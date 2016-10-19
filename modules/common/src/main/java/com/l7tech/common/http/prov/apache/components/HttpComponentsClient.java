@@ -215,7 +215,7 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
         }
 
         @Override
-        public Socket connectSocket(Socket sock, InetSocketAddress remoteAddress, InetSocketAddress localAddress, HttpParams params) throws IOException, UnknownHostException, ConnectTimeoutException {
+        public Socket connectSocket(Socket sock, InetSocketAddress remoteAddress, InetSocketAddress localAddress, HttpParams params) throws IOException {
             return wrapSocket(delegate.connectSocket(sock, remoteAddress, localAddress, params), "http", traceLogger);
         }
 
@@ -331,7 +331,8 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
             }
         } else if (params.isUseKeepAlives() && useHttp1_0) {
             // default is to close so add keep-alive
-            clientParams.setParameter(ClientPNames.DEFAULT_HEADERS, Collections.singletonList(new BasicHeader("Connection", "keep-alive")));//"http.default-headers"
+			// DE211049: JAISH04- disabled keep-alive for http v1.0 as it does not supports persistent connection
+            clientParams.setParameter(ClientPNames.DEFAULT_HEADERS, Collections.singletonList(new BasicHeader("Connection", "close")));//"http.default-headers"
         }
         final HttpContext state = getHttpState(params);
 
@@ -1054,12 +1055,12 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
         }
 
         @Override
-        public Socket connectSocket(Socket socket, InetSocketAddress remoteAddress, InetSocketAddress localAddress, HttpParams params) throws IOException, UnknownHostException, ConnectTimeoutException {
+        public Socket connectSocket(Socket socket, InetSocketAddress remoteAddress, InetSocketAddress localAddress, HttpParams params) throws IOException {
             return wrapSocket(super.connectSocket(socket, remoteAddress, localAddress, params), PROTOCOL_HTTPS, traceSecureLogger);
         }
 
         @Override
-        public Socket createLayeredSocket(Socket socket, String host, int port, HttpParams params) throws IOException, UnknownHostException {
+        public Socket createLayeredSocket(Socket socket, String host, int port, HttpParams params) throws IOException {
             return wrapSocket(super.createLayeredSocket(socket, host, port >= 0 ? port : DEFAULT_HTTPS_PORT, params), PROTOCOL_HTTPS, traceSecureLogger);
         }
     }
