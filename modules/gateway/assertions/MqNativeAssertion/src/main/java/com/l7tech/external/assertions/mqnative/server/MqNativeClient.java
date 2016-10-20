@@ -82,9 +82,10 @@ class MqNativeClient implements Closeable {
     }
 
     private void checkConnect( final boolean reconnect ) throws MQException, MqNativeConfigException {
-        if ( !clientBag.isSome() ||
-             !clientBag.some().getQueueManager().isConnected() ||
-             !clientBag.some().getQueueManager().isOpen() ) {
+        if ( !clientBag.isSome() || (clientBag.isSome() &&
+                (!clientBag.some().getQueueManager().isConnected() ||
+                 !clientBag.some().getQueueManager().isOpen()
+                )) ) {
 
             close();
 
@@ -109,18 +110,13 @@ class MqNativeClient implements Closeable {
                 queueManager = null;
                 targetQueue = null;
                 specifiedReplyQueue = null;
-            //TODO [jdk7] Multicatch
-            } catch ( MQException e ) {
-                connectionListener.notifyConnectionError( ExceptionUtils.getMessage( e ) );
-                throw e;
-            } catch ( MqNativeConfigException e ) {
+            } catch ( MQException | MqNativeConfigException e ) {
                 connectionListener.notifyConnectionError( ExceptionUtils.getMessage( e ) );
                 throw e;
             } finally {
                 closeResources( queueManager, targetQueue, specifiedReplyQueue );
             }
         }
-        
     }
 
     private static void closeResources( final MQQueueManager queueManager, final MQQueue targetQueue, final MQQueue specifiedReplyQueue ) {

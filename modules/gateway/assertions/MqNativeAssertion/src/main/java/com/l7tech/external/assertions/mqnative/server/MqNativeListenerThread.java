@@ -14,6 +14,7 @@ import java.util.logging.Level;
 
 import static com.ibm.mq.constants.MQConstants.MQGMO_SYNCPOINT;
 import static com.ibm.mq.constants.MQConstants.MQGMO_WAIT;
+import static com.ibm.mq.constants.MQConstants.MQPMO_FAIL_IF_QUIESCING;
 import static java.text.MessageFormat.format;
 
 /**
@@ -55,10 +56,20 @@ class MqNativeListenerThread extends Thread {
                     mqMessage = mqNativeListener.doWithMqNativeClient( new UnaryThrows<MQMessage,ClientBag,MQException>() {
                         @Override
                         public MQMessage call( final ClientBag bag ) throws MQException {
+                            // TODO make these options configurable through the assertion (new feature)
                             final MQGetMessageOptions getOptions = new MQGetMessageOptions();
                             getOptions.options = MQGMO_WAIT | MQGMO_SYNCPOINT;
+
+                            // fail if the queue manager is in the quiescing state
+                            getOptions.options |= MQPMO_FAIL_IF_QUIESCING;
+
                             getOptions.waitInterval = pollInterval.get();
-                            return mqNativeListener.receiveMessage( bag.getTargetQueue(), getOptions );
+                            MQMessage result = mqNativeListener.receiveMessage( bag.getTargetQueue(), getOptions );
+
+                            if (mqNativeListener.isLoggable(Level.FINE)) {
+                                mqNativeListener.log(Level.FINE, "MQ Native listener receive message complete.");
+                            }
+                            return result;
                         }
                     });
 

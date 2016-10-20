@@ -334,6 +334,19 @@ public class MqNativeUtils {
                             "Error closing MQ object: " + ExceptionUtils.getMessage( e ),
                             ExceptionUtils.getDebugException( e ) );
                 }
+            } catch (Throwable t) {
+                // attempt to recover from unexpected error when closing MQ objects
+                // For example Rally ticket DE237841, NullPointerException at com.ibm.mq.jmqi.remote.api.RemoteFAP.MQCLOSE(RemoteFAP.java:6727)
+                StackTraceElement[] stackTraceElements = t.getStackTrace();
+                if (stackTraceElements != null && stackTraceElements.length > 0 && stackTraceElements[0] != null && stackTraceElements[0].getClassName().startsWith("com.ibm.mq.")) {
+                    if ( logger.isLoggable( Level.FINE ) ) {
+                        logger.log( Level.FINE,
+                                "Error closing MQ object: " + ExceptionUtils.getMessage( t ),
+                                ExceptionUtils.getDebugException( t ) );
+                    }
+                } else {
+                    throw t;
+                }
             }
         }
     }

@@ -334,6 +334,10 @@ public abstract class MqNativeListener {
         logger.log(level, messageKey, ex);
     }
 
+    boolean isLoggable(Level level) {
+        return logger.isLoggable(level);
+    }
+
     private void configureProperties(ServerConfig serverConfig) {
         listenerThread.setOopsSleep(getErrorSleepTime(serverConfig));
         listenerThread.setPollInterval(getPollInterval(serverConfig));
