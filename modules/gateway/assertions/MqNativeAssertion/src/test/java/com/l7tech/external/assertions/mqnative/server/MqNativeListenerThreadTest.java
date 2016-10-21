@@ -83,7 +83,7 @@ public class MqNativeListenerThreadTest extends AbstractJUnit4SpringContextTests
         verify(mqNativeListener,times(8)).doWithMqNativeClient((Functions.UnaryThrows<Object,MqNativeClient.ClientBag,MQException>) any());
         verify(mqNativeListener,times(1)).handleMessage((MQMessage) any());
         verify(mqNativeListener,times(8)).receiveMessage((MQQueue)any(),(MQGetMessageOptions)any());
-        verify(mqNativeListener,atLeast(1)).log((Level) any(), anyString(), anyVararg());
+        verify(mqNativeListener,atLeast(1)).log((Level) any(), anyString(), (Object) anyVararg());
         verify(mqNativeListener,times(6)).cleanup();
     }
 

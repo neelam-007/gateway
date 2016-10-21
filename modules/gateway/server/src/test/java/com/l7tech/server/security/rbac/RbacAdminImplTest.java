@@ -19,7 +19,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.stubbing.Answer;
 
 import java.util.*;
 
@@ -117,7 +120,13 @@ public class RbacAdminImplTest {
         final User user = new InternalUser("test");
         final PublishedService service = new PublishedService();
         when(roleManager.getAssignedRoles(user, true, false)).thenReturn(Arrays.asList(role));
-        when(entityCrud.find(EntityType.SERVICE.getEntityClass(), GOID)).thenReturn(service);
+//        Mockito.when(entityCrud.find(EntityType.SERVICE.getEntityClass(), GOID)).thenReturn(service);
+        Mockito.when(entityCrud.find(EntityType.SERVICE.getEntityClass(), GOID)).thenAnswer(new Answer<PublishedService>() {
+            @Override
+            public PublishedService answer(InvocationOnMock invocationOnMock) throws Throwable {
+                return service;
+            }
+        });
 
         final Collection<Role> assignedRoles = admin.findRolesForUser(user);
         assertEquals(1, assignedRoles.size());
@@ -134,7 +143,13 @@ public class RbacAdminImplTest {
         final User user = new InternalUser("test");
         final JdbcConnection connection = new JdbcConnection();
         when(roleManager.getAssignedRoles(user, true, false)).thenReturn(Arrays.asList(role));
-        when(entityCrud.find(EntityType.JDBC_CONNECTION.getEntityClass(), ZONE_GOID)).thenReturn(connection);
+//        when(entityCrud.find(EntityType.JDBC_CONNECTION.getEntityClass(), ZONE_GOID)).thenReturn(connection);
+        when(entityCrud.find(EntityType.JDBC_CONNECTION.getEntityClass(), ZONE_GOID)).thenAnswer(new Answer<JdbcConnection>() {
+            @Override
+            public JdbcConnection answer(InvocationOnMock invocationOnMock) throws Throwable {
+                return connection;
+            }
+        });
 
         final Collection<Role> assignedRoles = admin.findRolesForUser(user);
         assertEquals(1, assignedRoles.size());
@@ -151,7 +166,13 @@ public class RbacAdminImplTest {
         final Group group = new InternalGroup("test");
         final JdbcConnection connection = new JdbcConnection();
         when(roleManager.getAssignedRoles(group)).thenReturn(Arrays.asList(role));
-        when(entityCrud.find(EntityType.JDBC_CONNECTION.getEntityClass(), GOID)).thenReturn(connection);
+//        when(entityCrud.find(EntityType.JDBC_CONNECTION.getEntityClass(), GOID)).thenReturn(connection);
+        when(entityCrud.find(EntityType.JDBC_CONNECTION.getEntityClass(), GOID)).thenAnswer(new Answer<JdbcConnection>() {
+            @Override
+            public JdbcConnection answer(InvocationOnMock invocationOnMock) throws Throwable {
+                return connection;
+            }
+        });
 
         final Collection<Role> assignedRoles = admin.findRolesForGroup(group);
         assertEquals(1, assignedRoles.size());

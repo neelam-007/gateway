@@ -323,10 +323,10 @@ public class UserRestEntityResourceTest extends RestEntityTests<User, UserMO> {
             Assert.assertEquals(entity.getName(), managedObject.getName());
             if(entity instanceof InternalUser) {
                 if (managedObject.getProperty("enabled") != null) {
-                    Assert.assertEquals(((InternalUser) entity).isEnabled(), managedObject.getProperty("enabled"));
+                    Assert.assertEquals(((InternalUser) entity).isEnabled(), (boolean) managedObject.getProperty("enabled"));
                 }
                 if (managedObject.getProperty("accountExpiration") != null) {
-                    Assert.assertEquals(((InternalUser) entity).getExpiration(), managedObject.getProperty("accountExpiration"));
+                    Assert.assertEquals(((InternalUser) entity).getExpiration(), (long) managedObject.getProperty("accountExpiration"));
                 }
             }
         }

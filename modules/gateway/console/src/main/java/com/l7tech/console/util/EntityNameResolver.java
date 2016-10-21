@@ -470,7 +470,7 @@ public class EntityNameResolver {
         if (assertion instanceof CustomAssertionHolder) {
             name = CustomAssertionHolder.CUSTOM_ASSERTION;
         } else if (assertion != null) {
-            name = String.valueOf(assertion.meta().get(AssertionMetadata.PALETTE_NODE_NAME));
+            name = String.valueOf((Object) assertion.meta().get(AssertionMetadata.PALETTE_NODE_NAME));
         } else {
             name = defaultName;
         }

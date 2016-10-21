@@ -239,8 +239,7 @@ public class ConsoleAssertionRegistry extends AssertionRegistry {
                         if ( meta instanceof DefaultAssertionMetadata ) {
                             ((DefaultAssertionMetadata) meta).put( AssertionMetadata.MODULE_FILE_NAME, moduleFilename );
                         }
-                        String basePackage = String.valueOf(prototype.meta().get(AssertionMetadata.BASE_PACKAGE));
-
+                        String basePackage = String.valueOf((Object) prototype.meta().get(AssertionMetadata.BASE_PACKAGE));
                         logger.info("Registering remote assertion " + prototype.getClass().getName());
                         modulePrototypes.add(prototype);
                         registerAssertion(prototype.getClass());

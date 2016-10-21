@@ -151,7 +151,7 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
     }
 
      public String getPropertiesDialogTitle() {
-        return String.valueOf(meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME));
+        return String.valueOf((Object) meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME));
     }
 
     public String getHost() {

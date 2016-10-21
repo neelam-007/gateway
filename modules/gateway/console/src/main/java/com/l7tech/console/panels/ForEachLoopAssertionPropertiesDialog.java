@@ -21,7 +21,7 @@ public class ForEachLoopAssertionPropertiesDialog extends AssertionPropertiesOkC
     private TargetVariablePanel prefixField;
 
     public ForEachLoopAssertionPropertiesDialog(Frame parent, ForEachLoopAssertion assertion) {
-        super(ForEachLoopAssertion.class, parent, String.valueOf(assertion.meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME)), true);
+        super(ForEachLoopAssertion.class, parent, String.valueOf((Object) assertion.meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME)), true);
 
         initComponents();
         setData(assertion);

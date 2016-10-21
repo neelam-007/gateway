@@ -32,7 +32,7 @@ public class CreateJsonWebKeyPropertiesDialog extends AssertionPropertiesOkCance
     private SimpleTableModel<JwkKeyInfo> tableModel;
 
     public CreateJsonWebKeyPropertiesDialog(final Frame parent, final CreateJsonWebKeyAssertion assertion) {
-        super(CreateJsonWebKeyAssertion.class, parent, String.valueOf(assertion.meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME)), true);
+        super(CreateJsonWebKeyAssertion.class, parent, String.valueOf((Object) assertion.meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME)), true);
         initComponents();
         setData(assertion);
     }

@@ -65,7 +65,7 @@ public class EncodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
     private JCheckBox isEncryptionSecretBase64EncodedCheckBox;
 
     public EncodeJsonWebTokenPropertiesDialog(final Frame parent, final EncodeJsonWebTokenAssertion assertion) {
-        super(EncodeJsonWebTokenAssertion.class, parent, String.valueOf(assertion.meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME)), true);
+        super(EncodeJsonWebTokenAssertion.class, parent, String.valueOf((Object) assertion.meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME)), true);
         initComponents();
 
         setData(assertion);

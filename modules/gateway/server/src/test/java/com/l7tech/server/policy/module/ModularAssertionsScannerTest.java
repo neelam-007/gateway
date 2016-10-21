@@ -273,9 +273,9 @@ public class ModularAssertionsScannerTest extends ModulesScannerTestBase {
         // This way we can distinguish between different objects and methods and verify that the
         // all load-listener methods have been called accordingly
         final Set<Pair<String, String>> loadListenerMethodsCalled = new HashSet<>(2*numOfModules);
-        Mockito.when(applicationContext.getBean(Mockito.anyString(), Mockito.anyVararg())).thenAnswer(new Answer<Object>() {
+        Mockito.when(applicationContext.getBean(Mockito.anyString(), Mockito.<String>anyVararg())).thenAnswer(new Answer<Pair<String, String>>() {
             @Override
-            public Object answer(final InvocationOnMock invocation) throws Throwable {
+            public Pair<String, String> answer(final InvocationOnMock invocation) throws Throwable {
                 Assert.assertEquals("make sure exactly two arguments are passed", 2, invocation.getArguments().length);
 
                 final Object param1 = invocation.getArguments()[0];

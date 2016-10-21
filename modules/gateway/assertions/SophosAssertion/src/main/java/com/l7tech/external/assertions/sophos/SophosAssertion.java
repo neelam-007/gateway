@@ -106,7 +106,7 @@ public class SophosAssertion extends MessageTargetableAssertion implements SetsV
     }
 
     public String getPropertiesDialogTitle() {
-        return String.valueOf(meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME));
+        return String.valueOf((Object) meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME));
     }
 
     public String getFailoverStrategyName() {

@@ -17,7 +17,7 @@ public class HandleErrorsPropertiesDialog extends AssertionPropertiesOkCancelSup
     private JLabel label;
 
     public HandleErrorsPropertiesDialog(final Frame parent, final HandleErrorsAssertion assertion) {
-        super(HandleErrorsAssertion.class, parent, String.valueOf(assertion.meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME)), true);
+        super(HandleErrorsAssertion.class, parent, String.valueOf((Object) assertion.meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME)), true);
         initComponents();
         setData(assertion);
     }
