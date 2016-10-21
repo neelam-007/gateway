@@ -14,7 +14,7 @@ import java.util.logging.Level;
 
 import static com.ibm.mq.constants.MQConstants.MQGMO_SYNCPOINT;
 import static com.ibm.mq.constants.MQConstants.MQGMO_WAIT;
-import static com.ibm.mq.constants.MQConstants.MQPMO_FAIL_IF_QUIESCING;
+import static com.ibm.mq.constants.MQConstants.MQGMO_FAIL_IF_QUIESCING;
 import static java.text.MessageFormat.format;
 
 /**
@@ -61,7 +61,7 @@ class MqNativeListenerThread extends Thread {
                             getOptions.options = MQGMO_WAIT | MQGMO_SYNCPOINT;
 
                             // fail if the queue manager is in the quiescing state
-                            getOptions.options |= MQPMO_FAIL_IF_QUIESCING;
+                            getOptions.options |= MQGMO_FAIL_IF_QUIESCING;
 
                             getOptions.waitInterval = pollInterval.get();
                             MQMessage result = mqNativeListener.receiveMessage( bag.getTargetQueue(), getOptions );

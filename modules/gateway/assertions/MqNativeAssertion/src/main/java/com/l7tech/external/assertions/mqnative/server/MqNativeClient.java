@@ -81,11 +81,9 @@ class MqNativeClient implements Closeable {
         return new Triple<MQQueueManager,MQQueue,MQQueue>(queueManager,targetQueue,specifiedReplyQueue);
     }
 
-    private void checkConnect( final boolean reconnect ) throws MQException, MqNativeConfigException {
-        if ( !clientBag.isSome() || (clientBag.isSome() &&
-                (!clientBag.some().getQueueManager().isConnected() ||
-                 !clientBag.some().getQueueManager().isOpen()
-                )) ) {
+    private void checkConnect(final boolean reconnect) throws MQException, MqNativeConfigException {
+        if (!clientBag.isSome() ||
+                !clientBag.some().getQueueManager().isConnected() || !clientBag.some().getQueueManager().isOpen()) {
 
             close();
 
