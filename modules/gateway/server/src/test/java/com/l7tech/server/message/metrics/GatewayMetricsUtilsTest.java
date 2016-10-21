@@ -3,16 +3,14 @@ package com.l7tech.server.message.metrics;
 import com.l7tech.message.Message;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.AssertionMetrics;
 import com.l7tech.server.event.metrics.AssertionFinished;
+import com.l7tech.server.event.metrics.ServiceFinished;
 import com.l7tech.server.message.AssertionTraceListener;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.util.Functions;
 import org.apache.commons.lang.ClassUtils;
-import org.apache.xerces.impl.xpath.regex.Match;
-import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
@@ -192,7 +190,7 @@ public class GatewayMetricsUtilsTest {
                     final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(null, null);
                     GatewayMetricsUtils.setPublisher(context, publisher);
                     // wire it up
-                    final AssertionFinished assertionFinished = GatewayMetricsUtils.createAssertionFinishedEvent(context, serverAssertion.getAssertion(), new AssertionMetrics(0, 0));
+                    final AssertionFinished assertionFinished = GatewayMetricsUtils.createAssertionFinishedEvent(context, serverAssertion.getAssertion(), new LatencyMetrics(0, 0));
                     Assert.assertNotNull(assertionFinished.getContext());
 
                     // this thread should be able to access the content
@@ -227,10 +225,17 @@ public class GatewayMetricsUtilsTest {
 
     @Test
     public void testCreateAssertionFinishedEvent() throws Exception {
-        final AssertionMetrics assertionMetrics = new AssertionMetrics(0, 0);
+        final LatencyMetrics assertionMetrics = new LatencyMetrics(0, 0);
         final Assertion assertion = serverAssertion.getAssertion();
         final AssertionFinished assertionFinished = GatewayMetricsUtils.createAssertionFinishedEvent(context, assertion, assertionMetrics);
         assertThat("Assertion in assertionFinished should be the same instance and cannot be null", assertionFinished.getAssertion(),  Matchers.allOf(Matchers.sameInstance(assertion), Matchers.notNullValue()));
         assertThat("AssertionMetrics in assertionFinished should be the same instance and cannot be null", assertionFinished.getAssertionMetrics(), Matchers.allOf(Matchers.sameInstance(assertionMetrics), Matchers.notNullValue()));
+    }
+
+    @Test
+    public void testCreateServiceFinishedEvent() throws Exception {
+        final LatencyMetrics serviceMetrics = new LatencyMetrics(0, 0);
+        final ServiceFinished serviceFinished = GatewayMetricsUtils.createServiceFinishedEvent(context, serviceMetrics);
+        assertThat("AssertionMetrics in assertionFinished should be the same instance and cannot be null", serviceFinished.getServiceMetrics(), Matchers.allOf(Matchers.sameInstance(serviceMetrics), Matchers.notNullValue()));
     }
 }

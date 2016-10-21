@@ -1,14 +1,15 @@
-package com.l7tech.policy.assertion;
+package com.l7tech.server.message.metrics;
 
 /**
- * Class created to contain assertion metrics
- * current holds start and end times in MS
+ * Class created to contain metrics
+ * currently holds start and end times in MS
+ * TODO finalize the structure and name of this class before release
  */
-public final class AssertionMetrics {
+public final class LatencyMetrics {
     private final long startTimeMs;
     private final long endTimeMs;
     
-    public AssertionMetrics(final long startTimeMs, final long endTimeMs) {
+    public LatencyMetrics(final long startTimeMs, final long endTimeMs) {
         this.startTimeMs = startTimeMs;
         this.endTimeMs = endTimeMs;
     }

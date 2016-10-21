@@ -6,7 +6,7 @@ import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.mapping.MessageContextMapping;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.message.Message;
-import com.l7tech.policy.assertion.AssertionMetrics;
+import com.l7tech.server.message.metrics.LatencyMetrics;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.MessageTargetable;
 import com.l7tech.policy.assertion.RoutingStatus;
@@ -381,7 +381,7 @@ public class PolicyEnforcementContextWrapper implements PolicyEnforcementContext
     }
 
     @Override
-    public void assertionFinished( final ServerAssertion assertion, final AssertionStatus status, @Nullable final AssertionMetrics assertionMetrics ) {
+    public void assertionFinished( final ServerAssertion assertion, final AssertionStatus status, @Nullable final LatencyMetrics assertionMetrics ) {
         delegate.assertionFinished( assertion, status, assertionMetrics );
     }
 

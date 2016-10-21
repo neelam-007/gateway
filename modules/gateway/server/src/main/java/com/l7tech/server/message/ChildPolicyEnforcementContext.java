@@ -3,7 +3,7 @@ package com.l7tech.server.message;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.message.Message;
-import com.l7tech.policy.assertion.AssertionMetrics;
+import com.l7tech.server.message.metrics.LatencyMetrics;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.MessageTargetable;
 import com.l7tech.policy.assertion.RoutingStatus;
@@ -300,7 +300,7 @@ class ChildPolicyEnforcementContext extends PolicyEnforcementContextWrapper impl
     }
 
     @Override
-    public void assertionFinished( final ServerAssertion assertion, final AssertionStatus status, @Nullable final AssertionMetrics assertionMetrics ) {
+    public void assertionFinished( final ServerAssertion assertion, final AssertionStatus status, @Nullable final LatencyMetrics assertionMetrics ) {
         context.assertionFinished( assertion, status, assertionMetrics);
 
         if (debugContext != null) {

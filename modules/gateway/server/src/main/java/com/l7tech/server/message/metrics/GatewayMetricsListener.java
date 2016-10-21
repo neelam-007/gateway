@@ -1,6 +1,7 @@
 package com.l7tech.server.message.metrics;
 
 import com.l7tech.server.event.metrics.AssertionFinished;
+import com.l7tech.server.event.metrics.ServiceFinished;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -15,6 +16,14 @@ public abstract class GatewayMetricsListener {
      */
     @SuppressWarnings("UnusedParameters")
     public void assertionFinished(@NotNull final AssertionFinished event) {
+        // nothing to do in the base
+    }
+
+    /**
+     * @param event contains the ServiceMetrics {@link ServiceFinished ServiceFinished}, cannot be {@code null}
+     */
+    @SuppressWarnings("UnusedParameters")
+    public void serviceFinished(@NotNull final ServiceFinished event) {
         // nothing to do in the base
     }
 

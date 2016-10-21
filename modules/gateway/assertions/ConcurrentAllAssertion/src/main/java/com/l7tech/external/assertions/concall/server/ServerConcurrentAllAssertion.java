@@ -19,6 +19,7 @@ import com.l7tech.server.audit.AuditContextFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.message.metrics.GatewayMetricsUtils;
+import com.l7tech.server.message.metrics.LatencyMetrics;
 import com.l7tech.server.policy.PolicyCache;
 import com.l7tech.server.policy.PolicyMetadata;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
@@ -128,10 +129,10 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
         }
 
         /**
-         * @return the associated {@link AssertionMetrics} for the kid PEC or {@code null} if it does not exist.
+         * @return the associated {@link LatencyMetrics} for the kid PEC or {@code null} if it does not exist.
          */
         @Nullable
-        public AssertionMetrics getAssertionMetrics() {
+        public LatencyMetrics getAssertionMetrics() {
             return assertionMetricsWrapper != null ? assertionMetricsWrapper.getAssertionMetrics() : null;
         }
     }
@@ -174,16 +175,16 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
     }
 
     /**
-     * {@link AssertionMetrics} is created in the kid PEC and is immutable. {@link com.l7tech.server.event.metrics.AssertionFinished AssertionFinished} is published after the completion of all the kid PECs.
+     * {@link LatencyMetrics} is created in the kid PEC and is immutable. {@link com.l7tech.server.event.metrics.AssertionFinished AssertionFinished} is published after the completion of all the kid PECs.
      * Therefore, a wrapper class is created to contain the current kidPECs AssertionMetrics.
      */
     private static final class AssertionMetricsWrapper {
-        private AssertionMetrics assertionMetrics;
+        private LatencyMetrics assertionMetrics;
 
-        void setAssertionMetrics(final AssertionMetrics assertionMetrics) {
+        void setAssertionMetrics(final LatencyMetrics assertionMetrics) {
             this.assertionMetrics = assertionMetrics;
         }
-        AssertionMetrics getAssertionMetrics() {
+        LatencyMetrics getAssertionMetrics() {
             return this.assertionMetrics;
         }
     }
@@ -223,7 +224,7 @@ public class ServerConcurrentAllAssertion extends ServerCompositeAssertion<Concu
                                                             new String[] { "Unable to run concurrent assertion: " + ExceptionUtils.getMessage(t) }, t);
                                                     return AssertionStatus.SERVER_ERROR;
                                                 } finally {
-                                                    assertionMetricsWrapper.setAssertionMetrics(new AssertionMetrics(startTime, timeSource.currentTimeMillis()));
+                                                    assertionMetricsWrapper.setAssertionMetrics(new LatencyMetrics(startTime, timeSource.currentTimeMillis()));
                                                 }
                                             }
                                         }

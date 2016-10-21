@@ -1,6 +1,6 @@
 package com.l7tech.server.trace;
 
-import com.l7tech.policy.assertion.AssertionMetrics;
+import com.l7tech.server.message.metrics.LatencyMetrics;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.message.AssertionTraceListener;
@@ -67,7 +67,7 @@ public class TracePolicyEvaluator implements AssertionTraceListener {
     }
 
     @Override
-    public void assertionFinished(ServerAssertion assertion, AssertionStatus status, @Nullable final AssertionMetrics assertionMetrics) {
+    public void assertionFinished(ServerAssertion assertion, AssertionStatus status, @Nullable final LatencyMetrics assertionMetrics) {
         tracePec.setTracedAssertion(assertion);
         tracePec.setTracedStatus(status);
         tracePec.setTracedAssertionMetrics(assertionMetrics);

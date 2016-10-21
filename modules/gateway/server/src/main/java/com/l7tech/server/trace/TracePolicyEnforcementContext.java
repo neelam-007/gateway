@@ -2,7 +2,7 @@ package com.l7tech.server.trace;
 
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.message.Message;
-import com.l7tech.policy.assertion.AssertionMetrics;
+import com.l7tech.server.message.metrics.LatencyMetrics;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.message.HasOriginalContext;
@@ -22,7 +22,7 @@ public class TracePolicyEnforcementContext extends PolicyEnforcementContextWrapp
     private ServerAssertion tracedAssertion; // assertion currently being traced
     private AssertionStatus tracedStatus; // status returned by tracedAssertion
     private Object traceOut; // holds reference to value of convenience variable $trace.out
-    private AssertionMetrics tracedAssertionMetrics; // metrics for the assertion currently being traced
+    private LatencyMetrics tracedAssertionMetrics; // metrics for the assertion currently being traced
 
     public TracePolicyEnforcementContext(final PolicyEnforcementContext contextToTrace) {
         super(PolicyEnforcementContextFactory.createUnregisteredPolicyEnforcementContext(null, null, true));
@@ -131,11 +131,11 @@ public class TracePolicyEnforcementContext extends PolicyEnforcementContextWrapp
         this.traceOut = traceOut;
     }
 
-    public AssertionMetrics getTracedAssertionMetrics() {
+    public LatencyMetrics getTracedAssertionMetrics() {
         return tracedAssertionMetrics;
     }
 
-    public void setTracedAssertionMetrics(final AssertionMetrics assertionMetrics) {
+    public void setTracedAssertionMetrics(final LatencyMetrics assertionMetrics) {
         this.tracedAssertionMetrics = assertionMetrics;
 
     }

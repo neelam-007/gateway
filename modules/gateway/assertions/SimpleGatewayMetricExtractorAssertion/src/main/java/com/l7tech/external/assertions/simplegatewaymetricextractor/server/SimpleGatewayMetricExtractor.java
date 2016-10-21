@@ -9,9 +9,10 @@ import com.l7tech.policy.GenericEntityHeader;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.policy.assertion.AssertionMetrics;
+import com.l7tech.server.message.metrics.LatencyMetrics;
 import com.l7tech.server.entity.GenericEntityManager;
 import com.l7tech.server.event.metrics.AssertionFinished;
+import com.l7tech.server.event.metrics.ServiceFinished;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.metrics.GatewayMetricsListener;
 import com.l7tech.server.message.metrics.GatewayMetricsPublisher;
@@ -58,22 +59,12 @@ public class SimpleGatewayMetricExtractor extends GatewayMetricsListener {
         // apply service filter
         final PolicyEnforcementContext pec = assertionFinished.getContext();
         final String serviceName = getServiceName(pec);
-        Collection<SimpleGatewayMetricExtractorEntity> entities;
-        try {
-            entities = entityManager.findAll();
-            if(entities.iterator().hasNext()) {
-                serviceFilterName = entities.iterator().next().getServiceNameFilter();
-            } else {
-                serviceFilterName = null;
-            }
-        } catch (FindException e) {
-            logger.log(Level.WARNING, "Error loading configuration: "+ getMessage(e), getDebugException(e) );
-        }
+        setServiceFilterName();
 
         if (isEmpty(serviceFilterName) || serviceFilterName.equals(serviceName) ) {
             final Assertion assertion = assertionFinished.getAssertion();
             String assertionNumber = getAssertionNumber(pec, assertion);
-            final AssertionMetrics metrics = assertionFinished.getAssertionMetrics();
+            final LatencyMetrics metrics = assertionFinished.getAssertionMetrics();
             final Pair<String, String> policyNameAndGuid = getPolicyNameAndGuid(pec);
 
             //final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
@@ -97,6 +88,19 @@ public class SimpleGatewayMetricExtractor extends GatewayMetricsListener {
         // TODO add sample how to set user defined context variable
     }
 
+    private void setServiceFilterName() {
+        try {
+            Collection<SimpleGatewayMetricExtractorEntity> entities = entityManager.findAll();
+            if(entities.iterator().hasNext()) {
+                serviceFilterName = entities.iterator().next().getServiceNameFilter();
+            } else {
+                serviceFilterName = null;
+            }
+        } catch (FindException e) {
+            logger.log(Level.WARNING, "Error loading configuration: "+ getMessage(e), getDebugException(e) );
+        }
+    }
+
     private String getAssertionNumber(@NotNull final PolicyEnforcementContext pec, @Nullable final Assertion assertion) {
         return DebugTraceVariableContextSelector.buildAssertionNumberStr(pec, assertion);
     }
@@ -115,6 +119,32 @@ public class SimpleGatewayMetricExtractor extends GatewayMetricsListener {
     private String getRequestId(@NotNull final PolicyEnforcementContext pec) {
         final RequestId requestId = pec.getRequestId();
         return requestId == null ? "N/A" : requestId.toString();
+        // TODO add / verify access to requestId
+    }
+
+    /**
+     * Extracts and logs the content in ServiceFinished
+     */
+    @Override
+    public void serviceFinished(@NotNull ServiceFinished event) {
+        final PolicyEnforcementContext pec = event.getContext();
+        final String serviceName = getServiceName(pec);
+        setServiceFilterName();
+        if (isEmpty(serviceFilterName) || serviceFilterName.equals(serviceName) ) {
+            final PublishedService service = pec.getService();
+            final LatencyMetrics metrics = event.getServiceMetrics();
+
+            logger.log(
+                    Level.INFO,
+                    "SERVICE LATENCY: " +
+                            "request-id=" + getRequestId(pec) + " " +
+                            "service name=" + serviceName + " " +
+                            "service-id=" + service.getId() + " " +
+                            "version=" + service.getVersion() + " " +
+                            "startTime=" + metrics.getStartTimeMs() + " " +//.append("startTime=").append(sdf.format(new Date(metrics.getStartTimeMs()))).append(" ")
+                            "latency=" + metrics.getLatencyMs()
+            );
+        }
     }
 
     /**

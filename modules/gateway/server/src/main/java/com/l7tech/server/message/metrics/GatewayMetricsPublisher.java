@@ -1,6 +1,7 @@
 package com.l7tech.server.message.metrics;
 
 import com.l7tech.server.event.metrics.AssertionFinished;
+import com.l7tech.server.event.metrics.ServiceFinished;
 import com.l7tech.server.policy.module.AssertionModuleUnregistrationEvent;
 import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.util.ExceptionUtils;
@@ -83,6 +84,24 @@ public final class GatewayMetricsPublisher implements PostStartupApplicationList
                 logger.log(
                         Level.WARNING,
                         "Error while publishing AssertionFinished event for subscriber \"" + subscriber.getClass().getName() + "\":" + ExceptionUtils.getMessage(ex), ExceptionUtils.getDebugException(ex)
+                );
+            }
+        }
+    }
+
+    /**
+     * publishes the {@link ServiceFinished} event to each {@link GatewayMetricsListener subscriber}.
+     *
+     * @param event the event {@link ServiceFinished} to be published. Cannot be {@code null}
+     */
+    void publishEvent(@NotNull final ServiceFinished event) {
+        for (final GatewayMetricsListener subscriber : subscribers) {
+            try {
+                subscriber.serviceFinished(event);
+            } catch (final Throwable ex) {
+                logger.log(
+                        Level.WARNING,
+                        "Error while publishing ServiceFinished event for subscriber \"" + subscriber.getClass().getName() + "\":" + ExceptionUtils.getMessage(ex), ExceptionUtils.getDebugException(ex)
                 );
             }
         }

@@ -4,7 +4,7 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.AssertionMetrics;
+import com.l7tech.server.message.metrics.LatencyMetrics;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -15,7 +15,6 @@ import com.l7tech.server.util.AbstractReferenceCounted;
 import com.l7tech.util.Functions.Nullary;
 import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.TimeSource;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.util.*;
@@ -74,14 +73,14 @@ public class ServerPolicy extends AbstractReferenceCounted<ServerPolicyHandle> {
             result = e.getAssertionStatus();
         } catch (final Throwable ex) {
             if (context != null)
-                GatewayMetricsUtils.publishAssertionFinish(context, rootAssertion, new AssertionMetrics(assLatencyStartTime, timeSource.currentTimeMillis()));
+                GatewayMetricsUtils.publishAssertionFinish(context, rootAssertion, new LatencyMetrics(assLatencyStartTime, timeSource.currentTimeMillis()));
             throw ex;
         } finally {
             assLatencyEndTime = timeSource.currentTimeMillis();
         }
 
         if (context != null)
-            context.assertionFinished(rootAssertion, result, new AssertionMetrics(assLatencyStartTime, assLatencyEndTime));
+            context.assertionFinished(rootAssertion, result, new LatencyMetrics(assLatencyStartTime, assLatencyEndTime));
 
         return result;
     }

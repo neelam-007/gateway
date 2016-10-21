@@ -4,7 +4,7 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.policy.assertion.AssertionMetrics;
+import com.l7tech.server.message.metrics.LatencyMetrics;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.wsp.WspWriter;
@@ -212,7 +212,7 @@ public class DebugTraceVariableContextSelector implements ExpandVariables.Select
         simpleFields.put(ASSERTION_START_MILLIS, new Functions.Unary<Selection, DebugTraceVariableContext>() {
             @Override
             public Selection call(DebugTraceVariableContext ctx) {
-                final AssertionMetrics assertionMetrics = ctx.getContext().getTracedAssertionMetrics();
+                final LatencyMetrics assertionMetrics = ctx.getContext().getTracedAssertionMetrics();
                 return new Selection(assertionMetrics == null ? null : assertionMetrics.getStartTimeMs());
             }
         });
@@ -220,7 +220,7 @@ public class DebugTraceVariableContextSelector implements ExpandVariables.Select
         simpleFields.put(ASSERTION_LATENCY_MILLIS, new Functions.Unary<Selection, DebugTraceVariableContext>() {
             @Override
             public Selection call(DebugTraceVariableContext ctx) {
-                final AssertionMetrics assertionMetrics = ctx.getContext().getTracedAssertionMetrics();
+                final LatencyMetrics assertionMetrics = ctx.getContext().getTracedAssertionMetrics();
                 return new Selection(assertionMetrics == null ? null : assertionMetrics.getLatencyMs());
             }
         });

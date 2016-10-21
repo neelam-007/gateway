@@ -10,6 +10,7 @@ import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.VariableNotSettableException;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.event.metrics.AssertionFinished;
+import com.l7tech.server.event.metrics.ServiceFinished;
 import com.l7tech.server.event.metrics.GatewayMetricsEvent;
 import com.l7tech.server.message.AssertionTraceListener;
 import com.l7tech.server.message.AuthenticationContext;
@@ -445,7 +446,7 @@ public final class GatewayMetricsUtils {
             }
 
             @Override
-            public void assertionFinished(final ServerAssertion assertion, final AssertionStatus status, @Nullable final AssertionMetrics assertionMetrics) {
+            public void assertionFinished(final ServerAssertion assertion, final AssertionStatus status, @Nullable final LatencyMetrics assertionMetrics) {
                 throw new UnsupportedOperationException();
             }
 
@@ -675,12 +676,12 @@ public final class GatewayMetricsUtils {
      */
     private static class AssertionFinishedImpl extends GatewayMetricsEventImpl implements AssertionFinished {
         private final Assertion assertion;
-        private final AssertionMetrics assertionMetrics;
+        private final LatencyMetrics assertionMetrics;
 
         private AssertionFinishedImpl(
                 @NotNull final PolicyEnforcementContext context,
                 @NotNull final Assertion assertion,
-                @NotNull final AssertionMetrics assertionMetrics
+                @NotNull final LatencyMetrics assertionMetrics
         ) {
             super(context);
             this.assertion = assertion;
@@ -689,7 +690,7 @@ public final class GatewayMetricsUtils {
 
         @NotNull
         @Override
-        public AssertionMetrics getAssertionMetrics() {
+        public LatencyMetrics getAssertionMetrics() {
             return assertionMetrics;
         }
 
@@ -710,7 +711,7 @@ public final class GatewayMetricsUtils {
     public static void publishAssertionFinish(
             @NotNull final PolicyEnforcementContext context,
             @NotNull final ServerAssertion assertion,
-            @NotNull final AssertionMetrics assertionMetrics
+            @NotNull final LatencyMetrics assertionMetrics
     ) {
         if (context instanceof GatewayMetricsSupport) {
             final GatewayMetricsPublisher publisher = ((GatewayMetricsSupport) context).getGatewayMetricsEventsPublisher();
@@ -721,21 +722,75 @@ public final class GatewayMetricsUtils {
     }
 
     /**
+     * Our private {@link ServiceFinished} implementation.
+     */
+    private static class ServiceFinishedImpl extends GatewayMetricsEventImpl implements ServiceFinished {
+        private LatencyMetrics serviceMetrics;
+
+        private ServiceFinishedImpl(
+                @NotNull final PolicyEnforcementContext context,
+                @NotNull final LatencyMetrics serviceMetrics)
+        {
+            super(context);
+            this.serviceMetrics = serviceMetrics;
+        }
+        @NotNull
+        @Override
+        public LatencyMetrics getServiceMetrics() {
+            return serviceMetrics;
+        }
+    }
+
+    /**
+     * Publish {@link ServiceFinished} event if the specified {@code context} is instance of {@link GatewayMetricsSupport}.
+     *
+     * @param context               The executing PEC. Cannot be {@code null}
+     * @param serviceMetrics        Service metrics info. Cannot be {@code null}
+     */
+    public static void publishServiceFinish(
+            @NotNull final PolicyEnforcementContext context,
+            @NotNull final LatencyMetrics serviceMetrics
+    ) {
+        if (context instanceof GatewayMetricsSupport) {
+            final GatewayMetricsPublisher publisher = ((GatewayMetricsSupport) context).getGatewayMetricsEventsPublisher();
+            if (publisher != null) {
+                publisher.publishEvent(createServiceFinishedEvent(context, serviceMetrics));
+            }
+        }
+    }
+
+    /**
      * Utility method to create a new instance of our private {@link AssertionFinished} event.<br/>
      * Used by unit tests.
      *
      * @param context             the associated PEC.  Required and cannot be {@code null}.
      * @param assertion           the assertion that finished executing.  Required and cannot be {@code null}.
-     * @param assertionMetrics    the {@code assertion} metrics.  Required and cannot be {@code null}.
+     * @param assertionMetrics    the {@link LatencyMetrics assertion metrics}.  Required and cannot be {@code null}.
      * @return a new instance of {@link AssertionFinishedImpl}, never {@code null}.
      */
     @NotNull
     static AssertionFinished createAssertionFinishedEvent(
             @NotNull final PolicyEnforcementContext context,
             @NotNull final Assertion assertion,
-            @NotNull final AssertionMetrics assertionMetrics
+            @NotNull final LatencyMetrics assertionMetrics
     ) {
         return new AssertionFinishedImpl(context, assertion, assertionMetrics);
+    }
+
+    /**
+     * Utility method to create a new instance of our private {@link ServiceFinished} event.<br/>
+     * Used by unit tests.
+     *
+     * @param context             the associated PEC.  Required and cannot be {@code null}.
+     * @param serviceMetrics    the {@link LatencyMetrics service metrics}.  Required and cannot be {@code null}.
+     * @return a new instance of {@link ServiceFinishedImpl}, never {@code null}.
+     */
+    @NotNull
+    static ServiceFinished createServiceFinishedEvent(
+            @NotNull final PolicyEnforcementContext context,
+            @NotNull final LatencyMetrics serviceMetrics
+    ) {
+        return new ServiceFinishedImpl(context, serviceMetrics);
     }
 
     /**

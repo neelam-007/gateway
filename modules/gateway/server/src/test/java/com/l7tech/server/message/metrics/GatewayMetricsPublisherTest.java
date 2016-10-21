@@ -1,8 +1,8 @@
 package com.l7tech.server.message.metrics;
 
 import com.l7tech.server.event.metrics.AssertionFinished;
+import com.l7tech.server.event.metrics.ServiceFinished;
 import com.l7tech.server.policy.module.AssertionModuleUnregistrationEvent;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -22,6 +22,9 @@ public class GatewayMetricsPublisherTest {
 
     @Mock
     private AssertionFinished assertionFinished;
+
+    @Mock
+    private ServiceFinished serviceFinished;
 
     private GatewayMetricsPublisher publisher;
 
@@ -54,5 +57,10 @@ public class GatewayMetricsPublisherTest {
         Mockito.verify(subscriber, Mockito.never()).assertionFinished(Mockito.any(AssertionFinished.class));
         publisher.publishEvent(assertionFinished);
         Mockito.verify(subscriber, Mockito.times(1)).assertionFinished(assertionFinished);
+
+        Mockito.verify(subscriber, Mockito.never()).serviceFinished(Mockito.any(ServiceFinished.class));
+        publisher.publishEvent(serviceFinished);
+        Mockito.verify(subscriber, Mockito.times(1)).serviceFinished(serviceFinished);
+        Mockito.verify(subscriber, Mockito.times(1)).assertionFinished(assertionFinished); // make sure it remains one
     }
 }

@@ -28,6 +28,9 @@ import com.l7tech.server.audit.MessageSummaryAuditFactory;
 import com.l7tech.server.event.FaultProcessed;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.server.message.metrics.GatewayMetricsPublisher;
+import com.l7tech.server.message.metrics.GatewayMetricsUtils;
+import com.l7tech.server.message.metrics.LatencyMetrics;
 import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.transport.http.HttpTransportModule;
@@ -93,6 +96,8 @@ public class SoapMessageProcessingServlet extends HttpServlet {
     AuditContextFactory auditContextFactory;
     MessageSummaryAuditFactory messageSummaryAuditFactory;
 
+    private GatewayMetricsPublisher publisher;
+    private final TimeSource timeSource = new TimeSource();
 
     @Override
     public void init(ServletConfig servletConfig) throws ServletException {
@@ -110,6 +115,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         auditContextFactory = applicationContext.getBean("auditContextFactory", AuditContextFactory.class);
         messageSummaryAuditFactory = applicationContext.getBean("messageSummaryAuditFactory", MessageSummaryAuditFactory.class);
         auditor = new Auditor(this, applicationContext, logger);
+        publisher = applicationContext.getBean("gatewayMetricsPublisher", GatewayMetricsPublisher.class);
     }
 
     /**
@@ -127,27 +133,40 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         // Initialize processing context
         final Message response = new Message();
         final Message request = new Message();
-        try ( PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( request, response, true ) ) {
-            final AssertionStatus[] status = { null };
+        try ( final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( request, response, true ) ) {
+            GatewayMetricsUtils.setPublisher(context, isRelayGatewayMetricsEnable() ? getPublisher() : null);
+            final long startTime = timeSource.currentTimeMillis();
+            try {
+                final AssertionStatus[] status = {null};
 
-            auditContextFactory.doWithNewAuditContext( new Callable<Object>() {
-                @Override
-                public Object call() throws Exception {
-                    status[0] = serviceNoAudit( hrequest, hresponse, context );
-                    return null;
-                }
-            }, new Functions.Nullary<AuditRecord>() {
-                @Override
-                public AuditRecord call() {
-                    AssertionStatus s = status[0] == null ? AssertionStatus.UNDEFINED : status[0];
-                    return messageSummaryAuditFactory.makeEvent( context, s );
-                }
-            } );
+                auditContextFactory.doWithNewAuditContext(new Callable<Object>() {
+                    @Override
+                    public Object call() throws Exception {
+                        status[0] = serviceNoAudit(hrequest, hresponse, context);
+                        return null;
+                    }
+                }, new Functions.Nullary<AuditRecord>() {
+                    @Override
+                    public AuditRecord call() {
+                        AssertionStatus s = status[0] == null ? AssertionStatus.UNDEFINED : status[0];
+                        return messageSummaryAuditFactory.makeEvent(context, s);
+                    }
+                });
+            } finally {
+                GatewayMetricsUtils.publishServiceFinish(context, new LatencyMetrics(startTime, timeSource.currentTimeMillis()));
+            }
         } catch ( ServletException | IOException e ) {
             throw e;
         } catch ( Exception e ) {
             throw new ServletException( e );
         }
+    }
+
+    /**
+     * Proxy {@code relayGatewayMetrics.enable} cluster property through the message processor.
+     */
+    private boolean isRelayGatewayMetricsEnable() {
+        return messageProcessor != null && messageProcessor.isRelayGatewayMetricsEnable();
     }
 
     private AssertionStatus serviceNoAudit(HttpServletRequest hrequest, HttpServletResponse hresponse, final PolicyEnforcementContext context)
@@ -839,5 +858,12 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 logger.log( Level.FINE, message, params );
             }
         }
+    }
+
+    /**
+     * Restricted visibility - overridden in unit tests.
+     */
+    GatewayMetricsPublisher getPublisher() {
+        return publisher;
     }
 }

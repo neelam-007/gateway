@@ -1,7 +1,7 @@
 package com.l7tech.server.event.metrics;
 
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.AssertionMetrics;
+import com.l7tech.server.message.metrics.LatencyMetrics;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -9,10 +9,10 @@ import org.jetbrains.annotations.NotNull;
  */
 public interface AssertionFinished extends GatewayMetricsEvent {
     /**
-     * @return the associated {@link AssertionMetrics}, never {@code null}.
+     * @return the associated {@link LatencyMetrics}, never {@code null}.
      */
     @NotNull
-    AssertionMetrics getAssertionMetrics();
+    LatencyMetrics getAssertionMetrics();
 
     /**
      * @return the assertion that finished executing, never {@code null}.

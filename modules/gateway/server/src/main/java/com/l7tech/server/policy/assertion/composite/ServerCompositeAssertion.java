@@ -2,7 +2,7 @@ package com.l7tech.server.policy.assertion.composite;
 
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.AssertionMetrics;
+import com.l7tech.server.message.metrics.LatencyMetrics;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
@@ -142,7 +142,7 @@ public abstract class ServerCompositeAssertion<CT extends CompositeAssertion>
             } catch (AssertionStatusException e) {
                 result = e.getAssertionStatus();
             } catch (final Throwable ex) {
-                GatewayMetricsUtils.publishAssertionFinish(context, kid, new AssertionMetrics(assLatencyStartTime, timeSource.currentTimeMillis()));
+                GatewayMetricsUtils.publishAssertionFinish(context, kid, new LatencyMetrics(assLatencyStartTime, timeSource.currentTimeMillis()));
                 throw ex;
             } finally {
                 assLatencyEndTime = timeSource.currentTimeMillis();
@@ -151,7 +151,7 @@ public abstract class ServerCompositeAssertion<CT extends CompositeAssertion>
                 context.setAssertionLatencyNanos(timeSource.nanoTime() - startTime);
             }
             i++;
-            context.assertionFinished(kid, result, new AssertionMetrics(assLatencyStartTime, assLatencyEndTime));
+            context.assertionFinished(kid, result, new LatencyMetrics(assLatencyStartTime, assLatencyEndTime));
 
             if (listener != null) {
                 boolean proceed = listener.assertionFinished(context, result);

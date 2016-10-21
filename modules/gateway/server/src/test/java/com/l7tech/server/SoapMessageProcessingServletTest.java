@@ -15,16 +15,21 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.HttpPassthroughRuleSet;
 import com.l7tech.server.audit.AuditContextFactory;
 import com.l7tech.server.audit.MessageSummaryAuditFactory;
+import com.l7tech.server.event.metrics.ServiceFinished;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.metrics.GatewayMetricsListener;
+import com.l7tech.server.message.metrics.GatewayMetricsPublisher;
 import com.l7tech.test.BugId;
 import com.l7tech.util.Config;
 import com.l7tech.util.Functions;
 import com.l7tech.util.IOUtils;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Matchers;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
@@ -32,6 +37,7 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.w3c.dom.Document;
 
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 import java.util.concurrent.Callable;
@@ -46,6 +52,7 @@ public class SoapMessageProcessingServletTest {
     private MockHttpServletRequest request;
     private MockHttpServletResponse response;
     private SsgConnector connector;
+    private GatewayMetricsPublisher gatewayMetricsPublisher;
     @Mock
     private LicenseManager licenseManager;
     @Mock
@@ -74,6 +81,7 @@ public class SoapMessageProcessingServletTest {
         servlet.messageSummaryAuditFactory = messageSummaryAuditFactory;
         connector = new SsgConnector();
         connector.setEndpoints(SsgConnector.Endpoint.MESSAGE_INPUT.name());
+        gatewayMetricsPublisher = new GatewayMetricsPublisher();
         when(stashManagerFactory.createStashManager()).thenReturn(stashManager);
         when(auditContextFactory.doWithNewAuditContext(Matchers.<Callable>any(), Matchers.<Functions.Nullary>any())).then(new Answer<Object>() {
             @Override
@@ -81,6 +89,7 @@ public class SoapMessageProcessingServletTest {
                 return ((Callable) invocationOnMock.getArguments()[0]).call();
             }
         });
+        doReturn(false).when(messageProcessor).isRelayGatewayMetricsEnable();
     }
 
     @Test
@@ -506,10 +515,52 @@ public class SoapMessageProcessingServletTest {
         verify(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
     }
 
+    @Test
+    public void serviceFinishedEventOnError() throws Exception {
+        final GatewayMetricsListener subscriber = Mockito.mock(GatewayMetricsListener.class);
+        try {
+            servlet.getPublisher().addListener(subscriber);
+            doReturn(true).when(messageProcessor).isRelayGatewayMetricsEnable();
+            try {
+                request.setContent("test".getBytes());
+                doThrow(new RuntimeException("my runtime exception")).when(auditContextFactory).doWithNewAuditContext(Matchers.<Callable>any(), Matchers.<Functions.Nullary>any());
+                servlet.service(request, response);
+            } catch (Exception ex) {
+                Assert.assertThat(ex, org.hamcrest.Matchers.instanceOf(ServletException.class));
+                Assert.assertThat(
+                        ex.getCause(),
+                        org.hamcrest.Matchers.allOf(
+                                org.hamcrest.Matchers.not(org.hamcrest.Matchers.nullValue()),
+                                org.hamcrest.Matchers.instanceOf(RuntimeException.class)
+                        )
+                );
+                Assert.assertThat(
+                        ex.getCause().getMessage(),
+                        org.hamcrest.Matchers.allOf(
+                                org.hamcrest.Matchers.not(org.hamcrest.Matchers.nullValue()),
+                                org.hamcrest.Matchers.equalTo("my runtime exception")
+                        )
+                );
+                verify(subscriber, times(1)).serviceFinished(Mockito.any(ServiceFinished.class));
+            }
+        } finally {
+            servlet.getPublisher().removeListener(subscriber);
+        }
+    }
+
     private class TestableSoapMessageProcessingServlet extends SoapMessageProcessingServlet {
         @Override
         SsgConnector getConnector(final HttpServletRequest request) {
             return connector;
+        }
+
+        /**
+         * Must cleanup any subscribers added in your test(s).
+         * See {@link #serviceFinishedEventOnError()} for reference on how to do it.
+         */
+        @Override
+        GatewayMetricsPublisher getPublisher() {
+            return gatewayMetricsPublisher;
         }
     }
 }

@@ -313,7 +313,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         doRequestPreChecks( context );
 
         // set gateway metrics publisher
-        GatewayMetricsUtils.setPublisher(context, relayGatewayMetricsEnable.get() ? gatewayMetricsEventsPublisher : null);
+        GatewayMetricsUtils.setPublisher(context, isRelayGatewayMetricsEnable() ? gatewayMetricsEventsPublisher : null);
 
         final MessageProcessingContext mc = new MessageProcessingContext(context);
 
@@ -1301,5 +1301,12 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             this.permitUnknownBinarySecurityTokens = permitUnknownBinarySecurityTokens;
             this.strictSignatureConfirmationValidation = strictSignatureConfirmationValidation;
         }
+    }
+
+    /**
+     * Get the value of the cluster property, {@code relayGatewayMetrics.enable}.
+     */
+    public boolean isRelayGatewayMetricsEnable() {
+        return relayGatewayMetricsEnable.get();
     }
 }
