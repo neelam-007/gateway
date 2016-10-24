@@ -1,0 +1,39 @@
+#!/bin/sh
+
+MODULE=$1
+LEVEL=$2
+
+# Pull in collector support funtions
+#
+. ${COLLECTOR_HOME}/collectorlib
+
+preModule $MODULE
+
+logCommand service mysql status
+service mysql status
+
+logCommand mysql ssg -e 'select * from ssg_version'
+mysql ssg -e 'select * from ssg_version'
+
+
+
+if [ $LEVEL -ge $DETAIL ]
+then
+    logCommand mysql ssg -e 'show tables'
+    mysql ssg -e 'show tables'
+
+    logCommand mysql ssg -e 'show slave status'
+    mysql ssg -e 'show slave status'
+
+    logCommand mysql ssg -e 'show master status'
+    mysql ssg -e 'show master status'
+
+fi
+
+if [ $LEVEL -ge $EVERYTHING ]
+then
+    logCommand cat /etc/my.cnf
+    cat /etc/my.cnf
+fi
+
+postModule $MODULE

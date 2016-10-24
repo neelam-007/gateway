@@ -1,0 +1,27 @@
+#!/bin/sh
+
+MODULE=$1
+LEVEL=$2
+
+# Pull in collector support funtions
+#
+. ${COLLECTOR_HOME}/collectorlib
+
+preModule $MODULE
+
+logCommand /opt/SecureSpan/JDK/bin/java -version
+/opt/SecureSpan/JDK/bin/java -version
+
+if [ $LEVEL -ge $DETAIL ]
+then
+    logCommand cat /opt/SecureSpan/JDK/jre/lib/security/java.security
+    cat /opt/SecureSpan/JDK/jre/lib/security/java.security
+fi
+
+if [ $LEVEL -ge $EVERYTHING ]
+then
+    logCommand ls /opt/SecureSpan/JDK/jre/lib/ext
+    ls -l /opt/SecureSpan/JDK/jre/lib/ext
+fi
+
+postModule $MODULE

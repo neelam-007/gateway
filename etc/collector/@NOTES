@@ -1,0 +1,171 @@
+
+Gateway diagnostic items
+
+
+Hardware:
+- lspci
+- /proc/meminfo
+- /proc/cpuinfo
+- ls -Rl /dev
+- dmidecode
+
+
+VMware:
+- vmware-checkvm (to get the VMware software version)
+- vmware-checkvm -hp (to get the VMware hardware version and the kind of host being run on)
+- vmware-toolbox-cmd stat balloon
+- vmware-toolbox-cmd stat swap
+- vmware-toolbox-cmd stat memlimit
+- vmware-toolbox-cmd stat memres
+- vmware-toolbox-cmd stat cpures
+- vmware-toolbox-cmd stat cpulimit
+- vmware-toolbox-cmd timesync status
+
+
+Disk:
+- mount
+- df
+- /proc/mdstat
+- lsblk
+- pvdisplay
+- vgdisplay
+- lvdisplay
+- the contents of /etc/mdadm.conf
+- mdadm --detail  --scan
+- mdadm --query --detail /dev/sd[a-z]
+- mdadm --query --detail /dev/sd[a-z][1-9]
+- mdadm --examine /dev/sd[a-z]
+- mdadm --examine /dev/sd[a-z][1-9]
+
+
+
+Network:
+- ifconfig -a
+- netstat -nr
+- iptables -nL
+- iptables -v -nL  (all chains)
+- iptables static config files
+
+
+Boot:
+- copies of everything in /boot (it's small enough)
+- echo 'find /grub/stage1' | grub --read-only --batch
+- echo 'find /grub/e2fs_stage1_5' | grub --read-only --batch
+- echo 'find /grub/stage2' | grub --read-only --batch
+- for I in `seq 0 9`; do echo "geometry (hd$I)"; done | grub --read-only --batch
+
+
+Kernel:
+- /proc/version
+- lsmod
+- installed memory?  cat /proc/meminfo
+- sysctl -p
+- the contents of /etc/sysctl.conf
+- the contents of /proc/cmdline
+
+
+
+OS config:
+- uname -a
+- /etc/redhat-release
+- chkconfig --list
+- rpm -qa
+- rpm verify for ssg rpms?
+- who -r
+- ntpd config
+- ntpc -q ?  query runtime state of NTP daemon
+- /etc/security/limits.conf
+- /etc/security/limits.d/*ssg*
+- whoami && ulimit -S -a
+- whoami && ulimit -H -a
+- (su gateway -l -c "whoami && ulimit -S -a")
+- (su gateway -l -c "whoami && ulimit -H -a")
+- above for mysql, maybe layer7 if PC runs anything as it, if users exist
+- only certain users and groups from /etc/passwd and /etc/group:
+  - gateway
+  - layer7
+  - nfast?
+  - mysql
+  - ssgconfig
+- OPTIONAL: copies of everything in /etc (it's only 5.8MB on a shipping 8.0 appliance!)
+
+
+OS logs:
+- dmesg
+- OPTIONAL: copies of everything in /var/log
+
+
+OS monitoring:
+- (export LINES=200; top -n 1)
+- vmstat 1 5
+- Heinrich: "We should also consider using sar via the sysstat package and pidstat to collect a variety of hardware metrics"
+
+
+Foundation Services Toolkit:
+- Dump of FST config?
+- FST change history?
+
+
+nCipher specific:
+- versions?
+- ps to see if nc_hardserver is running
+- enquiry
+- already have lsmod
+- already have lspci
+- already have chkconfig --list
+- crypto primitive operation counters (AES/RSA/SHA etc)
+  - KNOWN: if SHA count is bigger than (say) 1000, and NOT using strict FIPS security 
+           world(?), display loud diagnostic error to STDERR
+- ls -l kmdata/local ?
+  - KNOWN: if directory not readable or writable to Gateway, print to STDERR
+
+
+mysql db:
+- do nothing unless mysql RPM is installed
+- is mysqld running?
+- are tables present?
+- ssg version from active ssg db?
+- maybe full DDL dump?
+- mysqld.conf file?
+- replication status?
+  - KNOWN: if replication bad, display loud diagnostic error to STDERR
+
+
+derby db:
+- do nothing unless /opt/SecureSpan/Gateway/node/default/var/db dir exists
+- OPTIONAL: can interrogate DB if stop gateway first
+
+
+ssg-appliance:
+- versions?
+
+
+JDK:
+- versions?
+- java.security settings?
+- anything present in ext dirs?
+
+
+Process Controller:
+- process controller log (only highlights and/or tail?)
+- ask what patches have been applied, if not available from file system?
+
+
+Active Gateway DB contents:
+- select port,name,enabled,scheme,secure,endpoints,key_alias from connector \G
+- select * from ssg_version \G
+- select propkey from cluster_properties;
+- select propkey,propvalue from cluster_properties where propkey like 'upgrade.task.%';
+
+
+Gateway:
+- versions?
+- Gateway log (only highlights and/or tail?)
+- Config wizard log (only highlights and/or tail?)
+- kmp.properties (with sensitive fields blinded?)
+- omp.dat existence + size
+- node.properties file (with passwords blinded?)
+- system.properties (with any known-to-be-sensitive values blinded, if any)
+- ssglog.properties
+- OPTIONAL: take thread dump
+- OPTIONAL: take heap dump
