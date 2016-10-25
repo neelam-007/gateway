@@ -32,6 +32,7 @@ rm -fr %{buildroot}
 %defattr(0644,root,root,0755)
 %dir /opt/SecureSpan/Gateway
 %dir /opt/SecureSpan/Controller
+%dir /opt/SecureSpan/Collector
 
 # Group writable config files
 %defattr(0640,layer7,gateway,0750)
@@ -114,6 +115,24 @@ rm -fr %{buildroot}
 %attr(0770,layer7,gateway) /opt/SecureSpan/Controller/var/logs
 %attr(0770,layer7,gateway) /opt/SecureSpan/Controller/var/patches
 
+# Gateway data collection utility
+%defattr(0444,layer7,layer7,0755)
+/opt/SecureSpan/Collector
+%attr(0555,root,root) /opt/SecureSpan/Collector/collect.sh
+%defattr(0555,layer7,layer7,0755)
+%dir /opt/SecureSpan/Collector/modules
+/opt/SecureSpan/Collector/modules/devices
+/opt/SecureSpan/Collector/modules/filesystems
+/opt/SecureSpan/Collector/modules/gateway
+/opt/SecureSpan/Collector/modules/java
+/opt/SecureSpan/Collector/modules/kernel
+/opt/SecureSpan/Collector/modules/monitor
+/opt/SecureSpan/Collector/modules/mysql
+/opt/SecureSpan/Collector/modules/network
+/opt/SecureSpan/Collector/modules/os
+/opt/SecureSpan/Collector/modules/template
+/opt/SecureSpan/Collector/modules/vmware
+
 %pre
 grep -q ^gateway: /etc/group || groupadd gateway
 grep -q ^layer7: /etc/group || groupadd layer7
@@ -184,3 +203,5 @@ if [ "$1" = "0" ] ; then
     if grep -q ^gateway: /etc/group; then groupdel gateway; fi
     if grep -q ^layer7: /etc/group; then groupdel layer7; fi
 fi
+
+

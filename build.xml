@@ -1669,6 +1669,12 @@
         </java>
     </target>
     <target name="deploy-controller" description="Deploy a development Process Controller (run with ./run.sh controller)" depends="deploy-controller-init,deploy-controller-config"/>
+
+    <target name="deploy-collector" depends="init, init-install-macros">
+        <property name="dev.deploy.col.dir" value="${dev.deploy.dir}/Collector"/>
+        <install-ssg-datacollection dir="${dev.deploy.col.dir}"/>
+    </target>
+
     <!-- Deprecated deployment target -->
     <target name="deploycontroller" depends="deploy-controller"/>
 
@@ -3114,6 +3120,8 @@
 
         <install-ssg-processcontroller/>
 
+        <install-ssg-datacollection/>
+
         <install-ssg-software/>
     </target>
 
@@ -3269,6 +3277,36 @@
 
                 <copy file="${src.root}/etc/omp.dat" tofile="@{dir}/${install.src.pc.controletc}/conf/omp.dat"/>
            </sequential>
+        </macrodef>
+
+        <!--
+          Macro to install Data Collection Utility files under the given directory
+        -->
+        <macrodef name="install-ssg-datacollection">
+            <attribute name="dir" default="${install.src.col}"/>
+            <sequential>
+                <echo>Making Data Collection directories...</echo>
+
+                <!-- Data Collection directories -->
+                <mkdir dir="@{dir}"/>
+                <mkdir dir="@{dir}/${install.src.col.modules}"/>
+
+                <copy todir="@{dir}" flatten="true">
+                    <fileset dir="${src.root}/etc/collector" casesensitive="yes">
+                        <include name="collect.sh"/>
+                        <include name="collectorlib"/>
+                    </fileset>
+                </copy>
+                <chmod file="@{dir}/collect.sh" perm="755"/>
+
+                <!-- Copy data collection utility module files -->
+                <copy todir="@{dir}/${install.src.col.modules}" flatten="true">
+                    <fileset dir="${src.root}/etc/collector/modules" casesensitive="yes">
+                        <include name="*"/>
+                    </fileset>
+                </copy>
+
+            </sequential>
         </macrodef>
 
         <!--
@@ -3510,6 +3548,16 @@
             <tarfileset dir="${install.src.pc}" username="gateway" group="gateway" filemode="555" dirmode="755" prefix="${install.target.pc}">
                 <include name="bin/*.sh"/>
             </tarfileset>
+
+            <tarfileset dir="${install.src.col}" username="gateway" group="gateway" mode="644" prefix="${install.target.col}">
+                <include name="**/*"/>
+                <exclude name="*.sh"/>
+            </tarfileset>
+            <tarfileset dir="${install.src.col}" username="gateway" group="gateway" filemode="555" dirmode="755" prefix="${install.target.col}">
+                <include name="*.sh"/>
+            </tarfileset>
+
+
             <tarfileset dir="${install.src.ssg}" username="gateway" group="gateway" filemode="555" dirmode="755" prefix="${install.target.ssg}">
                 <include  name="${install.src.ssg.samples}/*.sh"/>
             </tarfileset>
