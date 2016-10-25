@@ -6,6 +6,7 @@ import com.ca.siteminder.SiteMinderLowLevelAgent;
 import com.l7tech.external.assertions.siteminder.SiteMinderCheckProtectedAssertion;
 import com.l7tech.message.HttpRequestKnobStub;
 import com.l7tech.message.Message;
+import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -239,4 +240,13 @@ public class ServerSiteMinderCheckProtectedAssertionTest {
         assertEquals(AssertionStatus.FALSIFIED, fixture.checkRequest(pec));
     }
 
+    @Test
+    public void getEntitiesUsedTest(){
+        EntityHeader[] entitiesUsed = assertion.getEntitiesUsed();
+        assertEquals(0, entitiesUsed.length);
+
+        assertion.setAgentGoid(new Goid(1,1));
+        entitiesUsed = assertion.getEntitiesUsed();
+        assertEquals(1, entitiesUsed.length);
+    }
 }
