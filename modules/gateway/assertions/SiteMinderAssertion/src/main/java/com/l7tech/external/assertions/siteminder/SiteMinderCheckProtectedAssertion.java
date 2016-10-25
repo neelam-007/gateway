@@ -120,7 +120,10 @@ public class SiteMinderCheckProtectedAssertion extends Assertion implements Mess
     @Migration(mapName = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.ASSERTION)
     @Override
     public EntityHeader[] getEntitiesUsed() {
-        return new EntityHeader[] { new EntityHeader(Goid.toString(agentGoid), EntityType.SITEMINDER_CONFIGURATION, null, null) };
+        if(agentGoid != null) {
+            return new EntityHeader[] { new EntityHeader(Goid.toString(agentGoid), EntityType.SITEMINDER_CONFIGURATION, null, null) };
+        }
+        return new EntityHeader[0];
     }
 
     @Override
