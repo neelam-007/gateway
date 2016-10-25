@@ -1,0 +1,28 @@
+#!/bin/sh
+
+MODULE=$1
+LEVEL=$2
+
+# Pull in collector support funtions
+#
+. ${COLLECTOR_HOME}/collectorlib
+
+
+preModule $MODULE
+
+logCommand ifconfig -a
+ifconfig -a
+
+logCommand netstat -nr
+netstat -nr
+
+logCommand iptables -nL
+iptables -nL
+
+if [ $LEVEL -ge $DETAIL ]
+then
+    logCommand iptables -v -nL
+    iptables -v -nL
+fi
+
+postModule $MODULE

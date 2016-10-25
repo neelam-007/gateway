@@ -1,0 +1,58 @@
+#!/bin/sh
+
+MODULE=$1
+LEVEL=$2
+
+SSHOME=/opt/SecureSpan
+GWDEFAULT=${SSHOME}/Gateway/node/default
+APDEFAULT=${SSHOME}/Appliance
+JAVA_HOME=${SSHOME}/JDK
+
+# Pull in collector support funtions
+#
+. ${COLLECTOR_HOME}/collectorlib
+
+preModule $MODULE
+
+logCommand rpm -qa ssg ssg-appliance ssem
+rpm -qa ssg ssg-appliance ssem
+
+
+if [ $LEVEL -ge $DETAIL ]
+then
+    logCommand ls -l ${GWDEFAULT}/etc/conf/omp.dat
+    ls -l ${GWDEFAULT}/etc/conf/omp.dat
+
+    logCommand cat ${GWDEFAULT}/etc/conf/node.properties
+    cat ${GWDEFAULT}/etc/conf/node.properties
+
+    logCommand cat ${GWDEFAULT}/etc/conf/system.properties
+    cat ${GWDEFAULT}/etc/conf/system.properties
+    
+    logCommand cat ${GWDEFAULT}/etc/conf/ssglog.properties
+    cat ${GWDEFAULT}/etc/conf/ssglog.properties
+
+    logCommand cat ${GWDEFAULT}/var/logs/ssg_0_0.log
+    cat ${GWDEFAULT}/var/logs/ssg_0_0.log
+fi
+
+if [ $LEVEL -ge $EVERYTHING ]
+then
+    logCommand cat ${APDEFAULT}/config/ssgsysconfig.log
+    cat ${APDEFAULT}/config/ssgsysconfig.log
+
+    GATEWAYPID=`${JAVA_HOME}/bin/jps | awk '/Gateway/ {print $1}'`
+    logCommand "${JAVA_HOME}/bin/jstack -F -l $GATEWAYPID"
+    if [ $GATEWAYPID ]
+    then
+	${JAVA_HOME}/bin/jstack -F -l $GATEWAYPID
+    else
+	echo "Error: Cannot get Gatway PID"
+    fi
+fi
+
+postModule $MODULE
+
+
+## TODO
+# take heap-dump

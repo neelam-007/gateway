@@ -1,0 +1,29 @@
+#!/bin/sh
+
+MODULE=$1
+LEVEL=$2
+
+# Pull in collector support funtions
+#
+. ${COLLECTOR_HOME}/collectorlib
+
+preModule $MODULE
+
+echo Template module. Does nothing but provides a template for new collector modules.
+echo BASIC level commands go here
+
+# Example command
+logCommand ls /opt/SecureSpan
+ls /opt/SecureSpan
+
+if [ $LEVEL -ge $DETAIL ]
+then
+echo DETAIL level commands go here
+fi
+
+if [ $LEVEL -ge $EVERYTHING ]
+then
+echo EVERYTHING level commands go here
+fi
+
+postModule $MODULE

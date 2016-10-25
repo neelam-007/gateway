@@ -1,0 +1,60 @@
+#!/bin/sh
+
+MODULE=$1
+LEVEL=$2
+
+# Pull in collector support funtions
+#
+. ${COLLECTOR_HOME}/collectorlib
+
+preModule $MODULE
+
+logCommand df
+df
+
+logCommand cat /proc/mdstat
+cat /proc/mdstat
+
+logCommand mdadm --detail --scan
+mdadm --detail --scan
+
+if [ $LEVEL -ge $DETAIL ]
+then
+    logCommand mount
+    mount
+
+    logCommand lsblk
+    lsblk
+
+    logCommand pvdisplay
+    pvdisplay
+
+    logCommand vgdisplay
+    vgdisplay
+
+    logCommand lvdisplay
+    lvdisplay
+
+    logCommand cat /etc/mdadm.conf
+    cat /etc/mdadm.conf
+fi
+
+if [ $LEVEL -ge $EVERYTHING ]
+then
+    disks=(/dev/sd[a-z])
+    parts=(/dev/sd[a-z][1-9])
+
+    logCommand mdadm --query --detail ${disks[@]}
+    mdadm --query --detail ${disks[@]}
+
+    logCommand mdadm --query --detail ${parts[@]}
+    mdadm --query --detail ${parts[@]}
+
+    logCommand mdadm --examine ${disks[@]}
+    mdadm --examine ${disks[@]}
+
+    logCommand mdamd --examine ${parts[@]}
+    mdadm --examine ${parts[@]}
+fi
+
+postModule $MODULE

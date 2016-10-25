@@ -1,0 +1,34 @@
+#
+# Useful constants
+BASIC=0
+DETAIL=3
+EVERYTHING=5
+
+#
+#  Library of routines supporting collector scripts
+
+function preModule ()
+{
+    echo "**********"
+    echo "**********"
+    echo "*"
+    echo "* MODULE: $1"
+    echo "*"
+}
+
+function postModule ()
+{
+    echo "*"
+    echo "* END MODULE: $1"
+    echo "*"
+    echo "**********"
+    echo
+}
+
+function logCommand ()
+{
+	echo "+---------"
+	echo "| COMMAND: $*"
+	echo "+---------"
+}  
+

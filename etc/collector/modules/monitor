@@ -1,0 +1,28 @@
+#!/bin/sh
+
+MODULE=$1
+LEVEL=$2
+
+# Pull in collector support funtions
+#
+. ${COLLECTOR_HOME}/collectorlib
+
+preModule $MODULE
+
+logCommand ps axjf
+ps axjf
+
+logCommand vmstat 1 30
+vmstat 1 30
+
+logCommand timeout 30s netstat -i 1
+timeout 30s netstat -i 1
+
+if [ $LEVEL -ge $DETAIL ]
+then
+    logCommand 'ps auxwww | grep gateway'
+    ps auxwww | grep gateway
+
+fi
+
+postModule $MODULE

@@ -1,0 +1,27 @@
+#!/bin/sh
+
+MODULE=$1
+LEVEL=$2
+
+# Pull in collector support funtions
+#
+. ${COLLECTOR_HOME}/collectorlib
+
+preModule $MODULE
+
+logCommand cat /proc/version
+cat /proc/version
+
+logCommand lsmod
+lsmod
+
+logCommand cat /etc/sysctl.conf
+cat /etc/sysctl.conf
+
+if [ $LEVEL -ge $DETAIL ]
+then
+    logCommand cat /proc/cmdline
+    cat /proc/cmdline
+fi
+
+postModule $MODULE

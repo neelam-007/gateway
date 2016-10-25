@@ -1,0 +1,65 @@
+#!/bin/sh
+
+MODULE=$1
+LEVEL=$2
+
+# Pull in collector support funtions
+#
+. ${COLLECTOR_HOME}/collectorlib
+
+preModule $MODULE
+
+logCommand uname -a
+uname -a
+
+logCommand cat /etc/redhat-release
+cat /etc/redhat-release
+
+logCommand chkconfig --list
+chkconfig --list
+
+if [ $LEVEL -ge $DETAIL ]
+then
+    logCommand rpm -qa
+    rpm -qa
+
+    logCommand cat /var/log/messages
+    cat /var/log/messages
+
+    logCommand who -r
+    who -r
+
+    logCommand dmesg
+    dmesg
+fi
+
+if [ $LEVEL -ge $EVERYTHING ]
+then
+    logCommand cat /etc/ntp.conf
+    cat /etc/ntp.conf
+
+    logCommand ntpq -p
+    ntpq -p
+
+    logCommand cat /etc/security/limits.conf
+    cat /etc/security/limits.conf
+
+    logCommand cat /etc/security/limist.d/*ssg*
+    cat /etc/security/limits.d/*ssg*
+
+    logCommand whoami
+    whoami
+
+    logCommand ulimit -S -a
+    ulimit -S -a
+
+    logCommand ulimit -H -a
+    ulimit -H -a
+fi
+
+#TODO: 
+#  extra combinations for other users.
+#  ntp config
+#  
+
+postModule $MODULE

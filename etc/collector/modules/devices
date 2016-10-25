@@ -1,0 +1,33 @@
+#!/bin/sh
+
+MODULE=$1
+LEVEL=$2
+
+# Pull in collector support funtions
+#
+. ${COLLECTOR_HOME}/collectorlib
+
+preModule $MODULE
+
+logCommand cat /proc/meminfo
+cat /proc/meminfo
+
+if [ $LEVEL -ge $DETAIL ]
+then
+    logCommand lspci -tv
+    lspci -tv
+
+    logCommand cat /proc/cpuinfo
+    cat /proc/cpuinfo
+fi
+
+if [ $LEVEL -ge $EVERYTHING ]
+then
+    logCommand ls -Rl /dev
+    ls -Rl /dev
+
+    logCommand dmidecode
+    dmidecode
+fi
+
+postModule $MODULE
