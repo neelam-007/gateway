@@ -5,9 +5,15 @@ import com.l7tech.policy.GenericEntity;
 import com.l7tech.search.Dependency;
 
 public class SimpleGatewayMetricExtractorEntity extends GenericEntity {
+    public static final String ENTITY_UNIQUE_NAME = "UniqueSimpleGatewayMetricExtractorEntityName";
+
     private String serviceNameFilter;
     private Goid serviceId;
     private Goid simpleGatewayMetricExtractorEntityId;
+
+    public SimpleGatewayMetricExtractorEntity() {
+        setName(ENTITY_UNIQUE_NAME);
+    }
 
     public String getServiceNameFilter() {
         return serviceNameFilter;

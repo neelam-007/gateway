@@ -16,6 +16,10 @@ public interface SimpleGatewayMetricExtractorGenericEntityAdmin {
     @Secured(stereotype=FIND_ENTITIES)
     Collection<SimpleGatewayMetricExtractorEntity> findAll() throws FindException;
 
+    @Transactional(readOnly=true)
+    @Secured(stereotype=FIND_ENTITY)
+    SimpleGatewayMetricExtractorEntity getEntity() throws FindException;
+
     @Secured(stereotype=SAVE_OR_UPDATE)
     Goid save(SimpleGatewayMetricExtractorEntity entity) throws SaveException, UpdateException;
 

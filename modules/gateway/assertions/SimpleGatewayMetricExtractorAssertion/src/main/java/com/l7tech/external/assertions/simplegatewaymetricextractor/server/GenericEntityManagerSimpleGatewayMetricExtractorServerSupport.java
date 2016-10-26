@@ -58,6 +58,11 @@ public class GenericEntityManagerSimpleGatewayMetricExtractorServerSupport {
             }
 
             @Override
+            public SimpleGatewayMetricExtractorEntity getEntity() throws FindException {
+                return entityManager.findByUniqueName(SimpleGatewayMetricExtractorEntity.ENTITY_UNIQUE_NAME);
+            }
+
+            @Override
             public Goid save(SimpleGatewayMetricExtractorEntity entity) throws SaveException, UpdateException {
                 if (SimpleGatewayMetricExtractorEntity.DEFAULT_GOID.equals(entity.getGoid())) {
                     return entityManager.save(entity);
