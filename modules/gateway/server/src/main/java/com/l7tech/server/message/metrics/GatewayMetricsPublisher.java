@@ -83,7 +83,7 @@ public final class GatewayMetricsPublisher implements PostStartupApplicationList
             } catch (final Throwable ex) {
                 logger.log(
                         Level.WARNING,
-                        "Error while publishing AssertionFinished event for subscriber \"" + subscriber.getClass().getName() + "\":" + ExceptionUtils.getMessage(ex), ExceptionUtils.getDebugException(ex)
+                        "Error while publishing AssertionFinished event for subscriber \"" + subscriber.getClass().getName() + "\": " + ExceptionUtils.getMessage(ex), ExceptionUtils.getDebugException(ex)
                 );
             }
         }
@@ -101,7 +101,7 @@ public final class GatewayMetricsPublisher implements PostStartupApplicationList
             } catch (final Throwable ex) {
                 logger.log(
                         Level.WARNING,
-                        "Error while publishing ServiceFinished event for subscriber \"" + subscriber.getClass().getName() + "\":" + ExceptionUtils.getMessage(ex), ExceptionUtils.getDebugException(ex)
+                        "Error while publishing ServiceFinished event for subscriber \"" + subscriber.getClass().getName() + "\": " + ExceptionUtils.getMessage(ex), ExceptionUtils.getDebugException(ex)
                 );
             }
         }

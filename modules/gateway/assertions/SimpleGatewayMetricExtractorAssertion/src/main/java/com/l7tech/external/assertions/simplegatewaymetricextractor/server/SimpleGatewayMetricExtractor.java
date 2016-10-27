@@ -55,9 +55,24 @@ public class SimpleGatewayMetricExtractor extends GatewayMetricsListener {
     private static SimpleGatewayMetricExtractor instance = null;
     private final GatewayMetricsPublisher gatewayMetricsEventsPublisher;
     private final EntityManager<SimpleGatewayMetricExtractorEntity, GenericEntityHeader> entityManager;
+    // if this is not set or is empty it means we are not filtering (i.e. all events are logged)
     private final AtomicReference<String> serviceNameFilterRef = new AtomicReference<>();
+
     private final Map<RequestId, Queue<LatencyObject>> latencyHash = new ConcurrentHashMap<>();
-    private final ReadWriteLock rwLock = new ReentrantReadWriteLock();
+    private final ReadWriteLock rwLatencyHashLock = new ReentrantReadWriteLock();
+
+    // Holds latency for assertions in a message-received global policy.
+    // Since message-received global policy is executed before the service is being resolved,
+    // the AssertionFinish event doesn't have a service attach to its PEC, therefore it is difficult to filter these based on a service.
+    //
+    // Even when the Gateway receives a request for a non-existing service (e.g. http://localhost:8080/blahblah),
+    // then message-received global policy is executed regardless ... ib other words it is ALWAYS executed, so we need to handle it here.
+    //
+    // For this sample the contract is that assertions latency for message-received global policy are LOGGED only for the service we are interest in.
+    private final Map<RequestId, Queue<LatencyObject>> msgRcvLatencyHash = new ConcurrentHashMap<>();
+    private final ReadWriteLock rwMsgRcvLatencyHashLock = new ReentrantReadWriteLock();
+
+    private final TimerTask flushEnqueuedLatenciesTask;
 
     /**
      * Immutable
@@ -160,42 +175,42 @@ public class SimpleGatewayMetricExtractor extends GatewayMetricsListener {
         gatewayMetricsEventsPublisher = applicationContext.getBean("gatewayMetricsPublisher", GatewayMetricsPublisher.class);
         gatewayMetricsEventsPublisher.addListener(this);
 
-        GenericEntityManager gem = applicationContext.getBean("genericEntityManager", GenericEntityManager.class);
+        final GenericEntityManager gem = applicationContext.getBean("genericEntityManager", GenericEntityManager.class);
         entityManager = gem.getEntityManager(SimpleGatewayMetricExtractorEntity.class);
 
         final ApplicationEventProxy applicationEventProxy = applicationContext.getBean("applicationEventProxy", ApplicationEventProxy.class);
         applicationEventProxy.addApplicationListener(new ApplicationListener() {
             @Override
-            public void onApplicationEvent(ApplicationEvent event) {
+            public void onApplicationEvent(final ApplicationEvent event) {
                 if (event instanceof Started) {
-                    serviceNameFilterRef.set(getServiceNameFilterFromManager());
-                    Background.scheduleRepeated(
-                            new TimerTask() {
-                                @Override
-                                public void run() {
-                                    flushEnqueuedLatencies();
-                                }
-                            },
-                            FLUSH_PERIOD,
-                            FLUSH_PERIOD
-                    );
+                    retrieveServiceNameFilterFromManager();
                 } else //noinspection StatementWithEmptyBody
                     if (event instanceof LicenseChangeEvent) {
-                        // TODO handle license event here
-                    } else if (event instanceof EntityInvalidationEvent) {
-                        final EntityInvalidationEvent entityInvalidationEvent = (EntityInvalidationEvent) event;
-                        if (GenericEntity.class.equals(entityInvalidationEvent.getEntityClass()) && entityInvalidationEvent.getSource() instanceof GenericEntity) {
-                            final char[] ops = entityInvalidationEvent.getEntityOperations();
-                            final GenericEntity entity = (GenericEntity) entityInvalidationEvent.getSource();
-                            if (SimpleGatewayMetricExtractorEntity.class.getName().equals(entity.getEntityClassName())) {
-                                // since there is only one generic entity, just get it from the manager
-                                serviceNameFilterRef.set(getServiceNameFilterFromManager());
-                            }
+                    // TODO handle license event here
+                } else if (event instanceof EntityInvalidationEvent) {
+                    final EntityInvalidationEvent entityInvalidationEvent = (EntityInvalidationEvent) event;
+                    if (GenericEntity.class.equals(entityInvalidationEvent.getEntityClass()) && entityInvalidationEvent.getSource() instanceof GenericEntity) {
+                        final char[] ops = entityInvalidationEvent.getEntityOperations();
+                        final GenericEntity entity = (GenericEntity) entityInvalidationEvent.getSource();
+                        if (SimpleGatewayMetricExtractorEntity.class.getName().equals(entity.getEntityClassName())) {
+                            // since there is only one generic entity, just get it from the manager
+                            retrieveServiceNameFilterFromManager();
                         }
                     }
-
+                }
             }
         });
+
+        Background.scheduleRepeated(
+                flushEnqueuedLatenciesTask = new TimerTask() {
+                    @Override
+                    public void run() {
+                        flushEnqueuedLatencies();
+                    }
+                },
+                FLUSH_PERIOD,
+                FLUSH_PERIOD
+        );
     }
 
     /**
@@ -210,27 +225,31 @@ public class SimpleGatewayMetricExtractor extends GatewayMetricsListener {
 
         // Service object for "Global Policy Message Received" is null; therefore, we cannot filter them by service name
         // For the time being we will include it anyways (decide later)
-        if (StringUtils.isEmpty(serviceNameFilter) || service == null || serviceNameFilter.equals(service.getName())) {
+
+        if (service == null || StringUtils.isEmpty(serviceNameFilter) || serviceNameFilter.equals(service.getName())) {
             final Assertion assertion = assertionFinished.getAssertion();
             final LatencyMetrics metrics = assertionFinished.getAssertionMetrics();
             final RequestId requestId = pec.getRequestId();
 
-            enqueueLatency(
-                    requestId,
-                    new AssertionFinishedLatency(
-                            service,
-                            metrics,
-                            pec.getCurrentPolicyMetadata(),
-                            assertion.meta().get(AssertionMetadata.SHORT_NAME),
-                            getAssertionNumber(pec, assertion)
-                    )
+            final AssertionFinishedLatency latencyObject = new AssertionFinishedLatency(
+                    service,
+                    metrics,
+                    pec.getCurrentPolicyMetadata(),
+                    getAssertionName(assertion),
+                    getAssertionNumber(pec, assertion)
             );
+
+            if (service == null) {
+                // if the service is null, this means that this is from a message-received global policy
+                // we are going to add this latency to a dedicated queue for message-received and merge that to
+                // the original latency queue when the service of interest is finally executed
+                enqueueMessageReceivedLatency(requestId, latencyObject);
+            } else {
+                enqueueLatency(requestId,latencyObject);
+            }
         }
 
-        // TODO add access to PolicyHeader (maybe as ${request.executingPolicy.<policy_header_field>
-        // TODO add / verify access to requestId
-        // TODO add sample use of ConcurrentLinkedQueue
-        // TODO add sample how to set user defined context variable
+        // TODO add sample how to set user defined context variable (don't really need this now?)
     }
 
     /**
@@ -239,24 +258,33 @@ public class SimpleGatewayMetricExtractor extends GatewayMetricsListener {
     @Override
     public void serviceFinished(@NotNull final ServiceFinished event) {
         final PolicyEnforcementContext pec = event.getContext();
+        // could ne NULL
+        // edge case when there is a global message-received and the service could NOT be resolved (e.g. the user hit non-existing url)
+        // in that case the global message-received is executed (followed with assertion finished for its assertions)
+        // but since there is no service found for the URL the serfice finished will NOT be attached to any
+        @Nullable
         final PublishedService service = pec.getService();
         final String serviceNameFilter = serviceNameFilterRef.get();
+        final RequestId requestId = pec.getRequestId();
 
-        if (StringUtils.isEmpty(serviceNameFilter) || serviceNameFilter.equals(service.getName()) ) {
+        if ( service != null && (StringUtils.isEmpty(serviceNameFilter) || serviceNameFilter.equals(service.getName())) ) {
             final LatencyMetrics metrics = event.getServiceMetrics();
-            final RequestId requestId = pec.getRequestId();
 
             enqueueLatency(
                     requestId,
                     new ServiceFinishedLatency(service, metrics)
             );
+        } else {
+            // service is either null (meaning invalid url i.e. http://localhost:8080/blahblah) or the service is not of our interest
+            // in any case we need to flush any potential message-received latencies for this request-id
+            flushEnqueuedMsgRcvLatencies(requestId);
         }
     }
 
-    private void enqueueLatency(@NotNull final RequestId requestId, @NotNull final LatencyObject object) {
+    private void enqueueMessageReceivedLatency(@NotNull final RequestId requestId, @NotNull final AssertionFinishedLatency object) {
         try {
-            rwLock.readLock().lock();
-            final Queue<LatencyObject> enqueuedObjects = latencyHash.computeIfAbsent(
+            rwMsgRcvLatencyHashLock.readLock().lock();
+            final Queue<LatencyObject> enqueuedObjects = msgRcvLatencyHash.computeIfAbsent(
                     requestId,
                     new Function<RequestId, Queue<LatencyObject>>() {
                         @Override
@@ -269,10 +297,53 @@ public class SimpleGatewayMetricExtractor extends GatewayMetricsListener {
                 enqueuedObjects.add(object);
             } else {
                 // should never happen
+                logger.log(Level.SEVERE, "Failed to create new ConcurrentLinkedQueue for msgRcvLatencyHash: requestId = " + requestId);
+            }
+        } finally {
+            rwMsgRcvLatencyHashLock.readLock().unlock();
+        }
+    }
+
+    private void enqueueLatency(@NotNull final RequestId requestId, @NotNull final LatencyObject object) {
+        try {
+            rwLatencyHashLock.readLock().lock();
+            final Queue<LatencyObject> enqueuedObjects = latencyHash.computeIfAbsent(
+                    requestId,
+                    new Function<RequestId, Queue<LatencyObject>>() {
+                        @Override
+                        public Queue<LatencyObject> apply(final RequestId requestId) {
+                            // this is the first event for this request-id, therefore check if there are latencies
+                            // inside the message-received queue, and if there are, then merge them into the original queue
+                            final Queue<LatencyObject> msgRcvLatencies;
+                            try {
+                                rwMsgRcvLatencyHashLock.writeLock().lock();
+                                msgRcvLatencies = msgRcvLatencyHash.remove(requestId);
+                            } finally {
+                                rwMsgRcvLatencyHashLock.writeLock().unlock();
+                            }
+                            // if there were message-received latencies for this request-id, this is our starting point so return them
+                            return (msgRcvLatencies != null) ? msgRcvLatencies : new ConcurrentLinkedQueue<>();
+                        }
+                    }
+            );
+            if (enqueuedObjects != null) {
+                enqueuedObjects.add(object);
+            } else {
+                // should never happen
                 logger.log(Level.SEVERE, "Failed to create new ConcurrentLinkedQueue for latencyHash: requestId = " + requestId);
             }
         } finally {
-            rwLock.readLock().unlock();
+            rwLatencyHashLock.readLock().unlock();
+        }
+    }
+
+    private void flushEnqueuedMsgRcvLatencies(@NotNull final RequestId requestId) {
+        // the service for this request-id is complete, therefore remove all message-received latencies for this request-id
+        try {
+            rwMsgRcvLatencyHashLock.writeLock().lock();
+            msgRcvLatencyHash.remove(requestId);
+        } finally {
+            rwMsgRcvLatencyHashLock.writeLock().unlock();
         }
     }
 
@@ -288,14 +359,14 @@ public class SimpleGatewayMetricExtractor extends GatewayMetricsListener {
 
         final Collection<Pair<RequestId, LatencyObject>> drainedLatencies = new LinkedList<>();
         try {
-            rwLock.writeLock().lock();
+            rwLatencyHashLock.writeLock().lock();
             for (final Iterator<Map.Entry<RequestId, Queue<LatencyObject>>> iterator = latencyHash.entrySet().iterator(); iterator.hasNext(); ) {
                 final Map.Entry<RequestId, Queue<LatencyObject>> entry = iterator.next();
                 drainLatencies(entry.getKey(), entry.getValue(), drainedLatencies);
                 iterator.remove();
             }
         } finally {
-            rwLock.writeLock().unlock();
+            rwLatencyHashLock.writeLock().unlock();
         }
         logLatencies(drainedLatencies);
         drainedLatencies.clear(); // just in case
@@ -357,6 +428,41 @@ public class SimpleGatewayMetricExtractor extends GatewayMetricsListener {
         );
     }
 
+    @NotNull
+    private String getAssertionName(@NotNull final Assertion assertion) {
+        return assertion.meta().get(AssertionMetadata.SHORT_NAME);
+    }
+
+    @NotNull
+    private String getAssertionNumber(@NotNull final PolicyEnforcementContext pec, @NotNull final Assertion assertion) {
+        return DebugTraceVariableContextSelector.buildAssertionNumberStr(pec, assertion);
+    }
+
+    /**
+     * Get the current instance, if there is one.
+     *
+     * @return  the current instance, created when onModuleLoaded() was called, or null if there isn't one.
+     */
+    public static SimpleGatewayMetricExtractor getInstance() {
+        return instance;
+    }
+
+    public static void genericEntityRegistered() {
+        if (instance != null) {
+            instance.retrieveServiceNameFilterFromManager();
+        }
+    }
+
+    public static void genericEntityUnregistered() {
+        if (instance != null) {
+            instance.serviceNameFilterRef.set(null);
+        }
+    }
+
+    private void retrieveServiceNameFilterFromManager() {
+        serviceNameFilterRef.set(getServiceNameFilterFromManager());
+    }
+
     @Nullable
     private String getServiceNameFilterFromManager() {
         try {
@@ -370,26 +476,14 @@ public class SimpleGatewayMetricExtractor extends GatewayMetricsListener {
         return null;
     }
 
-    @NotNull
-    private String getAssertionNumber(@NotNull final PolicyEnforcementContext pec, @Nullable final Assertion assertion) {
-        return DebugTraceVariableContextSelector.buildAssertionNumberStr(pec, assertion);
-    }
-
-    /**
-     * Get the current instance, if there is one.
-     *
-     * @return  the current instance, created when onModuleLoaded() was called, or null if there isn't one.
-     */
-    public static SimpleGatewayMetricExtractor getInstance() {
-        return instance;
-    }
-
     private void destroy() throws Exception {
         try {
             if (gatewayMetricsEventsPublisher != null)
                 gatewayMetricsEventsPublisher.removeListener(this);
         } finally {
+            Background.cancel(flushEnqueuedLatenciesTask);
             flushEnqueuedLatencies();
+            msgRcvLatencyHash.clear();
         }
     }
 
@@ -409,6 +503,7 @@ public class SimpleGatewayMetricExtractor extends GatewayMetricsListener {
      * that would otherwise keep our instances from getting collected.
      */
     public static synchronized void onModuleUnloaded() {
+        GenericEntityManagerSimpleGatewayMetricExtractorServerSupport.clearInstance();
         if (instance != null) {
             logger.log(Level.INFO, "SimpleGatewayMetricExtractor module is shutting down");
             try {
@@ -419,6 +514,5 @@ public class SimpleGatewayMetricExtractor extends GatewayMetricsListener {
                 instance = null;
             }
         }
-        GenericEntityManagerSimpleGatewayMetricExtractorServerSupport.clearInstance();
     }
 }

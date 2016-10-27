@@ -38,6 +38,7 @@ public class GenericEntityManagerSimpleGatewayMetricExtractorServerSupport {
         GenericEntityManager gem = context.getBean("genericEntityManager", GenericEntityManager.class);
         gem.registerClass(SimpleGatewayMetricExtractorEntity.class, null);
         entityManager = gem.getEntityManager(SimpleGatewayMetricExtractorEntity.class);
+        SimpleGatewayMetricExtractor.genericEntityRegistered();
         return gem;
     }
 
@@ -47,6 +48,7 @@ public class GenericEntityManagerSimpleGatewayMetricExtractorServerSupport {
             instance.genericEntityManager.unRegisterClass(SimpleGatewayMetricExtractorEntity.class.getName());
             instance.genericEntityManager = null;
             instance = null;
+            SimpleGatewayMetricExtractor.genericEntityUnregistered();
         }
     }
 
