@@ -65,18 +65,20 @@ public class SimpleGatewayMetricExtractor extends GatewayMetricsListener {
     private static abstract class LatencyObject {
 
         protected LatencyObject(
-                @NotNull final PublishedService service,
+                @Nullable final PublishedService service,
                 @NotNull final LatencyMetrics metrics
         ) {
-            this.serviceName = service.getName();
-            this.serviceId = service.getId();
+            this.serviceName = (service != null) ? service.getName() : null;
+            this.serviceId = (service != null) ? service.getId() : null;
             this.metrics = metrics;
         }
 
+        @Nullable
         public String getServiceName() {
             return serviceName;
         }
 
+        @Nullable
         public String getServiceId() {
             return serviceId;
         }
@@ -97,7 +99,7 @@ public class SimpleGatewayMetricExtractor extends GatewayMetricsListener {
      */
     public static class AssertionFinishedLatency extends LatencyObject {
         private AssertionFinishedLatency(
-                @NotNull final PublishedService service,
+                @Nullable final PublishedService service,
                 @NotNull final LatencyMetrics metrics,
                 final PolicyMetadata policyMetadata,
                 final String assertionName,
@@ -206,7 +208,9 @@ public class SimpleGatewayMetricExtractor extends GatewayMetricsListener {
         final PublishedService service = pec.getService();
         final String serviceNameFilter = serviceNameFilterRef.get();
 
-        if (StringUtils.isEmpty(serviceNameFilter) || serviceNameFilter.equals(service.getName())) {
+        // Service object for "Global Policy Message Received" is null; therefore, we cannot filter them by service name
+        // For the time being we will include it anyways (decide later)
+        if (StringUtils.isEmpty(serviceNameFilter) || service == null || serviceNameFilter.equals(service.getName())) {
             final Assertion assertion = assertionFinished.getAssertion();
             final LatencyMetrics metrics = assertionFinished.getAssertionMetrics();
             final RequestId requestId = pec.getRequestId();
@@ -233,7 +237,7 @@ public class SimpleGatewayMetricExtractor extends GatewayMetricsListener {
      * Extracts and queue the content in ServiceFinished
      */
     @Override
-    public void serviceFinished(@NotNull ServiceFinished event) {
+    public void serviceFinished(@NotNull final ServiceFinished event) {
         final PolicyEnforcementContext pec = event.getContext();
         final PublishedService service = pec.getService();
         final String serviceNameFilter = serviceNameFilterRef.get();
