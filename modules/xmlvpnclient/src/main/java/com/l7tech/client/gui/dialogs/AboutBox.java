@@ -15,14 +15,20 @@ import java.awt.event.ActionEvent;
  * About Box for the client.
  */
 public class AboutBox extends JDialog {
+    private static final int IMAGE_PADDING = 10;
+
     public AboutBox() {
         super(Gui.getInstance().getFrame(), "About the " + Gui.APP_NAME);
         setModal(true);
         Container pane = getContentPane();
         pane.setLayout(new GridBagLayout());
-        JLabel thinger = new JLabel(IconManager.getSmallSplashImageIcon());
-        thinger.setBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED));
-        pane.add(thinger,
+
+        final JPanel whitePanel = new JPanel(new FlowLayout(FlowLayout.CENTER, IMAGE_PADDING, IMAGE_PADDING));
+        whitePanel.setBackground(Color.WHITE);
+        whitePanel.add(new JLabel(IconManager.getAboutImageIcon()));
+        whitePanel.setBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED));
+
+        pane.add(whitePanel,
                  new GridBagConstraints(0, 0, 2, 1, 1.0, 1.0,
                                         GridBagConstraints.CENTER,
                                         GridBagConstraints.BOTH,
