@@ -47,6 +47,8 @@
         <dependency name="layer7-cassandra" rev="latest.integration" conf="core"/>
 
         <!-- Dependencies -->
+        <dependency org="javax.jnlp" name="jnlp-jardiff" rev="1.0" conf="core"/>
+        <dependency org="javax.jnlp" name="jnlp-servlet" rev="1.0" conf="core"/>
         <dependency org="com.l7tech.lib" name="layer7-sun-jaxws" rev="1.0" conf="core"/> <!-- should be before CXF in classpath -->
         <dependency org="antlr" name="antlr" rev="2.7.7-l7p1" force="true" conf="core"/>
         <dependency org="com.jscape" name="sftp" rev="8.8.1" force="true" conf="core"/>

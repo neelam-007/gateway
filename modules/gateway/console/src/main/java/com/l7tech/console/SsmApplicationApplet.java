@@ -32,6 +32,10 @@ public class SsmApplicationApplet extends SsmApplication {
         SaxonUtils.setEnableByteCodeGeneration(false);
     }
 
+    public boolean isWebStart() {
+        return false;
+    }
+
     public boolean isApplet() {
         return true;
     }
