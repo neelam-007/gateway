@@ -1,25 +1,29 @@
 #!/bin/sh
 
+export COLLECTOR_HOME=/opt/SecureSpan/Collector
+
 DEFAULTMODULE=
 DEFAULTLEVEL=0
 DEFAULTGROUP=all
+DEFAULTFILENAME=ssg.data
+DEFAULTDIR=$COLLECTOR_HOME
 
 DEBUG=0
 
 MODULE=$DEFAULTMODULE
 LEVEL=$DEFAULTLEVEL
 GROUP=$DEFAULTGROUP
+DIR=$DEFAULTDIR
+FILENAME=$DEFAULTFILENAME
 
-export COLLECTOR_HOME=/opt/SecureSpan/Collector
 
 function usage () 
 {
     echo 
-    echo "$0: [-m collection-module] [-a] [-l detail-level]"
+    echo "$0: [-m collection-module] [-a] [-l detail-level] [-f file]"
     echo " -- detail-level default is 0, 0 = basic, 3 = detail, 5 = everything"
     echo
 }
-
 
    
 # Process an individual module
@@ -51,10 +55,16 @@ function doAll ()
 
 }
 
+# Compress the file
+# Parameters $1 = dir
+#            $2 = filename 
+function doCompress ()
+{
+   tar -C $1 -zcvf $2.tar.gz $2
+}
 
 
-
-while getopts "hm:al:" opt; do
+while getopts "hm:al:f:" opt; do
 
   case $opt in
 
@@ -100,6 +110,18 @@ while getopts "hm:al:" opt; do
 
 	  ;;
 
+      f)
+	  if [ ${OPTARG#-} != $OPTARG ]
+	  then
+	      echo "Argument required for -f."
+	      usage
+	      exit 1
+	  fi
+          DIR=$(dirname "$OPTARG")
+          FILENAME=$(basename "$OPTARG")
+
+	  ;;
+
       \?)	  
 	  usage
 	  exit 1
@@ -116,13 +138,41 @@ then
     echo "MODULE: $MODULE"
     echo "GROUP: $GROUP"
     echo "LEVEL: $LEVEL"
+    echo "DIR: $DIR"
+    echo "FILENAME: $FILENAME"
 fi
+
+if [ ! -d "$DIR" ]
+then
+    echo "$DIR doesn't exist."
+    exit 1
+fi
+
+if [ ! -w "$DIR" ]
+then
+    echo "You don't have write access to $DIR"
+    exit 1
+fi
+
+FILE="$DIR/$FILENAME"
+
+if [ $DEBUG -eq 1 ] 
+then
+    echo "FILE: $FILE"
+fi
+
+
+
+cp /dev/null $FILE
 
 if [ $MODE == "module" ]
 then
-    doModule $MODULE $LEVEL
+    doModule $MODULE $LEVEL | tee $FILE
+    doCompress $DIR $FILENAME
 
 elif [ $MODE == "all" ]
 then
-    doAll $LEVEL
+    doAll $LEVEL | tee $FILE
+    doCompress $DIR $FILENAME
 fi
+
