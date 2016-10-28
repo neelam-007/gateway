@@ -2339,6 +2339,7 @@
                 <ref bean="workQueueEntityManager"/>
                 <ref bean="policyBackedServiceManager"/>
                 <ref bean="solutionKitManager"/>
+                <ref bean="passwordPolicyManger"/>
             </list>
         </constructor-arg>
     </bean>
