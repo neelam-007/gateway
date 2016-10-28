@@ -40,6 +40,7 @@ import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.util.ApplicationContextInjector;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.*;
+import org.apache.commons.lang.StringUtils;
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;
 import org.jetbrains.annotations.NotNull;
@@ -164,10 +165,6 @@ public class PortalBootstrapManager {
         if ( !"https".equals( url.getProtocol() ) )
             throw new IOException( "Enrollment URL must begin with https" );
 
-        if ( ENROLL_PORT != url.getPort() )
-            throw new IOException( "Incorrect port." );
-
-
         String query = url.getQuery();
         Pattern pinExtractor = Pattern.compile( "sckh=([a-zA-Z0-9\\_\\-]+)" );
         Matcher pinMatcher = pinExtractor.matcher( query );
@@ -268,7 +265,11 @@ public class PortalBootstrapManager {
         final String nodeId = clusterPropertyManager.getProperty("portal.config.node.id");
         final String bundleVersion = clusterPropertyManager.getProperty("portal.bundle.version");
 
-        URL url = new URL("https://" + pssgHost + ":" + ENROLL_PORT + "/enroll/" + tenantId + "?action=upgrade&nodeId=" + nodeId + "&bundleVersion=" + bundleVersion);
+        //v2 OSE uses a specified port, ENROLL_PORT for backwards compatibility
+        String port = clusterPropertyManager.getProperty("portal.config.pssg.enroll.port");
+        final String enrollPort = (StringUtils.isEmpty(port)? "" + ENROLL_PORT : port);
+
+        URL url = new URL("https://" + pssgHost + ":" + enrollPort + "/enroll/" + tenantId + "?action=upgrade&nodeId=" + nodeId + "&bundleVersion=" + bundleVersion);
 
         byte[] postBody = buildEnrollmentPostBody( user );
 
