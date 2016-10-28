@@ -29,6 +29,7 @@
         <dependency org="jfree" name="jcommon" rev="1.0.17" force="true" conf="core">
             <exclude org="junit" module="junit" name="*" type="*" ext="*" conf="" matcher="exact"/>
         </dependency>
+        <dependency org="javax.jnlp" name="jnlp-javaws" rev="1.0" conf="compile"/>
         <dependency org="dom4j" name="dom4j" rev="1.6.1" force="true" conf="core">
             <exclude org="xml-apis" module="xml-apis" name="*" type="*" ext="*" conf="" matcher="exact"/>            
         </dependency>

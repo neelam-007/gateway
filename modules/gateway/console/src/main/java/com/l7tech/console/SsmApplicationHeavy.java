@@ -47,7 +47,10 @@ public class SsmApplicationHeavy extends SsmApplication  {
             throw new IllegalStateException("Policy Manager already running");
         }
 
-        installAdditionalSecurityProviders();
+        //      TODO: refer to cryotojError.log. For now, don't installAdditionalSecurityProviders if it is webstart
+        if (!isWebStart()) {
+            installAdditionalSecurityProviders();
+        }
 
         if (!isSuppressAutoLookAndFeel()) setAutoLookAndFeel();
         mainWindow = new MainWindow(this);
@@ -63,6 +66,11 @@ public class SsmApplicationHeavy extends SsmApplication  {
                 mainWindow.activateLogonDialog();
             }
         });
+    }
+
+    public boolean isWebStart() {
+
+        return System.getProperty("javawebstart.version", null) != null;
     }
 
     public boolean isApplet() {
@@ -140,7 +148,8 @@ public class SsmApplicationHeavy extends SsmApplication  {
 
     private Provider getJsafeProvider() {
         try {
-            return (Provider) getClass().getClassLoader().loadClass("com.rsa.jsafe.provider.JsafeJCE").newInstance();
+            //return (Provider) getClass().getClassLoader().loadClass("com.rsa.jsafe.provider.JsafeJCE").newInstance();
+            return (Provider) Thread.currentThread().getContextClassLoader().loadClass("com.rsa.jsafe.provider.JsafeJCE").newInstance();
         } catch (InstantiationException e) {
             throw new RuntimeException(e);
         } catch (IllegalAccessException e) {

@@ -22,7 +22,7 @@ public class IconManager {
     private static ImageIcon iconRemove;
     private static ImageIcon iconDefault;
     private static ImageIcon iconCert;
-    private static ImageIcon splashImage;
+    private static ImageIcon aboutImage;
     private static Image iconAppIcon;
     private static ImageIcon trustedSsgDiagram;
     private static ImageIcon genericServiceDiagram;
@@ -155,13 +155,9 @@ public class IconManager {
         return iconAppIcon;
     }
 
-    public static ImageIcon getSplashImageIcon() {
-        if (splashImage == null)
-            splashImage = loadImageIcon(Gui.RESOURCE_PATH + "/bridge_splash.gif");
-        return splashImage;
-    }
-
-    public static ImageIcon getSmallSplashImageIcon() {
-        return getSplashImageIcon();
+    public static ImageIcon getAboutImageIcon() {
+        if (aboutImage == null)
+            aboutImage = loadImageIcon(Gui.RESOURCE_PATH + "/CA_Logo_Grey_523x434.png");
+        return aboutImage;
     }
 }

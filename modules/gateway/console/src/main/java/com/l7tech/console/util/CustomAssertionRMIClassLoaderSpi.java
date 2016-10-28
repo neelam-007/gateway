@@ -33,7 +33,7 @@ public class CustomAssertionRMIClassLoaderSpi extends RMIClassLoaderSpi {
     }
 
     public Class<?> loadClass(String codebase, String name, ClassLoader defaultLoader) throws MalformedURLException, ClassNotFoundException {
-        if ( isArrayClassName( name ) ) {
+        if (!(TopComponents.getInstance().isWebStart()) && isArrayClassName( name ) ) {
             return Class.forName( name, true, classLoader.get() );
         }
         return classLoader.get().loadClass(name);
@@ -46,7 +46,13 @@ public class CustomAssertionRMIClassLoaderSpi extends RMIClassLoaderSpi {
     public static void resetRemoteClassLoader() {
         CustomAssertionRMIClassLoaderSpi that = lastInstance;
         if (that != null) {
-            that.classLoader.set(new CustomAssertionClassLoader());
+            if (TopComponents.getInstance().isWebStart()) {
+                that.classLoader.set(new CustomAssertionClassLoader(Thread.currentThread().getContextClassLoader()));
+            }
+            else
+            {
+                that.classLoader.set(new CustomAssertionClassLoader());
+            }
             ClassLoaderUtil.setClassloader(that.classLoader.get());
         }
     }

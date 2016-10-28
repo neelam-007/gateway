@@ -3,7 +3,6 @@ package com.l7tech.external.assertions.simplegatewaymetricextractor.console;
 import com.l7tech.console.util.Registry;
 import com.l7tech.external.assertions.simplegatewaymetricextractor.SimpleGatewayMetricExtractorEntity;
 import com.l7tech.external.assertions.simplegatewaymetricextractor.SimpleGatewayMetricExtractorGenericEntityAdmin;
-import com.l7tech.external.assertions.simplegatewaymetricextractor.server.SimpleGatewayMetricExtractor;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
@@ -14,7 +13,6 @@ import com.l7tech.util.ExceptionUtils;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -89,9 +87,9 @@ public class SimpleGatewayMetricExtractorDialog extends JDialog {
 
     private SimpleGatewayMetricExtractorEntity getEntity() {
         try {
-            Collection<SimpleGatewayMetricExtractorEntity> entities = getEntityManager().findAll();
-            if(entities.iterator().hasNext()) {
-                return entities.iterator().next();
+            final SimpleGatewayMetricExtractorEntity entity = getEntityManager().getEntity();
+            if(entity != null) {
+                return entity;
             }
         } catch (FindException ex) {
             error("Unable to find entity: " + ExceptionUtils.getMessage(ex));
@@ -109,18 +107,17 @@ public class SimpleGatewayMetricExtractorDialog extends JDialog {
         }
     }
 
-    private void deleteEntity(SimpleGatewayMetricExtractorEntity entity) {
+    private void deleteEntity(final SimpleGatewayMetricExtractorEntity entity) {
         try {
             getEntityManager().delete(entity);
         } catch (FindException e1) {
-            // TODO log this
             logger.log(Level.WARNING, "Unable to find entity to delete" + ExceptionUtils.getMessage(e1));
         } catch (DeleteException e1) {
             logger.log(Level.WARNING, "Unable to delete entity" + ExceptionUtils.getMessage(e1));
         }
     }
 
-    private void error(String s) {
+    private void error(final String s) {
         DialogDisplayer.showMessageDialog(this, s, null);
     }
 }
