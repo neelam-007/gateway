@@ -127,6 +127,11 @@ public class WsdlServicePanel extends WizardStepPanel {
             service.setQName(new QName(wsdlComposer.getTargetNamespace(), nameField.getText()));
             Port port = wsdlComposer.getSupportedSoapPort(service);
             port.setName(portNameField.getText());
+            /*
+               DE220559-Changes via Edit WSDL seem to be missing after multiple edits.
+               JAISH04: To save the service port binding state.
+            */
+            port.setBinding(wsdlComposer.getBinding());
             collectSoapAddress(wsdlComposer, port);
         } catch (WSDLException e) {
             //todo: error manager
