@@ -50,7 +50,9 @@ import java.util.logging.Logger;
 @SuppressWarnings({"WeakerAccess", "unused"})
 public class SimpleGatewayMetricExtractor extends GatewayMetricsListener {
     private static final Logger logger = Logger.getLogger(SimpleGatewayMetricExtractor.class.getName());
-    private static final int FLUSH_PERIOD = 30000;
+    private static final int FLUSH_FIRST_RUN_DELAY = 30000;
+    // our flush timer interval of 1s, which pushes enqueued latencies into the log subsystem
+    private static final int FLUSH_INTERVAL = 1000;
 
     private static SimpleGatewayMetricExtractor instance = null;
     private final GatewayMetricsPublisher gatewayMetricsEventsPublisher;
@@ -208,8 +210,8 @@ public class SimpleGatewayMetricExtractor extends GatewayMetricsListener {
                         flushEnqueuedLatencies();
                     }
                 },
-                FLUSH_PERIOD,
-                FLUSH_PERIOD
+                FLUSH_FIRST_RUN_DELAY,
+                FLUSH_INTERVAL
         );
     }
 
