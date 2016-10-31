@@ -1,38 +1,25 @@
 package com.l7tech.server.transport;
 
-import com.l7tech.gateway.common.transport.ResolutionConfiguration;
-import com.l7tech.gateway.common.transport.SsgActiveConnector;
+import com.l7tech.common.io.PortRanges;
+import com.l7tech.gateway.common.transport.*;
 import com.l7tech.gateway.common.transport.firewall.SsgFirewallRule;
 import com.l7tech.message.Message;
 import com.l7tech.objectmodel.*;
+import com.l7tech.server.DefaultKey;
 import com.l7tech.server.ServerConfigParams;
+import com.l7tech.server.tomcat.ConnectionIdValve;
 import com.l7tech.server.transport.firewall.SsgFirewallRuleManager;
 import com.l7tech.util.Config;
-import com.l7tech.util.InetAddressUtil;
-import com.l7tech.common.io.PortRanges;
-import com.l7tech.gateway.common.transport.TransportDescriptor;
-import com.l7tech.gateway.common.transport.SsgConnector;
-import com.l7tech.gateway.common.transport.TransportAdmin;
-import com.l7tech.security.prov.JceProvider;
-import com.l7tech.server.DefaultKey;
-import com.l7tech.server.tomcat.ConnectionIdValve;
-import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.InetAddressUtil;
 
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.SSLContext;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.security.Provider;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 /**
  * Server-side implementation of the TransportAdmin API.
@@ -41,10 +28,9 @@ public class TransportAdminImpl implements TransportAdmin {
     private final SsgActiveConnectorManager ssgActiveConnectorManager;
     private final SsgConnectorManager connectorManager;
     private final ResolutionConfigurationManager resolutionConfigurationManager;
-    private final DefaultKey defaultKeystore;
     private final Config config;
-    private ConcurrentMap<String, SSLContext> testSslContextByProviderName = new ConcurrentHashMap<String, SSLContext>();
     private final SsgFirewallRuleManager firewallRuleManager;
+    private final TransportAdminHelper transportAdminHelper;
 
     public TransportAdminImpl( final SsgActiveConnectorManager ssgActiveConnectorManager,
                                final SsgConnectorManager connectorManager,
@@ -55,9 +41,9 @@ public class TransportAdminImpl implements TransportAdmin {
         this.ssgActiveConnectorManager = ssgActiveConnectorManager;
         this.connectorManager = connectorManager;
         this.resolutionConfigurationManager = resolutionConfigurationManager;
-        this.defaultKeystore = defaultKeystore;
         this.config = config;
         this.firewallRuleManager = firewallRuleManager;
+        this.transportAdminHelper = new TransportAdminHelper(defaultKeystore);
     }
 
     @Override
@@ -139,53 +125,22 @@ public class TransportAdminImpl implements TransportAdmin {
 
     @Override
     public String[] getAllProtocolVersions(boolean defaultProviderOnly) {
-        String[] protos;
-        if (defaultProviderOnly) {
-            protos = getTestSslContext(null).getSupportedSSLParameters().getProtocols();
-        } else {
-            protos = ArrayUtils.union(
-                    getTestSslContext(JceProvider.getInstance().getProviderFor(JceProvider.SERVICE_TLS10)).getSupportedSSLParameters().getProtocols(),
-                    getTestSslContext(JceProvider.getInstance().getProviderFor(JceProvider.SERVICE_TLS12)).getSupportedSSLParameters().getProtocols());
-        }
-        return protos;
-    }
-
-    private SSLContext getTestSslContext(Provider provider) {
-        String providerName = provider == null ? "" : provider.getName();
-        SSLContext sslContext = testSslContextByProviderName.get(providerName);
-        if (sslContext != null)
-            return sslContext;
-        try {
-            final KeyManager[] keyManagers;
-            keyManagers = defaultKeystore.getSslKeyManagers();
-            sslContext = provider == null ? SSLContext.getInstance("TLS") : SSLContext.getInstance("TLS", provider);
-            JceProvider.getInstance().prepareSslContext( sslContext );
-            sslContext.init(keyManagers, null, null);
-            SSLContext ret = testSslContextByProviderName.putIfAbsent(providerName, sslContext);
-            return ret != null ? ret : sslContext;
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(ExceptionUtils.getMessage(e));
-        } catch (KeyManagementException e) {
-            throw new RuntimeException(ExceptionUtils.getMessage(e));
-        }
+        return transportAdminHelper.getAllProtocolVersions(defaultProviderOnly);
     }
 
     @Override
     public String[] getAllCipherSuiteNames() {
-        return ArrayUtils.union(
-                getTestSslContext(JceProvider.getInstance().getProviderFor(JceProvider.SERVICE_TLS10)).getSupportedSSLParameters().getCipherSuites(),
-                getTestSslContext(JceProvider.getInstance().getProviderFor(JceProvider.SERVICE_TLS12)).getSupportedSSLParameters().getCipherSuites()
-        );
+        return transportAdminHelper.getAllCipherSuiteNames();
     }
 
     @Override
     public String[] getDefaultCipherSuiteNames() {
-        // intersection would result in defaults with better security, but union is more likely to result in defaults
-        // that can actually complete a handshake, given the widest possible variety of enabled TLS versions
-        return ArrayUtils.union(
-                getTestSslContext(JceProvider.getInstance().getProviderFor(JceProvider.SERVICE_TLS12)).getDefaultSSLParameters().getCipherSuites(),
-                getTestSslContext(JceProvider.getInstance().getProviderFor(JceProvider.SERVICE_TLS10)).getDefaultSSLParameters().getCipherSuites()
-        );
+        return transportAdminHelper.getDefaultCipherSuiteNames();
+    }
+
+    @Override
+    public String[] getVisibleCipherSuiteNames() {
+        return transportAdminHelper.getVisibleCipherSuiteNames();
     }
 
     @Override

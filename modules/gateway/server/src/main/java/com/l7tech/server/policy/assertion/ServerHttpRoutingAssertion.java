@@ -31,6 +31,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.policy.variable.ServerVariables;
 import com.l7tech.server.security.kerberos.KerberosRoutingClient;
+import com.l7tech.server.transport.http.DefaultHttpCiphers;
 import com.l7tech.server.transport.http.SslClientTrustManager;
 import com.l7tech.server.util.HttpForwardingRuleEnforcer;
 import com.l7tech.server.util.IdentityBindingHttpClientFactory;
@@ -56,6 +57,7 @@ import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.logging.Level;
+import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
 import static com.l7tech.common.http.prov.apache.components.ClientConnectionManagerFactory.ConnectionManagerType.POOLING;
@@ -84,6 +86,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
     public static final String HOST = HttpConstants.HEADER_HOST;
 
     private static final boolean doNotForwardContentType = HttpPassthroughRuleSet.HEADERS_NOT_TO_IMPLICITLY_FORWARD.contains(HttpConstants.HEADER_CONTENT_TYPE.toLowerCase());
+    private static final Pattern PAT_COMMA_WITH_OPTIONAL_WHITESPACE = Pattern.compile("\\s*,\\s*");
 
     private final Config config;
     private final SignerInfo senderVouchesSignerInfo;
@@ -187,11 +190,14 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             sslSocketFactory = sslContext.getSocketFactory();
 
             if (assertion.getTlsCipherSuites() != null || assertion.getTlsVersion() != null) {
-                String[] tlsVersions = assertion.getTlsVersion() == null ? null : assertion.getTlsVersion().trim().split("\\s*,\\s*");
-                String[] tlsCipherSuites = assertion.getTlsCipherSuites() == null ? null : assertion.getTlsCipherSuites().trim().split("\\s*,\\s*");
+                String[] tlsVersions = assertion.getTlsVersion() == null ? null : PAT_COMMA_WITH_OPTIONAL_WHITESPACE.split(assertion.getTlsVersion().trim());
+                String[] tlsCipherSuites = assertion.getTlsCipherSuites() == null ? null : PAT_COMMA_WITH_OPTIONAL_WHITESPACE.split(assertion.getTlsCipherSuites().trim());
+                sslSocketFactory = SSLSocketFactoryWrapper.wrapAndSetTlsVersionAndCipherSuites(sslSocketFactory, tlsVersions, tlsCipherSuites);
+            } else if (assertion.getTlsCipherSuites() == null) {
+                String[] tlsVersions = assertion.getTlsVersion() == null ? null : PAT_COMMA_WITH_OPTIONAL_WHITESPACE.split(assertion.getTlsVersion().trim());
+                String[] tlsCipherSuites = PAT_COMMA_WITH_OPTIONAL_WHITESPACE.split(DefaultHttpCiphers.getRecommendedCiphers().trim());
                 sslSocketFactory = SSLSocketFactoryWrapper.wrapAndSetTlsVersionAndCipherSuites(sslSocketFactory, tlsVersions, tlsCipherSuites);
             }
-
         } catch (Exception e) {
             //noinspection ThrowableResultOfMethodCallIgnored
             logAndAudit(AssertionMessages.HTTPROUTE_SSL_INIT_FAILED, null, ExceptionUtils.getDebugException(e));

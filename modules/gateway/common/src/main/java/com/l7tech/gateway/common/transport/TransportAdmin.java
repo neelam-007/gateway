@@ -179,6 +179,16 @@ public interface TransportAdmin {
     String[] getDefaultCipherSuiteNames();
 
     /**
+     * Get the names of visible cipher suites .
+     *
+     * @return the list of all cipher suites that are visible,
+     *         ie { "TLS_RSA_WITH_AES_128_CBC_SHA", "SSL_RSA_WITH_3DES_EDE_CBC_SHA" }
+     */
+    @Transactional(readOnly=true)
+    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
+    String[] getVisibleCipherSuiteNames();
+
+    /**
      * Get all bindable internet addresses available on this Gateway node, if possible.
      *
      * @return an array of InetAddress instances, or null if this information is unavailable.

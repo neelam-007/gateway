@@ -1,8 +1,9 @@
 package com.l7tech.server.transport.http;
 
+import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.InetAddressUtil;
-import com.l7tech.gateway.common.transport.SsgConnector;
+import com.l7tech.util.JceUtil;
 import com.l7tech.util.TextUtils;
 
 import java.net.InetAddress;
@@ -33,10 +34,6 @@ public class DefaultHttpConnectors {
     private static final String RSA_256 = "TLS_DHE_RSA_WITH_AES_256_CBC_SHA,TLS_RSA_WITH_AES_256_CBC_SHA";
     private static final String RSA_128 = "TLS_DHE_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_128_CBC_SHA";
 
-    // Weaker/older cipher suites for RSA server certs.  Needed in order to support older/non-Mozilla web browsers.
-    // We have to draw a line somewhere: we won't (by default) enable any suites that use DES or MD5 or RC4
-    private static final String RSA_3DES = "SSL_RSA_WITH_3DES_EDE_CBC_SHA,SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA";
-
     // Strong cipher suites for ECC server certs.  We omit the _ECDH_ECDSA_ suites for now for two reasons:
     //   1) They can only do client auth with client cert keys on exactly the same EC curve as the server cert key
     //   2) These suites trigger fatal bugs with SunJSSE using our EC providers (Certicom, RSA, and Luna)
@@ -44,25 +41,10 @@ public class DefaultHttpConnectors {
     private static final String ECC_128 = "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA";
 
     private static final String RSA_ECC = TextUtils.join(",", RSA_256, ECC_256, RSA_128, ECC_128).toString();
-    private static final String HTTPS_LISTENER_STRONG_CIPHERS = "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384,TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384,"
-        + "TLS_RSA_WITH_AES_256_CBC_SHA256,TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384,TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384,"
-        + "TLS_DHE_RSA_WITH_AES_256_CBC_SHA256,TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,"
-        + "TLS_RSA_WITH_AES_256_CBC_SHA,TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA,TLS_ECDH_RSA_WITH_AES_256_CBC_SHA,"
-        + "TLS_DHE_RSA_WITH_AES_256_CBC_SHA,TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,"
-        + "TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256,TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256,"
-        + "TLS_DHE_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,"
-        + "TLS_RSA_WITH_AES_128_CBC_SHA,TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA,TLS_ECDH_RSA_WITH_AES_128_CBC_SHA,"
-        + "TLS_DHE_RSA_WITH_AES_128_CBC_SHA,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,"
-        + "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384,"
-        + "TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384,TLS_DHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,"
-        + "TLS_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256,"
-        + "TLS_DHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA,TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA,"
-        + "SSL_RSA_WITH_3DES_EDE_CBC_SHA,TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA,TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA,"
-        + "SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA";
 
     static final String defaultHttpEndpoints = ConfigFactory.getProperty( PROP_INIT_LISTENER_HTTP_ENDPOINTS, "MESSAGE_INPUT, POLICYDISCO, PING, STS, WSDLPROXY, SNMPQUERY" ); // Other two built-in endpoints (CSRHANDLER and PASSWD) are not available for HTTP protocol.
     static final String defaultHttpsEndpoints = ConfigFactory.getProperty( PROP_INIT_LISTENER_HTTPS_ENDPOINTS, "MESSAGE_INPUT,ADMIN_REMOTE,ADMIN_APPLET,OTHER_SERVLETS" );
-    static final String defaultListenerStrongCiphers = ConfigFactory.getProperty( PROP_INIT_LISTENER_CIPHERS, HTTPS_LISTENER_STRONG_CIPHERS );
+    static final String defaultListenerStrongCiphers = ConfigFactory.getProperty( PROP_INIT_LISTENER_CIPHERS, DefaultHttpCiphers.getRecommendedCiphers() );
     static final String defaultInternodeStrongCiphers = ConfigFactory.getProperty( PROP_INIT_INTERNODE_CIPHERS, RSA_ECC );
     static final String defaultInternodePoolSize = ConfigFactory.getProperty( PROP_INIT_INTERNODE_POOLSIZE, "10" );
 
