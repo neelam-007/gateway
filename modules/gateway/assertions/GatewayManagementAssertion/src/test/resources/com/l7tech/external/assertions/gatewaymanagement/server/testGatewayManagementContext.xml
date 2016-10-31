@@ -231,6 +231,10 @@
         <constructor-arg index="3" ref="revocationCheckPolicyManager"/>
         <constructor-arg index="4" ref="securityZoneManager"/>
     </bean>
+    <bean id="passwordPolicyResourceFactory" class="com.l7tech.external.assertions.gatewaymanagement.server.PasswordPolicyResourceFactory" parent="entityResourceFactoryParent">
+        <constructor-arg index="3" ref="passwordPolicyManger"/>
+        <constructor-arg index="4" ref="securityZoneManager"/>
+    </bean>
     <bean id="resourceFactoryRegistry" class="com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactoryRegistry">
         <constructor-arg index="0">
             <list>
@@ -260,6 +264,7 @@
                 <ref local="emailListenerResourceFactory" />
                 <ref local="serviceAliasResourceFactory" />
                 <ref local="revocationCheckingPolicyResourceFactory" />
+                <ref local="passwordPolicyResourceFactory" />
             </list>
         </constructor-arg>
     </bean>
