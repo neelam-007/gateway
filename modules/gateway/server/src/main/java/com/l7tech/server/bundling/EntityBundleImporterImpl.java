@@ -1258,14 +1258,6 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
             if (policyManager.findByPrimaryKey(newPolicyGoid) == null) {
                 ((ScheduledTask)entity).setPolicyGoid(((ScheduledTask) existingEntity).getPolicyGoid());
             }
-        } else if (entity instanceof  IdentityProviderPasswordPolicy) {
-            // If the new policy goid a stale id, then just use the existing policy goid.
-            final Goid newGoid = ((IdentityProviderPasswordPolicy) entity).getInternalIdentityProviderGoid();
-
-            if (newGoid == null) {
-                ((IdentityProviderPasswordPolicy)entity).setInternalIdentityProviderGoid(((IdentityProviderPasswordPolicy) existingEntity).getInternalIdentityProviderGoid());
-            }
-
         }
         //if this entity has a folder and it is mapped to an existing entity then ignore the given folderID and use the folderId of the existing entity.
         if(entity instanceof HasFolder && existingEntity != null) {

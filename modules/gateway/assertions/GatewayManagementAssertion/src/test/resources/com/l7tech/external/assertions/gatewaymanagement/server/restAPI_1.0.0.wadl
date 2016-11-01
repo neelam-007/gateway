@@ -3247,50 +3247,6 @@
                 </wadl:method>
             </wadl:resource>
         </wadl:resource>
-	<wadl:resource path="1.0/passwordPolicy">
-            <wadl:doc>Password Rules</wadl:doc>
-            <wadl:doc title="title-src">Password Policy</wadl:doc>
-            <wadl:resource path="{id}">
-                <wadl:doc>Password Rules</wadl:doc>
-                <wadl:doc title="title-src">Password Policy</wadl:doc>
-                <wadl:param name="id" style="template" type="xsd:string">
-                    <wadl:doc>ID of the password rule to update</wadl:doc>
-                </wadl:param>
-                <wadl:method name="GET">
-                    <wadl:doc>Returns a password rule with the given ID.</wadl:doc>
-                    <wadl:doc title="title-src">Get</wadl:doc>
-                    <wadl:response status="200">
-                        <wadl:doc>The password rule.</wadl:doc>
-                        <wadl:representation element="l7:Item"/>
-                    </wadl:response>
-                </wadl:method>
-                <wadl:method name="PUT">
-                    <wadl:doc>Updates an existing password rule.</wadl:doc>
-                    <wadl:doc title="title-src">Update</wadl:doc>
-                    <wadl:request>
-                        <wadl:representation element="l7:PasswordPolicy" mediaType="application/xml">
-                            <wadl:doc>Password rule to create or update</wadl:doc>
-                        </wadl:representation>
-                    </wadl:request>
-                    <wadl:response status="200">
-                        <wadl:doc>A reference to the newly updated password rule.</wadl:doc>
-                    </wadl:response>
-                </wadl:method>
-            </wadl:resource>
-            <wadl:resource path="template">
-                <wadl:doc>Password Rules</wadl:doc>
-                <wadl:doc title="title-src">Password Policy</wadl:doc>
-                <wadl:method name="GET">
-                    <wadl:doc>Returns a template, which is an example password rule that can be used as a reference for what password rule
-					objects should look like.</wadl:doc>
-                    <wadl:doc title="title-src">Template</wadl:doc>
-                    <wadl:response status="200">
-                        <wadl:doc>The template password rule.</wadl:doc>
-                        <wadl:representation element="l7:Item"/>
-                    </wadl:response>
-                </wadl:method>
-            </wadl:resource>
-        </wadl:resource>
         <wadl:resource path="1.0/policies">
             <wadl:doc>This resource is used to manage policies. These can be internal, global or other special purpose policies.</wadl:doc>
             <wadl:doc title="title-src">Policy</wadl:doc>

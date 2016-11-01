@@ -642,15 +642,6 @@ public class ManagedObjectFactory {
     }
 
     /**
-     * Create a new PasswordPolicyMO instance.
-     *
-     * @return The new instance.
-     */
-     public static PasswordPolicyMO createPasswordPolicy() {
-         return new PasswordPolicyMO();
-     }
-
-    /**
      * Read a managed object from the given data.
      *
      * @param in The input data.
