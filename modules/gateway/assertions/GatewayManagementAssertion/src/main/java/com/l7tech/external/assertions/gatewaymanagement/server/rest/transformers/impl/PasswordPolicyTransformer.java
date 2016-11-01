@@ -31,7 +31,7 @@ public class PasswordPolicyTransformer extends APIResourceWsmanBaseTransformer<P
     @NotNull
     @Override
     public Item<PasswordPolicyMO> convertToItem(@NotNull PasswordPolicyMO m) {
-        return new ItemBuilder<PasswordPolicyMO>("Manage Password Rules", m.getId(), factory.getType().name())
+        return new ItemBuilder<PasswordPolicyMO>(m.getId(), factory.getType().name())
                 .setContent(m)
                 .build();
     }
