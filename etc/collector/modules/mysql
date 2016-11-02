@@ -3,7 +3,7 @@
 MODULE=$1
 LEVEL=$2
 
-# Pull in collector support funtions
+# Pull in collector support functions
 #
 . ${COLLECTOR_HOME}/collectorlib
 

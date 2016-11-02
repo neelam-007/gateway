@@ -5,7 +5,7 @@ LEVEL=$2
 
 VMWARE_CMDDIR=/usr/sbin
 
-# Pull in collector support funtions
+# Pull in collector support functions
 #
 . ${COLLECTOR_HOME}/collectorlib
 

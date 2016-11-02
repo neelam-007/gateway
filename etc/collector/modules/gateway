@@ -8,7 +8,7 @@ GWDEFAULT=${SSHOME}/Gateway/node/default
 APDEFAULT=${SSHOME}/Appliance
 JAVA_HOME=${SSHOME}/JDK
 
-# Pull in collector support funtions
+# Pull in collector support functions
 #
 . ${COLLECTOR_HOME}/collectorlib
 
