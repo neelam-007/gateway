@@ -9,7 +9,6 @@ import com.l7tech.gateway.common.transport.InterfaceTag;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.User;
-import com.l7tech.identity.internal.InternalGroup;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.DesignTimeEntityProvider;
 import com.l7tech.policy.PolicyUtil;
@@ -192,10 +191,7 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
             if (header.getType() == EntityType.USER) {
                 return provider.getUserManager().findByPrimaryKey(header.getStrId());
             } else if (header.getType() == EntityType.GROUP) {
-                InternalGroup group = (InternalGroup)provider.getGroupManager().findByPrimaryKey(header.getStrId());
-                Set<IdentityHeader> users = provider.getGroupManager().getUserHeaders(group);
-                group.setUserHeaders(users);
-                return group;
+                return provider.getGroupManager().findByPrimaryKey(header.getStrId());
             } else {
                 throw new IllegalArgumentException("EntityHeader is an IdentityHeader, but type is neither USER nor GROUP");
             }

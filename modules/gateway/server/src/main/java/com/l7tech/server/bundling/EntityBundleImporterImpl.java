@@ -21,7 +21,6 @@ import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
-import com.l7tech.identity.internal.InternalGroup;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
@@ -964,12 +963,9 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                             }
                             if (entityContainer.getEntity() instanceof GroupBean) {
                                 final GroupManager groupManager = identityProvider.getGroupManager();
-                                Set<String> userids = ((GroupBean)entityContainer.getEntity()).getUserIds();
-                                Set<IdentityHeader> headers = idsToHeaders(userids, identityProvider);
-
                                 if(existingEntity == null) {
                                     final Group group = groupManager.reify((GroupBean) entityContainer.getEntity());
-                                    final String groupId = groupManager.save(id == null ? null : Goid.parseGoid(id), group, headers);
+                                    final String groupId = groupManager.save(id == null ? null : Goid.parseGoid(id), group, null);
                                     ((GroupBean) entityContainer.getEntity()).setUniqueIdentifier(groupId);
                                 } else {
                                     final GroupBean groupBean = (GroupBean) entityContainer.getEntity();
@@ -979,7 +975,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                         //need to set the version to the existing user version so it can update properly
                                         ((PersistentEntity) group).setVersion(((PersistentEntity) existingEntity).getVersion());
                                     }
-                                    groupManager.update(group, headers);
+                                    groupManager.update(group);
                                 }
                             } else if (entityContainer.getEntity() instanceof UserBean) {
                                 final UserManager userManager = identityProvider.getUserManager();
@@ -1694,20 +1690,5 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                 return resourceMapping.get(header).getGoid();
         }
         return providerGoid;
-    }
-
-    private Set<IdentityHeader> idsToHeaders(Set<String> userids, IdentityProvider provider) {
-        Set<IdentityHeader> headers = new HashSet<IdentityHeader>();
-            for (String userid : userids) {
-                User user;
-                try {
-                    user = provider.getUserManager().findByPrimaryKey(userid);
-                } catch (FindException e) {
-                    user = null;
-                }
-                if (null != user)
-                    headers.add(provider.getUserManager().userToHeader(user));
-            }
-        return headers;
     }
 }

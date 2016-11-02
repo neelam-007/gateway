@@ -3,13 +3,11 @@ package com.l7tech.identity;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.PropertyResolver;
+import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
 
 import java.io.Serializable;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
-
-import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
+import java.util.HashMap;
 
 public class GroupBean implements Group, Serializable {
     public GroupBean(Goid providerId, String _name) {
@@ -114,14 +112,6 @@ public class GroupBean implements Group, Serializable {
         this.providerId = providerId;
     }
 
-    public Set<String> getUserIds() {
-        return userids;
-    }
-
-    public void setUsersIds(Set<String> userids) {
-        this.userids = userids;
-    }
-
     private static final long serialVersionUID = -2260828785148311161L;
 
     private String uniqueId;
@@ -130,5 +120,4 @@ public class GroupBean implements Group, Serializable {
     private Goid providerId;
     private Map<String, String> properties;
     private int version;
-    private Set<String> userids;
 }
