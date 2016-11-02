@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.websocket.console;
 
+import com.l7tech.console.panels.CipherSuiteDialog;
 import com.l7tech.console.panels.PrivateKeysComboBox;
 import com.l7tech.console.util.Registry;
 import com.l7tech.external.assertions.websocket.InvalidRangeException;
@@ -9,8 +10,10 @@ import com.l7tech.external.assertions.websocket.WebSocketUtils;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.util.Functions;
 
 import javax.swing.*;
 import java.awt.*;
@@ -48,10 +51,18 @@ public class WebSocketConnectionDialog extends JDialog {
     private JCheckBox useClientAuthenticationCheckBox;
     private JComboBox inboundClientAuthenticationComboBox;
     private JComboBox connectionPolicyComboBox;
+    private JButton outboundCipherSuiteButton;
+    private JButton outboundTlsProtocolButton;
+    private JButton inboundTlsButton;
+    private JButton inboundCipherSuitesButton;
     private boolean dirtyPortFlag;
     private int oldInboundListenPort;
     private boolean oldEnableFlag;
     private boolean dirtyEnableFlag;
+    private String[] inboundTlsProtocols;
+    private String[] inboundTlsCipherSuites;
+    private String[] outboundTlsProtocols;
+    private String[] outboundTlsCipherSuites;
 
 
     public WebSocketConnectionDialog(Window owner, WebSocketConnectionEntity connection) {
@@ -96,9 +107,79 @@ public class WebSocketConnectionDialog extends JDialog {
             }
         });
 
+        inboundTlsButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                TlsSelectionDialog.show(WebSocketConnectionDialog.this, "Enabled TLS Protocols", null, inboundTlsProtocols, new Functions.UnaryVoid<String[]>() {
+                    @Override
+                    public void call(String[] s) {
+                        inboundTlsProtocols = s;
+                    }
+                });
+            }
+        });
+
+        inboundCipherSuitesButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+
+                String inboundTlsCipherSuitesString = null;
+                if (inboundTlsCipherSuites != null){
+                    inboundTlsCipherSuitesString = String.join(",", inboundTlsCipherSuites);
+                }
+                CipherSuiteDialog.show(WebSocketConnectionDialog.this, "Enabled Cipher Suites", null, false, inboundTlsCipherSuitesString, new Functions.UnaryVoid<String>() {
+                    @Override
+                    public void call(String s) {
+                        if (s==null){
+                            inboundTlsCipherSuites = null;
+                        } else {
+                            inboundTlsCipherSuites = s.split(",");
+                        }
+                    }
+                });
+            }
+        });
+        Utilities.equalizeButtonSizes(new JButton[] {inboundTlsButton, inboundCipherSuitesButton });
+
+        outboundTlsProtocolButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                TlsSelectionDialog.show(WebSocketConnectionDialog.this, "Enabled TLS Protocols", null, outboundTlsProtocols, new Functions.UnaryVoid<String[]>() {
+                    @Override
+                    public void call(String[] s) {
+                        outboundTlsProtocols = s;
+                    }
+                });
+            }
+        });
+
+        outboundCipherSuiteButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+
+                String outboundTlsCipherSuitesString = null;
+                if (outboundTlsCipherSuites != null){
+                    outboundTlsCipherSuitesString = String.join(",", outboundTlsCipherSuites);
+                }
+
+                CipherSuiteDialog.show(WebSocketConnectionDialog.this, "Enabled Cipher Suites", null, false, outboundTlsCipherSuitesString, new Functions.UnaryVoid<String>() {
+                    @Override
+                    public void call(String s) {
+                        if (s == null){
+                            // use default list.
+                            outboundTlsCipherSuites = null;
+                        } else {
+                            outboundTlsCipherSuites = s.split(",");
+                        }
+                    }
+                });
+            }
+        });
+        Utilities.equalizeButtonSizes(new JButton[] {outboundTlsProtocolButton, outboundCipherSuiteButton });
+
 
 // call onCancel() when cross is clicked
-                setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
+        setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
@@ -131,10 +212,18 @@ public class WebSocketConnectionDialog extends JDialog {
         oldEnableFlag = connection.isEnabled();
         useInboundSSLCheckBox.setSelected(connection.isInboundSsl());
         useOutboundSSLCheckBox.setSelected(connection.isOutboundSsl());
+        inboundTlsButton.setEnabled(connection.isInboundSsl());
+        inboundCipherSuitesButton.setEnabled(connection.isInboundSsl());
+        outboundTlsProtocolButton.setEnabled(connection.isOutboundSsl());
+        outboundCipherSuiteButton.setEnabled(connection.isOutboundSsl());
         useClientAuthenticationCheckBox.setSelected(connection.isOutboundClientAuthentication());
         inboundPrivateKeysComboBox.setEnabled(connection.isInboundSsl());
         outboundPrivateKeysComboBox.setEnabled(connection.isOutboundSsl() && connection.isOutboundClientAuthentication());
         inboundClientAuthenticationComboBox.setEnabled(connection.isInboundSsl());
+        inboundTlsProtocols = connection.getInboundTlsProtocol();
+        inboundTlsCipherSuites = connection.getInboundCipherSuite();
+        outboundTlsProtocols = connection.getOutboundTlsProtocolString();
+        outboundTlsCipherSuites = connection.getOutboundCipherSuiteString();
 
     }
 
@@ -216,8 +305,25 @@ public class WebSocketConnectionDialog extends JDialog {
                 connection.setOutboundMaxIdleTime(WebSocketUtils.isInt(outBoundMaxIdleTime.getText(), "Outbound Maximum Idle Time"));
                 connection.setInboundMaxIdleTime(WebSocketUtils.isInt(inBoundMaxIdleTime.getText(), "Inbound Maximum Idle Time"));
                 connection.setOutboundUrl(WebSocketUtils.normalizeUrl(outboundUrl.getText(), useOutboundSSLCheckBox.isSelected()));
+
                 connection.setInboundSsl(useInboundSSLCheckBox.isSelected());
+                if (useInboundSSLCheckBox.isSelected()){
+                    connection.setInboundTlsProtocol(inboundTlsProtocols);
+                    connection.setInboundCipherSuite(inboundTlsCipherSuites);
+                } else {
+                    connection.setInboundTlsProtocol(null);
+                    connection.setInboundCipherSuite(null);
+                }
+
                 connection.setOutboundSsl(useOutboundSSLCheckBox.isSelected());
+                if (useOutboundSSLCheckBox.isSelected()) {
+                    connection.setOutboundTlsProtocolString(outboundTlsProtocols);
+                    connection.setOutboundCipherSuiteString(outboundTlsCipherSuites);
+                } else {
+                    connection.setOutboundTlsProtocolString(null);
+                    connection.setOutboundCipherSuiteString(null);
+                }
+
                 connection.setOutboundClientAuthentication(useClientAuthenticationCheckBox.isSelected());
                 connection.setInboundClientAuth((WebSocketConnectionEntity.ClientAuthType)inboundClientAuthenticationComboBox.getSelectedItem());
 
@@ -382,10 +488,15 @@ public class WebSocketConnectionDialog extends JDialog {
         if ( inboundClientAuthenticationComboBox.getSelectedIndex() == -1)  {
             inboundClientAuthenticationComboBox.setSelectedIndex(0);
         }
+        inboundTlsButton.setEnabled(useInboundSSLCheckBox.isSelected());
+        inboundCipherSuitesButton.setEnabled(useInboundSSLCheckBox.isSelected());
+
     }
 
     private void onOutboundSslChecked() {
         useClientAuthenticationCheckBox.setEnabled(useOutboundSSLCheckBox.isSelected());
+        outboundTlsProtocolButton.setEnabled(useOutboundSSLCheckBox.isSelected());
+        outboundCipherSuiteButton.setEnabled(useOutboundSSLCheckBox.isSelected());
     }
 
     private void onUseClientAuthorizationChecked() {

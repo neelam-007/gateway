@@ -36,6 +36,7 @@ public class SSGInboundWebSocket extends WebSocketAdapter {
     private final String protocol;
     private final String resolvedOutboundConnectionUrl;
     private static final String contextVariablePattern = "(\\$\\{.*?\\})";
+    private boolean isLoopback = false;
 
     protected static final Logger logger = Logger.getLogger(SSGInboundWebSocket.class.getName());
 
@@ -49,15 +50,15 @@ public class SSGInboundWebSocket extends WebSocketAdapter {
         this.protocol = httpServletRequest.getRemoteAddr();
         this.clientId = generateClientId(webSocketMetadata, this.protocol);
         this.resolvedOutboundConnectionUrl = resolveOutboundUrl(this.webSocketInboundHandler.getUnresolvedOutboundUrl(), webSocketMetadata.getContextVariables());
-
         webSocketInboundHandler.registerClientId(clientId, webSocketId);
+        this.isLoopback = webSocketInboundHandler.isLoopback();
     }
 
     private String resolveOutboundUrl(String originalOutboundUrl, HashMap contextVariables) throws URISyntaxException {
 
         if (isOutboundUrlNeedResolution(originalOutboundUrl)) {
             if ((contextVariables == null) || contextVariables.isEmpty()) {
-                throw new URISyntaxException("No context variables found.", "Cannot resolve outbound URL:"+ originalOutboundUrl.toString());
+                throw new URISyntaxException("No context variables found.", "Cannot resolve outbound URL:" + originalOutboundUrl.toString());
             }
 
             StringBuilder resolvedUri = new StringBuilder(originalOutboundUrl);
@@ -190,7 +191,7 @@ public class SSGInboundWebSocket extends WebSocketAdapter {
         logger.log(Level.INFO, "Terminating SSGInboundWebSocket for URL:" + resolvedOutboundConnectionUrl + " websocket id=" + webSocketId + ". " + msg);
 
         if (isConnected()) {
-            getSession().close(closeStatus,msg);
+            getSession().close(closeStatus, msg);
         }
 
         webSocketInboundHandler.getWebSocketIdWebSocketMap().remove(webSocketId);
@@ -226,7 +227,9 @@ public class SSGInboundWebSocket extends WebSocketAdapter {
         webSocketInboundHandler.getWebSocketIdWebSocketMap().put(webSocketId, this);
 
         try {
-            connectToServer(webSocketId); // connect to the server on open.  TAC-1376.
+            if (!isLoopback) { //  DE245097:The WebSocket's loopback mode is broken
+                connectToServer(webSocketId); // connect to the server on open.  TAC-1376.
+            }
 
         } catch (Exception e) {
             logger.log(Level.WARNING, "Failed to create connection to the server for websocket id=" + webSocketId + ". Reason:" + e.toString());

@@ -66,6 +66,8 @@ public class WebSocketConstants {
 
     public static final String AUTHENTICATION_CONTEXT_REQ_ATTRIB = "AuthenticationContextRequestAttributes";
     public static final String REQUEST_CONTEXT_VARIABLES = "RequestContextVariables";
+    public static final String[] DEFAULT_TLS_PROTOCOL_LIST = {"TLSv1.2"}; //Jetty 9 libraries excluded a lot of ciphersuites from
+    // its default list such that TLS 1.2 is the only one remaining with the required ciphersuites.
 
     public static void setClusterProperty(String key, int value) {
         clusterprops.put(key, value);
@@ -74,4 +76,5 @@ public class WebSocketConstants {
     public static int getClusterProperty(String key) {
         return clusterprops.get(key);
     }
+
 }

@@ -151,8 +151,7 @@ public class WebSocketInboundHandler extends WebSocketHandlerBase {
                             logger.log(Level.INFO, "Http Basic Authentication required for WebSocket");
                             response.addHeader("WWW-Authenticate", "Basic");
                             sendResponseErrorAndSetHandled(request, response, HttpServletResponse.SC_UNAUTHORIZED, processResults.getMsg().getStatus());
-                        }
-                        else {
+                        } else {
                             logger.log(Level.INFO, "Authentication failed.");
                             sendResponseErrorAndSetHandled(request, response, HttpServletResponse.SC_UNAUTHORIZED, processResults.getMsg().getStatus());
                         }
@@ -169,7 +168,8 @@ public class WebSocketInboundHandler extends WebSocketHandlerBase {
 
     protected SSGInboundWebSocket createWebSocket(HttpServletRequest httpServletRequest, WebSocketMetadata metaData) throws WebSocketCreationException, URISyntaxException {
 
-        if ((webSocketIdWebSocketMap.size()) > getMaxConnections()) {
+        // - DE245426-WebSocket - (Inbound) Maximum Connections - Client can generate one more connection than the configured Maximum Connections number.
+        if ((webSocketIdWebSocketMap.size() + 1) > getMaxConnections()) {
             logger.log(Level.WARNING, "Will not create inbound websocket because the maximum number of connections will be exceeded.");
             throw new WebSocketCreationException("Will not create inbound websocket because the maximum number of connections will be exceeded.");
         }
@@ -318,9 +318,11 @@ public class WebSocketInboundHandler extends WebSocketHandlerBase {
 
     public void notifyCloseOutboundConnection(String webSocketId, int statusCode, String msg) {
         try {
-            getOutboundHandler(getHandlerId()).closeOutboundConnection(webSocketId, statusCode, msg);
+            if (!isLoopback()) { //DE245097:The WebSocket's loopback mode is broken
+                getOutboundHandler(getHandlerId()).closeOutboundConnection(webSocketId, statusCode, msg);
+            }
         } catch (WebSocketConnectionManagerException e) {
-            logger.log(Level.WARNING, "Could not ");
+            logger.log(Level.WARNING, "Could not close the outbound connection.");
         }
     }
 

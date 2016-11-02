@@ -12,8 +12,11 @@ import com.l7tech.policy.wsp.InvalidPolicyStreamException;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
 import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 import org.w3c.dom.Text;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -42,6 +45,11 @@ public class WebSocketConnectionReference extends ExternalReference {
     private static final String ELMT_NAME_INBOUND_PRIVATE_KEY_ID = "InboundPrivateKeyId";
     private static final String ELMT_NAME_INBOUND_PRIVATE_KEY_ALIAS = "InboundPrivateKeyAlias";
     private static final String ELMT_NAME_INBOUND_CLIENT_AUTH = "InboundClientAuth";
+    private static final String ELMT_NAME_INBOUND_TLS_CIPHER_SUITES = "InboundTlsCipherSuites";
+    private static final String ELMT_NAME_INBOUND_TLS_CIPHER_SUITE = "InboundTlsCipherSuite";
+    private static final String ELMT_NAME_INBOUND_TLS_PROTOCOL_SUITES = "InboundTlsProtocolSuites";
+    private static final String ELMT_NAME_INBOUND_TLS_PROTOCOL_SUITE = "InboundTlsProtocolSuite";
+
 
     private static final String ELMT_NAME_OUTBOUND_URL = "OutboundURL";
     private static final String ELMT_NAME_OUTBOUND_MAX_IDLE_TIME = "OutboundMaxIdleTime";
@@ -52,6 +60,10 @@ public class WebSocketConnectionReference extends ExternalReference {
     private static final String ELMT_NAME_OUTBOUND_CLIENT_AUTH = "OutboundClientAuth";
 
     private static final String ELMT_NAME_LOOPBACK = "Loopback";
+    private static final String ELMT_NAME_OUTBOUND_TLS_CIPHER_SUITES = "OutboundTlsCipherSuites";
+    private static final String ELMT_NAME_OUTBOUND_TLS_CIPHER_SUITE = "OutboundTlsCipherSuite";
+    private static final String ELMT_NAME_OUTBOUND_TLS_PROTOCOL_SUITES = "OutboundTlsProtocolSuites";
+    private static final String ELMT_NAME_OUTBOUND_TLS_PROTOCOL_SUITE = "OutboundTlsProtocolSuite";
 
     private Goid goid;
     private String name;
@@ -77,6 +89,10 @@ public class WebSocketConnectionReference extends ExternalReference {
     private boolean outboundClientAuthentication;
     private boolean loopback = true;
     private ExternalReferenceFinder finder;
+    private String[] inboundTlsCipherSuites;
+    private String[] inboundTlsProtocols;
+    private String[] outboundTlsCipherSuites;
+    private String[] outboundTlsProtocols;
 
 
     public WebSocketConnectionReference(ExternalReferenceFinder finder) {
@@ -108,6 +124,8 @@ public class WebSocketConnectionReference extends ExternalReference {
             inboundPrivateKeyAlias = entity.getInboundPrivateKeyAlias();
             inboundPrivateKeyId = entity.getInboundPrivateKeyId();
             inboundSsl = entity.isInboundSsl();
+            inboundTlsCipherSuites = entity.getInboundCipherSuite();
+            inboundTlsProtocols = entity.getInboundTlsProtocol();
 
             outboundUrl = entity.getOutboundUrl();
             outboundMaxIdleTime = entity.getOutboundMaxIdleTime();
@@ -117,6 +135,9 @@ public class WebSocketConnectionReference extends ExternalReference {
             outboundSsl = entity.isOutboundSsl();
             outboundClientAuthentication = entity.isOutboundClientAuthentication();
             loopback = entity.isLoopback();
+            outboundTlsCipherSuites = entity.getOutboundCipherSuiteString();
+            outboundTlsProtocols = entity.getOutboundTlsProtocolString();
+
 
         } catch (FindException e) {
             logger.log(Level.WARNING, "Unable to retrieve Entity from EntityManager");
@@ -153,6 +174,11 @@ public class WebSocketConnectionReference extends ExternalReference {
         setTypeAttribute(referenceElement);
         referencesParentElement.appendChild(referenceElement);
 
+
+        if (goid != null){
+            addParameterElement(ELMT_GOID, goid.toHexString(), referenceElement);
+        }
+
         addParameterElement(ELMT_NAME, name, referenceElement);
         addParameterElement(ELMT_DESC, description, referenceElement);
         addParameterElement(ELMT_NAME_CLASSNAME, classname, referenceElement);
@@ -179,6 +205,27 @@ public class WebSocketConnectionReference extends ExternalReference {
         } else {
             addParameterElement(ELMT_NAME_INBOUND_CLIENT_AUTH, "", referenceElement);
         }
+
+        if (inboundTlsProtocols != null) {
+            Element propertiesElement = referencesParentElement.getOwnerDocument().createElement(ELMT_NAME_INBOUND_TLS_PROTOCOL_SUITES);
+            for (int i = 0; i< inboundTlsProtocols.length; i++ ){
+                Element propertyElement = referencesParentElement.getOwnerDocument().createElement(ELMT_NAME_INBOUND_TLS_PROTOCOL_SUITE);
+                propertyElement.setAttribute(ELMT_NAME, inboundTlsProtocols[i]);
+                propertiesElement.appendChild(propertyElement);
+            }
+            referenceElement.appendChild(propertiesElement);
+        }
+
+        if (inboundTlsCipherSuites != null) {
+            Element propertiesElement = referencesParentElement.getOwnerDocument().createElement(ELMT_NAME_INBOUND_TLS_CIPHER_SUITES);
+            for (int i = 0; i< inboundTlsCipherSuites.length; i++ ){
+                Element propertyElement = referencesParentElement.getOwnerDocument().createElement(ELMT_NAME_INBOUND_TLS_CIPHER_SUITE);
+                propertyElement.setAttribute(ELMT_NAME, inboundTlsCipherSuites[i]);
+                propertiesElement.appendChild(propertyElement);
+            }
+            referenceElement.appendChild(propertiesElement);
+        }
+
         addParameterElement(ELMT_NAME_OUTBOUND_URL, outboundUrl, referenceElement);
         addParameterElement(ELMT_NAME_OUTBOUND_MAX_IDLE_TIME, String.valueOf(outboundMaxIdleTime), referenceElement);
 
@@ -187,10 +234,35 @@ public class WebSocketConnectionReference extends ExternalReference {
         }
 
         addParameterElement(ELMT_NAME_OUTBOUND_SSL, String.valueOf(outboundSsl), referenceElement);
-        addParameterElement(ELMT_NAME_OUTBOUND_PRIVATE_KEY_ID, outboundPrivateKeyId.toHexString(), referenceElement);
+        if (outboundPrivateKeyId == null){
+            addParameterElement(ELMT_NAME_OUTBOUND_PRIVATE_KEY_ID, Goid.DEFAULT_GOID.toHexString(), referenceElement);
+        } else {
+            addParameterElement(ELMT_NAME_OUTBOUND_PRIVATE_KEY_ID, outboundPrivateKeyId.toHexString(), referenceElement);
+        }
+
         addParameterElement(ELMT_NAME_OUTBOUND_PRIVATE_KEY_ALIAS, outboundPrivateKeyAlias, referenceElement);
         addParameterElement(ELMT_NAME_OUTBOUND_CLIENT_AUTH, String.valueOf(outboundClientAuthentication), referenceElement);
         addParameterElement(ELMT_NAME_LOOPBACK, String.valueOf(loopback), referenceElement);
+
+        if (outboundTlsProtocols != null) {
+            Element propertiesElement = referencesParentElement.getOwnerDocument().createElement(ELMT_NAME_OUTBOUND_TLS_PROTOCOL_SUITES);
+            for (int i = 0; i< outboundTlsProtocols.length; i++ ){
+                Element propertyElement = referencesParentElement.getOwnerDocument().createElement(ELMT_NAME_OUTBOUND_TLS_PROTOCOL_SUITE);
+                propertyElement.setAttribute(ELMT_NAME, outboundTlsProtocols[i]);
+                propertiesElement.appendChild(propertyElement);
+            }
+            referenceElement.appendChild(propertiesElement);
+        }
+
+        if (outboundTlsCipherSuites != null) {
+            Element propertiesElement = referencesParentElement.getOwnerDocument().createElement(ELMT_NAME_OUTBOUND_TLS_CIPHER_SUITES);
+            for (int i = 0; i< outboundTlsCipherSuites.length; i++ ){
+                Element propertyElement = referencesParentElement.getOwnerDocument().createElement(ELMT_NAME_OUTBOUND_TLS_CIPHER_SUITE);
+                propertyElement.setAttribute(ELMT_NAME, outboundTlsCipherSuites[i]);
+                propertiesElement.appendChild(propertyElement);
+            }
+            referenceElement.appendChild(propertiesElement);
+        }
 
     }
 
@@ -219,6 +291,8 @@ public class WebSocketConnectionReference extends ExternalReference {
             if (assertionToLocalize instanceof WebSocketMessageInjectionAssertion) {
                 try {
                     WebSocketConnectionEntity entity = new WebSocketConnectionEntity();
+
+
                     entity.setGoid(goid);
                     entity.setName(name);
                     entity.setDescription(description);
@@ -234,6 +308,9 @@ public class WebSocketConnectionReference extends ExternalReference {
                     entity.setInboundSsl(inboundSsl);
                     entity.setInboundPrivateKeyAlias(inboundPrivateKeyAlias);
                     entity.setInboundPrivateKeyId(inboundPrivateKeyId);
+                    entity.setInboundTlsProtocol(inboundTlsProtocols);
+                    entity.setInboundCipherSuite(inboundTlsCipherSuites);
+
                     entity.setOutboundUrl(outboundUrl);
                     entity.setOutboundMaxIdleTime(outboundMaxIdleTime);
                     entity.setOutboundPolicyOID(outboundPolicyGOID);
@@ -241,6 +318,8 @@ public class WebSocketConnectionReference extends ExternalReference {
                     entity.setOutboundPrivateKeyId(outboundPrivateKeyId);
                     entity.setOutboundPrivateKeyAlias(outboundPrivateKeyAlias);
                     entity.setOutboundClientAuthentication(outboundClientAuthentication);
+                    entity.setOutboundTlsProtocolString(outboundTlsProtocols);
+                    entity.setOutboundCipherSuiteString(outboundTlsCipherSuites);
 
                     if (getEntityManager(finder).findByPrimaryKey(goid) == null) {
                         getEntityManager(finder).save(entity);
@@ -332,6 +411,35 @@ public class WebSocketConnectionReference extends ExternalReference {
         output.inboundSsl = Boolean.parseBoolean(getParamFromEl(el, ELMT_NAME_INBOUND_SSL));
         output.inboundPrivateKeyId = Goid.parseGoid(getParamFromEl(el, ELMT_NAME_INBOUND_PRIVATE_KEY_ID));
         output.inboundPrivateKeyAlias = getParamFromEl(el, ELMT_NAME_INBOUND_PRIVATE_KEY_ALIAS);
+
+        NodeList propertiesEls = el.getElementsByTagName(ELMT_NAME_INBOUND_TLS_PROTOCOL_SUITES);
+        if (propertiesEls.getLength() > 0) {
+            Element propertiesEl = (Element) propertiesEls.item(0);
+
+            NodeList propertyEls = propertiesEl.getElementsByTagName(ELMT_NAME_INBOUND_TLS_PROTOCOL_SUITE);
+
+            List<String> inboundTlsProtocolList = new ArrayList<>();
+            for (int i = 0; i < propertyEls.getLength(); i++) {
+                Element propertyEl = (Element) propertyEls.item(i);
+                inboundTlsProtocolList.add(propertyEl.getAttribute(ELMT_NAME));
+            }
+            output.inboundTlsProtocols = inboundTlsProtocolList.toArray(new String[0]);
+        }
+
+        propertiesEls = el.getElementsByTagName(ELMT_NAME_INBOUND_TLS_CIPHER_SUITES);
+        if (propertiesEls.getLength() > 0) {
+            Element propertiesEl = (Element) propertiesEls.item(0);
+
+            NodeList propertyEls = propertiesEl.getElementsByTagName(ELMT_NAME_INBOUND_TLS_CIPHER_SUITE);
+
+            List<String> inboundTlsCipherSuitesList = new ArrayList<>();
+            for (int i = 0; i < propertyEls.getLength(); i++) {
+                Element propertyEl = (Element) propertyEls.item(i);
+                inboundTlsCipherSuitesList.add(propertyEl.getAttribute(ELMT_NAME));
+            }
+            output.inboundTlsCipherSuites = inboundTlsCipherSuitesList.toArray(new String[0]);
+        }
+
         output.outboundUrl = getParamFromEl(el, ELMT_NAME_OUTBOUND_URL);
         output.outboundMaxIdleTime = Integer.parseInt(getParamFromEl(el, ELMT_NAME_OUTBOUND_MAX_IDLE_TIME));
 
@@ -345,6 +453,34 @@ public class WebSocketConnectionReference extends ExternalReference {
         output.outboundPrivateKeyAlias = getParamFromEl(el, ELMT_NAME_OUTBOUND_PRIVATE_KEY_ALIAS);
         output.outboundClientAuthentication = Boolean.parseBoolean(getParamFromEl(el, ELMT_NAME_OUTBOUND_CLIENT_AUTH));
         output.loopback = Boolean.parseBoolean(getParamFromEl(el, ELMT_NAME_LOOPBACK));
+
+        propertiesEls = el.getElementsByTagName(ELMT_NAME_OUTBOUND_TLS_PROTOCOL_SUITES);
+        if (propertiesEls.getLength() > 0) {
+            Element propertiesEl = (Element) propertiesEls.item(0);
+
+            NodeList propertyEls = propertiesEl.getElementsByTagName(ELMT_NAME_OUTBOUND_TLS_PROTOCOL_SUITE);
+
+            List<String> outboundTlsProtocolList = new ArrayList<>();
+            for (int i = 0; i < propertyEls.getLength(); i++) {
+                Element propertyEl = (Element) propertyEls.item(i);
+                outboundTlsProtocolList.add(propertyEl.getAttribute(ELMT_NAME));
+            }
+            output.inboundTlsProtocols = outboundTlsProtocolList.toArray(new String[0]);
+        }
+
+        propertiesEls = el.getElementsByTagName(ELMT_NAME_OUTBOUND_TLS_CIPHER_SUITES);
+        if (propertiesEls.getLength() > 0) {
+            Element propertiesEl = (Element) propertiesEls.item(0);
+
+            NodeList propertyEls = propertiesEl.getElementsByTagName(ELMT_NAME_OUTBOUND_TLS_CIPHER_SUITE);
+
+            List<String> outboundTlsCipherSuitesList = new ArrayList<>();
+            for (int i = 0; i < propertyEls.getLength(); i++) {
+                Element propertyEl = (Element) propertyEls.item(i);
+                outboundTlsCipherSuitesList.add(propertyEl.getAttribute(ELMT_NAME));
+            }
+            output.outboundTlsCipherSuites = outboundTlsCipherSuitesList.toArray(new String[0]);
+        }
 
         return output;
     }
