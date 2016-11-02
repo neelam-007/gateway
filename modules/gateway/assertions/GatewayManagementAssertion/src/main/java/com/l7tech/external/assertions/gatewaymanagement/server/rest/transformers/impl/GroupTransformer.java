@@ -3,9 +3,14 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.transformer
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.SecretsEncryptor;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.EntityAPITransformer;
-import com.l7tech.gateway.api.*;
+import com.l7tech.gateway.api.GroupMO;
+import com.l7tech.gateway.api.Item;
+import com.l7tech.gateway.api.ItemBuilder;
+import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.GroupBean;
+import com.l7tech.identity.User;
+import com.l7tech.identity.internal.InternalGroup;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
@@ -16,6 +21,8 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import java.util.HashSet;
+import java.util.Set;
 
 @Component
 public class GroupTransformer implements EntityAPITransformer<GroupMO, Group> {
@@ -43,6 +50,13 @@ public class GroupTransformer implements EntityAPITransformer<GroupMO, Group> {
         groupMO.setProviderId(group.getProviderId().toString());
         groupMO.setName(group.getName());
         groupMO.setDescription(group.getDescription());
+        Set<IdentityHeader> userheaders = ((InternalGroup)group).getUserHeaders();
+        Set<String> userids= new HashSet<String>();
+
+        for (IdentityHeader userheader : userheaders) {
+            userids.add(userheader.getStrId());
+        }
+        groupMO.setUserIds(userids);
         return groupMO;
     }
 
@@ -69,6 +83,8 @@ public class GroupTransformer implements EntityAPITransformer<GroupMO, Group> {
         group.setProviderId(identityProviderGoid);
         group.setName(groupMO.getName());
         group.setDescription(groupMO.getDescription());
+        group.setUsersIds(groupMO.getUserIds());
+
         return new EntityContainer<Group>(group);
     }
 
