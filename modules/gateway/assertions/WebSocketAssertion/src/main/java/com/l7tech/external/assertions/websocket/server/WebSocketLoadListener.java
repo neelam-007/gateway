@@ -6,6 +6,7 @@ import com.l7tech.external.assertions.websocket.WebSocketUtils;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.GenericEntity;
 import com.l7tech.policy.GenericEntityHeader;
 import com.l7tech.server.DefaultKey;
@@ -13,17 +14,20 @@ import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.event.EntityInvalidationEvent;
-import com.l7tech.server.event.admin.Created;
-import com.l7tech.server.event.admin.Deleted;
 import com.l7tech.server.event.system.LicenseEvent;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.service.FirewallRulesManager;
+import com.l7tech.server.transport.TransportAdminHelper;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.util.ExceptionUtils;
-import org.eclipse.jetty.server.*;
+import org.eclipse.jetty.server.HttpConfiguration;
+import org.eclipse.jetty.server.HttpConnectionFactory;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
@@ -55,6 +59,7 @@ public class WebSocketLoadListener {
     private static DefaultKey defaultKey;
     private static FirewallRulesManager fwManager;
     private static LicenseManager licenseManager;
+    private static TransportAdminHelper transportAdminHelper;
 
     private static boolean isStarted = false;
 
@@ -69,6 +74,8 @@ public class WebSocketLoadListener {
         defaultKey = context.getBean("defaultKey", DefaultKey.class);
         fwManager = context.getBean("ssgFirewallManager", FirewallRulesManager.class);
         licenseManager = context.getBean("licenseManager", LicenseManager.class);
+        final DefaultKey defaultKey = context.getBean("defaultKey", DefaultKey.class);
+        transportAdminHelper = new TransportAdminHelper(defaultKey);
 
         init(context);
 
@@ -86,43 +93,38 @@ public class WebSocketLoadListener {
                             logger.log(Level.WARNING, "Unable to initialize WebSocket servers", e);
                         }
                     }
-                } else if (event instanceof Created) {
-                    if (((Created) event).getEntity() instanceof GenericEntity) {
-                        GenericEntity entity = (GenericEntity) ((Created) event).getEntity();
-                        if (entity.getEntityClassName().equals(WebSocketConnectionEntity.class.getName())) {
-                            logger.log(Level.INFO, "Created WebSocket Service " + entity.getId());
-                            try {
-                                start(WebSocketUtils.asConcreteEntity(entity, WebSocketConnectionEntity.class), true);
-                            } catch (FindException e) {
-                                logger.log(Level.WARNING, "Unable to find WebSocket Connection Entity");
-                            }
-                        }
-                    }
                 } else if (event instanceof EntityInvalidationEvent) {
                     if (event.getSource() instanceof GenericEntity) {
                         GenericEntity entity = (GenericEntity) event.getSource();
                         if (entity.getEntityClassName().equals(WebSocketConnectionEntity.class.getName())) {
-                            if (((EntityInvalidationEvent) event).getEntityOperations()[0] == 'U') {
-                                logger.log(Level.INFO, "Changed WebSocket Service " + entity.getId());
-                                try {
-                                    restart(WebSocketUtils.asConcreteEntity(entity, WebSocketConnectionEntity.class));
-                                } catch (FindException e) {
-                                    logger.log(Level.WARNING, "Unable to find WebSocket Connection Entity");
-                                }
-                            }
-                        }
-                    }
-                } else if (event instanceof Deleted) {
-                    if (((Deleted) event).getEntity() instanceof GenericEntity) {
-                        GenericEntity entity = (GenericEntity) ((Deleted) event).getEntity();
-                        if (entity.getEntityClassName().equals(WebSocketConnectionEntity.class.getName())) {
-                            logger.log(Level.INFO, "Changed WebSocket Service " + entity.getId());
-                            Set<WebSocketConnectionEntity> connections = servers.keySet();
 
-                            for (WebSocketConnectionEntity connection : connections) {
-                                if (connection.getId().equals(entity.getId())) {
-                                    connection.setRemovePortFlag(true);
-                                    stop(connection);
+                            final char[] ops = ((EntityInvalidationEvent) event).getEntityOperations();
+                            final Goid[] goids = ((EntityInvalidationEvent) event).getEntityIds();
+                            for (int i = 0; i < goids.length; ++i) {
+                                if (ops[i] == EntityInvalidationEvent.CREATE) {
+                                    logger.log(Level.INFO, "Created WebSocket Service " + entity.getId());
+                                    try {
+                                        start(WebSocketUtils.asConcreteEntity(entity, WebSocketConnectionEntity.class), true);
+                                    } catch (FindException e) {
+                                        logger.log(Level.WARNING, "Unable to find WebSocket Connection Entity");
+                                    }
+                                } else if (ops[i] == EntityInvalidationEvent.UPDATE) {
+                                    logger.log(Level.INFO, "Changed WebSocket Service " + entity.getId());
+                                    try {
+                                        restart(WebSocketUtils.asConcreteEntity(entity, WebSocketConnectionEntity.class));
+                                    } catch (FindException e) {
+                                        logger.log(Level.WARNING, "Unable to find WebSocket Connection Entity");
+                                    }
+                                } else if (ops[i] == EntityInvalidationEvent.DELETE) {
+                                    logger.log(Level.INFO, "Changed WebSocket Service " + entity.getId());
+                                    Set<WebSocketConnectionEntity> connections = servers.keySet();
+
+                                    for (WebSocketConnectionEntity connection : connections) {
+                                        if (connection.getId().equals(entity.getId())) {
+                                            connection.setRemovePortFlag(true);
+                                            stop(connection);
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -330,5 +332,10 @@ public class WebSocketLoadListener {
         }
 
         return inboundQueuedThreadPool;
+    }
+
+    @NotNull
+    public static String[] getDefaultCipherSuiteNames() {
+        return transportAdminHelper.getDefaultCipherSuiteNames();
     }
 }

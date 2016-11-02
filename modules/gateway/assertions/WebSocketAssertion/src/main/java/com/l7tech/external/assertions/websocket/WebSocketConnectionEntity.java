@@ -34,6 +34,8 @@ public class WebSocketConnectionEntity extends GenericEntity {
     private String inboundPrivateKeyAlias;
     private ClientAuthType inboundClientAuth;
     private boolean removePortFlag;
+    private String[] inboundTlsProtocol;
+    private String[] inboundCipherSuite;
 
 
     //Connection Fields
@@ -50,7 +52,8 @@ public class WebSocketConnectionEntity extends GenericEntity {
     private String outboundPrivateKeyAlias;
     private boolean outboundClientAuthentication;
     private boolean loopback = true;
-
+    private String[] outboundTlsProtocolString;
+    private String[] outboundCipherSuiteString;
 
     public boolean isLoopback() {
         return loopback;
@@ -231,4 +234,38 @@ public class WebSocketConnectionEntity extends GenericEntity {
     public void setConnectionPolicyGOID(Goid connectionPolicyGOID) {
         this.connectionPolicyGOID = connectionPolicyGOID;
     }
+
+    public String[] getInboundTlsProtocol() {
+        return inboundTlsProtocol;
+    }
+
+    public void setInboundTlsProtocol(String[] inboundTlsProtocol) {
+        this.inboundTlsProtocol = inboundTlsProtocol;
+    }
+
+    public String[] getInboundCipherSuite() {
+        return inboundCipherSuite;
+    }
+
+    public void setInboundCipherSuite(String[] inboundCipherSuite) {
+        this.inboundCipherSuite = inboundCipherSuite;
+    }
+
+    public String[] getOutboundTlsProtocolString() {
+        return outboundTlsProtocolString;
+    }
+
+    public void setOutboundTlsProtocolString(String[] outboundTlsProtocolString) {
+        this.outboundTlsProtocolString = outboundTlsProtocolString;
+    }
+
+    public String[] getOutboundCipherSuiteString() {
+        return outboundCipherSuiteString;
+    }
+
+    public void setOutboundCipherSuiteString(String[] outboundCipherSuiteString) {
+        this.outboundCipherSuiteString = outboundCipherSuiteString;
+    }
+
+
 }

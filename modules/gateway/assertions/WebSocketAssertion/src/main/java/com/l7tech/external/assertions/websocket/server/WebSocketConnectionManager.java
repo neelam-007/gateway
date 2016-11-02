@@ -20,7 +20,6 @@ import org.eclipse.jetty.websocket.common.extensions.compress.PerMessageDeflateE
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
-import java.security.Provider;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.Map;
@@ -50,7 +49,7 @@ public class WebSocketConnectionManager {
 
     public static synchronized void createConnectionManager(SsgKeyStoreManager keyStoreManager, TrustManager trustManager, SecureRandom secureRandom, DefaultKey defaultKey) throws IllegalStateException, WebSocketConnectionManagerException {
 
-        if (instance == null ) {
+        if (instance == null) {
             instance = new WebSocketConnectionManager(keyStoreManager, trustManager, secureRandom, defaultKey);
         } else {
             logger.log(Level.WARNING, "Attempt to create a WebSocketConnectionManager that is already initialized");
@@ -116,7 +115,6 @@ public class WebSocketConnectionManager {
 
         if (outboundWebSocketClientMap == null) {
             outboundWebSocketClientMap = new ConcurrentHashMap<>();
-
             Map<String, WebSocketClient> outboundWebSocketClientMapPrev = handlerIdWebSocketClientMapMap.putIfAbsent(handlerId, outboundWebSocketClientMap);
             if (outboundWebSocketClientMapPrev != null) {
                 outboundWebSocketClientMap = outboundWebSocketClientMapPrev;
@@ -312,36 +310,51 @@ public class WebSocketConnectionManager {
             tm = trustManager;
         }
 
-        Provider provider = JceProvider.getInstance().getProviderFor("SSLContext.TLSv1");
-        SSLContext sslContext = SSLContext.getInstance("TLSv1", provider);
+        SSLContext sslContext = SSLContext.getInstance("TLS");
+        JceProvider.getInstance().prepareSslContext(sslContext);
         sslContext.init(keyManagers, new TrustManager[]{tm}, secureRandom);
 
         return sslContext;
     }
 
     public SslContextFactory getInboundSslCtxFactory(WebSocketConnectionEntity webSocketConnectionEntity) throws Exception {
-        SslContextFactory sslCtxFactory = new SslContextFactory();
-        sslCtxFactory.setSslContext(createSslContext(webSocketConnectionEntity, WebSocketConstants.ConnectionType.Inbound));
-        sslCtxFactory.setTrustAll(true);
+        SslContextFactory sslContextFactory = new SslContextFactory();
+
+        sslContextFactory.setExcludeCipherSuites();
+        sslContextFactory.setExcludeProtocols();
+
+        if (webSocketConnectionEntity.getInboundCipherSuite() == null) {
+            sslContextFactory.setIncludeCipherSuites(WebSocketLoadListener.getDefaultCipherSuiteNames());
+        } else {
+            sslContextFactory.setIncludeCipherSuites(webSocketConnectionEntity.getInboundCipherSuite());
+        }
+
+        if (webSocketConnectionEntity.getInboundTlsProtocol() == null) {
+            sslContextFactory.setIncludeProtocols(WebSocketConstants.DEFAULT_TLS_PROTOCOL_LIST);
+        } else {
+            sslContextFactory.setIncludeProtocols(webSocketConnectionEntity.getInboundTlsProtocol());
+        }
+
+        sslContextFactory.setSslContext(createSslContext(webSocketConnectionEntity, WebSocketConstants.ConnectionType.Inbound));
+        sslContextFactory.setTrustAll(true);
         switch (webSocketConnectionEntity.getInboundClientAuth()) {
             case NONE:
-                sslCtxFactory.setNeedClientAuth(false);
-                sslCtxFactory.setWantClientAuth(false);
+                sslContextFactory.setNeedClientAuth(false);
+                sslContextFactory.setWantClientAuth(false);
                 break;
             case OPTIONAL:
-                sslCtxFactory.setNeedClientAuth(false);
-                sslCtxFactory.setWantClientAuth(true);
+                sslContextFactory.setNeedClientAuth(false);
+                sslContextFactory.setWantClientAuth(true);
                 break;
             case REQUIRED:
-                sslCtxFactory.setNeedClientAuth(true);
-                sslCtxFactory.setWantClientAuth(true);
+                sslContextFactory.setNeedClientAuth(true);
+                sslContextFactory.setWantClientAuth(true);
                 break;
             default:
                 throw new IllegalStateException("The ClientAuthType was not handled. Could not configure and return the SslContextFactory.");
         }
 
-
-        return sslCtxFactory;
+        return sslContextFactory;
     }
 
     private SslContextFactory getOutboundSslCtxFactory(WebSocketConnectionEntity webSocketConnectionEntity) throws Exception {
@@ -351,8 +364,25 @@ public class WebSocketConnectionManager {
         if (sslContextFactoryPrev != null) {
             sslContextFactory = sslContextFactoryPrev;
         }
-        sslContextFactory.setSslContext(createSslContext(webSocketConnectionEntity, WebSocketConstants.ConnectionType.Outbound));
+        final SSLContext sslContext = createSslContext(webSocketConnectionEntity, WebSocketConstants.ConnectionType.Outbound);
+        sslContextFactory.setSslContext(sslContext);
+
+        sslContextFactory.setExcludeProtocols();
+        sslContextFactory.setExcludeCipherSuites();
+
+        if (webSocketConnectionEntity.getOutboundCipherSuiteString() == null) {
+            sslContextFactory.setIncludeCipherSuites(WebSocketLoadListener.getDefaultCipherSuiteNames());
+        } else {
+            sslContextFactory.setIncludeCipherSuites(webSocketConnectionEntity.getOutboundCipherSuiteString());
+        }
+
+        if (webSocketConnectionEntity.getOutboundTlsProtocolString() == null) {
+            sslContextFactory.setIncludeProtocols(WebSocketConstants.DEFAULT_TLS_PROTOCOL_LIST);
+        } else {
+            sslContextFactory.setIncludeProtocols(webSocketConnectionEntity.getOutboundTlsProtocolString());
+        }
 
         return sslContextFactory;
     }
+
 }
