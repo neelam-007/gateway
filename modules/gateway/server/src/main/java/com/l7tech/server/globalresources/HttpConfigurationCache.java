@@ -17,6 +17,7 @@ import com.l7tech.server.event.EntityClassEvent;
 import com.l7tech.server.security.keystore.KeystoreFile;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.security.password.SecurePasswordManager;
+import com.l7tech.server.transport.http.DefaultHttpCiphers;
 import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.util.*;
 import org.springframework.beans.factory.InitializingBean;
@@ -38,6 +39,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 /**
  * Cache for HTTP Configuration data
@@ -236,6 +238,7 @@ public class HttpConfigurationCache implements PostStartupApplicationListener, I
     private final AtomicReference<SSLSocketFactory> defaultKeySSLSocketFactory = new AtomicReference<SSLSocketFactory>();
     private final Map<SslSocketFactoryKey,SSLSocketFactory> sslSocketFactoryMap = new ConcurrentHashMap<SslSocketFactoryKey,SSLSocketFactory>();
     private final AtomicReference<HttpConfig> configurationRef = new AtomicReference<HttpConfig>();
+    private static final Pattern PAT_COMMA_WITH_OPTIONAL_WHITESPACE = Pattern.compile("\\s*,\\s*");
 
     private void loadConfiguration() {
         logger.config( "(Re)Loading HTTP configuration." );
@@ -328,10 +331,15 @@ public class HttpConfigurationCache implements PostStartupApplicationListener, I
                 final String tlsVersion = httpConfiguration.getTlsVersion();
                 final String tlsCipherSuites = httpConfiguration.getTlsCipherSuites();
                 String[] tlsVersionArray = tlsVersion == null ? null : new String[] { tlsVersion };
-                String[] tlsCipherSuitesArray = tlsCipherSuites == null ? null : tlsCipherSuites.trim().split("\\s*,\\s*");
+                String[] tlsCipherSuitesArray = tlsCipherSuites == null ? null : PAT_COMMA_WITH_OPTIONAL_WHITESPACE.split(tlsCipherSuites);
                 sslSocketFactory = SSLSocketFactoryWrapper.wrapAndSetTlsVersionAndCipherSuites(sslSocketFactory, tlsVersionArray, tlsCipherSuitesArray);
                 sslSocketFactoryMap.put( key, sslSocketFactory );
-            } 
+            } else if (httpConfiguration.getTlsCipherSuites() == null) {
+                final String[] tlsVersionArray = httpConfiguration.getTlsVersion() == null ? null : PAT_COMMA_WITH_OPTIONAL_WHITESPACE.split(httpConfiguration.getTlsVersion().trim());
+                String[] tlsCipherSuitesArray = PAT_COMMA_WITH_OPTIONAL_WHITESPACE.split(DefaultHttpCiphers.getRecommendedCiphers().trim());
+                sslSocketFactory = SSLSocketFactoryWrapper.wrapAndSetTlsVersionAndCipherSuites(sslSocketFactory, tlsVersionArray, tlsCipherSuitesArray);
+                sslSocketFactoryMap.put( key, sslSocketFactory );
+            }
         }
 
         return sslSocketFactory;

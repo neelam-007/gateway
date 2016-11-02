@@ -218,7 +218,7 @@ public class PropertiesConfigurationBeanProvider implements ConfigurationBeanPro
     private final boolean preserveExtraProperties;
 
     private String unprefix( final String name ) {
-        String cleanName = null;
+        String cleanName = name;
 
         if  ( name.startsWith( propertyPrefix ) ) {
             cleanName = name.substring(propertyPrefix.length());

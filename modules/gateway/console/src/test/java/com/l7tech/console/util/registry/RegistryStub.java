@@ -413,6 +413,11 @@ public class RegistryStub extends Registry {
             }
 
             @Override
+            public String[] getVisibleCipherSuiteNames() {
+                return new String[0];
+            }
+
+            @Override
             public InetAddress[] getAvailableBindAddresses() {
                 return null;
             }

@@ -3,6 +3,7 @@ package com.l7tech.console.util;
 import com.l7tech.console.panels.CipherSuiteListModel;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.Functions;
+import com.l7tech.util.JceUtil;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
@@ -16,6 +17,16 @@ import java.util.*;
  * Utilities for GUI controls that configure TLS cipher suites.
  */
 public final class CipherSuiteGuiUtil {
+
+    // This is the signalling cipher suite value (SCSV) that means the same thing as the renegotiation extension
+    // but is more interoperable since it is communicated as a pseudo-cipher suite number
+    // (which every implementation of TLS ever shipped manages to ignore unknown ciphers, while many will choke on unknown extensions):
+    // https://tools.ietf.org/html/rfc5746 This SCSV is included to notify the the server that this handshake is not intended to be a renegotiation,
+    // so that if an attacker attempts to reply the handshake in order to perform a renegotiation attack, the serve will realize
+    // something is wrong and the jig will be up.
+    public static final String TLS_EMPTY_RENEGOTIATION_INFO_SCSV = "TLS_EMPTY_RENEGOTIATION_INFO_SCSV";
+    private static List defaultCipherList;
+    private static List visibleCipherList;
 
     private CipherSuiteGuiUtil() {}
 
@@ -158,8 +169,9 @@ public final class CipherSuiteGuiUtil {
             }
         }
 
-        if ( outbound )
-            ret.add( "TLS_EMPTY_RENEGOTIATION_INFO_SCSV" );
+        // Always include this for outbound TLS to enhance interoperability.
+        if ( outbound && !ret.contains(TLS_EMPTY_RENEGOTIATION_INFO_SCSV) )
+            ret.add(TLS_EMPTY_RENEGOTIATION_INFO_SCSV);
 
         return ret.toArray(new String[ret.size()]);
     }
@@ -176,11 +188,10 @@ public final class CipherSuiteGuiUtil {
      *         in new connectors).  False if this cipher suite should be hidden in the UI.
      */
     public static boolean cipherSuiteShouldBeVisible(String cipherSuiteName) {
-        return !cipherSuiteName.contains("_WITH_NULL_") && !cipherSuiteName.contains("_anon_") && !cipherSuiteName.contains("_EXPORT_") && (
-                cipherSuiteName.contains("_RSA_") ||
-                cipherSuiteName.contains("_ECDSA_") ||
-                cipherSuiteName.contains("_SCSV")
-        );
+        if (getVisibleCipherList() != null) {
+            return getVisibleCipherList().contains(cipherSuiteName);
+        }
+        return false;
     }
 
     /**
@@ -192,10 +203,25 @@ public final class CipherSuiteGuiUtil {
      * @return true if this cipher suite should be checked by default in the UI.
      */
     public static boolean cipherSuiteShouldBeCheckedByDefault(String cipherSuiteName) {
-        return cipherSuiteShouldBeVisible(cipherSuiteName) &&
-                !cipherSuiteName.contains( "_WITH_RC4_" ) &&
-                !cipherSuiteName.contains( "_WITH_DES_" ) &&
-                !cipherSuiteName.equals( "TLS_EMPTY_RENEGOTIATION_INFO_SCSV" );
+        if (getDefaultCipherList() != null) {
+            return getDefaultCipherList().contains(cipherSuiteName);
+        }
+        return false;
+    }
+
+    private static List getDefaultCipherList() {
+        if (defaultCipherList == null && Registry.getDefault().isAdminContextPresent()) {
+            defaultCipherList = Arrays.asList(Registry.getDefault().getTransportAdmin().getDefaultCipherSuiteNames());
+
+        }
+        return defaultCipherList;
+    }
+
+    private static List getVisibleCipherList() {
+        if (visibleCipherList == null && Registry.getDefault().isAdminContextPresent()) {
+            visibleCipherList = Arrays.asList(Registry.getDefault().getTransportAdmin().getVisibleCipherSuiteNames());
+        }
+        return visibleCipherList;
     }
 
     /**

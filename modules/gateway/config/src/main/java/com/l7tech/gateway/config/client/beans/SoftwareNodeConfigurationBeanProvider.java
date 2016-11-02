@@ -28,8 +28,7 @@ public class SoftwareNodeConfigurationBeanProvider extends NodeConfigurationBean
 
     public SoftwareNodeConfigurationBeanProvider( final File propertiesFile ) {
         super(new NodeManagementApiFactory());
-        //DE211839 - property need not prefix with "node."
-        propertiesConfig = new PropertiesConfigurationBeanProvider( propertiesFile, "", true );
+        propertiesConfig = new PropertiesConfigurationBeanProvider( propertiesFile, "node.", true );
     }
 
     @Override

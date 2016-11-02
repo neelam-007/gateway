@@ -50,7 +50,9 @@ import java.util.logging.Logger;
 @SuppressWarnings({"WeakerAccess", "unused"})
 public class SimpleGatewayMetricExtractor extends GatewayMetricsListener {
     private static final Logger logger = Logger.getLogger(SimpleGatewayMetricExtractor.class.getName());
-    private static final int FLUSH_PERIOD = 30000;
+    private static final int FLUSH_FIRST_RUN_DELAY = 1000;
+    // our flush timer interval of 1s, which pushes enqueued latencies into the log subsystem
+    private static final int FLUSH_INTERVAL = 1000;
 
     private static SimpleGatewayMetricExtractor instance = null;
     private final GatewayMetricsPublisher gatewayMetricsEventsPublisher;
@@ -172,12 +174,14 @@ public class SimpleGatewayMetricExtractor extends GatewayMetricsListener {
 
 
     private SimpleGatewayMetricExtractor(final ApplicationContext applicationContext) {
+        //register this assertion to the publisher
         gatewayMetricsEventsPublisher = applicationContext.getBean("gatewayMetricsPublisher", GatewayMetricsPublisher.class);
         gatewayMetricsEventsPublisher.addListener(this);
 
         final GenericEntityManager gem = applicationContext.getBean("genericEntityManager", GenericEntityManager.class);
         entityManager = gem.getEntityManager(SimpleGatewayMetricExtractorEntity.class);
 
+        //set up the service filter by accessing the Generic Entity
         final ApplicationEventProxy applicationEventProxy = applicationContext.getBean("applicationEventProxy", ApplicationEventProxy.class);
         applicationEventProxy.addApplicationListener(new ApplicationListener() {
             @Override
@@ -201,6 +205,7 @@ public class SimpleGatewayMetricExtractor extends GatewayMetricsListener {
             }
         });
 
+        //create task to flush metrics for processing
         Background.scheduleRepeated(
                 flushEnqueuedLatenciesTask = new TimerTask() {
                     @Override
@@ -208,8 +213,8 @@ public class SimpleGatewayMetricExtractor extends GatewayMetricsListener {
                         flushEnqueuedLatencies();
                     }
                 },
-                FLUSH_PERIOD,
-                FLUSH_PERIOD
+                FLUSH_FIRST_RUN_DELAY,
+                FLUSH_INTERVAL
         );
     }
 
@@ -261,7 +266,7 @@ public class SimpleGatewayMetricExtractor extends GatewayMetricsListener {
         // could ne NULL
         // edge case when there is a global message-received and the service could NOT be resolved (e.g. the user hit non-existing url)
         // in that case the global message-received is executed (followed with assertion finished for its assertions)
-        // but since there is no service found for the URL the serfice finished will NOT be attached to any
+        // but since there is no service found for the URL the service finished will NOT be attached to any
         @Nullable
         final PublishedService service = pec.getService();
         final String serviceNameFilter = serviceNameFilterRef.get();
@@ -369,7 +374,7 @@ public class SimpleGatewayMetricExtractor extends GatewayMetricsListener {
             rwLatencyHashLock.writeLock().unlock();
         }
         logLatencies(drainedLatencies);
-        drainedLatencies.clear(); // just in case
+        drainedLatencies.clear();
     }
 
     private void drainLatencies(
@@ -478,9 +483,11 @@ public class SimpleGatewayMetricExtractor extends GatewayMetricsListener {
 
     private void destroy() throws Exception {
         try {
+            //unsubscribe from publisher
             if (gatewayMetricsEventsPublisher != null)
                 gatewayMetricsEventsPublisher.removeListener(this);
         } finally {
+            //cancel the background task and clear all queues
             Background.cancel(flushEnqueuedLatenciesTask);
             flushEnqueuedLatencies();
             msgRcvLatencyHash.clear();
