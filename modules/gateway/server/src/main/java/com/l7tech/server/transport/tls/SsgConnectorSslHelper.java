@@ -7,6 +7,7 @@ import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.transport.TransportModule;
+import com.l7tech.server.transport.http.DefaultHttpCiphers;
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.CachedCallable;
 import com.l7tech.util.ConfigFactory;
@@ -90,10 +91,11 @@ public class SsgConnectorSslHelper {
 
         // Enable all ciphers suites that are both supported by this SSLContext and enabled for the SsgConnector
         String desiredCiphersString = c.getProperty(SsgConnector.PROP_TLS_CIPHERLIST);
-        String[] desiredCiphers = desiredCiphersString != null && desiredCiphersString.trim().length() >= 1
-                ? SPLITTER.split(desiredCiphersString)
-                : sslServerSocketFactory.getDefaultCipherSuites();
-        enabledCiphers = ArrayUtils.intersection(desiredCiphers, sslServerSocketFactory.getSupportedCipherSuites());
+        if (desiredCiphersString != null && desiredCiphersString.trim().length() >= 1) {
+            enabledCiphers = SPLITTER.split(desiredCiphersString);
+        } else {
+            enabledCiphers = SPLITTER.split(DefaultHttpCiphers.getRecommendedCiphers());
+        }
         allowUnsafeLegacyRenegotiation = Boolean.valueOf(getStringProperty(SsgConnector.PROP_TLS_ALLOW_UNSAFE_LEGACY_RENEGOTIATION, "false"));
 
         try {
