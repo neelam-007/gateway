@@ -106,12 +106,19 @@ public class EvaluateJsonPathExpressionPropertiesDialog extends AssertionPropert
                             JsonPathEvaluator.valueOf(cbEvaluator.getSelectedItem().toString()), 
                             testInputArea.getText().trim(), textFieldExpression.getText().trim());
                     StringBuilder sb = new StringBuilder("found = ").append(result.isFound()).append("\r\n")
-                            .append("count = ").append(result.getCount()).append("\r\n\r\nResult(s):\r\n");
+                            .append("count = ").append(result.getCount());
                     List<String> results = result.getResults();
-                    for(int i = 0; i < results.size(); i++){
-                        sb.append((i + 1)).append(": ").append(results.get(i)).append("\r\n");
+                    if (result.isFound()) {
+                        sb.append("\r\n\r\nResult(s):\r\n");
+                        if (results == null || results.size() == 0) {
+                            sb.append("[]");
+                        } else {
+                            for (int i = 0; i < results.size(); i++) {
+                                sb.append((i + 1)).append(": ").append(results.get(i)).append("\r\n");
+                            }
+                            sb = sb.delete(sb.length() - 2, sb.length());
+                        }
                     }
-                    sb = sb.delete(sb.length() - 2, sb.length());
                     testOutputArea.setText(sb.toString());
                 } catch (EvaluateJsonPathExpressionAdmin.EvaluateJsonPathExpressionTestException e1) {
                     testOutputArea.setText(e1.getMessage());

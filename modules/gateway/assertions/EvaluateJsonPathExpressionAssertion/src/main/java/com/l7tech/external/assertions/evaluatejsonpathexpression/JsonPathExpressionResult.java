@@ -1,7 +1,6 @@
 package com.l7tech.external.assertions.evaluatejsonpathexpression;
 
 import java.io.Serializable;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -12,16 +11,14 @@ import java.util.List;
 public class JsonPathExpressionResult implements Serializable {
 
     private final List<String> results;
-    private final boolean isFound;
 
     /**
      * Construct a new JsonPathExpressionResult.
      *
      * @param results the results.
      */
-    public JsonPathExpressionResult(final List<String> results, boolean isFound) {
-        this.isFound = isFound;
-        this.results = results == null ? Collections.singletonList("") : results;
+    public JsonPathExpressionResult(final List<String> results) {
+        this.results = results;
     }
 
     /**
@@ -29,8 +26,7 @@ public class JsonPathExpressionResult implements Serializable {
      * @return true if a result was found, false otherwise.
      */
     public boolean isFound() {
-        return isFound;
-//        return (results != null && !results.isEmpty());
+        return results != null;
     }
 
     /**

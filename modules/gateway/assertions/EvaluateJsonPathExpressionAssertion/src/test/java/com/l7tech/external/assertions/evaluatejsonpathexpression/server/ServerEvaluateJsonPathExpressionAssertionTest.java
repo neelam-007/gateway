@@ -12,8 +12,10 @@ import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.VariableNameSyntaxException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.test.BugId;
 import net.minidev.json.JSONArray;
 import net.minidev.json.parser.JSONParser;
+import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -44,7 +46,8 @@ public class ServerEvaluateJsonPathExpressionAssertionTest {
             "    \"bicycle\": {\n" +
             "      \"color\": \"red\",\n" +
             "      \"price\": 19.95\n" +
-            "    }\n" +
+            "    },\n" +
+            "    \"members\": []\n" +
             "  }\n" +
             "}";
 
@@ -202,13 +205,9 @@ public class ServerEvaluateJsonPathExpressionAssertionTest {
             //check results
             Assert.assertEquals(false, pec.getVariable("jsonPath.found"));
             Assert.assertEquals(0, pec.getVariable("jsonPath.count"));
-            try {
-                pec.getVariable("jsonPath.result");
-                pec.getVariable("jsonPath.results");
-                Assert.fail("Should have failed with NoSuchVariableException!");
-            } catch (NoSuchVariableException e) {
 
-            }
+            doTestForNonExistingContextVar("jsonPath.result");
+            doTestForNonExistingContextVar("jsonPath.results");
         } catch (Exception e) {
             Assert.fail("Test JsonPath failed: " + e.getMessage());
         }
@@ -221,17 +220,11 @@ public class ServerEvaluateJsonPathExpressionAssertionTest {
             assertion.setExpression("$.book[2");
             final AssertionStatus status = serverAssertion.checkRequest(pec);
             Assert.assertEquals(AssertionStatus.FAILED, status);
-
-            try {
-                //check results - these vars shouldn't exist
-                pec.getVariable("jsonPath.found");
-                pec.getVariable("jsonPath.count");
-                pec.getVariable("jsonPath.result");
-                pec.getVariable("jsonPath.results");
-                Assert.fail("Should have failed with NoSuchVariableException!");
-            } catch (NoSuchVariableException e) {
-
-            }
+            //check results - these vars shouldn't exist
+            doTestForNonExistingContextVar("jsonPath.found");
+            doTestForNonExistingContextVar("jsonPath.count");
+            doTestForNonExistingContextVar("jsonPath.result");
+            doTestForNonExistingContextVar("jsonPath.results");
         } catch (Exception e) {
             Assert.fail("Test JsonPath failed: " + e.getMessage());
         }
@@ -254,16 +247,12 @@ public class ServerEvaluateJsonPathExpressionAssertionTest {
             assertion.setExpression("$.foo");
             final AssertionStatus status = serverAssertion.checkRequest(pec);
             Assert.assertEquals(AssertionStatus.FAILED, status);
-            try {
-                //check results - these vars shouldn't exist
-                pec.getVariable("jsonPath.found");
-                pec.getVariable("jsonPath.count");
-                pec.getVariable("jsonPath.result");
-                pec.getVariable("jsonPath.results");
-                Assert.fail("Should have failed with NoSuchVariableException!");
-            } catch (NoSuchVariableException e) {
 
-            }
+            //check results - these vars shouldn't exist
+            doTestForNonExistingContextVar("jsonPath.found");
+            doTestForNonExistingContextVar("jsonPath.count");
+            doTestForNonExistingContextVar("jsonPath.result");
+            doTestForNonExistingContextVar("jsonPath.results");
         } catch (Exception e) {
             Assert.fail("Error initializing test");
         }
@@ -302,15 +291,10 @@ public class ServerEvaluateJsonPathExpressionAssertionTest {
             Assert.assertEquals(AssertionStatus.FAILED, status);
 
             //check results
-            try {
-                pec.getVariable("jsonPath.found");
-                pec.getVariable("jsonPath.count");
-                pec.getVariable("jsonPath.result");
-                pec.getVariable("jsonPath.results");
-                Assert.fail("Should have failed with NoSuchVariableException!");
-            } catch (NoSuchVariableException e) {
-
-            }
+            doTestForNonExistingContextVar("jsonPath.found");
+            doTestForNonExistingContextVar("jsonPath.count");
+            doTestForNonExistingContextVar("jsonPath.result");
+            doTestForNonExistingContextVar("jsonPath.results");
         } catch (VariableNameSyntaxException e) {
 
         } catch (Exception e) {
@@ -336,6 +320,41 @@ public class ServerEvaluateJsonPathExpressionAssertionTest {
             }
         } catch (Exception e) {
             Assert.fail("Test JsonPath failed: " + e.getMessage());
+        }
+    }
+
+    @BugId("DE246126")
+    @Test
+    public void testEmptyArray() {
+        try {
+            assertion.setEvaluator("JsonPath");
+            assertion.setExpression("$.store.members");
+            final AssertionStatus status = serverAssertion.checkRequest(pec);
+            Assert.assertEquals(AssertionStatus.NONE, status);
+
+            //check results
+            Assert.assertEquals(true, pec.getVariable("jsonPath.found"));
+            Assert.assertEquals(0, pec.getVariable("jsonPath.count"));
+
+            doTestForNonExistingContextVar("jsonPath.result");
+
+            final Object objects = pec.getVariable("jsonPath.results");
+            Assert.assertThat(objects, Matchers.instanceOf(String[].class));
+            Assert.assertThat((String[]) objects, Matchers.emptyArray());
+        } catch (Exception e) {
+            Assert.fail("Test JsonPath failed: " + e.getMessage());
+        }
+    }
+
+    private void doTestForNonExistingContextVar(final String varName) {
+        Assert.assertNotNull(varName);
+        Assert.assertThat(varName, Matchers.not(Matchers.isEmptyOrNullString()));
+
+        try {
+            pec.getVariable("varName");
+            Assert.fail("\"" + varName + "\" should have failed with NoSuchVariableException!");
+        } catch (NoSuchVariableException e) {
+            // ok
         }
     }
 }

@@ -1,9 +1,7 @@
 package com.l7tech.external.assertions.evaluatejsonpathexpression;
 
 import com.jayway.jsonpath.InvalidPathException;
-import com.l7tech.server.config.systemconfig.SysConfigWizardLauncher;
 import net.minidev.json.JSONArray;
-import net.minidev.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,8 +20,6 @@ public enum JsonPathEvaluator implements Evaluator {
     JsonPath {
         @Override
         public JsonPathExpressionResult evaluate(final String source, final String expression) throws EvaluatorException{
-            boolean isFound = false;
-            List<String> results = new ArrayList<String>();
             com.jayway.jsonpath.JsonPath path;
             try{
                 path = com.jayway.jsonpath.JsonPath.compile(expression);
@@ -33,6 +29,7 @@ public enum JsonPathEvaluator implements Evaluator {
             }
             
             try{
+                final List<String> results = new ArrayList<>();
                 Object res = path.read(source, expression);
                 if(res instanceof JSONArray){
                     for(Object o : (JSONArray)res){
@@ -42,7 +39,7 @@ public enum JsonPathEvaluator implements Evaluator {
                 else {
                     results.add(res.toString());
                 }
-                isFound = true;
+                return new JsonPathExpressionResult(results);
             }
             catch (RuntimeException e){
                 //InvalidPathException is thrown when querying for a path that doesn't exist.
@@ -51,9 +48,8 @@ public enum JsonPathEvaluator implements Evaluator {
                 if(!(e instanceof InvalidPathException)){
                     throw new EvaluatorException(e.getMessage());
                 }
-                isFound = false;
             }
-            return new JsonPathExpressionResult(results, isFound);
+            return new JsonPathExpressionResult(null);
         }
     };
 }
