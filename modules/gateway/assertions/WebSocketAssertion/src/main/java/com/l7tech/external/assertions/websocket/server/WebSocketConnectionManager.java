@@ -323,16 +323,16 @@ public class WebSocketConnectionManager {
         sslContextFactory.setExcludeCipherSuites();
         sslContextFactory.setExcludeProtocols();
 
-        if (webSocketConnectionEntity.getInboundCipherSuite() == null) {
+        if (webSocketConnectionEntity.getInboundCipherSuites() == null) {
             sslContextFactory.setIncludeCipherSuites(WebSocketLoadListener.getDefaultCipherSuiteNames());
         } else {
-            sslContextFactory.setIncludeCipherSuites(webSocketConnectionEntity.getInboundCipherSuite());
+            sslContextFactory.setIncludeCipherSuites(webSocketConnectionEntity.getInboundCipherSuites());
         }
 
-        if (webSocketConnectionEntity.getInboundTlsProtocol() == null) {
+        if (webSocketConnectionEntity.getInboundTlsProtocols() == null) {
             sslContextFactory.setIncludeProtocols(WebSocketConstants.DEFAULT_TLS_PROTOCOL_LIST);
         } else {
-            sslContextFactory.setIncludeProtocols(webSocketConnectionEntity.getInboundTlsProtocol());
+            sslContextFactory.setIncludeProtocols(webSocketConnectionEntity.getInboundTlsProtocols());
         }
 
         sslContextFactory.setSslContext(createSslContext(webSocketConnectionEntity, WebSocketConstants.ConnectionType.Inbound));
@@ -370,16 +370,16 @@ public class WebSocketConnectionManager {
         sslContextFactory.setExcludeProtocols();
         sslContextFactory.setExcludeCipherSuites();
 
-        if (webSocketConnectionEntity.getOutboundCipherSuiteString() == null) {
+        if (webSocketConnectionEntity.getOutboundCipherSuites() == null) {
             sslContextFactory.setIncludeCipherSuites(WebSocketLoadListener.getDefaultCipherSuiteNames());
         } else {
-            sslContextFactory.setIncludeCipherSuites(webSocketConnectionEntity.getOutboundCipherSuiteString());
+            sslContextFactory.setIncludeCipherSuites(webSocketConnectionEntity.getOutboundCipherSuites());
         }
 
-        if (webSocketConnectionEntity.getOutboundTlsProtocolString() == null) {
+        if (webSocketConnectionEntity.getOutboundTlsProtocols() == null) {
             sslContextFactory.setIncludeProtocols(WebSocketConstants.DEFAULT_TLS_PROTOCOL_LIST);
         } else {
-            sslContextFactory.setIncludeProtocols(webSocketConnectionEntity.getOutboundTlsProtocolString());
+            sslContextFactory.setIncludeProtocols(webSocketConnectionEntity.getOutboundTlsProtocols());
         }
 
         return sslContextFactory;

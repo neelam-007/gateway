@@ -124,8 +124,8 @@ public class WebSocketConnectionReference extends ExternalReference {
             inboundPrivateKeyAlias = entity.getInboundPrivateKeyAlias();
             inboundPrivateKeyId = entity.getInboundPrivateKeyId();
             inboundSsl = entity.isInboundSsl();
-            inboundTlsCipherSuites = entity.getInboundCipherSuite();
-            inboundTlsProtocols = entity.getInboundTlsProtocol();
+            inboundTlsCipherSuites = entity.getInboundCipherSuites();
+            inboundTlsProtocols = entity.getInboundTlsProtocols();
 
             outboundUrl = entity.getOutboundUrl();
             outboundMaxIdleTime = entity.getOutboundMaxIdleTime();
@@ -135,8 +135,8 @@ public class WebSocketConnectionReference extends ExternalReference {
             outboundSsl = entity.isOutboundSsl();
             outboundClientAuthentication = entity.isOutboundClientAuthentication();
             loopback = entity.isLoopback();
-            outboundTlsCipherSuites = entity.getOutboundCipherSuiteString();
-            outboundTlsProtocols = entity.getOutboundTlsProtocolString();
+            outboundTlsCipherSuites = entity.getOutboundCipherSuites();
+            outboundTlsProtocols = entity.getOutboundTlsProtocols();
 
 
         } catch (FindException e) {
@@ -308,8 +308,8 @@ public class WebSocketConnectionReference extends ExternalReference {
                     entity.setInboundSsl(inboundSsl);
                     entity.setInboundPrivateKeyAlias(inboundPrivateKeyAlias);
                     entity.setInboundPrivateKeyId(inboundPrivateKeyId);
-                    entity.setInboundTlsProtocol(inboundTlsProtocols);
-                    entity.setInboundCipherSuite(inboundTlsCipherSuites);
+                    entity.setInboundTlsProtocols(inboundTlsProtocols);
+                    entity.setInboundCipherSuites(inboundTlsCipherSuites);
 
                     entity.setOutboundUrl(outboundUrl);
                     entity.setOutboundMaxIdleTime(outboundMaxIdleTime);
@@ -318,8 +318,8 @@ public class WebSocketConnectionReference extends ExternalReference {
                     entity.setOutboundPrivateKeyId(outboundPrivateKeyId);
                     entity.setOutboundPrivateKeyAlias(outboundPrivateKeyAlias);
                     entity.setOutboundClientAuthentication(outboundClientAuthentication);
-                    entity.setOutboundTlsProtocolString(outboundTlsProtocols);
-                    entity.setOutboundCipherSuiteString(outboundTlsCipherSuites);
+                    entity.setOutboundTlsProtocols(outboundTlsProtocols);
+                    entity.setOutboundCipherSuites(outboundTlsCipherSuites);
 
                     if (getEntityManager(finder).findByPrimaryKey(goid) == null) {
                         getEntityManager(finder).save(entity);

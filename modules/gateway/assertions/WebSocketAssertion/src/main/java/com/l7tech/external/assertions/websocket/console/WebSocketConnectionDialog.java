@@ -220,10 +220,10 @@ public class WebSocketConnectionDialog extends JDialog {
         inboundPrivateKeysComboBox.setEnabled(connection.isInboundSsl());
         outboundPrivateKeysComboBox.setEnabled(connection.isOutboundSsl() && connection.isOutboundClientAuthentication());
         inboundClientAuthenticationComboBox.setEnabled(connection.isInboundSsl());
-        inboundTlsProtocols = connection.getInboundTlsProtocol();
-        inboundTlsCipherSuites = connection.getInboundCipherSuite();
-        outboundTlsProtocols = connection.getOutboundTlsProtocolString();
-        outboundTlsCipherSuites = connection.getOutboundCipherSuiteString();
+        inboundTlsProtocols = connection.getInboundTlsProtocols();
+        inboundTlsCipherSuites = connection.getInboundCipherSuites();
+        outboundTlsProtocols = connection.getOutboundTlsProtocols();
+        outboundTlsCipherSuites = connection.getOutboundCipherSuites();
 
     }
 
@@ -308,20 +308,20 @@ public class WebSocketConnectionDialog extends JDialog {
 
                 connection.setInboundSsl(useInboundSSLCheckBox.isSelected());
                 if (useInboundSSLCheckBox.isSelected()){
-                    connection.setInboundTlsProtocol(inboundTlsProtocols);
-                    connection.setInboundCipherSuite(inboundTlsCipherSuites);
+                    connection.setInboundTlsProtocols(inboundTlsProtocols);
+                    connection.setInboundCipherSuites(inboundTlsCipherSuites);
                 } else {
-                    connection.setInboundTlsProtocol(null);
-                    connection.setInboundCipherSuite(null);
+                    connection.setInboundTlsProtocols(null);
+                    connection.setInboundCipherSuites(null);
                 }
 
                 connection.setOutboundSsl(useOutboundSSLCheckBox.isSelected());
                 if (useOutboundSSLCheckBox.isSelected()) {
-                    connection.setOutboundTlsProtocolString(outboundTlsProtocols);
-                    connection.setOutboundCipherSuiteString(outboundTlsCipherSuites);
+                    connection.setOutboundTlsProtocols(outboundTlsProtocols);
+                    connection.setOutboundCipherSuites(outboundTlsCipherSuites);
                 } else {
-                    connection.setOutboundTlsProtocolString(null);
-                    connection.setOutboundCipherSuiteString(null);
+                    connection.setOutboundTlsProtocols(null);
+                    connection.setOutboundCipherSuites(null);
                 }
 
                 connection.setOutboundClientAuthentication(useClientAuthenticationCheckBox.isSelected());
