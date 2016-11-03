@@ -1,5 +1,8 @@
 Related ticket - US213903/SSG-13822: SPIKE - investigate replacement for Kerberos library in Gateway
 
+Find the modified jaaslounge library here: https://github-isl-01.ca.com/APIM-Tactical/jaaslounge-decoding-2.0-l7p1-SNAPSHOT
+To compile the jar and all of its dependencies, run mvn install.
+
 https://github.com/Serli/JaasLounge
 Jaaslounge originally supported the decryption of Kerberos tickets in two types:
 DES-CBC-MD5

@@ -8,10 +8,18 @@ import sun.security.jgss.GSSManagerImpl;
  */
 public class MockGSSManagerImpl extends GSSManagerImpl {
 
+    private boolean usesRainier;
+
+    public MockGSSManagerImpl(boolean usesRainier) {
+        super();
+        this.usesRainier = usesRainier;
+    }
+
     @Override
     public GSSContext createContext(GSSName gssName, Oid oid, GSSCredential gssCredential, int i) throws GSSException {
         GSSContext context = super.createContext(gssName, oid, gssCredential, i);    //To change body of overridden methods use File | Settings | File Templates.
-        return new MockGSSContext(context);
+        return new MockGSSContext(context, usesRainier);
+
     }
 
     @Override

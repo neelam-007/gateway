@@ -17,8 +17,8 @@ public interface KerberosConfigConstants {
     static final String SYSPROP_KRB5_ENC_TGS = "com.l7tech.server.krb5.tgsenc";
     static final String SYSPROP_KRB5_REFRESH = "com.l7tech.server.krb5.refresh";
 
-    static final String ENCTYPES_TKT_DEFAULT = "rc4-hmac,des-cbc-md5";
-    static final String ENCTYPES_TGS_DEFAULT = "rc4-hmac,des-cbc-md5";
+    static final String ENCTYPES_TKT_DEFAULT = "aes256-cts-hmac-sha1-96,rc4-hmac,des-cbc-md5";
+    static final String ENCTYPES_TGS_DEFAULT = "aes256-cts-hmac-sha1-96,rc4-hmac,des-cbc-md5";
     static final String REFRESH_DEFAULT = "true";
 
     static final String PATH_KEYTAB = "/kerberos.keytab";

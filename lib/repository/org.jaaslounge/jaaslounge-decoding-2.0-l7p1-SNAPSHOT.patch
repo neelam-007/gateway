@@ -1,9 +1,11 @@
-commit 2e1dfde1a3ce7113d57164433e55dfce7f22a607
-Author: Wong <wonch14@wonch14mac1048.ca.com>
-Date:   Thu Oct 20 11:23:14 2016 -0700
-
-    Adding modifications.
-
+diff --git a/README.md b/README.md
+index 2e963bd..7db7afc 100644
+--- a/README.md
++++ b/README.md
+@@ -1,2 +1,2 @@
+-# jaaslounge-decoding-2.0-l7p1
++# jaaslounge-decoding-2.0-l7p1-SNAPSHOT
+ Modified jaaslounge-decoding library to support encryption type AES256.
 diff --git a/pom.xml b/pom.xml
 index 951b777..f81c1cd 100755
 --- a/pom.xml
@@ -486,7 +488,7 @@ index 2a3dd46..a4e3a97 100755
 +}
 \ No newline at end of file
 diff --git a/src/main/java/org/jaaslounge/decoding/pac/Pac.java b/src/main/java/org/jaaslounge/decoding/pac/Pac.java
-index 46a5201..86e6abf 100755
+index 46a5201..82192dd 100755
 --- a/src/main/java/org/jaaslounge/decoding/pac/Pac.java
 +++ b/src/main/java/org/jaaslounge/decoding/pac/Pac.java
 @@ -7,95 +7,127 @@ import java.security.Key;
@@ -608,7 +610,7 @@ index 46a5201..86e6abf 100755
 +        
 +        byte[] checksum = null;
 +        
-+        if (serverSignature.getType() == 15 || serverSignature.getType() == 16)
++        if (serverSignature.getType() == PacConstants.AES128_SIGNATURE_TYPE || serverSignature.getType() == PacConstants.AES256_SIGNATURE_TYPE)
 +        {
 +            try
 +            {
@@ -663,6 +665,19 @@ index 46a5201..86e6abf 100755
 -}
 +}
 \ No newline at end of file
+diff --git a/src/main/java/org/jaaslounge/decoding/pac/PacConstants.java b/src/main/java/org/jaaslounge/decoding/pac/PacConstants.java
+index ee1e8a3..fff594b 100755
+--- a/src/main/java/org/jaaslounge/decoding/pac/PacConstants.java
++++ b/src/main/java/org/jaaslounge/decoding/pac/PacConstants.java
+@@ -16,5 +16,8 @@ public interface PacConstants {
+ 
+     static final int MD5_KRB_SALT = 17;
+     static final int MD5_BLOCK_LENGTH = 64;
++    
++    static final int AES128_SIGNATURE_TYPE = 15;
++    static final int AES256_SIGNATURE_TYPE = 16;
+ 
+ }
 diff --git a/src/test/java/org/jaaslounge/decoding/TestKerberos.java b/src/test/java/org/jaaslounge/decoding/TestKerberos.java
 index f3b17bd..ee9d4a2 100755
 --- a/src/test/java/org/jaaslounge/decoding/TestKerberos.java

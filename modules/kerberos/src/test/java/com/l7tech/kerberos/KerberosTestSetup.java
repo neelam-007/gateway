@@ -20,12 +20,21 @@ public class KerberosTestSetup {
     }
 
     public static void setUp(File tmpDir) throws Exception {
-        client = new KerberosClient() {
-            @Override
-            public GSSManager getGSSManager() {
-                return new MockGSSManagerImpl();
-            }
-        };
+        if (MockKrb5LoginModule.getUsesRainier()) {
+            client = new KerberosClient() {
+                @Override
+                public GSSManager getGSSManager() {
+                    return new MockGSSManagerImpl(true);
+                }
+            };
+        } else {
+            client = new KerberosClient() {
+                @Override
+                public GSSManager getGSSManager() {
+                    return new MockGSSManagerImpl(false);
+                }
+            };
+        }
         setUpLoginConfig(tmpDir);
         SyspropUtil.setProperty(KerberosConfigConstants.SYSPROP_KRB5CFG_PATH, tmpDir.getPath() + File.separator + "krb5.conf");
     }
@@ -53,8 +62,8 @@ public class KerberosTestSetup {
     private static void setUpKrb5Conf(File tmpDir) throws IOException {
         String krb5 = "[libdefaults]\n" +
                 "default_realm = QAWIN2003.SUP\n" +
-                "default_tkt_enctypes = rc4-hmac,des-cbc-md5\n" +
-                "default_tgs_enctypes = rc4-hmac,des-cbc-md5\n" +
+                "default_tkt_enctypes = aes256-cts-hmac-sha1-96,rc4-hmac,des-cbc-md5\n" +
+                "default_tgs_enctypes = aes256-cts-hmac-sha1-96,rc4-hmac,des-cbc-md5\n" +
                 "\n" +
                 "[realms]\n" +
                 "QAWIN2003.COM = {\n" +
