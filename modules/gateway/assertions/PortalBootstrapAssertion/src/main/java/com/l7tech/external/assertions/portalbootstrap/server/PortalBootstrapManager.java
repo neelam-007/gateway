@@ -58,8 +58,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
 import java.security.*;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
+import java.security.cert.*;
+import java.security.cert.Certificate;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -178,7 +178,7 @@ public class PortalBootstrapManager {
 
         final SsgKeyEntry clientCert = prepareClientCert( user );
 
-        X509TrustManager tm = new PinCheckingX509TrustManager( pinBytes );
+        PinChecker pinChecker = new PinChecker( pinBytes );
         X509KeyManager km;
 
         final SSLSocketFactory socketFactory;
@@ -186,7 +186,7 @@ public class PortalBootstrapManager {
             km = new SingleCertX509KeyManager( clientCert.getCertificateChain(), clientCert.getPrivateKey(), clientCert.getAlias() );
 
             SSLContext sslContext = SSLContext.getInstance( "TLS" );
-            sslContext.init( new KeyManager[] { km }, new TrustManager[] { tm }, JceProvider.getInstance().getSecureRandom() );
+            sslContext.init( new KeyManager[] { km }, new TrustManager[] { pinChecker }, JceProvider.getInstance().getSecureRandom() );
             socketFactory = sslContext.getSocketFactory();
         } catch ( NoSuchAlgorithmException | KeyManagementException | UnrecoverableKeyException e ) {
             throw new IOException( e );
@@ -199,6 +199,7 @@ public class PortalBootstrapManager {
 
         try {
             connection = (HttpsURLConnection) url.openConnection();
+            connection.setHostnameVerifier( pinChecker );
             connection.setRequestMethod("POST");
             connection.setSSLSocketFactory(socketFactory);
             connection.setRequestProperty("Content-Type", "application/json");
@@ -565,10 +566,14 @@ public class PortalBootstrapManager {
         }
     }
 
-    private static class PinCheckingX509TrustManager implements X509TrustManager {
+    /**
+     * An X509TrustManager and HostnameVerifier that passes checks if the peer subject cert matches the
+     * specified pin value.
+     */
+    static class PinChecker implements X509TrustManager, HostnameVerifier {
         private final byte[] pinBytes;
 
-        public PinCheckingX509TrustManager( byte[] pinBytes ) {
+        public PinChecker( byte[] pinBytes ) {
             this.pinBytes = pinBytes;
         }
 
@@ -580,8 +585,11 @@ public class PortalBootstrapManager {
         @Override
         public void checkServerTrusted( X509Certificate[] chain, String authType ) throws CertificateException {
             // TODO for now pin required to match server subject cert, rather than some intermediate cert
-            X509Certificate subjectCert = chain[0];
-            byte[] encodedPublicKey = subjectCert.getPublicKey().getEncoded();
+            ensurePinMatches( chain[0] );
+        }
+
+        private void ensurePinMatches( Certificate certificate ) throws CertificateException {
+            byte[] encodedPublicKey = certificate.getPublicKey().getEncoded();
             byte[] keyHash = HexUtils.getSha256Digest( encodedPublicKey );
             if ( !Arrays.equals( keyHash, pinBytes ) )
                 throw new CertificateException( "Server certificate key hash does not match pin value" );
@@ -590,6 +598,26 @@ public class PortalBootstrapManager {
         @Override
         public X509Certificate[] getAcceptedIssuers() {
             return new X509Certificate[0];
+        }
+
+        @Override
+        public boolean verify( String s, SSLSession sslSession ) {
+            try {
+                java.security.cert.Certificate[] serverChain = sslSession.getPeerCertificates();
+                if ( serverChain.length < 1 ) {
+                    logger.warning( "Server cert chain is empty" );
+                    return false;
+                }
+                ensurePinMatches( serverChain[0] );
+                return true;
+
+            } catch ( SSLPeerUnverifiedException e ) {
+                logger.log( Level.WARNING, "Unable to check server cert chain: " + ExceptionUtils.getMessage( e ), ExceptionUtils.getDebugException( e ) );
+                return false;
+            } catch ( CertificateException e ) {
+                logger.log( Level.WARNING, "Pin check failed: " + ExceptionUtils.getMessage( e ), ExceptionUtils.getDebugException( e ) );
+                return false;
+            }
         }
     }
 
