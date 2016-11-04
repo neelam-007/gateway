@@ -5,6 +5,9 @@
 
 package com.l7tech.util;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.Date;
@@ -176,6 +179,169 @@ public class BuildInfo {
     }
 
     /**
+     * Parse a string (which should be in the format X.Y.Z, where X,Y,Z are positive 1 or 2 digit numbers)
+     * into its subparts, where X = major version, Y = minor version, Z = subminor version
+     * Note: (1) for invalid strings, the returned value is null
+     *       (2) for subparts containing leading a leading 0, the leading zero is stripped out
+     *           Example: "01" = "1", "00" = "0"
+     *       (3) X (major version) cannot be "0" or "00".  This is treated as invalid
+     *
+     * @param  versionString  a string representing the version of db or gateway
+     * @return int[]  the string subparts as an int array {X.Y.Z}, where X,Y,Z are positive 1-or-2 digit numbers
+     *                OR null on error (for parsing errors when the version string is in an incorrect format)
+     */
+    @Nullable
+    static int[] parseVersionString(final String versionString) {
+        if (versionString == null || versionString.trim().isEmpty()) {
+            logger.log(Level.WARNING, VERSION_PARSING_ERR_MSG_START + versionString + VERSION_PARSING_ERR_MSG_END);
+            return null;
+        }
+
+        // check if version format matches X.Y.Z where X,Y,Z are positive numbers with max length=2
+        if (!versionString.matches(VERSION_FORMAT_REGEX)) {
+            logger.log(Level.WARNING, VERSION_PARSING_ERR_MSG_START + versionString + VERSION_PARSING_ERR_MSG_END);
+            return null;
+        }
+
+        String[] versionStringSubparts = versionString.split(VERSION_SUBPART_SEPARATOR_REGEX);
+
+        int[] versionSubparts = {0,0,0};
+        for (int i = 0; i < versionStringSubparts.length; i++) {
+            versionSubparts[i] = Integer.parseInt(versionStringSubparts[i]);
+        }
+
+        if (versionSubparts[0] == 0) {
+            logger.log(Level.WARNING, VERSION_PARSING_ERR_MSG_START + versionString + VERSION_PARSING_ERR_MSG_END);
+            return null;
+        }
+        return versionSubparts;
+    }
+
+    /**
+     * Compare 2 versions and return the difference (-1, 0, or +1) between them
+     *
+     * @param v1Subparts  int array in the format {X.Y.Z} where X,Y,Z are positive 2-digit numbers.
+     * @param v2Subparts  int array in the format {X.Y.Z} where X,Y,Z are positive 2-digit numbers.
+     * @precondition v1Subparts and v2Subparts must be in the correct format for this method to work
+     *
+     * @return  (a) if v1Subparts == v2Subparts, return 0
+     *          (b) if v1Subparts > v2Subparts, return +1
+     *          (c) if v1Subparts < v2Subparts, return -1
+     *          (d) null on error (when either input argument is null or in the incorrect format)
+     */
+    static Integer compareVersions(final int[] v1Subparts, final int[] v2Subparts) {
+
+        if (v1Subparts == null || v2Subparts == null || v1Subparts.length != 3 || v2Subparts.length != 3) {
+            return null;
+        }
+
+        int v1Major = v1Subparts[0];
+        int v1Minor = v1Subparts[1];
+        int v1SubMinor = v1Subparts[2];
+        int v2Major = v2Subparts[0];
+        int v2Minor = v2Subparts[1];
+        int v2SubMinor = v2Subparts[2];
+
+        // if versions are equal, return 0
+        if (v1Major == v2Major && v1Minor == v2Minor && v1SubMinor == v2SubMinor) {
+            return 0;
+        }
+
+        // else return the difference between v1 - v2 (+1 if v1 is larger, -1 if v2 is larger)
+        if ( (v1Major < v2Major) ||
+                (v1Major == v2Major && v1Minor < v2Minor) ||
+                (v1Major == v2Major && v1Minor == v2Minor && v1SubMinor < v2SubMinor) ) {
+            return -1;
+        } else {
+            return 1;
+        }
+    }
+
+    /**
+     * Compare 2 versions and return the difference (-ve, 0, or +ve) between their Major version
+     *
+     * @param versionA  string in the format X.Y.Z where X,Y,Z are positive 2-digit numbers.
+     * @param versionB  string in the format X.Y.Z where X,Y,Z are positive 2-digit numbers.
+     *
+     * @return  (a) if versionA.X == versionB.X, return 0
+     *          (b) if versionA.X > versionB.X, return the +ve difference between their major versions
+     *          (c) if versionA.X < versionB.X, return the -ve difference between their major versions
+     *          (d) null on error (for parsing errors when the version string is in an incorrect format)
+     */
+    @Nullable
+    static Integer diffBetweenMajorVersions(final String versionA, final String versionB) {
+        final int[] v1Subparts = parseVersionString(versionA);
+        final int[] v2Subparts = parseVersionString(versionB);
+
+        if (v1Subparts == null || v2Subparts == null) {
+            return null;
+        } else {
+            return v1Subparts[0] - v2Subparts[0];
+        }
+    }
+
+    /**
+     * Compare 2 versions and return the difference (-1, 0, or +1) between versionA and VersionB
+     *
+     * @param versionA  string in the format X.Y.Z where X,Y,Z are positive 2-digit numbers.
+     * @param versionB  string in the format X.Y.Z where X,Y,Z are positive 2-digit numbers.
+     *
+     * @return  (a) if versionA == versionB, return 0
+     *          (b) if versionA > versionB, return +1
+     *          (c) if versionA < versionB, return -1
+     *          (d) null on error (for parsing errors when the version string is in an incorrect format)
+     */
+    @Nullable
+    public static Integer compareVersions(@NotNull final String versionA, @NotNull final String versionB) {
+        final int[] v1Subparts = parseVersionString(versionA);
+        final int[] v2Subparts = parseVersionString(versionB);
+
+        if (v1Subparts == null || v2Subparts == null) {
+            return null;
+        } else {
+            return compareVersions(v1Subparts, v2Subparts);
+        }
+    }
+
+    /**
+     * The Gateway version is compatible with the database version if:
+     * (a) the database is the same version as the Gateway or higher AND
+     * (b) the database is at most "maxMjorVersionRange" major versions ahead
+     * Gateway and database versions are in the format X.Y.Z,
+     * where X = major version, Y = minor version, Z = subminor version
+     *
+     * @param gatewayVersion  string representing the gateway version
+     * @param dbVersion  string representing the db version
+     * @param maxMajorVersionDiff  the allowable max Major Version difference by which the db version can be higher than the gateway version
+     * @return boolean  true if (gateway Version <= db Version) AND (db version <= gateway version + maxMajorVersionRange),
+     *                  false otherwise
+     */
+    public static boolean isGatewayVersionCompatibleWithDBVersion(@NotNull String gatewayVersion, @NotNull String dbVersion, int maxMajorVersionDiff) {
+        // if gatewayVersion == dbVersion, diff = 0;
+        // if gatewayVersion < dbVersion, diff = gatewayVersion - dbVersion (-ve)
+        // if gatewayVersion > dbVersion, diff = gatewayVersion - dbVersion (+ve)
+        Integer diff = diffBetweenMajorVersions(gatewayVersion, dbVersion);
+        Integer lessThan = compareVersions(gatewayVersion, dbVersion);
+        return  (lessThan != null) && (lessThan <= 0) && (diff != null) && (-maxMajorVersionDiff <= diff && diff <= 0);
+    }
+
+    /**
+     * The Gateway version is compatible with the database version if:
+     * (a) the database is the same version as the Gateway or higher AND
+     * (b) the database is at most 2 major versions ahead
+     * Gateway and database versions are in the format X.Y.Z,
+     * where X = major version, Y = minor version, Z = subminor version
+     *
+     * @param gatewayVersion  string representing the gateway version
+     * @param dbVersion  string representing the db version
+     * @return boolean  true if (gateway Version <= db Version) AND (db version <= gateway version + 2),
+     *                  false otherwise
+     */
+    public static boolean isGatewayVersionCompatibleWithDBVersion(@NotNull final String gatewayVersion, @NotNull final String dbVersion) {
+        return isGatewayVersionCompatibleWithDBVersion(gatewayVersion, dbVersion, MAX_ACCEPTABLE_MAJOR_VERSION_DIFF);
+    }
+
+    /**
      * Outputs version information to the console.
      */
     public static void main(String[] args) {
@@ -198,7 +364,14 @@ public class BuildInfo {
     private static final String PROP_BUILD_TIMESTAMP = "Build-Timestamp";
     private static final String PROP_BUILD_HOST = "Build-Host";
     private static final String PROP_BUILD_USER = "Built-By";
-    private static final String PROP_BUILD_NUMBER = "Build-Number";    
+    private static final String PROP_BUILD_NUMBER = "Build-Number";
+
+    private static final String VERSION_FORMAT_REGEX = "[0-9]{1,2}[.][0-9]{1,2}[.][0-9]{1,2}";
+    private static final String VERSION_SUBPART_SEPARATOR_REGEX = "[.]";
+    private static final String VERSION_PARSING_ERR_MSG_START = "Error parsing version string \"";
+    private static final String VERSION_PARSING_ERR_MSG_END = "\". Acceptable format: X.Y.Z where X,Y,Z are positive 1-or-2 digit numbers.";
+    private static final int MAX_ACCEPTABLE_MAJOR_VERSION_DIFF = 2;
+
 
     private static Package packageInfo = BuildInfo.class.getPackage();
     private static String productName = "CA API Gateway";

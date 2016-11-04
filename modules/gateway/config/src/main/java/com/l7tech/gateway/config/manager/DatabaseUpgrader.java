@@ -129,65 +129,69 @@ public class DatabaseUpgrader {
         } else if ( "unknown".equalsIgnoreCase(dbVersion) ) {
             System.out.println("Unable to determine database version (incorrect credentials?), cannot upgrade.");
             System.exit(4);
-        } else if ( !dbVersion.equals(swVersion) ) {
-            System.out.println("Database upgrade is required.");
-            System.out.println();
-            System.out.println(" Software version : " + swVersion);
-            System.out.println(" Database version : " + dbVersion);
-            System.out.println();
-
-            boolean upgrade = false;
-            boolean confirmed = false;
-            while( !confirmed ) {
-                System.out.print("Perform upgrade? [No]: ");
-
-                String response = fallbackReadLine(console, reader, "No");
-                exitOnQuit(response);
-                if ( OptionType.BOOLEAN.matches(response) ) {
-                    confirmed = true;
-                    upgrade =
-                        response.toLowerCase().startsWith("t") ||
-                        response.toLowerCase().startsWith("y");
-                } else if ( "".equals(response) ) {
-                    break;
-                } else {
-                    System.out.println();
-                    System.out.println("Invalid choice '"+response+"', options are Yes/No.");
-                    System.out.println();
-                }
-            }
-
-            if ( upgrade ) {
-                System.out.print("Enter Administrative Database Username [root]: ");
-                config.setDatabaseAdminUsername( fallbackReadLine( console, reader, "root" ) );
-
-                System.out.print("Enter Administrative Database Password: ");
-                config.setDatabaseAdminPassword( fallbackReadPassword( console, reader ) );
-
-                DBActionsListener consoleLoggingListener = getLoggingActionListener();
-
-                final DatabaseConfig localConfig;
-                try {
-                    // If the host is localhost then use that when connecting
-                    if ( NetworkInterface.getByInetAddress(InetAddress.getByName(config.getHost())) != null ) {
-                        localConfig = new DatabaseConfig(config);
-                        localConfig.setHost("localhost");
-                    } else {
-                        localConfig = config;
-                    }
-                } catch ( UnknownHostException uhe ) {
-                    throw new CausedIOException("Could not resolve host '"+config.getHost()+"'.");
-                }
-
-                System.out.println();
-                System.out.println("Performing database upgrade:");
-                System.out.println();
-                dba.upgradeDb( localConfig, "etc/sql", "etc/db", swVersion, consoleLoggingListener );
-            } else {
-                System.out.println("Database upgrade is required, but was declined.");
-            }
         } else {
-            System.out.println("Database upgrade not required.");
+            // If db version is LESS THAN gateway version, database upgrade is mandatory
+            Integer versionDiff = BuildInfo.compareVersions(dbVersion, swVersion);
+            if (versionDiff != null && versionDiff < 0) {
+                System.out.println("Database upgrade is required.");
+                System.out.println();
+                System.out.println(" Software version : " + swVersion);
+                System.out.println(" Database version : " + dbVersion);
+                System.out.println();
+
+                boolean upgrade = false;
+                boolean confirmed = false;
+                while (!confirmed) {
+                    System.out.print("Perform upgrade? [No]: ");
+
+                    String response = fallbackReadLine(console, reader, "No");
+                    exitOnQuit(response);
+                    if (OptionType.BOOLEAN.matches(response)) {
+                        confirmed = true;
+                        upgrade =
+                                response.toLowerCase().startsWith("t") ||
+                                        response.toLowerCase().startsWith("y");
+                    } else if ("".equals(response)) {
+                        break;
+                    } else {
+                        System.out.println();
+                        System.out.println("Invalid choice '" + response + "', options are Yes/No.");
+                        System.out.println();
+                    }
+                }
+
+                if (upgrade) {
+                    System.out.print("Enter Administrative Database Username [root]: ");
+                    config.setDatabaseAdminUsername(fallbackReadLine(console, reader, "root"));
+
+                    System.out.print("Enter Administrative Database Password: ");
+                    config.setDatabaseAdminPassword(fallbackReadPassword(console, reader));
+
+                    DBActionsListener consoleLoggingListener = getLoggingActionListener();
+
+                    final DatabaseConfig localConfig;
+                    try {
+                        // If the host is localhost then use that when connecting
+                        if (NetworkInterface.getByInetAddress(InetAddress.getByName(config.getHost())) != null) {
+                            localConfig = new DatabaseConfig(config);
+                            localConfig.setHost("localhost");
+                        } else {
+                            localConfig = config;
+                        }
+                    } catch (UnknownHostException uhe) {
+                        throw new CausedIOException("Could not resolve host '" + config.getHost() + "'.");
+                    }
+
+                    System.out.println();
+                    System.out.println("Performing database upgrade:");
+                    System.out.println();
+                    dba.upgradeDb(localConfig, "etc/sql", "etc/db", swVersion, consoleLoggingListener);
+                } else {
+                    System.out.println("Database upgrade is required, but was declined.");
+                }
+            } else {
+                System.out.println("Database upgrade not required.");
+            }
         }
     }
 

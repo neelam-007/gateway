@@ -14,12 +14,15 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.logging.Logger;
 
 /**
  * Extremely simple bean with no dependencies on any Hibernate managers (not even cluster property manager)
  * that checks the Gateway database version number and aborts startup if it is incorrect.
  */
 public class GatewayDbVersionChecker extends ApplicationObjectSupport implements InitializingBean {
+
+    private static final Logger logger = Logger.getLogger(GatewayDbVersionChecker.class.getName());
 
     public static final String SSG_VERSION_TABLE="ssg_version";
     public static final String CURRENT_VERSION_COLUMN="current_version";
@@ -50,8 +53,20 @@ public class GatewayDbVersionChecker extends ApplicationObjectSupport implements
                         if (rs.next()) {
                             //we have a table, now check the contents
                             String dbVersion = rs.getString(CURRENT_VERSION_COLUMN);
-                            if (!myVersion.equalsIgnoreCase(dbVersion)) {
-                                errMsg = "The database is not the right version for this product (found, " + dbVersion + ", expected " + myVersion + "). Please check or upgrade the database before starting the gateway.";
+
+                            // Log the Gateway and Database versions to the logger
+                            logger.info("Gateway version: " + myVersion);
+                            logger.info("Database version: " + dbVersion);
+
+                            // Check if the gateway and database version are compatible
+                            // Compatibility between the Gateway and Database is defined as follows:
+                            // Rule: (1) database Version must be greater than or equal to the gateway version
+                            //       (2) database Version can be at most 2 major versions higher than the gateway version
+                            if (!BuildInfo.isGatewayVersionCompatibleWithDBVersion(myVersion, dbVersion)) {
+                                errMsg = "The version mismatch between the database (version " + dbVersion +
+                                        ") and Gateway (version " + myVersion + ") is too great." +
+                                        "The database version must be within two major version of the Gateway and cannot be lower." +
+                                        "To resolve, either upgrade the database or the Gateway.";
                             }
                         } else {
                             errMsg = "Could not find a correct version (" + myVersion + ") in the database. Please check or upgrade the database before starting the gateway.";
@@ -67,4 +82,6 @@ public class GatewayDbVersionChecker extends ApplicationObjectSupport implements
             }
         });
     }
+
+
 }
