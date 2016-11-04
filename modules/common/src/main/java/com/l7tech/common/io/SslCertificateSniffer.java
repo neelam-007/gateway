@@ -13,6 +13,7 @@ import java.security.cert.X509Certificate;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -124,6 +125,9 @@ public class SslCertificateSniffer {
                     if ( socket instanceof SSLSocket ) {
                         final SSLSocket sslSocket = (SSLSocket) socket;
                         sslSocket.setEnabledProtocols( new String[]{ protocol } );
+                        SSLParameters params = sslSocket.getSSLParameters();
+                        params.setServerNames( Collections.singletonList( new SNIHostName( url.getHost() ) ) );
+                        sslSocket.setSSLParameters( params );
                     }
 
                     return socket;
