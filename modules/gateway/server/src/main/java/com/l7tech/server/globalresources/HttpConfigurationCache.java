@@ -327,22 +327,21 @@ public class HttpConfigurationCache implements PostStartupApplicationListener, I
                 sslSocketFactory = getDefaultSSLSocketFactory( true );
             }
 
-            if ( httpConfiguration.getTlsVersion() != null || httpConfiguration.getTlsCipherSuites() != null ) {
-                final String tlsVersion = httpConfiguration.getTlsVersion();
-                final String tlsCipherSuites = httpConfiguration.getTlsCipherSuites();
-                String[] tlsVersionArray = tlsVersion == null ? null : new String[] { tlsVersion };
-                String[] tlsCipherSuitesArray = tlsCipherSuites == null ? null : PAT_COMMA_WITH_OPTIONAL_WHITESPACE.split(tlsCipherSuites);
-                sslSocketFactory = SSLSocketFactoryWrapper.wrapAndSetTlsVersionAndCipherSuites(sslSocketFactory, tlsVersionArray, tlsCipherSuitesArray);
-                sslSocketFactoryMap.put( key, sslSocketFactory );
-            } else if (httpConfiguration.getTlsCipherSuites() == null) {
-                final String[] tlsVersionArray = httpConfiguration.getTlsVersion() == null ? null : PAT_COMMA_WITH_OPTIONAL_WHITESPACE.split(httpConfiguration.getTlsVersion().trim());
-                String[] tlsCipherSuitesArray = PAT_COMMA_WITH_OPTIONAL_WHITESPACE.split(DefaultHttpCiphers.getRecommendedCiphers().trim());
-                sslSocketFactory = SSLSocketFactoryWrapper.wrapAndSetTlsVersionAndCipherSuites(sslSocketFactory, tlsVersionArray, tlsCipherSuitesArray);
-                sslSocketFactoryMap.put( key, sslSocketFactory );
-            }
+            String[] tlsVersions = httpConfiguration.getTlsVersion() == null ? null : PAT_COMMA_WITH_OPTIONAL_WHITESPACE.split(httpConfiguration.getTlsVersion().trim());
+            String[] tlsCipherSuites = getOutBoundCipherSuiteArray(httpConfiguration.getTlsCipherSuites());
+            sslSocketFactory = SSLSocketFactoryWrapper.wrapAndSetTlsVersionAndCipherSuites(sslSocketFactory, tlsVersions, tlsCipherSuites);
+            sslSocketFactoryMap.put( key, sslSocketFactory );
         }
-
         return sslSocketFactory;
+    }
+
+    private String[] getOutBoundCipherSuiteArray(String cipherSuites) {
+        if (cipherSuites == null) {
+            cipherSuites = DefaultHttpCiphers.getRecommendedCiphers();
+        }
+        //include TLS_EMPTY_RENEGOTIATION_INFO_SCSV cipher for outbound TLS to enhance interoperability.
+        String[] cipherSuitesArray = PAT_COMMA_WITH_OPTIONAL_WHITESPACE.split(cipherSuites.trim() + "," + DefaultHttpCiphers.TLS_EMPTY_RENEGOTIATION_INFO_SCSV);
+        return cipherSuitesArray;
     }
 
     private SSLSocketFactory getDefaultSSLSocketFactory( final boolean useSslKeyForDefault ) throws NoSuchAlgorithmException, KeyManagementException {

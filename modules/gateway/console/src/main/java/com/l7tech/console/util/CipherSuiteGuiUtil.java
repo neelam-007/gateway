@@ -18,13 +18,6 @@ import java.util.*;
  */
 public final class CipherSuiteGuiUtil {
 
-    // This is the signalling cipher suite value (SCSV) that means the same thing as the renegotiation extension
-    // but is more interoperable since it is communicated as a pseudo-cipher suite number
-    // (which every implementation of TLS ever shipped manages to ignore unknown ciphers, while many will choke on unknown extensions):
-    // https://tools.ietf.org/html/rfc5746 This SCSV is included to notify the the server that this handshake is not intended to be a renegotiation,
-    // so that if an attacker attempts to reply the handshake in order to perform a renegotiation attack, the serve will realize
-    // something is wrong and the jig will be up.
-    public static final String TLS_EMPTY_RENEGOTIATION_INFO_SCSV = "TLS_EMPTY_RENEGOTIATION_INFO_SCSV";
     private static List defaultCipherList;
     private static List visibleCipherList;
 
@@ -168,11 +161,6 @@ public final class CipherSuiteGuiUtil {
                     ret.add(name);
             }
         }
-
-        // Always include this for outbound TLS to enhance interoperability.
-        if ( outbound && !ret.contains(TLS_EMPTY_RENEGOTIATION_INFO_SCSV) )
-            ret.add(TLS_EMPTY_RENEGOTIATION_INFO_SCSV);
-
         return ret.toArray(new String[ret.size()]);
     }
 

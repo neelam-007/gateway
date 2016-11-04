@@ -188,16 +188,9 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             sslContext.getClientSessionContext().setSessionCacheSize( size );
 
             sslSocketFactory = sslContext.getSocketFactory();
-
-            if (assertion.getTlsCipherSuites() != null || assertion.getTlsVersion() != null) {
-                String[] tlsVersions = assertion.getTlsVersion() == null ? null : PAT_COMMA_WITH_OPTIONAL_WHITESPACE.split(assertion.getTlsVersion().trim());
-                String[] tlsCipherSuites = assertion.getTlsCipherSuites() == null ? null : PAT_COMMA_WITH_OPTIONAL_WHITESPACE.split(assertion.getTlsCipherSuites().trim());
-                sslSocketFactory = SSLSocketFactoryWrapper.wrapAndSetTlsVersionAndCipherSuites(sslSocketFactory, tlsVersions, tlsCipherSuites);
-            } else if (assertion.getTlsCipherSuites() == null) {
-                String[] tlsVersions = assertion.getTlsVersion() == null ? null : PAT_COMMA_WITH_OPTIONAL_WHITESPACE.split(assertion.getTlsVersion().trim());
-                String[] tlsCipherSuites = PAT_COMMA_WITH_OPTIONAL_WHITESPACE.split(DefaultHttpCiphers.getRecommendedCiphers().trim());
-                sslSocketFactory = SSLSocketFactoryWrapper.wrapAndSetTlsVersionAndCipherSuites(sslSocketFactory, tlsVersions, tlsCipherSuites);
-            }
+            String[] tlsVersions = assertion.getTlsVersion() == null ? null : PAT_COMMA_WITH_OPTIONAL_WHITESPACE.split(assertion.getTlsVersion().trim());
+            String[] tlsCipherSuites = getOutBoundCipherSuiteArray(assertion.getTlsCipherSuites());
+            sslSocketFactory = SSLSocketFactoryWrapper.wrapAndSetTlsVersionAndCipherSuites(sslSocketFactory, tlsVersions, tlsCipherSuites);
         } catch (Exception e) {
             //noinspection ThrowableResultOfMethodCallIgnored
             logAndAudit(AssertionMessages.HTTPROUTE_SSL_INIT_FAILED, null, ExceptionUtils.getDebugException(e));
@@ -257,6 +250,15 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
 
         localState = new ThreadLocal<>();
         varNames = assertion.getVariablesUsed();
+    }
+
+    private String[] getOutBoundCipherSuiteArray(String cipherSuites) {
+        if (cipherSuites == null) {
+            cipherSuites = DefaultHttpCiphers.getRecommendedCiphers();
+        }
+        //include TLS_EMPTY_RENEGOTIATION_INFO_SCSV cipher for outbound TLS to enhance interoperability.
+        String[] cipherSuitesArray = PAT_COMMA_WITH_OPTIONAL_WHITESPACE.split(cipherSuites.trim() + "," + DefaultHttpCiphers.TLS_EMPTY_RENEGOTIATION_INFO_SCSV);
+        return cipherSuitesArray;
     }
 
     private GenericHttpClientFactory makeHttpClientFactory() throws FindException {
