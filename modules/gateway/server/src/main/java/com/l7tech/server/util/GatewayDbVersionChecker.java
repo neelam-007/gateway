@@ -65,7 +65,7 @@ public class GatewayDbVersionChecker extends ApplicationObjectSupport implements
                             if (!BuildInfo.isGatewayVersionCompatibleWithDBVersion(myVersion, dbVersion)) {
                                 errMsg = "The version mismatch between the database (version " + dbVersion +
                                         ") and Gateway (version " + myVersion + ") is too great." +
-                                        "The database version must be within two major version of the Gateway and cannot be lower." +
+                                        "The database version must be within two major versions of the Gateway and cannot be lower." +
                                         "To resolve, either upgrade the database or the Gateway.";
                             }
                         } else {
