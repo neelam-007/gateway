@@ -7,6 +7,7 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.IdentityProviderPasswordPolicy;
 import com.l7tech.identity.external.PolicyBackedIdentityProviderConfig;
 import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
 import com.l7tech.identity.ldap.BindOnlyLdapIdentityProviderConfig;
@@ -229,6 +230,10 @@ class EntityPropertiesHelper {
             .put( "trustedForSsl", null )
             .put( "verifyHostname", null )
             .unmodifiableMap() )
+        .put( IdentityProviderPasswordPolicy.class, MapBuilder.<String,String>builder()
+            .put( "serializedProps", null )
+            .put( "internalIdentityProviderGoid", null )
+            .unmodifiableMap() )
         .unmodifiableMap();
 
     private static final Map<Class<? extends Entity>,Map<String,Object>> DEFAULTS_PROPERTY_MAP = MapBuilder.<Class<? extends Entity>,Map<String,Object>>builder()
@@ -288,6 +293,10 @@ class EntityPropertiesHelper {
             .put( "trustedForSigningServerCerts", false )
             .put( "trustedForSsl", false )
             .put( "verifyHostname", true )
+            .unmodifiableMap()
+        )
+        .put( IdentityProviderPasswordPolicy.class, MapBuilder.<String,Object>builder()
+            .put( "serializedProps", false )
             .unmodifiableMap()
         )
         .unmodifiableMap();
@@ -500,5 +509,11 @@ class EntityPropertiesHelper {
             "certificate",
             "securityZone"
         ) )
+         .put( IdentityProviderPasswordPolicy.class, list(
+             "version",
+             "id",
+             "goid",
+             "internalIdentityProviderGoid"
+         ) )
         .unmodifiableMap();
 }

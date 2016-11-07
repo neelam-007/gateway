@@ -636,6 +636,7 @@
                 <ref bean="policyManager" />
                 <ref bean="genericEntityManager"/>
                 <ref bean="policyBackedServiceManager"/>
+		<ref bean="passwordPolicyManger"/>
             </list>
         </constructor-arg>
     </bean>
