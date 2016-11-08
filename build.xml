@@ -1871,6 +1871,12 @@
                 <include name="*.jar"/>
             </fileset>
         </copy>
+        <!-- Copy a hmac file for CCJ 2.2.1 -->
+        <copy todir="${build.dir}/manager/lib">
+            <fileset dir="${src.root}/lib/repository/com.safelogic.cryptocomply">
+                <include name="cryptocomply-2.2.1.hmac"/>
+            </fileset>
+        </copy>
         <mkdir dir="${build.dir}/managerapplet/lib"/>
         <copy todir="${build.dir}/managerapplet/lib">
             <fileset dir="modules/gateway/console-applet/build/dependency">
@@ -2107,6 +2113,10 @@
         <!-- Config files -->
         <copy file="${src.root}/modules/gateway/console/src/main/resources/com/l7tech/console/resources/logging.properties"
               todir="${build.installer}/Manager-${build.version}"
+              preservelastmodified="true"
+              granularity="2000"/>
+        <copy file="${src.root}/lib/repository/com.safelogic.cryptocomply/cryptocomply-2.2.1.hmac"
+              todir="${build.installer}/Manager-${build.version}/lib"
               preservelastmodified="true"
               granularity="2000"/>
 
