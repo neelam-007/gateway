@@ -31,7 +31,6 @@ import org.apache.http.client.params.ClientPNames;
 import org.apache.http.client.params.CookiePolicy;
 import org.apache.http.client.protocol.ClientContext;
 import org.apache.http.conn.ClientConnectionManager;
-import org.apache.http.conn.ConnectTimeoutException;
 import org.apache.http.conn.ConnectionKeepAliveStrategy;
 import org.apache.http.conn.params.ConnRoutePNames;
 import org.apache.http.conn.scheme.PlainSocketFactory;
@@ -53,12 +52,10 @@ import org.apache.http.params.*;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.protocol.HttpContext;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLException;
-import javax.net.ssl.SSLSession;
-import javax.net.ssl.SSLSocket;
+import javax.net.ssl.*;
 import java.io.*;
 import java.net.*;
 import java.security.cert.X509Certificate;
@@ -196,7 +193,7 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
     private void configureSocketFactories(HttpClient hc, URL url, GenericHttpRequestParams params) {
         if(PROTOCOL_HTTPS.equalsIgnoreCase(url.getProtocol())){
             final HostnameVerifier hostVerifier = params.getHostnameVerifier();
-            Scheme scheme = new Scheme(PROTOCOL_HTTPS, url.getPort() > 0? url.getPort():url.getDefaultPort(), buildSSLSocketFactory(params.getSslSocketFactory(), hostVerifier));
+            Scheme scheme = new Scheme(PROTOCOL_HTTPS, url.getPort() > 0? url.getPort():url.getDefaultPort(), buildSSLSocketFactory(params.getSslSocketFactory(), hostVerifier, url));
             hc.getConnectionManager().getSchemeRegistry().register(scheme);
         } else {
             if (enableTrace) {
@@ -225,7 +222,7 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
         }
     }
 
-    private SSLSocketFactory buildSSLSocketFactory(javax.net.ssl.SSLSocketFactory socketFactory, final HostnameVerifier verifier) {
+    private SSLSocketFactory buildSSLSocketFactory(javax.net.ssl.SSLSocketFactory socketFactory, final HostnameVerifier verifier, final URL url) {
         SSLSocketFactory sf = null;
 
         /* create wraper for hostnameVerifier  */
@@ -262,9 +259,9 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
             }
         };
         if(enableTrace){
-            sf = new SecureTraceDirectSocketFactory(socketFactory, x509HostnameVerifier);
+            sf = new SecureTraceDirectSocketFactory(socketFactory, x509HostnameVerifier, url);
         } else {
-            sf = new SecureDirectSocketFactory(socketFactory, x509HostnameVerifier);
+            sf = new SecureDirectSocketFactory(socketFactory, x509HostnameVerifier, url);
         }
 
         return sf;
@@ -815,6 +812,14 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
             s.setEnabledCipherSuites(suites);
     }
 
+    private static void configureSniMetadata(@NotNull SSLSocket s, @NotNull URL url) {
+        if ( url.getHost() != null ) {
+            SSLParameters params = s.getSSLParameters();
+            params.setServerNames( Collections.singletonList( new SNIHostName( url.getHost() ) ) );
+            s.setSSLParameters( params );
+        }
+    }
+
     private static final Pattern commasWithWhitespace = Pattern.compile("\\s*,\\s*");
 
     private static String[] getCommaDelimitedSystemProperty(String propertyName) {
@@ -1045,8 +1050,8 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
 
     private static class SecureTraceDirectSocketFactory extends SecureDirectSocketFactory {
 
-        private SecureTraceDirectSocketFactory(javax.net.ssl.SSLSocketFactory socketfactory, X509HostnameVerifier hostnameVerifier) {
-            super(socketfactory, hostnameVerifier);
+        private SecureTraceDirectSocketFactory(javax.net.ssl.SSLSocketFactory socketfactory, X509HostnameVerifier hostnameVerifier, @NotNull URL url) {
+            super(socketfactory, hostnameVerifier, url);
         }
 
         @Override
@@ -1068,14 +1073,17 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
 
 
     private static class SecureDirectSocketFactory extends SSLSocketFactory {
+        private final URL url;
 
-        private SecureDirectSocketFactory(javax.net.ssl.SSLSocketFactory socketfactory, X509HostnameVerifier hostnameVerifier) {
+        private SecureDirectSocketFactory(javax.net.ssl.SSLSocketFactory socketfactory, X509HostnameVerifier hostnameVerifier, @NotNull URL url) {
             super(socketfactory, hostnameVerifier);
+            this.url = url;
         }
 
         protected void prepareSocket(SSLSocket socket) throws IOException {
             if(socket != null) {
                 configureEnabledProtocolsAndCiphers(socket);
+                configureSniMetadata( socket, url );
             }
         }
 
