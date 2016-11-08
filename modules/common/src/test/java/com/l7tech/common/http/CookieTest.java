@@ -5,9 +5,7 @@ import org.junit.Test;
 
 import java.net.URL;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
-import java.util.TimeZone;
+import java.util.*;
 
 import static org.junit.Assert.*;
 
@@ -276,31 +274,112 @@ public class CookieTest {
 
     /*
     * Date format: Sun, 06 Nov 16 08:49:37 GMT
-    * This date format accepts two digit years. SimpleDateFormat will not always handle this two digit year as we
-    * need it done as it may assume it's in the last century.
-    * Internally HttpCookie will expand the year to the current century
+    * Parse the full year; check to see if the short year is within a second (because it's based off
+    * System.currentTimeMillis()) of the cookie's expiry time. We do this because the date format accepts two
+    * digit years. SimpleDateFormat will not always handle this two digit year as we need it done as it may assume
+    * it's in the last century. Internally HttpCookie will expand the year to the current century.
     * */
     @Test
-    public void testCookieExpiresRfc1036AndRfc822() throws Exception {
-        String name = "test";
-        String value = "testvalue";
-        String path = "/test/path";
-        String domain = ".testdomain.com";
-        String expires = "Sun, 06 Nov 50 08:49:37 GMT";
-        String expiresFullYear = "Sun, 06 Nov 2050 08:49:37 GMT";
-        String headerValue = name + "=" + value + "; expires=" + expires + "; Path=" + path + "; Domain=" + domain + "; Version=0";
+    public void testRfc1123Rfc1036Rfc822DateFormatParsedCorrectly() throws Exception {
+        // Create some time in the future.
+        final String nextFullYear = getNextYear();
+        final String nextShortYear = nextFullYear.substring(2);
+        final String date = "Sun, 06 Nov " + nextShortYear + " 08:49:37 GMT";
+        final String dateWithFullYear = "Sun, 06 Nov " + nextFullYear + " 08:49:37 GMT";
 
-        SimpleDateFormat expiryFormat = new SimpleDateFormat(CookieUtils.RFC1123_RFC1036_RFC822_DATEFORMAT, Locale.US);
+        // Full year calculation.
+        final SimpleDateFormat expiryFormat = new SimpleDateFormat(CookieUtils.RFC1123_RFC1036_RFC822_DATEFORMAT, Locale.US);
         expiryFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
-        Date expiresDate = expiryFormat.parse(expiresFullYear);
-        int maxAgeTarget = (int) ((expiresDate.getTime() - System.currentTimeMillis()) / 1000L);
+        final long expiryTime = expiryFormat.parse(dateWithFullYear).getTime();
 
+        // Create a cookie that uses the two character representation.
+        final String name = "test";
+        final String value = "testvalue";
+        final String path = "/test/path";
+        final String domain = ".testdomain.com";
+        final String headerValue = name + "=" + value + "; expires=" + date + "; Path=" + path + "; Domain=" + domain + "; Version=0";
+        final HttpCookie cookie = new HttpCookie(domain, path, headerValue);
+
+        // Compare to be very close. It won't be exactly the same because internally HttpCookie bases expiry time on
+        // System.currentTimeMillis(), which will not be the same as the calculation above... But it should be close.
+        assertTrue(Math.abs(cookie.getExpiryTime() - expiryTime) < 1000L);
+    }
+
+    private static String getNextYear() {
+        final GregorianCalendar calendar = new GregorianCalendar();
+        calendar.add(Calendar.YEAR, 1);
+        return Integer.toString(calendar.get(Calendar.YEAR));
+    }
+
+    /*
+    * Using the same date format as above ("Sun, 06 Nov 16 08:49:37 GMT"), test the expiry input and calculated
+    * max-age property. The same notes on date formats above apply here:  This date format accepts two digit years.
+    * SimpleDateFormat will not always handle this two digit year as we need it done as it may assume it's in the
+    * last century. Internally HttpCookie will expand the year to the current century.
+    * */
+    @Test
+    public void testCookieExpiresRfc1036AndRfc822ExpiryMaxAgeInFuture() throws Exception {
+        final String name = "test";
+        final String value = "testvalue";
+        final String path = "/test/path";
+        final String domain = ".testdomain.com";
+
+        // Create some time in the future.
+        final String nextFullYear = getNextYear();
+        final String nextShortYear = nextFullYear.substring(2);
+        final String date = "Sun, 06 Nov " + nextShortYear + " 08:49:37 GMT";
+        final String dateWithFullYear = "Sun, 06 Nov " + nextFullYear + " 08:49:37 GMT";
+
+        // Calculate the expiry time based on the full four digit year.
+        final SimpleDateFormat expiryFormat = new SimpleDateFormat(CookieUtils.RFC1123_RFC1036_RFC822_DATEFORMAT, Locale.US);
+        expiryFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+        final long expiryTime = expiryFormat.parse(dateWithFullYear).getTime();
+
+        // The max age property is expressed in seconds from now. It should be very close to this (but won't be exact)
+        // because HttpCookie internally bases time calcuations on System.currentTimeMillis().
+        int maxAgeTarget = (int) ((expiryTime - System.currentTimeMillis()) / 1000L);
+
+        final String headerValue = name + "=" + value + "; expires=" + date + "; Path=" + path + "; Domain=" + domain + "; Version=0";
         HttpCookie cookie = new HttpCookie(domain, path, headerValue);
 
         assertEquals("Checking name property", name, cookie.getCookieName());
         assertEquals("Checking value property", value, cookie.getCookieValue());
         assertEquals("Expiry set", true, cookie.hasExpiry());
-        assertTrue("Checking max-age property", 3 > Math.abs(cookie.getMaxAge() - maxAgeTarget)); //allow few secs difference
+        // Allow for a little bit of difference. It should be very close to this (but won't be exact) because
+        // HttpCookie internally bases time calcuations on System.currentTimeMillis().
+        assertTrue("Checking max-age property", 3 > Math.abs(cookie.getMaxAge() - maxAgeTarget));
+        assertEquals("Checking path property", path, cookie.getPath());
+        assertEquals("Checking domain property", domain, cookie.getDomain());
+        assertEquals("Should not be secure", false, cookie.isSecure());
+    }
+
+    @Test
+    public void testCookieExpiresRfc1036AndRfc822ExpiryMaxAgeInPast() throws Exception {
+        final String name = "test";
+        final String value = "testvalue";
+        final String path = "/test/path";
+        final String domain = ".testdomain.com";
+
+        // Create some time in the future.
+        final String date = "Sun, 06 Nov 16 08:49:37 GMT";
+        final String dateWithFullYear = "Sun, 06 Nov 2016 08:49:37 GMT";
+
+        // Calculate the expiry time based on the full four digit year.
+        final SimpleDateFormat expiryFormat = new SimpleDateFormat(CookieUtils.RFC1123_RFC1036_RFC822_DATEFORMAT, Locale.US);
+        expiryFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
+        final long expiryTime = expiryFormat.parse(dateWithFullYear).getTime();
+
+        // The max age property is expressed in seconds from now. It should be very close to this (but won't be exact)
+        // because HttpCookie internally bases time calcuations on System.currentTimeMillis().
+        int maxAgeTarget = (int) ((expiryTime - System.currentTimeMillis()) / 1000L);
+
+        final String headerValue = name + "=" + value + "; expires=" + date + "; Path=" + path + "; Domain=" + domain + "; Version=0";
+        HttpCookie cookie = new HttpCookie(domain, path, headerValue);
+
+        assertEquals("Checking name property", name, cookie.getCookieName());
+        assertEquals("Checking value property", value, cookie.getCookieValue());
+        assertEquals("Expiry set", true, cookie.hasExpiry());
+        assertEquals("Making sure cookie max-age is zero.", 0, cookie.getMaxAge());
         assertEquals("Checking path property", path, cookie.getPath());
         assertEquals("Checking domain property", domain, cookie.getDomain());
         assertEquals("Should not be secure", false, cookie.isSecure());
