@@ -286,8 +286,8 @@ public class CookieTest {
         String value = "testvalue";
         String path = "/test/path";
         String domain = ".testdomain.com";
-        String expires = "Sun, 06 Nov 16 08:49:37 GMT";
-        String expiresFullYear = "Sun, 06 Nov 2016 08:49:37 GMT";
+        String expires = "Sun, 06 Nov 50 08:49:37 GMT";
+        String expiresFullYear = "Sun, 06 Nov 2050 08:49:37 GMT";
         String headerValue = name + "=" + value + "; expires=" + expires + "; Path=" + path + "; Domain=" + domain + "; Version=0";
 
         SimpleDateFormat expiryFormat = new SimpleDateFormat(CookieUtils.RFC1123_RFC1036_RFC822_DATEFORMAT, Locale.US);
