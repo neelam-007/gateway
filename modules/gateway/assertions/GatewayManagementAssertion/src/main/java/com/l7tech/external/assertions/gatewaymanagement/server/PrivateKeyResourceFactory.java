@@ -516,9 +516,25 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
         final Pair<Goid,String> keyId = getKeyId( selectorMap );
         final SecurityZone securityZone = getSecurityZone( resource.getSecurityZoneId() );
 
-        return extract( transactional( new TransactionalCallback<Either<InvalidResourceException,PrivateKeyMO>>(){
+        // The generation of the key pair (helper.doGenerateKeyPair(...)) is executed in a separate thread.
+        // Therefore there is a chance of a racing condition when the process of key pair generation takes longer
+        // i.e. if the key size is 4096 to complete, in which case the getter below (i.e. getSsgKeyEntry(...)) will not see
+        // the updated keystore (i.e. the newly created key-pair), until this transaction completes and flushes all objects.
+        //
+        // Hence sometimes (mostly when generating keys with bigger size i.e. key-size of 4096) this operation will fail
+        // with 403 (FORBIDDEN), but the key will be successfully created.
+        // See DE238694 for more details.
+        //
+        // Separating the writer and getter into distinct transactions will make sure the getter manager (inside getSsgKeyEntry(...))
+        // sees the newly created private key.
+        //
+        // Ideally the transactional callback would have been TransactionalCallback<Option<InvalidResourceException>>,
+        // however transactional(...) method only seem to support Either<...> as a exception holder and handle it
+        // correctly (i.e. setup the transaction for rollback).
+        // That being said I'll use a dummy boolean and do NOT care about the result.
+        extract( transactional( new TransactionalCallback<Either<InvalidResourceException,Boolean>>(){
             @Override
-            public Either<InvalidResourceException,PrivateKeyMO> execute() throws ObjectModelException {
+            public Either<InvalidResourceException,Boolean> execute() throws ObjectModelException {
                 try {
                     checkPermittedForSomeEntity( OperationType.CREATE, EntityType.SSG_KEY_ENTRY );
 
@@ -544,6 +560,7 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
                                 new KeyGenParams(curveName.some()) :
                                 new KeyGenParams(keybits);
 
+                        // the generation of the key pair is executed in a separate thread
                         helper.doGenerateKeyPair(
                                 keystoreId,
                                 alias,
@@ -564,14 +581,25 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
                         return left(new InvalidResourceException(ExceptionType.INVALID_VALUES, e.getMessage()));
                     }
 
-                    return right( buildPrivateKeyResource( getSsgKeyEntry( keyId ), Option.<Collection<SpecialKeyType>>none() ) );
-                } catch ( ResourceNotFoundException e ) {
-                    throw new ResourceAccessException( e ); // error since we just created the resource
+                    // all good return success
+                    return right( true );
                 } catch ( InvalidResourceException e ) {
                     return left( e );
                 }
             }
         }, false ) );
+
+        // now that the writer transaction is complete start a new one (read-only) to get the newly created private-key MO.
+        return extract( transactional( new TransactionalCallback<Either<InvalidResourceException,PrivateKeyMO>>(){
+            @Override
+            public Either<InvalidResourceException,PrivateKeyMO> execute() throws ObjectModelException {
+                try {
+                    return right( buildPrivateKeyResource( getSsgKeyEntry( keyId ), Option.<Collection<SpecialKeyType>>none() ) );
+                } catch ( ResourceNotFoundException e ) {
+                    throw new ResourceAccessException( e ); // error since we just created the resource
+                }
+            }
+        }, true ) );
     }
 
     @ResourceMethod(name="ImportKey", resource=true, selectors=true)
