@@ -1,5 +1,6 @@
 package com.l7tech.server.policy.assertion.credential.http;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.l7tech.common.http.HttpCookie;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.HttpCookiesKnob;
@@ -22,6 +23,7 @@ import java.util.Map;
  * @author mike
  */
 public class ServerCookieCredentialSourceAssertion extends ServerCredentialSourceAssertion<CookieCredentialSourceAssertion> {
+    private static final String DOUBLE_QUOTE = "\"";
     private final String cookieName;
 
     public ServerCookieCredentialSourceAssertion(CookieCredentialSourceAssertion data) {
@@ -38,7 +40,15 @@ public class ServerCookieCredentialSourceAssertion extends ServerCredentialSourc
                 // set cookie context variable
                 for (final HttpCookie cookie : context.getRequest().getHttpCookiesKnob().getCookies()) {
                     if (cookie.getCookieName().equals(cookieName)) {
-                        context.setVariable(assertion.getVariablePrefix() + "." + cookie.getCookieName(), cookie.getCookieValue());
+                        //  DE241365: Switching from the HttpRequestKnob to the HttpCookiesKnob changed the behaviour
+                        // here. Previously, the HttpRequestKnob stripped wrapping quotation marks before even getting
+                        // to our code. Our homegrown HttpCookiesKnob doesn't do this - it sent quotation marks. To
+                        // provide backward compatibility here, we strip the surrounding quotation marks. This does
+                        // indicate a somewhat larger problem though - we handle cookie parsin in two different ways,
+                        // depending on how you come at it. Created issue US257045 for this.
+                        String cookieValue = cookie.getCookieValue();
+                        cookieValue = stripSurroundingQuotationMarks(cookieValue);
+                        context.setVariable(assertion.getVariablePrefix() + "." + cookie.getCookieName(), cookieValue);
                         break;
                     }
                 }
@@ -47,6 +57,14 @@ public class ServerCookieCredentialSourceAssertion extends ServerCredentialSourc
             }
         }
         return assertionStatus;
+    }
+
+    @VisibleForTesting
+    protected String stripSurroundingQuotationMarks(final String s) {
+        if (s != null && s.length() >= 2 && s.startsWith(DOUBLE_QUOTE) && s.endsWith(DOUBLE_QUOTE)) {
+            return s.substring(1, s.length() - 1);
+        }
+        return s;
     }
 
     @Override

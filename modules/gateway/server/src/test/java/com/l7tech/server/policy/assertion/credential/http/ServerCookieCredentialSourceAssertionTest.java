@@ -171,6 +171,31 @@ public class ServerCookieCredentialSourceAssertionTest {
         checkContextVariableDoesNotExist(CookieCredentialSourceAssertion.DEFAULT_VARIABLE_PREFIX + "." + DEFAULT_COOKIE_NAME);
     }
 
+    @Test
+    public void checkRequestStripsEnclosingCookieQuotationMarks() throws Exception {
+        serverAssertion = new ServerCookieCredentialSourceAssertion(assertion);
+        final Cookie cookie = new Cookie(DEFAULT_COOKIE_NAME, "\"" + SESSION_VALUE + "\"");
+        context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(createRequest(cookie), new Message());
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(context);
+
+        assertEquals(AssertionStatus.NONE, assertionStatus);
+        final String contextVariable = (String) context.getVariable(CookieCredentialSourceAssertion.DEFAULT_VARIABLE_PREFIX + "." + DEFAULT_COOKIE_NAME);
+        assertEquals(SESSION_VALUE, contextVariable);
+    }
+
+    @Test
+    public void testStripQuotationMarksVariousCases() throws Exception {
+        serverAssertion = new ServerCookieCredentialSourceAssertion(assertion);
+        assertNull(serverAssertion.stripSurroundingQuotationMarks(null));
+        assertEquals("", serverAssertion.stripSurroundingQuotationMarks(""));
+        assertEquals("\"", serverAssertion.stripSurroundingQuotationMarks("\""));
+        assertEquals("", serverAssertion.stripSurroundingQuotationMarks("\"\""));
+        assertEquals("asdf\"", serverAssertion.stripSurroundingQuotationMarks("asdf\""));
+        assertEquals("\"asdf", serverAssertion.stripSurroundingQuotationMarks("\"asdf"));
+        assertEquals("asdf", serverAssertion.stripSurroundingQuotationMarks("\"asdf\""));
+    }
+
     /**
      * Validate that a cookie with an empty value is treated as missing
      * <ul>
