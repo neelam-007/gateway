@@ -56,6 +56,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.Socket;
 import java.net.URL;
 import java.security.*;
 import java.security.cert.*;
@@ -201,7 +202,7 @@ public class PortalBootstrapManager {
             connection = (HttpsURLConnection) url.openConnection();
             connection.setHostnameVerifier( pinChecker );
             connection.setRequestMethod("POST");
-            connection.setSSLSocketFactory(socketFactory);
+            enableSni( connection, socketFactory, url );
             connection.setRequestProperty("Content-Type", "application/json");
             connection.setDoOutput(true);
             output = connection.getOutputStream();
@@ -256,6 +257,30 @@ public class PortalBootstrapManager {
         }
     }
 
+    /**
+     * Work around Oracle JDK bug JDK-8072464 where outbound server_name indication is not included with ClientHello
+     * in JDK 8 if a custom HostnameVerifier is in use.
+     *
+     * @param connection the HttpsURLConnection to customize
+     * @param socketFactory the SSLSocketFactory that is to be used
+     * @param url the URL that is to be connected to
+     */
+    private static void enableSni( @NotNull HttpsURLConnection connection, @NotNull SSLSocketFactory socketFactory, @NotNull final URL url ) {
+        connection.setSSLSocketFactory( new SSLSocketFactoryWrapper( socketFactory ) {
+            @Override
+            protected Socket notifySocket( final Socket socket ) {
+                if ( socket instanceof SSLSocket && url.getHost() != null ) {
+                    final SSLSocket sslSocket = (SSLSocket) socket;
+                    SSLParameters params = sslSocket.getSSLParameters();
+                    params.setServerNames( Collections.singletonList( new SNIHostName( url.getHost() ) ) );
+                    sslSocket.setSSLParameters( params );
+                }
+
+                return socket;
+            }
+        } );
+    }
+
     public void upgradePortal() throws IOException, FindException {
         final User user = JaasUtils.getCurrentUser();
         if ( null == user )
@@ -275,7 +300,7 @@ public class PortalBootstrapManager {
         byte[] postBody = buildEnrollmentPostBody( user );
 
         final SsgKeyEntry clientCert = prepareClientCert(user);
-        final X509TrustManager tm = new PermissiveX509TrustManager();
+        final X509TrustManager tm = new PermissiveX509TrustManager();  // TODO MUST BE FIXED!! DE248282  new PinChecker( pinBytes )
         X509KeyManager km;
 
         final SSLSocketFactory socketFactory;
@@ -297,6 +322,7 @@ public class PortalBootstrapManager {
         try {
             connection = (HttpsURLConnection) url.openConnection();
             connection.setRequestMethod("POST");
+            enableSni( connection, socketFactory, url );
             connection.setSSLSocketFactory(socketFactory);
             connection.setRequestProperty("Content-Type", "application/json");
             connection.setDoOutput(true);
