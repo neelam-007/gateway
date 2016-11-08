@@ -150,6 +150,7 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
     private final Object identity;
     private final boolean isBindingManager;
     private final @Nullable HttpProxyConfig proxyConfig;
+    private static final ThreadLocal<String> sniHostname = new ThreadLocal<>();
 
 
     public static ClientConnectionManager newConnectionManager(int maxConnectionsPerHost, int maxTotalConnections) {
@@ -193,7 +194,7 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
     private void configureSocketFactories(HttpClient hc, URL url, GenericHttpRequestParams params) {
         if(PROTOCOL_HTTPS.equalsIgnoreCase(url.getProtocol())){
             final HostnameVerifier hostVerifier = params.getHostnameVerifier();
-            Scheme scheme = new Scheme(PROTOCOL_HTTPS, url.getPort() > 0? url.getPort():url.getDefaultPort(), buildSSLSocketFactory(params.getSslSocketFactory(), hostVerifier, url));
+            Scheme scheme = new Scheme(PROTOCOL_HTTPS, url.getPort() > 0? url.getPort():url.getDefaultPort(), buildSSLSocketFactory(params.getSslSocketFactory(), hostVerifier ));
             hc.getConnectionManager().getSchemeRegistry().register(scheme);
         } else {
             if (enableTrace) {
@@ -222,7 +223,7 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
         }
     }
 
-    private SSLSocketFactory buildSSLSocketFactory(javax.net.ssl.SSLSocketFactory socketFactory, final HostnameVerifier verifier, final URL url) {
+    private SSLSocketFactory buildSSLSocketFactory(javax.net.ssl.SSLSocketFactory socketFactory, final HostnameVerifier verifier ) {
         SSLSocketFactory sf = null;
 
         /* create wraper for hostnameVerifier  */
@@ -259,9 +260,9 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
             }
         };
         if(enableTrace){
-            sf = new SecureTraceDirectSocketFactory(socketFactory, x509HostnameVerifier, url);
+            sf = new SecureTraceDirectSocketFactory(socketFactory, x509HostnameVerifier );
         } else {
-            sf = new SecureDirectSocketFactory(socketFactory, x509HostnameVerifier, url);
+            sf = new SecureDirectSocketFactory(socketFactory, x509HostnameVerifier );
         }
 
         return sf;
@@ -337,6 +338,7 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
         if (HttpMethod.OTHER.equals(method) && (methodString == null || methodString.trim().length() < 1))
             throw new GenericHttpException("Method name string must be provided for HTTP method OTHER");
 
+        sniHostname.set( targetUrl.getHost() == null ? null : targetUrl.getHost() );
         final HttpRequestBase httpMethod = getClientMethod(method, methodString, params, targetUrl);
 
         configureParameters( clientParams, state, client, httpMethod, params );
@@ -812,10 +814,11 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
             s.setEnabledCipherSuites(suites);
     }
 
-    private static void configureSniMetadata(@NotNull SSLSocket s, @NotNull URL url) {
-        if ( url.getHost() != null ) {
+    private static void configureSniMetadata(@NotNull SSLSocket s ) {
+        String serverName = sniHostname.get();
+        if ( serverName != null ) {
             SSLParameters params = s.getSSLParameters();
-            params.setServerNames( Collections.singletonList( new SNIHostName( url.getHost() ) ) );
+            params.setServerNames( Collections.singletonList( new SNIHostName( serverName ) ) );
             s.setSSLParameters( params );
         }
     }
@@ -1050,8 +1053,8 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
 
     private static class SecureTraceDirectSocketFactory extends SecureDirectSocketFactory {
 
-        private SecureTraceDirectSocketFactory(javax.net.ssl.SSLSocketFactory socketfactory, X509HostnameVerifier hostnameVerifier, @NotNull URL url) {
-            super(socketfactory, hostnameVerifier, url);
+        private SecureTraceDirectSocketFactory(javax.net.ssl.SSLSocketFactory socketfactory, X509HostnameVerifier hostnameVerifier ) {
+            super( socketfactory, hostnameVerifier );
         }
 
         @Override
@@ -1073,17 +1076,14 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
 
 
     private static class SecureDirectSocketFactory extends SSLSocketFactory {
-        private final URL url;
-
-        private SecureDirectSocketFactory(javax.net.ssl.SSLSocketFactory socketfactory, X509HostnameVerifier hostnameVerifier, @NotNull URL url) {
+        private SecureDirectSocketFactory(javax.net.ssl.SSLSocketFactory socketfactory, X509HostnameVerifier hostnameVerifier ) {
             super(socketfactory, hostnameVerifier);
-            this.url = url;
         }
 
         protected void prepareSocket(SSLSocket socket) throws IOException {
             if(socket != null) {
                 configureEnabledProtocolsAndCiphers(socket);
-                configureSniMetadata( socket, url );
+                configureSniMetadata( socket );
             }
         }
 
