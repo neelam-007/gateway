@@ -55,6 +55,7 @@ public class WebSocketConnectionDialog extends JDialog {
     private JButton outboundTlsProtocolButton;
     private JButton inboundTlsButton;
     private JButton inboundCipherSuitesButton;
+    private JLabel outboundPrivateKeyLabel;
     private boolean dirtyPortFlag;
     private int oldInboundListenPort;
     private boolean oldEnableFlag;
@@ -218,6 +219,7 @@ public class WebSocketConnectionDialog extends JDialog {
         outboundCipherSuiteButton.setEnabled(connection.isOutboundSsl());
         useClientAuthenticationCheckBox.setSelected(connection.isOutboundClientAuthentication());
         inboundPrivateKeysComboBox.setEnabled(connection.isInboundSsl());
+        outboundPrivateKeyLabel.setEnabled(connection.isOutboundSsl() && connection.isOutboundClientAuthentication());
         outboundPrivateKeysComboBox.setEnabled(connection.isOutboundSsl() && connection.isOutboundClientAuthentication());
         inboundClientAuthenticationComboBox.setEnabled(connection.isInboundSsl());
         inboundTlsProtocols = connection.getInboundTlsProtocols();
@@ -495,14 +497,16 @@ public class WebSocketConnectionDialog extends JDialog {
 
     private void onOutboundSslChecked() {
         useClientAuthenticationCheckBox.setEnabled(useOutboundSSLCheckBox.isSelected());
+        onUseClientAuthorizationChecked();
         outboundTlsProtocolButton.setEnabled(useOutboundSSLCheckBox.isSelected());
         outboundCipherSuiteButton.setEnabled(useOutboundSSLCheckBox.isSelected());
     }
 
     private void onUseClientAuthorizationChecked() {
-        outboundPrivateKeysComboBox.setEnabled(useClientAuthenticationCheckBox.isSelected());
+        outboundPrivateKeysComboBox.setEnabled(useClientAuthenticationCheckBox.isSelected() && useClientAuthenticationCheckBox.isEnabled());
+        outboundPrivateKeyLabel.setEnabled(useClientAuthenticationCheckBox.isSelected() && useClientAuthenticationCheckBox.isEnabled());
         if (!useClientAuthenticationCheckBox.isSelected()) {
-            outboundPrivateKeysComboBox.setSelectedIndex(-1);
+            outboundPrivateKeysComboBox.setSelectedIndex(0);
         }
     }
 
