@@ -176,8 +176,9 @@ public final class CipherSuiteGuiUtil {
      *         in new connectors).  False if this cipher suite should be hidden in the UI.
      */
     public static boolean cipherSuiteShouldBeVisible(String cipherSuiteName) {
-        if (getVisibleCipherList() != null) {
-            return getVisibleCipherList().contains(cipherSuiteName);
+        List cipherList = getVisibleCipherList();
+        if (cipherList != null) {
+            return cipherList.contains(cipherSuiteName);
         }
         return false;
     }
@@ -191,8 +192,9 @@ public final class CipherSuiteGuiUtil {
      * @return true if this cipher suite should be checked by default in the UI.
      */
     public static boolean cipherSuiteShouldBeCheckedByDefault(String cipherSuiteName) {
-        if (getDefaultCipherList() != null) {
-            return getDefaultCipherList().contains(cipherSuiteName);
+        List cipherList = getDefaultCipherList();
+        if (cipherList != null) {
+            return cipherList.contains(cipherSuiteName);
         }
         return false;
     }
