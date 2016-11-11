@@ -97,6 +97,8 @@ public class SelectableTableModel<T> extends SimpleTableModel<T> {
     }
 
     private void selectDeselectAll(final boolean select) {
+        //Clearing previously selected Roles in the List, before using SELECT ALL Operation(in PM UI)
+        selected.clear();
         if (select) {
             selected.addAll(getRows());
         } else {
