@@ -27,8 +27,6 @@ SSGNODE="default"
 SSGJDK_VERSION="1.6"
 RUNASUSER="bash"
 export SSGNODE SSGUSER
-# This variable is only meaningful to GNU libc, so don't set it on Solaris.
-[ "$(uname)" = "Linux" ] && export MALLOC_ARENA_MAX=4
 
 # appliance check
 [ -d /opt/SecureSpan/Appliance ] && IS_APPLIANCE=yes
