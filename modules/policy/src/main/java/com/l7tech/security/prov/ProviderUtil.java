@@ -49,4 +49,16 @@ public final class ProviderUtil {
             logger.log(Level.WARNING, "Error configuring services '" + ExceptionUtils.getMessage(e) + "'.", ExceptionUtils.getDebugException(e));
         }
     }
+
+    /**
+     * If a method "removeService" throws an exception, then use this method to remove some services from a given provider.
+     *
+     * @param serviceBlacklist: a list of services to be removed.
+     * @param provider: a crypto provider will remove a list of services.
+     */
+    public static void removeService(final Collection<Pair<String, String>> serviceBlacklist, final Provider provider) {
+        for (Pair<String, String> serviceDesc : serviceBlacklist) {
+            provider.remove(serviceDesc.left + "." + serviceDesc.right);
+        }
+    }
 }

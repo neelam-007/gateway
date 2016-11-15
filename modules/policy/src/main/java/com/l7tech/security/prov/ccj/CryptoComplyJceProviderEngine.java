@@ -1,11 +1,16 @@
 package com.l7tech.security.prov.ccj;
 
 import com.l7tech.security.prov.JceProvider;
+import com.l7tech.security.prov.ProviderUtil;
 import com.l7tech.util.ConfigFactory;
+import com.l7tech.util.Pair;
 import com.safelogic.cryptocomply.jce.provider.SLProvider;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import java.security.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.logging.Logger;
 
 /**
@@ -16,8 +21,17 @@ public class CryptoComplyJceProviderEngine extends JceProvider {
     private static final String PROP_FIPS = "com.l7tech.security.fips.enabled";
     private static final String PROP_PERMAFIPS = "com.l7tech.security.fips.alwaysEnabled";
     private static final String PROP_TLS_PROV = "com.l7tech.security.tlsProvider";
+    private static final String PROP_DISABLE_BLACKLISTED_SERVICES = "com.l7tech.security.prov.ccj.disableServices";
+    private static final boolean DISABLE_BLACKLISTED_SERVICES = ConfigFactory.getBooleanProperty(PROP_DISABLE_BLACKLISTED_SERVICES, true);
+    private static final Collection<Pair<String,String>> SERVICE_BLACKLIST = Collections.unmodifiableCollection(Arrays.asList(
+        new Pair<>( "CertificateFactory", "X.509" ),
+        new Pair<>( "KeyStore", "PKCS12" ),
+        new Pair<>( "CertPathBuilder", "PKIX" ),
+        new Pair<>( "CertPathValidator", "PKIX" ),
+        new Pair<>( "CertStore", "Collection" )
+    ));
 
-    public final Provider PROVIDER;
+    private final Provider PROVIDER;
 
     public CryptoComplyJceProviderEngine() {
         final boolean FIPS = ConfigFactory.getBooleanProperty( PROP_FIPS, false );
@@ -25,7 +39,12 @@ public class CryptoComplyJceProviderEngine extends JceProvider {
         if (FIPS || permafips) {
             logger.info("Initializing CryptoComply library in FIPS 140 mode");
             PROVIDER = new SLProvider();
+            Security.removeProvider(SLProvider.PROVIDER_NAME);
             Security.insertProviderAt(PROVIDER, 1);
+
+            if (DISABLE_BLACKLISTED_SERVICES) {
+                ProviderUtil.removeService(SERVICE_BLACKLIST, PROVIDER);
+            }
         } else {
             PROVIDER = new BouncyCastleProvider();
             logger.info("Initializing Bouncy Castle library in Non-FIPS mode");
@@ -49,6 +68,11 @@ public class CryptoComplyJceProviderEngine extends JceProvider {
     }
 
     @Override
+    protected String getRsaOaepPaddingCipherName() {
+        return "RSA/ECB/OAEPWithSHA1AndMGF1Padding";
+    }
+
+    @Override
     public Provider getPreferredProvider(String service) {
         if ("Cipher.RSA/ECB/NoPadding".equals(service))
             return PROVIDER;
@@ -56,7 +80,14 @@ public class CryptoComplyJceProviderEngine extends JceProvider {
     }
 
     @Override
+    protected String getRsaPkcs1PaddingCipherName() {
+        return "RSA/ECB/PKCS1Padding";
+    }
+
+    @Override
     public Provider getProviderFor(String service) {
+        if (SERVICE_KEYSTORE_PKCS12.equalsIgnoreCase(service))
+            return new com.sun.net.ssl.internal.ssl.Provider();
         if (SERVICE_TLS10.equals(service))
             return getTls10Provider();
         return super.getProviderFor(service);

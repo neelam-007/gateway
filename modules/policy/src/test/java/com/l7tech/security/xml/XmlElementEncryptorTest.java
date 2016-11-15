@@ -13,6 +13,7 @@ import com.l7tech.util.SoapConstants;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.xml.soap.SoapUtil;
 import com.rsa.jsafe.provider.JsafeJCE;
+import com.safelogic.cryptocomply.jce.provider.SLProvider;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -27,6 +28,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.OAEPParameterSpec;
 import javax.crypto.spec.PSource;
 import java.security.PrivateKey;
+import java.security.Provider;
 import java.security.Security;
 import java.security.cert.X509Certificate;
 import java.security.spec.MGF1ParameterSpec;
@@ -67,21 +69,22 @@ public class XmlElementEncryptorTest {
         useDefaultProvider();
     }
 
-    private static void useCryptoJProvider() {
-        Security.removeProvider( "JsafeJCE" );
-        Security.insertProviderAt( new JsafeJCE(), 1 );
-        expectedRsaProvider = "JsafeJCE";
+    private static void useCCJProvider() {
+        Provider provider = new SLProvider();
+        Security.removeProvider("WF");
+        Security.insertProviderAt(provider, 1);
+        expectedRsaProvider = "WF";
     }
 
     private static void useDefaultProvider() {
-        Security.removeProvider( "JsafeJCE" );
+        Security.removeProvider( "WF" );
         Security.removeProvider( "RsaJsse" );
         expectedRsaProvider = "SunJCE";
     }
 
-    private static void setCryptoJ( boolean useCryptoJ ) {
-        if ( useCryptoJ ) {
-            useCryptoJProvider();
+    private static void setCCJ(boolean useCCJ ) {
+        if ( useCCJ ) {
+            useCCJProvider();
         } else {
             useDefaultProvider();
         }
@@ -140,7 +143,7 @@ public class XmlElementEncryptorTest {
     }
 
     private void runOaepTest( boolean useCryptoJ ) throws Exception {
-        setCryptoJ( useCryptoJ );
+        setCCJ( useCryptoJ );
 
         XmlElementEncryptionConfig rawConfig = new XmlElementEncryptionConfig();
         rawConfig.setRecipientCertificateBase64(recipb64);
@@ -212,7 +215,7 @@ public class XmlElementEncryptorTest {
     }
 
     private void runOaepWithSha256Mgf1Sha1Test( boolean useCryptoJ ) throws Exception {
-        setCryptoJ( useCryptoJ );
+        setCCJ( useCryptoJ );
 
         XmlElementEncryptionConfig rawConfig = new XmlElementEncryptionConfig();
         rawConfig.setRecipientCertificateBase64(recipb64);
@@ -260,7 +263,7 @@ public class XmlElementEncryptorTest {
     }
 
     private void runOaepWithSha384Mgf1Sha1Test( boolean useCryptoJ ) throws Exception {
-        setCryptoJ( useCryptoJ );
+        setCCJ( useCryptoJ );
 
         XmlElementEncryptionConfig rawConfig = new XmlElementEncryptionConfig();
         rawConfig.setRecipientCertificateBase64(recipb64);
@@ -308,7 +311,7 @@ public class XmlElementEncryptorTest {
     }
 
     private void runOaepWithSha256Mgf1Sha1_defaultViaSystemPropertyTest( boolean useCryptoJ ) throws Exception {
-        setCryptoJ( useCryptoJ );
+        setCCJ( useCryptoJ );
 
         // Make sure encryption of XML using OAEP uses SHA-256 by default (note: not currently known to be necessary for security, SHA-1 seems to be fine for this application, even without collision resistance)
         SyspropUtil.setProperty( XmlElementEncryptor.PROP_OAEP_DIGEST_SHA256, "true" );

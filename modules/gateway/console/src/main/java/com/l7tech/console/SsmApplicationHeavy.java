@@ -2,10 +2,16 @@ package com.l7tech.console;
 
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gui.util.HelpUtil;
+import com.l7tech.security.prov.ProviderUtil;
+import com.l7tech.util.ConfigFactory;
+import com.l7tech.util.Pair;
 
 import javax.swing.*;
 import java.security.Provider;
 import java.security.Security;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.logging.Logger;
 
 /**
@@ -13,6 +19,12 @@ import java.util.logging.Logger;
  */
 public class SsmApplicationHeavy extends SsmApplication  {
     private final Logger log = Logger.getLogger(getClass().getName());
+    private static final String PROP_DISABLE_BLACKLISTED_SERVICES = "com.l7tech.security.prov.ccj.disableServices";
+    private static final boolean DISABLE_BLACKLISTED_SERVICES = ConfigFactory.getBooleanProperty( PROP_DISABLE_BLACKLISTED_SERVICES, true );
+    private static final Collection<Pair<String,String>> SERVICE_BLACKLIST = Collections.unmodifiableCollection(Arrays.asList(
+        new Pair<>( "CertificateFactory", "X.509" ),
+        new Pair<>( "KeyStore", "PKCS12" )
+    ));
     private static SsmApplication ssmApplication;
     private boolean running = false;
 
@@ -112,8 +124,13 @@ public class SsmApplicationHeavy extends SsmApplication  {
 
     private void installAdditionalSecurityProviders() {
         final Provider provider = getCcjProvider();
-        Security.addProvider(provider);
+        Security.removeProvider("WF");
+        Security.insertProviderAt(provider, 1);
         log.info("Registering CryptoComply as preferred crypto provider");
+
+        if (DISABLE_BLACKLISTED_SERVICES) {
+            ProviderUtil.removeService(SERVICE_BLACKLIST, provider);
+        }
     }
 
     private Provider getCcjProvider() {
