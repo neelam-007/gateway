@@ -5,6 +5,7 @@ import com.l7tech.gui.util.HelpUtil;
 import com.l7tech.security.prov.ProviderUtil;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.Pair;
+import com.l7tech.util.SyspropUtil;
 
 import javax.swing.*;
 import java.security.Provider;
@@ -123,10 +124,16 @@ public class SsmApplicationHeavy extends SsmApplication  {
     }
 
     private void installAdditionalSecurityProviders() {
+        final boolean asFirstProvider = SyspropUtil.getBoolean("com.l7tech.console.install.ccj.first.provider", true);
+
         final Provider provider = getCcjProvider();
-        Security.removeProvider("WF");
-        Security.insertProviderAt(provider, 1);
-        log.info("Registering CryptoComply as preferred crypto provider");
+        if (asFirstProvider) {
+            Security.removeProvider("WF");
+            Security.insertProviderAt(provider, 1);
+            log.info("Registering CryptoComply as most-preferred crypto provider");
+        } else {
+            log.info("Registering CryptoComply as additional crypto provider");
+        }
 
         if (DISABLE_BLACKLISTED_SERVICES) {
             ProviderUtil.removeService(SERVICE_BLACKLIST, provider);
