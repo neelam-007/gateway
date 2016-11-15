@@ -4,15 +4,11 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.gui.util.HelpUtil;
 import com.l7tech.security.prov.ProviderUtil;
 import com.l7tech.util.ConfigFactory;
-import com.l7tech.util.Pair;
 import com.l7tech.util.SyspropUtil;
 
 import javax.swing.*;
 import java.security.Provider;
 import java.security.Security;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.logging.Logger;
 
 /**
@@ -22,16 +18,12 @@ public class SsmApplicationHeavy extends SsmApplication  {
     private final Logger log = Logger.getLogger(getClass().getName());
     private static final String PROP_DISABLE_BLACKLISTED_SERVICES = "com.l7tech.security.prov.ccj.disableServices";
     private static final boolean DISABLE_BLACKLISTED_SERVICES = ConfigFactory.getBooleanProperty( PROP_DISABLE_BLACKLISTED_SERVICES, true );
-    private static final Collection<Pair<String,String>> SERVICE_BLACKLIST = Collections.unmodifiableCollection(Arrays.asList(
-        new Pair<>( "CertificateFactory", "X.509" ),
-        new Pair<>( "KeyStore", "PKCS12" )
-    ));
     private static SsmApplication ssmApplication;
     private boolean running = false;
 
     public SsmApplicationHeavy() {
         if (ssmApplication != null) {
-            throw new IllegalStateException("Already initalized");
+            throw new IllegalStateException("Already initialized");
         }
         ssmApplication = this;
     }
@@ -136,7 +128,7 @@ public class SsmApplicationHeavy extends SsmApplication  {
         }
 
         if (DISABLE_BLACKLISTED_SERVICES) {
-            ProviderUtil.removeService(SERVICE_BLACKLIST, provider);
+            ProviderUtil.removeService(ProviderUtil.SERVICE_BLACKLIST, provider);
         }
     }
 

@@ -6,7 +6,9 @@ import com.l7tech.util.Pair;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.security.Provider;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -14,6 +16,13 @@ import java.util.logging.Logger;
  * Provider utility class.
  */
 public final class ProviderUtil {
+    public static final Collection<Pair<String,String>> SERVICE_BLACKLIST = Collections.unmodifiableCollection(Arrays.asList(
+        new Pair<>( "CertificateFactory", "X.509" ),
+        new Pair<>( "KeyStore", "PKCS12" ),
+        new Pair<>( "CertPathBuilder", "PKIX" ),
+        new Pair<>( "CertPathValidator", "PKIX" ),
+        new Pair<>( "CertStore", "Collection" )
+    ));
     private static final Logger logger = Logger.getLogger(ProviderUtil.class.getName());
     private ProviderUtil() {
         // do not construct
