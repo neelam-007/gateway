@@ -17,6 +17,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Properties configuration bean provider that uses Properties files for storage.
@@ -57,6 +59,8 @@ public class PropertiesConfigurationBeanProvider implements ConfigurationBeanPro
                 configBean.setConfigName( name );
                 configBean.setConfigValue( onLoad(name, properties.getProperty(property)) );
                 configuration.add(configBean);
+            } else {
+                    logger.log(Level.WARNING, "Ignoring unknown node property: " + property);
             }
         }
         
@@ -83,9 +87,15 @@ public class PropertiesConfigurationBeanProvider implements ConfigurationBeanPro
 
         if ( preserveExtraProperties ) {
             for ( final String property : properties.stringPropertyNames() ) {
-                final ConfigurationBean bean = getConfigurationBean( unprefix( property ), configuration );
-                if ( bean == null ) {
-                    propertiesToKeep.add( property );
+                String propertyName = unprefix(property);
+                if(propertyName != null) {
+                    final ConfigurationBean bean = getConfigurationBean( unprefix( property ), configuration );
+                    if ( bean == null ) {
+                        propertiesToKeep.add( property );
+                    }
+                } else {
+                    propertiesToKeep.add(property);
+                    logger.log(Level.WARNING, "Ignoring unknown node property: " + property);
                 }
             }
         }
@@ -216,9 +226,10 @@ public class PropertiesConfigurationBeanProvider implements ConfigurationBeanPro
     private final File propertiesFile;
     private final String propertyPrefix;
     private final boolean preserveExtraProperties;
+    private static final Logger logger = Logger.getLogger(PropertiesConfigurationBeanProvider.class.getName());
 
     private String unprefix( final String name ) {
-        String cleanName = name;
+        String cleanName = null;
 
         if  ( name.startsWith( propertyPrefix ) ) {
             cleanName = name.substring(propertyPrefix.length());
