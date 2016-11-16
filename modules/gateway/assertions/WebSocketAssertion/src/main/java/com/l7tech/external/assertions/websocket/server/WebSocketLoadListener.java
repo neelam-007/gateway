@@ -227,68 +227,78 @@ public class WebSocketLoadListener {
     }
 
     private static void start(WebSocketConnectionEntity connectionEntity, boolean forceFirewall) {
-        try {
+
             if (connectionEntity.isEnabled()) {
 
                 Server server = new Server(getInboundThreadPool());
 
-                if (connectionEntity.isInboundSsl()) {
+                try {
 
-                    SslContextFactory sslContextFactory = WebSocketConnectionManager.getInstance().getInboundSslCtxFactory(connectionEntity);
+                    if (connectionEntity.isInboundSsl()) {
 
-                    HttpConnectionFactory httpConnectionFactory = new HttpConnectionFactory(new HttpConfiguration());
-                    ServerConnector sslConnector = new ServerConnector(server, sslContextFactory, httpConnectionFactory);
-                    sslConnector.setPort(connectionEntity.getInboundListenPort());
-                    sslConnector.setAcceptQueueSize(WebSocketConstants.getClusterProperty(WebSocketConstants.ACCEPT_QUEUE_SIZE_KEY));
-                    server.addConnector(sslConnector);
+                        SslContextFactory sslContextFactory = WebSocketConnectionManager.getInstance().getInboundSslCtxFactory(connectionEntity);
 
-                } else {
-                    ServerConnector connector = new ServerConnector(server);
-                    connector.setPort(connectionEntity.getInboundListenPort());
-                    connector.setAcceptQueueSize(WebSocketConstants.getClusterProperty(WebSocketConstants.ACCEPT_QUEUE_SIZE_KEY));
-                    server.addConnector(connector);
+                        HttpConnectionFactory httpConnectionFactory = new HttpConnectionFactory(new HttpConfiguration());
+                        ServerConnector sslConnector = new ServerConnector(server, sslContextFactory, httpConnectionFactory);
+                        sslConnector.setPort(connectionEntity.getInboundListenPort());
+                        sslConnector.setAcceptQueueSize(WebSocketConstants.getClusterProperty(WebSocketConstants.ACCEPT_QUEUE_SIZE_KEY));
+                        server.addConnector(sslConnector);
+
+                    } else {
+                        ServerConnector connector = new ServerConnector(server);
+                        connector.setPort(connectionEntity.getInboundListenPort());
+                        connector.setAcceptQueueSize(WebSocketConstants.getClusterProperty(WebSocketConstants.ACCEPT_QUEUE_SIZE_KEY));
+                        server.addConnector(connector);
+                    }
+
+                    WebSocketInboundHandler webSocketInboundHandler = new WebSocketInboundHandler(messageProcessor, connectionEntity);
+                    server.setHandler(webSocketInboundHandler);
+
+                    //Register Inbound Handler
+                    WebSocketConnectionManager.getInstance().registerInboundHandler(connectionEntity.getId(), webSocketInboundHandler);
+
+                    if (!connectionEntity.isLoopback()) {
+                        //Register outbound Handler
+                        WebSocketOutboundHandler webSocketOutboundHandler = new WebSocketOutboundHandler(messageProcessor, connectionEntity);
+                        WebSocketConnectionManager.getInstance().registerOutboundHandler(connectionEntity.getId(), webSocketOutboundHandler);
+                    }
+
+                    server.start();
+                    if (logger.isLoggable(Level.FINEST)) {
+                        logger.log(Level.FINEST, server.dump());
+                    }
+
+                    StringBuilder statement = new StringBuilder();
+                    if (connectionEntity.isInboundSsl()) {
+                        statement.append("Starting WSS listener ");
+                    } else {
+                        statement.append("Starting WS listener ");
+                    }
+                    statement.append("on port ").append(connectionEntity.getInboundListenPort());
+
+                    logger.log(Level.INFO, "Checking firewall state for port " + connectionEntity.getInboundListenPort() + " with connection state " + connectionEntity.getRemovePortFlag() + "," + forceFirewall);
+                    //open the firewall for inbound port
+                    if (connectionEntity.getRemovePortFlag() || forceFirewall) {
+                        logger.log(Level.INFO, "Adding firewall rules for port " + connectionEntity.getInboundListenPort());
+                        fwManager.openPort(connectionEntity.getId(), connectionEntity.getInboundListenPort());
+                    }
+
+                    logger.log(Level.INFO, statement.toString());
+
+                    servers.put(connectionEntity, server);
+
+                } catch (Throwable e) {
+                    logger.log(Level.WARNING, "Failed to start the WebSockets Server " + connectionEntity.getId(), e);
+                    if (server.isFailed()){
+                        try {
+                            // DE250298-Inbound SSL - Selecting only SSLv2Hello throws Exception and Fails to start WebSocket Server.
+                            server.stop();
+                        } catch (Exception exception2) {
+                            logger.log(Level.WARNING, "Failed to stop WebSocket Server:" + exception2.toString());
+                        }
+                    }
                 }
-
-                WebSocketInboundHandler webSocketInboundHandler = new WebSocketInboundHandler(messageProcessor, connectionEntity);
-                server.setHandler(webSocketInboundHandler);
-
-                //Register Inbound Handler
-                WebSocketConnectionManager.getInstance().registerInboundHandler(connectionEntity.getId(), webSocketInboundHandler);
-
-                if (!connectionEntity.isLoopback()) {
-                    //Register outbound Handler
-                    WebSocketOutboundHandler webSocketOutboundHandler = new WebSocketOutboundHandler(messageProcessor, connectionEntity);
-                    WebSocketConnectionManager.getInstance().registerOutboundHandler(connectionEntity.getId(), webSocketOutboundHandler);
-                }
-
-                server.start();
-                if (logger.isLoggable(Level.FINEST)) {
-                    logger.log(Level.FINEST, server.dump());
-                }
-
-                StringBuilder statement = new StringBuilder();
-                if (connectionEntity.isInboundSsl()) {
-                    statement.append("Starting WSS listener ");
-                } else {
-                    statement.append("Starting WS listener ");
-                }
-                statement.append("on port ").append(connectionEntity.getInboundListenPort());
-
-                logger.log(Level.INFO, "Checking firewall state for port " + connectionEntity.getInboundListenPort() + " with connection state " + connectionEntity.getRemovePortFlag() + "," + forceFirewall);
-                //open the firewall for inbound port
-                if (connectionEntity.getRemovePortFlag() || forceFirewall) {
-                    logger.log(Level.INFO, "Adding firewall rules for port " + connectionEntity.getInboundListenPort());
-                    fwManager.openPort(connectionEntity.getId(), connectionEntity.getInboundListenPort());
-                }
-
-                logger.log(Level.INFO, statement.toString());
-
-                servers.put(connectionEntity, server);
-
             }
-        } catch (Throwable e) {
-            logger.log(Level.WARNING, "Failed to start the WebSockets Server " + connectionEntity.getId(), e);
-        }
     }
 
     private static void stop(WebSocketConnectionEntity connectionEntity) {
