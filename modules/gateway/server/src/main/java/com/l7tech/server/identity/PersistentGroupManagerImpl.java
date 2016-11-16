@@ -530,6 +530,32 @@ public abstract class PersistentGroupManagerImpl<UT extends PersistentUser, GT e
     }
 
     @Override
+    public void addUserGroup(Set<String> userids, String groupId) throws FindException, UpdateException {
+        try {
+            Set<String> existingUids = headersToIds(doGetUserHeaders(Goid.parseGoid(groupId)));
+
+            GT thisGroup = findByPrimaryKey(groupId);
+
+            // Check for new memberships
+            final UMT uman = identityProvider.getUserManager();
+            for (String newUid : userids) {
+                if (!existingUids.contains(newUid)) {
+                    getHibernateTemplate().save(newMembershipFromId(newUid, groupId));
+                }
+            }
+            // Check for removed memberships
+            for (String existingUid : existingUids) {
+                if (!userids.contains(existingUid)) {
+                    UT oldUser = uman.findByPrimaryKey(existingUid);
+                    deleteMembership(thisGroup, oldUser);
+                }
+            }
+        } catch (HibernateException he) {
+            throw new UpdateException(he.toString(), he);
+        }
+    }
+
+    @Override
     public void removeUser(UT user, GT group) throws FindException, UpdateException {
         UT userImp = identityProvider.getUserManager().cast(user);
         GT groupImp = cast(group);

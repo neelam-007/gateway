@@ -194,4 +194,11 @@ public class FederatedGroupManagerImpl
     public String getTableName() {
         return "fed_group";
     }
+
+    @Override
+    public GroupMembership newMembershipFromId(String userId, String groupId) {
+        Goid groupOid = Goid.parseGoid(groupId);
+        Goid userOid = Goid.parseGoid(userId);
+        return new FederatedGroupMembership(providerConfig.getGoid(), groupOid, userOid);
+    }
 }

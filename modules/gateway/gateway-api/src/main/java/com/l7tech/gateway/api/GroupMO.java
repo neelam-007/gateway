@@ -3,10 +3,11 @@ package com.l7tech.gateway.api;
 import com.l7tech.gateway.api.impl.AccessorSupport;
 
 import javax.xml.bind.annotation.*;
+import java.util.Set;
 import java.util.List;
 
 @XmlRootElement(name = "Group")
-@XmlType(name = "GroupType", propOrder = {"name", "description", "extensions"})
+@XmlType(name = "GroupType", propOrder = {"name", "description", "userIds", "extensions"})
 @AccessorSupport.AccessibleResource(name = "groups")
 public class GroupMO extends AccessibleObject {
 
@@ -69,6 +70,21 @@ public class GroupMO extends AccessibleObject {
         this.providerId = providerId;
     }
 
+    @XmlElementWrapper(name = "userids", required = false)
+    @XmlElement(name = "userid", required = false)
+    public Set<String> getUserIds() {
+        return userids;
+    }
+
+    /**
+     * Sets of user Ids in the group
+     *
+     * @param userids The list of user ids for this group.
+     */
+    public void setUserIds(Set<String> userids) {
+        this.userids = userids;
+    }
+
     //- PACKAGE
 
     GroupMO() {
@@ -85,5 +101,5 @@ public class GroupMO extends AccessibleObject {
     private String name;
     private String description;
     private String providerId;
-
+    private Set<String> userids;
 }

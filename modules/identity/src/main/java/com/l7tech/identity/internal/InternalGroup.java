@@ -2,13 +2,14 @@ package com.l7tech.identity.internal;
 
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.PersistentGroup;
+import org.hibernate.annotations.Proxy;
 
 import javax.persistence.Column;
-import javax.xml.bind.annotation.XmlRootElement;
 import javax.persistence.Entity;
 import javax.persistence.Table;
-
-import org.hibernate.annotations.Proxy;
+import javax.persistence.Transient;
+import javax.xml.bind.annotation.XmlRootElement;
+import java.util.Set;
 
 @XmlRootElement
 @Entity
@@ -17,6 +18,7 @@ import org.hibernate.annotations.Proxy;
 public class InternalGroup extends PersistentGroup {
 
     private boolean enabled = true;
+    Set<String> userHeaders = null;
 
     public InternalGroup() {
         this(null);
@@ -64,4 +66,17 @@ public class InternalGroup extends PersistentGroup {
     public void setEnabled(boolean enabled){
         this.enabled = enabled;
     }
+
+
+    @Transient
+    public Set<String> getUserHeaders() {
+        return userHeaders;
+    }
+
+    // Setting users associated with group by fetching the associated User details from intenal_user_group table and intenal_user table
+    @Transient
+    public void setUserHeaders(Set<String> userHeaders) {
+        this.userHeaders = userHeaders;
+    }
+
 }

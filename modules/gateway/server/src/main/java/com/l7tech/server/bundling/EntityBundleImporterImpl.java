@@ -963,10 +963,14 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                             }
                             if (entityContainer.getEntity() instanceof GroupBean) {
                                 final GroupManager groupManager = identityProvider.getGroupManager();
+                                Set<String> userids = ((GroupBean)entityContainer.getEntity()).getUserHeaders();
+
                                 if(existingEntity == null) {
                                     final Group group = groupManager.reify((GroupBean) entityContainer.getEntity());
                                     final String groupId = groupManager.save(id == null ? null : Goid.parseGoid(id), group, null);
                                     ((GroupBean) entityContainer.getEntity()).setUniqueIdentifier(groupId);
+                                    groupManager.addUserGroup(userids, groupId);
+
                                 } else {
                                     final GroupBean groupBean = (GroupBean) entityContainer.getEntity();
                                     groupBean.setUniqueIdentifier(existingEntity.getId());
@@ -976,6 +980,8 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                         ((PersistentEntity) group).setVersion(((PersistentEntity) existingEntity).getVersion());
                                     }
                                     groupManager.update(group);
+                                    groupManager.addUserGroup(userids, group.getId());
+
                                 }
                             } else if (entityContainer.getEntity() instanceof UserBean) {
                                 final UserManager userManager = identityProvider.getUserManager();

@@ -10,5 +10,6 @@ import com.l7tech.identity.*;
  */
 public interface PersistentGroupManager<UT extends PersistentUser, GT extends PersistentGroup> extends GroupManager<UT, GT> {
     GroupMembership newMembership(GT group, UT user);
+    GroupMembership newMembershipFromId(String userId, String groupId);
     void deleteMembership(GT group, UT user);
 }

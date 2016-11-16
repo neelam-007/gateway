@@ -7,6 +7,9 @@ import com.l7tech.objectmodel.AnonymousEntityReference;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.PropertyResolver;
+
+import java.util.Set;
+
 import static com.l7tech.objectmodel.migration.MigrationMappingSelection.NONE;
 
 /**
@@ -45,5 +48,13 @@ public class AnonymousGroupReference extends AnonymousEntityReference implements
 
     public GroupBean getGroupBean() {
         return groupBean;
+    }
+
+    public Set<String> getUserHeaders() {
+        return null;
+    }
+
+    public void setUserHeaders(Set<String> userHeaders) {
+        // Not used
     }
 }

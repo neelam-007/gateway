@@ -472,6 +472,14 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
      * throws an UnsupportedOperationException
      */
     @Override
+    public void addUserGroup(Set<String> userids, String group) {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * throws an UnsupportedOperationException
+     */
+    @Override
     public void removeUser(LdapUser user, LdapGroup group) {
         throw new UnsupportedOperationException();
     }
