@@ -5,21 +5,26 @@ import com.l7tech.security.prov.JceProvider;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.SyspropUtil;
 import org.apache.http.client.params.ClientPNames;
+import org.apache.http.conn.ConnectTimeoutException;
 import org.apache.http.conn.scheme.Scheme;
 import org.apache.http.conn.ssl.X509HostnameVerifier;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.PoolingClientConnectionManager;
 import org.apache.http.params.CoreConnectionPNames;
+import org.apache.http.params.HttpParams;
 
 import javax.net.ssl.*;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -38,7 +43,7 @@ public class SecureHttpComponentsClient extends DefaultHttpClient {
     public static final String DEFAULT_PROTOCOLS = null; // "TLSv1.2";
 
     public SecureHttpComponentsClient() {
-        this( getDefaultKeyManagers() );
+        this(getDefaultKeyManagers());
     }
 
     public SecureHttpComponentsClient(KeyManager[] keyManagers) {
@@ -83,7 +88,7 @@ public class SecureHttpComponentsClient extends DefaultHttpClient {
     private static X509KeyManager keyManager;
     private static SSLTrustFailureHandler currentTrustFailureHandler;
 
-    private void updateHostConfiguration(){
+    private void updateHostConfiguration() {
         getConnectionManager().getSchemeRegistry().register(getScheme(getSSLSocketFactory()));
     }
 
@@ -92,13 +97,12 @@ public class SecureHttpComponentsClient extends DefaultHttpClient {
     private SSLSocketFactory getSSLSocketFactory() {
         try {
             SSLContext sslContext = SSLContext.getInstance("TLS");
-            JceProvider.getInstance().prepareSslContext( sslContext );
+            JceProvider.getInstance().prepareSslContext(sslContext);
             KeyManager[] keyManagers = getKeyManagers();
             TrustManager[] trustManagers = getTrustManagers();
             sslContext.init(keyManagers, trustManagers, null);
             return sslContext.getSocketFactory();
-        }
-        catch(GeneralSecurityException gse) {
+        } catch (GeneralSecurityException gse) {
             throw new RuntimeException("Error initializing SSL", gse);
         }
     }
@@ -113,23 +117,35 @@ public class SecureHttpComponentsClient extends DefaultHttpClient {
             super(socketfactory, hostnameVerifier);
         }
 
+        @Override
+        public Socket connectSocket(final Socket socket, final InetSocketAddress remoteAddress, final InetSocketAddress localAddress, final HttpParams params) throws IOException, UnknownHostException, ConnectTimeoutException {
+            if (socket instanceof SSLSocket) {
+                configureSNIHeader((SSLSocket) socket, remoteAddress.getHostString());
+            }
+            return super.connectSocket(socket, remoteAddress, localAddress, params);
+        }
+
+        @Override
         protected void prepareSocket(SSLSocket socket) throws IOException {
-            if(socket != null) {
+            if (socket != null) {
                 configureSslClientSocket(socket);
             }
         }
 
-    }
+        private static void configureSNIHeader(final SSLSocket socket, final String host) {
+            final SSLParameters parameters = socket.getSSLParameters();
+            parameters.setServerNames(Collections.singletonList(new SNIHostName(host)));
+            socket.setSSLParameters(parameters);
+        }
 
-    private static void configureSslClientSocket(Socket s) {
-        SSLSocket sslSocket = (SSLSocket) s;
-        if ( PROTOCOLS != null) {
-            String[] protos = PROTOCOLS.trim().split("\\s*,\\s*");
-            sslSocket.setEnabledProtocols(protos);
+        private static void configureSslClientSocket(Socket s) {
+            SSLSocket sslSocket = (SSLSocket) s;
+            if (PROTOCOLS != null) {
+                String[] protos = PROTOCOLS.trim().split("\\s*,\\s*");
+                sslSocket.setEnabledProtocols(protos);
+            }
         }
     }
-
-
 
     private KeyManager[] getKeyManagers() {
         return keyManagers;
@@ -170,7 +186,7 @@ public class SecureHttpComponentsClient extends DefaultHttpClient {
                 }
             };
         }
-        return new KeyManager[] { manager };
+        return new KeyManager[]{manager};
     }
 
     private TrustManager[] getTrustManagers() {
@@ -178,17 +194,16 @@ public class SecureHttpComponentsClient extends DefaultHttpClient {
             String tmalg = ConfigFactory.getProperty("com.l7tech.console.trustMananagerFactoryAlgorithm",
                     TrustManagerFactory.getDefaultAlgorithm());
             TrustManagerFactory tmf = TrustManagerFactory.getInstance(tmalg);
-            tmf.init((KeyStore)null);
+            tmf.init((KeyStore) null);
             TrustManager[] trustManagers = tmf.getTrustManagers();
-            for (int t=0; t<trustManagers.length; t++) {
+            for (int t = 0; t < trustManagers.length; t++) {
                 TrustManager trustManager = trustManagers[t];
                 if (trustManager instanceof X509TrustManager) {
                     trustManagers[t] = getWrappedX509TrustManager((X509TrustManager) trustManager);
                 }
             }
             return trustManagers;
-        }
-        catch(GeneralSecurityException gse) {
+        } catch (GeneralSecurityException gse) {
             throw new RuntimeException("Error initializing SSL", gse);
         }
     }
@@ -239,4 +254,5 @@ public class SecureHttpComponentsClient extends DefaultHttpClient {
         this.getConnectionManager().closeIdleConnections(0, TimeUnit.MILLISECONDS);
         updateHostConfiguration();
     }
+
 }
