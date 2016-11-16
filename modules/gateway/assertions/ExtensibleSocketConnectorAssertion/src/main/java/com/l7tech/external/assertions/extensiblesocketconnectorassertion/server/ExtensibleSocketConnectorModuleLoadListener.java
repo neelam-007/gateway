@@ -48,6 +48,7 @@ public class ExtensibleSocketConnectorModuleLoadListener {
     private static ExtensibleSocketConnectorReferenceFactory externalReferenceFactory;
     private static ApplicationEventProxy eventProxy;
 
+    private static SocketConnectorManager connectionManager;
     private static ApplicationListener applicationListener;
     private static GenericEntityManager gem;
 
@@ -73,48 +74,58 @@ public class ExtensibleSocketConnectorModuleLoadListener {
         eventProxy = context.getBean("applicationEventProxy", ApplicationEventProxy.class);
         applicationListener = new ApplicationListener() {
             @Override
-            public void onApplicationEvent(ApplicationEvent event) {
+            public void onApplicationEvent(ApplicationEvent applicationEvent) {
 
                 // only do this when the SSG is ready for messages
-                if (event instanceof ReadyForMessages) {
-                    // initialize the outbound connection manager
-                    if (SocketConnectorManager.getInstance() != null) {
-                        SocketConnectorManager.getInstance().start();
-                    }
+                if (applicationEvent instanceof ReadyForMessages) {
+                    // initialize the outbound MQ connection manager
+                    connectionManager.start();
+
                 }
 
-                //startup the connection for the generic entity when one has been created
-                //or updated
-                if (event instanceof EntityInvalidationEvent &&
-                        event.getSource().getClass().equals(GenericEntity.class)) {
+                // startup the connection for the generic entity when one has been created
+                // or updated
+                if (applicationEvent instanceof EntityInvalidationEvent) {
 
-                    EntityInvalidationEvent e = (EntityInvalidationEvent) event;
-                    GenericEntity sourceEntity = (GenericEntity) e.getSource();
-                    Goid goid = sourceEntity.getGoid();
-                    char operation = e.getEntityOperations()[0];
+                    EntityInvalidationEvent event = (EntityInvalidationEvent) applicationEvent;
 
-                    if (sourceEntity.getEntityClassName().equals(ExtensibleSocketConnectorEntity.class.getName())) {
+                    if (GenericEntity.class.equals(event.getEntityClass())) {
+                        Goid[] goids = event.getEntityIds();
+                        char[] ops = event.getEntityOperations();
+                        for (int i = 0; i < ops.length; i++) {
+                            switch (ops[i]) {
+                                case EntityInvalidationEvent.CREATE:
+                                    try {
+                                        ExtensibleSocketConnectorEntity entity = gem.getEntityManager(ExtensibleSocketConnectorEntity.class).findByPrimaryKey(goids[i]);
+                                        if (entity != null) {
+                                            connectionManager.connectionAdded(entity);
+                                        }
+                                    } catch (FindException e) {
+                                        LOGGER.warning("Entity for goid, " + goids[i].toString() + ", not found when creating " +
+                                                "ExtensibleSocketConnectorEntity");
+                                    }
+                                    break;
 
-                        ExtensibleSocketConnectorEntity entity;
+                                case EntityInvalidationEvent.UPDATE:
+                                    try {
+                                        ExtensibleSocketConnectorEntity entity = gem.getEntityManager(ExtensibleSocketConnectorEntity.class).findByPrimaryKey(goids[i]);
+                                        if (entity != null) {
+                                            connectionManager.connectionUpdated(entity);
+                                        }
+                                    } catch (FindException e) {
+                                        LOGGER.warning("Entity for goid, " + goids[i].toString() + ", not found when updating " +
+                                                "ExtensibleSocketConnectorEntity");
+                                    }
+                                    break;
 
-                        try {
-                            entity = gem.getEntityManager(ExtensibleSocketConnectorEntity.class).findByPrimaryKey(goid);
-                        } catch (FindException e1) {
-                            LOGGER.warning("Entity for goid, " + goid.toString() + ", not found when creating/updating " +
-                                    "ExtensibleSocketConnectorEntity");
-                            return;
-                        }
+                                case EntityInvalidationEvent.DELETE:
+                                    connectionManager.connectionRemoved(goids[i]);
+                                    break;
 
-                        if (operation == EntityInvalidationEvent.CREATE) {
-                            SocketConnectorManager.getInstance().connectionAdded(entity);
-                        }
-
-                        if (operation == EntityInvalidationEvent.UPDATE) {
-                            SocketConnectorManager.getInstance().connectionUpdated(entity);
-                        }
-
-                        if (operation == EntityInvalidationEvent.DELETE) {
-                            SocketConnectorManager.getInstance().connectionRemoved(goid);
+                                default:
+                                    LOGGER.log(Level.WARNING, "Unexpected EntityInvalidationEvent Operation: " + ops[i]);
+                                    break;
+                            }
                         }
                     }
                 }
@@ -175,7 +186,7 @@ public class ExtensibleSocketConnectorModuleLoadListener {
                     gem.getEntityManager(ExtensibleSocketConnectorEntity.class),
                     clusterPropertyManager, keyStoreManager, trustManager, secureRandom, stashManagerFactory,
                     messageProcessor, defaultKey, firewallRulesManager);
-            SocketConnectorManager connectionManager = SocketConnectorManager.getInstance();
+            connectionManager = SocketConnectorManager.getInstance();
             connectionManager.initializeConnectorClasses();
             connectionManager.setDirectoryContext(new InitialDirContext(env));
         } catch (IllegalStateException | NamingException e) {
