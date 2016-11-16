@@ -123,6 +123,8 @@ public class ServiceManagerImp
         // 3. Service now has correct oid so update the associated policy with the right name
         try {
             updatePolicyName( service, policy );
+            //DE212203 : Updating service security zone to policy
+            updateSecurityZone (service, policy);
             Object key = getHibernateTemplate().save( policy );
             if (!(key instanceof Goid))
                 throw new SaveException("Primary key was a " + key.getClass().getName() + ", not a Goid");
@@ -152,6 +154,8 @@ public class ServiceManagerImp
         }
 
         updatePolicyName(service, service.getPolicy());
+        //DE212203 : Updating service security zone to policy
+        updateSecurityZone (service, service.getPolicy());
         try {
             super.update(service);
         } catch (UpdateException ue) {
@@ -368,6 +372,12 @@ public class ServiceManagerImp
         if ( policy != null ) {
             String policyName = service.generatePolicyName();
             policy.setName( policyName );
+        }
+    }
+
+    private void updateSecurityZone( final PublishedService service, final Policy policy ) {
+        if ( policy != null ) {
+            policy.setSecurityZone(service.getSecurityZone());
         }
     }
 }
