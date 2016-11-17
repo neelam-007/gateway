@@ -60,15 +60,15 @@ public class ExtensibleSocketConnectorModuleLoadListener {
 
         registerExternalReferenceFactory(context);
 
-        if (SocketConnectorManager.getInstance() == null) {
+        if (connectionManager == null) {
             initSocketConnectionManager(context);
         }
 
         /* Starts the connection manager if the Gateway is ReadyForMessages */
         GatewayState gatewayState = context.getBean("gatewayState", GatewayState.class);
-        if (gatewayState.isReadyForMessages() && SocketConnectorManager.getInstance() != null) {
+        if (gatewayState.isReadyForMessages() && connectionManager != null) {
             // Only initialize all the ExtensibleSocketConnector inbound/outbound resource managers when the SSG is "ready for messages"
-            SocketConnectorManager.getInstance().start();
+            connectionManager.start();
         }
 
         eventProxy = context.getBean("applicationEventProxy", ApplicationEventProxy.class);
@@ -198,8 +198,9 @@ public class ExtensibleSocketConnectorModuleLoadListener {
     public static synchronized void onModuleUnloaded() {
         removeApplicationListeners();
 
-        if (SocketConnectorManager.getInstance() != null) {
-            SocketConnectorManager.getInstance().stop();
+        if (connectionManager != null) {
+            connectionManager.stop();
+            connectionManager = null;
         }
 
         unregisterGenericEntities();

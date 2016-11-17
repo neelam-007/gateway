@@ -97,7 +97,7 @@ public class ExtensibleSocketConnectorModuleLoadListenerTest {
         when(context.getBean("genericEntityManager", GenericEntityManager.class)).thenReturn(genericEntityManager);
 
         PowerMockito.mockStatic(SocketConnectorManager.class);
-        when(SocketConnectorManager.getInstance()).thenReturn(null).thenReturn(socketConnectorManager);
+        when(SocketConnectorManager.getInstance()).thenReturn(socketConnectorManager);
         PowerMockito.mockStatic(ExtensibleSocketConnectorEntityManagerServerSupport.class);
         when(ExtensibleSocketConnectorEntityManagerServerSupport.getInstance(any(ApplicationContext.class))).thenReturn(serverSupport);
     }
