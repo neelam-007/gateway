@@ -23,67 +23,92 @@ public class DefaultHttpCiphers {
     protected static final Logger logger = Logger.getLogger(DefaultHttpCiphers.class.getName());
 
     private static final String RECOMMENDED_CIPHERS =
-            "TLS_DHE_RSA_WITH_AES_128_CBC_SHA," +
-                    "TLS_DHE_RSA_WITH_AES_128_CBC_SHA256," +
-                    "TLS_DHE_RSA_WITH_AES_128_GCM_SHA256," +
-                    "TLS_DHE_RSA_WITH_AES_256_CBC_SHA," +
-                    "TLS_DHE_RSA_WITH_AES_256_CBC_SHA256," +
-                    "TLS_DHE_RSA_WITH_AES_256_GCM_SHA384," +
-                    "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA," +
-                    "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256," +
-                    "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256," +
-                    "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA," +
-                    "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384," +
+            "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384," +
                     "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384," +
-                    "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA," +
-                    "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256," +
-                    "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256," +
-                    "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA," +
                     "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384," +
-                    "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384";
+                    "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384," +
+                    "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA," +
+                    "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA," +
+                    "TLS_DHE_RSA_WITH_AES_256_GCM_SHA384," +
+                    "TLS_DHE_RSA_WITH_AES_256_CBC_SHA256," +
+                    "TLS_DHE_RSA_WITH_AES_256_CBC_SHA," +
+                    "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256," +
+                    "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256," +
+                    "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256," +
+                    "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256," +
+                    "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA," +
+                    "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA," +
+                    "TLS_DHE_RSA_WITH_AES_128_GCM_SHA256," +
+                    "TLS_DHE_RSA_WITH_AES_128_CBC_SHA256," +
+                    "TLS_DHE_RSA_WITH_AES_128_CBC_SHA," +
+                    "TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384," +
+                    "TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384," +
+                    "TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384," +
+                    "TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384," +
+                    "TLS_ECDH_RSA_WITH_AES_256_CBC_SHA," +
+                    "TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA," +
+                    "TLS_RSA_WITH_AES_256_GCM_SHA384," +
+                    "TLS_RSA_WITH_AES_256_CBC_SHA256," +
+                    "TLS_RSA_WITH_AES_256_CBC_SHA," +
+                    "TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256," +
+                    "TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256," +
+                    "TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256," +
+                    "TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256," +
+                    "TLS_ECDH_RSA_WITH_AES_128_CBC_SHA," +
+                    "TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA," +
+                    "TLS_RSA_WITH_AES_128_GCM_SHA256," +
+                    "TLS_RSA_WITH_AES_128_CBC_SHA256," +
+                    "TLS_RSA_WITH_AES_128_CBC_SHA," +
+                    "TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA," +
+                    "TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA," +
+                    "SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA," +
+                    "TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA," +
+                    "TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA," +
+                    "SSL_RSA_WITH_3DES_EDE_CBC_SHA";
 
     private static final String ALL_VISIBLE_CIPHERS =
-            "TLS_DHE_RSA_WITH_AES_128_CBC_SHA," +
-                    "TLS_DHE_RSA_WITH_AES_128_CBC_SHA256," +
-                    "TLS_DHE_RSA_WITH_AES_128_GCM_SHA256," +
-                    "TLS_DHE_RSA_WITH_AES_256_CBC_SHA," +
-                    "TLS_DHE_RSA_WITH_AES_256_CBC_SHA256," +
-                    "TLS_DHE_RSA_WITH_AES_256_GCM_SHA384," +
-                    "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA," +
-                    "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256," +
-                    "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256," +
-                    "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA," +
-                    "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384," +
+            "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384," +
                     "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384," +
-                    "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA," +
-                    "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256," +
-                    "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256," +
-                    "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA," +
                     "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384," +
-                    "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384," +
-                    "TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA," +
-                    "TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256," +
-                    "TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256," +
-                    "TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA," +
-                    "TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384," +
-                    "TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384," +
-                    "SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA," +
-                    "SSL_RSA_WITH_3DES_EDE_CBC_SHA," +
-                    "TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA," +
-                    "TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA," +
-                    "TLS_ECDH_RSA_WITH_AES_128_CBC_SHA," +
-                    "TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256," +
-                    "TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256," +
-                    "TLS_ECDH_RSA_WITH_AES_256_CBC_SHA," +
-                    "TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384," +
+                    "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384," +
+                    "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA," +
+                    "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA," +
+                    "TLS_DHE_RSA_WITH_AES_256_GCM_SHA384," +
+                    "TLS_DHE_RSA_WITH_AES_256_CBC_SHA256," +
+                    "TLS_DHE_RSA_WITH_AES_256_CBC_SHA," +
+                    "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256," +
+                    "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256," +
+                    "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256," +
+                    "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256," +
+                    "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA," +
+                    "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA," +
+                    "TLS_DHE_RSA_WITH_AES_128_GCM_SHA256," +
+                    "TLS_DHE_RSA_WITH_AES_128_CBC_SHA256," +
+                    "TLS_DHE_RSA_WITH_AES_128_CBC_SHA," +
                     "TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384," +
-                    "TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA," +
-                    "TLS_RSA_WITH_AES_128_CBC_SHA," +
-                    "TLS_RSA_WITH_AES_128_CBC_SHA256," +
-                    "TLS_RSA_WITH_AES_128_GCM_SHA256," +
-                    "TLS_RSA_WITH_AES_256_CBC_SHA," +
+                    "TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384," +
+                    "TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384," +
+                    "TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384," +
+                    "TLS_ECDH_RSA_WITH_AES_256_CBC_SHA," +
+                    "TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA," +
+                    "TLS_RSA_WITH_AES_256_GCM_SHA384," +
                     "TLS_RSA_WITH_AES_256_CBC_SHA256," +
-                    "TLS_RSA_WITH_AES_256_GCM_SHA384";
+                    "TLS_RSA_WITH_AES_256_CBC_SHA," +
+                    "TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256," +
+                    "TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256," +
+                    "TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256," +
+                    "TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256," +
+                    "TLS_ECDH_RSA_WITH_AES_128_CBC_SHA," +
+                    "TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA," +
+                    "TLS_RSA_WITH_AES_128_GCM_SHA256," +
+                    "TLS_RSA_WITH_AES_128_CBC_SHA256," +
+                    "TLS_RSA_WITH_AES_128_CBC_SHA," +
+                    "TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA," +
+                    "TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA," +
+                    "SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA," +
+                    "TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA," +
+                    "TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA," +
+                    "SSL_RSA_WITH_3DES_EDE_CBC_SHA";
 
     // This is the signalling cipher suite value (SCSV) that means the same thing as the renegotiation extension
     // but is more interoperable since it is communicated as a pseudo-cipher suite number
