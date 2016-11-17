@@ -9,6 +9,8 @@ import com.l7tech.policy.variable.VariableMetadata;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.l7tech.policy.assertion.AssertionMetadata.SHORT_NAME;
+
 /**
  * Purpose: This assertion will validate WebSocket message with associated XML Schema,
  * If validation success and Send Response Immediately is not checked it will return WebSocket message in a context variable
@@ -126,6 +128,7 @@ public class WebSocketValidationAssertion extends MessageTargetableAssertion {
         // request default feature set name for our class name, since we are a known optional module
         // that is, we want our required feature set to be "assertion:WebSocket" rather than "set:modularAssertions"
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
+        meta.put(SHORT_NAME, "Validate WebSocket Message"); //DE250773-The name of the protocol "WebSocket" is misspelled in Security Zones > Manage Assignments
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;

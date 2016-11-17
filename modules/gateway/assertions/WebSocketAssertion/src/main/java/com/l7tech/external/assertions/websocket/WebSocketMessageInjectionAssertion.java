@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 import static com.l7tech.policy.assertion.AssertionMetadata.MODULE_LOAD_LISTENER_CLASSNAME;
+import static com.l7tech.policy.assertion.AssertionMetadata.SHORT_NAME;
 
 /**
  * Purpose: This assertion will validate WebSocket message with associated XML Schema,
@@ -162,6 +163,7 @@ public class WebSocketMessageInjectionAssertion extends Assertion implements Use
         // request default feature set name for our class name, since we are a known optional module
         // that is, we want our required feature set to be "assertion:WebSocket" rather than "set:modularAssertions"
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
+        meta.put(SHORT_NAME, "WebSocket Message Injection"); //DE250773-The name of the protocol "WebSocket" is misspelled in Security Zones > Manage Assignments
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;

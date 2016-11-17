@@ -10,6 +10,8 @@ import org.springframework.context.ApplicationContext;
 
 import java.util.Collection;
 
+import static com.l7tech.policy.assertion.AssertionMetadata.SHORT_NAME;
+
 /**
  * Created with IntelliJ IDEA.
  * User: cirving
@@ -33,6 +35,7 @@ public class WebSocketEntityManagerAssertion extends Assertion {
             }
         });
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
+        meta.put(SHORT_NAME, "WebSocket Entity Manager"); //DE250773-The name of the protocol "WebSocket" is misspelled in Security Zones > Manage Assignments
 
         return meta;
     }
