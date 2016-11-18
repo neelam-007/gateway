@@ -2,10 +2,18 @@
 
 <jnlp spec="6.0+" codebase="$$codebase">
     <information>
-        <title>SSM</title>
+        <title>CA API Gateway - Policy Manager</title>
         <vendor>CA Technologies</vendor>
         <description kind="short">Manager Application</description>
+		<icon href="resources/ca_logo_black_64x64.jpg" width="64" height="64"/>
+		<icon kind="shortcut" href="resources/ca_logo_black_16x16.jpg" width="16" height="16"/>
+		<icon kind="shortcut" href="resources/ca_logo_black_32x32.jpg" width="32" height="32"/>
+		<icon kind="shortcut" href="resources/ca_logo_black_64x64.jpg" width="64" height="64"/>
         <offline-allowed/>
+		<shortcut>
+            <desktop/>
+            <menu submenu="CA API Gateway - Policy Manager"/>
+        </shortcut>
     </information>
     <security>
         <all-permissions/>

@@ -3366,6 +3366,7 @@
                 <mkdir dir="@{dir}/${install.src.ssg.modstaging}"/>
 				<mkdir dir="@{dir}/${install.src.ssg.webstart}"/>				
                 <mkdir dir="@{dir}/${install.src.ssg.webstartlib}"/>
+				<mkdir dir="@{dir}/${install.src.ssg.webstartres}"/>
 
                 <!--copy the config wizard -->
                 <copy todir="@{dir}/${install.src.ssg.configwizard}">
@@ -3523,6 +3524,14 @@
 				    <fileset dir="${build.dir}/managerwebstart" includes="layer7-gateway-console-webstart.jar*"/>
                     <fileset dir="${build.dir}/managerwebstart/lib"/>
 					<fileset dir="modules/gateway/console/src/main/resources/com/l7tech/console/resources" includes="version.xml"/>
+                </copy>
+				
+				<copy todir="@{dir}/${install.src.ssg.webstartres}">
+					<fileset dir="modules/gateway/console/src/main/resources/com/l7tech/console/resources">
+						<include name="ca_logo_black_16x16.jpg"/>
+						<include name="ca_logo_black_32x32.jpg"/>
+						<include name="ca_logo_black_64x64.jpg"/>
+					</fileset>
                 </copy>
 
                 <copy file="${src.root}/etc/backup_tables_audit" todir="@{dir}/${install.src.ssg.backuprestore.cfg}"/>
