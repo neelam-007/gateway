@@ -137,17 +137,13 @@ public class DependencyFinder {
         // getDependencies() method in order to handle the cyclical case
         boolean bAddEntitiesAndMapping = true;
         boolean bIncludeOnlyServicePolicy = (PropertiesUtil.getOption("IncludeOnlyServicePolicyOption", Boolean.class, false, searchOptions));
-        boolean bIncludeOnlyDependencies = (PropertiesUtil.getOption("IncludeOnlyDependenciesOption", Boolean.class, false, searchOptions));
+        // Include only service policy will include only Service, Policy and Folder - should ignore the other entities.
         if (bIncludeOnlyServicePolicy) {
             if(!(dependency.getDependent().getDependencyType().toString().equals("SERVICE")) && !(dependency.getDependent().getDependencyType().toString().equals("POLICY")) && !(dependency.getDependent().getDependencyType().toString().equals("FOLDER"))) {
                 bAddEntitiesAndMapping = false;
             }
         }
-        if (bIncludeOnlyDependencies) {
-            if (dependency.getDependent().getDependencyType().toString().equals("SERVICE")) {
-                bAddEntitiesAndMapping = false;
-            }
-        }
+
         if (bAddEntitiesAndMapping)
         dependenciesFound.add(dependency);
         else

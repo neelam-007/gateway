@@ -233,17 +233,10 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
      */
     private List<List<EntityHeader>> loadAllGatewayEntities(@NotNull final Map<String, Object> searchOptions) throws FindException {
         final List<List<EntityHeader>> headerLists = new ArrayList<>();
-        Boolean bIncludeOnlyServicePolicy = (PropertiesUtil.getOption("IncludeOnlyServicePolicyOption", Boolean.class, false, searchOptions));
         Boolean bIncludeOnlyDependencies = (PropertiesUtil.getOption("IncludeOnlyDependenciesOption", Boolean.class, false, searchOptions));
         for (final Class<? extends Entity> entityClass : entityClasses) {
             final EntityHeaderSet<EntityHeader> entityHeaders;
-            if((bIncludeOnlyDependencies) && (PublishedService.class.equals(entityClass)) ) {
-                continue;
-            }
-            else if( (bIncludeOnlyServicePolicy) && (!PublishedService.class.equals(entityClass))&& (!Policy.class.equals(entityClass))&& (!Folder.class.equals(entityClass)) ){
-                continue;
-            }
-            else if (Policy.class.equals(entityClass)) {
+            if (Policy.class.equals(entityClass)) {
                 //exclude private service policies
                 EntityHeaderSet<EntityHeader> policyHeaders = entityCrud.findAll(entityClass);
                 entityHeaders = policyHeaders == null ? null : Functions.reduce(policyHeaders, new EntityHeaderSet<>(), new Functions.Binary<EntityHeaderSet<EntityHeader>, EntityHeaderSet<EntityHeader>, EntityHeader>() {
@@ -331,7 +324,9 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
                 for(final EntityHeader header : roleHeaders){
                     if(header instanceof RoleEntityHeader){
                         final RoleEntityHeader roleHeader = (RoleEntityHeader)header;
-                        if((bIncludeOnlyDependencies) && (roleHeader.getEntityType() != null)&& (roleHeader.getEntityType().toString().equals("SERVICE")) )
+                        // Include only dependencies ignores Service, Policy and Folder - should not include corresponding role headers as well.
+                        if((bIncludeOnlyDependencies) && (roleHeader.getEntityType() != null)&& (roleHeader.getEntityType().toString().equals("SERVICE")
+                                || (roleHeader.getEntityType().toString().equals("POLICY") || (roleHeader.getEntityType().toString().equals("FOLDER")) )))
                         {
                             continue;
                         }

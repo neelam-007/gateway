@@ -172,8 +172,19 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
                     throw new FindException("Could not load entity from dependency found: " + ((DependentEntity) dependentObject.getDependent()).getEntityHeader().toStringVerbose());
                 }
 
-                addMapping(bundleExportProperties, mappings, (DependentEntity) dependentObject.getDependent(), entity, readOnlyEntities);
-                addEntities(bundleExportProperties, entity, entityContainers);
+                boolean bAddEntitiesAndMapping = true;
+                boolean bIncludeOnlyDependencies = Boolean.parseBoolean(bundleExportProperties.getProperty(IncludeOnlyDependenciesOption, IncludeOnlyDependencies));
+                // Include only dependencies ignores Service, Policy and Folder
+                if (bIncludeOnlyDependencies) {
+                    if (entity instanceof PublishedService || entity instanceof Policy || entity instanceof Folder) {
+                        bAddEntitiesAndMapping = false;
+                    }
+                }
+
+                if (bAddEntitiesAndMapping) {
+                    addMapping(bundleExportProperties, mappings, (DependentEntity) dependentObject.getDependent(), entity, readOnlyEntities);
+                    addEntities(bundleExportProperties, entity, entityContainers);
+                }
             }
         }
 
