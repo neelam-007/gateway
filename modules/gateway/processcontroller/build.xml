@@ -2,9 +2,6 @@
     <property name="module.main" value="com.l7tech.server.processcontroller.ProcessControllerDaemon"/>
     <property name="module.package.root" value="com/l7tech/server/processcontroller"/>
     <property name="module.sign" value="true"/>
-	<!-- Change Java language level to 1.7 for patchbuilder to handle platform patch upgrades from gateways with JDK7 -->
-	<property name="module.compile.source" value="1.7"/>
-    <property name="module.compile.target" value="1.7"/>
 	
     <import file="../../../etc/build/build-common.xml"/>
 </project>
