@@ -19,6 +19,8 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.wsp.WspReader;
+import com.l7tech.security.cert.TrustedCert;
+import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.token.OpaqueSecurityToken;
 import com.l7tech.server.StashManagerFactory;
@@ -128,6 +130,9 @@ public class PortalBootstrapManager {
 
     @Inject
     private ClusterPropertyManager clusterPropertyManager;
+
+    @Inject
+    private TrustedCertManager trustedCertManager;
 
     private Config config = ConfigFactory.getCachedConfig();
 
@@ -300,15 +305,28 @@ public class PortalBootstrapManager {
         byte[] postBody = buildEnrollmentPostBody( user );
 
         final SsgKeyEntry clientCert = prepareClientCert(user);
-        final X509TrustManager tm = new PermissiveX509TrustManager();  // TODO MUST BE FIXED!! DE248282  new PinChecker( pinBytes )
-        X509KeyManager km;
 
         final SSLSocketFactory socketFactory;
+        X509KeyManager km;
+        PinChecker pinChecker;
+
         try {
+
+            Collection<TrustedCert> trustedCerts = trustedCertManager.findByName(pssgHost);
+            if (trustedCerts != null && trustedCerts.size() > 0) {
+                TrustedCert cert = trustedCerts.iterator().next();
+                byte[] encodedPublicKey = cert.getCertificate().getPublicKey().getEncoded();
+                byte[] keyHash = HexUtils.getSha256Digest( encodedPublicKey );
+                pinChecker = new PinChecker(keyHash);
+            } else {
+                throw new IOException("Certificate not valid");
+            }
+
+
             km = new SingleCertX509KeyManager( clientCert.getCertificateChain(), clientCert.getPrivateKey(), clientCert.getAlias() );
 
             SSLContext sslContext = SSLContext.getInstance( "TLS" );
-            sslContext.init( new KeyManager[] { km }, new TrustManager[] { tm }, JceProvider.getInstance().getSecureRandom() );
+            sslContext.init( new KeyManager[] { km }, new TrustManager[] { pinChecker }, JceProvider.getInstance().getSecureRandom() );
             socketFactory = sslContext.getSocketFactory();
         } catch ( NoSuchAlgorithmException | KeyManagementException | UnrecoverableKeyException e ) {
             throw new IOException( e );
@@ -322,6 +340,7 @@ public class PortalBootstrapManager {
         try {
             connection = (HttpsURLConnection) url.openConnection();
             connection.setRequestMethod("POST");
+            connection.setHostnameVerifier(pinChecker);
             enableSni( connection, socketFactory, url );
             connection.setSSLSocketFactory(socketFactory);
             connection.setRequestProperty("Content-Type", "application/json");
