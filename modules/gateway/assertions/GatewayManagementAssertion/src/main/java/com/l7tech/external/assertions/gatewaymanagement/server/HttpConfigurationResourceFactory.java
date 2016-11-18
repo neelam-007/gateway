@@ -3,7 +3,6 @@ package com.l7tech.external.assertions.gatewaymanagement.server;
 import com.l7tech.gateway.api.HttpConfigurationMO;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.common.resources.HttpConfiguration;
-import com.l7tech.gateway.common.resources.HttpHeader;
 import com.l7tech.gateway.common.resources.HttpProxyConfiguration;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.objectmodel.*;
@@ -15,10 +14,6 @@ import com.l7tech.server.security.rbac.SecurityZoneManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.transaction.PlatformTransactionManager;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * This is the resource factory for Http configurations
@@ -72,12 +67,7 @@ public class HttpConfigurationResourceFactory extends SecurityZoneableEntityMana
             httpConfigurationMO.setProxyUse(null);
             httpConfigurationMO.setProxyConfiguration(null);
         }
-        List<HttpHeader> httpHeadersList = httpConfiguration.getHeaders();
-        Map<String, String> httpHeadersMap = new HashMap<>();
-        for (HttpHeader httpHeader : httpHeadersList) {
-            httpHeadersMap.put(httpHeader.getName(), httpHeader.getValue());
-        }
-        httpConfigurationMO.setHttpHeaders(httpHeadersMap);
+
         // handle SecurityZone
         doSecurityZoneAsResource(httpConfigurationMO, httpConfiguration);
 

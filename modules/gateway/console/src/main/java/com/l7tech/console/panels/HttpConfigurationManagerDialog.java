@@ -1,9 +1,9 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.util.InetAddressUtil;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.resources.HttpConfiguration;
-import com.l7tech.gateway.common.resources.HttpHeader;
 import com.l7tech.gateway.common.resources.HttpProxyConfiguration;
 import com.l7tech.gateway.common.resources.ResourceAdmin;
 import com.l7tech.gui.SimpleTableModel;
@@ -16,7 +16,6 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
-import com.l7tech.util.InetAddressUtil;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -26,7 +25,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.List;
 import java.util.ResourceBundle;
 
 /**
@@ -62,6 +60,7 @@ public class HttpConfigurationManagerDialog extends JDialog {
     private void init() {
         setTitle( getResourceString( "dialog.title" ) );
         add( mainPanel );
+
         httpConfigurationTableModel = TableUtil.configureTable(
                 httpConfigurationTable,
                 TableUtil.column(getResourceString("table.column.host"),     40, 150,   400, property("host"), String.class),
@@ -246,8 +245,6 @@ public class HttpConfigurationManagerDialog extends JDialog {
                 if ( dialog.wasOk() ) {
                     final ResourceAdmin admin = Registry.getDefault().getResourceAdmin();
                     try {
-                        List<HttpHeader> headers = dialog.getHttpHeaderTableHandler().getData();
-                        httpConfiguration.syncHeaders(headers);
                         admin.saveHttpConfiguration( httpConfiguration );
                     } catch ( final DuplicateObjectException e ) {
                         handleDuplicateError(httpConfiguration);

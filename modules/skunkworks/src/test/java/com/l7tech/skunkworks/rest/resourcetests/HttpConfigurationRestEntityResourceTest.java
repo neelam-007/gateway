@@ -4,7 +4,6 @@ import com.l7tech.gateway.api.HttpConfigurationMO;
 import com.l7tech.gateway.api.Link;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.common.resources.HttpConfiguration;
-import com.l7tech.gateway.common.resources.HttpHeader;
 import com.l7tech.gateway.common.resources.HttpProxyConfiguration;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.objectmodel.*;
@@ -88,14 +87,6 @@ public class HttpConfigurationRestEntityResourceTest extends RestEntityTests<Htt
         httpConfiguration.setTlsKeystoreGoid(new Goid(882, 999));
         httpConfiguration.setTlsVersion("2");
         httpConfiguration.setTlsKeyUse(HttpConfiguration.Option.CUSTOM);
-
-        HttpHeader httpHeader = new HttpHeader();
-        httpHeader.setName("testName");
-        httpHeader.setValue("testValue");
-        httpHeader.setHttpConfiguration(httpConfiguration);
-        List<HttpHeader> headers = new ArrayList();
-        headers.add(httpHeader);
-        httpConfiguration.setHeaders(headers);
 
         httpConfigurationManager.save(httpConfiguration);
         httpConfigurations.add(httpConfiguration);
