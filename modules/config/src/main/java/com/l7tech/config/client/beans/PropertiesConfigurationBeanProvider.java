@@ -60,6 +60,7 @@ public class PropertiesConfigurationBeanProvider implements ConfigurationBeanPro
                 configBean.setConfigValue( onLoad(name, properties.getProperty(property)) );
                 configuration.add(configBean);
             } else {
+                    System.out.println("Ignoring unknown property: " + property);
                     logger.log(Level.WARNING, "Ignoring unknown property: " + property);
             }
         }
@@ -95,6 +96,7 @@ public class PropertiesConfigurationBeanProvider implements ConfigurationBeanPro
                     }
                 } else {
                     propertiesToKeep.add(property);
+                    System.out.println("Ignoring unknown property: " + property);
                     logger.log(Level.WARNING, "Ignoring unknown property: " + property);
                 }
             }
