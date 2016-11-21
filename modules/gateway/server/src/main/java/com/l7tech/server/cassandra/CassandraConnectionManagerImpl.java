@@ -50,7 +50,7 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
     private final SecureRandom secureRandom;
     private final static Audit auditor = new LoggingAudit(logger);
     private final Timer timer;
-    private final String[] DEFAULT_SSL_CIPHER_SUITES = { "TLS_RSA_WITH_AES_128_CBC_SHA", "TLS_RSA_WITH_AES_256_CBC_SHA" };
+    private final String[] DEFAULT_SSL_CIPHER_SUITES = { "TLS_RSA_WITH_AES_256_CBC_SHA", "TLS_RSA_WITH_AES_128_CBC_SHA" };
     private static final String PROP_CACHE_CLEAN_INTERVAL = "com.l7tech.server.cassandra.connection.cacheCleanInterval";
     private static final long CACHE_CLEAN_INTERVAL = ConfigFactory.getLongProperty(PROP_CACHE_CLEAN_INTERVAL, 15 * 60 * 1000L);
 
