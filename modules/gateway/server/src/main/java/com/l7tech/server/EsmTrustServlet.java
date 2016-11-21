@@ -228,7 +228,7 @@ public class EsmTrustServlet extends AuthenticatableHttpServlet {
                                                 return;
                                             }
                                         } else {
-                                            message = "Enter Gateway credentials if you wish to allow the Enterprise Service Manager shown below to manage this Gateway.";
+                                            message = "Enter Gateway credentials if you wish to allow the CA API Gateway - Enterprise Service Manager shown below to manage this Gateway.";
                                             param.put("esminfo", formatCertInfo(cert));
                                         }
 
