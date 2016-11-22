@@ -175,8 +175,11 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
                     for ( final QueryAttributeMapping attributeMapping : assertion.getQueryMappings() ) {
                         final String attributeName = attributeMapping.getAttributeName();
                         final Attribute attribute = attributes.get( attributeName );
-                        //In case of Attribute not present in DN, attribute: null, It will be handled at callback end.
-                        resultCallback.call( attributeMapping, new SimpleAttribute(sr.getNameInNamespace(), attribute));
+                        if ( attribute != null && attribute.size() > 0 ) {
+                            resultCallback.call( attributeMapping, new SimpleAttribute(sr.getNameInNamespace(), attribute) );
+                        } else {
+                            resultCallback.call( attributeMapping, new SimpleAttribute(sr.getNameInNamespace()) );
+                        }
                     }
                 }
             } catch (AssertionStatusException e) {
@@ -235,20 +238,27 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
                         attributeValues.get(contextVariableName).add(simpleAttribute.getEntryName());
                     }
                 }
-                //Get the current Attribute List.
-                List<String> values = attributeValues.get( contextVariableName );
-                if ( values == null ) {
-                    values = new ArrayList<String>();
-                    attributeValues.put( contextVariableName, values );
-                }
-                //In case of MultiValue Attribute, Values are concatenated with comma ',' separator.
+
                 if ( simpleAttribute.isPresent() && simpleAttribute.getSize() > 0 ) {
+                    List<String> values = attributeValues.get( contextVariableName );
+                    if ( values == null ) {
+                        values = new ArrayList<String>();
+                        attributeValues.put( contextVariableName, values );
+                    }
+
                     if ( attributeMapping.isMultivalued() ) {
-                        final String value = simpleAttribute.getJoinedValue();
-                        if ( logger.isLoggable( Level.FINE ) ) {
-                            logger.log( Level.FINE, "Attribute " + attributeName + " as " + value);
+                        if ( attributeMapping.isJoinMultivalued() ) {
+                            final String value = simpleAttribute.getJoinedValue();
+                            if ( logger.isLoggable( Level.FINE ) ) {
+                                logger.log( Level.FINE, "Attribute " + attributeName + " as " + value);
+                            }
+                            values.add( value );
+                        } else {
+                            if ( logger.isLoggable( Level.FINE ) ) {
+                                logger.log( Level.FINE, "Attribute " + attributeName + " as " + simpleAttribute.getSize() + " values");
+                            }
+                            values.addAll( simpleAttribute.getValues() );
                         }
-                        values.add( value );
                     } else {
                         if ( attributeMapping.isFailMultivalued() && simpleAttribute.getSize() > 1 ) {
                             logAndAudit( AssertionMessages.LDAP_QUERY_MULTIVALUED_ATTR, attributeName );
@@ -260,8 +270,6 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
                         values.add( simpleAttribute.getFirstValue() );
                     }
                 } else {
-                    //In case of No Attribute present. Default Value assigned is Empty String.
-                    if(null == simpleAttribute.attribute) values.add("");
                     if ( logger.isLoggable( Level.FINE ) ) {
                         logger.log( Level.FINE, "Attribute named " + attributeName + " was not present for ldap entry " + simpleAttribute.getEntryName());
                     }

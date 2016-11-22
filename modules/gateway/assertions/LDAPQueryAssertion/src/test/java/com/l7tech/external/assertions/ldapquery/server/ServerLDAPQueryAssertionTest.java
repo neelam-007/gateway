@@ -64,9 +64,9 @@ public class ServerLDAPQueryAssertionTest {
     @Test
     public void testSingleResult() throws Exception {
         doTestResults( AssertionStatus.NONE, 0, false, false, false, new String[]{ "a" }, "a" );
-        doTestResults( AssertionStatus.NONE, 0, false, false, false, new String[0], "" );
+        doTestResults( AssertionStatus.NONE, 0, false, false, false, new String[0], null );
         doTestResults( AssertionStatus.NONE, 0, true, false, true, new String[]{ "a", "b" }, "a, b" );
-        doTestResults( AssertionStatus.NONE, 0, true, false, false, new String[]{ "a", "b" }, "a, b" );
+        doTestResults( AssertionStatus.NONE, 0, true, false, false, new String[]{ "a", "b" }, new String[]{ "a", "b" } );
         doTestResults( AssertionStatus.NONE, 0, false, true, false, new String[]{ "a" }, "a" );
         doTestResults( AssertionStatus.FALSIFIED, 0, false, true, false, new String[]{ "a", "b" }, null );
     }
@@ -76,13 +76,13 @@ public class ServerLDAPQueryAssertionTest {
         doTestResults( AssertionStatus.NONE, 1, false, false, false, new String[]{ "a" }, new String[]{ "a" } );
         doTestResults( AssertionStatus.NONE, 1, false, false, false, new String[0], null );
         doTestResults( AssertionStatus.NONE, 1, true, false, true, new String[]{ "a", "b" }, new String[]{ "a, b" } );
-        doTestResults( AssertionStatus.NONE, 1, true, false, false, new String[]{ "a", "b" }, new String[]{ "a, b" } );
+        doTestResults( AssertionStatus.NONE, 1, true, false, false, new String[]{ "a", "b" }, new String[]{ "a", "b" } );
         doTestResults( AssertionStatus.NONE, 1, false, true, false, new String[]{ "a" }, new String[]{ "a" } );
 
         doTestResults( AssertionStatus.NONE, 2, false, false, false, new String[]{ "a" }, new String[]{ "a", "a" } );
         doTestResults( AssertionStatus.NONE, 2, false, false, false, new String[0], null );
         doTestResults( AssertionStatus.NONE, 2, true, false, true, new String[]{ "a", "b" }, new String[]{ "a, b", "a, b" } );
-        doTestResults( AssertionStatus.NONE, 2, true, false, false, new String[]{ "a", "b" }, new String[]{ "a, b", "a, b" } );
+        doTestResults( AssertionStatus.NONE, 2, true, false, false, new String[]{ "a", "b" }, new String[]{ "a", "b", "a", "b" } );
         doTestResults( AssertionStatus.NONE, 2, false, true, false, new String[]{ "a" }, new String[]{ "a", "a" } );
 
         doTestResults( AssertionStatus.FALSIFIED, 1, false, true, false, new String[]{ "a", "b" }, null );
