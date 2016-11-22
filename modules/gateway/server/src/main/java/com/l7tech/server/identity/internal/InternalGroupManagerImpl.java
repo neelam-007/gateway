@@ -56,13 +56,6 @@ public class InternalGroupManagerImpl
     }
 
     @Override
-    public GroupMembership newMembershipFromId(String userId, String groupId) {
-        Goid groupOid = Goid.parseGoid(groupId);
-        Goid userOid = Goid.parseGoid(userId);
-        return InternalGroupMembership.newInternalMembership(groupOid, userOid);
-    }
-
-    @Override
     public Class getMembershipClass() {
         return InternalGroupMembership.class;
     }

@@ -5,7 +5,6 @@ import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.Goid;
 
 import java.io.Serializable;
-import java.util.Set;
 
 public class LdapGroup extends LdapIdentityBase implements Group, LdapIdentity, Serializable {
     public static final int OU_GROUP = 0;
@@ -65,13 +64,5 @@ public class LdapGroup extends LdapIdentityBase implements Group, LdapIdentity, 
         int result = super.hashCode();
         result = 31 * result + (description != null ? description.hashCode() : 0);
         return result;
-    }
-
-    public Set<String> getUserHeaders() {
-        return null;
-    }
-
-    public void setUserHeaders(Set<String> userHeaders) {
-        // Not used
     }
 }

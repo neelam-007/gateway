@@ -331,11 +331,6 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider<User
         }
 
         @Override
-        public void addUserGroup(Set<String> userids, String group) throws FindException, UpdateException {
-            throw new UnsupportedOperationException("not supported for TestIdentityProvider");
-        }
-
-        @Override
         public void addUser(User user, Set<Group> groups) throws FindException, UpdateException {
             userToGroupMap.put(user, groups);
         }

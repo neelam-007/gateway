@@ -19,10 +19,9 @@ import javax.persistence.Entity;
 import javax.persistence.Column;
 import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
-import javax.persistence.Transient;
+
 import org.hibernate.annotations.Proxy;
 import org.hibernate.annotations.Type;
-import java.util.Set;
 
 /**
  * A "physical" federated group.
@@ -40,7 +39,6 @@ import java.util.Set;
 @Table(name="fed_group")
 @Inheritance(strategy=InheritanceType.TABLE_PER_CLASS)
 public class FederatedGroup extends PersistentGroup {
-    Set<String> userHeaders = null;
     public FederatedGroup() {
         this(IdentityProviderConfig.DEFAULT_GOID, null);
     }
@@ -65,16 +63,5 @@ public class FederatedGroup extends PersistentGroup {
         return "com.l7tech.identity.fed.FederatedGroup." +
                 "\n\tname=" + _name +
                 "\n\tproviderId=" + getProviderId();
-    }
-
-    @Transient
-    public Set<String> getUserHeaders() {
-        return userHeaders;
-    }
-
-    // Setting users associated with group by fetching the associated User details from intenal_user_group table and intenal_user table
-    @Transient
-    public void setUserHeaders(Set<String> userHeaders) {
-        this.userHeaders = userHeaders;
     }
 }

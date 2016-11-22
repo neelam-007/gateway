@@ -77,8 +77,6 @@ public interface GroupManager<UT extends User, GT extends Group> {
      */
     void addUser(UT user, GT group) throws FindException, UpdateException;
 
-    void addUserGroup(Set<String> userids, String groupId) throws FindException, UpdateException;
-
     /**
      * Remove a single User from a single Group.
      * @param user

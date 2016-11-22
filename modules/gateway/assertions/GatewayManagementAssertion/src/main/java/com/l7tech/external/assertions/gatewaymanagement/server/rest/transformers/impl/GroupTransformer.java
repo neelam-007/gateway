@@ -3,10 +3,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.transformer
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.SecretsEncryptor;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.EntityAPITransformer;
-import com.l7tech.gateway.api.GroupMO;
-import com.l7tech.gateway.api.Item;
-import com.l7tech.gateway.api.ItemBuilder;
-import com.l7tech.gateway.api.ManagedObjectFactory;
+import com.l7tech.gateway.api.*;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.GroupBean;
 import com.l7tech.objectmodel.EntityType;
@@ -46,7 +43,6 @@ public class GroupTransformer implements EntityAPITransformer<GroupMO, Group> {
         groupMO.setProviderId(group.getProviderId().toString());
         groupMO.setName(group.getName());
         groupMO.setDescription(group.getDescription());
-        groupMO.setUserIds(group.getUserHeaders());
         return groupMO;
     }
 
@@ -73,8 +69,6 @@ public class GroupTransformer implements EntityAPITransformer<GroupMO, Group> {
         group.setProviderId(identityProviderGoid);
         group.setName(groupMO.getName());
         group.setDescription(groupMO.getDescription());
-        group.setUserHeaders(groupMO.getUserIds());
-
         return new EntityContainer<Group>(group);
     }
 

@@ -113,11 +113,6 @@ public class BindOnlyLdapGroupManagerImpl implements BindOnlyLdapGroupManager {
     }
 
     @Override
-    public void addUserGroup(Set<String> userids, String group) throws FindException, UpdateException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public void removeUser(BindOnlyLdapUser user, LdapGroup group) throws FindException, UpdateException {
         throw new UnsupportedOperationException();
     }

@@ -25,10 +25,7 @@ import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
-import com.l7tech.util.ConfigFactory;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Functions;
-import com.l7tech.util.GoidUpgradeMapper;
+import com.l7tech.util.*;
 import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
 import org.hibernate.MappingException;
@@ -184,14 +181,6 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
         }
     }
 
-    private Set<String> headersToIds(Set<IdentityHeader> headers) {
-        Set<String> uids = new HashSet<String>();
-        for (EntityHeader header : headers) {
-            uids.add(header.getStrId());
-        }
-        return uids;
-    }
-
     @Override
     @Transactional(readOnly=true)
     public Entity find(@NotNull final EntityHeader header) throws FindException {
@@ -202,10 +191,7 @@ public class EntityFinderImpl extends HibernateDaoSupport implements EntityFinde
             if (header.getType() == EntityType.USER) {
                 return provider.getUserManager().findByPrimaryKey(header.getStrId());
             } else if (header.getType() == EntityType.GROUP) {
-                Group group = provider.getGroupManager().findByPrimaryKey(header.getStrId());
-                Set<IdentityHeader> users = provider.getGroupManager().getUserHeaders(group);
-                group.setUserHeaders(headersToIds(users));
-                return group;
+                return provider.getGroupManager().findByPrimaryKey(header.getStrId());
             } else {
                 throw new IllegalArgumentException("EntityHeader is an IdentityHeader, but type is neither USER nor GROUP");
             }

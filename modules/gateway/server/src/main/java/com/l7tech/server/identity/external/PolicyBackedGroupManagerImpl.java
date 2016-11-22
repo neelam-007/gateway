@@ -113,11 +113,6 @@ public class PolicyBackedGroupManagerImpl implements PolicyBackedGroupManager {
     }
 
     @Override
-    public void addUserGroup(Set<String> userids, String group) throws FindException, UpdateException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public void removeUser(VirtualPolicyUser user, VirtualPolicyGroup group) throws FindException, UpdateException {
         throw new UnsupportedOperationException();
     }
