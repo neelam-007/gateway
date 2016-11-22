@@ -17,8 +17,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
-import java.util.logging.Level;
 import java.util.logging.Logger;
+
 
 /**
  * Properties configuration bean provider that uses Properties files for storage.
@@ -60,8 +60,7 @@ public class PropertiesConfigurationBeanProvider implements ConfigurationBeanPro
                 configBean.setConfigValue( onLoad(name, properties.getProperty(property)) );
                 configuration.add(configBean);
             } else {
-                    System.out.println("Ignoring unknown property: " + property);
-                    logger.log(Level.WARNING, "Ignoring unknown property: " + property);
+                    logger.warning("Ignoring unknown property: " + property);
             }
         }
         
@@ -96,8 +95,7 @@ public class PropertiesConfigurationBeanProvider implements ConfigurationBeanPro
                     }
                 } else {
                     propertiesToKeep.add(property);
-                    System.out.println("Ignoring unknown property: " + property);
-                    logger.log(Level.WARNING, "Ignoring unknown property: " + property);
+                    logger.warning("Ignoring unknown property: " + property);
                 }
             }
         }
@@ -230,6 +228,7 @@ public class PropertiesConfigurationBeanProvider implements ConfigurationBeanPro
     private final boolean preserveExtraProperties;
     private static final Logger logger = Logger.getLogger(PropertiesConfigurationBeanProvider.class.getName());
 
+
     private String unprefix( final String name ) {
         String cleanName = null;
 
@@ -239,7 +238,11 @@ public class PropertiesConfigurationBeanProvider implements ConfigurationBeanPro
 
         return cleanName;
     }
+    public static void main(String args[]){
 
+
+
+    }
     private String prefix( final String name ) {
         return propertyPrefix + name;
     }
