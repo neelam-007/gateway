@@ -8,13 +8,17 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.test.BenchmarkRunner;
+import com.l7tech.test.BugId;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.TestTimeSource;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
+import java.util.Random;
 import java.util.logging.Logger;
 
 /**
@@ -25,6 +29,7 @@ public class ServerBufferDataAssertionTest {
     private static final Logger log = Logger.getLogger(ServerBufferDataAssertionTest.class.getName());
 
     private static final TestTimeSource timeSource = new TestTimeSource();
+    private static final String TEST_RECORD = "1,3,4,asdf,55,adsfhiauhrg,55,aghuiahsiuha,63336\r\n";
 
     @BeforeClass
     public static void setUp() {
@@ -131,5 +136,96 @@ public class ServerBufferDataAssertionTest {
         } catch ( NoSuchVariableException e ) {
             // Ok
         }
+    }
+
+    @Test
+    @BugId( "DE254507" )
+    @Ignore
+    public void testParallelBuffering() throws Exception {
+        final BufferDataAssertion ass1 = new BufferDataAssertion();
+        ass1.setBufferName( "concurrent1" );
+        ass1.setNewDataVarName( "csv" );
+        ass1.setMaxSizeBytes( 90000000 );
+        ass1.setMaxAgeMillis( 86400 * 1000L );
+        ass1.setVariablePrefix( "capture" );
+        final ServerBufferDataAssertion sass1 = new ServerBufferDataAssertion( ass1 );
+
+        final BufferDataAssertion ass2 = new BufferDataAssertion();
+        ass2.setBufferName( "concurrent1" );
+        ass2.setNewDataVarName( "empty" );
+        ass2.setMaxSizeBytes( 0L );
+        ass2.setMaxAgeMillis( 0L );
+        ass2.setVariablePrefix( "extract" );
+        final ServerBufferDataAssertion sass2 = new ServerBufferDataAssertion( ass2 );
+
+        Runnable r = new Runnable() {
+            private void extract() {
+                try {
+                    PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext( new Message(), new Message() );
+                    pec.setVariable( "empty", "" );
+                    assertEquals( AssertionStatus.NONE, sass2.checkRequest( pec ) );
+                    boolean wasExtracted = Boolean.valueOf( String.valueOf( pec.getVariable( "extract.wasExtracted" ) ) );
+                    if ( wasExtracted ) {
+                        Message mess = (Message) pec.getVariable( "extract.extractedMessage" );
+                        byte[] messBytes = IOUtils.slurpStream( mess.getMimeKnob().getEntireMessageBodyAsInputStream() );
+                        String messStr = new String( messBytes, Charsets.UTF8 ) ;
+                        assertTrue( messStr.startsWith( TEST_RECORD ) );
+                        assertTrue( messStr.endsWith( TEST_RECORD ) );
+                    }
+                } catch ( Exception e ) {
+                    e.printStackTrace();
+                    fail( "test failed: " + e );
+                }
+            }
+
+            private void store() {
+                try {
+                    PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext( new Message(), new Message() );
+                    pec.setVariable( "csv", TEST_RECORD );
+                    assertEquals( AssertionStatus.NONE, sass1.checkRequest( pec ) );
+                    assertFalse( Boolean.valueOf( String.valueOf( pec.getVariable( "capture.wasExtracted" ) ) ) );
+                } catch ( Exception e ) {
+                    e.printStackTrace();
+                    fail( "test failed: " + e );
+                }
+            }
+
+            final Random s = new Random( 359835L );
+
+            @Override
+            public void run() {
+                final Random r = new Random( s.nextLong() );
+                store();
+                store();
+                store();
+                store();
+                store();
+                store();
+                if ( r.nextBoolean() )
+                    extract();
+                store();
+                store();
+                store();
+                store();
+                store();
+                store();
+                store();
+                store();
+                store();
+                store();
+                store();
+                if ( r.nextBoolean() )
+                    extract();
+                store();
+                store();
+                store();
+                store();
+                store();
+                store();
+                store();
+                store();
+            }
+        };
+        new BenchmarkRunner( r, 1000000, 200, "buffer data workload" ).run();
     }
 }
