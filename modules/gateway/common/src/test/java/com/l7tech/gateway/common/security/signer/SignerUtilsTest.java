@@ -12,6 +12,7 @@ import org.hamcrest.Matchers;
 import org.jetbrains.annotations.Nullable;
 import org.junit.*;
 import org.junit.rules.TemporaryFolder;
+import org.mockito.Mockito;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -1341,6 +1342,118 @@ public class SignerUtilsTest {
             ResourceUtils.closeQuietly(bytesPool);
             ResourceUtils.closeQuietly(signaturePool);
         }
+    }
+
+    @Test
+    public void testInnerPayloadClose() throws Exception {
+        // create sample data and signature
+        PoolByteArrayOutputStream bytesPool = null, signaturePool = null;
+        byte[] bytes = "test bytes".getBytes(Charsets.UTF8);
+        bytesPool = new PoolByteArrayOutputStream(bytes.length);
+        IOUtils.copyStream(new ByteArrayInputStream(bytes), bytesPool);
+        Properties sigProps = new Properties() {{
+            setProperty("key1", "value1");
+            setProperty("key2", "value2");
+            setProperty("key3", "value3");
+            setProperty("unicode_key", Character.toString('\u2202') + Character.toString('\uD840') + Character.toString('\u0436'));
+        }};
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        sigProps.store(bos, "don't care");
+        bos.flush();
+        byte[] signature = bos.toByteArray();
+        signaturePool = new PoolByteArrayOutputStream(signature.length);
+        IOUtils.copyStream(new ByteArrayInputStream(signature), signaturePool);
+
+        try {
+            // create the payload
+            final SignerUtils.SignedZip.InnerPayload payload = Mockito.spy(new SignerUtils.SignedZip.InnerPayload(bytesPool, ModuleDigest.digest(bytes), signaturePool));
+            doTestInnerPayload(payload, bytes, Either.<Pair<byte[], Properties>, X509Certificate>left(Pair.pair(signature, sigProps)));
+
+            // close the payload
+            Mockito.verify(payload, Mockito.never()).dispose();
+            payload.close();
+            Mockito.verify(payload, Mockito.times(1)).dispose();
+
+            doTestPayloadIsClosed(payload);
+
+            // close again
+            Mockito.verify(payload, Mockito.times(1)).dispose();
+            payload.close();
+            Mockito.verify(payload, Mockito.times(1)).dispose(); // make sure dispose is never called
+
+            doTestPayloadIsClosed(payload);
+        } finally {
+            ResourceUtils.closeQuietly(bytesPool);
+            ResourceUtils.closeQuietly(signaturePool);
+        }
+
+        // test with try-with-resources block
+        bytesPool = new PoolByteArrayOutputStream(bytes.length);
+        IOUtils.copyStream(new ByteArrayInputStream(bytes), bytesPool);
+
+        signaturePool = new PoolByteArrayOutputStream(signature.length);
+        IOUtils.copyStream(new ByteArrayInputStream(signature), signaturePool);
+
+        SignerUtils.SignedZip.InnerPayload mockPayload = Mockito.spy(new SignerUtils.SignedZip.InnerPayload(bytesPool, ModuleDigest.digest(bytes), signaturePool));
+        try (final SignerUtils.SignedZip.InnerPayload payload = mockPayload) {
+            doTestInnerPayload(payload, bytes, Either.<Pair<byte[], Properties>, X509Certificate>left(Pair.pair(signature, sigProps)));
+            Mockito.verify(payload, Mockito.never()).dispose();
+            Mockito.verify(mockPayload, Mockito.never()).dispose();
+        } finally {
+            ResourceUtils.closeQuietly(bytesPool);
+            ResourceUtils.closeQuietly(signaturePool);
+        }
+        Mockito.verify(mockPayload, Mockito.times(1)).dispose();
+        doTestPayloadIsClosed(mockPayload);
+        // close again
+        Mockito.verify(mockPayload, Mockito.times(1)).dispose();
+        mockPayload.close();
+        Mockito.verify(mockPayload, Mockito.times(1)).dispose(); // make sure dispose is never called
+    }
+
+    private void doTestPayloadIsClosed(final SignerUtils.SignedZip.InnerPayload payload) throws Exception {
+        Assert.assertNotNull(payload);
+
+        final byte[] expected = new byte[0];
+        // make sure data is not leaked
+        Assert.assertThat(
+                payload.getDataBytes(),
+                Matchers.allOf(
+                        Matchers.not(Matchers.sameInstance(expected)),  // make sure it is a copy of the buffer
+                        Matchers.equalTo(expected)
+                )
+        );
+        Assert.assertThat(payload.getDataSize(), Matchers.is(expected.length));
+        InputStream stream = payload.getDataStream();
+        Assert.assertThat(
+                IOUtils.slurpStream(stream),
+                Matchers.allOf(
+                        Matchers.not(Matchers.sameInstance(expected)),  // make sure it is a copy of the buffer
+                        Matchers.equalTo(expected)
+                )
+        );
+
+        // make sure signature is not leaked
+        Assert.assertThat(
+                payload.getSignaturePropertiesBytes(),
+                Matchers.allOf(
+                        Matchers.not(Matchers.sameInstance(expected)),  // make sure it is a copy of the buffer
+                        Matchers.equalTo(expected)
+                )
+        );
+        Assert.assertThat(payload.getSignaturePropertiesSize(), Matchers.is(expected.length));
+        stream = payload.getSignaturePropertiesStream();
+        Assert.assertThat(
+                IOUtils.slurpStream(stream),
+                Matchers.allOf(
+                        Matchers.not(Matchers.sameInstance(expected)),  // make sure it is a copy of the buffer
+                        Matchers.equalTo(expected)
+                )
+        );
+        Assert.assertThat(payload.getSignaturePropertiesString(), Matchers.isEmptyString());
+        Properties signatureProperties = payload.getSignatureProperties();
+        Assert.assertNotNull(signatureProperties);
+        Assert.assertEquals(0, signatureProperties.size());
     }
 
     @Test

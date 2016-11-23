@@ -341,16 +341,17 @@ public class SignerUtils {
                 }
             };
 
+            @NotNull
             private final AtomicBoolean closed = new AtomicBoolean(false);
 
             @NotNull
             private final byte[] data;
-            private final int dataSize;
+            private int dataSize;
             @NotNull
             private final byte[] dataDigest;
             @NotNull
             private final byte[] signatureProps;
-            private final int signaturePropsSize;
+            private int signaturePropsSize;
 
             // typically called by the SignedZip framework through the dedicated factory instance
             protected InnerPayload(
@@ -462,14 +463,20 @@ public class SignerUtils {
                 return signaturePropsSize;
             }
 
+            void dispose() {
+                dataSize = 0;
+                BufferPool.returnBuffer(data);
+                signaturePropsSize = 0;
+                BufferPool.returnBuffer(signatureProps);
+            }
+
             /**
              * Cleanup resources i.e. return signed data and signature properties buffers to the pool.
              */
             @Override
             public void close() throws IOException {
                 if (!closed.getAndSet(true)) {
-                    BufferPool.returnBuffer(data);
-                    BufferPool.returnBuffer(signatureProps);
+                    dispose();
                 }
             }
         }
