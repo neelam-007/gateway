@@ -18,11 +18,13 @@ import static org.junit.Assert.*;
  */
 public class BufferPoolTest {
     private static Logger log = Logger.getLogger(BufferPoolTest.class.getName());
+    private static boolean PREVIOUS_ENABLED_STATE;
 
     private int[] reqPerSizeClass = new int[BufferPool.getNumSizeClasses()];
 
     @BeforeClass
     public static void enableBufferPool() {
+        PREVIOUS_ENABLED_STATE = BufferPool.isEnabledBufferPool();
         BufferPool.setEnabledBufferPool(true);
     }
 
@@ -34,7 +36,7 @@ public class BufferPoolTest {
 
     @AfterClass
     public static void disableBufferPool() {
-        BufferPool.setEnabledBufferPool(false);
+        BufferPool.setEnabledBufferPool(PREVIOUS_ENABLED_STATE);
     }
 
     @Test

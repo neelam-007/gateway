@@ -116,67 +116,81 @@ public class PoolByteArrayOutputStream extends OutputStream {
         needBufIse();
         final int length = count;
         final byte[] buffer = detachPooledByteArray();
+        return new InternalPooledByteArrayInputStream(buffer, length);
+    }
 
-        return new InputStream() {
-            private final InputStream delegate = new ByteArrayInputStream( buffer, 0, length );
-            private boolean closed = false;
+    private static class InternalPooledByteArrayInputStream extends InputStream {
+        private final InputStream delegate;
+        private boolean closed = false;
+        private byte[] buffer;
 
-            @Override
-            public int read() throws IOException {
-                checkOpen();
-                return delegate.read();
-            }
+        public InternalPooledByteArrayInputStream(final byte[] buffer, final int length) {
+            this.buffer = buffer;
+            delegate = new ByteArrayInputStream(buffer, 0, length);
+        }
 
-            @Override
-            public int read( byte[] b ) throws IOException {
-                checkOpen();
-                return delegate.read( b );
-            }
+        @Override
+        public int read() throws IOException {
+            checkOpen();
+            return delegate.read();
+        }
 
-            @Override
-            public int read( byte[] b, int off, int len ) throws IOException {
-                checkOpen();
-                return delegate.read( b, off, len );
-            }
+        @Override
+        public int read( byte[] b ) throws IOException {
+            checkOpen();
+            return delegate.read( b );
+        }
 
-            @Override
-            public long skip( long n ) throws IOException {
-                checkOpen();
-                return delegate.skip( n );
-            }
+        @Override
+        public int read( byte[] b, int off, int len ) throws IOException {
+            checkOpen();
+            return delegate.read( b, off, len );
+        }
 
-            @Override
-            public int available() throws IOException {
-                checkOpen();
-                return delegate.available();
-            }
+        @Override
+        public long skip( long n ) throws IOException {
+            checkOpen();
+            return delegate.skip( n );
+        }
 
-            @Override
-            public void mark( int readlimit ) {
-                delegate.mark( readlimit );
-            }
+        @Override
+        public int available() throws IOException {
+            checkOpen();
+            return delegate.available();
+        }
 
-            @Override
-            public void reset() throws IOException {
-                checkOpen();
-                delegate.reset();
-            }
+        @Override
+        public void mark( int readlimit ) {
+            delegate.mark( readlimit );
+        }
 
-            @Override
-            public boolean markSupported() {
-                return delegate.markSupported();
-            }
+        @Override
+        public void reset() throws IOException {
+            checkOpen();
+            delegate.reset();
+        }
 
-            @Override
-            public void close() throws IOException {
+        @Override
+        public boolean markSupported() {
+            return delegate.markSupported();
+        }
+
+        @Override
+        public void close() throws IOException {
+            if (!closed) {
+                // DE254507: Possible cause; calling close() on a Closeable object more than once is legitimate,
+                // so we shouldn't return it to the pool more than once.
                 closed = true;
-                BufferPool.returnBuffer( buffer );
+                final byte[] tmpBuff = buffer;
+                buffer = null;
+                BufferPool.returnBuffer(tmpBuff);
             }
+        }
 
-            private void checkOpen() throws IOException {
-                if ( closed ) throw new IOException( "Stream is closed" );
-            }
-        };
+        private void checkOpen() throws IOException {
+            if ( closed ) throw new IOException( "Stream is closed" );
+        }
+
     }
 
     /** @return the number of bytes currently accumulated in the buffer. */

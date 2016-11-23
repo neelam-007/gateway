@@ -24,7 +24,11 @@ public class BufferPool {
 
     private static boolean ENABLE_BUFFER_POOL = SyspropUtil.getBoolean( PROP_ENABLE_BUFFER_POOL, false);
 
-    protected static void setEnabledBufferPool(final boolean enabled) {
+    static boolean isEnabledBufferPool() {
+        return ENABLE_BUFFER_POOL;
+    }
+
+    static void setEnabledBufferPool(final boolean enabled) {
         ENABLE_BUFFER_POOL = enabled;
     }
 
