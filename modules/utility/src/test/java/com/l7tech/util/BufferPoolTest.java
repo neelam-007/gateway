@@ -5,8 +5,7 @@
 
 package com.l7tech.util;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.Arrays;
 import java.util.Random;
@@ -22,10 +21,20 @@ public class BufferPoolTest {
 
     private int[] reqPerSizeClass = new int[BufferPool.getNumSizeClasses()];
 
+    @BeforeClass
+    public static void enableBufferPool() {
+        BufferPool.setEnabledBufferPool(true);
+    }
+
     @Before
     public void clearHistogram() {
         Arrays.fill(reqPerSizeClass, 0);
         BufferPool.clearAllPools();
+    }
+
+    @AfterClass
+    public static void disableBufferPool() {
+        BufferPool.setEnabledBufferPool(false);
     }
 
     @Test

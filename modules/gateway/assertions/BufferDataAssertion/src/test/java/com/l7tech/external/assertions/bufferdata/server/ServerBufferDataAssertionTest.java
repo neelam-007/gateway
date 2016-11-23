@@ -13,6 +13,7 @@ import com.l7tech.test.BugId;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.TestTimeSource;
+import org.apache.commons.lang.StringUtils;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -169,8 +170,7 @@ public class ServerBufferDataAssertionTest {
                         Message mess = (Message) pec.getVariable( "extract.extractedMessage" );
                         byte[] messBytes = IOUtils.slurpStream( mess.getMimeKnob().getEntireMessageBodyAsInputStream() );
                         String messStr = new String( messBytes, Charsets.UTF8 ) ;
-                        assertTrue( messStr.startsWith( TEST_RECORD ) );
-                        assertTrue( messStr.endsWith( TEST_RECORD ) );
+                        assertValid(messStr);
                     }
                 } catch ( Exception e ) {
                     e.printStackTrace();
@@ -178,15 +178,34 @@ public class ServerBufferDataAssertionTest {
                 }
             }
 
+            private static final int MULTIPLIER = 10;
+
             private void store() {
                 try {
                     PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext( new Message(), new Message() );
-                    pec.setVariable( "csv", TEST_RECORD );
+                    char c = (char) (new Random().nextFloat() * 26 + 65);
+                    int length = (int) (new Random().nextFloat() * 8) + 1;
+                    pec.setVariable("csv", "." + length + StringUtils.repeat("" + c, length * MULTIPLIER) + ".");
                     assertEquals( AssertionStatus.NONE, sass1.checkRequest( pec ) );
                     assertFalse( Boolean.valueOf( String.valueOf( pec.getVariable( "capture.wasExtracted" ) ) ) );
                 } catch ( Exception e ) {
                     e.printStackTrace();
                     fail( "test failed: " + e );
+                }
+            }
+
+            private void assertValid(final String s) {
+                int i = 0;
+                while (i < s.length()) {
+                    assertEquals('.', s.charAt(i++));
+                    int j = Integer.parseInt("" + s.charAt(i++));
+                    assertTrue(j >= 1 && j <= 9);
+                    char c = s.charAt(i);
+                    for (int jj = 0; jj < j * MULTIPLIER; jj++) {
+                        assertEquals(c, s.charAt(i + jj));
+                    }
+                    i += j * MULTIPLIER;
+                    assertEquals('.', s.charAt(i++));
                 }
             }
 

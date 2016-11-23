@@ -22,7 +22,12 @@ public class BufferPool {
     public static final String PROP_ENABLE_BUFFER_POOL = "com.l7tech.util.BufferPool.enabled";
     public static final String PROP_ENABLE_HUGE_POOL = "com.l7tech.util.BufferPool.hugePool.enabled";
 
-    static final boolean ENABLE_BUFFER_POOL = SyspropUtil.getBoolean( PROP_ENABLE_BUFFER_POOL, true );
+    private static boolean ENABLE_BUFFER_POOL = SyspropUtil.getBoolean( PROP_ENABLE_BUFFER_POOL, false);
+
+    protected static void setEnabledBufferPool(final boolean enabled) {
+        ENABLE_BUFFER_POOL = enabled;
+    }
+
     static final boolean ENABLE_HUGE_POOL = SyspropUtil.getBoolean( PROP_ENABLE_HUGE_POOL, true );
 
     static final int MIN_BUFFER_SIZE = 1024;

@@ -18,6 +18,7 @@ import java.security.*;
 import java.security.cert.*;
 import java.security.cert.Certificate;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
@@ -340,6 +341,8 @@ public class SignerUtils {
                 }
             };
 
+            private final AtomicBoolean closed = new AtomicBoolean(false);
+
             @NotNull
             private final byte[] data;
             private final int dataSize;
@@ -464,8 +467,10 @@ public class SignerUtils {
              */
             @Override
             public void close() throws IOException {
-                BufferPool.returnBuffer(data);
-                BufferPool.returnBuffer(signatureProps);
+                if (!closed.getAndSet(true)) {
+                    BufferPool.returnBuffer(data);
+                    BufferPool.returnBuffer(signatureProps);
+                }
             }
         }
 
