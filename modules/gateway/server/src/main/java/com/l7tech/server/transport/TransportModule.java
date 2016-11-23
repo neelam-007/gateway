@@ -286,13 +286,10 @@ public abstract class TransportModule extends LifecycleBean {
         if (connector.getClientAuth() == SsgConnector.CLIENT_AUTH_NEVER)
             return new X509Certificate[0];
 
-        String protocols = connector.getProperty(SsgConnector.PROP_TLS_OVERRIDE_PROTOCOLS);
-        if (protocols == null) protocols = connector.getProperty(SsgConnector.PROP_TLS_PROTOCOLS);
-        boolean onlyTls10 = protocols == null || (!protocols.contains("TLSv1.1") && !protocols.contains("TLSv1.2"));
-
-        // If only TLS 1.0 is enabled, behave as we did pre-5.3, unless "acceptedIssuers" is forced to "true" (Bug #8727)
+        // Leave accepted issuers list blank unless "acceptedIssuers" is forced to "true" (Bug #8727)
         // "acceptedIssuers" connector property not to be documented -- will be removed in future release
-        if (onlyTls10 && !connector.getBooleanProperty("acceptedIssuers"))
+        // This no longer depends on enabled TLS version because SSL-J is no longer present by default
+        if (!connector.getBooleanProperty("acceptedIssuers"))
             return new X509Certificate[0];
 
         Collection<TrustedCert> trustedCerts = trustedCertServices.getAllCertsByTrustFlags(EnumSet.of(TrustedCert.TrustedFor.SIGNING_CLIENT_CERTS));
@@ -301,9 +298,11 @@ public abstract class TransportModule extends LifecycleBean {
             certs.add(trustedCert.getCertificate());
         }
 
-        // SSL-J requires at least one accepted issuer when client auth is set to anything but NEVER.  If using SSL-J with client auth,
-        // and the list would otherwise be empty, we'll add our own server cert to the list to keep it from failing.
-        if (!onlyTls10 && certs.isEmpty()) {
+        // Previous Gateway versions would include the SSL cert as an accepted issuer if the list would otherwise be empty,
+        // to work around an issue with older versions of SSL-J (that would fail with client auth set to OPTIONAL or REQUIRED
+        // unless the accepted issuers list was non-empty).  We will still support this hack, in case it is required in some
+        // situation, but only if a new undocumented connector property includeSelfCertIfAcceptedIssuersEmpty is set to true.
+        if ( certs.isEmpty() && connector.getBooleanProperty( "includeSelfCertIfAcceptedIssuersEmpty" ) ) {
             try {
                 certs.add( defaultKey.getSslInfo().getCertificate() );
             } catch (IOException e) {
