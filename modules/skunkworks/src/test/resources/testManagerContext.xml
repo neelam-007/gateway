@@ -765,7 +765,6 @@
                 <ref bean="workQueueEntityManager"/>
                 <ref bean="scheduledTaskManager"/>
                 <ref bean="policyBackedServiceManager"/>
-		<ref bean="passwordPolicyManger"/>
             </list>
         </constructor-arg>
     </bean>
