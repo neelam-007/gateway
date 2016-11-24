@@ -2,6 +2,7 @@ package com.l7tech.security.prov;
 
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
+import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -60,6 +61,25 @@ public final class ProviderUtil {
     public static void removeService(final Collection<Pair<String, String>> serviceBlacklist, final Provider provider) {
         for (Pair<String, String> serviceDesc : serviceBlacklist) {
             provider.remove(serviceDesc.left + "." + serviceDesc.right);
+        }
+    }
+
+    /**
+     * Pad leading zeros at the beginning of the decryption output, if the output byte length is less than the key size
+     * in bytes, when the encryption/decryption is using "RSA/ECB/NoPadding".
+     *
+     * @param resultToBePadded: the byte array needs to be padded with leading zeros.
+     * @param keySizeInBytes: the RSA key size in bytes.
+     * @return a new array with padding zeros.
+     */
+    public static byte[] paddingDecryptionOutputUsingRsaEcbNoPadding(@NotNull final byte[] resultToBePadded, final int keySizeInBytes) {
+        final int resultSizeInBytes = resultToBePadded.length;
+        if (resultSizeInBytes < keySizeInBytes) {
+            final byte[] resultWithPadding = new byte[keySizeInBytes];
+            System.arraycopy(resultToBePadded, 0, resultWithPadding, (keySizeInBytes - resultSizeInBytes), resultSizeInBytes);
+            return resultWithPadding;
+        } else {
+            return resultToBePadded;
         }
     }
 }

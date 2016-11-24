@@ -6,7 +6,6 @@ import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.Pair;
 import com.safelogic.cryptocomply.jce.provider.SLProvider;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.jetbrains.annotations.NotNull;
 
 import java.security.*;
 import java.util.Arrays;
@@ -111,24 +110,5 @@ public class CryptoComplyJceProviderEngine extends JceProvider {
         // Prefer SunJSSE as TLS 1.0 provider for compatibility with previous behavior
         logger.fine("Using SunJSSE as TLS 1.0 provider");
         return getSunJsseProvider();
-    }
-
-    /**
-     * When CCJ 2.2.1 is used as provider, add padding zeros into the beginning of the decryption output, if the output
-     * byte length is less than the key size in bytes, when the encryption/decryption is using "RSA/ECB/NoPadding".
-     *
-     * @param resultToBePadded: the byte array needs to be padded with leading zeros.
-     * @param keySizeInBytes: the RSA key size in bytes.
-     * @return a new array with padding zeros.
-     */
-    public static byte[] paddingDecryptionOutputUsingRsaEcbNoPadding(@NotNull final byte[] resultToBePadded, final int keySizeInBytes) {
-        final int resultSizeInBytes = resultToBePadded.length;
-        if (resultSizeInBytes < keySizeInBytes) {
-            final byte[] resultWithPadding = new byte[keySizeInBytes];
-            System.arraycopy(resultToBePadded, 0, resultWithPadding, (keySizeInBytes - resultSizeInBytes), resultSizeInBytes);
-            return resultWithPadding;
-        } else {
-            return resultToBePadded;
-        }
     }
 }

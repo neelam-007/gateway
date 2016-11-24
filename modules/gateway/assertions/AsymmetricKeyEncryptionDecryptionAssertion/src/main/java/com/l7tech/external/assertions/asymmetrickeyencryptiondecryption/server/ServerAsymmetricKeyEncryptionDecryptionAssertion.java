@@ -11,6 +11,7 @@ import com.l7tech.policy.variable.Syntax;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.security.prov.JceProvider;
+import com.l7tech.security.prov.ProviderUtil;
 import com.l7tech.security.prov.ccj.CryptoComplyJceProviderEngine;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
@@ -101,7 +102,7 @@ public class ServerAsymmetricKeyEncryptionDecryptionAssertion extends AbstractSe
     private byte[] transform(Key key, byte[] inputData, int mode, RsaModePaddingOption modePaddingOption) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, NoSuchProviderException {
 
         byte[] result;
-        Cipher cipher = null;
+        Cipher cipher;
 
         if (!key.getAlgorithm().contains("RSA"))
             throw new NoSuchAlgorithmException("Only RSA Keys are supported.");
@@ -115,20 +116,20 @@ public class ServerAsymmetricKeyEncryptionDecryptionAssertion extends AbstractSe
         else if (modePaddingOption == RsaModePaddingOption.ECP_OAEP_WITH_SHA1_AND_MDG1_PADDING)
             cipher = JceProvider.getInstance().getRsaOaepPaddingCipher();
         else
-            throw new NoSuchAlgorithmException("Invalid RSA Mode Padding Option used.");
+            throw new NoSuchPaddingException("Invalid RSA Mode Padding Option used.");
 
         // set initialize the cypher to eithed encrypt/decrypt, depending on what was selected, with the specified key.
         cipher.init(mode, key);
         // do the transformation
         result = cipher.doFinal(inputData);
 
-        // US265438: When the encryption/decryption transformation uses "RSA/ECB/NoPadding", non-CCJ provider adds padding
+        // US265438: When the encryption/decryption transformation uses "RSA/ECB/NoPadding", some providers add padding
         // zeros at the beginning of the decryption output bytes, if the output byte length is less than the key size in
-        // bytes. In order to keep this back compatibility, this story added padding zeros as RSA Bsafe does, when CCJ
-        // (version 2.2.1) is used as the crypto provider.
-        if ("WF".equals(cipher.getProvider().getName()) && mode == Cipher.DECRYPT_MODE && modePaddingOption == RsaModePaddingOption.ECB_NO_PADDING) {
+        // bytes. In order to keep this back compatibility, this story added padding zeros if the current provider does
+        // not pad leading zeros.
+        if (mode == Cipher.DECRYPT_MODE && modePaddingOption == RsaModePaddingOption.ECB_NO_PADDING) {
             final int keySizeInBytes = ((RSAKey)key).getModulus().bitLength() / 8;
-            result = CryptoComplyJceProviderEngine.paddingDecryptionOutputUsingRsaEcbNoPadding(result, keySizeInBytes);
+            result = ProviderUtil.paddingDecryptionOutputUsingRsaEcbNoPadding(result, keySizeInBytes);
         }
 
         return result;
