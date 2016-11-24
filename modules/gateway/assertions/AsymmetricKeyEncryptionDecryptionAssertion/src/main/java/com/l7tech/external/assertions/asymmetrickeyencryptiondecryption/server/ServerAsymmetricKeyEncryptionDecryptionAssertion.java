@@ -114,6 +114,8 @@ public class ServerAsymmetricKeyEncryptionDecryptionAssertion extends AbstractSe
             cipher = JceProvider.getInstance().getRsaPkcs1PaddingCipher();
         else if (modePaddingOption == RsaModePaddingOption.ECP_OAEP_WITH_SHA1_AND_MDG1_PADDING)
             cipher = JceProvider.getInstance().getRsaOaepPaddingCipher();
+        else
+            throw new NoSuchAlgorithmException("Invalid RSA Mode Padding Option used.");
 
         // set initialize the cypher to eithed encrypt/decrypt, depending on what was selected, with the specified key.
         cipher.init(mode, key);
@@ -124,7 +126,7 @@ public class ServerAsymmetricKeyEncryptionDecryptionAssertion extends AbstractSe
         // zeros at the beginning of the decryption output bytes, if the output byte length is less than the key size in
         // bytes. In order to keep this back compatibility, this story added padding zeros as RSA Bsafe does, when CCJ
         // (version 2.2.1) is used as the crypto provider.
-        if ("WF".equals(JceProvider.getInstance().getDisplayName()) && mode == Cipher.DECRYPT_MODE && modePaddingOption == RsaModePaddingOption.ECB_NO_PADDING) {
+        if ("WF".equals(cipher.getProvider().getName()) && mode == Cipher.DECRYPT_MODE && modePaddingOption == RsaModePaddingOption.ECB_NO_PADDING) {
             final int keySizeInBytes = ((RSAKey)key).getModulus().bitLength() / 8;
             result = CryptoComplyJceProviderEngine.paddingDecryptionOutputUsingRsaEcbNoPadding(result, keySizeInBytes);
         }
