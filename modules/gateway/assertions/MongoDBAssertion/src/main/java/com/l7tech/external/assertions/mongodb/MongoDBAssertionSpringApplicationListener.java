@@ -1,8 +1,6 @@
 package com.l7tech.external.assertions.mongodb;
 
 import com.l7tech.external.assertions.mongodb.entity.MongoDBConnectionEntity;
-import com.l7tech.external.assertions.mongodb.entity.MongoDBConnectionEntityAdmin;
-import com.l7tech.external.assertions.mongodb.entity.MongoDBConnectionEntityAdminImpl;
 import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
@@ -18,6 +16,7 @@ import org.springframework.context.ApplicationListener;
 
 import javax.net.ssl.X509TrustManager;
 import java.security.SecureRandom;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -56,43 +55,48 @@ public class MongoDBAssertionSpringApplicationListener implements ApplicationLis
             MongoDBConnectionManager.getInstance().loadMongoDBConnections(entityManager);
         }
 
-        if (event instanceof EntityInvalidationEvent &&
-                event.getSource().getClass().equals(GenericEntity.class)) {
+        if (event instanceof EntityInvalidationEvent) {
 
             EntityInvalidationEvent e = (EntityInvalidationEvent) event;
-            GenericEntity sourceEntity = (GenericEntity) e.getSource();
-            char operation = e.getEntityOperations()[0];
 
-            if (sourceEntity.getEntityClassName().equals(MongoDBConnectionEntity.class.getName())) {
+            if (GenericEntity.class.equals(e.getEntityClass())) {
+                Goid[] goids = e.getEntityIds();
+                char[] ops = e.getEntityOperations();
+                for (int i = 0; i < ops.length; i++) {
+                    switch (ops[i]) {
+                        case EntityInvalidationEvent.CREATE:
+                            try {
+                                MongoDBConnectionEntity entity = entityManager.findByPrimaryKey(goids[i]);
+                                if (entity != null) {
+                                    MongoDBConnectionManager.getInstance().addConnection(entity);
+                                }
+                            } catch (FindException f) {
+                                logger.warning("Entity for goid, " + goids[i].toString() + ", not found when creating " +
+                                        "MongoDBConnectionEntity");
+                            }
+                            break;
 
-                MongoDBConnectionEntityAdmin mongoDBConnectionEntityAdmin = MongoDBConnectionEntityAdminImpl.getInstance(entityManager);
-                MongoDBConnectionEntity connectionEntity = null;
-                Goid goid = sourceEntity.getGoid();
+                        case EntityInvalidationEvent.UPDATE:
+                            try {
+                                MongoDBConnectionEntity entity = entityManager.findByPrimaryKey(goids[i]);
+                                if (entity != null) {
+                                    MongoDBConnectionManager.getInstance().updateConnection(entity);
+                                }
+                            } catch (FindException f) {
+                                logger.warning("Entity for goid, " + goids[i].toString() + ", not found when updating " +
+                                        "MongoDBConnectionEntity");
+                            }
+                            break;
 
-                try {
-                    connectionEntity = mongoDBConnectionEntityAdmin.findByGoid(goid);
-                } catch (FindException e1) {
-                    if (goid != null) {
-                        logger.warning("Entity for goid, " + goid.toString() + ", not found when creating/updating " +
-                                "ExtensibleSocketConnectorEntity");
+                        case EntityInvalidationEvent.DELETE:
+                            MongoDBConnectionManager.getInstance().removeConnection(goids[i]);
+                            break;
+
+                        default:
+                            logger.log(Level.WARNING, "Unexpected EntityInvalidationEvent Operation: " + ops[i]);
+                            break;
                     }
-                    else {
-                        logger.warning("Entity for goid is NULL and not found when creating/updating " +
-                                "ExtensibleSocketConnectorEntity");
-                    }
-
-                    return;
                 }
-
-                if (operation == EntityInvalidationEvent.CREATE)
-                    MongoDBConnectionManager.getInstance().addConnection(connectionEntity);
-
-                if (operation == EntityInvalidationEvent.UPDATE)
-                    MongoDBConnectionManager.getInstance().updateConnection(connectionEntity);
-
-                if (operation == EntityInvalidationEvent.DELETE)
-                    MongoDBConnectionManager.getInstance().removeConnection(goid);
-
             }
         }
     }
