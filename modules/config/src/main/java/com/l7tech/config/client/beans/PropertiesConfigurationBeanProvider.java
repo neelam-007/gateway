@@ -17,11 +17,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
-import java.util.logging.ConsoleHandler;
-import java.util.logging.Formatter;
-import java.util.logging.LogRecord;
-import java.util.logging.Logger;
-
 
 /**
  * Properties configuration bean provider that uses Properties files for storage.
@@ -42,16 +37,6 @@ public class PropertiesConfigurationBeanProvider implements ConfigurationBeanPro
         this.propertiesFile = file;
         this.propertyPrefix = prefix;
         this.preserveExtraProperties = preserveExtraProperties;
-
-        Formatter formatter = new Formatter() {
-            @Override
-            public String format(LogRecord record) {
-                return record.getLevel() + ":" + record.getMessage()+"\n";
-            }
-        };
-        ConsoleHandler consoleHandler = new ConsoleHandler();
-        consoleHandler.setFormatter(formatter);
-        logger.addHandler(consoleHandler);
     }
 
     @Override
@@ -72,8 +57,6 @@ public class PropertiesConfigurationBeanProvider implements ConfigurationBeanPro
                 configBean.setConfigName( name );
                 configBean.setConfigValue( onLoad(name, properties.getProperty(property)) );
                 configuration.add(configBean);
-            } else {
-                logger.warning("Ignoring unknown property: " + property);
             }
         }
         
@@ -108,7 +91,6 @@ public class PropertiesConfigurationBeanProvider implements ConfigurationBeanPro
                     }
                 } else {
                     propertiesToKeep.add(property);
-                    logger.warning("Ignoring unknown property: " + property);
                 }
             }
         }
@@ -239,8 +221,6 @@ public class PropertiesConfigurationBeanProvider implements ConfigurationBeanPro
     private final File propertiesFile;
     private final String propertyPrefix;
     private final boolean preserveExtraProperties;
-    private static final Logger logger = Logger.getLogger(PropertiesConfigurationBeanProvider.class.getName());
-
 
     private String unprefix( final String name ) {
         String cleanName = null;
@@ -251,11 +231,7 @@ public class PropertiesConfigurationBeanProvider implements ConfigurationBeanPro
 
         return cleanName;
     }
-    public static void main(String args[]){
 
-
-
-    }
     private String prefix( final String name ) {
         return propertyPrefix + name;
     }
