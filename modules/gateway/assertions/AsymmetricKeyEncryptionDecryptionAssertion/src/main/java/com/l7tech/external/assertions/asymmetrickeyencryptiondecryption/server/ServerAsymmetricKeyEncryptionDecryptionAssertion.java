@@ -11,6 +11,7 @@ import com.l7tech.policy.variable.Syntax;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.security.prov.JceProvider;
+import com.l7tech.security.prov.ccj.CryptoComplyJceProviderEngine;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
@@ -27,6 +28,7 @@ import javax.inject.Named;
 import java.io.IOException;
 import java.security.*;
 import java.security.cert.X509Certificate;
+import java.security.interfaces.RSAKey;
 import java.util.Map;
 
 /**
@@ -98,7 +100,7 @@ public class ServerAsymmetricKeyEncryptionDecryptionAssertion extends AbstractSe
      */
     private byte[] transform(Key key, byte[] inputData, int mode, RsaModePaddingOption modePaddingOption) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, NoSuchProviderException {
 
-        byte[] result = null;
+        byte[] result;
         Cipher cipher = null;
 
         if (!key.getAlgorithm().contains("RSA"))
@@ -117,6 +119,15 @@ public class ServerAsymmetricKeyEncryptionDecryptionAssertion extends AbstractSe
         cipher.init(mode, key);
         // do the transformation
         result = cipher.doFinal(inputData);
+
+        // US265438: When the encryption/decryption transformation uses "RSA/ECB/NoPadding", non-CCJ provider adds padding
+        // zeros at the beginning of the decryption output bytes, if the output byte length is less than the key size in
+        // bytes. In order to keep this back compatibility, this story added padding zeros as RSA Bsafe does, when CCJ
+        // (version 2.2.1) is used as the crypto provider.
+        if ("WF".equals(JceProvider.getInstance().getDisplayName()) && mode == Cipher.DECRYPT_MODE && modePaddingOption == RsaModePaddingOption.ECB_NO_PADDING) {
+            final int keySizeInBytes = ((RSAKey)key).getModulus().bitLength() / 8;
+            result = CryptoComplyJceProviderEngine.paddingDecryptionOutputUsingRsaEcbNoPadding(result, keySizeInBytes);
+        }
 
         return result;
     }
