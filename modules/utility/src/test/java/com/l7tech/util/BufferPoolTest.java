@@ -114,4 +114,23 @@ public class BufferPoolTest {
         buff = BufferPool.getBuffer(2 * 1024 * 1024);
         assertEquals("should have reused existing buffer (overlarge, but less than 2x the desired size)", 3 * 1024 * 1024, buff.length);
     }
+
+    @Ignore
+    @Test
+    public void testDuplicateReturn() {
+        final boolean isEnabled = BufferPool.isEnabledBufferPool();
+        BufferPool.setEnabledBufferPool(true);
+        try {
+            byte[] hugeBuffer = BufferPool.getBuffer(BufferPool.HUGE_THRESHOLD + 10);
+            byte[] smallBuffer = BufferPool.getBuffer(BufferPool.HUGE_THRESHOLD - 10);
+
+            BufferPool.returnBuffer(hugeBuffer);
+            BufferPool.returnBuffer(smallBuffer);
+
+            BufferPool.returnBuffer(hugeBuffer);
+            BufferPool.returnBuffer(smallBuffer);
+        } finally {
+            BufferPool.setEnabledBufferPool(isEnabled);
+        }
+    }
 }

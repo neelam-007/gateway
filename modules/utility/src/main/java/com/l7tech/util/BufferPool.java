@@ -8,7 +8,11 @@ package com.l7tech.util;
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
 import java.util.Queue;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Class that provides access to a pool of not-zeroed-on-use byte arrays to use as read buffers.
@@ -21,8 +25,19 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class BufferPool {
     public static final String PROP_ENABLE_BUFFER_POOL = "com.l7tech.util.BufferPool.enabled";
     public static final String PROP_ENABLE_HUGE_POOL = "com.l7tech.util.BufferPool.hugePool.enabled";
+    public static final String PROP_DEBUG_BUFFER_POOL = "com.l7tech.util.BufferPool.debug.enabled";
 
     private static boolean ENABLE_BUFFER_POOL = SyspropUtil.getBoolean( PROP_ENABLE_BUFFER_POOL, false);
+
+    private static final boolean DEBUG_BUFFER_POOL;
+    private static final Logger logger;
+    private static final Set<Integer> buffersHash;
+
+    static {
+        DEBUG_BUFFER_POOL = SyspropUtil.getBoolean(PROP_DEBUG_BUFFER_POOL, false);
+        logger = DEBUG_BUFFER_POOL ? Logger.getLogger(BufferPool.class.getName()) : null;
+        buffersHash = DEBUG_BUFFER_POOL ? ConcurrentHashMap.newKeySet() : null;
+    }
 
     static boolean isEnabledBufferPool() {
         return ENABLE_BUFFER_POOL;
@@ -141,6 +156,17 @@ public class BufferPool {
      * @throws OutOfMemoryError if a new buffer can't be created
      */
     public static byte[] getBuffer(int minSize) {
+        if (ENABLE_BUFFER_POOL && DEBUG_BUFFER_POOL) {
+            final byte[] buffer = doGetBuffer(minSize);
+            if (buffer != null && buffersHash != null) {
+                buffersHash.remove(System.identityHashCode(buffer));
+            }
+            return buffer;
+        }
+        return doGetBuffer(minSize);
+    }
+
+    private static byte[] doGetBuffer(int minSize) {
         if (minSize > HUGE_THRESHOLD)
             return getHugeBuffer(minSize);
         for (Pool pool : pools) {
@@ -167,17 +193,35 @@ public class BufferPool {
             return false;
         final int size = buffer.length;
         if (size > HUGE_THRESHOLD) {
+            checkForDuplicateReturn(buffer);
             return returnHugeBuffer(buffer);
         }
         for (int i = pools.length - 1; i >= 0; i--) {
             Pool pool = pools[i];
             if (pool.size <= size) {
+                checkForDuplicateReturn(buffer);
                 return pool.returnBuffer(buffer);
             }
         }
         // Normally not possible to reach this.  If we do, must have returned a tiny buffer.
         assert size < MIN_BUFFER_SIZE;
         return false;
+    }
+
+    private static class DuplicateReturnException extends Exception {
+    }
+
+    private static void checkForDuplicateReturn(final byte[] buffer) {
+        if (ENABLE_BUFFER_POOL && DEBUG_BUFFER_POOL && buffersHash != null && !buffersHash.add(System.identityHashCode(buffer))) {
+            // TODO what to do????  for now throw exception and log along with call stack
+            try {
+                throw new DuplicateReturnException();
+            } catch (DuplicateReturnException e) {
+                if (logger != null) {
+                    logger.log(Level.SEVERE, "!!!! RETURNED BUFFER ALREADY EXISTS !!!!", e);
+                }
+            }
+        }
     }
 
     /**
