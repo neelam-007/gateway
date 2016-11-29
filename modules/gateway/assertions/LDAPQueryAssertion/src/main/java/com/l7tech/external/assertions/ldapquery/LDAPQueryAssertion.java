@@ -51,6 +51,7 @@ public class LDAPQueryAssertion extends Assertion implements UsesEntities, UsesV
     private int maximumResults = 0;
     private String selectedScope;
     private String dnText;
+    private boolean includeEmptyAttributes;
 
     public LDAPQueryAssertion() {
 
@@ -261,6 +262,14 @@ public class LDAPQueryAssertion extends Assertion implements UsesEntities, UsesV
 
     public void setDnText(String dnText) {
         this.dnText = dnText;
+    }
+
+    public boolean isIncludeEmptyAttributes() {
+        return includeEmptyAttributes;
+    }
+
+    public void setIncludeEmptyAttributes(boolean includeEmptyAttributes) {
+        this.includeEmptyAttributes = includeEmptyAttributes;
     }
 
     /** @deprecated only for parsing pre-5.0 versions of the policy XML */

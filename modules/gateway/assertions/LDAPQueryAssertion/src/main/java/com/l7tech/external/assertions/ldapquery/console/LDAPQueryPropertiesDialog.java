@@ -58,6 +58,7 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
     private JCheckBox failIfTooManyResultsCheckBox;
     private JComboBox selectScopeCombo;
     private JTextField dnField;
+    private JCheckBox includeEmptyAttributesInCheckBox;
     private boolean wasOKed = false;
     private LDAPQueryAssertion assertion;
     private java.util.List<QueryAttributeMapping> localMappings = new ArrayList<QueryAttributeMapping>();
@@ -223,7 +224,7 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
         failIfTooManyResultsCheckBox.setSelected(assertion.isFailIfTooManyResults());
         allowMultipleSearchResultsCheckBox.setSelected(assertion.isAllowMultipleResults());
         maximumResultsSpinner.setValue(assertion.getMaximumResults());
-
+        includeEmptyAttributesInCheckBox.setSelected(assertion.isIncludeEmptyAttributes());
     }
 
     private void viewToModel() {
@@ -344,6 +345,7 @@ public class LDAPQueryPropertiesDialog extends AssertionPropertiesEditorSupport<
         } else {
             assertion.setMaximumResults( 0 );
         }
+        assertion.setIncludeEmptyAttributes(includeEmptyAttributesInCheckBox.isSelected());
         return assertion;
     }
 
