@@ -25,18 +25,22 @@ import java.util.logging.Logger;
 public class BufferPool {
     public static final String PROP_ENABLE_BUFFER_POOL = "com.l7tech.util.BufferPool.enabled";
     public static final String PROP_ENABLE_HUGE_POOL = "com.l7tech.util.BufferPool.hugePool.enabled";
-    public static final String PROP_DEBUG_BUFFER_POOL = "com.l7tech.util.BufferPool.debug.enabled";
+    public static final String PROP_DEBUG_BUFFER_POOL = "com.l7tech.util.BufferPool.debug";
 
     private static boolean ENABLE_BUFFER_POOL = SyspropUtil.getBoolean( PROP_ENABLE_BUFFER_POOL, false);
 
-    private static final boolean DEBUG_BUFFER_POOL;
+    private static final String DEBUG_BUFFER_POOL;
     private static final Logger logger;
     private static final Set<Integer> buffersHash;
 
+    // "throw" will, as the name suggests, throw java.lang.AssertionError which'll halt the gateway (used for development - teamcity and/or unit tests)
+    // set to other than null (i.e. true) will log the duplicate and continue processing (for debugging in prod environment)
+    private static final String BUFFER_POOL_DEBUG_MODE_THROW = "throw";
+
     static {
-        DEBUG_BUFFER_POOL = SyspropUtil.getBoolean(PROP_DEBUG_BUFFER_POOL, false);
-        logger = DEBUG_BUFFER_POOL ? Logger.getLogger(BufferPool.class.getName()) : null;
-        buffersHash = DEBUG_BUFFER_POOL ? ConcurrentHashMap.newKeySet() : null;
+        DEBUG_BUFFER_POOL = SyspropUtil.getProperty(PROP_DEBUG_BUFFER_POOL);
+        logger = (DEBUG_BUFFER_POOL != null && !BUFFER_POOL_DEBUG_MODE_THROW.equals(DEBUG_BUFFER_POOL)) ? Logger.getLogger(BufferPool.class.getName()) : null;
+        buffersHash = DEBUG_BUFFER_POOL != null ? ConcurrentHashMap.newKeySet() : null;
     }
 
     static boolean isEnabledBufferPool() {
@@ -156,7 +160,7 @@ public class BufferPool {
      * @throws OutOfMemoryError if a new buffer can't be created
      */
     public static byte[] getBuffer(int minSize) {
-        if (ENABLE_BUFFER_POOL && DEBUG_BUFFER_POOL) {
+        if (ENABLE_BUFFER_POOL && DEBUG_BUFFER_POOL != null) {
             final byte[] buffer = doGetBuffer(minSize);
             if (buffer != null && buffersHash != null) {
                 buffersHash.remove(System.identityHashCode(buffer));
@@ -208,18 +212,13 @@ public class BufferPool {
         return false;
     }
 
-    private static class DuplicateReturnException extends Exception {
-    }
-
-    private static void checkForDuplicateReturn(final byte[] buffer) {
-        if (ENABLE_BUFFER_POOL && DEBUG_BUFFER_POOL && buffersHash != null && !buffersHash.add(System.identityHashCode(buffer))) {
-            // TODO what to do????  for now throw exception and log along with call stack
-            try {
-                throw new DuplicateReturnException();
-            } catch (DuplicateReturnException e) {
-                if (logger != null) {
-                    logger.log(Level.SEVERE, "!!!! RETURNED BUFFER ALREADY EXISTS !!!!", e);
-                }
+    private static void checkForDuplicateReturn(final byte[] buffer) throws java.lang.AssertionError {
+        if (ENABLE_BUFFER_POOL && DEBUG_BUFFER_POOL != null && buffersHash != null && !buffersHash.add(System.identityHashCode(buffer))) {
+            final java.lang.AssertionError ex = new java.lang.AssertionError("Attempting to return existing buffer");
+            if (BUFFER_POOL_DEBUG_MODE_THROW.equals(DEBUG_BUFFER_POOL)) {
+                throw ex;
+            } else if (logger != null) {
+                logger.log(Level.SEVERE, "!!!! RETURNED BUFFER ALREADY EXISTS !!!!", ex);
             }
         }
     }

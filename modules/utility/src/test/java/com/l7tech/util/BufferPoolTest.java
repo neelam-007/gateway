@@ -5,6 +5,7 @@
 
 package com.l7tech.util;
 
+import com.l7tech.test.BugId;
 import org.junit.*;
 
 import java.util.Arrays;
@@ -116,6 +117,7 @@ public class BufferPoolTest {
     }
 
     @Ignore
+    @BugId("DE254879")
     @Test
     public void testDuplicateReturn() {
         final boolean isEnabled = BufferPool.isEnabledBufferPool();
