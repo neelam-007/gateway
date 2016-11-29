@@ -207,7 +207,6 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         context.addMimeMapping("xml", "text/xml");
         context.addMimeMapping("txt", "text/plain");
         context.addMimeMapping("css", "text/css");
-        context.addMimeMapping("jnlp", "application/x-java-jnlp-file");
 
         StandardWrapper dflt = (StandardWrapper)context.createWrapper();
         dflt.setServletClass(SsgDefaultServlet.class.getName());

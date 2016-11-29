@@ -1883,15 +1883,8 @@
                 <include name="*.jar"/>
             </fileset>
         </copy>
-		<mkdir dir="${build.dir}/managerwebstart/lib"/>
-		<copy todir="${build.dir}/managerwebstart/lib">
-            <fileset dir="modules/gateway/console-webstart/build/dependency" excludes="cryptojce-*.jar">
-                <include name="*.jar"/>
-            </fileset>
-        </copy>
         <copy file="modules/gateway/console/build/layer7-gateway-console.jar" tofile="${build.dir}/manager/Manager.jar"/>
         <copy file="modules/gateway/console-applet/build/layer7-gateway-console-applet.jar" todir="${build.dir}/managerapplet"/>
-		<copy file="modules/gateway/console-webstart/build/layer7-gateway-console-webstart.jar" todir="${build.dir}/managerwebstart"/>
     </target>
 
     <target name="package.manager" depends="package.manager.jar" unless="manager.notrequired">
@@ -3364,9 +3357,6 @@
                 <mkdir dir="@{dir}/${install.src.ssg.web}"/>
                 <mkdir dir="@{dir}/${install.src.ssg.web}/ssg"/>
                 <mkdir dir="@{dir}/${install.src.ssg.modstaging}"/>
-				<mkdir dir="@{dir}/${install.src.ssg.webstart}"/>				
-                <mkdir dir="@{dir}/${install.src.ssg.webstartlib}"/>
-				<mkdir dir="@{dir}/${install.src.ssg.webstartres}"/>
 
                 <!--copy the config wizard -->
                 <copy todir="@{dir}/${install.src.ssg.configwizard}">
@@ -3513,37 +3503,10 @@
                 <copy todir="@{dir}/${install.src.ssg.appletlib}">
                     <fileset dir="${build.dir}/managerapplet/lib"/>
                 </copy>
-				
-				<copy todir="@{dir}/${install.src.ssg.webstart}">
-					<fileset dir="modules/gateway/console/src/main/resources/com/l7tech/console/resources">
-						<include name="manager.jnlp"/>
-					</fileset>
-                </copy>
-				
-                <copy todir="@{dir}/${install.src.ssg.webstartlib}">
-				    <fileset dir="${build.dir}/managerwebstart" includes="layer7-gateway-console-webstart.jar*"/>
-                    <fileset dir="${build.dir}/managerwebstart/lib"/>
-					<fileset dir="modules/gateway/console/src/main/resources/com/l7tech/console/resources" includes="version.xml"/>
-                </copy>
-				
-				<copy todir="@{dir}/${install.src.ssg.webstartres}">
-					<fileset dir="modules/gateway/console/src/main/resources/com/l7tech/console/resources">
-						<include name="ca_logo_black_16x16.jpg"/>
-						<include name="ca_logo_black_32x32.jpg"/>
-						<include name="ca_logo_black_64x64.jpg"/>
-					</fileset>
-                </copy>
 
                 <copy file="${src.root}/etc/backup_tables_audit" todir="@{dir}/${install.src.ssg.backuprestore.cfg}"/>
                 <copy file="${src.root}/etc/exclude_tables" todir="@{dir}/${install.src.ssg.backuprestore.cfg}"/>
                 <copy file="${src.root}/etc/exclude_files" todir="@{dir}/${install.src.ssg.backuprestore.cfg}"/>
-				
-				<signjar alias="signer6" keystore="${src.root}/etc/ssgKeyStore" storepass="password" lazy="true">
-					<path>
-						<fileset dir="@{dir}/${install.src.ssg.webstartlib}" includes="*.jar"/>
-					</path>
-				</signjar>
-				
             </sequential>
         </macrodef>
 

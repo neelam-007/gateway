@@ -3,8 +3,6 @@ package com.l7tech.console.policy;
 import com.l7tech.policy.assertion.Assertion;
 import static com.l7tech.util.ClassUtils.getArrayElementClassName;
 import static com.l7tech.util.ClassUtils.isArrayClassName;
-
-import com.l7tech.policy.wsp.ClassLoaderUtil;
 import com.l7tech.util.Functions.BinaryThrows;
 import com.l7tech.util.Option;
 import static com.l7tech.util.Option.optional;
@@ -51,9 +49,6 @@ public class ConsoleModularAssertionClassFinder implements BinaryThrows<Class,St
                     }
                 }
             }
-        }
-        else {
-            return ClassLoaderUtil.getClassLoader().loadClass(className);
         }
 
         throw e;

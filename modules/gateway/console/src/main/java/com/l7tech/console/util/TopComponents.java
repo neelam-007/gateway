@@ -433,14 +433,6 @@ public class TopComponents {
     /**
      * @return  True if the SSM is currently running as an applet.
      */
-    public boolean isWebStart() {
-        MainWindow mainWindow = getMainWindow();
-        return mainWindow != null && mainWindow.isWebStart();
-    }
-
-    /**
-     * @return  True if the SSM is currently running as an applet.
-     */
     public boolean isApplet() {
         MainWindow mainWindow = getMainWindow();
         return mainWindow != null && mainWindow.isApplet();

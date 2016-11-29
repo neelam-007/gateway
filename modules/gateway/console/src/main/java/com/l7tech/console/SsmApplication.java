@@ -45,8 +45,6 @@ public abstract class SsmApplication extends ApplicationObjectSupport {
 
     public abstract boolean isApplet();
 
-    public abstract boolean isWebStart();
-
     public boolean isTrusted() {
         return trusted;    
     }
@@ -155,8 +153,7 @@ public abstract class SsmApplication extends ApplicationObjectSupport {
 
         try {
             // incors.org Kunststoff faq says we need the following line if we ever want to use Java Web Start:
-            //UIManager.getLookAndFeelDefaults().put( "ClassLoader", getClass().getClassLoader() );
-            UIManager.getLookAndFeelDefaults().put( "ClassLoader", Thread.currentThread().getContextClassLoader() );
+            UIManager.getLookAndFeelDefaults().put( "ClassLoader", getClass().getClassLoader() );
         } catch ( Exception e ) {
             logger.log( Level.WARNING, "Unable to update look-and-feel classloader", e );
         }
