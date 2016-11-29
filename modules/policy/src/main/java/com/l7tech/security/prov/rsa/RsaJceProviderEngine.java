@@ -5,6 +5,7 @@ import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SyspropUtil;
 import com.rsa.jsafe.crypto.CryptoJ;
+import com.rsa.jsse.JsseProvider;
 import org.jetbrains.annotations.NotNull;
 
 import javax.net.ssl.SSLContext;
@@ -234,6 +235,22 @@ public class RsaJceProviderEngine extends JceProvider {
         if ("TrustManagerFactory.PKIX".equals(service))
             return PKIX_PROVIDER;
         return super.getProviderFor(service);
+    }
+
+    @Override
+    public Object getCompatibilityFlag(String flagName) {
+        if ( CF_TLSv10_CLIENT_AUTH_REQUIRES_NONEMPTY_CACERTS.equalsIgnoreCase( flagName ) ) {
+            //if ( SSL-J currently being used as default provider for TLS 1.0 ) // this is normally NOT the case by the way, see the logic above: by default TLSv1=SunJSSE, other versions=SSL-J
+            if (TLS10_PROVIDER != null && JsseProvider.NAME.equals(TLS10_PROVIDER.getName())) {
+                return Boolean.TRUE;
+            }
+        } else if ( CF_TLSv12_CLIENT_AUTH_REQUIRES_NONEMPTY_CACERTS.equalsIgnoreCase( flagName ) ) {
+            //if ( SSL-J currently being used as default provider for TLS 1.1 and 1.2 ) {
+            if (TLS12_PROVIDER != null && JsseProvider.NAME.equals(TLS12_PROVIDER.getName())) {
+                return Boolean.TRUE;
+            }
+        }
+        return super.getCompatibilityFlag(flagName);
     }
 
     @Override

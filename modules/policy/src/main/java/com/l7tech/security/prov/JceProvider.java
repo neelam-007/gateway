@@ -7,7 +7,6 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
-import javax.crypto.SecretKey;
 import javax.net.ssl.SSLContext;
 import java.security.*;
 import java.security.cert.X509Certificate;
@@ -510,6 +509,27 @@ public abstract class JceProvider {
         //NOTE: We may want to pre-process the name here, e.g. Ciper.RSA/NONE/NoPadding -> Cipher.RSA
         final Provider sp = getProviderFor( service );
         return sp != null ? sp : first( Security.getProviders( service ) ).toNull();
+    }
+
+    public static final String CF_TLSv10_CLIENT_AUTH_REQUIRES_NONEMPTY_CACERTS = "CF_TLSv10_CLIENT_AUTH_REQUIRES_NONEMPTY_CACERTS";
+    public static final String CF_TLSv12_CLIENT_AUTH_REQUIRES_NONEMPTY_CACERTS = "CF_TLSv12_CLIENT_AUTH_REQUIRES_NONEMPTY_CACERTS";
+
+    /**
+     * See if this provider requires a special compatibility mode enabled at the application level.
+     * <p/>
+     * Current defined compatbility modes as of 9.2:
+     * <ul>
+     *     <li>{@link #CF_TLSv10_CLIENT_AUTH_REQUIRES_NONEMPTY_CACERTS} - The accepted issuers list must be nonempty in order to do client auth for inbound TLS 1.0.
+     *     The return value will be the Boolean.TRUE if this is the case.</li>
+     *     <li>{@link #CF_TLSv12_CLIENT_AUTH_REQUIRES_NONEMPTY_CACERTS} - The accepted issuers list must be nonempty in order to do client auth for inboud TLS versions > 1.0.
+     *     The return value will be the Boolean.TRUE if this is the case.</li>
+     * </ul>
+     *
+     * @param flagName the name of the compatibility flag to query for.  Required.
+     * @return an object ,or null if the flag is not required or meaningful to the current JceProviderEngine.
+     */
+    public Object getCompatibilityFlag( String flagName ) {
+        return null;
     }
 
     /**

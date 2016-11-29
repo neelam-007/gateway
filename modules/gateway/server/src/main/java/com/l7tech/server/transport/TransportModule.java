@@ -10,6 +10,7 @@ import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.security.cert.TrustedCert;
+import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.LifecycleBean;
 import com.l7tech.server.event.EntityInvalidationEvent;
@@ -286,10 +287,20 @@ public abstract class TransportModule extends LifecycleBean {
         if (connector.getClientAuth() == SsgConnector.CLIENT_AUTH_NEVER)
             return new X509Certificate[0];
 
+
+        String protocols = connector.getProperty(SsgConnector.PROP_TLS_OVERRIDE_PROTOCOLS);
+        if (protocols == null) protocols = connector.getProperty(SsgConnector.PROP_TLS_PROTOCOLS);
+        boolean isOnlyTls10Enabled =  (protocols == null || (!protocols.contains("TLSv1.1") && !protocols.contains("TLSv1.2")));
+
+        //If the TLS provider returns true for requireCacerts then a non-empty cacerts list must be present in order to use client aut
+        final Object requireCacerts = JceProvider.getInstance().getCompatibilityFlag(
+                isOnlyTls10Enabled ? JceProvider.CF_TLSv10_CLIENT_AUTH_REQUIRES_NONEMPTY_CACERTS : JceProvider.CF_TLSv12_CLIENT_AUTH_REQUIRES_NONEMPTY_CACERTS
+        );
+
         // Leave accepted issuers list blank unless "acceptedIssuers" is forced to "true" (Bug #8727)
         // "acceptedIssuers" connector property not to be documented -- will be removed in future release
         // This no longer depends on enabled TLS version because SSL-J is no longer present by default
-        if (!connector.getBooleanProperty("acceptedIssuers"))
+        if (!Boolean.TRUE.equals(requireCacerts) && !connector.getBooleanProperty("acceptedIssuers"))
             return new X509Certificate[0];
 
         Collection<TrustedCert> trustedCerts = trustedCertServices.getAllCertsByTrustFlags(EnumSet.of(TrustedCert.TrustedFor.SIGNING_CLIENT_CERTS));
@@ -302,7 +313,8 @@ public abstract class TransportModule extends LifecycleBean {
         // to work around an issue with older versions of SSL-J (that would fail with client auth set to OPTIONAL or REQUIRED
         // unless the accepted issuers list was non-empty).  We will still support this hack, in case it is required in some
         // situation, but only if a new undocumented connector property includeSelfCertIfAcceptedIssuersEmpty is set to true.
-        if ( certs.isEmpty() && connector.getBooleanProperty( "includeSelfCertIfAcceptedIssuersEmpty" ) ) {
+        // If cacert is empty and acceptedIssuers is true and includeSelfCertIfAcceptedIssuersEmpty/requireCacerts is true as well then self-signed cert will be added
+        if ( certs.isEmpty() && (Boolean.TRUE.equals(requireCacerts) || connector.getBooleanProperty( "includeSelfCertIfAcceptedIssuersEmpty" )) ) {
             try {
                 certs.add( defaultKey.getSslInfo().getCertificate() );
             } catch (IOException e) {

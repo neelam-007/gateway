@@ -174,6 +174,11 @@ public class DelegatingJceProvider extends JceProvider {
     }
 
     @Override
+    public Object getCompatibilityFlag( String flagName ) {
+        return delegate.getCompatibilityFlag(flagName);
+    }
+
+    @Override
     public void prepareSslContext( @NotNull SSLContext sslContext ) {
         delegate.prepareSslContext( sslContext );
     }
