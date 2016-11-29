@@ -76,6 +76,8 @@ public class ServerFtpRoutingAssertionTest {
                     new WritePermission("/"));
 
     // other settings
+    private final FtpFileDetails FS_HOME_DIR_CHANGE = new FtpFileDetails("/", FS_LOG_DIR,
+            "", Charsets.UTF8);
     private final FtpFileDetails LOG_FILE_DETAILS = new FtpFileDetails(FS_LOG_TXT_FILE, FS_LOG_DIR,
             readResourceAsString(RES_LOG_TXT_FILE_NAME), Charsets.UTF8);
     private final FtpFileDetails XML_FILE_DETAILS = new FtpFileDetails(FS_DATA_XML_FILE, FS_DATA_DIR,
@@ -114,6 +116,39 @@ public class ServerFtpRoutingAssertionTest {
         }
 
         System.setSecurityManager(originalSecurityManager);
+    }
+
+    @Test
+    public void testCWD_Success() throws Exception {
+
+        FtpFileDetails testDirectory = FS_HOME_DIR_CHANGE;
+        FtpCommand testCommand = FtpCommand.CWD;
+
+        // set up file system
+        addDirectory(fakeFtpServer.getFileSystem(), testDirectory);
+
+        // create assertion
+        FtpRoutingAssertion assertion = createAssertion();
+
+        assertion.setFtpCommand( testCommand );
+        assertion.setArguments( testDirectory.getDirectory());
+        assertion.setDirectory( FS_HOME_DIR );
+        assertion.setSecurity( FtpSecurity.FTP_UNSECURED );
+        assertion.setCredentialsSource( FtpCredentialsSource.PASS_THRU );
+
+        // create server assertion
+        ServerFtpRoutingAssertion serverAssertion = createServer( assertion );
+
+        // create context
+        final PolicyEnforcementContext context = createPolicyEnforcementContext( testDirectory );
+
+        // run server assertion
+        AssertionStatus status = serverAssertion.checkRequest( context );
+
+        assertEquals( AssertionStatus.NONE, status );
+        assertTrue( testAudit.isAuditPresent(AssertionMessages.FTP_ROUTING_SUCCEEDED) );
+
+        validateFtpResponseKnob(context, 250, "CWD completed. New directory is "+testDirectory.getDirectory()+".");
     }
 
     @Test

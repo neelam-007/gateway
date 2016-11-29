@@ -495,7 +495,12 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
                     ftpClient.noop();
                     break;
                 case CWD:
-                    ftpClient.setDir(arguments);
+                    /* DE246285: Jscape's ftp.setDir method executes a CWD, and if successful it will then issue a PWD. This behaviour
+                    causes a response code of 275 (a valid PWD command successful response code) and not that of a CWD command
+                    which was issued by the client/requestor.
+                     */
+                    //ftpClient.setDir(arguments);
+                    ftpClient.issueCommand( ftpCommand.name() +" "+ arguments );
                     break;
                 case CDUP:
                     ftpClient.setDirUp();
@@ -859,6 +864,11 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
             }
 
             @Override
+            public void issueCommand(String command) throws FtpException {
+                ftps.issueCommand(command);
+            }
+
+            @Override
             public void setDirUp() throws FtpException {
                 ftps.setDirUp();
             }
@@ -965,6 +975,11 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
             @Override
             public void setDir(String remoteDir) throws FtpException {
                 ftp.setDir(remoteDir);
+            }
+
+            @Override
+            public void issueCommand(String command) throws FtpException {
+                ftp.issueCommand(command);
             }
 
             @Override
@@ -1082,6 +1097,11 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
         public void setDir(String remoteDir) throws FtpException;
 
         /**
+         * Issue Raw FTP Commands
+         */
+        public void issueCommand(String command) throws FtpException;
+
+        /**
          * CDUP
          */
         public void setDirUp() throws FtpException;
@@ -1136,7 +1156,6 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
                 lock.unlock();
             }
         }
-
         @Override
         public void responseReceived(final FtpResponseEvent ftpResponseEvent) {
             lock.lock();
