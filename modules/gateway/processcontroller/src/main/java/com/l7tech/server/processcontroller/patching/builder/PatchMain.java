@@ -1,11 +1,8 @@
 package com.l7tech.server.processcontroller.patching.builder;
 
 import static com.l7tech.server.processcontroller.patching.builder.PatchTask.*;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.FileUtils;
-import com.l7tech.util.IOUtils;
-import com.l7tech.util.ResourceUtils;
-import com.l7tech.util.SyspropUtil;
+
+import com.l7tech.util.*;
 
 import java.io.*;
 
@@ -60,7 +57,7 @@ public class PatchMain {
             "com.l7tech.util.BufferPool$Pool",
             "com.l7tech.util.BufferPool$HugePool",
             "com.l7tech.util.PoolByteArrayOutputStream",
-            "com.l7tech.util.PoolByteArrayOutputStream$1",
+            "com.l7tech.util.PoolByteArrayOutputStream$InternalPooledByteArrayInputStream"
         };
     }
 
