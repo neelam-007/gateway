@@ -521,6 +521,7 @@ public class FtpRoutingAssertion extends RoutingAssertion implements UsesVariabl
 
     }
 
+    @Migration(mapName = MigrationMappingSelection.REQUIRED, export=false, resolver = PropertyResolver.Type.ASSERTION)
     @Override
     public EntityHeader[] getEntitiesUsed() {
         EntityHeader[] headers = new EntityHeader[0];

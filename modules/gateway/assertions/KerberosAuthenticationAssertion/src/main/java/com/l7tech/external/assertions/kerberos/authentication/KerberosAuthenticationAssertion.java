@@ -151,6 +151,7 @@ public class KerberosAuthenticationAssertion extends Assertion implements UsesVa
         return Syntax.getReferencedNames(servicePrincipalName, authenticatedUser, realm, krbConfiguredAccount, userRealm);
     }
 
+    @Migration(mapName = MigrationMappingSelection.REQUIRED, export=false, resolver = PropertyResolver.Type.ASSERTION)
     @Override
     public EntityHeader[] getEntitiesUsed() {
         if (!krbUseGatewayKeytab) {

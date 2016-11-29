@@ -8,7 +8,6 @@ import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import javax.xml.bind.annotation.XmlEnumValue;
-import javax.xml.bind.annotation.XmlRootElement;
 import java.util.Date;
 
 /**
@@ -17,7 +16,6 @@ import java.util.Date;
 @Entity
 @Proxy(lazy=false)
 @Table(name="secure_password")
-@XmlRootElement
 public class SecurePassword extends ZoneableNamedEntityImp {
 
     public static enum SecurePasswordType {

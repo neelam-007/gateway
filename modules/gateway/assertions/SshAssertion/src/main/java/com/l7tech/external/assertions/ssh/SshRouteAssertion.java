@@ -441,6 +441,7 @@ public class SshRouteAssertion extends RoutingAssertion implements UsesVariables
         return saveFileSizeContextVariable;
     }
 
+    @Migration(mapName = MigrationMappingSelection.REQUIRED, export=false, resolver = PropertyResolver.Type.ASSERTION)
     @Override
     public EntityHeader[] getEntitiesUsed() {
         if (isCredentialsSourceSpecified()) {
