@@ -152,6 +152,38 @@ public class ServerFtpRoutingAssertionTest {
     }
 
     @Test
+    public void testCDUP_Success() throws Exception {
+
+        FtpFileDetails testDirectory = FS_HOME_DIR_CHANGE;
+        FtpCommand testCommand = FtpCommand.CDUP;
+
+        // set up file system
+        addDirectory(fakeFtpServer.getFileSystem(), testDirectory);
+
+        // create assertion
+        FtpRoutingAssertion assertion = createAssertion();
+
+        assertion.setFtpCommand( testCommand );
+        assertion.setDirectory( testDirectory.getDirectory() );
+        assertion.setSecurity( FtpSecurity.FTP_UNSECURED );
+        assertion.setCredentialsSource( FtpCredentialsSource.PASS_THRU );
+
+        // create server assertion
+        ServerFtpRoutingAssertion serverAssertion = createServer( assertion );
+
+        // create context
+        final PolicyEnforcementContext context = createPolicyEnforcementContext( testDirectory );
+
+        // run server assertion
+        AssertionStatus status = serverAssertion.checkRequest( context );
+
+        assertEquals( AssertionStatus.NONE, status );
+        assertTrue( testAudit.isAuditPresent(AssertionMessages.FTP_ROUTING_SUCCEEDED) );
+
+        validateFtpResponseKnob(context, 200, "CDUP completed. New directory is "+FS_HOME_DIR+".");
+    }
+
+    @Test
     public void testPWD_Success() throws Exception {
         FtpFileDetails testFile = LOG_FILE_DETAILS;
         FtpCommand testCommand = FtpCommand.PWD;

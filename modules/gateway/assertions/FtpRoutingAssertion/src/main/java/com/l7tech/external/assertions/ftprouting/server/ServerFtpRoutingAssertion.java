@@ -503,7 +503,12 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
                     ftpClient.issueCommand( ftpCommand.name() +" "+ arguments );
                     break;
                 case CDUP:
-                    ftpClient.setDirUp();
+                    /* Note: RFC 959 says that code 200 is required but it also says that CDUP uses the same codes as CWD.
+                    # FIXING as the current response code is set to 257, due to the library issuing a PWD after the CDUP.
+                    # Note: The reply code and text will be passed back from the backend ftp server.
+                    */
+                    //ftpClient.setDirUp();
+                    ftpClient.issueCommand( ftpCommand.name() );
                     break;
                 case PWD:
                     ftpClient.getDir();
