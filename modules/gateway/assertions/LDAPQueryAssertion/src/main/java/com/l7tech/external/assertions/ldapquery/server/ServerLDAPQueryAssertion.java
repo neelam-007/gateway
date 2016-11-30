@@ -18,6 +18,7 @@ import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.util.ManagedTimerTask;
 import com.l7tech.util.*;
 import org.apache.commons.collections.map.LRUMap;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.BeanFactory;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
@@ -247,14 +248,10 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
                         attributeValues.get(contextVariableName).add(simpleAttribute.getEntryName());
                     }
                 }
-                //Get the current Attribute List.
-                List<String> values = attributeValues.get( contextVariableName );
-                if ( values == null ) {
-                    values = new ArrayList<String>();
-                    attributeValues.put( contextVariableName, values );
-                }
+
                 //In case of MultiValue Attribute, Values are concatenated with comma ',' separator.
                 if ( simpleAttribute.isPresent() && simpleAttribute.getSize() > 0 ) {
+                    final List<String> values = getOrCreateAttributeValues(contextVariableName, attributeValues);
                     if ( attributeMapping.isMultivalued() ) {
                         if ( attributeMapping.isJoinMultivalued() ) {
                             final String value = simpleAttribute.getJoinedValue();
@@ -281,6 +278,7 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
                 } else {
                     //In case of No Attribute present. Default Value assigned is Empty String.
                     if (!simpleAttribute.isPresent() && assertion.isIncludeEmptyAttributes()) {
+                        final List<String> values = getOrCreateAttributeValues(contextVariableName, attributeValues);
                         values.add("");
                     }
                     if ( logger.isLoggable( Level.FINE ) ) {
@@ -307,6 +305,17 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
             cachedAttributes.put( entryKey, new AttributeValue( assertion.isAllowMultipleResults(), values ) );
         }
         return new CacheEntry( cachedAttributes );
+    }
+
+    @NotNull
+    private List<String> getOrCreateAttributeValues(String contextVariableName, Map<String, List<String>> attributeValues) {
+        //Get the current Attribute List.
+        List<String> values = attributeValues.get( contextVariableName );
+        if ( values == null ) {
+            values = new ArrayList<String>();
+            attributeValues.put( contextVariableName, values );
+        }
+        return values;
     }
 
     private void cacheCleanup() {

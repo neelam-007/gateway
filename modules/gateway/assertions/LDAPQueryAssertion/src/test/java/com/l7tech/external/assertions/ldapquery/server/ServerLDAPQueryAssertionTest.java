@@ -28,7 +28,6 @@ import javax.naming.NamingException;
 import javax.naming.directory.Attribute;
 import javax.naming.directory.DirContext;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -135,7 +134,7 @@ public class ServerLDAPQueryAssertionTest {
     @Test
     public void testIncludeEmptyAttributes() throws Exception{
         doJoinMultiValueTestResults(new String[]{ "" }, true, new String[] { null });
-        doJoinMultiValueTestResults(new String[]{}, false, new String[] { null });
+        doJoinMultiValueTestResults(null, false, new String[] { null });
     }
 
     private void doJoinMultiValueTestResults(final Object expectedValue,
