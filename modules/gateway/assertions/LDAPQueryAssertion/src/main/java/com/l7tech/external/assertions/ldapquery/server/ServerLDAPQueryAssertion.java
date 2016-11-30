@@ -154,16 +154,25 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
                 dirContext = identityProvider.getBrowseContext();
                 String searchScope = assertion.getSelectedScope();
                 final SearchControls sc = new SearchControls();
-                if(LDAPConstants.OBJECT_SCOPE.equals(searchScope)) sc.setSearchScope(SearchControls.OBJECT_SCOPE);
-                else if(LDAPConstants.ONELEVEL_SCOPE.equals(searchScope)) sc.setSearchScope(SearchControls.ONELEVEL_SCOPE);
-                else sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
+
+                if (LDAPConstants.OBJECT_SCOPE.equals(searchScope)) {
+                    sc.setSearchScope(SearchControls.OBJECT_SCOPE);
+                } else if (LDAPConstants.ONELEVEL_SCOPE.equals(searchScope)) {
+                    sc.setSearchScope(SearchControls.ONELEVEL_SCOPE);
+                } else {
+                    sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
+                }
+
                 sc.setReturningAttributes( attributeNames );
                 if ( maxResults > 0 ) {
                     sc.setCountLimit( (long) (maxResults + 1) );
                 }
 
-                if(SearchControls.OBJECT_SCOPE != sc.getSearchScope()) answer = dirContext.search(LdapUtils.name(identityProvider.getConfig().getSearchBase()), filter, sc);
-                else answer = dirContext.search(assertion.getDnText(), filter, sc);
+                if (SearchControls.OBJECT_SCOPE != sc.getSearchScope()) {
+                    answer = dirContext.search(LdapUtils.name(identityProvider.getConfig().getSearchBase()), filter, sc);
+                } else {
+                    answer = dirContext.search(assertion.getDnText(), filter, sc);
+                }
 
                 // answer = dirContext.search(LdapUtils.name(identityProvider.getConfig().getSearchBase()), filter, sc);
                 while ( answer.hasMore() && (availableResultCount++ < maxResults || maxResults==0) ) {
@@ -238,14 +247,14 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
                         attributeValues.get(contextVariableName).add(simpleAttribute.getEntryName());
                     }
                 }
-
+                //Get the current Attribute List.
+                List<String> values = attributeValues.get( contextVariableName );
+                if ( values == null ) {
+                    values = new ArrayList<String>();
+                    attributeValues.put( contextVariableName, values );
+                }
+                //In case of MultiValue Attribute, Values are concatenated with comma ',' separator.
                 if ( simpleAttribute.isPresent() && simpleAttribute.getSize() > 0 ) {
-                    List<String> values = attributeValues.get( contextVariableName );
-                    if ( values == null ) {
-                        values = new ArrayList<String>();
-                        attributeValues.put( contextVariableName, values );
-                    }
-
                     if ( attributeMapping.isMultivalued() ) {
                         if ( attributeMapping.isJoinMultivalued() ) {
                             final String value = simpleAttribute.getJoinedValue();
@@ -270,6 +279,10 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
                         values.add( simpleAttribute.getFirstValue() );
                     }
                 } else {
+                    //In case of No Attribute present. Default Value assigned is Empty String.
+                    if (!simpleAttribute.isPresent() && assertion.isIncludeEmptyAttributes()) {
+                        values.add("");
+                    }
                     if ( logger.isLoggable( Level.FINE ) ) {
                         logger.log( Level.FINE, "Attribute named " + attributeName + " was not present for ldap entry " + simpleAttribute.getEntryName());
                     }
