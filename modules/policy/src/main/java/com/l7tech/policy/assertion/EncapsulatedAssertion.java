@@ -228,7 +228,7 @@ public class EncapsulatedAssertion extends Assertion implements UsesEntitiesAtDe
     }
 
     @Override
-    @Migration(mapName = MigrationMappingSelection.NONE)
+    @Migration(mapName = MigrationMappingSelection.NONE, resolver = PropertyResolver.Type.ASSERTION)
     public EntityHeader[] getEntitiesUsed() {
         return configHeader.getGuid() == null
             ? new EntityHeader[0]
