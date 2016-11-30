@@ -280,8 +280,9 @@ public abstract class TransportModule extends LifecycleBean {
      */
     public X509Certificate[] getAcceptedIssuersForConnector(SsgConnector connector) throws FindException {
         // Suppress inclusion of accepted issuers list if so configured for this connector
-        if (connector.getBooleanProperty("noAcceptedIssuers"))
+        if (connector.getBooleanProperty("noAcceptedIssuers")|| "false".equalsIgnoreCase(connector.getProperty("acceptedIssuers"))) {
             return new X509Certificate[0];
+        }
 
         // There's no point worrying about the accepted issuers list if we don't plan to ever send a client challenge.
         if (connector.getClientAuth() == SsgConnector.CLIENT_AUTH_NEVER)
