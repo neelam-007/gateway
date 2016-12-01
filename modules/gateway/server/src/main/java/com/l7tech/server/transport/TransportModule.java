@@ -300,7 +300,6 @@ public abstract class TransportModule extends LifecycleBean {
 
         // Leave accepted issuers list blank unless "acceptedIssuers" is forced to "true" (Bug #8727)
         // "acceptedIssuers" connector property not to be documented -- will be removed in future release
-        // This no longer depends on enabled TLS version because SSL-J is no longer present by default
         if (!Boolean.TRUE.equals(requireCacerts) && !connector.getBooleanProperty("acceptedIssuers"))
             return new X509Certificate[0];
 

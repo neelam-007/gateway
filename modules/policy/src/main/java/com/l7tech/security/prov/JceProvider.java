@@ -511,7 +511,10 @@ public abstract class JceProvider {
         return sp != null ? sp : first( Security.getProviders( service ) ).toNull();
     }
 
+    //For SSL-J the accepted issuers list must be nonempty in order to do client auth for inbound TLS 1.0.
     public static final String CF_TLSv10_CLIENT_AUTH_REQUIRES_NONEMPTY_CACERTS = "CF_TLSv10_CLIENT_AUTH_REQUIRES_NONEMPTY_CACERTS";
+
+    //For SSL-J accepted issuers list must be nonempty in order to do client auth for inboud TLS versions > 1.0.
     public static final String CF_TLSv12_CLIENT_AUTH_REQUIRES_NONEMPTY_CACERTS = "CF_TLSv12_CLIENT_AUTH_REQUIRES_NONEMPTY_CACERTS";
 
     /**
