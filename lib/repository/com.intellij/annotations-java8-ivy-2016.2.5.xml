@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ivy-module version="2.0">
 	<info organisation="com.intellij"
-		module="forms_rt"
-		revision="11.1.2"
+		module="annotations-java8"
+		revision="2016.2.5"
 		status="release"
-		publication="20120517115251"
+		publication="2016120200000"
 		default="true"
 	/>
 	<configurations>
 		<conf name="default" visibility="public"/>
 	</configurations>
 	<publications>
-		<artifact name="forms_rt" type="jar" ext="jar" conf="default"/>
+		<artifact name="annotations-java8" type="jar" ext="jar" conf="default"/>
 	</publications>
 </ivy-module>

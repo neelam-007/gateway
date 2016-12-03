@@ -28,6 +28,7 @@ import javax.naming.NamingException;
 import javax.naming.directory.Attribute;
 import javax.naming.directory.DirContext;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -159,7 +160,7 @@ public class ServerLDAPQueryAssertionTest {
                     for (int i=0; i < results.length; i++) {
 
                         Attribute attribute = null;
-                        if (countNotNull(results[i]) > 0) {
+                        if (Arrays.stream(results[i]).filter(x -> x != null).count() > 0) {
                             final int finalI = i;
                             attribute = new StubAttribute() {
                                 @Override
@@ -205,19 +206,6 @@ public class ServerLDAPQueryAssertionTest {
             }
         } );
         assertEquals(AssertionStatus.NONE, status);
-    }
-
-    private static int countNotNull(final String[] array) {
-        int count = 0;
-        for (final String a : array) {
-            if (a != null) {
-                count++;
-            }
-        }
-        return count;
-        // This should be replaceable with:
-        // Arrays.stream(array).filter(x -> x != null).count();
-        // But something doesn't work in the build process.
     }
 
     private void doTestResults(final AssertionStatus expectedStatus,
