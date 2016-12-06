@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.odata.server.producer.jdbc;
 
+import java.util.logging.Level;
 import org.odata4j.command.Command;
 import org.odata4j.command.CommandResult;
 import org.odata4j.core.Throwables;
@@ -99,7 +100,7 @@ public class LoggingCommand implements Command<ProducerCommandContext<?>> {
             sb.append('=');
             sb.append(format(args[i + 1]));
         }
-        log.info(sb.toString());
+        log.log(Level.FINE, sb.toString());
     }
 
 }

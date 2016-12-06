@@ -38,7 +38,7 @@ public class JdbcDataSource extends BaseJdbc {
         } finally {
             final long endTime = System.nanoTime();
             final double elapseTime = (endTime - startTime) / (double) 1000 / (double) 1000;
-            log.info("jdbc execute/apply time " + elapseTime + " msec");
+            log.log(Level.FINER ,"jdbc execute/apply time " + elapseTime + " msec");
             if (conn != null && !reuseConnection) {
                 try {
                     conn.close();

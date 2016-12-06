@@ -234,7 +234,7 @@ public class GenerateSqlQuery {
             select.replace(fromMarkerIndex, fromMarkerIndex + FROM_MARKER.length(), " FROM " + table.tableName + " ");
         }
 
-        logger.info(select.toString());
+        logger.log(Level.FINE ,select.toString());
         return new SqlStatement(select.toString(), ImmutableList.copyOf(params), maxRows);
     }
 

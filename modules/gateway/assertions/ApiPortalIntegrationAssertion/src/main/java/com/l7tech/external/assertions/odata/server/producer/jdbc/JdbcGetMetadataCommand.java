@@ -43,11 +43,11 @@ public class JdbcGetMetadataCommand implements Command<GetMetadataCommandContext
             model = modelCache.get(hashCode);
         }
         if (model == null) {
-            logger.log(Level.INFO, "{0} cache miss", new String[]{hashCode});
+            logger.log(Level.FINER, "{0} cache miss", new String[]{hashCode});
             model = jdbcContext.getJdbc().execute(new GenerateJdbcModel());
             modelCache.put(hashCode, model);
         } else {
-            logger.log(Level.INFO, "{0} cache hit", new String[]{hashCode});
+            logger.log(Level.FINER, "{0} cache hit", new String[]{hashCode});
         }
         return model;
     }
