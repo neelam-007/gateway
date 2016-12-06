@@ -291,16 +291,16 @@ public abstract class TransportModule extends LifecycleBean {
 
         String protocols = connector.getProperty(SsgConnector.PROP_TLS_OVERRIDE_PROTOCOLS);
         if (protocols == null) protocols = connector.getProperty(SsgConnector.PROP_TLS_PROTOCOLS);
-        boolean isOnlyTls10Enabled =  (protocols == null || (!protocols.contains("TLSv1.1") && !protocols.contains("TLSv1.2")));
+        final boolean isOnlyTls10Enabled =  (protocols == null || (!protocols.contains("TLSv1.1") && !protocols.contains("TLSv1.2")));
 
         //If the TLS provider returns true for requireCacerts then a non-empty cacerts list must be present in order to use client aut
         final Object requireCacerts = JceProvider.getInstance().getCompatibilityFlag(
                 isOnlyTls10Enabled ? JceProvider.CF_TLSv10_CLIENT_AUTH_REQUIRES_NONEMPTY_CACERTS : JceProvider.CF_TLSv12_CLIENT_AUTH_REQUIRES_NONEMPTY_CACERTS
         );
 
-        // Leave accepted issuers list blank unless "acceptedIssuers" is forced to "true" (Bug #8727)
-        // "acceptedIssuers" connector property not to be documented -- will be removed in future release
-        if (!Boolean.TRUE.equals(requireCacerts) && !connector.getBooleanProperty("acceptedIssuers"))
+        // Changing the default behaviour due to a request from Support to always send the Gateway's configured accepted issuers list if not empty (see DE258122).
+        // Keeping default 9.1 behaviour for TLS1.0, in which case an empty list was sent regardless of the configured accepted issuers list in the Gateway (unless SSL-J is the provider)
+        if (isOnlyTls10Enabled && !Boolean.TRUE.equals(requireCacerts) && !connector.getBooleanProperty("acceptedIssuers"))
             return new X509Certificate[0];
 
         Collection<TrustedCert> trustedCerts = trustedCertServices.getAllCertsByTrustFlags(EnumSet.of(TrustedCert.TrustedFor.SIGNING_CLIENT_CERTS));
