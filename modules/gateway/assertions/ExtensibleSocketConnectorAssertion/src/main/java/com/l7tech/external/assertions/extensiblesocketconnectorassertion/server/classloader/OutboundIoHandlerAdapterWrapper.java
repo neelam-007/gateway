@@ -5,7 +5,6 @@ import com.l7tech.external.assertions.extensiblesocketconnectorassertion.server.
 import com.l7tech.external.assertions.extensiblesocketconnectorassertion.server.ExtensibleSocketConnectorMinaClassException;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 /**
@@ -31,7 +30,7 @@ public class OutboundIoHandlerAdapterWrapper {
 
     private static void checkInitialized() throws ExtensibleSocketConnectorClassHelperNotInitializedException {
         if (ioHandlerAdapterClass == null) {
-            throw new ExtensibleSocketConnectorClassHelperNotInitializedException("Failed to load the Apache Mina components.");
+            throw new ExtensibleSocketConnectorClassHelperNotInitializedException("Unexpected Error. IOHandlerAdapter Class not initialized");
         }
     }
 
@@ -39,12 +38,8 @@ public class OutboundIoHandlerAdapterWrapper {
         checkInitialized();
         try {
             return new OutboundIoHandlerAdapterWrapper(ioHandlerAdapterConstructor.newInstance());
-        } catch (IllegalAccessException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
-        } catch (InstantiationException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
-        } catch (InvocationTargetException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
+        } catch (Exception e) {
+            throw new ExtensibleSocketConnectorMinaClassException("Failed to invoke method", e);
         }
     }
 
@@ -60,12 +55,8 @@ public class OutboundIoHandlerAdapterWrapper {
         checkInitialized();
         try {
             return (byte[]) ioHandlerAdapterGetResponseMethod.invoke(ioHandlerAdapter);
-        } catch (IllegalArgumentException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Could not set IoHandler with message to send.", e);
-        } catch (IllegalAccessException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Could not set IoHandler with message to send.", e);
-        } catch (InvocationTargetException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Could not set IoHandler with message to send.", e);
+        } catch (Exception e) {
+            throw new ExtensibleSocketConnectorMinaClassException("Failed to invoke method", e);
         }
     }
 }

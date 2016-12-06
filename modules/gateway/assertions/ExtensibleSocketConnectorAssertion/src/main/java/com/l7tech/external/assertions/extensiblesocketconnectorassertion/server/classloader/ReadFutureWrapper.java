@@ -4,7 +4,6 @@ import com.l7tech.external.assertions.extensiblesocketconnectorassertion.server.
 import com.l7tech.external.assertions.extensiblesocketconnectorassertion.server.ExtensibleSocketConnectorClassLoader;
 import com.l7tech.external.assertions.extensiblesocketconnectorassertion.server.ExtensibleSocketConnectorMinaClassException;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 /**
@@ -29,8 +28,11 @@ public class ReadFutureWrapper {
     }
 
     private static void checkInitialized() throws ExtensibleSocketConnectorClassHelperNotInitializedException {
-        if (readFutureClass == null || readFutureAwaitUninterruptiblyMethod == null) {
-            throw new ExtensibleSocketConnectorClassHelperNotInitializedException("Failed to load the Apache Mina components.");
+        if (readFutureClass == null) {
+            throw new ExtensibleSocketConnectorClassHelperNotInitializedException("Unexpected Error. ReadFuture Class not initialized");
+        }
+        if (readFutureAwaitUninterruptiblyMethod == null) {
+            throw new ExtensibleSocketConnectorClassHelperNotInitializedException("Unexpected Error. ReadFuture AwaitUninterruptibly Method not initialized");
         }
     }
 
@@ -42,12 +44,8 @@ public class ReadFutureWrapper {
         checkInitialized();
         try {
             readFutureAwaitUninterruptiblyMethod.invoke(readFuture);
-        } catch (IllegalArgumentException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
-        } catch (IllegalAccessException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
-        } catch (InvocationTargetException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
+        } catch (Exception e) {
+            throw new ExtensibleSocketConnectorMinaClassException("Failed to invoke method", e);
         }
     }
 
@@ -55,12 +53,8 @@ public class ReadFutureWrapper {
         checkInitialized();
         try {
             return (Boolean) readFutureAwaitUninterruptiblyWithTimeoutMethod.invoke(readFuture, timeout);
-        } catch (IllegalArgumentException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
-        } catch (IllegalAccessException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
-        } catch (InvocationTargetException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
+        } catch (Exception e) {
+            throw new ExtensibleSocketConnectorMinaClassException("Error occurred when invoking await uninterruptibly with timeout in Read Future", e);
         }
     }
 }

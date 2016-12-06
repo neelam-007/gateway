@@ -5,7 +5,6 @@ import com.l7tech.external.assertions.extensiblesocketconnectorassertion.server.
 import com.l7tech.external.assertions.extensiblesocketconnectorassertion.server.ExtensibleSocketConnectorMinaClassException;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -56,9 +55,20 @@ public class NioSocketConnectorWrapper implements NioSocketWrapper {
     }
 
     private static void checkInitialized() throws ExtensibleSocketConnectorClassHelperNotInitializedException {
-        if (nioSocketConnectorClass == null || nioSocketConnectorConstructor == null || nioSocketConnectorGetFilterChainMethod == null || nioSocketConnectorConnectMethod == null ||
-                nioSocketConnectorGetSessionConfigMethod == null) {
-            throw new ExtensibleSocketConnectorClassHelperNotInitializedException("Failed to load the Apache Mina components.");
+        if (nioSocketConnectorClass == null) {
+            throw new ExtensibleSocketConnectorClassHelperNotInitializedException("Unexpected Error. NIOSocketConnector Class not initialized");
+        }
+        if (nioSocketConnectorConstructor == null) {
+            throw new ExtensibleSocketConnectorClassHelperNotInitializedException("Unexpected Error. NIOSocketConnector Constructor not initialized");
+        }
+        if (nioSocketConnectorGetFilterChainMethod == null) {
+            throw new ExtensibleSocketConnectorClassHelperNotInitializedException("Unexpected Error. NIOSocketConnector GetFilterChain Method not initialized");
+        }
+        if (nioSocketConnectorConnectMethod == null) {
+            throw new ExtensibleSocketConnectorClassHelperNotInitializedException("Unexpected Error. NIOSocketConnector Connect Method not initialized");
+        }
+        if (nioSocketConnectorGetSessionConfigMethod == null) {
+            throw new ExtensibleSocketConnectorClassHelperNotInitializedException("Unexpected Error. NIOSocketConnector GetSessionConfig Method not initialized");
         }
     }
 
@@ -70,12 +80,8 @@ public class NioSocketConnectorWrapper implements NioSocketWrapper {
         checkInitialized();
         try {
             return new NioSocketConnectorWrapper(nioSocketConnectorConstructor.newInstance());
-        } catch (IllegalAccessException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
-        } catch (InstantiationException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
-        } catch (InvocationTargetException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
+        } catch (Exception e) {
+            throw new ExtensibleSocketConnectorMinaClassException("Failed to invoke method", e);
         }
     }
 
@@ -89,10 +95,8 @@ public class NioSocketConnectorWrapper implements NioSocketWrapper {
             } else {
                 return new DefaultIoFilterChainBuilderWrapper(filterChainBuilder);
             }
-        } catch (IllegalAccessException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
-        } catch (InvocationTargetException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
+        } catch (Exception e) {
+            throw new ExtensibleSocketConnectorMinaClassException("Failed to invoke method", e);
         }
     }
 
@@ -101,10 +105,8 @@ public class NioSocketConnectorWrapper implements NioSocketWrapper {
         checkInitialized();
         try {
             nioSocketConnectorSetHandlerMethod.invoke(nioSocketConnector, handler);
-        } catch (IllegalAccessException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
-        } catch (InvocationTargetException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
+        } catch (Exception e) {
+            throw new ExtensibleSocketConnectorMinaClassException("Failed to invoke method", e);
         }
     }
 
@@ -117,10 +119,8 @@ public class NioSocketConnectorWrapper implements NioSocketWrapper {
             } else {
                 return new OutboundIoHandlerAdapterWrapper(ioHandler);
             }
-        } catch (IllegalAccessException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
-        } catch (InvocationTargetException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
+        } catch (Exception e) {
+            throw new ExtensibleSocketConnectorMinaClassException("Failed to invoke method", e);
         }
     }
 
@@ -134,10 +134,8 @@ public class NioSocketConnectorWrapper implements NioSocketWrapper {
             } else {
                 return new IoSessionConfigWrapper(sessionConfig);
             }
-        } catch (IllegalAccessException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
-        } catch (InvocationTargetException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
+        } catch (Exception e) {
+            throw new ExtensibleSocketConnectorMinaClassException("Failed to invoke method", e);
         }
     }
 
@@ -150,10 +148,8 @@ public class NioSocketConnectorWrapper implements NioSocketWrapper {
             } else {
                 return new ConnectFutureWrapper(connectFuture);
             }
-        } catch (IllegalAccessException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
-        } catch (InvocationTargetException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
+        } catch (Exception e) {
+            throw new ExtensibleSocketConnectorMinaClassException("Failed to invoke method", e);
         }
     }
 
@@ -162,10 +158,8 @@ public class NioSocketConnectorWrapper implements NioSocketWrapper {
         checkInitialized();
         try {
             nioSocketConnectorDisposeMethod.invoke(nioSocketConnector, awaitTermination);
-        } catch (IllegalAccessException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
-        } catch (InvocationTargetException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
+        } catch (Exception e) {
+            throw new ExtensibleSocketConnectorMinaClassException("Failed to invoke method", e);
         }
     }
 
@@ -174,10 +168,8 @@ public class NioSocketConnectorWrapper implements NioSocketWrapper {
         checkInitialized();
         try {
             return (Boolean) nioSocketConnectorIsDisposedMethod.invoke(nioSocketConnector);
-        } catch (IllegalAccessException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
-        } catch (InvocationTargetException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
+        } catch (Exception e) {
+            throw new ExtensibleSocketConnectorMinaClassException("Failed to invoke method", e);
         }
     }
 
@@ -186,12 +178,8 @@ public class NioSocketConnectorWrapper implements NioSocketWrapper {
         checkInitialized();
         try {
             return (Integer) nioSocketConnectorGetManagedSessionCountMethod.invoke(nioSocketConnector);
-        } catch (IllegalArgumentException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
-        } catch (IllegalAccessException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
-        } catch (InvocationTargetException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
+        } catch (Exception e) {
+            throw new ExtensibleSocketConnectorMinaClassException("Failed to invoke method", e);
         }
     }
 
@@ -216,12 +204,8 @@ public class NioSocketConnectorWrapper implements NioSocketWrapper {
 
                 return resultMap;
             }
-        } catch (IllegalArgumentException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
-        } catch (IllegalAccessException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
-        } catch (InvocationTargetException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
+        } catch (Exception e) {
+            throw new ExtensibleSocketConnectorMinaClassException("Failed to invoke method", e);
         }
     }
 

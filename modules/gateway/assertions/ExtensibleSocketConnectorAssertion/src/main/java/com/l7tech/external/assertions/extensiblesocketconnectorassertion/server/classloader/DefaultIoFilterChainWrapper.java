@@ -4,7 +4,6 @@ import com.l7tech.external.assertions.extensiblesocketconnectorassertion.server.
 import com.l7tech.external.assertions.extensiblesocketconnectorassertion.server.ExtensibleSocketConnectorClassLoader;
 import com.l7tech.external.assertions.extensiblesocketconnectorassertion.server.ExtensibleSocketConnectorMinaClassException;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 /**
@@ -31,8 +30,17 @@ public class DefaultIoFilterChainWrapper {
     }
 
     private static void checkInitialized() throws ExtensibleSocketConnectorClassHelperNotInitializedException {
-        if (defaultIoFilterChainClass == null || defaultIoFilterChainGetEntryMethod == null || defaultIoFilterChainAddFirstMethod == null || defaultIoFilterChainGetMethod == null) {
-            throw new ExtensibleSocketConnectorClassHelperNotInitializedException("Failed to load the Apache Mina components.");
+        if (defaultIoFilterChainClass == null) {
+            throw new ExtensibleSocketConnectorClassHelperNotInitializedException("Unexpected Error. DefaultIOFilterChain Class not initialized");
+        }
+        if (defaultIoFilterChainGetEntryMethod == null) {
+            throw new ExtensibleSocketConnectorClassHelperNotInitializedException("Unexpected Error. DefaultIOFilterChain GetEntry Method not initialized");
+        }
+        if (defaultIoFilterChainAddFirstMethod == null) {
+            throw new ExtensibleSocketConnectorClassHelperNotInitializedException("Unexpected Error. DefaultIOFilterChain AddFirst Method not initialized");
+        }
+        if (defaultIoFilterChainGetMethod == null) {
+            throw new ExtensibleSocketConnectorClassHelperNotInitializedException("Unexpected Error. DefaultIOFilterChain Get Method not initialized");
         }
     }
 
@@ -49,10 +57,8 @@ public class DefaultIoFilterChainWrapper {
             } else {
                 return new IoFilterChainEntryWrapper(entry);
             }
-        } catch (IllegalAccessException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
-        } catch (InvocationTargetException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
+        } catch (Exception e) {
+            throw new ExtensibleSocketConnectorMinaClassException("Failed to invoke method", e);
         }
     }
 
@@ -67,10 +73,8 @@ public class DefaultIoFilterChainWrapper {
             }
 
             defaultIoFilterChainAddFirstMethod.invoke(defaultIoFilterChain, name, filterToAdd);
-        } catch (IllegalAccessException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
-        } catch (InvocationTargetException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
+        } catch (Exception e) {
+            throw new ExtensibleSocketConnectorMinaClassException("Failed to invoke method", e);
         }
     }
 
@@ -78,10 +82,8 @@ public class DefaultIoFilterChainWrapper {
         checkInitialized();
         try {
             return defaultIoFilterChainGetMethod.invoke(defaultIoFilterChain, name);
-        } catch (IllegalAccessException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
-        } catch (InvocationTargetException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
+        } catch (Exception e) {
+            throw new ExtensibleSocketConnectorMinaClassException("Failed to invoke method", e);
         }
     }
 }

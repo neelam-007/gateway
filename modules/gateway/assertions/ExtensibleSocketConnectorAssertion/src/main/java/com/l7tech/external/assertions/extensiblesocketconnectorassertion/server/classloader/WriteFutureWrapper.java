@@ -4,7 +4,6 @@ import com.l7tech.external.assertions.extensiblesocketconnectorassertion.server.
 import com.l7tech.external.assertions.extensiblesocketconnectorassertion.server.ExtensibleSocketConnectorClassLoader;
 import com.l7tech.external.assertions.extensiblesocketconnectorassertion.server.ExtensibleSocketConnectorMinaClassException;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 /**
@@ -26,8 +25,11 @@ public class WriteFutureWrapper {
     }
 
     private static void checkInitialized() throws ExtensibleSocketConnectorClassHelperNotInitializedException {
-        if (writeFutureClass == null || writeFutureAwaitUninterruptiblyMethod == null) {
-            throw new ExtensibleSocketConnectorClassHelperNotInitializedException("Failed to load the Apache Mina components.");
+        if (writeFutureClass == null) {
+            throw new ExtensibleSocketConnectorClassHelperNotInitializedException("Unexpected Error. WriteFuture Class not initialized");
+        }
+        if (writeFutureAwaitUninterruptiblyMethod == null) {
+            throw new ExtensibleSocketConnectorClassHelperNotInitializedException("Unexpected Error. WriteFuture AwaitUninterruptibly Method not initialized");
         }
     }
 
@@ -39,10 +41,8 @@ public class WriteFutureWrapper {
         checkInitialized();
         try {
             writeFutureAwaitUninterruptiblyMethod.invoke(writeFuture);
-        } catch (IllegalAccessException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
-        } catch (InvocationTargetException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
+        } catch (Exception e) {
+            throw new ExtensibleSocketConnectorMinaClassException("Failed to invoke method", e);
         }
     }
 }

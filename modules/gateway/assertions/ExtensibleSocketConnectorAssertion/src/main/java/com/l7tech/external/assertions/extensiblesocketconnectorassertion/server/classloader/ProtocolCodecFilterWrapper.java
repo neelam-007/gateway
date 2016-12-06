@@ -5,7 +5,6 @@ import com.l7tech.external.assertions.extensiblesocketconnectorassertion.server.
 import com.l7tech.external.assertions.extensiblesocketconnectorassertion.server.ExtensibleSocketConnectorMinaClassException;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 
 /**
  * Created with IntelliJ IDEA.
@@ -27,8 +26,11 @@ public class ProtocolCodecFilterWrapper implements IoFilterWrapper {
     }
 
     private static void checkInitialized() throws ExtensibleSocketConnectorClassHelperNotInitializedException {
-        if (protocolCodecFilterClass == null || protocolCodecFilterConstructor == null) {
-            throw new ExtensibleSocketConnectorClassHelperNotInitializedException("Failed to load the Apache Mina components.");
+        if (protocolCodecFilterClass == null) {
+            throw new ExtensibleSocketConnectorClassHelperNotInitializedException("Unexpected Error. ProtocolCodecFilter Class not initialized");
+        }
+        if (protocolCodecFilterConstructor == null) {
+            throw new ExtensibleSocketConnectorClassHelperNotInitializedException("Unexpected Error. ProtocolCodecFilter Constructor not initialized");
         }
     }
 
@@ -40,12 +42,8 @@ public class ProtocolCodecFilterWrapper implements IoFilterWrapper {
         checkInitialized();
         try {
             return new ProtocolCodecFilterWrapper(protocolCodecFilterConstructor.newInstance(protocolCodecFactory));
-        } catch (IllegalAccessException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
-        } catch (InstantiationException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
-        } catch (InvocationTargetException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
+        } catch (Exception e) {
+            throw new ExtensibleSocketConnectorMinaClassException("Failed to invoke method", e);
         }
     }
 

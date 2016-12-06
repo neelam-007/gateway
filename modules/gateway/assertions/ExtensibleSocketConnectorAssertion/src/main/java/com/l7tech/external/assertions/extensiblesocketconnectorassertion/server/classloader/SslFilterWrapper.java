@@ -7,7 +7,6 @@ import com.l7tech.external.assertions.extensiblesocketconnectorassertion.server.
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 /**
@@ -41,10 +40,29 @@ public class SslFilterWrapper implements IoFilterWrapper {
     }
 
     private static void checkInitialized() throws ExtensibleSocketConnectorClassHelperNotInitializedException {
-        if (sslFilterClass == null || sslFilterConstructor == null || sslFilterSetEnabledCipherSuitesMethod == null || sslFilterSetUseClientModeMethod == null ||
-                sslFilterSetNeedClientAuthMethod == null || sslFilterSetWantClientAuthMethod == null || sslFilterSetWantClientAuthMethod == null ||
-                sslFilterGetSslSessionMethod == null || DISABLE_ENCRYPTION_ONCE_Constant == null) {
-            throw new ExtensibleSocketConnectorClassHelperNotInitializedException("Failed to load the Apache Mina components.");
+        if (sslFilterClass == null) {
+            throw new ExtensibleSocketConnectorClassHelperNotInitializedException("Unexpected Error. SSLFilter Class not initialized");
+        }
+        if (sslFilterConstructor == null) {
+            throw new ExtensibleSocketConnectorClassHelperNotInitializedException("Unexpected Error. SSLFilter Constructor not initialized");
+        }
+        if (sslFilterSetEnabledCipherSuitesMethod == null) {
+            throw new ExtensibleSocketConnectorClassHelperNotInitializedException("Unexpected Error. SSLFilter SetEnabledCipherSuites Method not initialized");
+        }
+        if (sslFilterSetUseClientModeMethod == null) {
+            throw new ExtensibleSocketConnectorClassHelperNotInitializedException("Unexpected Error. SSLFilter SetUseClientMode Method not initialized");
+        }
+        if (sslFilterSetNeedClientAuthMethod == null) {
+            throw new ExtensibleSocketConnectorClassHelperNotInitializedException("Unexpected Error. SSLFilter SetNeedClientAuth Method not initialized");
+        }
+        if (sslFilterSetWantClientAuthMethod == null) {
+            throw new ExtensibleSocketConnectorClassHelperNotInitializedException("Unexpected Error. SSLFilter SetWantClientAuth Method not initialized");
+        }
+        if (sslFilterGetSslSessionMethod == null) {
+            throw new ExtensibleSocketConnectorClassHelperNotInitializedException("Unexpected Error. SSLFilter GetSSLSession Method not initialized");
+        }
+        if (DISABLE_ENCRYPTION_ONCE_Constant == null) {
+            throw new ExtensibleSocketConnectorClassHelperNotInitializedException("Unexpected Error. SSLFilter DISABLE_ENCRYPTION_ONCE Constant not initialized");
         }
     }
 
@@ -56,12 +74,8 @@ public class SslFilterWrapper implements IoFilterWrapper {
         checkInitialized();
         try {
             return new SslFilterWrapper(sslFilterConstructor.newInstance(sslContext));
-        } catch (IllegalAccessException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
-        } catch (InstantiationException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
-        } catch (InvocationTargetException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
+        } catch (Exception e) {
+            throw new ExtensibleSocketConnectorMinaClassException("Failed to invoke method", e);
         }
     }
 
@@ -69,10 +83,8 @@ public class SslFilterWrapper implements IoFilterWrapper {
         checkInitialized();
         try {
             sslFilterSetEnabledCipherSuitesMethod.invoke(sslFilter, new Object[]{cipherSuites});
-        } catch (IllegalAccessException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
-        } catch (InvocationTargetException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
+        } catch (Exception e) {
+            throw new ExtensibleSocketConnectorMinaClassException("Failed to invoke method", e);
         }
     }
 
@@ -80,10 +92,8 @@ public class SslFilterWrapper implements IoFilterWrapper {
         checkInitialized();
         try {
             sslFilterSetUseClientModeMethod.invoke(sslFilter, clientMode);
-        } catch (IllegalAccessException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
-        } catch (InvocationTargetException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
+        } catch (Exception e) {
+            throw new ExtensibleSocketConnectorMinaClassException("Failed to invoke method", e);
         }
     }
 
@@ -91,10 +101,8 @@ public class SslFilterWrapper implements IoFilterWrapper {
         checkInitialized();
         try {
             sslFilterSetNeedClientAuthMethod.invoke(sslFilter, needClientAuth);
-        } catch (IllegalAccessException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
-        } catch (InvocationTargetException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
+        } catch (Exception e) {
+            throw new ExtensibleSocketConnectorMinaClassException("Failed to invoke method", e);
         }
     }
 
@@ -102,10 +110,8 @@ public class SslFilterWrapper implements IoFilterWrapper {
         checkInitialized();
         try {
             sslFilterSetWantClientAuthMethod.invoke(sslFilter, wantClientAuth);
-        } catch (IllegalAccessException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
-        } catch (InvocationTargetException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
+        } catch (Exception e) {
+            throw new ExtensibleSocketConnectorMinaClassException("Failed to invoke method", e);
         }
     }
 
@@ -113,10 +119,8 @@ public class SslFilterWrapper implements IoFilterWrapper {
         checkInitialized();
         try {
             return (SSLSession) sslFilterGetSslSessionMethod.invoke(sslFilter);
-        } catch (IllegalAccessException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
-        } catch (InvocationTargetException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
+        } catch (Exception e) {
+            throw new ExtensibleSocketConnectorMinaClassException("Failed to invoke method", e);
         }
     }
 

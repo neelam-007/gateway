@@ -10,6 +10,7 @@ import com.l7tech.policy.variable.Syntax;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerRoutingAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.util.ExceptionUtils;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
@@ -72,7 +73,10 @@ public class ServerExtensibleSocketConnectorAssertion extends ServerRoutingAsser
                 }
             }
         } catch (Exception e) {
-            getAudit().logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO, e.getMessage());
+            getAudit().logAndAudit(
+                    Messages.EXCEPTION_WARNING_WITH_MORE_INFO,
+                    new String[] {"Error while sending to remote socket: " + ExceptionUtils.getMessageWithCause(e) },
+                    e);
             return AssertionStatus.FAILED;
         }
 

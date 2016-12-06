@@ -259,7 +259,7 @@ public class ExtensibleSocketConnectorClassLoader extends ClassLoader {
             InboundIoHandlerAdapterWrapper.initialize(this);
             OutboundIoHandlerAdapterWrapper.initialize(this);
         } catch (Exception e) {
-            logger.warning("Unable to initialize the XMPP ClassLoader.");
+            logger.warning("Unable to initialize the Extensible Socket Connector ClassLoader.");
         }
     }
 }

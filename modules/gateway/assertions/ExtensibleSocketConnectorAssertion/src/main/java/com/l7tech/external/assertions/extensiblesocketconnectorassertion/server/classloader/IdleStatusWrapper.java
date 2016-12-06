@@ -20,8 +20,11 @@ public class IdleStatusWrapper {
     }
 
     private static void checkInitialized() throws ExtensibleSocketConnectorClassHelperNotInitializedException {
-        if (idleStatusClass == null || BOTH_IDLE_Constant == null) {
-            throw new ExtensibleSocketConnectorClassHelperNotInitializedException("Failed to load the Apache Mina components.");
+        if (idleStatusClass == null) {
+            throw new ExtensibleSocketConnectorClassHelperNotInitializedException("Unexpected Error. IdleStatus Class not initialized");
+        }
+        if (BOTH_IDLE_Constant == null) {
+            throw new ExtensibleSocketConnectorClassHelperNotInitializedException("Unexpected Error. IdleStatus BOTH_IDLE Constant not initialized");
         }
     }
 

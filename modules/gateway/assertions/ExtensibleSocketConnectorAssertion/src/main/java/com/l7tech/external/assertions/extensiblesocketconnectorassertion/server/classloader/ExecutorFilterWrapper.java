@@ -5,7 +5,6 @@ import com.l7tech.external.assertions.extensiblesocketconnectorassertion.server.
 import com.l7tech.external.assertions.extensiblesocketconnectorassertion.server.ExtensibleSocketConnectorMinaClassException;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 
 /**
  * Created with IntelliJ IDEA.
@@ -26,8 +25,11 @@ public class ExecutorFilterWrapper implements IoFilterWrapper {
     }
 
     private static void checkInitialized() throws ExtensibleSocketConnectorClassHelperNotInitializedException {
-        if (executorFilterClass == null || executorFilterConstructor == null) {
-            throw new ExtensibleSocketConnectorClassHelperNotInitializedException("Failed to load the Apache Mina components.");
+        if (executorFilterClass == null) {
+            throw new ExtensibleSocketConnectorClassHelperNotInitializedException("Unexpected Error. ExecutorFilter Class not initialized");
+        }
+        if (executorFilterConstructor == null) {
+            throw new ExtensibleSocketConnectorClassHelperNotInitializedException("Unexpected Error. ExecutorFilter Constructor not initialized");
         }
     }
 
@@ -39,12 +41,8 @@ public class ExecutorFilterWrapper implements IoFilterWrapper {
         checkInitialized();
         try {
             return new ExecutorFilterWrapper(executorFilterConstructor.newInstance(maximumPoolSize));
-        } catch (IllegalAccessException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
-        } catch (InstantiationException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
-        } catch (InvocationTargetException e) {
-            throw new ExtensibleSocketConnectorMinaClassException("Failure with Apache Mina components.", e);
+        } catch (Exception e) {
+            throw new ExtensibleSocketConnectorMinaClassException("Failed to invoke method", e);
         }
     }
 
