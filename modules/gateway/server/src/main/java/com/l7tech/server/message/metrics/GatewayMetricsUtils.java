@@ -92,22 +92,24 @@ public final class GatewayMetricsUtils {
             @NotNull
             private final PolicyEnforcementContext delegate;
 
-            /**
-             * Thread local to protect against passing instances of this class to to another thread.<br/>
-             * The thread who creates the instance (calls the constructor) owns it and only that thread can access its content.
-             */
-            private ThreadLocal<Boolean> ownedByThisThread = new ThreadLocal<Boolean>(){
-                @Override
-                protected Boolean initialValue() {
-                    return false;
-                }
-            };
+// Commenting-out for now as the thread-local appeared to be causing performance drop (see DE258124).
+// Func-spec will be updated to let the monitoring assertion developer know NOT to use the PEC outside of the assertionFinished/serviceFinished thread.
+//            /**
+//             * Thread local to protect against passing instances of this class to to another thread.<br/>
+//             * The thread who creates the instance (calls the constructor) owns it and only that thread can access its content.
+//             */
+//            private ThreadLocal<Boolean> ownedByThisThread = new ThreadLocal<Boolean>(){
+//                @Override
+//                protected Boolean initialValue() {
+//                    return false;
+//                }
+//            };
 
             private ReadOnlyPolicyEnforcementContext(@NotNull final PolicyEnforcementContext delegate) {
                 this.delegate = delegate;
 
                 // set this thread as the owner of this instance
-                ownedByThisThread.set(true);
+                //ownedByThisThread.set(true);
             }
 
             /**
@@ -116,9 +118,9 @@ public final class GatewayMetricsUtils {
              * @throws IllegalStateException when the calling thread is not the owner (i.e the one created this object) of this object
              */
             private void checkOwnerThread() throws IllegalStateException {
-                if (!ownedByThisThread.get()) {
-                    throw new IllegalStateException("PEC is not owned by this thread");
-                }
+//                if (!ownedByThisThread.get()) {
+//                    throw new IllegalStateException("PEC is not owned by this thread");
+//                }
             }
 
             @Override
