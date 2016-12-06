@@ -1,5 +1,5 @@
 # build a docker container using the ssg RPM and with the latest version of CentOS 6 as a base
-#FROM centos:centos6
+#FROM centos:centos6, this is a Naginata RC2 base
 FROM apim-dr.l7tech.com/teamcity/apim-centos6-base:201612060100
 MAINTAINER Heinrich Butow <heinrich.butow@ca.com>
 LABEL License="Commercial"
@@ -59,7 +59,7 @@ RUN cd /siteminder && /bin/bash ./doInstall.sh && cd / && rm -rf /siteminder
 # future builds take less time that way (because of docker creating intermediate images)
 
 # remove yum since STIG doesn't allow it
-RUN rpm -e yum yum-plugin-fastestmirror yum-metadata-parser python-iniparse python-urlgrabber
+RUN rpm -e yum yum-plugin-ovl yum-plugin-fastestmirror yum-metadata-parser python-iniparse python-urlgrabber
 
 # the command to run when starting the container
 CMD /root/entryPoint.sh
