@@ -1,6 +1,6 @@
 # build a docker container using the ssg RPM and with the latest version of CentOS 6 as a base
 #FROM centos:centos6
-FROM apim-dr.l7tech.com/teamcity/apim-centos6-base:201603300005
+FROM apim-dr.l7tech.com/teamcity/apim-centos6-base:201612060100
 MAINTAINER Heinrich Butow <heinrich.butow@ca.com>
 LABEL License="Commercial"
 LABEL Vendor="CA Technologies"
