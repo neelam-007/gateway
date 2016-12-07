@@ -27,6 +27,14 @@ public class AdminImplClassMaker extends AbstractClassMaker {
       The following code was generated: java -cp ./lib/repository/asm/asm-5.0.3.jar;./lib/tools/asm-util-5.0.3.jar;
       ./idea-classes/production/SimplePolicyBundleInstallerAssertion org.objectweb.asm.util.ASMifier
       com.l7tech.external.assertions.simplepolicybundleinstaller.SimplePolicyBundleInstallerAdminImpl
+
+      UPDATE: ASM was replaced in the lib/tools directory to better support Java 8. The one in the Ivy repository was
+      not changed. As a result, the above comment wouldn't successfully run from the command line. The following one
+      did (and generated slightly different code, due to the newer version of ASM), but I did not use it to replace
+      the generated code block below.
+      $ java -cp ./lib/tools/asm-all.jar:./idea-classes/production/SimplePolicyBundleInstallerAssertion \
+           org.jetbrains.org.objectweb.asm.util.ASMifier \
+           com.l7tech.external.assertions.simplepolicybundleinstaller.SimplePolicyBundleInstallerAdminImpl
     */
     public byte[] generate() throws IOException {
         ClassWriter cw = new ClassWriter(0);
