@@ -73,7 +73,7 @@ import static com.l7tech.common.http.prov.apache.components.ClientConnectionMana
 public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingAssertion<HttpRoutingAssertion> {
 
     public static final String PROP_ENABLE_STATE_POOL = "com.l7tech.server.policy.assertion.ServerHttpRoutingAssertion.statePool.enable";
-    public static final boolean ENABLE_STATE_POOL = SyspropUtil.getBoolean( PROP_ENABLE_STATE_POOL, true );
+    public static final boolean ENABLE_STATE_POOL = SyspropUtil.getBoolean( PROP_ENABLE_STATE_POOL, false );
 
     //Define the failed reason code.
     public static final int HOST_NOT_FOUND = -1; // The Host can not be reached
