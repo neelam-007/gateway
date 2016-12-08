@@ -48,6 +48,7 @@ import com.l7tech.server.policy.PolicyVersionManager;
 import com.l7tech.server.search.DependencyAnalyzer;
 import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
 import com.l7tech.server.search.processors.DependencyProcessorUtils;
+import com.l7tech.server.security.PasswordEnforcerManager;
 import com.l7tech.server.security.keystore.SsgKeyFinder;
 import com.l7tech.server.security.keystore.SsgKeyStore;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
@@ -129,6 +130,8 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
     @Inject
     private ProtectedEntityTracker protectedEntityTracker;
 
+    @Inject
+    private PasswordEnforcerManager passwordEnforcerManager;
 
     /**
      * This will import the given entity bundle. If test is true or there is an error during bundle import nothing is
@@ -981,6 +984,13 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                 final UserManager userManager = identityProvider.getUserManager();
                                 if(existingEntity == null) {
                                     final User user = userManager.reify((UserBean) entityContainer.getEntity());
+                                    if (user instanceof InternalUser){
+                                        final InternalUser internalUser = (InternalUser) user;
+                                        if (existingEntity instanceof InternalUser) {
+                                            internalUser.setPasswordChangesHistory(((InternalUser) existingEntity).getPasswordChangesHistory());
+                                        }
+                                        passwordEnforcerManager.setUserPasswordPolicyAttributes((InternalUser)user, true);
+                                    }
                                     final String userId = userManager.save(id == null ? null : Goid.parseGoid(id), user, null);
                                     ((UserBean) entityContainer.getEntity()).setUniqueIdentifier(userId);
                                 } else {
@@ -990,6 +1000,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                     final User user = userManager.reify(userBean);
                                     if(user instanceof InternalUser && existingEntity instanceof InternalUser){
                                         ((InternalUser) user).setPasswordChangesHistory(((InternalUser) existingEntity).getPasswordChangesHistory());
+                                        passwordEnforcerManager.setUserPasswordPolicyAttributes((InternalUser)user, true);
                                     }
                                     if (user instanceof PersistentEntity && existingEntity instanceof PersistentEntity) {
                                         //need to set the version to the existing user version so it can update properly

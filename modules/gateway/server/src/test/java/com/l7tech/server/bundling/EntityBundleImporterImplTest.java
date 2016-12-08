@@ -3,8 +3,14 @@ package com.l7tech.server.bundling;
 import com.l7tech.common.password.PasswordHasher;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.security.rbac.RoleEntityHeader;
+import com.l7tech.identity.IdentityProvider;
+import com.l7tech.identity.InternalUserBean;
+import com.l7tech.identity.User;
+import com.l7tech.identity.UserManager;
 import com.l7tech.identity.cert.ClientCertManager;
+import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.IdentityHeader;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.EntityCrud;
 import com.l7tech.server.audit.AuditContextFactory;
@@ -18,17 +24,20 @@ import com.l7tech.server.policy.PolicyManager;
 import com.l7tech.server.policy.PolicyVersionManager;
 import com.l7tech.server.search.DependencyAnalyzer;
 import com.l7tech.server.search.objects.DependencySearchResults;
+import com.l7tech.server.security.PasswordEnforcerManager;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.security.rbac.ProtectedEntityTracker;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.service.ServiceAliasManager;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.util.CollectionUtils;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -39,6 +48,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static com.l7tech.objectmodel.EntityType.USER;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.*;
@@ -89,6 +99,15 @@ public class EntityBundleImporterImplTest {
     @Spy
     private PasswordHasher passwordHasher = new TestPasswordHasher();
 
+    @Mock
+    private PasswordEnforcerManager passwordEnforcerManager;
+
+    @Mock
+    private IdentityProvider identityProvider;
+
+    @Mock
+    private UserManager userManager;
+
     @Before
     public void steup() {
         importer = new EntityBundleImporterImpl();
@@ -112,6 +131,9 @@ public class EntityBundleImporterImplTest {
                 .put("policyCache", policyCache)
                 .put("serverModuleFileManager", serverModuleFileManager)
                 .put("protectedEntityTracker", protectedEntityTracker)
+                .put("passwordEnforcerManager", passwordEnforcerManager)
+                .put("identityProvider", identityProvider)
+                .put("userManager", userManager)
                 .map(), false);
         when(transactionManager.getTransaction(any(TransactionDefinition.class))).thenReturn(new DefaultTransactionStatus(null, false, false, false, false, null));
     }
@@ -146,6 +168,65 @@ public class EntityBundleImporterImplTest {
         verify(entityCrud).update(captor.capture());
         // user created should not be modified
         assertFalse(captor.getValue().isUserCreated());
+    }
+
+    @Test
+    public void importBundleWithPasswordAttributesOnNewUser() throws Exception {
+        final InternalUserBean internalUser = new InternalUserBean();
+        internalUser.setLogin("foobar");
+        internalUser.setName("foobar");
+        internalUser.setUniqueIdentifier("96bfb8eb39656944856ae8a2579cfc97");
+
+        final InternalUser iu = new InternalUser(internalUser.getLogin());
+        iu.setLogin(internalUser.getLogin());
+        iu.setName(internalUser.getName());
+        iu.setGoid(Goid.parseGoid(internalUser.getId()));
+
+
+        when(identityProviderFactory.getProvider(internalUser.getProviderId())).thenReturn(identityProvider);
+        when(identityProvider.getUserManager()).thenReturn(userManager);
+        when(userManager.findByPrimaryKey(internalUser.getId())).thenReturn(null);
+        when(userManager.reify(internalUser)).thenReturn(iu);
+
+        final List<EntityMappingInstructions> mappingInstructions = new ArrayList<>();
+        mappingInstructions.add(new EntityMappingInstructions(createIndentityHeader(internalUser), null, EntityMappingInstructions.MappingAction.NewOrUpdate));
+        final List<EntityContainer> entities = new ArrayList<>();
+        entities.add(new EntityContainer(internalUser));
+
+        Mockito.verify(passwordEnforcerManager, Mockito.never()).setUserPasswordPolicyAttributes(Mockito.any(InternalUser.class), Mockito.anyBoolean());
+        importer.importBundle(new EntityBundle(entities, mappingInstructions, Collections.<DependencySearchResults>emptyList()), false, false, null);
+        Mockito.verify(passwordEnforcerManager, Mockito.times(1)).setUserPasswordPolicyAttributes(iu, true);
+    }
+
+    @Test
+    public void importBundleWithPasswordAttributesOnExistingUser() throws Exception {
+        final InternalUserBean internalUser = new InternalUserBean();
+        internalUser.setLogin("foobar");
+        internalUser.setName("foobar");
+        internalUser.setUniqueIdentifier("96bfb8eb39656944856ae8a2579cfc97");
+
+        final InternalUser iu = new InternalUser(internalUser.getLogin());
+        iu.setLogin(internalUser.getLogin());
+        iu.setName(internalUser.getName());
+        iu.setGoid(Goid.parseGoid(internalUser.getId()));
+
+        when(identityProviderFactory.getProvider(internalUser.getProviderId())).thenReturn(identityProvider);
+        when(identityProvider.getUserManager()).thenReturn(userManager);
+        when(userManager.findByPrimaryKey(internalUser.getId())).thenReturn(iu);
+        when(userManager.reify(internalUser)).thenReturn(iu);
+
+        final List<EntityMappingInstructions> mappingInstructions = new ArrayList<>();
+        mappingInstructions.add(new EntityMappingInstructions(createIndentityHeader(internalUser), null, EntityMappingInstructions.MappingAction.NewOrUpdate));
+        final List<EntityContainer> entities = new ArrayList<>();
+        entities.add(new EntityContainer(internalUser));
+
+        Mockito.verify(passwordEnforcerManager, Mockito.never()).setUserPasswordPolicyAttributes(Mockito.any(InternalUser.class), Mockito.anyBoolean());
+        importer.importBundle(new EntityBundle(entities, mappingInstructions, Collections.<DependencySearchResults>emptyList()), false, false, null);
+        Mockito.verify(passwordEnforcerManager, Mockito.times(1)).setUserPasswordPolicyAttributes(iu, true);
+    }
+
+    private IdentityHeader createIndentityHeader(User user){
+        return new IdentityHeader(user.getProviderId(), user.getId(), USER, user.getLogin(), null, user.getName(), null);
     }
 
     private RoleEntityHeader createRoleEntityHeader(final Role role) {
