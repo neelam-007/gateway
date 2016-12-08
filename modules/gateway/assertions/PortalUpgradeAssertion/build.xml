@@ -1,0 +1,3 @@
+<project name="PortalUpgradeAssertion" default="compile">
+    <import file="../assertion-build.xml"/>
+</project>
