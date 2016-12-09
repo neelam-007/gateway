@@ -24,7 +24,7 @@ public class UpgradePortalAction extends SecureAction {
     private static final Logger logger = Logger.getLogger(UpgradePortalAction.class.getName());
 
     public UpgradePortalAction() {
-        super(new AttemptedUpdateAny(EntityType.USER), "Update Portal Integration GOOD", "Update Portal Integration on Gateway",
+        super(new AttemptedUpdateAny(EntityType.USER), "Update Portal Integration", "Update Portal Integration on Gateway",
                 "com/l7tech/console/resources/ManageUserAccounts16.png");
     }
 
