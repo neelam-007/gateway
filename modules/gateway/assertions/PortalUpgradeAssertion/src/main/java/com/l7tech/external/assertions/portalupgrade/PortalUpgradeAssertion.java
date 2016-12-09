@@ -39,10 +39,10 @@ public class PortalUpgradeAssertion extends Assertion implements SetsVariables
 
         // Set description for GUI
         meta.put( AssertionMetadata.SHORT_NAME, "Portal Upgrade" );
-        meta.put( AssertionMetadata.LONG_NAME, "Internal assertion for updateing Gateway with Portal server" );
+        meta.put( AssertionMetadata.LONG_NAME, "Internal assertion for updating Gateway with Portal server" );
 
         meta.put( AssertionMetadata.MODULE_LOAD_LISTENER_CLASSNAME,
-                "PortalUpgradeModuleLoadListener" );
+                "com.l7tech.external.assertions.portalupgrade.server.PortalUpgradeModuleLoadListener" );
 
         meta.put( AssertionMetadata.GLOBAL_ACTION_CLASSNAMES, new String[] {
                 "com.l7tech.external.assertions.portalupgrade.console.UpgradePortalAction",
