@@ -30,7 +30,7 @@ import java.util.logging.Logger;
  * $Id$
  */
 
-public class LdapGroupMappingPanel extends IdentityProviderStepPanel {
+public class LdapGroupMappingPanel extends IdentityProviderStepPanel<LdapIdentityProviderConfig> {
 
     static final Logger log = Logger.getLogger(LdapGroupMappingPanel.class.getName());
 
@@ -116,6 +116,7 @@ public class LdapGroupMappingPanel extends IdentityProviderStepPanel {
      *
      * @throws IllegalArgumentException   if the data provided by the wizard are not valid.
      */
+    @Override
     public void readSettings(LdapIdentityProviderConfig settings) throws IllegalArgumentException {
         iProviderConfig = settings;
 
@@ -168,6 +169,7 @@ public class LdapGroupMappingPanel extends IdentityProviderStepPanel {
      *
      * @param settings the object representing wizard panel state
      */
+    @Override
     public void storeSettings(LdapIdentityProviderConfig settings) {
         Object groupMapping;
 
