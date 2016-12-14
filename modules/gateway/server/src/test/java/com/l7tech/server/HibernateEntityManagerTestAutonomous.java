@@ -5,21 +5,23 @@ import com.l7tech.objectmodel.imp.PersistentEntityImp;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.test.BugId;
 import org.hibernate.Criteria;
+import org.hibernate.HibernateException;
 import org.hibernate.Query;
 import org.hibernate.Session;
 import org.hibernate.criterion.Conjunction;
 import org.hibernate.criterion.Criterion;
 import org.hibernate.criterion.Disjunction;
 import org.hibernate.criterion.SimpleExpression;
-import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 import org.mockito.internal.util.reflection.Whitebox;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
+import org.springframework.orm.hibernate3.HibernateCallback;
 import org.springframework.orm.hibernate3.HibernateTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.persistence.Table;
+import javax.validation.constraints.NotNull;
 import java.util.*;
 
 import static com.l7tech.server.HibernateEntityManagerTestAutonomous.MOCK_TABLE;
@@ -117,6 +119,43 @@ public class HibernateEntityManagerTestAutonomous {
         entity = entityManager.getCachedEntityByName("mockEntityName", MAX_AGE);
 
         assertNull("Renamed entity retrieved by its old name", entity);
+    }
+
+    @Test
+    public void shouldFetchNewEntityFromCacheWhenOldRenamedAndNewCreated() throws SaveException, FindException {
+        // our entity manager
+        MockHibernateEntityManager entityManager = new MockHibernateEntityManager.Builder()
+                .withTransactionManager(new TransactionManagerBuilder().build())
+                .withHibernateTemplate(new HibernateTemplateBuilder().build())
+                .build();
+
+        // let's create the entity
+        entityManager.save(ENTITY_GOID,
+                new MockPersistentEntity.Builder()
+                        .withId("mockEntityId")
+                        .withName("mockEntityName")
+                        .build());
+
+        // let's fetch it so it gets cached
+        MockPersistentEntity entity = entityManager.getCachedEntityByName("mockEntityName", MAX_AGE);
+
+        // let's rename it
+        entity.setName("changedMockEntityName");
+        entityManager.save(entity);
+
+        // let's create a new entity with the same name as the old one
+        // let's create the entity
+        final Goid newGoid = randomGoid();
+        entityManager.save(newGoid,
+                new MockPersistentEntity.Builder()
+                        .withId("newMockEntityId")
+                        .withName("mockEntityName")
+                        .build());
+
+        // let's fetch by name - we should get the new entity, not the old one
+        MockPersistentEntity newlyFetchedEntity = entityManager.getCachedEntityByName("mockEntityName", MAX_AGE);
+        assertNotNull("Entity not found", newlyFetchedEntity);
+        assertEquals("Stale entity fetched by name", newGoid, newlyFetchedEntity.getGoid());
     }
 
     @Test
@@ -222,6 +261,126 @@ public class HibernateEntityManagerTestAutonomous {
         // should not exist
         assertNull("Entity was found in cache even though its name had changed in the database", retrievedFromOneAgain);
     }
+
+    @Test
+    public void shouldFindNewEntityByNameWhenCreatedThenDeletedThenCreatedWithSameNameAfterCacheExpiry()
+            throws SaveException, FindException, DeleteException, InterruptedException {
+        // these two will keep the state of our 'database'
+        PlatformTransactionManager transactionManager = new TransactionManagerBuilder().build();
+        HibernateTemplate hibernateTemplate = new HibernateTemplateBuilder().build();
+
+        // the entity manager for our gateway
+        MockHibernateEntityManager gateway = new MockHibernateEntityManager.Builder()
+                .withTransactionManager(transactionManager)
+                .withHibernateTemplate(hibernateTemplate)
+                .build();
+
+        // save entity named "mockEntityName"
+        final Goid oldGoid = randomGoid();
+        gateway.save(oldGoid, new MockPersistentEntity.Builder()
+                .withId("mockEntityId")
+                .withName("mockEntityName")
+                .build());
+
+        // retrieve it so it gets cached
+        gateway.getCachedEntityByName("mockEntityName", MAX_AGE);
+
+        // delete that entity
+        gateway.delete(oldGoid);
+
+        // make sure the entity is stale in the cache by waiting for twice as long as its expiry time
+        Thread.sleep(2 * MAX_AGE);
+
+        // save a new entity with the same name
+        final Goid newGoid = randomGoid();
+        gateway.save(newGoid, new MockPersistentEntity.Builder()
+                .withId("mockEntityId")
+                .withName("mockEntityName")
+                .build());
+
+        // now try and retrieve that entity by name
+        MockPersistentEntity entity = gateway.getCachedEntityByName("mockEntityName", MAX_AGE);
+        assertNotNull(entity);
+    }
+
+    @Test
+    public void shouldFindNewEntityByNameWhenCreatedThenDeletedThenCreatedWithSameNameBeforeCacheExpiry()
+            throws SaveException, FindException, DeleteException, InterruptedException {
+        // these two will keep the state of our 'database'
+        PlatformTransactionManager transactionManager = new TransactionManagerBuilder().build();
+        HibernateTemplate hibernateTemplate = new HibernateTemplateBuilder().build();
+
+        // the entity manager for our gateway
+        MockHibernateEntityManager gateway = new MockHibernateEntityManager.Builder()
+                .withTransactionManager(transactionManager)
+                .withHibernateTemplate(hibernateTemplate)
+                .build();
+
+        // save entity named "mockEntityName"
+        final Goid oldGoid = randomGoid();
+        gateway.save(oldGoid, new MockPersistentEntity.Builder()
+                .withId("mockEntityId")
+                .withName("mockEntityName")
+                .build());
+
+        // retrieve it so it gets cached
+        gateway.getCachedEntityByName("mockEntityName", MAX_AGE);
+
+        // delete that entity
+        gateway.delete(oldGoid);
+
+        // save a new entity with the same name
+        final Goid newGoid = randomGoid();
+        gateway.save(newGoid, new MockPersistentEntity.Builder()
+                .withId("mockEntityId")
+                .withName("mockEntityName")
+                .build());
+
+        // now try and retrieve that entity by name
+        MockPersistentEntity entity = gateway.getCachedEntityByName("mockEntityName", MAX_AGE);
+        assertNotNull(entity);
+    }
+
+    @Test
+    public void deleteEntityThatWasNeverSaved() throws DeleteException {
+        // these two will keep the state of our 'database'
+        PlatformTransactionManager transactionManager = new TransactionManagerBuilder().build();
+        HibernateTemplate hibernateTemplate = new HibernateTemplateBuilder().build();
+
+        // the entity manager for our gateway
+        MockHibernateEntityManager gateway = new MockHibernateEntityManager.Builder()
+                .withTransactionManager(transactionManager)
+                .withHibernateTemplate(hibernateTemplate)
+                .build();
+
+        MockPersistentEntity unsavedEntity = new MockPersistentEntity.Builder()
+                .withGoid(randomGoid())
+                .withId("mockEntityId")
+                .withName("mockEntityName")
+                .build();
+
+        gateway.delete(unsavedEntity);
+
+        // succeeds by not throwing
+    }
+
+    @Test
+    public void deleteByGoidEntityThatWasNeverSaved() throws FindException, DeleteException {
+        // these two will keep the state of our 'database'
+        PlatformTransactionManager transactionManager = new TransactionManagerBuilder().build();
+        HibernateTemplate hibernateTemplate = new HibernateTemplateBuilder().build();
+
+        // the entity manager for our gateway
+        MockHibernateEntityManager gateway = new MockHibernateEntityManager.Builder()
+                .withTransactionManager(transactionManager)
+                .withHibernateTemplate(hibernateTemplate)
+                .build();
+
+        gateway.delete(randomGoid());
+
+        // succeeds by not throwing
+    }
+
 }
 
 
@@ -392,6 +551,11 @@ class MockPersistentEntity extends PersistentEntityImp implements NamedEntity {
             return this;
         }
 
+        Builder fromEntity(MockPersistentEntity entity) {
+            return withVersion(entity.getVersion()).withName(entity.getName()).withGoid(entity.getGoid())
+                    .withId(entity.getId());
+        }
+
         MockPersistentEntity build() {
             return entity;
         }
@@ -444,11 +608,11 @@ class TransactionManagerBuilder {
  */
 class HibernateTemplateBuilder {
     private HibernateTemplate hibernateTemplate;
-    private final MultiKeyedMap table;
+    private final MultiKeyedCloningMap table;
     private IncrementTracker dbHitsByNameCounter;
 
     HibernateTemplateBuilder() {
-        table = new MultiKeyedMap();
+        table = new MultiKeyedCloningMap();
     }
 
     HibernateTemplateBuilder withGetByNameCallCounter(IncrementTracker getByNameCallCounter) {
@@ -462,14 +626,10 @@ class HibernateTemplateBuilder {
         hibernateTemplate = mock(HibernateTemplate.class);
 
         // calls to execute() may have any of a diversity of criteria that are further analyzed in mockSession()
-        when(hibernateTemplate.execute(any(ReadOnlyHibernateCallback.class))).thenAnswer(new Answer<Object>() {
-            @Override
-            public Object answer(InvocationOnMock invocationOnMock) throws Throwable {
-                @SuppressWarnings("unchecked")
-                ReadOnlyHibernateCallback<Object> callback =
-                        (ReadOnlyHibernateCallback) invocationOnMock.getArguments()[0];
-                return callback.doInHibernate(session);
-            }
+        when(hibernateTemplate.execute(any(HibernateCallback.class))).thenAnswer(invocationOnMock -> {
+            @SuppressWarnings("unchecked")
+            HibernateCallback<Object> callback = (HibernateCallback) invocationOnMock.getArguments()[0];
+            return callback.doInHibernate(session);
         });
 
         // calls to save() put the saved object in this.byGoid so it can be returned by findAllCriteria(),
@@ -511,7 +671,7 @@ class MockSessionBuilder {
      * This is a reference to the "table" that's held in {@link HibernateTemplateBuilder}.
      * We add things here and it retrieves them from its own state, but they point to the same data structure.
      */
-    private final MultiKeyedMap table;
+    private final MultiKeyedCloningMap table;
 
 
     /** To keep track of database hits looking for the entity by name (indicating it was not found in the cache) */
@@ -522,7 +682,7 @@ class MockSessionBuilder {
      * @param table a reference to the map where entities are held by
      * @param dbHitsByNameCounter a counter to keep track of how many times the cache was missed in a lookup by name
      */
-    MockSessionBuilder(MultiKeyedMap table,
+    MockSessionBuilder(MultiKeyedCloningMap table,
                        IncrementTracker dbHitsByNameCounter) {
         this.table = table;
         this.dbHitsByNameCounter = dbHitsByNameCounter;
@@ -532,7 +692,7 @@ class MockSessionBuilder {
         // program response to all Criteria (as opposed to HQL) queries
         Criteria mockCriteria = new MockCriteriaBuilder(table, dbHitsByNameCounter).build();
         Query mockVersionQuery = mockVersionQuery();
-        Query mockByGoidQuery = mockByGoidQuery();
+        Query mockByGoidQuery = mockByGoidQuery(mockCriteria);
 
         Session session = mock(Session.class);
         when(session.createCriteria(MockPersistentEntity.class)).thenReturn(mockCriteria);
@@ -544,6 +704,12 @@ class MockSessionBuilder {
         when(session.createQuery(startsWith("FROM " + MOCK_TABLE + " IN CLASS com.l7tech.server.MockPersistentEntity")))
                 .thenReturn(mockByGoidQuery);
 
+        doAnswer(invocationOnMock -> {
+            MockPersistentEntity entity = (MockPersistentEntity) invocationOnMock.getArguments()[0];
+            table.remove(entity);
+            return null;
+        }).when(session).delete(any());
+
         return session;
     }
 
@@ -552,32 +718,32 @@ class MockSessionBuilder {
         final ReferenceHolder<Goid> goidParameter = new ReferenceHolder<>();
 
         // when setParameter() is called to get the Goid of the object to be looked up, we store its value in a ReferenceHolder
-        when(query.setParameter(eq(0), any(Goid.class))).thenAnswer(new Answer<Query>() {
-            @Override
-            public Query answer(InvocationOnMock invocationOnMock) throws Throwable {
-                // argument 0 of setParameter is the parameter name/position, argument 1 is the parameter value (i.e. the Goid)
-                Goid goid = (Goid) invocationOnMock.getArguments()[1];
-                goidParameter.set(goid);
+        when(query.setParameter(eq(0), any(Goid.class))).thenAnswer(invocationOnMock ->  {
+            // argument 0 of setParameter is the parameter name/position, argument 1 is the parameter value (i.e. the Goid)
+            Goid goid = (Goid) invocationOnMock.getArguments()[1];
+            goidParameter.set(goid);
 
-                return query;
-            }
+            return query;
         });
 
         // when uniqueResult() is called, we grab the Goid from the ReferenceHolder and use it to index our 'table'
-        when(query.uniqueResult()).thenAnswer(new Answer<Integer>() {
-            @Override
-            public Integer answer(InvocationOnMock invocationOnMock) throws Throwable {
-                MockPersistentEntity entity = table.get(goidParameter.get());
-                // clear that ReferenceHolder for the next query
-                goidParameter.clear();
-                return entity.getVersion();
+        when(query.uniqueResult()).thenAnswer(invocationOnMock ->  {
+            MockPersistentEntity entity = table.get(goidParameter.get());
+
+            // clear that ReferenceHolder for the next query
+            Goid goid = goidParameter.get(); // save it in case it's needed to throw an exception
+            goidParameter.clear();
+
+            if (entity == null) {
+                throw new HibernateException("Entity with id " + goid + " not found");
             }
+            return entity.getVersion();
         });
 
         return query;
     }
 
-    private Query mockByGoidQuery() {
+    private Query mockByGoidQuery(Criteria criteria) {
         final Query query = mock(Query.class);
         final ReferenceHolder<Goid> goidParameter = new ReferenceHolder<>();
 
@@ -598,6 +764,9 @@ class MockSessionBuilder {
                 return result;
             }
         });
+
+        when(query.list()).thenAnswer(invocationOnMock -> criteria.list());
+
         return query;
     }
 
@@ -616,7 +785,7 @@ class MockCriteriaBuilder {
      * This is a reference to the "table" that's held in {@link HibernateTemplateBuilder}.
      * We add things here and it retrieves them from its own state, but they point to the same data structure.
      */
-    private final MultiKeyedMap table;
+    private final MultiKeyedCloningMap table;
 
     /** To keep track of database hits looking for the entity by name (indicating it was not found in the cache) */
     private final IncrementTracker dbHitsByNameCounter;
@@ -626,7 +795,7 @@ class MockCriteriaBuilder {
      * @param table a reference to the map where entities are held
      * @param dbHitsByNameCounter a counter to keep track of how many times the cache was missed in a lookup by name
      */
-    MockCriteriaBuilder(MultiKeyedMap table, IncrementTracker dbHitsByNameCounter) {
+    MockCriteriaBuilder(MultiKeyedCloningMap table, IncrementTracker dbHitsByNameCounter) {
         criteria = mock(Criteria.class);
         criterionList = new ArrayList<>();
         this.table = table;
@@ -670,9 +839,7 @@ class MockCriteriaBuilder {
      * </p>
      */
     private void programListMethod() {
-        when(criteria.list()).thenAnswer(new Answer<List>() {
-            @Override
-            public List answer(InvocationOnMock invocationOnMock) throws Throwable {
+        when(criteria.list()).thenAnswer(invocationOnMock -> {
                 // if the criterion list is empty, that means list everything
                 if (criterionList.isEmpty()) {
                     return table.all(); // return everything
@@ -697,7 +864,7 @@ class MockCriteriaBuilder {
                 // otherwise return a list containing the single element that matches the search criteria
                 return new ListBuilder().add(entity).build();
             }
-        });
+        );
     }
 
     /**
@@ -883,21 +1050,29 @@ class ReferenceHolder<T> {
 
 }
 
-class MultiKeyedMap {
+class MultiKeyedCloningMap {
     private final Map<Goid, MockPersistentEntity> goidMap;
     private final Map<String, MockPersistentEntity> nameMap;
 
-    MultiKeyedMap() {
+    MultiKeyedCloningMap() {
         this.goidMap = new HashMap<>();
         this.nameMap = new HashMap<>();
     }
 
     MockPersistentEntity get(Goid goid) {
-        return goidMap.get(goid);
+        MockPersistentEntity entity = goidMap.get(goid);
+        if (entity == null) {
+            return null;
+        }
+        return new MockPersistentEntity.Builder().fromEntity(entity).build();
     }
 
     MockPersistentEntity get(String name) {
-        return nameMap.get(name);
+        MockPersistentEntity entity = nameMap.get(name);
+        if (entity == null) {
+            return null;
+        }
+        return new MockPersistentEntity.Builder().fromEntity(entity).build();
     }
 
     void put(MockPersistentEntity entity) {
@@ -905,8 +1080,15 @@ class MultiKeyedMap {
         if (oldEntity != null && nameMap.containsKey(oldEntity.getName())) {
             nameMap.remove(oldEntity.getName());
         }
-        goidMap.put(entity.getGoid(), entity);
-        nameMap.put(entity.getName(), entity);
+
+        MockPersistentEntity newEntity = new MockPersistentEntity.Builder().fromEntity(entity).build();
+        goidMap.put(entity.getGoid(), newEntity);
+        nameMap.put(entity.getName(), newEntity);
+    }
+
+    void remove(MockPersistentEntity entity) {
+        nameMap.remove(entity.getName());
+        goidMap.remove(entity.getGoid());
     }
 
     List<MockPersistentEntity> all() {

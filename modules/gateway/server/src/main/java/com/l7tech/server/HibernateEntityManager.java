@@ -887,9 +887,11 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                     if (todelete.size() == 0) {
                         // nothing to do
                     } else if (todelete.size() == 1) {
-                        final Object entity = todelete.get(0);
+                        @SuppressWarnings("unchecked")
+                        final ET entity = (ET) todelete.get(0);
                         publishRoleAwareEntityDeletionEvent(entity);
                         session.delete(entity);
+                        cache.remove(entity);
                     } else {
                         throw new RuntimeException("More than one entity found with goid = " + goid);
                     }
@@ -912,10 +914,12 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                     if (entity == null) {
                         publishRoleAwareEntityDeletionEvent(et);
                         session.delete(et);
+                        cache.remove(et);
                     } else {
                         publishRoleAwareEntityDeletionEvent(entity);
                         // Avoid NonUniqueObjectException if an older version of this is still in the Session
                         session.delete(entity);
+                        cache.remove(entity);
                     }
                     return null;
                 }
@@ -954,7 +958,12 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                 }
 
                 // if freshen() found it in the cache but its name in the DB is changed,
-                // then we must pretend we didn't find it
+                // then we get it by name from the DB again
+                ET foundByName = findByUniqueName(name);
+                if (foundByName != null) {
+                    return checkAndCache(foundByName);
+                }
+
                 return null;
             }
 
