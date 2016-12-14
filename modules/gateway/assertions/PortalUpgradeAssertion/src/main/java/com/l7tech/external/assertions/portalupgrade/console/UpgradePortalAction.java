@@ -5,10 +5,13 @@ import com.l7tech.console.util.AdminGuiUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.external.assertions.portalupgrade.PortalUpgradeExtensionInterface;
+import com.l7tech.external.assertions.portalupgrade.server.PortalUpgradeManager;
 import com.l7tech.gateway.common.AsyncAdminMethods;
+import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdateAny;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.Either;
 import com.l7tech.util.ExceptionUtils;
 
@@ -47,8 +50,10 @@ public class UpgradePortalAction extends SecureAction {
                         @Override
                         public void reportResult(int option) {
                             if (JOptionPane.OK_OPTION == option) {
-                                try {
-                                    AsyncAdminMethods.JobId<Boolean> upgradeJobId = portalboot.upgradePortal();
+                              ClusterProperty oldEnrollmentVersion = null;
+                              try {
+                                  oldEnrollmentVersion = Registry.getDefault().getClusterStatusAdmin().findPropertyByName(PortalUpgradeManager.PORTAL_BUNDLE_VERSION);
+                                  AsyncAdminMethods.JobId<Boolean> upgradeJobId = portalboot.upgradePortal();
                                     Either<String, Boolean> result =
                                             AdminGuiUtils.doAsyncAdmin(portalboot, parent, "Update Portal integration", "Updating... (do not interrupt)", upgradeJobId, false);
 
@@ -76,9 +81,22 @@ public class UpgradePortalAction extends SecureAction {
                                         TopComponents.getInstance().refreshPoliciesFolderNode();
                                     }
                                 } catch (Exception e) {
-                                    String msg = "Unable to update: " + ExceptionUtils.getMessage(e);
-                                    logger.log(Level.WARNING, msg, e);
-                                    showError(msg);
+                                    if(isUpdateSuccessful(e,oldEnrollmentVersion)){
+                                        DialogDisplayer.showMessageDialog(parent,
+                                                "Gateway Updated Successfully",
+                                                "Gateway Updated Successfully",
+                                                JOptionPane.INFORMATION_MESSAGE,
+                                                new Runnable() {
+                                                  @Override
+                                                  public void run() {
+                                                  }
+                                                });
+                                        TopComponents.getInstance().refreshPoliciesFolderNode();
+                                    }else {
+                                      String msg = "Unable to update: " + ExceptionUtils.getMessage(e);
+                                      logger.log(Level.WARNING, msg, e);
+                                      showError(msg);
+                                    }
                                 }
                             }
                         }
@@ -91,6 +109,21 @@ public class UpgradePortalAction extends SecureAction {
 
     private void showError(String s) {
         DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(), "Error", s, null);
+    }
+
+    private boolean isUpdateSuccessful(Exception e, ClusterProperty oldEnrollmentVersion){
+        // error can be caused from the installed class being unloaded when new class from the enrollment bundle is installed
+        // confirm if update is successful by checking if the enrollment version is updated
+      if ( ExceptionUtils.causedBy(e, ClassNotFoundException.class)) {
+        try {
+          ClusterProperty newEnrollmentVersion = Registry.getDefault().getClusterStatusAdmin().findPropertyByName(PortalUpgradeManager.PORTAL_BUNDLE_VERSION);
+          return (oldEnrollmentVersion != null && newEnrollmentVersion.getVersion() > oldEnrollmentVersion.getVersion());
+        } catch (FindException e1) {
+          return false;
+        }
+      }
+      return false;
+
     }
 }
 

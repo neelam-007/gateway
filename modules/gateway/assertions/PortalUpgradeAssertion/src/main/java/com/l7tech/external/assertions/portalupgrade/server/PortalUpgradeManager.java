@@ -78,7 +78,7 @@ import java.util.zip.GZIPInputStream;
  * Invoked by extension interface.
  */
 public class PortalUpgradeManager {
-    private static final Logger logger = Logger.getLogger( PortalUpgradeManager.class.getName() );
+  private static final Logger logger = Logger.getLogger( PortalUpgradeManager.class.getName() );
     static final String CLUSTER_NAME = "cluster_name";
     static final String VERSION = "version";
     static final String BUILD_INFO = "build_info";
@@ -93,8 +93,9 @@ public class PortalUpgradeManager {
     static final String OTK_CLIENT_DB_GET = "OTK Client DB GET";
     static final String OTK_REQUIRE_OAUTH_2_0_TOKEN = "OTK Require OAuth 2.0 Token";
     static final String OAUTH = "OAuth";
+    public static final String PORTAL_BUNDLE_VERSION = "portal.bundle.version";
 
-    private static PortalUpgradeManager instance = null;
+  private static PortalUpgradeManager instance = null;
     private static final int ENROLL_PORT = 9446;
     private static final String SKAR_ID_HEADER_FIELD = "L7-skar-id";
 
@@ -193,7 +194,7 @@ public class PortalUpgradeManager {
       final String pssgHost = clusterPropertyManager.getProperty("portal.config.pssg.host");
       final String tenantId = clusterPropertyManager.getProperty("portal.config.name");
       final String nodeId = clusterPropertyManager.getProperty("portal.config.node.id");
-      final String bundleVersion = clusterPropertyManager.getProperty("portal.bundle.version");
+      final String bundleVersion = clusterPropertyManager.getProperty(PORTAL_BUNDLE_VERSION);
 
       String host = clusterPropertyManager.getProperty("portal.config.pssg.enroll.host");
       final String enrollHost = (StringUtils.isEmpty(host)? "" + pssgHost : host);
