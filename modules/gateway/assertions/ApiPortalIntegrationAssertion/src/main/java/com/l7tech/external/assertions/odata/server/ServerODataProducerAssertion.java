@@ -5,13 +5,7 @@ import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.external.assertions.odata.ODataProducerAssertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
-import com.l7tech.message.AbstractHttpResponseKnob;
-import com.l7tech.message.HeadersKnob;
-import com.l7tech.message.HttpRequestKnob;
-import com.l7tech.message.HttpRequestKnobAdapter;
-import com.l7tech.message.HttpResponseKnob;
-import com.l7tech.message.Message;
-import com.l7tech.message.MimeKnob;
+import com.l7tech.message.*;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -22,6 +16,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.CausedIOException;
+import com.l7tech.util.Charsets;
 import com.l7tech.util.ExceptionUtils;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -29,6 +24,7 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLDecoder;
+import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -37,6 +33,7 @@ import java.util.regex.Pattern;
 import javax.sql.DataSource;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
+import org.apache.commons.lang.StringUtils;
 import org.apache.cxf.helpers.IOUtils;
 import org.odata4j.exceptions.BadRequestException;
 import org.odata4j.exceptions.MethodNotAllowedException;
@@ -498,13 +495,20 @@ public class ServerODataProducerAssertion extends AbstractServerAssertion<ODataP
       }
     }
     response.close();
-    byte[] content = "".getBytes();
+
+    Charset returnEncoding = Charsets.UTF8;
+    final String acceptString = response.getRelated(MessageRole.REQUEST).getHttpRequestKnob().getHeaderSingleValue("Accept-Charset");
+    if (!StringUtils.isEmpty(acceptString) && Charset.isSupported(acceptString)) {
+      returnEncoding = Charset.forName(acceptString);
+    }
+
+    byte[] content = "".getBytes(returnEncoding);
     if (odataResponse.getEntity() != null) {
-      content = odataResponse.getEntity().toString().getBytes();
+      content = odataResponse.getEntity().toString().getBytes(returnEncoding);
       if (showInnerError && innerErrorMsg != null) {
         // We take this approach to avoid XMLStreamException as ODataJerseyClient is expecting the error message
         // within "innererror" element should be expressed as a child element.
-        content = new String(content).replace(ODataExceptionMappingProvider.REPLACE_ME_INNER_ERROR, ODataExceptionMappingProvider.STACK_TRACE_START_ELEMENT + innerErrorMsg + ODataExceptionMappingProvider.STACK_TRACE_END_ELEMENT).getBytes();
+        content = new String(content, returnEncoding).replace(ODataExceptionMappingProvider.REPLACE_ME_INNER_ERROR, ODataExceptionMappingProvider.STACK_TRACE_START_ELEMENT + innerErrorMsg + ODataExceptionMappingProvider.STACK_TRACE_END_ELEMENT).getBytes(returnEncoding);
       }
     }
     response.initialize(getContentType(format), content);
@@ -518,7 +522,7 @@ public class ServerODataProducerAssertion extends AbstractServerAssertion<ODataP
       if (mimeKnob != null) {
         payload = mimeKnob.getEntireMessageBodyAsInputStream();
       } else {
-        payload = new ByteArrayInputStream("".getBytes());
+        payload = new ByteArrayInputStream("".getBytes("UTF-8"));
       }
     } catch (NoSuchPartException nspe) {
       throw new CausedIOException("Unable copy request as stream.", nspe);

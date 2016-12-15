@@ -22,6 +22,7 @@ import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.util.MockInjector;
 import com.l7tech.server.util.SimpleSingletonBeanFactory;
+import com.l7tech.util.Charsets;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.MissingRequiredElementException;
 import com.l7tech.util.TooManyChildElementsException;
@@ -858,6 +859,7 @@ public class ServerODataAssertionHsqlDbTest {
     MockHttpServletRequest hrequest = new MockHttpServletRequest(servletContext);
     hrequest.setRequestURI("/OData.svc/TableName1s");
     hrequest.setMethod("POST");
+    hrequest.addHeader("Accept-Charset", "utf-8");
     request = new Message(XmlUtil.stringAsDocument(TEXT_CREATE_ENTITY_DOUBLEBYTE_ID999_XML));
     request.attachHttpRequestKnob(new HttpServletRequestKnob(hrequest));
     peCtx = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
