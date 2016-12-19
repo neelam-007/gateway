@@ -101,7 +101,7 @@ public class ServerReplaceTagContentAssertion extends AbstractMessageTargetableS
         }
         if (atLeastOneReplace) {
             logger.log(Level.FINEST, "Re-initializing message " + message);
-            message.initialize(firstPart.getContentType(), output.toString().getBytes());
+            message.initialize(firstPart.getContentType(), output.toString().getBytes(charset));
         } else {
             logAndAudit(AssertionMessages.NO_REPLACEMENTS);
         }

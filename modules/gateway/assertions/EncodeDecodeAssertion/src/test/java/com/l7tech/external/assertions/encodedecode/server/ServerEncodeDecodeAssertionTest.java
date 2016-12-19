@@ -190,8 +190,8 @@ public class ServerEncodeDecodeAssertionTest{
         String testString = "test input string \u0000 \u0373 \u8827";
         String testStringEncoded = "ORSXG5BANFXHA5LUEBZXI4TJNZTSAABAZWZSB2FAU4======";
 
-        assertEquals( testStringEncoded, oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_ENCODE, AssertionStatus.NONE, true, 0, testString.getBytes() ) );
-        assertEquals( testString, oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.NONE, true, 0, testStringEncoded.getBytes() ) );
+        assertEquals( testStringEncoded, oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_ENCODE, AssertionStatus.NONE, true, 0, testString.getBytes("UTF-8") ) );
+        assertEquals( testString, oneWayTest( EncodeDecodeAssertion.TransformType.BASE32_DECODE, AssertionStatus.NONE, true, 0, testStringEncoded.getBytes("UTF-8") ) );
     }
 
     @Test

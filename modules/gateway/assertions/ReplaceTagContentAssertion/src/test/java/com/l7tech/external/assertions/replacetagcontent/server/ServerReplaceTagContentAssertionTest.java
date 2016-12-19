@@ -375,10 +375,10 @@ public class ServerReplaceTagContentAssertionTest {
     @Test
     public void nonDefaultCharset() throws Exception {
         final String html = "<p>ψ</p>";
-        request.initialize(ContentTypeHeader.parseValue("text/html; charset=UTF-8"), html.getBytes());
+        request.initialize(ContentTypeHeader.parseValue("text/html; charset=UTF-8"), html.getBytes("UTF-8"));
         configureAssertion("ψ", "Ω", "p");
         assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(context));
-        assertEquals("<p>Ω</p>", new String(IOUtils.slurpStream(request.getMimeKnob().getEntireMessageBodyAsInputStream())));
+        assertEquals("<p>Ω</p>", new String(IOUtils.slurpStream(request.getMimeKnob().getEntireMessageBodyAsInputStream()), "UTF-8"));
     }
 
     private void configureAssertion(final String searchFor, final String replaceWith, final String commaSeparatedTags) throws PolicyAssertionException {

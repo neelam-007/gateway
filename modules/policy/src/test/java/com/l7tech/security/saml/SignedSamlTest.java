@@ -27,6 +27,7 @@ import static org.junit.Assert.*;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -130,7 +131,9 @@ public class SignedSamlTest {
     @Test
     public void testRequestSignedWithSamlTokenTwoStatements() throws Exception {
         Document req = getRequestSignedWithSamlToken(false, false, true, 2);
-        final FileOutputStream fos = new FileOutputStream("/tmp/saml2statements.xml");
+        final File tempFile = File.createTempFile("saml2statements", "xml");
+        tempFile.deleteOnExit();
+        final FileOutputStream fos = new FileOutputStream(tempFile);
         XmlUtil.nodeToOutputStream(req, fos);
         fos.close();
         log.info("Signed request using saml token: " + XmlUtil.nodeToFormattedString(req));
