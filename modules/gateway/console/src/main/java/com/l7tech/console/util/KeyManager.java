@@ -25,6 +25,7 @@ public class KeyManager {
     private X509Certificate[] cert;
     private X509Certificate choice;
     private PrivateKey privateKey;
+    private char[] keyEntryPin = TRUST_PASSWORD.toCharArray();
     private final static String TRUST_PASSWORD = "password";
 
     public KeyManager() {
@@ -33,6 +34,10 @@ public class KeyManager {
 
     public void setKeyStore(KeyStore keyStore) {
         this.keyStore = keyStore;
+    }
+
+    public void setKeyEntryPin( char[] pin ) {
+        this.keyEntryPin = pin;
     }
 
     /**
@@ -101,7 +106,7 @@ public class KeyManager {
                 X509Certificate certificate = (X509Certificate) keyStore.getCertificate(alias);
                 if (certificate != null && CertUtils.certsAreEqual(choice, certificate)) {
                     cert = new X509Certificate[] {certificate } ;
-                    privateKey = (PrivateKey) keyStore.getKey(alias, TRUST_PASSWORD.toCharArray());
+                    privateKey = (PrivateKey) keyStore.getKey(alias, keyEntryPin );
                     break;
                 }
             }

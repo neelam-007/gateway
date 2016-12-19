@@ -167,8 +167,38 @@ public class HeavySsmPreferences extends AbstractSsmPreferences implements SsmPr
         }
     }
 
+    private KeyStore getClientCertKeyStore() throws CertificateException, NoSuchAlgorithmException, KeyStoreException, IOException {
+        String storeType = SyspropUtil.getString( "com.l7tech.console.clientCert.storeType", null );
+        if ( null == storeType ) {
+            // Fall back to default storage
+            return getTrustStore();
+        }
+
+        String storePass = SyspropUtil.getString( "com.l7tech.console.clientCert.storePass", "" );
+        KeyStore keyStore = KeyStore.getInstance( storeType );
+
+        String storeFile = SyspropUtil.getString( "com.l7tech.console.clientCert.keystore", "NONE" );
+        if ( "NONE".equalsIgnoreCase( storeFile ) )
+            storeFile = null;
+
+        if ( storeFile == null ) {
+            keyStore.load( null, storePass.toCharArray() );
+        } else {
+            try ( InputStream is = new FileInputStream( storeFile ) ) {
+                keyStore.load( is, storePass.toCharArray() );
+            }
+        }
+
+        String entryPass = SyspropUtil.getString( "com.l7tech.console.clientCert.entryPass", null );
+
+        keyManager.setKeyStore( keyStore );
+        keyManager.setKeyEntryPin( entryPass == null ? null : entryPass.toCharArray() );
+
+        return keyStore;
+    }
+
     public void importPrivateKey(X509Certificate[] certs, PrivateKey privateKey) throws KeyStoreException, NoSuchAlgorithmException, IOException, CertificateException {
-        KeyStore keyStore = getTrustStore();
+        KeyStore keyStore = getClientCertKeyStore();
         String alias = certs[0].getSubjectDN().getName();
         logger.log( Level.INFO, "Adding private key with alias ''{0}'' for certificate ''{1}''.", new String[]{alias, certs[0].getSubjectDN().getName()});
         keyStore.setKeyEntry(alias, privateKey, TRUST_STORE_PASSWORD.toCharArray(), certs);
@@ -177,7 +207,7 @@ public class HeavySsmPreferences extends AbstractSsmPreferences implements SsmPr
     }
 
     public void deleteCertificate(X509Certificate cert) throws KeyStoreException, NoSuchAlgorithmException, IOException, CertificateException {
-        KeyStore keyStore = getTrustStore();
+        KeyStore keyStore = getClientCertKeyStore();
 
         //loop through list of certs and delete the one
         final List<String> aliases = Collections.list(keyStore.aliases());
@@ -200,7 +230,7 @@ public class HeavySsmPreferences extends AbstractSsmPreferences implements SsmPr
 
     @Override
     public Set<X509Certificate> getKeys() throws KeyStoreException, NoSuchAlgorithmException, IOException, CertificateException {
-        KeyStore store = getTrustStore();
+        KeyStore store = getClientCertKeyStore();
         Set<X509Certificate> data = new HashSet<X509Certificate>();
         for (String alias : Collections.list(store.aliases())) {
             if (store.isKeyEntry(alias)) {
@@ -232,7 +262,7 @@ public class HeavySsmPreferences extends AbstractSsmPreferences implements SsmPr
 
     public void initializeSsgCertStorage() {
         try {
-            keyManager.setKeyStore(getTrustStore());
+            keyManager.setKeyStore( getClientCertKeyStore() );
         } catch (Exception e) {
             logger.log(Level.WARNING, "Error itializing certificate storage.", e);
         }
