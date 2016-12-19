@@ -16,6 +16,7 @@ import com.l7tech.util.IOUtils;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.nio.charset.Charset;
 import java.util.Collections;
 
 import static org.junit.Assert.*;
@@ -392,7 +393,9 @@ public class ServerReplaceTagContentAssertionTest {
         configureAssertion("ψ", "Ω", "p");
         assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(context));
         final byte[] result = IOUtils.slurpStream(request.getMimeKnob().getEntireMessageBodyAsInputStream());
+        assertNotEquals(Charset.defaultCharset().name(), "UTF-32");
         assertNotEquals("<p>\uD83D\uDCA9Ω\uD83D\uDCA9</p>", new String(result, "UTF-8")); // Ensure it didn't use UTF-8.
+        assertNotEquals("<p>\uD83D\uDCA9?\uD83D\uDCA9</p>", new String(result, Charset.defaultCharset())); // Ensure it didn't use system default encoding.
         assertEquals("<p>\uD83D\uDCA9Ω\uD83D\uDCA9</p>", new String(result, "UTF-32"));
     }
 
