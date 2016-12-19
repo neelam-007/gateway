@@ -381,6 +381,21 @@ public class ServerReplaceTagContentAssertionTest {
         assertEquals("<p>Ω</p>", new String(IOUtils.slurpStream(request.getMimeKnob().getEntireMessageBodyAsInputStream()), "UTF-8"));
     }
 
+    // A test similar to above, but uses an encoding that is not native to any platform (that I know of) to ensure
+    // that it successfully makes the conversion and doesn't accidentally rely on a known good platform default. Also
+    // ensure that we use a non-BMP character in the message - Unicode Character 'PILE OF POO' (U+1F4A9). The
+    // multi-byte character hopefully ensures we are doing string manipulation properly.
+    @Test
+    public void nonDefaultCharsetForeignEncoding() throws Exception {
+        final String html = "<p>\uD83D\uDCA9ψ\uD83D\uDCA9</p>";
+        request.initialize(ContentTypeHeader.parseValue("text/html; charset=UTF-32"), html.getBytes("UTF-32"));
+        configureAssertion("ψ", "Ω", "p");
+        assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(context));
+        final byte[] result = IOUtils.slurpStream(request.getMimeKnob().getEntireMessageBodyAsInputStream());
+        assertNotEquals("<p>\uD83D\uDCA9Ω\uD83D\uDCA9</p>", new String(result, "UTF-8")); // Ensure it didn't use UTF-8.
+        assertEquals("<p>\uD83D\uDCA9Ω\uD83D\uDCA9</p>", new String(result, "UTF-32"));
+    }
+
     private void configureAssertion(final String searchFor, final String replaceWith, final String commaSeparatedTags) throws PolicyAssertionException {
         if (searchFor != null) {
             assertion.setSearchFor(searchFor);
