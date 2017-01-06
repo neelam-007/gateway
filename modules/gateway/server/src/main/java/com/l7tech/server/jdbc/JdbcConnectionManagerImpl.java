@@ -24,7 +24,9 @@ public class JdbcConnectionManagerImpl
     extends HibernateEntityManager<JdbcConnection, EntityHeader>
     implements JdbcConnectionManager {
 
-    private static final int JDBC_CONNECTION_CACHE_MAX_AGE = 500;
+    // Increased the max-age from 500 ms to 5000 ms.
+    // This avoids querying the DB for JDBC connection entity version details more frequently.
+    private static final int JDBC_CONNECTION_CACHE_MAX_AGE = 5000;
 
     @Override
     public Class<? extends PersistentEntity> getImpClass() {
