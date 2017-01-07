@@ -5,6 +5,6 @@
 #   - in HEAD, edit this file (build.version) to bump up the major and minor versions
 build.version.major=7
 build.version.minor=0
-build.version.micro=7
+build.version.micro=6
 build.version.revision=0
 
