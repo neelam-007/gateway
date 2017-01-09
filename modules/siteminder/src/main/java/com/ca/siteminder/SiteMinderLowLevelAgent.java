@@ -715,6 +715,9 @@ public class SiteMinderLowLevelAgent {
                 case AgentAPI.ATTR_AUTH_DIR_SERVER:
                     attributes.add(chopNullFromValueAndCreateAttribute(attr, SiteMinderAgentConstants.ATTR_AUTH_DIR_SERVER));
                     break;
+                case SiteMinderAgentConstants.ATTR_DENIED_REDIRECT_CODE:
+                    attributes.add(chopNullFromValueAndCreateAttribute(attr, SiteMinderAgentConstants.ATTR_DENIED_REDIRECT_NAME));
+                    break;
                 default:
                     attributes.add(new SiteMinderContext.Attribute("ATTR_" + Integer.toString(attr.id), attr.value, attr.flags, attr.id, attr.oid, attr.ttl, SiteMinderUtil.safeByteArrayCopy(attr.value)));
 
