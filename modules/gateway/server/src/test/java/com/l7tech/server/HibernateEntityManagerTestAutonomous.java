@@ -93,6 +93,59 @@ public class HibernateEntityManagerTestAutonomous {
         assertEquals("Unexpected number of GetByName invocations", 2, dbHitsByNameCounter.get());
     }
 
+    /**
+     * Verify that changing an entity's name does not prevent it from being properly cached by name.
+     * @throws FindException
+     * @throws SaveException
+     */
+    @BugId("DE267998")
+    @Test
+    public void shouldCacheByNameAndAvoidFrequentDBHitsForVersionOnExpiryIfEntityWasUnchanged() throws FindException, SaveException, InterruptedException {
+        // we need to keep count of the number of times the entity was fetched by name from the database
+        final IncrementTracker dbHitsByNameCounter = new IncrementTracker();
+
+        // To keep track of DB hits for entity version
+        final IncrementTracker dbHitsForVersionByGoidCounter = new IncrementTracker();
+
+        // our entity manager
+        MockHibernateEntityManager entityManager = new MockHibernateEntityManager.Builder()
+                .withTransactionManager(new TransactionManagerBuilder().build())
+                .withHibernateTemplate(new HibernateTemplateBuilder()
+                        .withGetByNameCallCounter(dbHitsByNameCounter)
+                        .withGetVersionByGoidCallCounter(dbHitsForVersionByGoidCounter)
+                        .build())
+                .build();
+
+        // let's create the entity
+        entityManager.save(ENTITY_GOID,
+                new MockPersistentEntity.Builder()
+                        .withId("mockEntityId")
+                        .withName("mockEntityName")
+                        .build());
+
+        // let's fetch it - should fetch from the database once
+        MockPersistentEntity entity = entityManager.getCachedEntityByName("mockEntityName", MAX_AGE);
+
+        // retrieve it a once more - should NOT hit the database
+        entityManager.getCachedEntityByName("mockEntityName", MAX_AGE);
+
+        // wait for cache to expire...
+        Thread.sleep(MAX_AGE  * 2);
+
+        // retrieve it a once more after expiry - should NOT hit the database for complete entity but for version alone
+        entityManager.getCachedEntityByName("mockEntityName", MAX_AGE);
+
+        // retrieve it a once more - should NOT hit the database  either for complete entity or for version alone
+        entityManager.getCachedEntityByName("mockEntityName", MAX_AGE);
+
+        // retrieve it a once more - should NOT hit the database either for complete entity or for version alone
+        entityManager.getCachedEntityByName("mockEntityName", MAX_AGE);
+
+        // check that the entity was only fetched twice - once after creation, once after renaming
+        assertEquals("Unexpected number of GetByName invocations", 1, dbHitsByNameCounter.get());
+        assertEquals("Unexpected number of GetVersion invocations", 1, dbHitsForVersionByGoidCounter.get());
+    }
+
     @Test
     public void shouldNotKeepRenamedEntitiesWithOldNamesInCache() throws SaveException, FindException {
         // our entity manager
@@ -610,6 +663,8 @@ class HibernateTemplateBuilder {
     private HibernateTemplate hibernateTemplate;
     private final MultiKeyedCloningMap table;
     private IncrementTracker dbHitsByNameCounter;
+    private IncrementTracker dbHitsByGoidCounter;
+    private IncrementTracker dbHitsForVersionByGoidCounter;
 
     HibernateTemplateBuilder() {
         table = new MultiKeyedCloningMap();
@@ -620,8 +675,18 @@ class HibernateTemplateBuilder {
         return this;
     }
 
+    HibernateTemplateBuilder withGetByGoidCallCounter(IncrementTracker getByGoidCallCounter) {
+        this.dbHitsByGoidCounter = getByGoidCallCounter;
+        return this;
+    }
+
+    HibernateTemplateBuilder withGetVersionByGoidCallCounter(IncrementTracker getVersionByGoidCallCounter) {
+        this.dbHitsForVersionByGoidCounter = getVersionByGoidCallCounter;
+        return this;
+    }
+
     HibernateTemplate build() {
-        final Session session = new MockSessionBuilder(table, dbHitsByNameCounter).build();
+        final Session session = new MockSessionBuilder(table, dbHitsByNameCounter, dbHitsByGoidCounter, dbHitsForVersionByGoidCounter).build();
 
         hibernateTemplate = mock(HibernateTemplate.class);
 
@@ -678,14 +743,28 @@ class MockSessionBuilder {
     private IncrementTracker dbHitsByNameCounter;
 
     /**
+     * To keep track of DB hits for the entity by goid
+     */
+    private IncrementTracker dbHitsByGoidCounter;
+
+    /**
+     * To keep track of DB hits for the entity version alone
+     */
+    private IncrementTracker dbHitsForVersionByGoidCounter;
+
+    /**
      * Constructor
      * @param table a reference to the map where entities are held by
      * @param dbHitsByNameCounter a counter to keep track of how many times the cache was missed in a lookup by name
      */
     MockSessionBuilder(MultiKeyedCloningMap table,
-                       IncrementTracker dbHitsByNameCounter) {
+                       IncrementTracker dbHitsByNameCounter,
+                       IncrementTracker dbHitsByGoidCounter,
+                       IncrementTracker dbHitsForVersionByGoidCounter) {
         this.table = table;
         this.dbHitsByNameCounter = dbHitsByNameCounter;
+        this.dbHitsByGoidCounter = dbHitsByGoidCounter;
+        this.dbHitsForVersionByGoidCounter = dbHitsForVersionByGoidCounter;
     }
 
     Session build() {
@@ -734,6 +813,14 @@ class MockSessionBuilder {
             Goid goid = goidParameter.get(); // save it in case it's needed to throw an exception
             goidParameter.clear();
 
+            if (dbHitsByGoidCounter != null) {
+                dbHitsByGoidCounter.increment();
+            }
+
+            if (dbHitsForVersionByGoidCounter != null) {
+                dbHitsForVersionByGoidCounter.increment();
+            }
+
             if (entity == null) {
                 throw new HibernateException("Entity with id " + goid + " not found");
             }
@@ -761,6 +848,11 @@ class MockSessionBuilder {
             public MockPersistentEntity answer(InvocationOnMock invocationOnMock) throws Throwable {
                 MockPersistentEntity result = table.get(goidParameter.get());
                 goidParameter.clear();
+
+                if (dbHitsByGoidCounter != null) {
+                    dbHitsByGoidCounter.increment();
+                }
+
                 return result;
             }
         });

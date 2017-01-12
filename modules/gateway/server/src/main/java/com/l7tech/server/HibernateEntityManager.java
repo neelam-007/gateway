@@ -997,6 +997,9 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                 // Updated
                 ET thing = findByPrimaryKey(cacheInfo.entity.getGoid());
                 return thing == null ? null : checkAndCache(thing);
+            } else {
+                // Increase it's age as there was no change in the original entity
+                cacheInfo.timestamp = System.currentTimeMillis();
             }
         }
 
