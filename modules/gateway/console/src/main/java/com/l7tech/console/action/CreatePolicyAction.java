@@ -20,10 +20,7 @@ import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyHeader;
 import com.l7tech.policy.PolicyType;
-import com.l7tech.policy.assertion.AuditDetailAssertion;
-import com.l7tech.policy.assertion.Include;
-import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.util.Option;
@@ -99,14 +96,14 @@ public class CreatePolicyAction extends SecureAction {
                 try {
                     //if the editor didn't already create some policy content, create a default here
                     if (!(newPolicy.getType() == PolicyType.INTERNAL)) {
-                        String xml = WspWriter.getPolicyXml(new AllAssertion(Arrays.<Assertion>asList(new AuditDetailAssertion("Policy Fragment: " + newPolicy.getName()))));
+                        String xml = WspWriter.getPolicyXml(new AllAssertion(Arrays.<Assertion>asList(new CommentAssertion("Policy Fragment: " + newPolicy.getName()))));
                         newPolicy.setXml( xml );
                     } else if (newPolicy.getXml() == null) {
                         final String defaultPolicyXml =
                                 Registry.getDefault().getPolicyAdmin().getDefaultPolicyXml(newPolicy.getType(), newPolicy.getInternalTag());
 
                         String xml = (defaultPolicyXml != null)? defaultPolicyXml: WspWriter.getPolicyXml(
-                                new AllAssertion(Arrays.<Assertion>asList(new AuditDetailAssertion("Internal Policy: " + newPolicy.getName()))));
+                                new AllAssertion(Arrays.<Assertion>asList(new CommentAssertion("Internal Policy: " + newPolicy.getName()))));
                         newPolicy.setXml( xml );
                     }
                     newPolicy.setFolder( folder.orSome( ((RootNode) root).getFolder() ) );
