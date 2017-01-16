@@ -207,7 +207,7 @@ public class ExternalAuditStoreConfigWizard extends Wizard {
 
     private static String getDefaultLookupPolicyXml(){
         AllAssertion all = new AllAssertion();
-        all.addChild(new AuditDetailAssertion("Internal Policy: [Internal Audit Lookup Policy]"));
+        all.addChild(new CommentAssertion("Internal Policy: [Internal Audit Lookup Policy]"));
         return WspWriter.getPolicyXml(all);
     }
 
