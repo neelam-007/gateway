@@ -188,10 +188,10 @@ public class ExternalAuditStoreConfigWizard extends Wizard {
     private static String getSendToHttpSinkPolicyXml(){
         AllAssertion all = new AllAssertion();
         all.addChild(new CommentAssertion("A simple audit sink policy could convert the audit record to XML, then post it somewhere via HTTP"));
+        all.addChild(new CommentAssertion("To do the above, enable the following two assertions. Alternatively, replace them with your own custom logic."));
         AuditRecordToXmlAssertion auditRecordToXmlAssertion = new AuditRecordToXmlAssertion();
         auditRecordToXmlAssertion.setEnabled(false);
         all.addChild(auditRecordToXmlAssertion);
-        all.addChild(new CommentAssertion("Enable the below routing assertion or replace it with something else"));
         HttpRoutingAssertion routingAssertion = new HttpRoutingAssertion();
         routingAssertion.setProtectedServiceUrl("${gateway.audit.sink.url}");
         routingAssertion.setEnabled(false);
