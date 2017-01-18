@@ -73,7 +73,7 @@ import static com.l7tech.common.http.prov.apache.components.ClientConnectionMana
 public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingAssertion<HttpRoutingAssertion> {
 
     public static final String PROP_ENABLE_STATE_POOL = "com.l7tech.server.policy.assertion.ServerHttpRoutingAssertion.statePool.enable";
-    public static final boolean ENABLE_STATE_POOL = SyspropUtil.getBoolean( PROP_ENABLE_STATE_POOL, false );
+    public static final boolean ENABLE_STATE_POOL = SyspropUtil.getBoolean( PROP_ENABLE_STATE_POOL, true );
 
     //Define the failed reason code.
     public static final int HOST_NOT_FOUND = -1; // The Host can not be reached
@@ -105,7 +105,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
     // Only used if thread local state enabled (bad hack, prevents connections from being shared across threads)
     private final ThreadLocal<Object> localState;
 
-    // Only used if state pool enabled (hack, reuses an existing state if there is one, otherwise makes a new one)
+    // Only used if state pool enabled (reuses an existing state if there is one, otherwise makes a new one)
     private final Queue<Object> statePool = new ConcurrentLinkedQueue<>();
 
     public ServerHttpRoutingAssertion(HttpRoutingAssertion assertion, ApplicationContext ctx) throws PolicyAssertionException {
@@ -690,27 +690,28 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 }
             }
 
-            if ( ENABLE_STATE_POOL ) {
-                Object pooledState = statePool.poll();
-                if ( pooledState != null ) {
-                    routedRequestParams.setState( new GenericHttpState( pooledState ) );
-                }
-            } else if ( localState.get() != null ) {
-                routedRequestParams.setState(new GenericHttpState(localState.get()));
-            }
+            if (assertion.isPassthroughHttpAuthentication()) {  // Authorization header from Request (e.g. HTTP Basic, Digest, or NTLM)
+                // no use of state pool at all: pre-pool behaviour - this avoids problems with NTLM
+                routedRequest = httpClient.createRequest(method, routedRequestParams);
+            } else {
+                if (ENABLE_STATE_POOL) { // check state pool for existing state (a new one will be created if left unset)
+                    Object pooledState = statePool.poll();
 
-            routedRequest = httpClient.createRequest(method, routedRequestParams);
-
-            if ( ENABLE_STATE_POOL && routedRequestParams.getState() != null ) {
-                final Object returnState = routedRequestParams.getState().getStateObject();
-                context.runOnClose( new Runnable() {
-                    @Override
-                    public void run() {
-                        statePool.offer( returnState );
+                    if (pooledState != null) {
+                        routedRequestParams.setState(new GenericHttpState(pooledState));
                     }
-                } );
-            } else if ( routedRequestParams.getState() != null ) {
-                localState.set(routedRequestParams.getState().getStateObject());
+                } else if (localState.get() != null) { // get state from ThreadLocal localState
+                    routedRequestParams.setState(new GenericHttpState(localState.get()));
+                }
+
+                routedRequest = httpClient.createRequest(method, routedRequestParams);
+
+                if (ENABLE_STATE_POOL && routedRequestParams.getState() != null) { // pool the state on PolicyEnforcementContext closure
+                    final Object returnState = routedRequestParams.getState().getStateObject();
+                    context.runOnClose(() -> statePool.offer(returnState));
+                } else if (routedRequestParams.getState() != null) { // save state in ThreadLocal localState
+                    localState.set(routedRequestParams.getState().getStateObject());
+                }
             }
 
             List<HttpForwardingRuleEnforcer.Param> paramRes = HttpForwardingRuleEnforcer.
