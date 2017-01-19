@@ -1,5 +1,5 @@
 Summary: Layer 7 Gateway, Copyright Layer 7 Technologies 2003-2012
-Name: ssg
+Name: ssg%{?nameSuffix}
 Version: 0.0
 Release: 0
 Group: Applications/Internet
@@ -7,7 +7,14 @@ License: Commercial
 URL: http://www.layer7tech.com
 Vendor: Layer 7 Technologies
 Packager: Layer 7 Technologies, <support@layer7tech.com>
-Source0: ssg.tar.gz
+Source0: ssg-core.tar.gz
+Source1: ssg-collector.tar.gz
+Source2: ssg-processcontroller.tar.gz
+
+%if "%{?isExtension}" == "1"
+Source3: ssg-extensions.tar.gz
+%endif
+
 BuildRoot: %{_builddir}/%{name}-%{version}
 Prefix: /opt/SecureSpan/Gateway
 
@@ -23,16 +30,28 @@ rm -fr %{buildroot}
 %prep
 rm -fr %{buildroot}
 
-%setup -qcn %{buildroot}
+%if "%{?isExtension}" == "1"
+%setup -T -b 0 -b 1 -b 2 -b 3 -qcn %{buildroot}
+%else
+%setup -T -b 0 -b 1 -b 2 -qcn %{buildroot}
+%endif
 
 %build
 
 %files
 # Main tree, owned by root
 %defattr(0644,root,root,0755)
+%if "%{?isCore}" == "1"
 %dir /opt/SecureSpan/Gateway
+%endif
+%if "%{?isController}" == "1"
 %dir /opt/SecureSpan/Controller
+%endif
+%if "%{?isCollector}" == "1"
 %dir /opt/SecureSpan/Collector
+%endif
+
+%if "%{?isCore}" == "1"
 
 # Group writable config files
 %defattr(0640,layer7,gateway,0750)
@@ -101,6 +120,17 @@ rm -fr %{buildroot}
 %defattr(0444,layer7,layer7,0755)
 /opt/SecureSpan/Gateway/config/backup/*.jar
 
+%endif
+
+%if "%{?isExtension}" == "1"
+
+%defattr(0444,layer7,layer7,0755)
+/opt/SecureSpan/Gateway/runtime/modules/assertions
+
+%endif
+
+%if "%{?isController}" == "1"
+
 # Gateway process controller
 %defattr(0640,layer7,layer7,0755)
 %dir /opt/SecureSpan/Controller/var
@@ -114,6 +144,10 @@ rm -fr %{buildroot}
 %attr(0770,layer7,gateway) /opt/SecureSpan/Controller/var/run
 %attr(0770,layer7,gateway) /opt/SecureSpan/Controller/var/logs
 %attr(0770,layer7,gateway) /opt/SecureSpan/Controller/var/patches
+
+%endif
+
+%if "%{?isCollector}" == "1"
 
 # Gateway data collection utility
 %defattr(0444,layer7,layer7,0755)
@@ -132,6 +166,8 @@ rm -fr %{buildroot}
 /opt/SecureSpan/Collector/modules/os
 /opt/SecureSpan/Collector/modules/template
 /opt/SecureSpan/Collector/modules/vmware
+
+%endif
 
 %pre
 grep -q ^gateway: /etc/group || groupadd gateway
@@ -158,6 +194,8 @@ fi
 [ ! -d "${RPM_INSTALL_PREFIX0}/node/default/etc/conf" ] || chown -R layer7.gateway "${RPM_INSTALL_PREFIX0}/node/default/etc/conf"
 [ ! -d "${RPM_INSTALL_PREFIX0}/node/default/var" ] || chown -R gateway.gateway "${RPM_INSTALL_PREFIX0}/node/default/var"
 
+%if "%{?isController}" == "1"
+
 # hack to turn back ownership/permissions for what's needed in software
 chown gateway:gateway /opt/SecureSpan/Controller/etc/host.properties 2>/dev/null
 chmod 660 /opt/SecureSpan/Controller/etc/host.properties 2>/dev/null
@@ -180,6 +218,8 @@ if [ -n "$prev_gateway_gid" ]; then
         find /opt/SecureSpan/Controller/ -group $prev_layer7_gid -exec chgrp layer7 '{}' \;
     fi
 fi
+
+%endif
 
 %post
 if [ -d "/ssg" ] ; then
