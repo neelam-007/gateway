@@ -41,7 +41,6 @@ public class GatewayMetricsMessage {
     private int resolution;
     private IntervalType intervalType;
     private ClusterNodeInfo[] clusterNodeInfos;
-    private ServiceStats serviceStats;
     private ServiceUsage[] serviceUsages;
     private List<MetricsSummaryBin> metricsSummaryBins;
     private ServiceManager serviceManager;
@@ -54,7 +53,7 @@ public class GatewayMetricsMessage {
                                  int resolution,
                                  IntervalType intervalType,
                                  ClusterNodeInfo[] clusterNodeInfos,
-                                 ServiceStats serviceStats,
+                                 ServiceUsage[] serviceUsages,
                                  List<MetricsSummaryBin> metricsSummaryBins,
                                  ServiceManager serviceManager) throws SAXException, GatewayMetricsException {
 
@@ -63,8 +62,7 @@ public class GatewayMetricsMessage {
         this.resolution = resolution;
         this.intervalType = intervalType;
         this.clusterNodeInfos = clusterNodeInfos;
-        this.serviceStats = serviceStats;
-        this.serviceUsages = serviceStats.getServiceUsages();
+        this.serviceUsages = serviceUsages;
         this.metricsSummaryBins = metricsSummaryBins;
         this.serviceManager = serviceManager;
 
@@ -99,78 +97,69 @@ public class GatewayMetricsMessage {
         serviceMetricsElement.setAttribute("resolution", getResolutionAsString(resolution));
 
         for (MetricsSummaryBin currentBin : metricsSummaryBins) {
-            createMetricsSummaryBinData(serviceMetricsElement, currentBin);
-        }
-    }
+            if (null != currentBin) {
+                String periodStart = this.formatTime(currentBin.getPeriodStart());
+                String periodEnd = this.formatTime(currentBin.getPeriodEnd());
 
-    /**
-     * This methods adds data from the MetricsSummaryBin as a child to the element passed in
-     * @param serviceMetricsElement
-     * @param currentBin
-     */
-    private void createMetricsSummaryBinData(Element serviceMetricsElement, MetricsSummaryBin currentBin) {
-        if (null != currentBin) {
-            String periodStart = this.formatTime(currentBin.getPeriodStart());
-            String periodEnd = this.formatTime(currentBin.getPeriodEnd());
+                String minFrontendResponseTime = Integer.toString(currentBin.getMinFrontendResponseTime() == null ? 0 : currentBin.getMinFrontendResponseTime());
+                double avgFrontendResponseTime = currentBin.getAverageFrontendResponseTime();
+                String maxFrontendResponseTime = Integer.toString(currentBin.getMaxFrontendResponseTime() == null ? 0 : currentBin.getMaxFrontendResponseTime());
 
-            String minFrontendResponseTime = Integer.toString(currentBin.getMinFrontendResponseTime() == null ? 0 : currentBin.getMinFrontendResponseTime());
-            double avgFrontendResponseTime = currentBin.getAverageFrontendResponseTime();
-            String maxFrontendResponseTime = Integer.toString(currentBin.getMaxFrontendResponseTime() == null ? 0 : currentBin.getMaxFrontendResponseTime());
+                String minBackendResponseTime = Integer.toString(currentBin.getMinBackendResponseTime() == null ? 0 : currentBin.getMinBackendResponseTime());
+                double avgBackendResponseTime = currentBin.getAverageBackendResponseTime();
+                String maxBackendResponseTime = Integer.toString(currentBin.getMaxBackendResponseTime() == null ? 0 : currentBin.getMaxBackendResponseTime());
 
-            String minBackendResponseTime = Integer.toString(currentBin.getMinBackendResponseTime() == null ? 0 : currentBin.getMinBackendResponseTime());
-            double avgBackendResponseTime = currentBin.getAverageBackendResponseTime();
-            String maxBackendResponseTime = Integer.toString(currentBin.getMaxBackendResponseTime() == null ? 0 : currentBin.getMaxBackendResponseTime());
+                int numberRoutingFailure = currentBin.getNumRoutingFailure();
+                int numberPolicyViolation = currentBin.getNumPolicyViolation();
+                int totalNumberOfSuccessfulRequests = currentBin.getNumSuccess();
+                int totalNumberOfRequest = currentBin.getNumTotal();
 
-            int numberRoutingFailure = currentBin.getNumRoutingFailure();
-            int numberPolicyViolation = currentBin.getNumPolicyViolation();
-            int totalNumberOfSuccessfulRequests = currentBin.getNumSuccess();
-            int totalNumberOfRequest = currentBin.getNumTotal();
+                Element serviceMetricElement = this.addElement("serviceMetrics", serviceMetricsElement);
+                serviceMetricElement.setAttribute("startTime", periodStart);
+                serviceMetricElement.setAttribute("endTime", periodEnd);
 
-            Element serviceMetricElement = this.addElement("serviceMetrics", serviceMetricsElement);
-            serviceMetricElement.setAttribute("startTime", periodStart);
-            serviceMetricElement.setAttribute("endTime", periodEnd);
+                Element currentElement = null;
+                currentElement = this.addElement("minFrontendResponseTime", serviceMetricElement);
+                currentElement.setAttribute("rate", "milliseconds");
+                currentElement.setTextContent(minFrontendResponseTime);
 
-            Element currentElement = null;
-            currentElement = this.addElement("minFrontendResponseTime", serviceMetricElement);
-            currentElement.setAttribute("rate", "milliseconds");
-            currentElement.setTextContent(minFrontendResponseTime);
+                currentElement = this.addElement("avgFrontendResponseTime", serviceMetricElement);
+                currentElement.setAttribute("rate", "milliseconds");
+                currentElement.setTextContent(this.formatNumber(avgFrontendResponseTime));
 
-            currentElement = this.addElement("avgFrontendResponseTime", serviceMetricElement);
-            currentElement.setAttribute("rate", "milliseconds");
-            currentElement.setTextContent(this.formatNumber(avgFrontendResponseTime));
+                currentElement = this.addElement("maxFrontendResponseTime", serviceMetricElement);
+                currentElement.setAttribute("rate", "milliseconds");
+                currentElement.setTextContent(maxFrontendResponseTime);
 
-            currentElement = this.addElement("maxFrontendResponseTime", serviceMetricElement);
-            currentElement.setAttribute("rate", "milliseconds");
-            currentElement.setTextContent(maxFrontendResponseTime);
+                currentElement = this.addElement("minBackendResponseTime", serviceMetricElement);
+                currentElement.setAttribute("rate", "milliseconds");
+                currentElement.setTextContent(minBackendResponseTime);
 
-            currentElement = this.addElement("minBackendResponseTime", serviceMetricElement);
-            currentElement.setAttribute("rate", "milliseconds");
-            currentElement.setTextContent(minBackendResponseTime);
+                currentElement = this.addElement("avgBackendResponseTime", serviceMetricElement);
+                currentElement.setAttribute("rate", "milliseconds");
+                currentElement.setTextContent(this.formatNumber(avgBackendResponseTime));
 
-            currentElement = this.addElement("avgBackendResponseTime", serviceMetricElement);
-            currentElement.setAttribute("rate", "milliseconds");
-            currentElement.setTextContent(this.formatNumber(avgBackendResponseTime));
+                currentElement = this.addElement("maxBackendResponseTime", serviceMetricElement);
+                currentElement.setAttribute("rate", "milliseconds");
+                currentElement.setTextContent(maxBackendResponseTime);
 
-            currentElement = this.addElement("maxBackendResponseTime", serviceMetricElement);
-            currentElement.setAttribute("rate", "milliseconds");
-            currentElement.setTextContent(maxBackendResponseTime);
+                this.addElement("numberRoutingFailure", serviceMetricElement).setTextContent(String.valueOf(numberRoutingFailure));
+                this.addElement("numberPolicyViolation", serviceMetricElement).setTextContent(String.valueOf(numberPolicyViolation));
+                this.addElement("totalNumberOfSuccessfulRequests", serviceMetricElement).setTextContent(String.valueOf(totalNumberOfSuccessfulRequests));
+                this.addElement("totalNumberOfRequest", serviceMetricElement).setTextContent(String.valueOf(totalNumberOfRequest));
 
-            this.addElement("numberRoutingFailure", serviceMetricElement).setTextContent(String.valueOf(numberRoutingFailure));
-            this.addElement("numberPolicyViolation", serviceMetricElement).setTextContent(String.valueOf(numberPolicyViolation));
-            this.addElement("totalNumberOfSuccessfulRequests", serviceMetricElement).setTextContent(String.valueOf(totalNumberOfSuccessfulRequests));
-            this.addElement("totalNumberOfRequest", serviceMetricElement).setTextContent(String.valueOf(totalNumberOfRequest));
+                if (intervalType.equals(IntervalType.RECENT_NUMBER_OF_INTERVALS) ||
+                        intervalType.equals(IntervalType.RECENT_INTERVALS_WITHIN_TIME_PERIOD)) {
+                    // The rates only apply to metrics already collected for a nominal period.
+                    //
+                    double routingFailureRate = currentBin.getNominalRoutingFailureRate();
+                    double policyViolationRate = currentBin.getNominalPolicyViolationRate();
+                    double successfulRequestRate = currentBin.getNominalSuccessRate();
 
-            if (intervalType.equals(IntervalType.RECENT_NUMBER_OF_INTERVALS) ||
-                    intervalType.equals(IntervalType.RECENT_INTERVALS_WITHIN_TIME_PERIOD)) {
-                // The rates only apply to metrics already collected for a nominal period.
-                //
-                double routingFailureRate = currentBin.getNominalRoutingFailureRate();
-                double policyViolationRate = currentBin.getNominalPolicyViolationRate();
-                double successfulRequestRate = currentBin.getNominalSuccessRate();
-
-                this.addElement("routingFailureRate", serviceMetricElement).setTextContent(this.formatNumber(routingFailureRate));
-                this.addElement("policyViolationRate", serviceMetricElement).setTextContent(this.formatNumber(policyViolationRate));
-                this.addElement("successfulRequestRate", serviceMetricElement).setTextContent(this.formatNumber(successfulRequestRate));
+                    this.addElement("routingFailureRate", serviceMetricElement).setTextContent(this.formatNumber(routingFailureRate));
+                    this.addElement("policyViolationRate", serviceMetricElement).setTextContent(this.formatNumber(policyViolationRate));
+                    this.addElement("successfulRequestRate", serviceMetricElement).setTextContent(this.formatNumber(successfulRequestRate));
+                }
             }
         }
     }
@@ -244,11 +233,6 @@ public class GatewayMetricsMessage {
             this.addElement("routingFailures", serviceStatElement).setTextContent(String.valueOf(numRoutingFailures));
             this.addElement("policyViolations", serviceStatElement).setTextContent(String.valueOf(numPolicyViolations));
             this.addElement("successCount", serviceStatElement).setTextContent(String.valueOf(numSuccesses));
-
-            List<MetricsSummaryBin> serviceMetrics = serviceStats.getServiceMetricsMap().get(serviceId);
-            for(MetricsSummaryBin msb : serviceMetrics) {
-                createMetricsSummaryBinData(serviceStatElement, msb);
-            }
 
             numRoutingFailuresTotal += numRoutingFailures;
             numPolicyViolationsTotal += numPolicyViolations;
