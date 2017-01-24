@@ -191,8 +191,8 @@ public class ServerGatewayMetricsAssertion extends AbstractServerAssertion<Gatew
 
         try {
             ClusterNodeInfo[] clusterNodeInfos = this.getClusterData();
+            ServiceUsage[] serviceUsages = this.getServiceStatistics(serviceGoid);
             List<MetricsSummaryBin> metricsSummaryBins = this.getMetricsSummaryBins(clusterNodeId, serviceGoid, resolution, vars);
-            ServiceStats listServiceStats = this.getServiceStats(clusterNodeId, serviceGoid, resolution, vars);
 
             GatewayMetricsMessage metricsMessage = new GatewayMetricsMessage(
                 clusterNodeId,
@@ -200,7 +200,7 @@ public class ServerGatewayMetricsAssertion extends AbstractServerAssertion<Gatew
                 resolution,
                 assertion.getIntervalType(),
                 clusterNodeInfos,
-                listServiceStats,
+                serviceUsages,
                 metricsSummaryBins,
                 serviceManager);
 
@@ -219,29 +219,7 @@ public class ServerGatewayMetricsAssertion extends AbstractServerAssertion<Gatew
         return c.toArray(new ClusterNodeInfo[c.size()] );
     }
 
-    /**
-     * This method gathers service usage metrics for a given goid and using that, gathers
-     * all MetricsSummaryBin data associated with the service goids for each of the services.
-     */
-    private ServiceStats getServiceStats(String clusterNodeId, Goid serviceGoid, int resolution,
-                                         Map<String, Object> vars) throws Exception {
-        ServiceUsage[] serviceUsages = getServiceUsage(serviceGoid);
-
-        ServiceStats stats = new ServiceStats();
-        stats.setServiceUsages(serviceUsages);
-        Goid[] serviceGoids = new Goid[serviceUsages.length];
-        Map<Goid, List<MetricsSummaryBin>> serviceMetricsMap = new HashMap<Goid, List<MetricsSummaryBin>>();
-
-        for(int i=0; i< serviceUsages.length; i++) {
-            serviceGoids[i] = serviceUsages[i].getServiceid();
-            serviceMetricsMap.put(serviceUsages[i].getServiceid(), getMetricsSummaryBins(clusterNodeId, serviceGoids[i], resolution, vars));
-        }
-        stats.setServiceMetricsMap(serviceMetricsMap);
-
-        return stats;
-    }
-
-    private ServiceUsage[] getServiceUsage(Goid serviceGoid) throws FindException {
+    private ServiceUsage[] getServiceStatistics(Goid serviceGoid) throws FindException {
         ServiceUsage[] serviceUsages;
 
         if (!serviceGoid.equals(PublishedService.DEFAULT_GOID)) {

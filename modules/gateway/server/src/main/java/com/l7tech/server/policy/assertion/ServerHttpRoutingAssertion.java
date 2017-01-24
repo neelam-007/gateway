@@ -102,9 +102,6 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
     private boolean customURLList;
     private SSLContext sslContext = null;
 
-    // Only used if thread local state enabled (bad hack, prevents connections from being shared across threads)
-    private final ThreadLocal<Object> localState;
-
     // Only used if state pool enabled (reuses an existing state if there is one, otherwise makes a new one)
     private final Queue<Object> statePool = new ConcurrentLinkedQueue<>();
 
@@ -248,7 +245,6 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             maxFailoverAttempts = 1;
         }
 
-        localState = new ThreadLocal<>();
         varNames = assertion.getVariablesUsed();
     }
 
@@ -700,8 +696,6 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                     if (pooledState != null) {
                         routedRequestParams.setState(new GenericHttpState(pooledState));
                     }
-                } else if (localState.get() != null) { // get state from ThreadLocal localState
-                    routedRequestParams.setState(new GenericHttpState(localState.get()));
                 }
 
                 routedRequest = httpClient.createRequest(method, routedRequestParams);
@@ -709,8 +703,6 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 if (ENABLE_STATE_POOL && routedRequestParams.getState() != null) { // pool the state on PolicyEnforcementContext closure
                     final Object returnState = routedRequestParams.getState().getStateObject();
                     context.runOnClose(() -> statePool.offer(returnState));
-                } else if (routedRequestParams.getState() != null) { // save state in ThreadLocal localState
-                    localState.set(routedRequestParams.getState().getStateObject());
                 }
             }
 
