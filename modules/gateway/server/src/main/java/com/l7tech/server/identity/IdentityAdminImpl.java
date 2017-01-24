@@ -17,7 +17,6 @@ import com.l7tech.ntlm.protocol.AuthenticationManagerException;
 import com.l7tech.objectmodel.*;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.server.DefaultKey;
-import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.TrustedEsmUserManager;
 import com.l7tech.server.event.admin.AdminEvent;
@@ -128,11 +127,6 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
     public IdentityProviderConfig findIdentityProviderConfigByID(Goid oid)
             throws FindException {
         return getIdProvCfgMan().findByPrimaryKey(oid);
-    }
-
-    @Override
-    public String findServerConfigPropertyByName(String name) {
-        return ServerConfig.getInstance().getProperty(name);
     }
 
     @Override
