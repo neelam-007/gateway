@@ -2173,15 +2173,11 @@
     </target>
 
     <target name="package.installgateway.work.rpm.check" if="makerpm.enabled" depends="prepare.base">
-        <available property="package.installgateway.work.rpm.sourceavailable" file="${tarball}"/>
+        <available property="package.installgateway.work.rpm.sourceavailable" file="${ssg-tarball}"/>
+        <available property="package.installgateway.work.rpm.sourceavailable" file="${extensions-tarball}"/>
+        <available property="package.installgateway.work.rpm.sourceavailable" file="${collector-tarball}"/>
+        <available property="package.installgateway.work.rpm.sourceavailable" file="${processcontroller-tarball}"/>
         <available property="package.installgateway.work.rpm.appliance.sourceavailable" file="${appliance-tarball}"/>
-        <condition property="package.installgateway.work.rpm.i386.appliance.required">
-          <and>
-            <isset property="install.jdk.tar.gz"/>
-            <available file="${install.jdk.tar.gz}"/>
-            <isset property="package.installgateway.work.rpm.appliance.sourceavailable"/>
-          </and>
-        </condition>
         <condition property="package.installgateway.work.rpm.x86_64.appliance.required">
           <and>
             <isset property="install.jdk64.tar.gz"/>
@@ -2217,11 +2213,21 @@
 
         <!-- Set release as empty if not yet set -->
         <property name="build.release" value=""/>
-        <property name="package.installgateway.work.rpmspec" value="etc/ssg.spec"/>
-        <echo level="info">Using spec file : ${package.installgateway.work.rpmspec}</echo>
-        <echo level="info">Using source TGZ: ${tarball}</echo>
-        <copy file="${tarball}" tofile="${build.rpm}/SOURCES/ssg.tar.gz"/>
-        <copy file="${package.installgateway.work.rpmspec}" todir="${build.rpm}/SPECS">
+        <echo level="info">Using source TGZs: ${ssg-tarball}, ${extensions-tarball}, ${collector-tarball}, ${processcontroller-tarball}</echo>
+        <copy file="${ssg-tarball}" tofile="${build.rpm}/SOURCES/ssg-core.tar.gz"/>
+        <copy file="${extensions-tarball}" tofile="${build.rpm}/SOURCES/ssg-extensions.tar.gz"/>
+        <copy file="${collector-tarball}" tofile="${build.rpm}/SOURCES/ssg-collector.tar.gz"/>
+        <copy file="${processcontroller-tarball}" tofile="${build.rpm}/SOURCES/ssg-processcontroller.tar.gz"/>
+	<copy file="etc/ssg.spec" todir="${build.rpm}/SPECS">
+            <filterchain>
+                <tokenfilter>
+                    <replaceregex pattern="(?&lt;=^Version: )[0-9\._\-a-z]{1,10}" replace="${build.rpmversion}" flags="m"/>
+                    <replaceregex pattern="(?&lt;=^Release: )[0-9]{1,10}" replace="${build.version.revision}${build.release}" flags="m"/>
+                    <replaceregex pattern="(?&lt;=^[a-zA-Z &quot;]{0,80}Layer 7 SecureSpan\(tm\) Gateway v)[0-9\._\-a-z]{1,10}" replace="${build.version}" flags="m"/>
+                </tokenfilter>
+            </filterchain>
+        </copy>
+	<copy file="etc/ssg-extensions.spec" todir="${build.rpm}/SPECS">
             <filterchain>
                 <tokenfilter>
                     <replaceregex pattern="(?&lt;=^Version: )[0-9\._\-a-z]{1,10}" replace="${build.rpmversion}" flags="m"/>
@@ -2231,11 +2237,14 @@
             </filterchain>
         </copy>
 
-        <rpm specFile="ssg.spec" topDir="${build.rpm}" command="-bb --target noarch" failOnError="true"/>
+        <!-- Default "everything" RPM. -->
+        <rpm specFile="ssg.spec" topDir="${build.rpm}" command="--define 'isCore 1' --define 'isExtension 1' --define 'isController 1' --define 'isCollector 1' -bb --target noarch" failOnError="true"/>
 
-        <!--<condition property="package.installgateway.work.rpm.x86_64.required">-->
-          <!--<isset property="install.jdk64.tar.gz"/>-->
-        <!--</condition>-->
+        <!-- Smaller "core only" RPM for containerized form factors. -->
+        <rpm specFile="ssg.spec" topDir="${build.rpm}" command="--define 'nameSuffix -core' --define 'isCore 1' -bb --target noarch" failOnError="true"/>
+
+        <!-- Extensions RPMs for containerized form factors. -->
+        <rpm specFile="ssg-extensions.spec" topDir="${build.rpm}" command="--define 'nameSuffix -twelvefactor' --define 'isTwelveFactor 1' -bb --target noarch" failOnError="true"/>
     </target>
 
     <target name="package.installgateway.work.rpm.appliance" depends="package.installgateway.work.rpm.check, package.readversion, package.checkrelease" if="package.installgateway.work.rpm.appliance.sourceavailable">
@@ -2316,20 +2325,9 @@
     </target>
 
     <!--
-      Create the SSG RPM (i386)
-    -->
-    <target name="package.installgateway.work.rpm.appliance.i386" depends="package.installgateway.work.rpm.check, package.readversion, package.checkrelease" if="package.installgateway.work.rpm.i386.appliance.required">
-        <echo level="info">Using source JDK: ${install.jdk.tar.gz}</echo>
-        <copy file="${install.jdk.tar.gz}" tofile="${build.rpm}/SOURCES/jdk.tar.gz" overwrite="true"/>
-        <copy file="etc/appliance/custom-find-requires.sh" todir="${build.rpm}/SOURCES" overwrite="true"/>
-        <chmod file="${build.rpm}/SOURCES/custom-find-requires.sh" perm="755"/>
-<rpm specFile="ssg-appliance.spec" topDir="${build.rpm}" command="-bb --target i386" failOnError="true"/>
-    </target>
-
-    <!--
       Create the SSG RPM
     -->
-    <target name="package.installgateway.work.rpm" depends="package.installgateway.work.rpm.core, package.installgateway.work.rpm.appliance, package.installgateway.work.rpm.appliance.i386, package.installgateway.work.rpm.appliance.x86_64" if="makerpm.enabled">
+    <target name="package.installgateway.work.rpm" depends="package.installgateway.work.rpm.core, package.installgateway.work.rpm.appliance, package.installgateway.work.rpm.appliance.x86_64" if="makerpm.enabled">
         <echo level="info">RPM build completed.</echo>
     </target>
 
@@ -3036,7 +3034,8 @@
 
         <move todir="${dist.dir}" flatten="true" verbose="true">
             <fileset dir="${build.rpm}/RPMS">
-                <include name="*/*.rpm"/>
+                <include name="*/ssg-?.?.??-*.rpm"/>
+                <include name="*/ssg-appliance-?.?.??-*.rpm"/>
             </fileset>
             <fileset dir="${build.installer}">
                 <include name="*Installer.exe"/>
@@ -3057,7 +3056,18 @@
                 <include name="SSGBackup.zip" />
             </fileset>
         </move>
+
         <copy file="etc/assets/SecureSpan_ActiveSOA.jar" tofile="${dist.dir}/SecureSpan_ActiveSOA-${build.version}.jar" verbose="true"/>
+
+        <mkdir dir="${dist.dir}/components"/>
+
+        <move todir="${dist.dir}/components" flatten="true" verbose="true">
+            <fileset dir="${build.rpm}/RPMS">
+                <include name="*/*.rpm"/>
+                <exclude name="*/ssg-?.?.??-*.rpm"/>
+                <exclude name="*/ssg-appliance-?.?.??-*.rpm"/>
+            </fileset>
+        </move>
     </target>
 
     <target name="tar"
@@ -3110,16 +3120,11 @@
         <fail unless="install.build.number"
               message="Set the install.build.number property before running this target!"/>
 
-        <fail unless="install.jdk.tar.gz" message="Set the install.jdk.tar.gz property or create install.properties!"/>
-
         <condition property="jdk.exists">
-            <or>
-                <available file="${install.jdk.tar.gz}"/>
-                <available file="${install.jdk64.tar.gz}"/>
-            </or>
+            <available file="${install.jdk64.tar.gz}"/>
         </condition>
 
-        <fail unless="jdk.exists" message="Couldn't find ${install.jdk.tar.gz} or ${install.jdk64.tar.gz}! Check your install.properties file!"/>
+        <fail unless="jdk.exists" message="Couldn't find ${install.jdk64.tar.gz}! Check your install.properties file!"/>
     </target>
 
     <!--
@@ -3516,7 +3521,7 @@
       Top level work target for official builds
     -->
     <target name="INTERNAL-ssg-install" depends="INTERNAL-ssg-install-init, INTERNAL-ssg-install-main" if="ssg.install.enabled">
-        <!-- Create software tarball -->
+        <!-- Create software tarballs. This is the original "megaball." -->
         <property name="tarball" value="${build.dir}/ssg-b${install.build.number}.tar.gz"/>
         <echo level="info">Creating Software Tarball (${tarball})...</echo>
         <tar destfile="${tarball}" compression="gzip" longfile="gnu">
@@ -3558,7 +3563,6 @@
             <tarfileset dir="${install.src.pc}" username="gateway" group="gateway" filemode="555" dirmode="755" prefix="${install.target.pc}">
                 <include name="bin/*.sh"/>
             </tarfileset>
-
             <tarfileset dir="${install.src.col}" username="gateway" group="gateway" mode="644" prefix="${install.target.col}">
                 <include name="**/*"/>
                 <exclude name="*.sh"/>
@@ -3566,8 +3570,6 @@
             <tarfileset dir="${install.src.col}" username="gateway" group="gateway" filemode="555" dirmode="755" prefix="${install.target.col}">
                 <include name="*.sh"/>
             </tarfileset>
-
-
             <tarfileset dir="${install.src.ssg}" username="gateway" group="gateway" filemode="555" dirmode="755" prefix="${install.target.ssg}">
                 <include  name="${install.src.ssg.samples}/*.sh"/>
             </tarfileset>
@@ -3585,6 +3587,96 @@
             </tarfileset>
         </tar>
 
+        <mkdir dir="${build.dir}/components"/>
+
+        <!-- This one is for core. -->
+        <property name="ssg-tarball" value="${build.dir}/components/ssg-core-b${install.build.number}.tar.gz"/>
+        <echo level="info">Creating Software Core Tarball (${ssg-tarball})...</echo>
+        <tar destfile="${ssg-tarball}" compression="gzip" longfile="gnu">
+            <tarfileset dir="${install.src.ssg}" username="layer7" group="layer7" filemode="444" dirmode="755" prefix="${install.target.ssg}">
+                <include name="**/*"/>
+                <exclude name="**/*.sh"/>
+                <exclude name="node/default/etc/conf/*"/>
+                <exclude name="node/default/var"/>
+                <exclude name="node/default/var/**"/>
+                <exclude name="**/*logging.properties"/>
+                <exclude name="runtime/modules/assertions/*"/>
+            </tarfileset>
+            <tarfileset dir="${install.src.ssg}" username="layer7" group="layer7" filemode="555" dirmode="755"  prefix="${install.target.ssg}">
+                <include name="**/*.sh"/>
+                <exclude name="runtime/etc/profile.d/xlocaldefs.sh"/>
+            </tarfileset>
+            <tarfileset dir="${install.src.ssg}" username="layer7" group="layer7" filemode="755" dirmode="755"  prefix="${install.target.ssg}">
+                <include name="runtime/etc/profile.d/xlocaldefs.sh"/>
+            </tarfileset>
+            <tarfileset dir="${install.src.ssg}" username="layer7" group="layer7" filemode="644" dirmode="755"  prefix="${install.target.ssg}">
+                <include name="node/default/etc/conf/*"/>
+                <include name="**/*logging.properties"/>
+            </tarfileset>
+            <tarfileset dir="${install.src.ssg}" username="gateway" group="gateway" filemode="444" dirmode="755" prefix="${install.target.ssg}">
+                <include name="node/default/var"/>
+                <include name="node/default/var/**"/>
+            </tarfileset>
+            <tarfileset dir="${install.src.ssg}" username="gateway" group="gateway" filemode="555" dirmode="755" prefix="${install.target.ssg}">
+                <include  name="${install.src.ssg.samples}/*.sh"/>
+            </tarfileset>
+        </tar>
+
+        <!-- This one is for the extension assertions that are not a part of core. -->
+        <property name="extensions-tarball" value="${build.dir}/components/ssg-extensions-b${install.build.number}.tar.gz"/>
+        <echo level="info">Creating Software Extensions Tarball (${extensions-tarball})...</echo>
+        <tar destfile="${extensions-tarball}" compression="gzip" longfile="gnu">
+            <tarfileset dir="${install.src.ssg}" username="layer7" group="layer7" filemode="444" dirmode="755" prefix="${install.target.ssg}">
+                <include name="runtime/modules/assertions/**/*"/>
+            </tarfileset>
+        </tar>
+
+        <!-- This one is for the collector. -->
+        <property name="collector-tarball" value="${build.dir}/components/ssg-collector-b${install.build.number}.tar.gz"/>
+        <echo level="info">Creating Software Collector Tarball (${collector-tarball})...</echo>
+        <tar destfile="${collector-tarball}" compression="gzip" longfile="gnu">
+            <tarfileset dir="${install.src.col}" username="gateway" group="gateway" mode="644" prefix="${install.target.col}">
+                <include name="**/*"/>
+                <exclude name="*.sh"/>
+            </tarfileset>
+            <tarfileset dir="${install.src.col}" username="gateway" group="gateway" filemode="555" dirmode="755" prefix="${install.target.col}">
+                <include name="*.sh"/>
+            </tarfileset>
+        </tar>
+
+        <!-- This one is for the process controller. -->
+        <property name="processcontroller-tarball" value="${build.dir}/components/ssg-processcontroller-b${install.build.number}.tar.gz"/>
+        <echo level="info">Creating Software Process Controller Tarball (${processcontroller-tarball})...</echo>
+        <tar destfile="${processcontroller-tarball}" compression="gzip" longfile="gnu">
+            <tarfileset dir="${install.src.pc}" username="layer7" group="gateway" filemode="555" dirmode="775" prefix="${install.target.pc}">
+                <include name="etc"/>
+                <include name="etc/*"/>
+            </tarfileset>
+            <tarfileset dir="${install.src.pc}" username="layer7" group="gateway" filemode="664" dirmode="770" prefix="${install.target.pc}">
+                <include name="${install.src.pc.controllogs}"/>
+                <include name="${install.src.pc.controllogs}/*"/>
+                <include name="${install.src.pc.controlrun}"/>
+                <include name="${install.src.pc.controlrun}/*"/>
+                <include name="${install.src.pc.controlpatches}"/>
+                <include name="${install.src.pc.controlpatches}/*"/>
+            </tarfileset>
+            <tarfileset dir="${install.src.pc}" username="gateway" group="gateway" mode="644" prefix="${install.target.pc}">
+                <include name="**/*"/>
+                <exclude name="bin/*.sh"/>
+                <exclude name="${install.src.pc.controletc}"/>
+                <exclude name="${install.src.pc.controletc}/*"/>
+                <exclude name="${install.src.pc.controllogs}"/>
+                <exclude name="${install.src.pc.controllogs}/*"/>
+                <exclude name="${install.src.pc.controlrun}"/>
+                <exclude name="${install.src.pc.controlrun}/*"/>
+                <exclude name="${install.src.pc.controlpatches}"/>
+                <exclude name="${install.src.pc.controlpatches}/*"/>
+            </tarfileset>
+            <tarfileset dir="${install.src.pc}" username="gateway" group="gateway" filemode="555" dirmode="755" prefix="${install.target.pc}">
+                <include name="bin/*.sh"/>
+            </tarfileset>
+        </tar>
+
         <!-- Create appliance tarball -->
         <property name="appliance-tarball" value="${build.dir}/ssg-appliance-b${install.build.number}.tar.gz"/>
         <echo level="info">Creating Appliance Add-On Tarball (${appliance-tarball})...</echo>
@@ -3594,7 +3686,7 @@
             </tarfileset>
         </tar>
 
-        <echo level="info">BUILD COMPLETE - Produced ${tarball} and ${appliance-tarball}!</echo>
+        <echo level="info">BUILD COMPLETE - Produced ${tarball}, ${ssg-tarball}, ${extensions-tarball}, ${collector-tarball}, ${processcontroller-tarball}, and ${appliance-tarball}!</echo>
     </target>
 
     <!-- Create the TAR used when building the Solaris PKG -->
@@ -3672,7 +3764,7 @@
     -->
     <target name="makensis-unsafe">
         <echo level="info">Enabling Win32 installers for build.</echo>
-        <property name="makensis" value="true"/>
+        <!-- <property name="makensis" value="true"/> -->
     </target>
 
     <target name="makensis" description="Enable building of Win32 installers" depends="makensis-unsafe">
