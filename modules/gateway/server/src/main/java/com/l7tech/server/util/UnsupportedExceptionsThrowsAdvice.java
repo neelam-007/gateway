@@ -69,6 +69,9 @@ public class UnsupportedExceptionsThrowsAdvice extends ThrowsAdviceSupport {
             // nCipher exceptions
             "com.ncipher.provider.nCRuntimeException",
             "com.ncipher.nfast.NFException",
+
+            // Sun JDK java internals (not present on IBM JDK)
+            "sun.security.krb5.KrbException",
     };
 
     @SuppressWarnings( { "deprecation" } )
@@ -79,8 +82,6 @@ public class UnsupportedExceptionsThrowsAdvice extends ThrowsAdviceSupport {
             ClassFilterException.class,
             // java
             javax.naming.NamingException.class, // can contain non-serializable objects, see bug 4738
-            // java internals
-            sun.security.krb5.KrbException.class,
             // spring jdbc errors
             BadSqlGrammarException.class,
             CannotGetJdbcConnectionException.class,
