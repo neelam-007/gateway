@@ -91,10 +91,14 @@ public class SsgConnectorSslHelper {
 
         // Enable all ciphers suites that are both supported by this SSLContext and enabled for the SsgConnector
         String desiredCiphersString = c.getProperty(SsgConnector.PROP_TLS_CIPHERLIST);
-        if (desiredCiphersString != null && desiredCiphersString.trim().length() >= 1) {
-            enabledCiphers = SPLITTER.split(desiredCiphersString);
-        } else {
-            enabledCiphers = SPLITTER.split(DefaultHttpCiphers.getRecommendedCiphers());
+        final String[] desiredCiphers = desiredCiphersString != null && desiredCiphersString.trim().length() >= 1
+                ? SPLITTER.split(desiredCiphersString)
+                : SPLITTER.split(DefaultHttpCiphers.getRecommendedCiphers());
+        // remove ciphers not supported by our TLS provider
+        enabledCiphers = ArrayUtils.intersection(desiredCiphers, sslServerSocketFactory.getSupportedCipherSuites());
+        // test for an edge case when all desired cipher are not supported by our TLS provider
+        if (desiredCiphers != null && desiredCiphers.length > 0 && enabledCiphers.length == 0) {
+            throw new ListenerException("Unable to open listen port with the specified SSL configuration: None of the selected cipher suites are supported by the underlying TLS provider");
         }
         allowUnsafeLegacyRenegotiation = Boolean.valueOf(getStringProperty(SsgConnector.PROP_TLS_ALLOW_UNSAFE_LEGACY_RENEGOTIATION, "false"));
 
