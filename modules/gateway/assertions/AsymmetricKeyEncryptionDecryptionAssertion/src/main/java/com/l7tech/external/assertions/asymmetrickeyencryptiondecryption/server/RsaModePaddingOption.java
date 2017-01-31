@@ -8,7 +8,10 @@ import javax.crypto.Cipher;
  * Date: 21/06/13
  * Time: 10:57 AM
  * To change this template use File | Settings | File Templates.
+ *
+ * We now use the algorithm string to allow for extra padding options that might be supported by bc providers
  */
+@Deprecated
 public enum RsaModePaddingOption {
     NO_MODE_NO_PADDING ("None"),
     ECB_NO_PADDING ("ECB/No padding"),

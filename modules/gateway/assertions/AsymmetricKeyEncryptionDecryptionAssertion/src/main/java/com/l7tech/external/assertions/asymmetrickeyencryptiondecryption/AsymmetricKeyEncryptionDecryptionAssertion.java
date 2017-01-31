@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.asymmetrickeyencryptiondecryption;
 
+import com.l7tech.external.assertions.asymmetrickeyencryptiondecryption.server.BlockAsymmetricAlgorithm;
 import com.l7tech.external.assertions.asymmetrickeyencryptiondecryption.server.RsaModePaddingOption;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
@@ -30,6 +31,7 @@ public class AsymmetricKeyEncryptionDecryptionAssertion extends Assertion implem
 
     private int mode = 0;
     private RsaModePaddingOption modePaddingOption = null;
+    private String algorithm;
 
     public String[] getVariablesUsed() {
         return new String[]{inputVariable, outputVariable};
@@ -139,7 +141,32 @@ public class AsymmetricKeyEncryptionDecryptionAssertion extends Assertion implem
     }
 
     public void setModePaddingOption(RsaModePaddingOption modePaddingOption) {
-        this.modePaddingOption = modePaddingOption;
+
+        switch (modePaddingOption) {
+            case ECB_NO_PADDING:
+                setAlgorithm(BlockAsymmetricAlgorithm.getAlgorithm(
+                        BlockAsymmetricAlgorithm.NAME_RSA, BlockAsymmetricAlgorithm.MODE_ECB, BlockAsymmetricAlgorithm.PADDING_NO_PADDING));
+                break;
+            case NO_MODE_NO_PADDING: // Tested SunJCE/BC to be mapped to PKCS1
+            case ECB_PKCS1_PADDING:
+                setAlgorithm(BlockAsymmetricAlgorithm.getAlgorithm(
+                        BlockAsymmetricAlgorithm.NAME_RSA, BlockAsymmetricAlgorithm.MODE_ECB, BlockAsymmetricAlgorithm.PADDING_PKCS1_PADDING));
+                break;
+            case ECP_OAEP_WITH_SHA1_AND_MDG1_PADDING:
+                setAlgorithm(BlockAsymmetricAlgorithm.getAlgorithm(
+                        BlockAsymmetricAlgorithm.NAME_RSA, BlockAsymmetricAlgorithm.MODE_ECB, BlockAsymmetricAlgorithm.PADDING_OAEP_WITH_SHA1_AND_MGF1_PADDING));
+                break;
+        }
+
+        this.modePaddingOption = null;
+    }
+
+    public String getAlgorithm() {
+        return algorithm;
+    }
+
+    public void setAlgorithm(String algorithm) {
+        this.algorithm = algorithm;
     }
 
     @Override

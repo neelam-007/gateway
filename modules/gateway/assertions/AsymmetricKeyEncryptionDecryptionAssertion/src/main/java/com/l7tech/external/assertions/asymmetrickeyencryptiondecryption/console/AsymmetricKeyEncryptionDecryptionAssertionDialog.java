@@ -4,7 +4,7 @@ import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.console.util.Registry;
 import com.l7tech.external.assertions.asymmetrickeyencryptiondecryption.AsymmetricKeyEncryptionDecryptionAssertion;
-import com.l7tech.external.assertions.asymmetrickeyencryptiondecryption.server.RsaModePaddingOption;
+import com.l7tech.external.assertions.asymmetrickeyencryptiondecryption.server.BlockAsymmetricAlgorithm;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.keystore.KeystoreFileEntityHeader;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
@@ -12,6 +12,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.util.ExceptionUtils;
+import org.apache.commons.lang.StringUtils;
 
 import javax.crypto.Cipher;
 import javax.swing.*;
@@ -43,8 +44,12 @@ public class AsymmetricKeyEncryptionDecryptionAssertionDialog extends AssertionP
     private JLabel inputLabel;
     private TargetVariablePanel inputVariableField;
     private TargetVariablePanel outputVariableField;
-    private JComboBox modePaddingComboBox;
-    private JLabel modePaddingLabel;
+    private JComboBox<String> nameComboBox;
+    private JLabel nameLabel;
+    private JComboBox<String> modeComboBox;
+    private JComboBox<String> paddingComboBox;
+    private JLabel modeLabel;
+    private JLabel paddingLabel;
 
     private class KeyEntry {
 
@@ -96,7 +101,8 @@ public class AsymmetricKeyEncryptionDecryptionAssertionDialog extends AssertionP
         assertion.setKeyName(((KeyEntry)keyComboBox.getSelectedItem()).getName());
         assertion.setKeyGoid(((KeyEntry)keyComboBox.getSelectedItem()).getGoid());
 
-        assertion.setModePaddingOption((RsaModePaddingOption)modePaddingComboBox.getSelectedItem());
+        assertion.setAlgorithm(BlockAsymmetricAlgorithm.getAlgorithm(
+                (String) nameComboBox.getSelectedItem(), (String) modeComboBox.getSelectedItem(), (String) paddingComboBox.getSelectedItem()));
 
         return assertion;
     }
@@ -127,12 +133,17 @@ public class AsymmetricKeyEncryptionDecryptionAssertionDialog extends AssertionP
         outputVariableField.setVariable(assertion.getOutputVariable());
         outputVariableField.setAssertion(assertion, getPreviousAssertion());
 
-        //update modePadding combo box populateKeyComboBox();
-        RsaModePaddingOption selectedModePaddingOption = assertion.getModePaddingOption();
-        if (selectedModePaddingOption == null)
-            modePaddingComboBox.setSelectedItem(RsaModePaddingOption.NO_MODE_NO_PADDING);
-        else
-            modePaddingComboBox.setSelectedItem(assertion.getModePaddingOption());
+        String algorithm = assertion.getAlgorithm();
+        if (algorithm == null) {
+            nameComboBox.setSelectedItem(BlockAsymmetricAlgorithm.NAME_RSA);
+            modeComboBox.setSelectedItem(BlockAsymmetricAlgorithm.MODE_ECB);
+            paddingComboBox.setSelectedItem(BlockAsymmetricAlgorithm.PADDING_NO_PADDING);
+        } else {
+            String[] algorithmParts = BlockAsymmetricAlgorithm.parseAlgorithm(algorithm);
+            nameComboBox.setSelectedItem(algorithmParts[0]);
+            modeComboBox.setSelectedItem(algorithmParts[1]);
+            paddingComboBox.setSelectedItem(algorithmParts[2]);
+        }
     }
 
     @Override
@@ -184,12 +195,15 @@ public class AsymmetricKeyEncryptionDecryptionAssertionDialog extends AssertionP
 
         inputVariableField.addChangeListener(variableFieldChangeListener);
         outputVariableField.addChangeListener(variableFieldChangeListener);
+        
+        nameComboBox.setModel(new DefaultComboBoxModel(BlockAsymmetricAlgorithm.getKnownNames().toArray()));
+        nameComboBox.addItemListener(comboBoxItemListener);
 
-        //initialize mode padding combo box
-        RsaModePaddingOption[] modePaddingArray = RsaModePaddingOption.values();
-        modePaddingComboBox.setModel(new DefaultComboBoxModel(modePaddingArray));
-        //modePaddingComboBox.setSelectedIndex(1);
-        modePaddingComboBox.addItemListener(comboBoxItemListener);
+        modeComboBox.setModel(new DefaultComboBoxModel(BlockAsymmetricAlgorithm.getKnownModes().toArray()));
+        modeComboBox.addItemListener(comboBoxItemListener);
+
+        paddingComboBox.setModel(new DefaultComboBoxModel(BlockAsymmetricAlgorithm.getKnownPaddings().toArray()));
+        paddingComboBox.addItemListener(comboBoxItemListener);
     }
 
     private void populateKeyComboBox() {
@@ -267,7 +281,9 @@ public class AsymmetricKeyEncryptionDecryptionAssertionDialog extends AssertionP
         if (inputVariableField.isEntryValid() &&
             outputVariableField.isEntryValid() &&
             keyComboBox.getSelectedIndex() != -1 &&
-            modePaddingComboBox.getSelectedIndex() != -1) {
+            nameComboBox.getSelectedIndex() != -1 &&
+            modeComboBox.getSelectedIndex() != -1 &&
+            StringUtils.isNotBlank((String) paddingComboBox.getSelectedItem())) {
             this.getOkButton().setEnabled(true);
         } else {
             this.getOkButton().setEnabled(false);

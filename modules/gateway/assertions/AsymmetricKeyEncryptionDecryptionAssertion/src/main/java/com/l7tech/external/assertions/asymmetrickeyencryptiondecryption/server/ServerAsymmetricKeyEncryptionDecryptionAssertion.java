@@ -12,7 +12,6 @@ import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.prov.ProviderUtil;
-import com.l7tech.security.prov.ccj.CryptoComplyJceProviderEngine;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
@@ -31,6 +30,8 @@ import java.security.*;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAKey;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Server side implementation of the AsymmetricKeyEncryptionDecryptionAssertion.
@@ -38,6 +39,8 @@ import java.util.Map;
  * @see com.l7tech.external.assertions.asymmetrickeyencryptiondecryption.AsymmetricKeyEncryptionDecryptionAssertion
  */
 public class ServerAsymmetricKeyEncryptionDecryptionAssertion extends AbstractServerAssertion<AsymmetricKeyEncryptionDecryptionAssertion> {
+
+    private static final Logger logger = Logger.getLogger(ServerAsymmetricKeyEncryptionDecryptionAssertion.class.getName());
 
     private final String[] variablesUsed;
     private final AsymmetricKeyEncryptionDecryptionAssertion assertion;
@@ -81,7 +84,7 @@ public class ServerAsymmetricKeyEncryptionDecryptionAssertion extends AbstractSe
             key = getKey(mode, assertion.getKeyName(), assertion.getKeyGoid());
 
             //encrypt/decrypt data
-            outputData = transform(key, inputData, mode, assertion.getModePaddingOption());
+            outputData = transform(key, inputData, mode, assertion.getAlgorithm());
 
             //assign to context variable
             context.setVariable( assertion.getOutputVariable(), HexUtils.encodeBase64(outputData));
@@ -99,7 +102,8 @@ public class ServerAsymmetricKeyEncryptionDecryptionAssertion extends AbstractSe
      * @param mode will either be javax.crypto.Cipher.ENCRYPT_MODE (== 1) or javax.crypto.Cipher.DECRYPT_MODE (== 2) as selected through the gui
      * @return the result of the encryption/decryption
      */
-    private byte[] transform(Key key, byte[] inputData, int mode, RsaModePaddingOption modePaddingOption) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, NoSuchProviderException {
+    private byte[] transform(Key key, byte[] inputData, int mode, String algorithm)
+            throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, NoSuchProviderException {
 
         byte[] result;
         Cipher cipher;
@@ -107,18 +111,13 @@ public class ServerAsymmetricKeyEncryptionDecryptionAssertion extends AbstractSe
         if (!key.getAlgorithm().contains("RSA"))
             throw new NoSuchAlgorithmException("Only RSA Keys are supported.");
 
-        if (modePaddingOption == RsaModePaddingOption.NO_MODE_NO_PADDING)
-            cipher = Cipher.getInstance("RSA");
-        else if (modePaddingOption == RsaModePaddingOption.ECB_NO_PADDING)
-            cipher = JceProvider.getInstance().getRsaNoPaddingCipher();
-        else if (modePaddingOption == RsaModePaddingOption.ECB_PKCS1_PADDING)
-            cipher = JceProvider.getInstance().getRsaPkcs1PaddingCipher();
-        else if (modePaddingOption == RsaModePaddingOption.ECP_OAEP_WITH_SHA1_AND_MDG1_PADDING)
-            cipher = JceProvider.getInstance().getRsaOaepPaddingCipher();
-        else
-            throw new NoSuchPaddingException("Invalid RSA Mode Padding Option used.");
+        cipher = JceProvider.getCipher(algorithm, JceProvider.getInstance().getProviderFor("Cipher.RSA"));
 
-        // set initialize the cypher to eithed encrypt/decrypt, depending on what was selected, with the specified key.
+        if (logger.isLoggable(Level.FINE)) {
+            logger.log(Level.FINE, "Using Provider: {0} for algorithm: {1}", new Object[]{cipher.getProvider().getName(), algorithm} );
+        }
+
+        // set initialize the cypher to either encrypt/decrypt, depending on what was selected, with the specified key.
         cipher.init(mode, key);
         // do the transformation
         result = cipher.doFinal(inputData);
@@ -127,7 +126,7 @@ public class ServerAsymmetricKeyEncryptionDecryptionAssertion extends AbstractSe
         // zeros at the beginning of the decryption output bytes, if the output byte length is less than the key size in
         // bytes. In order to keep this back compatibility, this story added padding zeros if the current provider does
         // not pad leading zeros.
-        if (mode == Cipher.DECRYPT_MODE && modePaddingOption == RsaModePaddingOption.ECB_NO_PADDING) {
+        if (mode == Cipher.DECRYPT_MODE && algorithm.equals("RSA/ECB/NoPadding")) {
             final int keySizeInBytes = ((RSAKey)key).getModulus().bitLength() / 8;
             result = ProviderUtil.paddingDecryptionOutputUsingRsaEcbNoPadding(result, keySizeInBytes);
         }
