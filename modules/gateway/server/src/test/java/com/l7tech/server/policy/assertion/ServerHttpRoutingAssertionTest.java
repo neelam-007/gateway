@@ -67,6 +67,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Field;
 import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.security.KeyStore;
@@ -1451,6 +1452,127 @@ public class ServerHttpRoutingAssertionTest {
 
         final ServerHttpRoutingAssertion routingAssertion = new ServerHttpRoutingAssertion(hra, appContext);
         assertEquals(AssertionStatus.NONE, routingAssertion.checkRequest(pec));
+    }
+
+    @BugId("DE272361")
+    @Test
+    public void testContextVariablesInLogin_VariableDetected() throws Exception {
+        HttpRoutingAssertion assertion = new HttpRoutingAssertion();
+        assertion.setLogin("${username}");    // context variable in login
+        assertion.setPassword("password");
+        assertion.setRealm("realm");
+        assertion.setNtlmHost("host");
+
+        ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+
+        final ServerHttpRoutingAssertion serverAssertion = new ServerHttpRoutingAssertion(assertion, appContext);
+
+        Field f = serverAssertion.getClass().getDeclaredField("specifiedCredentialsUseVariables");
+        f.setAccessible(true);
+        Boolean specifiedCredentialsUseVariables = (Boolean) f.get(serverAssertion);
+
+        assertTrue(specifiedCredentialsUseVariables);
+    }
+
+    @BugId("DE272361")
+    @Test
+    public void testContextVariablesInPassword_VariableDetected() throws Exception {
+        HttpRoutingAssertion assertion = new HttpRoutingAssertion();
+        assertion.setLogin("username");
+        assertion.setPassword("${password}"); // context variable in password
+        assertion.setRealm("realm");
+        assertion.setNtlmHost("host");
+
+        ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+
+        final ServerHttpRoutingAssertion serverAssertion = new ServerHttpRoutingAssertion(assertion, appContext);
+
+        Field f = serverAssertion.getClass().getDeclaredField("specifiedCredentialsUseVariables");
+        f.setAccessible(true);
+        Boolean specifiedCredentialsUseVariables = (Boolean) f.get(serverAssertion);
+
+        assertTrue(specifiedCredentialsUseVariables);
+    }
+
+    @BugId("DE272361")
+    @Test
+    public void testContextVariablesInRealm_VariableDetected() throws Exception {
+        HttpRoutingAssertion assertion = new HttpRoutingAssertion();
+        assertion.setLogin("username");
+        assertion.setPassword("password");
+        assertion.setRealm("${realm}");   // context variable in realm
+        assertion.setNtlmHost("host");
+
+        ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+
+        final ServerHttpRoutingAssertion serverAssertion = new ServerHttpRoutingAssertion(assertion, appContext);
+
+        Field f = serverAssertion.getClass().getDeclaredField("specifiedCredentialsUseVariables");
+        f.setAccessible(true);
+        Boolean specifiedCredentialsUseVariables = (Boolean) f.get(serverAssertion);
+
+        assertTrue(specifiedCredentialsUseVariables);
+    }
+
+    @BugId("DE272361")
+    @Test
+    public void testContextVariablesInNtlmHost_VariableDetected() throws Exception {
+        HttpRoutingAssertion assertion = new HttpRoutingAssertion();
+        assertion.setLogin("username");
+        assertion.setPassword("password");
+        assertion.setRealm("realm");
+        assertion.setNtlmHost("${host}"); // context variable in host
+
+        ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+
+        final ServerHttpRoutingAssertion serverAssertion = new ServerHttpRoutingAssertion(assertion, appContext);
+
+        Field f = serverAssertion.getClass().getDeclaredField("specifiedCredentialsUseVariables");
+        f.setAccessible(true);
+        Boolean specifiedCredentialsUseVariables = (Boolean) f.get(serverAssertion);
+
+        assertTrue(specifiedCredentialsUseVariables);
+    }
+
+    @BugId("DE272361")
+    @Test
+    public void testNoContextVariablesInCredentialsFields_NoneDetected() throws Exception {
+        HttpRoutingAssertion assertion = new HttpRoutingAssertion();
+        assertion.setLogin("username");
+        assertion.setPassword("password");
+        assertion.setRealm("realm");
+        assertion.setNtlmHost("host");
+
+        ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+
+        final ServerHttpRoutingAssertion serverAssertion = new ServerHttpRoutingAssertion(assertion, appContext);
+
+        Field f = serverAssertion.getClass().getDeclaredField("specifiedCredentialsUseVariables");
+        f.setAccessible(true);
+        Boolean specifiedCredentialsUseVariables = (Boolean) f.get(serverAssertion);
+
+        assertFalse(specifiedCredentialsUseVariables);
+    }
+
+
+    @BugId("DE272361")
+    @Test
+    public void testNoCredentialSet_NoCredentialsContextVarsDetected() throws Exception {
+        HttpRoutingAssertion assertion = new HttpRoutingAssertion();
+        assertion.setLogin("username");
+        assertion.setPassword("password");
+        assertion.setRealm("realm");
+        assertion.setNtlmHost("host");
+
+        ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+
+        final ServerHttpRoutingAssertion serverAssertion = new ServerHttpRoutingAssertion(assertion, appContext);
+
+        Field f = serverAssertion.getClass().getDeclaredField("specifiedCredentialsUseVariables");
+        f.setAccessible(true);
+        Boolean specifiedCredentialsUseVariables = (Boolean) f.get(serverAssertion);
+
+        assertFalse(specifiedCredentialsUseVariables);
     }
 
     @BugId("SSG-13709")

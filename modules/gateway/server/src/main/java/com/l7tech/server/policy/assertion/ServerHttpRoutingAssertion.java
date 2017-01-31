@@ -98,6 +98,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
     private final int maxFailoverAttempts;
     private final SSLSocketFactory socketFactory;
     private final boolean urlUsesVariables;
+    private final boolean specifiedCredentialsUseVariables;
     private final URL protectedServiceUrl;
     private boolean customURLList;
     private SSLContext sslContext = null;
@@ -140,6 +141,13 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             urlUsesVariables = false;
             protectedServiceUrl = null;
         }
+
+        // record if any credential values need to be resolved at runtime - this will preclude use of the statePool
+        specifiedCredentialsUseVariables =
+                (null != assertion.getLogin() && Syntax.isAnyVariableReferenced(assertion.getLogin())) ||
+                (null != assertion.getPassword() && Syntax.isAnyVariableReferenced(assertion.getPassword())) ||
+                (null != assertion.getRealm() && Syntax.isAnyVariableReferenced(assertion.getRealm())) ||
+                (null != assertion.getNtlmHost() && Syntax.isAnyVariableReferenced(assertion.getNtlmHost()));
 
         hostnameVerifier = applicationContext.getBean("hostnameVerifier", HostnameVerifier.class);
         SignerInfo signerInfo;
@@ -686,14 +694,15 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 }
             }
 
-            if (assertion.isPassthroughHttpAuthentication()) {  // Authorization header from Request (e.g. HTTP Basic, Digest, or NTLM)
-                // no use of state pool at all: pre-pool behaviour - this avoids problems with NTLM
+            // bypass use of statePool if using dynamic specified credentials or an Authorization header from the Request (e.g. HTTP Basic, Digest, or NTLM)
+            if (specifiedCredentialsUseVariables || assertion.isPassthroughHttpAuthentication()) {
+                // no use of state pool at all: pre-pool behaviour - this avoids problems with NTLM as a connection-based authentication protocol
                 routedRequest = httpClient.createRequest(method, routedRequestParams);
-            } else {
-                if (ENABLE_STATE_POOL) { // check state pool for existing state (a new one will be created if left unset)
+            } else { // otherwise the state pool may be used
+                if (ENABLE_STATE_POOL) { // check state pool for existing state
                     Object pooledState = statePool.poll();
 
-                    if (pooledState != null) {
+                    if (pooledState != null) { // if the state is found, set it on the routedRequestParams; if left unset, a new state will be created later
                         routedRequestParams.setState(new GenericHttpState(pooledState));
                     }
                 }
