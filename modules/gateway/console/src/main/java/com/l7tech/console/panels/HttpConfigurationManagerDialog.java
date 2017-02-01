@@ -1,9 +1,9 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.util.InetAddressUtil;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.resources.HttpConfiguration;
+import com.l7tech.gateway.common.resources.HttpHeader;
 import com.l7tech.gateway.common.resources.HttpProxyConfiguration;
 import com.l7tech.gateway.common.resources.ResourceAdmin;
 import com.l7tech.gui.SimpleTableModel;
@@ -16,9 +16,11 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
+import com.l7tech.util.InetAddressUtil;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -26,6 +28,7 @@ import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.ResourceBundle;
+import java.util.Set;
 
 /**
  * HTTP configuration manager dialog.
@@ -48,6 +51,7 @@ public class HttpConfigurationManagerDialog extends JDialog {
 
     private final PermissionFlags cpFlags = PermissionFlags.get( EntityType.CLUSTER_PROPERTY );
     private final PermissionFlags flags = PermissionFlags.get( EntityType.HTTP_CONFIGURATION );
+    private DefaultTableModel model;
     private SimpleTableModel<HttpConfiguration> httpConfigurationTableModel;
 
     public HttpConfigurationManagerDialog( final Window parent ) {
@@ -245,6 +249,8 @@ public class HttpConfigurationManagerDialog extends JDialog {
                 if ( dialog.wasOk() ) {
                     final ResourceAdmin admin = Registry.getDefault().getResourceAdmin();
                     try {
+                        Set<HttpHeader> headers = dialog.getHttpHeaderTableHandler().getData();
+                        httpConfiguration.syncHeaders(headers);
                         admin.saveHttpConfiguration( httpConfiguration );
                     } catch ( final DuplicateObjectException e ) {
                         handleDuplicateError(httpConfiguration);

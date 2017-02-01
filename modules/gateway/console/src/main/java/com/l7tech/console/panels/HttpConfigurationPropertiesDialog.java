@@ -1,5 +1,6 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.table.HttpHeaderTableHandler;
 import com.l7tech.console.util.CipherSuiteGuiUtil;
 import com.l7tech.console.util.SecurityZoneWidget;
 import com.l7tech.gateway.common.resources.HttpConfiguration;
@@ -67,11 +68,16 @@ public class HttpConfigurationPropertiesDialog extends JDialog {
     private JLabel tlsKeyLabel;
     private JTabbedPane tabbedPanel;
     private SecurityZoneWidget zoneControl;
+    private JTable headerTable;
+    private JButton headerAddButton;
+    private JButton headerRemoveButton;
+    private JButton headerEditButton;
 
     private boolean readOnly;
     private boolean wasOk;
     private HttpConfiguration httpConfiguration;
     private String tlsCipherSuiteList;
+    private HttpHeaderTableHandler httpHeaderTableHandler;
 
     public HttpConfigurationPropertiesDialog( final Window owner,
                                               final HttpConfiguration httpConfiguration,
@@ -79,6 +85,7 @@ public class HttpConfigurationPropertiesDialog extends JDialog {
         super( owner, JDialog.DEFAULT_MODALITY_TYPE );
         this.httpConfiguration = httpConfiguration;
         this.readOnly = readOnly;
+        this.headerTable = headerTable;
         init();
         modelToView( httpConfiguration );
         enableAndDisableComponents();
@@ -216,6 +223,16 @@ public class HttpConfigurationPropertiesDialog extends JDialog {
         getRootPane().setDefaultButton( cancelButton );
         Utilities.setEscKeyStrokeDisposes( this );
         Utilities.centerOnParentWindow( this );
+
+        initializeHttpHeadersTabs();
+    }
+
+    private void initializeHttpHeadersTabs() {
+
+        // init req rules stuff
+        httpHeaderTableHandler = new HttpHeaderTableHandler(headerTable, headerAddButton, headerRemoveButton, headerEditButton,
+                httpConfiguration);
+        httpHeaderTableHandler.getTable().getTableHeader().setReorderingAllowed( false );
     }
 
     public boolean wasOk() {
@@ -540,6 +557,10 @@ public class HttpConfigurationPropertiesDialog extends JDialog {
 
             return error;
         }
+    }
+
+    public HttpHeaderTableHandler getHttpHeaderTableHandler() {
+        return httpHeaderTableHandler;
     }
 }
 

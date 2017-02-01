@@ -1,6 +1,7 @@
 package com.l7tech.server.globalresources;
 
 import com.l7tech.common.http.GenericHttpRequestParams;
+import com.l7tech.common.http.HttpHeader;
 import com.l7tech.common.http.NtlmAuthentication;
 import com.l7tech.common.io.SSLSocketFactoryWrapper;
 import com.l7tech.common.io.SingleCertX509KeyManager;
@@ -93,6 +94,10 @@ public class HttpConfigurationCache implements PostStartupApplicationListener, I
                             httpConfig.getPassword(httpConfiguration.getPasswordGoid())
                         ) );
                     }
+                }
+
+                if ( httpConfiguration.getHeaders().size() > 0 ) {
+                    httpRequestParameters.setExtraHeaders((HttpHeader[]) httpConfiguration.getHeaders().toArray( new HttpHeader[httpConfiguration.getHeaders().size()] ));
                 }
 
                 try {
