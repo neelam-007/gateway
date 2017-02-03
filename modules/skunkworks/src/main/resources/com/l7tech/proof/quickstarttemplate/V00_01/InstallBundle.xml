@@ -1,0 +1,747 @@
+        <l7:Bundle xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management">
+            <l7:References>
+
+                <!-- FOLDERS -->
+                <l7:Item>
+                    <l7:Name>Quick Start Templates</l7:Name>
+                    <l7:Id>2a97ddf9a6e77162832b9c27bc8f54d5</l7:Id>
+                    <l7:Type>FOLDER</l7:Type>
+                    <l7:TimeStamp>2017-02-01T17:56:18.341-08:00</l7:TimeStamp>
+                    <l7:Resource>
+                        <l7:Folder folderId="0000000000000000ffffffffffffec76" id="2a97ddf9a6e77162832b9c27bc8f54d5" version="3">
+                            <l7:Name>Quick Start Templates</l7:Name>
+                        </l7:Folder>
+                    </l7:Resource>
+                </l7:Item>
+                <l7:Item>
+                    <l7:Name>Encapsulated Assertion Fragments</l7:Name>
+                    <l7:Id>2a97ddf9a6e77162832b9c27bc8f57e0</l7:Id>
+                    <l7:Type>FOLDER</l7:Type>
+                    <l7:TimeStamp>2017-02-01T17:56:18.341-08:00</l7:TimeStamp>
+                    <l7:Resource>
+                        <l7:Folder folderId="2a97ddf9a6e77162832b9c27bc8f54d5" id="2a97ddf9a6e77162832b9c27bc8f57e0" version="1">
+                            <l7:Name>Encapsulated Assertion Fragments</l7:Name>
+                        </l7:Folder>
+                    </l7:Resource>
+                </l7:Item>
+
+                <!-- POLICY FRAGMENTS -->
+                <l7:Item>
+                    <l7:Name>RateLimitFragment</l7:Name>
+                    <l7:Id>0b2f74a4feab91ad67617d8c107a748a</l7:Id>
+                    <l7:Type>POLICY</l7:Type>
+                    <l7:TimeStamp>2017-02-01T17:56:18.348-08:00</l7:TimeStamp>
+                    <l7:Resource>
+                        <l7:Policy guid="4327dd2d-b4f3-46f8-9f79-5bf043914098" id="0b2f74a4feab91ad67617d8c107a748a" version="14">
+                            <l7:PolicyDetail folderId="2a97ddf9a6e77162832b9c27bc8f57e0" guid="4327dd2d-b4f3-46f8-9f79-5bf043914098" id="0b2f74a4feab91ad67617d8c107a748a" version="14">
+                                <l7:Name>RateLimitFragment</l7:Name>
+                                <l7:PolicyType>Include</l7:PolicyType>
+                                <l7:Properties>
+                                    <l7:Property key="revision">
+                                        <l7:LongValue>15</l7:LongValue>
+                                    </l7:Property>
+                                    <l7:Property key="soap">
+                                        <l7:BooleanValue>false</l7:BooleanValue>
+                                    </l7:Property>
+                                </l7:Properties>
+                            </l7:PolicyDetail>
+                            <l7:Resources>
+                                <l7:ResourceSet tag="policy">
+                                    <l7:Resource type="policy">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+                                        &lt;wsp:Policy xmlns:L7p=&quot;http://www.layer7tech.com/ws/policy&quot; xmlns:wsp=&quot;http://schemas.xmlsoap.org/ws/2002/12/policy&quot;&gt;
+                                        &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;
+                                        &lt;L7p:CommentAssertion&gt;
+                                        &lt;L7p:Comment stringValue=&quot;Note workaround to select &amp;quot;Spread limit over&amp;quot; checkbox based on &amp;quot;hardLimit&amp;quot; argument into encapsulated assertion.&quot;/&gt;
+                                        &lt;/L7p:CommentAssertion&gt;
+                                        &lt;wsp:OneOrMore wsp:Usage=&quot;Required&quot;&gt;
+                                        &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;
+                                        &lt;L7p:ComparisonAssertion&gt;
+                                        &lt;L7p:CaseSensitive booleanValue=&quot;false&quot;/&gt;
+                                        &lt;L7p:Expression1 stringValue=&quot;${hardLimit}&quot;/&gt;
+                                        &lt;L7p:Operator operatorNull=&quot;null&quot;/&gt;
+                                        &lt;L7p:Predicates predicates=&quot;included&quot;&gt;
+                                        &lt;L7p:item dataType=&quot;included&quot;&gt;
+                                        &lt;L7p:Type variableDataType=&quot;boolean&quot;/&gt;
+                                        &lt;/L7p:item&gt;
+                                        &lt;L7p:item binary=&quot;included&quot;&gt;
+                                        &lt;L7p:CaseSensitive booleanValue=&quot;false&quot;/&gt;
+                                        &lt;L7p:RightValue stringValue=&quot;true&quot;/&gt;
+                                        &lt;/L7p:item&gt;
+                                        &lt;/L7p:Predicates&gt;
+                                        &lt;/L7p:ComparisonAssertion&gt;
+                                        &lt;L7p:RateLimit&gt;
+                                        &lt;L7p:CounterName stringValue=&quot;${counterName}&quot;/&gt;
+                                        &lt;L7p:HardLimit booleanValue=&quot;true&quot;/&gt;
+                                        &lt;L7p:MaxRequestsPerSecond stringValue=&quot;${maxRequestsPerSecond}&quot;/&gt;
+                                        &lt;/L7p:RateLimit&gt;
+                                        &lt;L7p:AuditDetailAssertion&gt;
+                                        &lt;L7p:Detail stringValue=&quot;HardLimit=true&quot;/&gt;
+                                        &lt;L7p:LoggingOnly booleanValue=&quot;true&quot;/&gt;
+                                        &lt;/L7p:AuditDetailAssertion&gt;
+                                        &lt;/wsp:All&gt;
+                                        &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;
+                                        &lt;L7p:RateLimit&gt;
+                                        &lt;L7p:CounterName stringValue=&quot;${counterName}&quot;/&gt;
+                                        &lt;L7p:MaxRequestsPerSecond stringValue=&quot;${maxRequestsPerSecond}&quot;/&gt;
+                                        &lt;/L7p:RateLimit&gt;
+                                        &lt;L7p:AuditDetailAssertion&gt;
+                                        &lt;L7p:Detail stringValue=&quot;HardLimit=false&quot;/&gt;
+                                        &lt;L7p:LoggingOnly booleanValue=&quot;true&quot;/&gt;
+                                        &lt;/L7p:AuditDetailAssertion&gt;
+                                        &lt;/wsp:All&gt;
+                                        &lt;/wsp:OneOrMore&gt;
+                                        &lt;/wsp:All&gt;
+                                        &lt;/wsp:Policy&gt;
+                                    </l7:Resource>
+                                </l7:ResourceSet>
+                            </l7:Resources>
+                        </l7:Policy>
+                    </l7:Resource>
+                </l7:Item>
+                <l7:Item>
+                    <l7:Name>RequireSslFragment</l7:Name>
+                    <l7:Id>1a5e3c7335bee88b2fe0e5b717f98082</l7:Id>
+                    <l7:Type>POLICY</l7:Type>
+                    <l7:TimeStamp>2017-02-01T17:56:18.349-08:00</l7:TimeStamp>
+                    <l7:Resource>
+                        <l7:Policy guid="b547d82a-d8b8-4aca-b926-dcac7faf7a70" id="1a5e3c7335bee88b2fe0e5b717f98082" version="2">
+                            <l7:PolicyDetail folderId="2a97ddf9a6e77162832b9c27bc8f57e0" guid="b547d82a-d8b8-4aca-b926-dcac7faf7a70" id="1a5e3c7335bee88b2fe0e5b717f98082" version="2">
+                                <l7:Name>RequireSslFragment</l7:Name>
+                                <l7:PolicyType>Include</l7:PolicyType>
+                                <l7:Properties>
+                                    <l7:Property key="revision">
+                                        <l7:LongValue>3</l7:LongValue>
+                                    </l7:Property>
+                                    <l7:Property key="soap">
+                                        <l7:BooleanValue>false</l7:BooleanValue>
+                                    </l7:Property>
+                                </l7:Properties>
+                            </l7:PolicyDetail>
+                            <l7:Resources>
+                                <l7:ResourceSet tag="policy">
+                                    <l7:Resource type="policy">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+                                        &lt;wsp:Policy xmlns:L7p=&quot;http://www.layer7tech.com/ws/policy&quot; xmlns:wsp=&quot;http://schemas.xmlsoap.org/ws/2002/12/policy&quot;&gt;
+                                        &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;
+                                        &lt;L7p:SslAssertion/&gt;
+                                        &lt;/wsp:All&gt;
+                                        &lt;/wsp:Policy&gt;
+                                    </l7:Resource>
+                                </l7:ResourceSet>
+                            </l7:Resources>
+                        </l7:Policy>
+                    </l7:Resource>
+                </l7:Item>
+                <l7:Item>
+                    <l7:Name>RequireBasicCredentialsFragment</l7:Name>
+                    <l7:Id>1a5e3c7335bee88b2fe0e5b717f980b4</l7:Id>
+                    <l7:Type>POLICY</l7:Type>
+                    <l7:TimeStamp>2017-02-01T17:56:18.350-08:00</l7:TimeStamp>
+                    <l7:Resource>
+                        <l7:Policy guid="7d080d3a-ee22-460d-858a-72947e08bb65" id="1a5e3c7335bee88b2fe0e5b717f980b4" version="2">
+                            <l7:PolicyDetail folderId="2a97ddf9a6e77162832b9c27bc8f57e0" guid="7d080d3a-ee22-460d-858a-72947e08bb65" id="1a5e3c7335bee88b2fe0e5b717f980b4" version="2">
+                                <l7:Name>RequireBasicCredentialsFragment</l7:Name>
+                                <l7:PolicyType>Include</l7:PolicyType>
+                                <l7:Properties>
+                                    <l7:Property key="revision">
+                                        <l7:LongValue>3</l7:LongValue>
+                                    </l7:Property>
+                                    <l7:Property key="soap">
+                                        <l7:BooleanValue>false</l7:BooleanValue>
+                                    </l7:Property>
+                                </l7:Properties>
+                            </l7:PolicyDetail>
+                            <l7:Resources>
+                                <l7:ResourceSet tag="policy">
+                                    <l7:Resource type="policy">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+                                        &lt;wsp:Policy xmlns:L7p=&quot;http://www.layer7tech.com/ws/policy&quot; xmlns:wsp=&quot;http://schemas.xmlsoap.org/ws/2002/12/policy&quot;&gt;
+                                        &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;
+                                        &lt;L7p:HttpBasic/&gt;
+                                        &lt;/wsp:All&gt;
+                                        &lt;/wsp:Policy&gt;
+                                    </l7:Resource>
+                                </l7:ResourceSet>
+                            </l7:Resources>
+                        </l7:Policy>
+                    </l7:Resource>
+                </l7:Item>
+                <l7:Item>
+                    <l7:Name>CodeInjectionProtectionFragment</l7:Name>
+                    <l7:Id>acac82df78079fc9b90ecda997d1eb3c</l7:Id>
+                    <l7:Type>POLICY</l7:Type>
+                    <l7:TimeStamp>2017-02-01T17:56:18.350-08:00</l7:TimeStamp>
+                    <l7:Resource>
+                        <l7:Policy guid="d5b0581a-8209-4756-bfc5-8e85b7ceb82f" id="acac82df78079fc9b90ecda997d1eb3c" version="2">
+                            <l7:PolicyDetail folderId="2a97ddf9a6e77162832b9c27bc8f57e0" guid="d5b0581a-8209-4756-bfc5-8e85b7ceb82f" id="acac82df78079fc9b90ecda997d1eb3c" version="2">
+                                <l7:Name>CodeInjectionProtectionFragment</l7:Name>
+                                <l7:PolicyType>Include</l7:PolicyType>
+                                <l7:Properties>
+                                    <l7:Property key="revision">
+                                        <l7:LongValue>2</l7:LongValue>
+                                    </l7:Property>
+                                    <l7:Property key="soap">
+                                        <l7:BooleanValue>false</l7:BooleanValue>
+                                    </l7:Property>
+                                </l7:Properties>
+                            </l7:PolicyDetail>
+                            <l7:Resources>
+                                <l7:ResourceSet tag="policy">
+                                    <l7:Resource type="policy">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+                                        &lt;wsp:Policy xmlns:L7p=&quot;http://www.layer7tech.com/ws/policy&quot; xmlns:wsp=&quot;http://schemas.xmlsoap.org/ws/2002/12/policy&quot;&gt;
+                                        &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;
+                                        &lt;L7p:CodeInjectionProtectionAssertion&gt;
+                                        &lt;L7p:IncludeBody booleanValue=&quot;true&quot;/&gt;
+                                        &lt;L7p:IncludeUrlPath booleanValue=&quot;true&quot;/&gt;
+                                        &lt;L7p:IncludeUrlQueryString booleanValue=&quot;true&quot;/&gt;
+                                        &lt;L7p:Protections codeInjectionProtectionTypeArray=&quot;included&quot;&gt;
+                                        &lt;L7p:item protectionType=&quot;htmlJavaScriptInjection&quot;/&gt;
+                                        &lt;L7p:item protectionType=&quot;phpEvalInjection&quot;/&gt;
+                                        &lt;L7p:item protectionType=&quot;shellInjection&quot;/&gt;
+                                        &lt;L7p:item protectionType=&quot;ldapDnInjection&quot;/&gt;
+                                        &lt;L7p:item protectionType=&quot;ldapSearchInjection&quot;/&gt;
+                                        &lt;L7p:item protectionType=&quot;xpathInjection&quot;/&gt;
+                                        &lt;/L7p:Protections&gt;
+                                        &lt;L7p:Target target=&quot;REQUEST&quot;/&gt;
+                                        &lt;/L7p:CodeInjectionProtectionAssertion&gt;
+                                        &lt;/wsp:All&gt;
+                                        &lt;/wsp:Policy&gt;
+                                    </l7:Resource>
+                                </l7:ResourceSet>
+                            </l7:Resources>
+                        </l7:Policy>
+                    </l7:Resource>
+                </l7:Item>
+                <l7:Item>
+                    <l7:Name>EnableCorsFragment</l7:Name>
+                    <l7:Id>acac82df78079fc9b90ecda997d1eb74</l7:Id>
+                    <l7:Type>POLICY</l7:Type>
+                    <l7:TimeStamp>2017-02-01T17:56:18.353-08:00</l7:TimeStamp>
+                    <l7:Resource>
+                        <l7:Policy guid="4b48b06c-5d63-44ec-9d4f-262eb6b96b03" id="acac82df78079fc9b90ecda997d1eb74" version="1">
+                            <l7:PolicyDetail folderId="2a97ddf9a6e77162832b9c27bc8f57e0" guid="4b48b06c-5d63-44ec-9d4f-262eb6b96b03" id="acac82df78079fc9b90ecda997d1eb74" version="1">
+                                <l7:Name>EnableCorsFragment</l7:Name>
+                                <l7:PolicyType>Include</l7:PolicyType>
+                                <l7:Properties>
+                                    <l7:Property key="revision">
+                                        <l7:LongValue>2</l7:LongValue>
+                                    </l7:Property>
+                                    <l7:Property key="soap">
+                                        <l7:BooleanValue>false</l7:BooleanValue>
+                                    </l7:Property>
+                                </l7:Properties>
+                            </l7:PolicyDetail>
+                            <l7:Resources>
+                                <l7:ResourceSet tag="policy">
+                                    <l7:Resource type="policy">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+                                        &lt;wsp:Policy xmlns:L7p=&quot;http://www.layer7tech.com/ws/policy&quot; xmlns:wsp=&quot;http://schemas.xmlsoap.org/ws/2002/12/policy&quot;&gt;
+                                        &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;
+                                        &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;
+                                        &lt;L7p:CORS&gt;
+                                        &lt;L7p:AcceptedMethods stringListValue=&quot;included&quot;&gt;
+                                        &lt;L7p:item stringValue=&quot;GET&quot;/&gt;
+                                        &lt;L7p:item stringValue=&quot;PUT&quot;/&gt;
+                                        &lt;L7p:item stringValue=&quot;POST&quot;/&gt;
+                                        &lt;L7p:item stringValue=&quot;HEAD&quot;/&gt;
+                                        &lt;L7p:item stringValue=&quot;DELETE&quot;/&gt;
+                                        &lt;L7p:item stringValue=&quot;PATCH&quot;/&gt;
+                                        &lt;L7p:item stringValue=&quot;OPTIONS&quot;/&gt;
+                                        &lt;/L7p:AcceptedMethods&gt;
+                                        &lt;L7p:RequireCors booleanValue=&quot;false&quot;/&gt;
+                                        &lt;/L7p:CORS&gt;
+                                        &lt;wsp:OneOrMore wsp:Usage=&quot;Required&quot;&gt;
+                                        &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;
+                                        &lt;L7p:ComparisonAssertion&gt;
+                                        &lt;L7p:CaseSensitive booleanValue=&quot;false&quot;/&gt;
+                                        &lt;L7p:Expression1 stringValue=&quot;${cors.isPreflight}&quot;/&gt;
+                                        &lt;L7p:Operator operatorNull=&quot;null&quot;/&gt;
+                                        &lt;L7p:Predicates predicates=&quot;included&quot;&gt;
+                                        &lt;L7p:item dataType=&quot;included&quot;&gt;
+                                        &lt;L7p:Type variableDataType=&quot;boolean&quot;/&gt;
+                                        &lt;/L7p:item&gt;
+                                        &lt;L7p:item binary=&quot;included&quot;&gt;
+                                        &lt;L7p:CaseSensitive booleanValue=&quot;false&quot;/&gt;
+                                        &lt;L7p:RightValue stringValue=&quot;false&quot;/&gt;
+                                        &lt;/L7p:item&gt;
+                                        &lt;/L7p:Predicates&gt;
+                                        &lt;/L7p:ComparisonAssertion&gt;
+                                        &lt;L7p:TrueAssertion/&gt;
+                                        &lt;L7p:assertionComment&gt;
+                                        &lt;L7p:Properties mapValue=&quot;included&quot;&gt;
+                                        &lt;L7p:entry&gt;
+                                        &lt;L7p:key stringValue=&quot;RIGHT.COMMENT&quot;/&gt;
+                                        &lt;L7p:value stringValue=&quot;// Non pre-flight&quot;/&gt;
+                                        &lt;/L7p:entry&gt;
+                                        &lt;/L7p:Properties&gt;
+                                        &lt;/L7p:assertionComment&gt;
+                                        &lt;/wsp:All&gt;
+                                        &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;
+                                        &lt;L7p:CustomizeErrorResponse&gt;
+                                        &lt;L7p:Content stringValue=&quot;{&amp;quot;msg&amp;quot;:&amp;quot;preflight&amp;quot;}&quot;/&gt;
+                                        &lt;L7p:ContentType stringValue=&quot;application/json&quot;/&gt;
+                                        &lt;L7p:ExtraHeaders nameValuePairArray=&quot;included&quot;/&gt;
+                                        &lt;L7p:HttpStatus stringValue=&quot;200&quot;/&gt;
+                                        &lt;/L7p:CustomizeErrorResponse&gt;
+                                        &lt;L7p:FalseAssertion/&gt;
+                                        &lt;L7p:assertionComment&gt;
+                                        &lt;L7p:Properties mapValue=&quot;included&quot;&gt;
+                                        &lt;L7p:entry&gt;
+                                        &lt;L7p:key stringValue=&quot;RIGHT.COMMENT&quot;/&gt;
+                                        &lt;L7p:value stringValue=&quot;// Return 200 if its a pre-flight&quot;/&gt;
+                                        &lt;/L7p:entry&gt;
+                                        &lt;/L7p:Properties&gt;
+                                        &lt;/L7p:assertionComment&gt;
+                                        &lt;/wsp:All&gt;
+                                        &lt;/wsp:OneOrMore&gt;
+                                        &lt;L7p:assertionComment&gt;
+                                        &lt;L7p:Properties mapValue=&quot;included&quot;&gt;
+                                        &lt;L7p:entry&gt;
+                                        &lt;L7p:key stringValue=&quot;RIGHT.COMMENT&quot;/&gt;
+                                        &lt;L7p:value stringValue=&quot;// CORS&quot;/&gt;
+                                        &lt;/L7p:entry&gt;
+                                        &lt;/L7p:Properties&gt;
+                                        &lt;/L7p:assertionComment&gt;
+                                        &lt;/wsp:All&gt;
+                                        &lt;/wsp:All&gt;
+                                        &lt;/wsp:Policy&gt;
+                                    </l7:Resource>
+                                </l7:ResourceSet>
+                            </l7:Resources>
+                        </l7:Policy>
+                    </l7:Resource>
+                </l7:Item>
+                <l7:Item>
+                    <l7:Name>RouteHttpFragment</l7:Name>
+                    <l7:Id>acac82df78079fc9b90ecda997d1ebd1</l7:Id>
+                    <l7:Type>POLICY</l7:Type>
+                    <l7:TimeStamp>2017-02-01T17:56:18.355-08:00</l7:TimeStamp>
+                    <l7:Resource>
+                        <l7:Policy guid="912af9a7-6d36-42d4-937c-369320448dd9" id="acac82df78079fc9b90ecda997d1ebd1" version="2">
+                            <l7:PolicyDetail folderId="2a97ddf9a6e77162832b9c27bc8f57e0" guid="912af9a7-6d36-42d4-937c-369320448dd9" id="acac82df78079fc9b90ecda997d1ebd1" version="2">
+                                <l7:Name>RouteHttpFragment</l7:Name>
+                                <l7:PolicyType>Include</l7:PolicyType>
+                                <l7:Properties>
+                                    <l7:Property key="revision">
+                                        <l7:LongValue>3</l7:LongValue>
+                                    </l7:Property>
+                                    <l7:Property key="soap">
+                                        <l7:BooleanValue>false</l7:BooleanValue>
+                                    </l7:Property>
+                                </l7:Properties>
+                            </l7:PolicyDetail>
+                            <l7:Resources>
+                                <l7:ResourceSet tag="policy">
+                                    <l7:Resource type="policy">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+                                        &lt;wsp:Policy xmlns:L7p=&quot;http://www.layer7tech.com/ws/policy&quot; xmlns:wsp=&quot;http://schemas.xmlsoap.org/ws/2002/12/policy&quot;&gt;
+                                        &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;
+                                        &lt;L7p:HttpRoutingAssertion&gt;
+                                        &lt;L7p:ProtectedServiceUrl stringValue=&quot;${targetUrl}&quot;/&gt;
+                                        &lt;L7p:ProxyPassword stringValueNull=&quot;null&quot;/&gt;
+                                        &lt;L7p:ProxyUsername stringValueNull=&quot;null&quot;/&gt;
+                                        &lt;L7p:RequestHeaderRules httpPassthroughRuleSet=&quot;included&quot;&gt;
+                                        &lt;L7p:ForwardAll booleanValue=&quot;true&quot;/&gt;
+                                        &lt;L7p:Rules httpPassthroughRules=&quot;included&quot;&gt;
+                                        &lt;L7p:item httpPassthroughRule=&quot;included&quot;&gt;
+                                        &lt;L7p:Name stringValue=&quot;Cookie&quot;/&gt;
+                                        &lt;/L7p:item&gt;
+                                        &lt;L7p:item httpPassthroughRule=&quot;included&quot;&gt;
+                                        &lt;L7p:Name stringValue=&quot;SOAPAction&quot;/&gt;
+                                        &lt;/L7p:item&gt;
+                                        &lt;/L7p:Rules&gt;
+                                        &lt;/L7p:RequestHeaderRules&gt;
+                                        &lt;L7p:RequestParamRules httpPassthroughRuleSet=&quot;included&quot;&gt;
+                                        &lt;L7p:ForwardAll booleanValue=&quot;true&quot;/&gt;
+                                        &lt;L7p:Rules httpPassthroughRules=&quot;included&quot;/&gt;
+                                        &lt;/L7p:RequestParamRules&gt;
+                                        &lt;L7p:ResponseHeaderRules httpPassthroughRuleSet=&quot;included&quot;&gt;
+                                        &lt;L7p:ForwardAll booleanValue=&quot;true&quot;/&gt;
+                                        &lt;L7p:Rules httpPassthroughRules=&quot;included&quot;&gt;
+                                        &lt;L7p:item httpPassthroughRule=&quot;included&quot;&gt;
+                                        &lt;L7p:Name stringValue=&quot;Set-Cookie&quot;/&gt;
+                                        &lt;/L7p:item&gt;
+                                        &lt;/L7p:Rules&gt;
+                                        &lt;/L7p:ResponseHeaderRules&gt;
+                                        &lt;L7p:SamlAssertionVersion intValue=&quot;2&quot;/&gt;
+                                        &lt;L7p:UsesNoKey booleanValue=&quot;true&quot;/&gt;
+                                        &lt;/L7p:HttpRoutingAssertion&gt;
+                                        &lt;/wsp:All&gt;
+                                        &lt;/wsp:Policy&gt;
+                                    </l7:Resource>
+                                </l7:ResourceSet>
+                            </l7:Resources>
+                        </l7:Policy>
+                    </l7:Resource>
+                </l7:Item>
+
+                <!-- ENCAPSULATED ASSERTIONS -->
+                <l7:Item>
+                    <l7:Name>RequireBasicCredentials</l7:Name>
+                    <l7:Id>1a5e3c7335bee88b2fe0e5b717f98100</l7:Id>
+                    <l7:Type>ENCAPSULATED_ASSERTION</l7:Type>
+                    <l7:TimeStamp>2017-02-01T22:32:54.947-08:00</l7:TimeStamp>
+                    <l7:Resource>
+                        <l7:EncapsulatedAssertion id="1a5e3c7335bee88b2fe0e5b717f98100" version="0">
+                            <l7:Name>RequireBasicCredentials</l7:Name>
+                            <l7:Guid>42a8515d-dea8-49e1-a59d-c8de575a2672</l7:Guid>
+                            <l7:PolicyReference id="1a5e3c7335bee88b2fe0e5b717f980b4" resourceUri="http://ns.l7tech.com/2010/04/gateway-management/policies"/>
+                            <l7:EncapsulatedArguments/>
+                            <l7:EncapsulatedResults/>
+                            <l7:Properties>
+                                <l7:Property key="allowTracing">
+                                    <l7:StringValue>false</l7:StringValue>
+                                </l7:Property>
+                                <l7:Property key="paletteFolder">
+                                    <l7:StringValue>accessControl</l7:StringValue>
+                                </l7:Property>
+                                <l7:Property key="passMetricsToParent">
+                                    <l7:StringValue>false</l7:StringValue>
+                                </l7:Property>
+                                <l7:Property key="policyGuid">
+                                    <l7:StringValue>7d080d3a-ee22-460d-858a-72947e08bb65</l7:StringValue>
+                                </l7:Property>
+                            </l7:Properties>
+                        </l7:EncapsulatedAssertion>
+                    </l7:Resource>
+                </l7:Item>
+                <l7:Item>
+                    <l7:Name>RequireSSL</l7:Name>
+                    <l7:Id>1a5e3c7335bee88b2fe0e5b717f9810c</l7:Id>
+                    <l7:Type>ENCAPSULATED_ASSERTION</l7:Type>
+                    <l7:TimeStamp>2017-02-01T22:32:54.949-08:00</l7:TimeStamp>
+                    <l7:Resource>
+                        <l7:EncapsulatedAssertion id="1a5e3c7335bee88b2fe0e5b717f9810c" version="1">
+                            <l7:Name>RequireSSL</l7:Name>
+                            <l7:Guid>27aae332-5e87-4af8-8113-f58bf311606d</l7:Guid>
+                            <l7:PolicyReference id="1a5e3c7335bee88b2fe0e5b717f98082" resourceUri="http://ns.l7tech.com/2010/04/gateway-management/policies"/>
+                            <l7:EncapsulatedArguments/>
+                            <l7:EncapsulatedResults/>
+                            <l7:Properties>
+                                <l7:Property key="allowTracing">
+                                    <l7:StringValue>false</l7:StringValue>
+                                </l7:Property>
+                                <l7:Property key="paletteFolder">
+                                    <l7:StringValue>transportLayerSecurity</l7:StringValue>
+                                </l7:Property>
+                                <l7:Property key="passMetricsToParent">
+                                    <l7:StringValue>false</l7:StringValue>
+                                </l7:Property>
+                                <l7:Property key="policyGuid">
+                                    <l7:StringValue>b547d82a-d8b8-4aca-b926-dcac7faf7a70</l7:StringValue>
+                                </l7:Property>
+                            </l7:Properties>
+                        </l7:EncapsulatedAssertion>
+                    </l7:Resource>
+                </l7:Item>
+                <l7:Item>
+                    <l7:Name>RateLimit</l7:Name>
+                    <l7:Id>0b2f74a4feab91ad67617d8c107a747b</l7:Id>
+                    <l7:Type>ENCAPSULATED_ASSERTION</l7:Type>
+                    <l7:TimeStamp>2017-02-01T22:32:54.951-08:00</l7:TimeStamp>
+                    <l7:Resource>
+                        <l7:EncapsulatedAssertion id="0b2f74a4feab91ad67617d8c107a747b" version="14">
+                            <l7:Name>RateLimit</l7:Name>
+                            <l7:Guid>dfeed551-fc25-4ab5-afc9-42db734407eb</l7:Guid>
+                            <l7:PolicyReference id="0b2f74a4feab91ad67617d8c107a748a" resourceUri="http://ns.l7tech.com/2010/04/gateway-management/policies"/>
+                            <l7:EncapsulatedArguments>
+                                <l7:EncapsulatedAssertionArgument>
+                                    <l7:Ordinal>1</l7:Ordinal>
+                                    <l7:ArgumentName>maxRequestsPerSecond</l7:ArgumentName>
+                                    <l7:ArgumentType>int</l7:ArgumentType>
+                                    <l7:GuiLabel></l7:GuiLabel>
+                                    <l7:GuiPrompt>true</l7:GuiPrompt>
+                                </l7:EncapsulatedAssertionArgument>
+                                <l7:EncapsulatedAssertionArgument>
+                                    <l7:Ordinal>2</l7:Ordinal>
+                                    <l7:ArgumentName>counterName</l7:ArgumentName>
+                                    <l7:ArgumentType>string</l7:ArgumentType>
+                                    <l7:GuiLabel></l7:GuiLabel>
+                                    <l7:GuiPrompt>true</l7:GuiPrompt>
+                                </l7:EncapsulatedAssertionArgument>
+                                <l7:EncapsulatedAssertionArgument>
+                                    <l7:Ordinal>3</l7:Ordinal>
+                                    <l7:ArgumentName>hardLimit</l7:ArgumentName>
+                                    <l7:ArgumentType>boolean</l7:ArgumentType>
+                                    <l7:GuiLabel></l7:GuiLabel>
+                                    <l7:GuiPrompt>true</l7:GuiPrompt>
+                                </l7:EncapsulatedAssertionArgument>
+                            </l7:EncapsulatedArguments>
+                            <l7:EncapsulatedResults/>
+                            <l7:Properties>
+                                <l7:Property key="allowTracing">
+                                    <l7:StringValue>false</l7:StringValue>
+                                </l7:Property>
+                                <l7:Property key="paletteFolder">
+                                    <l7:StringValue>misc</l7:StringValue>
+                                </l7:Property>
+                                <l7:Property key="passMetricsToParent">
+                                    <l7:StringValue>false</l7:StringValue>
+                                </l7:Property>
+                                <l7:Property key="policyGuid">
+                                    <l7:StringValue>4327dd2d-b4f3-46f8-9f79-5bf043914098</l7:StringValue>
+                                </l7:Property>
+                            </l7:Properties>
+                        </l7:EncapsulatedAssertion>
+                    </l7:Resource>
+                </l7:Item>
+                <l7:Item>
+                    <l7:Name>CodeInjectionProtection</l7:Name>
+                    <l7:Id>acac82df78079fc9b90ecda997d1eb56</l7:Id>
+                    <l7:Type>ENCAPSULATED_ASSERTION</l7:Type>
+                    <l7:TimeStamp>2017-02-01T22:41:43.639-08:00</l7:TimeStamp>
+                    <l7:Link rel="self" uri="https://localhost:8443/restman/1.0/encapsulatedAssertions/acac82df78079fc9b90ecda997d1eb56"/>
+                    <l7:Resource>
+                        <l7:EncapsulatedAssertion id="acac82df78079fc9b90ecda997d1eb56" version="0">
+                            <l7:Name>CodeInjectionProtection</l7:Name>
+                            <l7:Guid>badc8463-5532-4003-abdc-61d46ac4c097</l7:Guid>
+                            <l7:PolicyReference id="acac82df78079fc9b90ecda997d1eb3c" resourceUri="http://ns.l7tech.com/2010/04/gateway-management/policies"/>
+                            <l7:EncapsulatedArguments/>
+                            <l7:EncapsulatedResults/>
+                            <l7:Properties>
+                                <l7:Property key="allowTracing">
+                                    <l7:StringValue>false</l7:StringValue>
+                                </l7:Property>
+                                <l7:Property key="paletteFolder">
+                                    <l7:StringValue>threatProtection</l7:StringValue>
+                                </l7:Property>
+                                <l7:Property key="passMetricsToParent">
+                                    <l7:StringValue>false</l7:StringValue>
+                                </l7:Property>
+                                <l7:Property key="policyGuid">
+                                    <l7:StringValue>d5b0581a-8209-4756-bfc5-8e85b7ceb82f</l7:StringValue>
+                                </l7:Property>
+                            </l7:Properties>
+                        </l7:EncapsulatedAssertion>
+                    </l7:Resource>
+                </l7:Item>
+                <l7:Item>
+                    <l7:Name>EnableCors</l7:Name>
+                    <l7:Id>acac82df78079fc9b90ecda997d1eb8d</l7:Id>
+                    <l7:Type>ENCAPSULATED_ASSERTION</l7:Type>
+                    <l7:TimeStamp>2017-02-01T22:41:43.639-08:00</l7:TimeStamp>
+                    <l7:Link rel="self" uri="https://localhost:8443/restman/1.0/encapsulatedAssertions/acac82df78079fc9b90ecda997d1eb8d"/>
+                    <l7:Resource>
+                        <l7:EncapsulatedAssertion id="acac82df78079fc9b90ecda997d1eb8d" version="0">
+                            <l7:Name>EnableCors</l7:Name>
+                            <l7:Guid>59373e39-d693-4767-98f7-c21daef092dc</l7:Guid>
+                            <l7:PolicyReference id="acac82df78079fc9b90ecda997d1eb74" resourceUri="http://ns.l7tech.com/2010/04/gateway-management/policies"/>
+                            <l7:EncapsulatedArguments/>
+                            <l7:EncapsulatedResults/>
+                            <l7:Properties>
+                                <l7:Property key="allowTracing">
+                                    <l7:StringValue>false</l7:StringValue>
+                                </l7:Property>
+                                <l7:Property key="paletteFolder">
+                                    <l7:StringValue>threatProtection</l7:StringValue>
+                                </l7:Property>
+                                <l7:Property key="passMetricsToParent">
+                                    <l7:StringValue>false</l7:StringValue>
+                                </l7:Property>
+                                <l7:Property key="policyGuid">
+                                    <l7:StringValue>4b48b06c-5d63-44ec-9d4f-262eb6b96b03</l7:StringValue>
+                                </l7:Property>
+                            </l7:Properties>
+                        </l7:EncapsulatedAssertion>
+                    </l7:Resource>
+                </l7:Item>
+                <l7:Item>
+                    <l7:Name>RouteHttp</l7:Name>
+                    <l7:Id>acac82df78079fc9b90ecda997d1ebf9</l7:Id>
+                    <l7:Type>ENCAPSULATED_ASSERTION</l7:Type>
+                    <l7:TimeStamp>2017-02-01T22:41:43.639-08:00</l7:TimeStamp>
+                    <l7:Link rel="self" uri="https://localhost:8443/restman/1.0/encapsulatedAssertions/acac82df78079fc9b90ecda997d1ebf9"/>
+                    <l7:Resource>
+                        <l7:EncapsulatedAssertion id="acac82df78079fc9b90ecda997d1ebf9" version="1">
+                            <l7:Name>RouteHttp</l7:Name>
+                            <l7:Guid>938c33af-dcb0-4189-aba2-28822783f133</l7:Guid>
+                            <l7:PolicyReference id="acac82df78079fc9b90ecda997d1ebd1" resourceUri="http://ns.l7tech.com/2010/04/gateway-management/policies"/>
+                            <l7:EncapsulatedArguments>
+                                <l7:EncapsulatedAssertionArgument>
+                                    <l7:Ordinal>1</l7:Ordinal>
+                                    <l7:ArgumentName>targetUrl</l7:ArgumentName>
+                                    <l7:ArgumentType>string</l7:ArgumentType>
+                                    <l7:GuiLabel></l7:GuiLabel>
+                                    <l7:GuiPrompt>true</l7:GuiPrompt>
+                                </l7:EncapsulatedAssertionArgument>
+                            </l7:EncapsulatedArguments>
+                            <l7:EncapsulatedResults>
+                                <l7:EncapsulatedAssertionResult>
+                                    <l7:ResultName>httpRouting.latency</l7:ResultName>
+                                    <l7:ResultType>string</l7:ResultType>
+                                </l7:EncapsulatedAssertionResult>
+                                <l7:EncapsulatedAssertionResult>
+                                    <l7:ResultName>httpRouting.reasonCode</l7:ResultName>
+                                    <l7:ResultType>int</l7:ResultType>
+                                </l7:EncapsulatedAssertionResult>
+                                <l7:EncapsulatedAssertionResult>
+                                    <l7:ResultName>httpRouting.url</l7:ResultName>
+                                    <l7:ResultType>string</l7:ResultType>
+                                </l7:EncapsulatedAssertionResult>
+                            </l7:EncapsulatedResults>
+                            <l7:Properties>
+                                <l7:Property key="allowTracing">
+                                    <l7:StringValue>false</l7:StringValue>
+                                </l7:Property>
+                                <l7:Property key="paletteFolder">
+                                    <l7:StringValue>routing</l7:StringValue>
+                                </l7:Property>
+                                <l7:Property key="passMetricsToParent">
+                                    <l7:StringValue>false</l7:StringValue>
+                                </l7:Property>
+                                <l7:Property key="policyGuid">
+                                    <l7:StringValue>912af9a7-6d36-42d4-937c-369320448dd9</l7:StringValue>
+                                </l7:Property>
+                            </l7:Properties>
+                        </l7:EncapsulatedAssertion>
+                    </l7:Resource>
+                </l7:Item>
+
+                <l7:Item>
+                    <l7:Name>Internal Identity Provider</l7:Name>
+                    <l7:Id>0000000000000000fffffffffffffffe</l7:Id>
+                    <l7:Type>ID_PROVIDER_CONFIG</l7:Type>
+                    <l7:TimeStamp>2017-02-01T17:56:18.355-08:00</l7:TimeStamp>
+                    <l7:Resource>
+                        <l7:IdentityProvider id="0000000000000000fffffffffffffffe" version="0">
+                            <l7:Name>Internal Identity Provider</l7:Name>
+                            <l7:IdentityProviderType>Internal</l7:IdentityProviderType>
+                        </l7:IdentityProvider>
+                    </l7:Resource>
+                </l7:Item>
+
+                <l7:Item>
+                    <l7:Name>QuickStartTemplateAssertion</l7:Name>
+                    <l7:Id>0e49400b6596090c78c46c77c07bfe24</l7:Id>
+                    <l7:Type>SERVER_MODULE_FILE</l7:Type>
+                    <l7:TimeStamp>2017-02-01T17:56:18.356-08:00</l7:TimeStamp>
+                    <l7:Resource>
+                        <l7:ServerModuleFile id="0e49400b6596090c78c46c77c07bfe24" version="0">
+                            <l7:Name>QuickStartTemplateAssertion</l7:Name>
+                            <l7:ModuleType>Modular Assertion</l7:ModuleType>
+                            <l7:ModuleSha256>570c68a40cd4154703528d5b89dae26aa234aee23cb20a7886320326d95ba884</l7:ModuleSha256>
+                            <l7:ModuleData>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5rg/SgAAAAAAAAAAAAAAADoAAAAAAAAAAAAQAO1BuwIAAGNvbS9sN3RlY2gvZXh0ZXJuYWwvYXNzZXJ0aW9ucy9xdWlja3N0YXJ0dGVtcGxhdGUvY29uc29sZS9QSwECFAMKAAAIAADmuD9KAAAAAAAAAAAAAAAARAAAAAAAAAAAABAA7UETAwAAY29tL2w3dGVjaC9leHRlcm5hbC9hc3NlcnRpb25zL3F1aWNrc3RhcnR0ZW1wbGF0ZS9jb25zb2xlL3Jlc291cmNlcy9QSwECFAMKAAAIAADmuD9KAAAAAAAAAAAAAAAAOQAAAAAAAAAAABAA7UF1AwAAY29tL2w3dGVjaC9leHRlcm5hbC9hc3NlcnRpb25zL3F1aWNrc3RhcnR0ZW1wbGF0ZS9zZXJ2ZXIvUEsBAhQDCgAACAAA5rg/SgAAAAAAAAAAAAAAAEAAAAAAAAAAAAAQAO1BzAMAAGNvbS9sN3RlY2gvZXh0ZXJuYWwvYXNzZXJ0aW9ucy9xdWlja3N0YXJ0dGVtcGxhdGUvc2VydmVyL3BvbGljeS9QSwECFAMKAAAICADmuD9KdXw6ekQAAABTAAAAFwAAAAAAAAAAAAAApIEqBAAAQUFSLUlORi9hc3NlcnRpb24uaW5kZXhQSwECFAMKAAAICADmuD9KkwbXMgMAAAABAAAAFQAAAAAAAAAAAAAApIGjBAAAQUFSLUlORi9jb25zb2xlLmluZGV4UEsBAhQDCgAACAgA5rg/SiFnXrilBAAA4gkAAFMAAAAAAAAAAAAAAKSB2QQAAGNvbS9sN3RlY2gvZXh0ZXJuYWwvYXNzZXJ0aW9ucy9xdWlja3N0YXJ0dGVtcGxhdGUvUXVpY2tTdGFydFRlbXBsYXRlQXNzZXJ0aW9uLmNsYXNzUEsBAhQDCgAACAgA5rg/SmHVeZYAEQAAhi0AAGAAAAAAAAAAAAAAAKSB7wkAAGNvbS9sN3RlY2gvZXh0ZXJuYWwvYXNzZXJ0aW9ucy9xdWlja3N0YXJ0dGVtcGxhdGUvc2VydmVyL1NlcnZlclF1aWNrU3RhcnRUZW1wbGF0ZUFzc2VydGlvbi5jbGFzc1BLAQIUAwoAAAgIAOa4P0p8mc31GwMAAFMHAABtAAAAAAAAAAAAAACkgW0bAABjb20vbDd0ZWNoL2V4dGVybmFsL2Fzc2VydGlvbnMvcXVpY2tzdGFydHRlbXBsYXRlL3NlcnZlci9wb2xpY3kvUXVpY2tTdGFydEVuY2Fwc3VsYXRlZEFzc2VydGlvblRlbXBsYXRlLmNsYXNzUEsBAhQDCgAACAgA5rg/SmZjb1NlAQAAsgIAAGYAAAAAAAAAAAAAAKSBEx8AAGNvbS9sN3RlY2gvZXh0ZXJuYWwvYXNzZXJ0aW9ucy9xdWlja3N0YXJ0dGVtcGxhdGUvc2VydmVyL3BvbGljeS9RdWlja1N0YXJ0UG9saWN5QnVpbGRlckV4Y2VwdGlvbi5jbGFzc1BLAQIUAwoAAAgIAOa4P0pHe8yixgAAAA8BAABeAAAAAAAAAAAAAACkgfwgAABjb20vbDd0ZWNoL2V4dGVybmFsL2Fzc2VydGlvbnMvcXVpY2tzdGFydHRlbXBsYXRlL3NlcnZlci9wb2xpY3kvUXVpY2tTdGFydFNlcnZpY2VCdWlsZGVyLmNsYXNzUEsBAhQDCgAACAgA5rg/Stv5DT4pAQAAcwIAAGkAAAAAAAAAAAAAAKSBPiIAAGNvbS9sN3RlY2gvZXh0ZXJuYWwvYXNzZXJ0aW9ucy9xdWlja3N0YXJ0dGVtcGxhdGUvc2VydmVyL3BvbGljeS9RdWlja1N0YXJ0U2VydmljZUJ1aWxkZXJNYW5hZ2VySW1wbC5jbGFzc1BLAQIUAwoAAAgIAOa4P0pbfbnsGBYAADk9AABpAAAAAAAAAAAAAACkge4jAABjb20vbDd0ZWNoL2V4dGVybmFsL2Fzc2VydGlvbnMvcXVpY2tzdGFydHRlbXBsYXRlL3NlcnZlci9wb2xpY3kvUXVpY2tTdGFydFNlcnZpY2VCdWlsZGVyUmVzdG1hbkltcGwuY2xhc3NQSwECFAMKAAAIAADmuD9KAAAAAAAAAAAAAAAADAAAAAAAAAAAABAA7UGNOgAAQUFSLUlORi9saWIvUEsBAhQDCgAACAgAzkV4RnsmKCVsoAAAS6cAACIAAAAAAAAAAAAAAKSBtzoAAEFBUi1JTkYvbGliL2pzb24tamF2YS0xLjAtbDdwMS5qYXJQSwUGAAAAABcAFwDGCAAAY9sAAAAA</l7:ModuleData>
+                            <l7:Signature>
+                                <l7:Property key="cert">
+                                    <l7:StringValue>MIIBdjCCAR6gAwIBAgIJAOC+DREEgh+1MAkGByqGSM49BAEwGzEZMBcGA1UEAxMQcm9vdC5hcGltLmNhLmNvbTAeFw0xNTA4MDYyMzM5MTVaFw0zNTA4MDYyMzM5MTVaMCUxIzAhBgNVBAMTGnNpZ25lci5nYXRld2F5LmFwaW0uY2EuY29tMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEWR6rsgeDYY4nCkqjy12QBZW/U/dkWbM0NSEJnWwwDeKMD8rKgPygMKfZ3Gwbr134cYoqRtuE8rnYo4Oyxnm+NKNCMEAwHQYDVR0OBBYEFA/F83obUYIYLHnnXI5fObo/EMDIMB8GA1UdIwQYMBaAFOv2T4eG9aq4dDj8dGqF6Vj340LwMAkGByqGSM49BAEDRwAwRAIgIQrtZLIEZ6IXxPleal0AnnGE0wgq2MHzaWHAOm72KIgCIAWbYPKedEjKKcxv5vHuvbjAdUp1JhrnvnTCEWM7Zus7</l7:StringValue>
+                                </l7:Property>
+                                <l7:Property key="signature">
+                                    <l7:StringValue>MEYCIQDaqUWeB3jKs+sXk+VtMw+XNYNDGoKMxIwpDYTU1GioYQIhAKY7PQLJX21S9KmgKYA1OUK/ODEyYb+lXKquyDbJ7bpG</l7:StringValue>
+                                </l7:Property>
+                            </l7:Signature>
+                            <l7:Properties>
+                                <l7:Property key="moduleAssertions">
+                                    <l7:StringValue>QuickStartTemplateAssertion</l7:StringValue>
+                                </l7:Property>
+                                <l7:Property key="moduleFileName">
+                                    <l7:StringValue>QuickStartTemplateAssertion.saar</l7:StringValue>
+                                </l7:Property>
+                                <l7:Property key="moduleSize">
+                                    <l7:StringValue>58431</l7:StringValue>
+                                </l7:Property>
+                            </l7:Properties>
+                        </l7:ServerModuleFile>
+                    </l7:Resource>
+                </l7:Item>
+
+                <l7:Item>
+                    <l7:Name>quickStart</l7:Name>
+                    <l7:Id>2a97ddf9a6e77162832b9c27bc8f56bc</l7:Id>
+                    <l7:Type>SERVICE</l7:Type>
+                    <l7:TimeStamp>2017-02-01T17:56:18.378-08:00</l7:TimeStamp>
+                    <l7:Resource>
+                        <l7:Service id="2a97ddf9a6e77162832b9c27bc8f56bc" version="2">
+                            <l7:ServiceDetail folderId="2a97ddf9a6e77162832b9c27bc8f54d5" id="2a97ddf9a6e77162832b9c27bc8f56bc" version="2">
+                                <l7:Name>quickStart</l7:Name>
+                                <l7:Enabled>true</l7:Enabled>
+                                <l7:ServiceMappings>
+                                    <l7:HttpMapping>
+                                        <l7:UrlPattern>/quickStart/1.0</l7:UrlPattern>
+                                        <l7:Verbs>
+                                            <l7:Verb>GET</l7:Verb>
+                                            <l7:Verb>POST</l7:Verb>
+                                            <l7:Verb>PUT</l7:Verb>
+                                            <l7:Verb>DELETE</l7:Verb>
+                                        </l7:Verbs>
+                                    </l7:HttpMapping>
+                                </l7:ServiceMappings>
+                                <l7:Properties>
+                                    <l7:Property key="internal">
+                                        <l7:BooleanValue>false</l7:BooleanValue>
+                                    </l7:Property>
+                                    <l7:Property key="policyRevision">
+                                        <l7:LongValue>25</l7:LongValue>
+                                    </l7:Property>
+                                    <l7:Property key="soap">
+                                        <l7:BooleanValue>false</l7:BooleanValue>
+                                    </l7:Property>
+                                    <l7:Property key="tracingEnabled">
+                                        <l7:BooleanValue>false</l7:BooleanValue>
+                                    </l7:Property>
+                                    <l7:Property key="wssProcessingEnabled">
+                                        <l7:BooleanValue>false</l7:BooleanValue>
+                                    </l7:Property>
+                                </l7:Properties>
+                            </l7:ServiceDetail>
+                            <l7:Resources>
+                                <l7:ResourceSet tag="policy">
+                                    <l7:Resource type="policy" version="24">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+                                        &lt;wsp:Policy xmlns:L7p=&quot;http://www.layer7tech.com/ws/policy&quot; xmlns:wsp=&quot;http://schemas.xmlsoap.org/ws/2002/12/policy&quot;&gt;
+                                        &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;
+                                        &lt;wsp:OneOrMore wsp:Usage=&quot;Required&quot;&gt;
+                                        &lt;L7p:SslAssertion&gt;
+                                        &lt;L7p:Enabled booleanValue=&quot;false&quot;/&gt;
+                                        &lt;L7p:RequireClientAuthentication booleanValue=&quot;true&quot;/&gt;
+                                        &lt;/L7p:SslAssertion&gt;
+                                        &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;
+                                        &lt;L7p:SslAssertion&gt;
+                                        &lt;L7p:Enabled booleanValue=&quot;false&quot;/&gt;
+                                        &lt;/L7p:SslAssertion&gt;
+                                        &lt;L7p:HttpBasic/&gt;
+                                        &lt;/wsp:All&gt;
+                                        &lt;/wsp:OneOrMore&gt;
+                                        &lt;L7p:Authentication&gt;
+                                        &lt;L7p:IdentityProviderOid goidValue=&quot;0000000000000000fffffffffffffffe&quot;/&gt;
+                                        &lt;/L7p:Authentication&gt;
+                                        &lt;L7p:QuickStartTemplate/&gt;
+                                        &lt;L7p:HardcodedResponse&gt;
+                                        &lt;L7p:Base64ResponseBody stringValue=&quot;ewogICAicmVzcG9uc2UiIDogInF1aWNrU3RhcnQgc2VydmljZSBjb21wbGV0ZWQgc3VjZXNzZnVsbHkuIiwKICAgIndhcm5pbmciIDogIiR7cXMud2FybmluZ3N9Igp9&quot;/&gt;
+                                        &lt;L7p:ResponseContentType stringValue=&quot;application/json; charset=UTF-8&quot;/&gt;
+                                        &lt;/L7p:HardcodedResponse&gt;
+                                        &lt;/wsp:All&gt;
+                                        &lt;/wsp:Policy&gt;
+                                    </l7:Resource>
+                                </l7:ResourceSet>
+                            </l7:Resources>
+                        </l7:Service>
+                    </l7:Resource>
+                </l7:Item>
+            </l7:References>
+            <l7:Mappings>
+                <l7:Mapping action="NewOrExisting" srcId="0000000000000000ffffffffffffec76" srcUri="https://localhost:8443/restman/1.0/folders/0000000000000000ffffffffffffec76" type="FOLDER">
+                    <l7:Properties><l7:Property key="FailOnNew"><l7:BooleanValue>true</l7:BooleanValue></l7:Property></l7:Properties>
+                </l7:Mapping>
+                <l7:Mapping action="AlwaysCreateNew" srcId="2a97ddf9a6e77162832b9c27bc8f54d5" srcUri="https://localhost:8443/restman/1.0/folders/2a97ddf9a6e77162832b9c27bc8f54d5" type="FOLDER"/>
+                <l7:Mapping action="AlwaysCreateNew" srcId="2a97ddf9a6e77162832b9c27bc8f57e0" srcUri="https://localhost:8443/restman/1.0/folders/2a97ddf9a6e77162832b9c27bc8f57e0" type="FOLDER"/>
+
+                <l7:Mapping action="AlwaysCreateNew" srcId="0b2f74a4feab91ad67617d8c107a748a" srcUri="https://localhost:8443/restman/1.0/policies/0b2f74a4feab91ad67617d8c107a748a" type="POLICY"/>
+                <l7:Mapping action="AlwaysCreateNew" srcId="1a5e3c7335bee88b2fe0e5b717f98082" srcUri="https://localhost:8443/restman/1.0/policies/1a5e3c7335bee88b2fe0e5b717f98082" type="POLICY"/>
+                <l7:Mapping action="AlwaysCreateNew" srcId="1a5e3c7335bee88b2fe0e5b717f980b4" srcUri="https://localhost:8443/restman/1.0/policies/1a5e3c7335bee88b2fe0e5b717f980b4" type="POLICY"/>
+                <l7:Mapping action="AlwaysCreateNew" srcId="acac82df78079fc9b90ecda997d1eb3c" srcUri="https://localhost:8443/restman/1.0/policies/acac82df78079fc9b90ecda997d1eb3c" type="POLICY"/>
+                <l7:Mapping action="AlwaysCreateNew" srcId="acac82df78079fc9b90ecda997d1eb74" srcUri="https://localhost:8443/restman/1.0/policies/acac82df78079fc9b90ecda997d1eb74" type="POLICY"/>
+                <l7:Mapping action="AlwaysCreateNew" srcId="acac82df78079fc9b90ecda997d1ebd1" srcUri="https://localhost:8443/restman/1.0/policies/acac82df78079fc9b90ecda997d1ebd1" type="POLICY"/>
+
+                <l7:Mapping action="AlwaysCreateNew" srcId="1a5e3c7335bee88b2fe0e5b717f98100" srcUri="https://localhost:8443/restman/1.0/encapsulatedAssertions/1a5e3c7335bee88b2fe0e5b717f98100" type="ENCAPSULATED_ASSERTION"/>
+                <l7:Mapping action="AlwaysCreateNew" srcId="1a5e3c7335bee88b2fe0e5b717f9810c" srcUri="https://localhost:8443/restman/1.0/encapsulatedAssertions/1a5e3c7335bee88b2fe0e5b717f9810c" type="ENCAPSULATED_ASSERTION"/>
+                <l7:Mapping action="AlwaysCreateNew" srcId="0b2f74a4feab91ad67617d8c107a747b" srcUri="https://localhost:8443/restman/1.0/encapsulatedAssertions/0b2f74a4feab91ad67617d8c107a747b" type="ENCAPSULATED_ASSERTION"/>
+                <l7:Mapping action="AlwaysCreateNew" srcId="acac82df78079fc9b90ecda997d1ebf9" srcUri="https://localhost:8443/restman/1.0/encapsulatedAssertions/acac82df78079fc9b90ecda997d1ebf9" type="ENCAPSULATED_ASSERTION"/>
+                <l7:Mapping action="AlwaysCreateNew" srcId="acac82df78079fc9b90ecda997d1eb8d" srcUri="https://localhost:8443/restman/1.0/encapsulatedAssertions/acac82df78079fc9b90ecda997d1eb8d" type="ENCAPSULATED_ASSERTION"/>
+                <l7:Mapping action="AlwaysCreateNew" srcId="acac82df78079fc9b90ecda997d1eb56" srcUri="https://localhost:8443/restman/1.0/encapsulatedAssertions/acac82df78079fc9b90ecda997d1eb56" type="ENCAPSULATED_ASSERTION"/>
+
+                <l7:Mapping action="NewOrExisting" srcId="0000000000000000fffffffffffffffe" srcUri="https://localhost:8443/restman/1.0/identityProviders/0000000000000000fffffffffffffffe" type="ID_PROVIDER_CONFIG">
+                    <l7:Properties><l7:Property key="FailOnNew"><l7:BooleanValue>true</l7:BooleanValue></l7:Property></l7:Properties>
+                </l7:Mapping>
+
+                <l7:Mapping action="NewOrExisting" srcId="0e49400b6596090c78c46c77c07bfe24" srcUri="https://localhost:8443/restman/1.0/serverModuleFiles/0e49400b6596090c78c46c77c07bfe24" type="SERVER_MODULE_FILE">
+                    <l7:Properties><l7:Property key="MapBy"><l7:StringValue>moduleSha256</l7:StringValue></l7:Property></l7:Properties>
+                </l7:Mapping>
+
+                <l7:Mapping action="AlwaysCreateNew" srcId="2a97ddf9a6e77162832b9c27bc8f56bc" srcUri="https://localhost:8443/restman/1.0/services/2a97ddf9a6e77162832b9c27bc8f56bc" type="SERVICE"/>
+            </l7:Mappings>
+        </l7:Bundle>

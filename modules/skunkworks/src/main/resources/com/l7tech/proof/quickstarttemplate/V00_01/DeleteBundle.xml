@@ -1,0 +1,24 @@
+        <l7:Bundle xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management">
+            <l7:Mappings>
+                <l7:Mapping action="Delete" srcId="1a5e3c7335bee88b2fe0e5b717f98100" srcUri="https://localhost:8443/restman/1.0/encapsulatedAssertions/1a5e3c7335bee88b2fe0e5b717f98100" type="ENCAPSULATED_ASSERTION"/>
+                <l7:Mapping action="Delete" srcId="1a5e3c7335bee88b2fe0e5b717f9810c" srcUri="https://localhost:8443/restman/1.0/encapsulatedAssertions/1a5e3c7335bee88b2fe0e5b717f9810c" type="ENCAPSULATED_ASSERTION"/>
+                <l7:Mapping action="Delete" srcId="0b2f74a4feab91ad67617d8c107a747b" srcUri="https://localhost:8443/restman/1.0/encapsulatedAssertions/0b2f74a4feab91ad67617d8c107a747b" type="ENCAPSULATED_ASSERTION"/>
+                <l7:Mapping action="Delete" srcId="acac82df78079fc9b90ecda997d1ebf9" srcUri="https://localhost:8443/restman/1.0/encapsulatedAssertions/acac82df78079fc9b90ecda997d1ebf9" type="ENCAPSULATED_ASSERTION"/>
+                <l7:Mapping action="Delete" srcId="acac82df78079fc9b90ecda997d1eb8d" srcUri="https://localhost:8443/restman/1.0/encapsulatedAssertions/acac82df78079fc9b90ecda997d1eb8d" type="ENCAPSULATED_ASSERTION"/>
+                <l7:Mapping action="Delete" srcId="acac82df78079fc9b90ecda997d1eb56" srcUri="https://localhost:8443/restman/1.0/encapsulatedAssertions/acac82df78079fc9b90ecda997d1eb56" type="ENCAPSULATED_ASSERTION"/>
+
+                <l7:Mapping action="Delete" srcId="0b2f74a4feab91ad67617d8c107a748a" srcUri="https://localhost:8443/restman/1.0/policies/0b2f74a4feab91ad67617d8c107a748a" type="POLICY"/>
+                <l7:Mapping action="Delete" srcId="1a5e3c7335bee88b2fe0e5b717f98082" srcUri="https://localhost:8443/restman/1.0/policies/1a5e3c7335bee88b2fe0e5b717f98082" type="POLICY"/>
+                <l7:Mapping action="Delete" srcId="1a5e3c7335bee88b2fe0e5b717f980b4" srcUri="https://localhost:8443/restman/1.0/policies/1a5e3c7335bee88b2fe0e5b717f980b4" type="POLICY"/>
+                <l7:Mapping action="Delete" srcId="acac82df78079fc9b90ecda997d1eb3c" srcUri="https://localhost:8443/restman/1.0/policies/acac82df78079fc9b90ecda997d1eb3c" type="POLICY"/>
+                <l7:Mapping action="Delete" srcId="acac82df78079fc9b90ecda997d1eb74" srcUri="https://localhost:8443/restman/1.0/policies/acac82df78079fc9b90ecda997d1eb74" type="POLICY"/>
+                <l7:Mapping action="Delete" srcId="acac82df78079fc9b90ecda997d1ebd1" srcUri="https://localhost:8443/restman/1.0/policies/acac82df78079fc9b90ecda997d1ebd1" type="POLICY"/>
+
+                <l7:Mapping action="Delete" srcId="0e49400b6596090c78c46c77c07bfe24" srcUri="https://localhost:8443/restman/1.0/serverModuleFiles/0e49400b6596090c78c46c77c07bfe24" type="SERVER_MODULE_FILE"/>
+
+                <l7:Mapping action="Delete" srcId="2a97ddf9a6e77162832b9c27bc8f56bc" srcUri="https://localhost:8443/restman/1.0/services/2a97ddf9a6e77162832b9c27bc8f56bc" type="SERVICE"/>
+
+                <l7:Mapping action="Delete" srcId="2a97ddf9a6e77162832b9c27bc8f57e0" srcUri="https://localhost:8443/restman/1.0/folders/2a97ddf9a6e77162832b9c27bc8f57e0" type="FOLDER"/>
+                <l7:Mapping action="Delete" srcId="2a97ddf9a6e77162832b9c27bc8f54d5" srcUri="https://localhost:8443/restman/1.0/folders/2a97ddf9a6e77162832b9c27bc8f54d5" type="FOLDER"/>
+            </l7:Mappings>
+        </l7:Bundle>
