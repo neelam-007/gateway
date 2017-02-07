@@ -2218,16 +2218,7 @@
         <copy file="${extensions-tarball}" tofile="${build.rpm}/SOURCES/ssg-extensions.tar.gz"/>
         <copy file="${collector-tarball}" tofile="${build.rpm}/SOURCES/ssg-collector.tar.gz"/>
         <copy file="${processcontroller-tarball}" tofile="${build.rpm}/SOURCES/ssg-processcontroller.tar.gz"/>
-	<copy file="etc/ssg.spec" todir="${build.rpm}/SPECS">
-            <filterchain>
-                <tokenfilter>
-                    <replaceregex pattern="(?&lt;=^Version: )[0-9\._\-a-z]{1,10}" replace="${build.rpmversion}" flags="m"/>
-                    <replaceregex pattern="(?&lt;=^Release: )[0-9]{1,10}" replace="${build.version.revision}${build.release}" flags="m"/>
-                    <replaceregex pattern="(?&lt;=^[a-zA-Z &quot;]{0,80}Layer 7 SecureSpan\(tm\) Gateway v)[0-9\._\-a-z]{1,10}" replace="${build.version}" flags="m"/>
-                </tokenfilter>
-            </filterchain>
-        </copy>
-	<copy file="etc/ssg-extensions.spec" todir="${build.rpm}/SPECS">
+	    <copy file="etc/ssg.spec" todir="${build.rpm}/SPECS">
             <filterchain>
                 <tokenfilter>
                     <replaceregex pattern="(?&lt;=^Version: )[0-9\._\-a-z]{1,10}" replace="${build.rpmversion}" flags="m"/>
@@ -2238,13 +2229,7 @@
         </copy>
 
         <!-- Default "everything" RPM. -->
-        <rpm specFile="ssg.spec" topDir="${build.rpm}" command="--define 'isCore 1' --define 'isExtension 1' --define 'isController 1' --define 'isCollector 1' -bb --target noarch" failOnError="true"/>
-
-        <!-- Smaller "core only" RPM for containerized form factors. -->
-        <rpm specFile="ssg.spec" topDir="${build.rpm}" command="--define 'nameSuffix -core' --define 'isCore 1' -bb --target noarch" failOnError="true"/>
-
-        <!-- Extensions RPMs for containerized form factors. -->
-        <rpm specFile="ssg-extensions.spec" topDir="${build.rpm}" command="--define 'nameSuffix -twelvefactor' --define 'isTwelveFactor 1' -bb --target noarch" failOnError="true"/>
+        <rpm specFile="ssg.spec" topDir="${build.rpm}" command="-bb --target noarch" failOnError="true"/>
     </target>
 
     <target name="package.installgateway.work.rpm.appliance" depends="package.installgateway.work.rpm.check, package.readversion, package.checkrelease" if="package.installgateway.work.rpm.appliance.sourceavailable">
@@ -3056,16 +3041,11 @@
                 <include name="SSGBackup.zip" />
             </fileset>
         </move>
-
         <copy file="etc/assets/SecureSpan_ActiveSOA.jar" tofile="${dist.dir}/SecureSpan_ActiveSOA-${build.version}.jar" verbose="true"/>
-
         <mkdir dir="${dist.dir}/components"/>
-
         <move todir="${dist.dir}/components" flatten="true" verbose="true">
-            <fileset dir="${build.rpm}/RPMS">
-                <include name="*/*.rpm"/>
-                <exclude name="*/ssg-?.?.??-*.rpm"/>
-                <exclude name="*/ssg-appliance-?.?.??-*.rpm"/>
+            <fileset dir="${build.dir}/components">
+                <include name="*/*.tar.gz"/>
             </fileset>
         </move>
     </target>
@@ -3522,7 +3502,7 @@
     -->
     <target name="INTERNAL-ssg-install" depends="INTERNAL-ssg-install-init, INTERNAL-ssg-install-main" if="ssg.install.enabled">
         <!-- Create software tarballs. This is the original "megaball." -->
-        <property name="tarball" value="${build.dir}/ssg-b${install.build.number}.tar.gz"/>
+        <property name="tarball" value="${build.dir}/ssg-${build.version}-${install.build.number}.tar.gz"/>
         <echo level="info">Creating Software Tarball (${tarball})...</echo>
         <tar destfile="${tarball}" compression="gzip" longfile="gnu">
             <tarfileset dir="${install.src.ssg}" username="layer7" group="layer7" filemode="444" dirmode="755" prefix="${install.target.ssg}">
@@ -3590,7 +3570,7 @@
         <mkdir dir="${build.dir}/components"/>
 
         <!-- This one is for core. -->
-        <property name="ssg-tarball" value="${build.dir}/components/ssg-core-b${install.build.number}.tar.gz"/>
+        <property name="ssg-tarball" value="${build.dir}/components/ssg-core-${build.version}-${install.build.number}.tar.gz"/>
         <echo level="info">Creating Software Core Tarball (${ssg-tarball})...</echo>
         <tar destfile="${ssg-tarball}" compression="gzip" longfile="gnu">
             <tarfileset dir="${install.src.ssg}" username="layer7" group="layer7" filemode="444" dirmode="755" prefix="${install.target.ssg}">
@@ -3623,7 +3603,7 @@
         </tar>
 
         <!-- This one is for the extension assertions that are not a part of core. -->
-        <property name="extensions-tarball" value="${build.dir}/components/ssg-extensions-b${install.build.number}.tar.gz"/>
+        <property name="extensions-tarball" value="${build.dir}/components/ssg-extensions-${build.version}-${install.build.number}.tar.gz"/>
         <echo level="info">Creating Software Extensions Tarball (${extensions-tarball})...</echo>
         <tar destfile="${extensions-tarball}" compression="gzip" longfile="gnu">
             <tarfileset dir="${install.src.ssg}" username="layer7" group="layer7" filemode="444" dirmode="755" prefix="${install.target.ssg}">
@@ -3632,7 +3612,7 @@
         </tar>
 
         <!-- This one is for the collector. -->
-        <property name="collector-tarball" value="${build.dir}/components/ssg-collector-b${install.build.number}.tar.gz"/>
+        <property name="collector-tarball" value="${build.dir}/components/ssg-collector-${build.version}-${install.build.number}.tar.gz"/>
         <echo level="info">Creating Software Collector Tarball (${collector-tarball})...</echo>
         <tar destfile="${collector-tarball}" compression="gzip" longfile="gnu">
             <tarfileset dir="${install.src.col}" username="gateway" group="gateway" mode="644" prefix="${install.target.col}">
@@ -3645,7 +3625,7 @@
         </tar>
 
         <!-- This one is for the process controller. -->
-        <property name="processcontroller-tarball" value="${build.dir}/components/ssg-processcontroller-b${install.build.number}.tar.gz"/>
+        <property name="processcontroller-tarball" value="${build.dir}/components/ssg-processcontroller-${build.version}-${install.build.number}.tar.gz"/>
         <echo level="info">Creating Software Process Controller Tarball (${processcontroller-tarball})...</echo>
         <tar destfile="${processcontroller-tarball}" compression="gzip" longfile="gnu">
             <tarfileset dir="${install.src.pc}" username="layer7" group="gateway" filemode="555" dirmode="775" prefix="${install.target.pc}">
@@ -3678,7 +3658,7 @@
         </tar>
 
         <!-- Create appliance tarball -->
-        <property name="appliance-tarball" value="${build.dir}/ssg-appliance-b${install.build.number}.tar.gz"/>
+        <property name="appliance-tarball" value="${build.dir}/ssg-appliance-${build.version}-${install.build.number}.tar.gz"/>
         <echo level="info">Creating Appliance Add-On Tarball (${appliance-tarball})...</echo>
         <tar destfile="${appliance-tarball}" compression="gzip" longfile="gnu">
             <tarfileset dir="${install.src.app}" username="gateway" group="gateway" mode="644" prefix="${install.target.app}">
@@ -3764,7 +3744,7 @@
     -->
     <target name="makensis-unsafe">
         <echo level="info">Enabling Win32 installers for build.</echo>
-        <!-- <property name="makensis" value="true"/> -->
+        <!-- JMK <property name="makensis" value="true"/> -->
     </target>
 
     <target name="makensis" description="Enable building of Win32 installers" depends="makensis-unsafe">
@@ -4122,6 +4102,7 @@
 					<include name="*.zip"/>
 					<include name="*.tar.gz"/>
 					<include name="*.exe"/>
+                    <include name="components/*.tar.gz"/>
 				</fileset>
 			</path>
 		</foreach>
