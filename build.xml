@@ -3502,7 +3502,7 @@
     -->
     <target name="INTERNAL-ssg-install" depends="INTERNAL-ssg-install-init, INTERNAL-ssg-install-main" if="ssg.install.enabled">
         <!-- Create software tarballs. This is the original "megaball." -->
-        <property name="tarball" value="${build.dir}/ssg-${build.version}-${install.build.number}.tar.gz"/>
+        <property name="tarball" value="${build.dir}/ssg-b${install.build.number}.tar.gz"/>
         <echo level="info">Creating Software Tarball (${tarball})...</echo>
         <tar destfile="${tarball}" compression="gzip" longfile="gnu">
             <tarfileset dir="${install.src.ssg}" username="layer7" group="layer7" filemode="444" dirmode="755" prefix="${install.target.ssg}">
