@@ -3019,8 +3019,7 @@
 
         <move todir="${dist.dir}" flatten="true" verbose="true">
             <fileset dir="${build.rpm}/RPMS">
-                <include name="*/ssg-?.?.??-*.rpm"/>
-                <include name="*/ssg-appliance-?.?.??-*.rpm"/>
+                <include name="*/*.rpm"/>
             </fileset>
             <fileset dir="${build.installer}">
                 <include name="*Installer.exe"/>
@@ -3714,7 +3713,7 @@
         </tar>
 
         <!-- Create appliance tarball -->
-        <property name="appliance-tarball" value="${build.dir}/ssg-appliance-${build.version}-${install.build.number}.tar.gz"/>
+        <property name="appliance-tarball" value="${build.dir}/ssg-appliance-b${install.build.number}.tar.gz"/>
         <echo level="info">Creating Appliance Add-On Tarball (${appliance-tarball})...</echo>
         <tar destfile="${appliance-tarball}" compression="gzip" longfile="gnu">
             <tarfileset dir="${install.src.app}" username="gateway" group="gateway" mode="644" prefix="${install.target.app}">
