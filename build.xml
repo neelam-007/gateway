@@ -3045,7 +3045,7 @@
         <mkdir dir="${dist.dir}/components"/>
         <move todir="${dist.dir}/components" flatten="true" verbose="true">
             <fileset dir="${build.dir}/components">
-                <include name="*/*.tar.gz"/>
+                <include name="*.tar.gz"/>
             </fileset>
         </move>
     </target>
@@ -3611,6 +3611,62 @@
             </tarfileset>
         </tar>
 
+        <!-- This one is for the extensions for the twelve factor gateway. -->
+        <property name="extensions-twelvefactor-tarball" value="${build.dir}/components/ssg-extensions-twelvefactor-${build.version}-${install.build.number}.tar.gz"/>
+        <echo level="info">Creating 12 Factor Software Extensions Tarball (${extensions-twelvefactor-tarball})...</echo>
+        <tar destfile="${extensions-twelvefactor-tarball}" compression="gzip" longfile="gnu">
+            <tarfileset dir="${install.src.ssg}" username="layer7" group="layer7" filemode="444" dirmode="755" prefix="${install.target.ssg}">
+                <include name="runtime/modules/assertions/**/AdaptiveLoadBalancingAssertion-*.aar"/>
+                <include name="runtime/modules/assertions/**/BufferDataAssertion-*.aar"/>
+                <include name="runtime/modules/assertions/**/BulkJdbcInsertAssertion-*.aar"/>
+                <include name="runtime/modules/assertions/**/CORSAssertion-*.aar"/>
+                <include name="runtime/modules/assertions/**/CacheAssertion-*.aar"/>
+                <include name="runtime/modules/assertions/**/CassandraAssertion-*.aar"/>
+                <include name="runtime/modules/assertions/**/CertificateAttributesAssertion-*.aar"/>
+                <include name="runtime/modules/assertions/**/ComparisonAssertion-*.aar"/>
+                <include name="runtime/modules/assertions/**/ConcurrentAllAssertion-*.aar"/>
+                <include name="runtime/modules/assertions/**/CsrSignerAssertion-*.aar"/>
+                <include name="runtime/modules/assertions/**/CsrfProtectionAssertion-*.aar"/>
+                <include name="runtime/modules/assertions/**/EchoRoutingAssertion-*.aar"/>
+                <include name="runtime/modules/assertions/**/EncodeDecodeAssertion-*.aar"/>
+                <include name="runtime/modules/assertions/**/EvaluateJsonPathExpressionAssertion-*.aar"/>
+                <include name="runtime/modules/assertions/**/GatewayManagementAssertion-*.aar"/>
+                <include name="runtime/modules/assertions/**/GenerateOAuthSignatureBaseStringAssertion-*.aar"/>
+                <include name="runtime/modules/assertions/**/GenerateSecurityHashAssertion-*.aar"/>
+                <include name="runtime/modules/assertions/**/GenericIdentityManagementServiceAssertion-*.aar"/>
+                <include name="runtime/modules/assertions/**/IdentityAttributesAssertion-*.aar"/>
+                <include name="runtime/modules/assertions/**/JSONSchemaAssertion-*.aar"/>
+                <include name="runtime/modules/assertions/**/JdbcQueryAssertion-*.aar"/>
+                <include name="runtime/modules/assertions/**/JsonDocumentStructureAssertion-*.aar"/>
+                <include name="runtime/modules/assertions/**/JsonTransformationAssertion-*.aar"/>
+                <include name="runtime/modules/assertions/**/JsonWebTokenAssertion-*.aar"/>
+                <include name="runtime/modules/assertions/**/JwtAssertion-*.aar"/>
+                <include name="runtime/modules/assertions/**/KerberosAuthenticationAssertion-*.aar"/>
+                <include name="runtime/modules/assertions/**/LDAPQueryAssertion-*.aar"/>
+                <include name="runtime/modules/assertions/**/LookupDynamicContextVariablesAssertion-*.aar"/>
+                <include name="runtime/modules/assertions/**/ManageCookieAssertion-*.aar"/>
+                <include name="runtime/modules/assertions/**/ManipulateMultiValuedVariableAssertion-*.aar"/>
+                <include name="runtime/modules/assertions/**/MessageContextAssertion-*.aar"/>
+                <include name="runtime/modules/assertions/**/NtlmAuthenticationAssertion-*.aar"/>
+                <include name="runtime/modules/assertions/**/OdataValidationAssertion-*.aar"/>
+                <include name="runtime/modules/assertions/**/PortalBootstrapAssertion-*.aar"/>
+                <include name="runtime/modules/assertions/**/RateLimitAssertion-*.aar"/>
+                <include name="runtime/modules/assertions/**/ReplaceTagContentAssertion-*.aar"/>
+                <include name="runtime/modules/assertions/**/SamlIssuerAssertion-*.aar"/>
+                <include name="runtime/modules/assertions/**/SamlpAssertion-*.aar"/>
+                <include name="runtime/modules/assertions/**/SiteMinderAssertion-*.aar"/>
+                <include name="runtime/modules/assertions/**/SnmpTrapAssertion-*.aar"/>
+                <include name="runtime/modules/assertions/**/SplitJoinAssertion-*.aar"/>
+                <include name="runtime/modules/assertions/**/SwaggerAssertion-*.aar"/>
+                <include name="runtime/modules/assertions/**/UDDINotificationAssertion-*.aar"/>
+                <include name="runtime/modules/assertions/**/UUIDGeneratorAssertion-*.aar"/>
+                <include name="runtime/modules/assertions/**/ValidateCertificateAssertion-*.aar"/>
+                <include name="runtime/modules/assertions/**/ValidateNonSoapSamlAssertion-*.aar"/>
+                <include name="runtime/modules/assertions/**/WsAddressingAssertion-*.aar"/>
+                <include name="runtime/modules/assertions/**/XmlSecurityAssertion-*.aar"/>
+            </tarfileset>
+        </tar>
+
         <!-- This one is for the collector. -->
         <property name="collector-tarball" value="${build.dir}/components/ssg-collector-${build.version}-${install.build.number}.tar.gz"/>
         <echo level="info">Creating Software Collector Tarball (${collector-tarball})...</echo>
@@ -3666,7 +3722,7 @@
             </tarfileset>
         </tar>
 
-        <echo level="info">BUILD COMPLETE - Produced ${tarball}, ${ssg-tarball}, ${extensions-tarball}, ${collector-tarball}, ${processcontroller-tarball}, and ${appliance-tarball}!</echo>
+        <echo level="info">BUILD COMPLETE - Produced ${tarball}, ${ssg-tarball}, ${extensions-tarball}, ${extensions-twelvefactor-tarball}, ${collector-tarball}, ${processcontroller-tarball}, and ${appliance-tarball}!</echo>
     </target>
 
     <!-- Create the TAR used when building the Solaris PKG -->
@@ -3744,7 +3800,7 @@
     -->
     <target name="makensis-unsafe">
         <echo level="info">Enabling Win32 installers for build.</echo>
-        <!-- JMK <property name="makensis" value="true"/> -->
+        <property name="makensis" value="true"/>
     </target>
 
     <target name="makensis" description="Enable building of Win32 installers" depends="makensis-unsafe">
