@@ -14,9 +14,12 @@ import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.IOUtils;
 import org.springframework.context.ApplicationContext;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Map;
 
 /**
@@ -75,7 +78,9 @@ public class ServerContentTypeAssertion extends AbstractMessageTargetableServerA
             }
 
             if (assertion.isReinitializeMessage()) {
-                message.initialize(stashManagerFactory.createStashManager(), ctype, message.getMimeKnob().getEntireMessageBodyAsInputStream());
+                final InputStream msgStream = message.getMimeKnob().getEntireMessageBodyAsInputStream();
+                final ByteArrayInputStream inputStream = new ByteArrayInputStream(IOUtils.slurpStream(msgStream));
+                message.initialize(stashManagerFactory.createStashManager(), ctype, inputStream);
             }
 
             return AssertionStatus.NONE;
