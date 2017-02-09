@@ -14,10 +14,13 @@ import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerRoutingAssertion;
+import com.l7tech.util.IOUtils;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.logging.Level;
 
 /**
@@ -58,9 +61,9 @@ public class ServerEchoRoutingAssertion extends ServerRoutingAssertion<EchoRouti
 
         // Initialize request
         try {
-            response.initialize(stashManagerFactory.createStashManager(),
-                                cth,
-                                mimeKnob.getEntireMessageBodyAsInputStream());
+            final InputStream bodyInputStream = mimeKnob.getEntireMessageBodyAsInputStream();
+            final ByteArrayInputStream baos = new ByteArrayInputStream(IOUtils.slurpStream(bodyInputStream));
+            response.initialize(stashManagerFactory.createStashManager(), cth, baos);
             context.setRoutingStatus(RoutingStatus.ROUTED); // Ensure routing status set (Bug #4570)
             return AssertionStatus.NONE;
         } catch (NoSuchPartException nspe) {
