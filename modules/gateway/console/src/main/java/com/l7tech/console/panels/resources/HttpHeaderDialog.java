@@ -35,8 +35,6 @@ public class HttpHeaderDialog extends JDialog {
     private void initialize() {
         setContentPane(mainPanel);
         setTitle(bundle.getString("title"));
-        nameLabel.setText(bundle.getString("label.name"));
-        valueLabel.setText(bundle.getString("label.value"));
 
         inputValidator.constrainTextFieldToBeNonEmpty(bundle.getString("header.name.error"), nameTextField, null);
         inputValidator.constrainTextFieldToBeNonEmpty(bundle.getString("header.value.error"), valueTextField, null);
