@@ -11,6 +11,7 @@ Source0: ssg-core.tar.gz
 Source1: ssg-collector.tar.gz
 Source2: ssg-processcontroller.tar.gz
 Source3: ssg-extensions.tar.gz
+Source4: ssg-webadmin.tar.gz
 
 BuildRoot: %{_builddir}/%{name}-%{version}
 Prefix: /opt/SecureSpan/Gateway
@@ -27,7 +28,7 @@ rm -fr %{buildroot}
 %prep
 rm -fr %{buildroot}
 
-%setup -T -b 0 -b 1 -b 2 -b 3 -qcn %{buildroot}
+%setup -T -b 0 -b 1 -b 2 -b 3 -b 4 -qcn %{buildroot}
 
 %build
 
