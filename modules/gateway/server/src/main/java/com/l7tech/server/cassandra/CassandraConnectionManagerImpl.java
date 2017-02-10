@@ -533,7 +533,11 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
             String cipherSuiteList = cassandraConnectionEntity.getTlsEnabledCipherSuites();
             SSLOptions sslOptions;
             if ( !( cipherSuiteList == null || cipherSuiteList.equals("") ) ) {
-                sslOptions = JdkSSLOptions.builder().withSSLContext(sslContext).withCipherSuites(cipherSuiteList.split("\\s*,\\s*")).build();
+                final String[] finalCipherSuiteList = ArrayUtils.intersection(
+                        cipherSuiteList.split("\\s*,\\s*"),
+                        sslContext.getSupportedSSLParameters().getCipherSuites()
+                );
+                sslOptions = JdkSSLOptions.builder().withSSLContext(sslContext).withCipherSuites(finalCipherSuiteList).build();
             } else {
                 sslOptions = JdkSSLOptions.builder().withSSLContext(sslContext).withCipherSuites(DEFAULT_SSL_CIPHER_SUITES).build();
             }

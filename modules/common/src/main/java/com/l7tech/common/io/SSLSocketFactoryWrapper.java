@@ -1,5 +1,6 @@
 package com.l7tech.common.io;
 
+import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions.Nullary;
 import static com.l7tech.util.Functions.nullary;
@@ -75,25 +76,28 @@ public class SSLSocketFactoryWrapper extends SSLSocketFactory {
      * Convenience method for the case of wrapping a socket factory to override the TLS version and/or enabled cipher suites.
      *
      * @param socketFactory the SSLSocketFactory to wrap. Required.
-     * @param tlsVersions the enabledProtocols array to enable for created sockets, or null to leave them alone.
-     * @param tlsCipherSuites the enabledCipherSuites array to enable for created sockets, or null to leave them alone.
+     * @param desiredTlsVersions the enabledProtocols array to enable for created sockets, or null to leave them alone.
+     * @param desiredTlsCipherSuites the enabledCipherSuites array to enable for created sockets, or null to leave them alone.
      * @return the new wrapper.  Never null.
      */
-    public static SSLSocketFactoryWrapper wrapAndSetTlsVersionAndCipherSuites(SSLSocketFactory socketFactory, final String[] tlsVersions, final String[] tlsCipherSuites) {
+    public static SSLSocketFactoryWrapper wrapAndSetTlsVersionAndCipherSuites(SSLSocketFactory socketFactory, final String[] desiredTlsVersions, final String[] desiredTlsCipherSuites) {
         return new SSLSocketFactoryWrapper(socketFactory) {
             @Override
             protected Socket notifySocket( final Socket socket ) {
                 if ( socket instanceof SSLSocket) {
                     final SSLSocket sslSocket = (SSLSocket) socket;
-                    if (tlsVersions != null) {
+                    if (desiredTlsVersions != null) {
+                        final String[] tlsVersions = ArrayUtils.intersection(desiredTlsVersions, sslSocket.getSupportedProtocols());
                         try {
                             sslSocket.setEnabledProtocols(tlsVersions);
                         } catch (IllegalArgumentException e) {
                             throw new UnsupportedTlsVersionsException("Specified TLS version is not available in the current configuration: " + ExceptionUtils.getMessage(e), e);
                         }
                     }
-                    if (tlsCipherSuites != null)
+                    if (desiredTlsCipherSuites != null) {
+                        final String[] tlsCipherSuites = ArrayUtils.intersection(desiredTlsCipherSuites, sslSocket.getSupportedCipherSuites());
                         sslSocket.setEnabledCipherSuites(tlsCipherSuites);
+                    }
                 }
                 return socket;
             }
