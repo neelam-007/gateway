@@ -3,7 +3,7 @@ package com.l7tech.console.panels;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.resources.HttpConfiguration;
-import com.l7tech.gateway.common.resources.HttpHeader;
+import com.l7tech.gateway.common.resources.HttpConfigurationProperty;
 import com.l7tech.gateway.common.resources.HttpProxyConfiguration;
 import com.l7tech.gateway.common.resources.ResourceAdmin;
 import com.l7tech.gui.SimpleTableModel;
@@ -20,7 +20,6 @@ import com.l7tech.util.InetAddressUtil;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -51,7 +50,6 @@ public class HttpConfigurationManagerDialog extends JDialog {
 
     private final PermissionFlags cpFlags = PermissionFlags.get( EntityType.CLUSTER_PROPERTY );
     private final PermissionFlags flags = PermissionFlags.get( EntityType.HTTP_CONFIGURATION );
-    private DefaultTableModel model;
     private SimpleTableModel<HttpConfiguration> httpConfigurationTableModel;
 
     public HttpConfigurationManagerDialog( final Window parent ) {
@@ -243,29 +241,26 @@ public class HttpConfigurationManagerDialog extends JDialog {
     private void doEdit( final HttpConfiguration httpConfiguration,
                          final boolean readOnly ){
         final HttpConfigurationPropertiesDialog dialog = new HttpConfigurationPropertiesDialog( this, httpConfiguration, readOnly );
-        DialogDisplayer.display( dialog, new Runnable(){
-            @Override
-            public void run() {
-                if ( dialog.wasOk() ) {
-                    final ResourceAdmin admin = Registry.getDefault().getResourceAdmin();
-                    try {
-                        Set<HttpHeader> headers = dialog.getHttpHeaderTableHandler().getData();
-                        httpConfiguration.syncHeaders(headers);
-                        admin.saveHttpConfiguration( httpConfiguration );
-                    } catch ( final DuplicateObjectException e ) {
+        DialogDisplayer.display( dialog, () -> {
+            if ( dialog.wasOk() ) {
+                final ResourceAdmin admin = Registry.getDefault().getResourceAdmin();
+                try {
+                    Set<HttpConfigurationProperty> headers = dialog.getHttpHeaderTableHandler().getData();
+                    httpConfiguration.syncConfigurationProperties(headers);
+                    admin.saveHttpConfiguration( httpConfiguration );
+                } catch ( final DuplicateObjectException e ) {
+                    handleDuplicateError(httpConfiguration);
+                } catch ( final ObjectModelException e ) {
+                    if (ExceptionUtils.causedBy(e, DuplicateObjectException.class)) {
                         handleDuplicateError(httpConfiguration);
-                    } catch ( final ObjectModelException e ) {
-                        if (ExceptionUtils.causedBy(e, DuplicateObjectException.class)) {
-                            handleDuplicateError(httpConfiguration);
-                        } else {
-                            throw ExceptionUtils.wrap( e );
-                        }
+                    } else {
+                        throw ExceptionUtils.wrap( e );
                     }
-
-                    loadHttpConfigurations();
                 }
+
+                loadHttpConfigurations();
             }
-        } );
+        });
     }
 
     private void handleDuplicateError(final HttpConfiguration httpConfiguration) {

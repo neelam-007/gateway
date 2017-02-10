@@ -12,8 +12,8 @@
             </update>
         </rollback>
     </changeSet>
-    <changeSet author="gateway" id="create_http_header_table">
-        <createTable tableName="http_header">
+    <changeSet author="gateway" id="create_http_configuration_property">
+        <createTable tableName="http_configuration_property">
             <column name="goid" type="${goid.type}">
                 <constraints nullable="false"/>
             </column>
@@ -28,7 +28,7 @@
             </column>
             <column name="http_configuration_goid" type="${goid.type}"/>
         </createTable>
-        <addForeignKeyConstraint baseColumnNames="http_configuration_goid" baseTableName="http_header" constraintName="fk_http_config_http_header"
+        <addForeignKeyConstraint baseColumnNames="http_configuration_goid" baseTableName="http_configuration_property" constraintName="fk_http_config_http_configuration_property"
                                  deferrable="false" initiallyDeferred="false" onDelete="SET NULL" onUpdate="NO ACTION" referencedColumnNames="goid"
                                  referencedTableName="http_configuration"/>
         <rollback>

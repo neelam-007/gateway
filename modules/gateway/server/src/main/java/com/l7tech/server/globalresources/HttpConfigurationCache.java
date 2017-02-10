@@ -96,8 +96,8 @@ public class HttpConfigurationCache implements PostStartupApplicationListener, I
                     }
                 }
 
-                if ( httpConfiguration.getHeaders().size() > 0 ) {
-                    httpRequestParameters.setExtraHeaders((HttpHeader[]) httpConfiguration.getHeaders().toArray( new HttpHeader[httpConfiguration.getHeaders().size()] ));
+                if ( httpConfiguration.getHttpConfigurationProperties().size() > 0 ) {
+                    httpRequestParameters.setExtraHeaders(httpConfiguration.getHttpConfigurationProperties().toArray( new HttpHeader[httpConfiguration.getHttpConfigurationProperties().size()] ));
                 }
 
                 try {

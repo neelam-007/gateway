@@ -2,43 +2,35 @@ package com.l7tech.console.table;
 
 import com.l7tech.console.panels.resources.HttpHeaderDialog;
 import com.l7tech.gateway.common.resources.HttpConfiguration;
+import com.l7tech.gateway.common.resources.HttpConfigurationProperty;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.gateway.common.resources.HttpHeader;
 
 import javax.swing.*;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
 /**
  * Common code for tables that contain customized http header/parameter rules for routing dialogs
- * <p/>
- * <p/>
- * <br/><br/>
- * LAYER 7 TECHNOLOGIES, INC<br/>
- * User: Ekta<br/>
- * Date: June 20, 2016<br/>
  */
 public class HttpHeaderTableHandler {
-    private static final String MAGIC_DEF_VALUE = "<original value>";
     private static final String HEADER = "Header";
     final protected JTable table;
     final DefaultTableModel model;
     private JDialog parentDlg;
-    boolean editable = true;
+    private boolean editable = true;
     private JButton editButton;
-    private HttpConfiguration httpConfiguration;
-
 
     public HttpHeaderTableHandler(final JTable table,
                                   final JButton addButton, final JButton removeButton, final JButton editButton,
                                   final HttpConfiguration httpConfiguration) {
-        Set<HttpHeader> headers = httpConfiguration.getHeaders();
+        Set<HttpConfigurationProperty> headers = httpConfiguration.getHttpConfigurationProperties();
         this.table = table;
         this.editButton = editButton;
 
@@ -67,38 +59,22 @@ public class HttpHeaderTableHandler {
                     editRuleRow();
             }
         });
-        table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
-            public void valueChanged(ListSelectionEvent listSelectionEvent) {
-                updateeditState();
+        table.getSelectionModel().addListSelectionListener( listSelectionEvent -> updateeditState());
+
+        addButton.addActionListener(actionEvent -> {
+            HttpHeaderDialog editor = new HttpHeaderDialog(parentDlg, null);
+            editor.pack();
+            Utilities.centerOnScreen(editor);
+            editor.setVisible(true);
+            if (editor.wasOKed()) {
+                HttpConfigurationProperty dres = editor.getData();
+                model.addRow(dataToRow(dres));
             }
         });
 
-        addButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent actionEvent) {
-                HttpHeaderDialog editor = new HttpHeaderDialog(parentDlg, null);
-                editor.pack();
-                Utilities.centerOnScreen(editor);
-                editor.setVisible(true);
-                if (editor.wasOKed()) {
-                    HttpHeader dres = editor.getData();
-                    if (validateNewRule(dres)) {
-                        model.addRow(dataToRow(dres));
-                    }
-                }
-            }
-        });
+        removeButton.addActionListener( actionEvent -> removeLines());
 
-        removeButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent actionEvent) {
-                removeLines();
-            }
-        });
-
-        editButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent actionEvent) {
-                editRuleRow();
-            }
-        });
+        editButton.addActionListener(actionEvent -> editRuleRow());
 
         Container c = table.getParent();
         while (c != null) {
@@ -110,7 +86,7 @@ public class HttpHeaderTableHandler {
         }
     }
 
-    public void updateeditState() {
+    private void updateeditState() {
         boolean selection = false;
         if (table.getSelectedRows() != null && table.getSelectedRows().length > 0) {
             selection = true;
@@ -127,7 +103,7 @@ public class HttpHeaderTableHandler {
         table.setEnabled(editable);
     }
 
-    private Object[][] dataToRows(Set<HttpHeader> headers) {
+    private Object[][] dataToRows(Set<HttpConfigurationProperty> headers) {
         if (headers == null || headers.size() < 1) {
             return null;
         } else {
@@ -135,7 +111,7 @@ public class HttpHeaderTableHandler {
             Iterator iterator = headers.iterator();
             int counter = 0;
             while (iterator.hasNext()){
-                HttpHeader header = (HttpHeader)iterator.next();
+                HttpConfigurationProperty header = (HttpConfigurationProperty)iterator.next();
                 output[counter][0] = header.getName();
                 output[counter][1] = header.getFullValue();
                 counter++;
@@ -144,27 +120,27 @@ public class HttpHeaderTableHandler {
         }
     }
 
-    private String[] dataToRow(HttpHeader data) {
+    private String[] dataToRow(HttpConfigurationProperty data) {
         String val = data.getFullValue();
         return new String[] {data.getName(), val};
     }
 
-    private HttpHeader rowToData(int row) {
-        HttpHeader output = new HttpHeader();
+    private HttpConfigurationProperty rowToData(int row) {
+        HttpConfigurationProperty output = new HttpConfigurationProperty();
         output.setName((String)model.getValueAt(row, 0));
         String val = (String)model.getValueAt(row, 1);
         output.setFullValue(val);
         return output;
     }
 
-    public Set<HttpHeader> getData() {
+    public Set<HttpConfigurationProperty> getData() {
         int rowCount = model.getRowCount();
-        Set<HttpHeader> httpHeaders = new HashSet<HttpHeader>();
+        Set<HttpConfigurationProperty> httpConfigurationProperties = new HashSet<>();
         for (int i = 0; i < rowCount; i++) {
-            boolean added = httpHeaders.add(rowToData(i));
+            boolean added = httpConfigurationProperties.add(rowToData(i));
             System.out.println(added);
         }
-        return httpHeaders;
+        return httpConfigurationProperties;
     }
 
     private void removeLines() {
@@ -176,27 +152,21 @@ public class HttpHeaderTableHandler {
         }
     }
 
-    protected boolean validateNewRule(HttpHeader in) {
-        return true;
-    }
-
     private void editRuleRow() {
         if (!editable) return;
         int[] selectedrows = table.getSelectedRows();
         if (selectedrows != null && selectedrows.length > 0) {
-            HttpHeader toedit = rowToData(selectedrows[0]);
+            HttpConfigurationProperty toedit = rowToData(selectedrows[0]);
 
             HttpHeaderDialog editor = new HttpHeaderDialog(parentDlg, toedit);
             Utilities.centerOnScreen(editor);
             editor.pack();
             editor.setVisible(true);
             if (editor.wasOKed()) {
-                HttpHeader dres = editor.getData();
-                if (validateNewRule(dres)) {
-                    String[] res = dataToRow(dres);
-                    model.setValueAt(res[0], selectedrows[0], 0);
-                    model.setValueAt(res[1], selectedrows[0], 1);
-                }
+                HttpConfigurationProperty dres = editor.getData();
+                String[] res = dataToRow(dres);
+                model.setValueAt(res[0], selectedrows[0], 0);
+                model.setValueAt(res[1], selectedrows[0], 1);
             }
         }
     }

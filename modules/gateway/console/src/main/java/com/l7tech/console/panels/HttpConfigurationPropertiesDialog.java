@@ -85,7 +85,6 @@ public class HttpConfigurationPropertiesDialog extends JDialog {
         super( owner, JDialog.DEFAULT_MODALITY_TYPE );
         this.httpConfiguration = httpConfiguration;
         this.readOnly = readOnly;
-        this.headerTable = headerTable;
         init();
         modelToView( httpConfiguration );
         enableAndDisableComponents();
@@ -133,12 +132,7 @@ public class HttpConfigurationPropertiesDialog extends JDialog {
                         : "The selected TLS version is not available with the Gateway's current security provider configuration.";
             }
         });
-        validator.attachToButton( okButton, new ActionListener(){
-            @Override
-            public void actionPerformed( final ActionEvent e ) {
-                doOk();
-            }
-        } );
+        validator.attachToButton( okButton, e -> doOk());
 
         protocolComboBox.addActionListener( enableDisableListener );
         usernameTextField.getDocument().addDocumentListener( enableDisableListener );
@@ -192,31 +186,11 @@ public class HttpConfigurationPropertiesDialog extends JDialog {
             }
         });
 
-        managePrivateKeysButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                doManageKeys();
-            }
-        });
-        manageSecurePasswordsButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                doManagePasswords();
-            }
-        });
-        proxyManageSecurePasswordsButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                doManagePasswords();
-            }
-        });
+        managePrivateKeysButton.addActionListener(e -> doManageKeys());
+        manageSecurePasswordsButton.addActionListener(e -> doManagePasswords());
+        proxyManageSecurePasswordsButton.addActionListener(e -> doManagePasswords());
 
-        cancelButton.addActionListener( new ActionListener(){
-            @Override
-            public void actionPerformed( final ActionEvent e ) {
-                doCancel();
-            }
-        } );
+        cancelButton.addActionListener(e -> doCancel());
         zoneControl.configure(httpConfiguration);
         pack();
         setMinimumSize( getMinimumSize() );
@@ -251,24 +225,14 @@ public class HttpConfigurationPropertiesDialog extends JDialog {
     }
 
     private void doManageCipherSuites() {
-        CipherSuiteDialog.show(this, null, ModalityType.DOCUMENT_MODAL, readOnly, tlsCipherSuiteList, new Functions.UnaryVoid<String>() {
-            @Override
-            public void call(String s) {
-                tlsCipherSuiteList = s;
-            }
-        });
+        CipherSuiteDialog.show(this, null, ModalityType.DOCUMENT_MODAL, readOnly, tlsCipherSuiteList, s -> tlsCipherSuiteList = s);
     }
 
     private void doManageKeys() {
         final PrivateKeyManagerWindow privateKeyManagerWindow = new PrivateKeyManagerWindow(this);
         privateKeyManagerWindow.pack();
         Utilities.centerOnParentWindow(privateKeyManagerWindow);
-        DialogDisplayer.display(privateKeyManagerWindow, new Runnable() {
-            @Override
-            public void run() {
-                ((PrivateKeysComboBox)privateKeyComboBox).repopulate();
-            }
-        });
+        DialogDisplayer.display(privateKeyManagerWindow, () -> ((PrivateKeysComboBox)privateKeyComboBox).repopulate());
     }
 
     private void doManagePasswords() {
@@ -281,18 +245,15 @@ public class HttpConfigurationPropertiesDialog extends JDialog {
         final SecurePasswordManagerWindow securePasswordManagerWindow = new SecurePasswordManagerWindow(this);
         securePasswordManagerWindow.pack();
         Utilities.centerOnParentWindow(securePasswordManagerWindow);
-        DialogDisplayer.display(securePasswordManagerWindow, new Runnable() {
-            @Override
-            public void run() {
-                passwordComboBox.reloadPasswordList();
-                proxyPasswordComboBox.reloadPasswordList();
+        DialogDisplayer.display(securePasswordManagerWindow, () -> {
+            passwordComboBox.reloadPasswordList();
+            proxyPasswordComboBox.reloadPasswordList();
 
-                if ( password != null ) {
-                    passwordComboBox.setSelectedSecurePassword( password.getGoid() );
-                }
-                if ( proxyPassword != null ) {
-                    proxyPasswordComboBox.setSelectedSecurePassword( proxyPassword.getGoid() );
-                }
+            if ( password != null ) {
+                passwordComboBox.setSelectedSecurePassword( password.getGoid() );
+            }
+            if ( proxyPassword != null ) {
+                proxyPasswordComboBox.setSelectedSecurePassword( proxyPassword.getGoid() );
             }
         });
     }
@@ -559,7 +520,7 @@ public class HttpConfigurationPropertiesDialog extends JDialog {
         }
     }
 
-    public HttpHeaderTableHandler getHttpHeaderTableHandler() {
+    HttpHeaderTableHandler getHttpHeaderTableHandler() {
         return httpHeaderTableHandler;
     }
 }

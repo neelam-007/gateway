@@ -150,7 +150,7 @@
                 <value>com.l7tech.gateway.common.cluster.ClusterProperty</value>
                 <value>com.l7tech.gateway.common.log.SinkConfiguration</value>
                 <value>com.l7tech.gateway.common.resources.HttpConfiguration</value>
-                <value>com.l7tech.gateway.common.resources.HttpHeader</value>
+                <value>com.l7tech.gateway.common.resources.HttpConfigurationProperty</value>
                 <value>com.l7tech.gateway.common.resources.ResourceEntry</value>
                 <value>com.l7tech.gateway.common.transport.ResolutionConfiguration</value>
                 <value>com.l7tech.gateway.common.security.password.SecurePassword</value>

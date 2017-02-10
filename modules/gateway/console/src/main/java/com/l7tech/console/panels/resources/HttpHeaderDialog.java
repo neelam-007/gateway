@@ -1,14 +1,13 @@
 package com.l7tech.console.panels.resources;
 
-import com.l7tech.gateway.common.resources.HttpHeader;
+import com.l7tech.gateway.common.resources.HttpConfigurationProperty;
 import com.l7tech.gui.util.InputValidator;
 
 import javax.swing.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.util.ResourceBundle;
 
 /**
- * Created by Ekta Khandelwal on 2016-06-20.
+ * HttpHeaderDialog  dialog.
  */
 public class HttpHeaderDialog extends JDialog {
     private JLabel nameLabel;
@@ -18,15 +17,16 @@ public class HttpHeaderDialog extends JDialog {
     private JButton okButton;
     private JPanel mainPanel;
     private JLabel valueLabel;
-    private HttpHeader data;
+    private HttpConfigurationProperty data;
     private boolean wasOKed = false;
     private final InputValidator inputValidator;
+    private static final ResourceBundle bundle = ResourceBundle.getBundle(HttpHeaderDialog.class.getName());
 
-    public HttpHeaderDialog(JDialog owner, HttpHeader data) {
+    public HttpHeaderDialog(JDialog owner, HttpConfigurationProperty data) {
         super(owner, true);
         this.data = data;
         if (data == null) {
-            this.data = new HttpHeader();
+            this.data = new HttpConfigurationProperty();
         }
         inputValidator = new InputValidator(this, getTitle());
         initialize();
@@ -34,33 +34,25 @@ public class HttpHeaderDialog extends JDialog {
 
     private void initialize() {
         setContentPane(mainPanel);
-        setTitle("Custom Header Setting");
-        nameLabel.setText(" Name:");
+        setTitle(bundle.getString("title"));
+        nameLabel.setText(bundle.getString("label.name"));
+        valueLabel.setText(bundle.getString("label.value"));
 
-        inputValidator.constrainTextFieldToBeNonEmpty("Header Name", nameTextField, null);
-        inputValidator.constrainTextFieldToBeNonEmpty("Header Value", valueTextField, null);
+        inputValidator.constrainTextFieldToBeNonEmpty(bundle.getString("header.name.error"), nameTextField, null);
+        inputValidator.constrainTextFieldToBeNonEmpty(bundle.getString("header.value.error"), valueTextField, null);
 
-        cancelButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                cancel();
-            }
-        });
+        cancelButton.addActionListener( e -> cancel());
 
         nameTextField.setText(data.getName());
         valueTextField.setText(data.getFullValue());
-        inputValidator.attachToButton( okButton, new ActionListener(){
-            @Override
-            public void actionPerformed( final ActionEvent e ) {
-                ok();
-            }
-        } );
+        inputValidator.attachToButton( okButton, e -> ok());
     }
 
     private void cancel() {
-        dispose();
+        cleanup();
     }
 
-    public HttpHeader getData() {
+    public HttpConfigurationProperty getData() {
         return data;
     }
 
@@ -71,12 +63,14 @@ public class HttpHeaderDialog extends JDialog {
     private void ok() {
         wasOKed = true;
         // save data
-        String tmp = nameTextField.getText();
-        if (tmp != null) tmp = tmp.trim();
+        String tmp = nameTextField.getText().trim();
         data.setName(tmp);
-        tmp = valueTextField.getText();
-        if (tmp != null) tmp = tmp.trim();
+        tmp = valueTextField.getText().trim();
         data.setFullValue(tmp);
-        cancel();
+        cleanup();
+    }
+
+    private void cleanup() {
+        dispose();
     }
 }

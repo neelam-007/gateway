@@ -8,24 +8,13 @@ import javax.persistence.*;
 /**
  * A rule that determines if an http header or parameter should be forwarded, and if so,
  * which fullValue should it have.
- * <p/>
- * <p/>
- * <br/><br/>
- * CA Technologies, INC<br/>
- * User: Ekta<br/>
- * Date: June 18, 2016<br/>
  */
 @Entity
 @Proxy(lazy=false)
-@Table(name="http_header")
-public class HttpHeader extends PersistentEntityImp implements com.l7tech.common.http.HttpHeader {
+@Table(name="http_configuration_property")
+public class HttpConfigurationProperty extends PersistentEntityImp implements com.l7tech.common.http.HttpHeader {
 
-    public HttpHeader() {
-    }
-
-    public HttpHeader(String name, String fullValue) {
-        this.name = name;
-        this.fullValue = fullValue;
+    public HttpConfigurationProperty() {
     }
 
     @Column(name="name")
@@ -62,7 +51,7 @@ public class HttpHeader extends PersistentEntityImp implements com.l7tech.common
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        HttpHeader that = (HttpHeader) o;
+        HttpConfigurationProperty that = (HttpConfigurationProperty) o;
 
         if (name != null ? !name.equals(that.name) : that.name != null) return false;
         if (fullValue != null ? !fullValue.equals(that.fullValue) : that.fullValue != null) return false;
