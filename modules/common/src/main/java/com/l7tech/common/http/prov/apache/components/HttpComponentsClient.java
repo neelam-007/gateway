@@ -8,6 +8,7 @@ import com.l7tech.common.http.prov.apache.Ntlm2SchemeFactory;
 import com.l7tech.common.io.NonCloseableOutputStream;
 import com.l7tech.common.io.SSLSocketWrapper;
 import com.l7tech.common.io.SocketWrapper;
+import com.l7tech.common.io.UnsupportedTlsCiphersException;
 import com.l7tech.common.io.UnsupportedTlsVersionsException;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.MimeHeader;
@@ -533,7 +534,7 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
                     method = null;
                     return genericHttpResponse;
 
-                } catch (UnsupportedTlsVersionsException e) {
+                } catch (UnsupportedTlsVersionsException | UnsupportedTlsCiphersException e) {
                     throw new GenericHttpException("Unable to obtain HTTP response" +  " from " + httpMethod.getURI() + ": " + ExceptionUtils.getMessage(e), e);
                 } catch ( SocketTimeoutException e){
                     throw new GenericHttpException("Unable to obtain HTTP response" +" from " + httpMethod.getURI() + ": " + ExceptionUtils.getMessageWithCause(e) + ". Timed out at "+ method.getParams().getIntParameter(CoreConnectionPNames.SO_TIMEOUT, 0) +"ms", e);

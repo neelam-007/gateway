@@ -82,12 +82,16 @@ public class SSLSocketFactoryWrapper extends SSLSocketFactory {
      */
     public static SSLSocketFactoryWrapper wrapAndSetTlsVersionAndCipherSuites(SSLSocketFactory socketFactory, final String[] desiredTlsVersions, final String[] desiredTlsCipherSuites) {
         return new SSLSocketFactoryWrapper(socketFactory) {
+            @SuppressWarnings("Duplicates")
             @Override
             protected Socket notifySocket( final Socket socket ) {
                 if ( socket instanceof SSLSocket) {
                     final SSLSocket sslSocket = (SSLSocket) socket;
                     if (desiredTlsVersions != null) {
                         final String[] tlsVersions = ArrayUtils.intersection(desiredTlsVersions, sslSocket.getSupportedProtocols());
+                        if (desiredTlsVersions.length > 0 && tlsVersions.length == 0) {
+                            throw new UnsupportedTlsVersionsException("None of the specified TLS versions are supported by the underlying TLS provider");
+                        }
                         try {
                             sslSocket.setEnabledProtocols(tlsVersions);
                         } catch (IllegalArgumentException e) {
@@ -96,6 +100,9 @@ public class SSLSocketFactoryWrapper extends SSLSocketFactory {
                     }
                     if (desiredTlsCipherSuites != null) {
                         final String[] tlsCipherSuites = ArrayUtils.intersection(desiredTlsCipherSuites, sslSocket.getSupportedCipherSuites());
+                        if (desiredTlsCipherSuites.length > 0 && tlsCipherSuites.length == 0) {
+                            throw new UnsupportedTlsCiphersException("None of the specified TLS ciphers are supported by the underlying TLS provider");
+                        }
                         sslSocket.setEnabledCipherSuites(tlsCipherSuites);
                     }
                 }

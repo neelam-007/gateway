@@ -1,5 +1,6 @@
 package com.l7tech.common.io;
 
+import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions.Nullary;
 import static com.l7tech.util.Functions.nullary;
@@ -61,28 +62,38 @@ public class SSLServerSocketFactoryWrapper extends SSLServerSocketFactory {
      * Convenience method for the case of wrapping a socket factory to override the TLS version and/or enabled cipher suites.
      *
      * @param socketFactory the SSLServerSocketFactory to wrap. Required.
-     * @param tlsVersions the enabledProtocols array to enable for created sockets, or null to leave them alone.
-     * @param tlsCipherSuites the enabledCipherSuites array to enable for created sockets, or null to leave them alone.
+     * @param desiredTlsVersions the enabledProtocols array to enable for created sockets, or null to leave them alone.
+     * @param desiredTlsCipherSuites the enabledCipherSuites array to enable for created sockets, or null to leave them alone.
      * @return the new wrapper.  Never null.
      */
     @NotNull
     public static SSLServerSocketFactoryWrapper wrapAndSetTlsVersionAndCipherSuites( @NotNull  final SSLServerSocketFactory socketFactory,
-                                                                                     @Nullable final String[] tlsVersions,
-                                                                                     @Nullable final String[] tlsCipherSuites) {
+                                                                                     @Nullable final String[] desiredTlsVersions,
+                                                                                     @Nullable final String[] desiredTlsCipherSuites) {
         return new SSLServerSocketFactoryWrapper(socketFactory) {
+            @SuppressWarnings("Duplicates")
             @Override
             protected ServerSocket notifyServerSocket( final ServerSocket socket ) {
                 if ( socket instanceof SSLServerSocket ) {
                     final SSLServerSocket sslSocket = (SSLServerSocket) socket;
-                    if ( tlsVersions != null ) {
+                    if ( desiredTlsVersions != null ) {
+                        final String[] tlsVersions = ArrayUtils.intersection(desiredTlsVersions, sslSocket.getSupportedProtocols());
+                        if (desiredTlsVersions.length > 0 && tlsVersions.length == 0) {
+                            throw new UnsupportedTlsVersionsException("None of the specified TLS versions are supported by the underlying TLS provider");
+                        }
                         try {
                             sslSocket.setEnabledProtocols( tlsVersions );
                         } catch (IllegalArgumentException e) {
                             throw new UnsupportedTlsVersionsException("Specified TLS version is not available in the current configuration: " + ExceptionUtils.getMessage( e ), e);
                         }
                     }
-                    if ( tlsCipherSuites != null )
-                        sslSocket.setEnabledCipherSuites( tlsCipherSuites );
+                    if ( desiredTlsCipherSuites != null ) {
+                        final String[] tlsCipherSuites = ArrayUtils.intersection(desiredTlsCipherSuites, sslSocket.getSupportedCipherSuites());
+                        if (desiredTlsCipherSuites.length > 0 && tlsCipherSuites.length == 0) {
+                            throw new UnsupportedTlsCiphersException("None of the specified TLS ciphers are supported by the underlying TLS provider");
+                        }
+                        sslSocket.setEnabledCipherSuites(tlsCipherSuites);
+                    }
                 }
                 return socket;
             }

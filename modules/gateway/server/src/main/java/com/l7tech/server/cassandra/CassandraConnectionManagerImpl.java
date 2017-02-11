@@ -4,6 +4,7 @@ import com.ca.datasources.cassandra.CassandraUtil;
 import com.datastax.driver.core.*;
 import com.datastax.driver.core.exceptions.DriverInternalError;
 import com.google.common.util.concurrent.Uninterruptibles;
+import com.l7tech.common.io.UnsupportedTlsCiphersException;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.LoggingAudit;
@@ -533,10 +534,14 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
             String cipherSuiteList = cassandraConnectionEntity.getTlsEnabledCipherSuites();
             SSLOptions sslOptions;
             if ( !( cipherSuiteList == null || cipherSuiteList.equals("") ) ) {
+                final String[] desiredCipherSuiteList = cipherSuiteList.split("\\s*,\\s*");
                 final String[] finalCipherSuiteList = ArrayUtils.intersection(
-                        cipherSuiteList.split("\\s*,\\s*"),
+                        desiredCipherSuiteList,
                         sslContext.getSupportedSSLParameters().getCipherSuites()
                 );
+                if (desiredCipherSuiteList.length > 0 && finalCipherSuiteList.length == 0) {
+                    throw new UnsupportedTlsCiphersException("None of the specified TLS ciphers are supported by the underlying TLS provider");
+                }
                 sslOptions = JdkSSLOptions.builder().withSSLContext(sslContext).withCipherSuites(finalCipherSuiteList).build();
             } else {
                 sslOptions = JdkSSLOptions.builder().withSSLContext(sslContext).withCipherSuites(DEFAULT_SSL_CIPHER_SUITES).build();
