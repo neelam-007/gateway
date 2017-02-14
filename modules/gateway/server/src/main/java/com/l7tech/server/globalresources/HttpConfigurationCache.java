@@ -5,6 +5,7 @@ import com.l7tech.common.http.HttpHeader;
 import com.l7tech.common.http.NtlmAuthentication;
 import com.l7tech.common.io.SSLSocketFactoryWrapper;
 import com.l7tech.common.io.SingleCertX509KeyManager;
+import com.l7tech.common.io.SslSocketUtil;
 import com.l7tech.gateway.common.resources.HttpConfiguration;
 import com.l7tech.gateway.common.resources.HttpProxyConfiguration;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
@@ -345,7 +346,7 @@ public class HttpConfigurationCache implements PostStartupApplicationListener, I
             cipherSuites = DefaultHttpCiphers.getRecommendedCiphers();
         }
         //include TLS_EMPTY_RENEGOTIATION_INFO_SCSV cipher for outbound TLS to enhance interoperability.
-        String[] cipherSuitesArray = PAT_COMMA_WITH_OPTIONAL_WHITESPACE.split(cipherSuites.trim() + "," + DefaultHttpCiphers.TLS_EMPTY_RENEGOTIATION_INFO_SCSV);
+        String[] cipherSuitesArray = PAT_COMMA_WITH_OPTIONAL_WHITESPACE.split(cipherSuites.trim() + "," + SslSocketUtil.TLS_EMPTY_RENEGOTIATION_INFO_SCSV);
         return cipherSuitesArray;
     }
 

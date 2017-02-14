@@ -261,7 +261,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             cipherSuites = DefaultHttpCiphers.getRecommendedCiphers();
         }
         //include TLS_EMPTY_RENEGOTIATION_INFO_SCSV cipher for outbound TLS to enhance interoperability.
-        String[] cipherSuitesArray = PAT_COMMA_WITH_OPTIONAL_WHITESPACE.split(cipherSuites.trim() + "," + DefaultHttpCiphers.TLS_EMPTY_RENEGOTIATION_INFO_SCSV);
+        String[] cipherSuitesArray = PAT_COMMA_WITH_OPTIONAL_WHITESPACE.split(cipherSuites.trim() + "," + SslSocketUtil.TLS_EMPTY_RENEGOTIATION_INFO_SCSV);
         return cipherSuitesArray;
     }
 
