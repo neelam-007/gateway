@@ -16,12 +16,21 @@ import static com.l7tech.util.Functions.reduce;
 
 public class TestHandler extends Handler {
     private static List<String> logList = new ArrayList<String>();
+    private static boolean ignoreNonSevereThrowable;
+
+    public TestHandler() {
+        ignoreNonSevereThrowable = true;
+    }
+
+    public TestHandler(final boolean ignoreNonSevereThrowable) {
+        this.ignoreNonSevereThrowable = ignoreNonSevereThrowable;
+    }
 
     public synchronized void publish(LogRecord logRecord) {
         if (logRecord != null) {
             Level level = logRecord.getLevel();
             String logMessage = MessageFormat.format(logRecord.getMessage(),logRecord.getParameters());
-            if (level == Level.SEVERE) {
+            if (!ignoreNonSevereThrowable || level == Level.SEVERE) {
                 logList.add(level + ": " + logMessage);
                 Throwable t = logRecord.getThrown();
                 if (t != null)  {
@@ -52,5 +61,9 @@ public class TestHandler extends Handler {
                 return aBoolean || log.contains(text);
             }
         });
+    }
+
+    static public int getNumLogs() {
+        return logList.size();
     }
 }

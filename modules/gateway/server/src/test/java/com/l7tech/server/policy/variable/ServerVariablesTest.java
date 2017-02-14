@@ -4,10 +4,12 @@ import com.l7tech.common.TestDocuments;
 import com.l7tech.common.http.HttpConstants;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.StashManager;
 import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.RequestId;
 import com.l7tech.gateway.common.audit.*;
+import com.l7tech.gateway.common.log.TestHandler;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.identity.User;
@@ -49,6 +51,8 @@ import com.l7tech.server.security.password.SecurePasswordManagerStub;
 import com.l7tech.test.BugId;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.*;
+import com.l7tech.xml.SoapFaultDetail;
+import com.l7tech.xml.soap.SoapVersion;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.AfterClass;
@@ -58,7 +62,9 @@ import org.junit.Test;
 import org.springframework.context.ApplicationContext;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
+import javax.xml.namespace.QName;
 import javax.xml.soap.SOAPConstants;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -80,8 +86,10 @@ import static org.junit.Assert.assertArrayEquals;
 @SuppressWarnings({"JavaDoc"})
 public class ServerVariablesTest {
     private static final Logger logger = Logger.getLogger(ServerVariablesTest.class.getName());
+    private static final Logger serverVariablesLogger = Logger.getLogger(ServerVariables.class.getName());
 
     public static final String PROP_TEMPLATE_MAX_SIZE = "com.l7tech.server.policy.variable.partInfoBodyMaxSize";
+    public static final String SOAP_NAMESPACE = "${request.soap.namespace}";
 
     private TestAudit auditor;
     private static final String REQUEST_BODY = "<myrequest/>";
@@ -1179,6 +1187,28 @@ public class ServerVariablesTest {
         expandAndCheck(c, "${request.soap.envElopeNs}", SOAPConstants.URI_NS_SOAP_1_1_ENVELOPE);
         expandAndCheck(c, "${response.soap.version}", "1.2");
         expandAndCheck(c, "${response.soap.envElopeNs}", SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE);
+    }
+
+    @BugId("DE269283")
+    @Test
+    public void testCannotGetSoapNamespaceDoNotLogStacktrace() throws Exception {
+        final TestHandler handler = new TestHandler(false);
+        handler.flush();
+        serverVariablesLogger.addHandler(handler);
+        final PolicyEnforcementContext c = context();
+        c.getRequest().attachKnob(new GetPayloadNamesThrowingSoapKnob(), SoapKnob.class);
+
+        try {
+            String[] usedVars = Syntax.getReferencedNames(SOAP_NAMESPACE);
+            Map<String, Object> vars = c.getVariableMap(usedVars, auditor);
+            ExpandVariables.process(SOAP_NAMESPACE, vars, auditor);
+            assertEquals(1, TestHandler.getNumLogs());
+            assertTrue(TestHandler.isAuditPresentContaining("WARNING: Couldnt get SOAP namespace"));
+            assertFalse(TestHandler.isAuditPresentContaining("mocking exception"));
+        } finally {
+            serverVariablesLogger.removeHandler(handler);
+            handler.flush();
+        }
     }
 
     @Test
@@ -2295,6 +2325,54 @@ public class ServerVariablesTest {
         @Override
         public void setGrantedQOS(String grantedQOS) {
             this.grantedQOS = grantedQOS;
+        }
+    }
+
+    private class GetPayloadNamesThrowingSoapKnob implements SoapKnob {
+
+        @Override
+        public QName[] getPayloadNames() throws IOException, SAXException, NoSuchPartException {
+            throw new RuntimeException("mocking exception");
+        }
+
+        @Override
+        public boolean isFault() throws SAXException, IOException, InvalidDocumentFormatException {
+            return false;
+        }
+
+        @Override
+        public SoapFaultDetail getFaultDetail() throws SAXException, IOException, InvalidDocumentFormatException {
+            return null;
+        }
+
+        @Override
+        public void setFaultDetail(SoapFaultDetail faultDetail) {
+
+        }
+
+        @Override
+        public boolean isSecurityHeaderPresent() throws NoSuchPartException, IOException, SAXException {
+            return false;
+        }
+
+        @Override
+        public void invalidate() {
+
+        }
+
+        @Override
+        public String getSoapAction() throws IOException, SAXException, NoSuchPartException {
+            return null;
+        }
+
+        @Override
+        public SoapVersion getSoapVersion() throws IOException, SAXException {
+            return null;
+        }
+
+        @Override
+        public String getSoapEnvelopeUri() throws IOException, SAXException {
+            return null;
         }
     }
 }

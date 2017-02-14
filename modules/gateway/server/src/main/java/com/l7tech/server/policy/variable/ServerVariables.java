@@ -1264,7 +1264,7 @@ public class ServerVariables {
                 QName[] uris = soapKnob.getPayloadNames();
                 return uris == null || uris.length < 1 ? null : uris[0].getNamespaceURI();
             } catch (Exception e) {
-                logger.log(Level.WARNING, "Couldn't get SOAP namespace", e);
+                logger.log(Level.WARNING, "Couldn't get SOAP namespace", ExceptionUtils.getDebugException(e));
                 return null;
             }
         }
