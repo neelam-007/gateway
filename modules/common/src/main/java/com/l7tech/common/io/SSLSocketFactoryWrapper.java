@@ -1,9 +1,7 @@
 package com.l7tech.common.io;
 
-import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions.Nullary;
-import static com.l7tech.util.Functions.nullary;
 
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
@@ -11,6 +9,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.Socket;
+
+import static com.l7tech.util.Functions.nullary;
 
 /**
  * Wrapper for an SSL Socket Factory.
@@ -82,28 +82,19 @@ public class SSLSocketFactoryWrapper extends SSLSocketFactory {
      */
     public static SSLSocketFactoryWrapper wrapAndSetTlsVersionAndCipherSuites(SSLSocketFactory socketFactory, final String[] desiredTlsVersions, final String[] desiredTlsCipherSuites) {
         return new SSLSocketFactoryWrapper(socketFactory) {
-            @SuppressWarnings("Duplicates")
             @Override
             protected Socket notifySocket( final Socket socket ) {
                 if ( socket instanceof SSLSocket) {
                     final SSLSocket sslSocket = (SSLSocket) socket;
                     if (desiredTlsVersions != null) {
-                        final String[] tlsVersions = ArrayUtils.intersection(desiredTlsVersions, sslSocket.getSupportedProtocols());
-                        if (desiredTlsVersions.length > 0 && tlsVersions.length == 0) {
-                            throw new UnsupportedTlsVersionsException("None of the specified TLS versions are supported by the underlying TLS provider");
-                        }
                         try {
-                            sslSocket.setEnabledProtocols(tlsVersions);
+                            sslSocket.setEnabledProtocols(SslSocketUtil.filterUnsupportedTlsVersions(desiredTlsVersions, sslSocket.getSupportedProtocols()));
                         } catch (IllegalArgumentException e) {
                             throw new UnsupportedTlsVersionsException("Specified TLS version is not available in the current configuration: " + ExceptionUtils.getMessage(e), e);
                         }
                     }
                     if (desiredTlsCipherSuites != null) {
-                        final String[] tlsCipherSuites = ArrayUtils.intersection(desiredTlsCipherSuites, sslSocket.getSupportedCipherSuites());
-                        if (desiredTlsCipherSuites.length > 0 && tlsCipherSuites.length == 0) {
-                            throw new UnsupportedTlsCiphersException("None of the specified TLS ciphers are supported by the underlying TLS provider");
-                        }
-                        sslSocket.setEnabledCipherSuites(tlsCipherSuites);
+                        sslSocket.setEnabledCipherSuites(SslSocketUtil.filterUnsupportedCiphers(desiredTlsCipherSuites, sslSocket.getSupportedCipherSuites()));
                     }
                 }
                 return socket;
