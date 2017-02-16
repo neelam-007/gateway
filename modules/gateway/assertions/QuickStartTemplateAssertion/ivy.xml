@@ -11,6 +11,8 @@
 	<publications>
 		<artifact name="QuickStartTemplateAssertion" type="aar" ext="aar" conf="master"/>
 		<artifact name="QuickStartTemplateAssertion" type="pom" ext="pom" conf="pom"/>
+		<artifact name="QuickStartTemplateAssertion" type="saar" ext="saar" conf="skarsigner"/>
+		<artifact name="QuickStartTemplateAssertion" type="saar.xml" ext="saar.xml" conf="skarsigner"/>
 	</publications>
 	<dependencies>
         <dependency name="layer7-modular-assertions" rev="latest.integration"
