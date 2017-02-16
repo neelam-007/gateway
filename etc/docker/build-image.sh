@@ -12,6 +12,18 @@ REGISTRY_USER='tinder'
 REGISTRY_PASS='7layer'
 REGISTRY_EMAIL='noreply@l7tech.com'
 
+# Latest Docker Base Tag
+LATEST_DOCKER_BASE=''
+
+updateDockerBaseTag() {
+    LATEST_DOCKER_BASE=$(ls | grep docker_base_tag | sed -e 's/docker_base_tag_//g')
+    
+    if [ ! -z "${LATEST_DOCKER_BASE}" ]; then
+        sed -i "/FROM apim-dr.l7tech.com\/teamcity/ c\FROM apim-dr.l7tech.com/teamcity/apim-centos6-base:${LATEST_DOCKER_BASE}" Dockerfile
+        echo "Replaced the latest docker base with apim-dr.l7tech.com/teamcity/apim-centos6-base:$LATEST_DOCKER_BASE"
+    fi
+}
+
 removeExistingContainers() {
 	echo "Removing existing Docker containers from the build agent"
 	echo "Existing containers:"
@@ -175,6 +187,7 @@ cleanup() {
 	exit $EXIT_CODE
 }
 
+updateDockerBaseTag
 removeExistingContainers
 removeExistingImages
 loginToTheRegistry
