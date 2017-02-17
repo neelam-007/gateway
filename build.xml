@@ -387,6 +387,10 @@
         <property name="dist.dir" value="${src.root}/dist"/>
         <property name="doc.root" value="${build.dir}/htdocs"/>
 
+        <!-- Migrating from SVN to Git: Empty directories don't exist in Git, so we need to ensure these exist before building. -->
+        <mkdir dir="${basedir}/lib/prebuilt/modass"/>
+        <mkdir dir="${basedir}/web"/>
+
         <!-- javadoc home -->
         <property name="javadoc.home" value="${doc.root}/javadoc"/>
         <property name="app.name" value="Layer 7 SecureSpan Suite"/>
