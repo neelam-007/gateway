@@ -221,20 +221,8 @@ public class ServerCORSAssertion extends AbstractServerAssertion<CORSAssertion> 
     }
 
     private void addHeaders(HeadersKnob headersKnob, String header, List<String> values) {
-        //Multi-Valued Headers must be delimited by comma.
-        System.out.println();
-        if (values != null && values.size() >1) {
-            StringBuilder headerValues = new StringBuilder();
-            for (String value : values){
-                headerValues.append(value);
-                headerValues.append(",");
-            }
-            headerValues.setLength(headerValues.length()-1);
-            headersKnob.addHeader(header, headerValues.toString(), HEADER_TYPE_HTTP);
-        } else {
-            for (String val : values) {
-                headersKnob.addHeader(header, val, HEADER_TYPE_HTTP);
-            }
+        for (String val : values) {
+            headersKnob.addHeader(header, val, HEADER_TYPE_HTTP);
         }
     }
 
