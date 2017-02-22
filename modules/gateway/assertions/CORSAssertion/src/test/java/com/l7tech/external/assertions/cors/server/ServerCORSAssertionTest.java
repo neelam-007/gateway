@@ -141,16 +141,16 @@ public class ServerCORSAssertionTest {
         assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Expose-Headers", HeadersKnob.HEADER_TYPE_HTTP));
         assertEquals(true, response.getHeadersKnob().containsHeader("Access-Control-Allow-Headers", HeadersKnob.HEADER_TYPE_HTTP));
 
-        String[] allowedHeaderValues =
-                response.getHeadersKnob().getHeaderValues("Access-Control-Allow-Headers", HeadersKnob.HEADER_TYPE_HTTP);
-
-        assertEquals(3, allowedHeaderValues.length);
+        String[] allowedHeaderVals = response.getHeadersKnob().getHeaderValues("Access-Control-Allow-Headers", HeadersKnob.HEADER_TYPE_HTTP);
+        String[] allowedHeaderValues = allowedHeaderVals[0].split(",");
+        assertEquals(1, allowedHeaderVals.length);
         assertEquals("param", allowedHeaderValues[0]);
         assertEquals("x-param", allowedHeaderValues[1]);
         assertEquals("x-requested-with", allowedHeaderValues[2]);
 
         assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Max-Age", HeadersKnob.HEADER_TYPE_HTTP));
     }
+
 
     @Test
     public void testAcceptAllPreflightWithSupportCredentialsDisabled_AllowOriginsWildcardAndAllowCredentialsHeaderNotAdded() throws Exception {
@@ -184,10 +184,9 @@ public class ServerCORSAssertionTest {
         assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Expose-Headers", HeadersKnob.HEADER_TYPE_HTTP));
         assertEquals(true, response.getHeadersKnob().containsHeader("Access-Control-Allow-Headers", HeadersKnob.HEADER_TYPE_HTTP));
 
-        String[] allowedHeaderValues =
-                response.getHeadersKnob().getHeaderValues("Access-Control-Allow-Headers", HeadersKnob.HEADER_TYPE_HTTP);
-
-        assertEquals(3, allowedHeaderValues.length);
+        String[] allowedHeaderVals = response.getHeadersKnob().getHeaderValues("Access-Control-Allow-Headers", HeadersKnob.HEADER_TYPE_HTTP);
+        String[] allowedHeaderValues = allowedHeaderVals[0].split(",");
+        assertEquals(1, allowedHeaderVals.length);
         assertEquals("param", allowedHeaderValues[0]);
         assertEquals("x-param", allowedHeaderValues[1]);
         assertEquals("x-requested-with", allowedHeaderValues[2]);
@@ -227,10 +226,10 @@ public class ServerCORSAssertionTest {
         assertEquals("true", response.getHeadersKnob().getHeaderValues("Access-Control-Allow-Credentials", HeadersKnob.HEADER_TYPE_HTTP)[0]);
         assertEquals(true, response.getHeadersKnob().containsHeader("Access-Control-Expose-Headers", HeadersKnob.HEADER_TYPE_HTTP));
 
-        String[] exposedHeaderValues =
+        String[] exposedHeaderVals =
                 response.getHeadersKnob().getHeaderValues("Access-Control-Expose-Headers", HeadersKnob.HEADER_TYPE_HTTP);
-
-        assertEquals(2, exposedHeaderValues.length);
+        String[] exposedHeaderValues = exposedHeaderVals[0].split(",");
+        assertEquals(1, exposedHeaderVals.length);
         assertEquals(exposedHeader1, exposedHeaderValues[0]);
         assertEquals(exposedHeader2, exposedHeaderValues[1]);
 
@@ -270,10 +269,9 @@ public class ServerCORSAssertionTest {
         assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Expose-Headers", HeadersKnob.HEADER_TYPE_HTTP));
         assertEquals(true, response.getHeadersKnob().containsHeader("Access-Control-Allow-Headers", HeadersKnob.HEADER_TYPE_HTTP));
 
-        String[] allowedHeaderValues =
-                response.getHeadersKnob().getHeaderValues("Access-Control-Allow-Headers", HeadersKnob.HEADER_TYPE_HTTP);
-
-        assertEquals(3, allowedHeaderValues.length);
+        String[] allowedHeaderVals = response.getHeadersKnob().getHeaderValues("Access-Control-Allow-Headers", HeadersKnob.HEADER_TYPE_HTTP);
+        String[] allowedHeaderValues = allowedHeaderVals[0].split(",");
+        assertEquals(1, allowedHeaderVals.length);
         assertEquals("param", allowedHeaderValues[0]);
         assertEquals("x-param", allowedHeaderValues[1]);
         assertEquals("x-requested-with", allowedHeaderValues[2]);
@@ -316,10 +314,9 @@ public class ServerCORSAssertionTest {
         assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Expose-Headers", HeadersKnob.HEADER_TYPE_HTTP));
         assertEquals(true, response.getHeadersKnob().containsHeader("Access-Control-Allow-Headers", HeadersKnob.HEADER_TYPE_HTTP));
 
-        String[] allowedHeaderValues =
-                response.getHeadersKnob().getHeaderValues("Access-Control-Allow-Headers", HeadersKnob.HEADER_TYPE_HTTP);
-
-        assertEquals(3, allowedHeaderValues.length);
+        String[] allowedHeaderVals = response.getHeadersKnob().getHeaderValues("Access-Control-Allow-Headers", HeadersKnob.HEADER_TYPE_HTTP);
+        String[] allowedHeaderValues = allowedHeaderVals[0].split(",");
+        assertEquals(1, allowedHeaderVals.length);
         assertEquals("param", allowedHeaderValues[0]);
         assertEquals("x-param", allowedHeaderValues[1]);
         assertEquals("x-requested-with", allowedHeaderValues[2]);
@@ -364,10 +361,9 @@ public class ServerCORSAssertionTest {
         assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Expose-Headers", HeadersKnob.HEADER_TYPE_HTTP));
         assertEquals(true, response.getHeadersKnob().containsHeader("Access-Control-Allow-Headers", HeadersKnob.HEADER_TYPE_HTTP));
 
-        String[] allowedHeaderValues =
-                response.getHeadersKnob().getHeaderValues("Access-Control-Allow-Headers", HeadersKnob.HEADER_TYPE_HTTP);
-
-        assertEquals(3, allowedHeaderValues.length);
+        String[] allowedHeaderVals = response.getHeadersKnob().getHeaderValues("Access-Control-Allow-Headers", HeadersKnob.HEADER_TYPE_HTTP);
+        String[] allowedHeaderValues = allowedHeaderVals[0].split(",");
+        assertEquals(1, allowedHeaderVals.length);
         assertEquals("param", allowedHeaderValues[0]);
         assertEquals("x-param", allowedHeaderValues[1]);
         assertEquals("x-requested-with", allowedHeaderValues[2]);

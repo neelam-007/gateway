@@ -83,6 +83,10 @@ public class SoapMessageProcessingServlet extends HttpServlet {
     private static final Charset SOAP_1_2_CONTENT_ENCODING = Charsets.UTF8;
     private static final String PARAM_POLICYSERVLET_URI = "PolicyServletUri";
     private static final String DEFAULT_POLICYSERVLET_URI = "/policy/disco?serviceoid=";
+    private static final String RESPONSE_ALLOW_ORIGIN = "Access-Control-Allow-Origin";
+    private static final String RESPONSE_ALLOW_CREDENTIALS = "Access-Control-Allow-Credentials";
+    private static final String HEADER_TYPE_HTTP = "HTTP Header";
+
 
     private final Logger logger = Logger.getLogger(getClass().getName());
 
@@ -303,6 +307,31 @@ public class SoapMessageProcessingServlet extends HttpServlet {
 
             // Send response headers
             final HeadersKnob responseHeaders = context.getResponse().getHeadersKnob();
+            //Fix for Duplicate Headers.
+            if(responseHeaders.containsHeader(RESPONSE_ALLOW_CREDENTIALS,HEADER_TYPE_HTTP)){
+                String[] headerValues = responseHeaders.getHeaderValues(RESPONSE_ALLOW_CREDENTIALS);
+                Set<String> uniqueHeaderValues = new HashSet<String>(Arrays.asList(headerValues));
+                StringBuilder headerValuesAsString = new StringBuilder();
+                for(String headerValue : uniqueHeaderValues){
+                    headerValuesAsString.append(headerValue);
+                    headerValuesAsString.append(",");
+                }
+                headerValuesAsString.setLength(headerValuesAsString.length() -1);
+                responseHeaders.removeHeader(RESPONSE_ALLOW_CREDENTIALS,HEADER_TYPE_HTTP);
+                responseHeaders.addHeader(RESPONSE_ALLOW_CREDENTIALS,headerValuesAsString.toString(),HEADER_TYPE_HTTP);
+            }
+            if(responseHeaders.containsHeader(RESPONSE_ALLOW_ORIGIN,HEADER_TYPE_HTTP)){
+                String[] headerValues = responseHeaders.getHeaderValues(RESPONSE_ALLOW_ORIGIN);
+                Set<String> uniqueHeaderValues = new HashSet<String>(Arrays.asList(headerValues));
+                StringBuilder headerValuesAsString = new StringBuilder();
+                for(String headerValue : uniqueHeaderValues){
+                    headerValuesAsString.append(headerValue);
+                    headerValuesAsString.append(",");
+                }
+                headerValuesAsString.setLength(headerValuesAsString.length() -1);
+                responseHeaders.removeHeader(RESPONSE_ALLOW_ORIGIN,HEADER_TYPE_HTTP);
+                responseHeaders.addHeader(RESPONSE_ALLOW_ORIGIN,headerValuesAsString.toString(),HEADER_TYPE_HTTP);
+            }
             final Collection<Pair<String, Object>> passThroughHeaders = getPassThroughHeaders(context, reqKnob, responseHeaders);
 
             respKnob.beginResponse(passThroughHeaders, Collections.<HttpCookie>emptyList());
