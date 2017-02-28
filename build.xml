@@ -1497,7 +1497,7 @@
     <!--
       Compile and package a single module and any modules that directly depend on it
     -->
-    <target name="module" description="Build and package a single module (use with -Dmodule=...)" depends="prepare.base">
+    <target name="module_internal" depends="prepare.base">
         <fail unless="module">module is a required property (the module to package)</fail>
 
         <!-- Create build list for required 1.5 modules -->
@@ -1512,7 +1512,7 @@
     <!--
       Compile and package a single module and any modules that it depends on
     -->
-    <target name="moduled" description="Build and package a single module (use with -Dmodule=...)" depends="prepare.base">
+    <target name="moduled_internal" depends="prepare.base">
         <fail unless="module">module is a required property (the module to package)</fail>
 
         <!-- Create build list for required 1.5 modules -->
@@ -1522,6 +1522,32 @@
 
         <ivy-echo-build-plan refid="module-build-path-single" pathid="module-build-path-single-text"/>
         <modules target="publish" buildpathref="module-build-path-single"/>
+    </target>
+
+    <target name="do_module_sign" depends="package.skarsigner" if="module.skar.sign">
+        <property name="skarsigner.sign.all" value="true"/>
+
+        <!-- Create build list for required 1.5 modules -->
+        <ivy:buildlist root="${module}" reference="module-build-path-single" onMissingDescriptor="skip" restartFrom="${module}">
+            <fileset dir="modules" includes="${project.module.includes}" excludes="${project.module.excludes}"/>
+        </ivy:buildlist>
+
+        <ivy-echo-build-plan refid="module-build-path-single" pathid="module-build-path-single-text"/>
+        <modules target="package" buildpathref="module-build-path-single"/>
+    </target>
+
+    <!--
+      Compile and package a single module and any modules that directly depend on it
+    -->
+    <target name="module" description="Build and package a single module (use with -Dmodule=...)" depends="module_internal,do_module_sign">
+        <fail unless="module">module is a required property (the module to package)</fail>
+    </target>
+
+    <!--
+      Compile and package a single module and any modules that directly depend on it
+    -->
+    <target name="moduled" description="Build and package a single module (use with -Dmodule=...)" depends="moduled_internal,do_module_sign">
+        <fail unless="module">module is a required property (the module to package)</fail>
     </target>
 
     <!--
