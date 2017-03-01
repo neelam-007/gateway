@@ -2,9 +2,9 @@
 <ivy-module version="2.0">
 	<info organisation="com.jayway"
 		module="json-path"
-		revision="0.8.0"
+		revision="1.2.0"
 		status="release"
-		publication="20120420115615"
+		publication="20141111115615"
 		default="true"
 	/>
 	<configurations>

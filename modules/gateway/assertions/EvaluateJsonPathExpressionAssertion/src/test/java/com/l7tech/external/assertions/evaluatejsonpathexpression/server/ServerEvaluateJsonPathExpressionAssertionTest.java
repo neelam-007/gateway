@@ -346,6 +346,26 @@ public class ServerEvaluateJsonPathExpressionAssertionTest {
         }
     }
 
+    @BugId("DE278819")
+    @Test
+    public void testRecursiveDescent() {
+        try {
+            assertion.setEvaluator("JsonPath");
+            assertion.setExpression("$..color123");
+            final AssertionStatus status = serverAssertion.checkRequest(pec);
+            Assert.assertEquals(AssertionStatus.FALSIFIED, status);
+
+            //check results
+            Assert.assertEquals(false, pec.getVariable("jsonPath.found"));
+            Assert.assertEquals(0, pec.getVariable("jsonPath.count"));
+
+            doTestForNonExistingContextVar("jsonPath.result");
+
+        } catch (Exception e) {
+            Assert.fail("Test JsonPath failed: " + e.getMessage());
+        }
+    }
+
     private void doTestForNonExistingContextVar(final String varName) {
         Assert.assertNotNull(varName);
         Assert.assertThat(varName, Matchers.not(Matchers.isEmptyOrNullString()));
