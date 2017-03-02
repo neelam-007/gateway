@@ -95,7 +95,7 @@ public class ServerSslAssertion extends AbstractServerAssertion<SslAssertion> {
                         return AssertionStatus.AUTH_FAILED;
                     }
                 }
-                logAndAudit(AssertionMessages.HTTPCLIENTCERT_FOUND, certs[0].getIssuerDN() == null ? "" : certs[0].getIssuerDN().getName());
+                logAndAudit(AssertionMessages.HTTPCLIENTCERT_FOUND, certs[0].getSubjectDN() == null ? "" : certs[0].getSubjectDN().getName());
                 authContext.addCredentials(credentials);
                 return AssertionStatus.NONE;
             } else {
