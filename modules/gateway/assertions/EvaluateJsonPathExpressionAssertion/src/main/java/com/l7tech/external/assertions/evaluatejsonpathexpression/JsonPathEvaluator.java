@@ -6,6 +6,7 @@ import com.jayway.jsonpath.Option;
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -46,15 +47,11 @@ public enum JsonPathEvaluator implements Evaluator {
                         // For example if the source is `{"test":[]}` and the expression is `$test` or `$..something` the `res` in both cases will be an empty JSONArray.
                         final Configuration conf = com.jayway.jsonpath.Configuration.builder()
                                 .options(Option.AS_PATH_LIST).build();
+                        // if this is a recursive descent expression that didn't find anything, the below will fail.
                         com.jayway.jsonpath.JsonPath.using(conf).parse(source).read(expression);
                     } else {
-                        for (Object o : (JSONArray) res) {
-                            if (o instanceof Map) {
-                                results.add(new JSONObject((Map) o).toString());
-                            } else {
-                                results.add(o.toString());
-                            }
-                        }
+                        // TODO: This is here to preserve 'ugly' backwards compatibility. This should eventually be updated to not do this flattening.
+                        results.addAll(flattenJSONArray((JSONArray) res));
                     }
                 } else if (res instanceof Map) {
                     results.add(new JSONObject((Map) res).toString());
@@ -73,6 +70,27 @@ public enum JsonPathEvaluator implements Evaluator {
                 }
             }
             return new JsonPathExpressionResult(null);
+        }
+
+        /**
+         * This will traverse a json array and recurse into any elements that are also json arrays to flatten them into a single array
+         *
+         * @param jsonArray The json array to flatten
+         * @return The flattened json array
+         */
+        @NotNull
+        private List<String> flattenJSONArray(@NotNull final JSONArray jsonArray) {
+            final List<String> results = new ArrayList<>();
+            jsonArray.forEach(o -> {
+                if (o instanceof Map) {
+                    results.add(new JSONObject((Map) o).toString());
+                } else if (o instanceof JSONArray) {
+                    results.addAll(flattenJSONArray((JSONArray) o));
+                } else {
+                    results.add(o.toString());
+                }
+            });
+            return results;
         }
 
         /**

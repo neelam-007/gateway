@@ -366,6 +366,54 @@ public class ServerEvaluateJsonPathExpressionAssertionTest {
         }
     }
 
+    @BugId("DE278819")
+    @Test
+    public void testMergeArrays() {
+        try {
+            EvaluateJsonPathExpressionAssertion assertion = new EvaluateJsonPathExpressionAssertion();
+            assertion.setTarget(TargetMessageType.REQUEST);
+            final Message request = new Message();
+            request.initialize(new ByteArrayStashManager(), ContentTypeHeader.APPLICATION_JSON, new ByteArrayInputStream("{\"test\":[1,2,3],\"blah\":{\"test\":[5],\"foo\":{\"test\":{\"bar\":{\"test\":88}}}}}".getBytes()));
+
+            Message response = new Message();
+            response.initialize(XmlUtil.stringAsDocument("<response />"));
+            PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
+            ServerEvaluateJsonPathExpressionAssertion serverAssertion = new ServerEvaluateJsonPathExpressionAssertion(assertion);
+
+
+            assertion.setEvaluator("JsonPath");
+            assertion.setExpression("$..test");
+            final AssertionStatus status = serverAssertion.checkRequest(pec);
+            Assert.assertEquals(AssertionStatus.NONE, status);
+
+            //check results
+            Assert.assertEquals(true, pec.getVariable("jsonPath.found"));
+            Assert.assertEquals(6, pec.getVariable("jsonPath.count"));
+
+            String[] expected = new String[]{
+                    "1","2","3","5","{\"bar\":{\"test\":88}}","88"
+            };
+            JSONArray expectedArray = new JSONArray();
+            for (String s : expected) {
+                expectedArray.add(jsonParser.parse(s));
+            }
+            try {
+                assertEquals(expectedArray.get(0), jsonParser.parse(pec.getVariable("jsonPath.result").toString()));
+                Object results = pec.getVariable("jsonPath.results");
+                JSONArray actualArray = new JSONArray();
+                for(Object s : (Object[])results) {
+                    actualArray.add(jsonParser.parse(s.toString()));
+                }
+                assertEquals(expectedArray, actualArray);
+            } catch (NoSuchVariableException e) {
+                Assert.fail("Should have NOT failed with NoSuchVariableException!");
+            }
+
+        } catch (Exception e) {
+            Assert.fail("Test JsonPath failed: " + e.getMessage());
+        }
+    }
+
     private void doTestForNonExistingContextVar(final String varName) {
         Assert.assertNotNull(varName);
         Assert.assertThat(varName, Matchers.not(Matchers.isEmptyOrNullString()));
