@@ -368,12 +368,13 @@ public class ServerEvaluateJsonPathExpressionAssertionTest {
 
     @BugId("DE278819")
     @Test
-    public void testMergeArrays() {
+    public void testBackwardsCompatibility() {
+        // This test will validate backwards compatibility with results returned in 9.2.00 and earlier.
         try {
             EvaluateJsonPathExpressionAssertion assertion = new EvaluateJsonPathExpressionAssertion();
             assertion.setTarget(TargetMessageType.REQUEST);
             final Message request = new Message();
-            request.initialize(new ByteArrayStashManager(), ContentTypeHeader.APPLICATION_JSON, new ByteArrayInputStream("{\"test\":[1,2,3],\"blah\":{\"test\":[5],\"foo\":{\"test\":{\"bar\":{\"test\":88}}}}}".getBytes()));
+            request.initialize(new ByteArrayStashManager(), ContentTypeHeader.APPLICATION_JSON, new ByteArrayInputStream("{\"test\":[1,[2,99],3,{\"test\":\"inarray\"},6],\"blah\":{\"test\":[5],\"foo\":{\"test\":{\"bar\":{\"test\":88}}}}}".getBytes()));
 
             Message response = new Message();
             response.initialize(XmlUtil.stringAsDocument("<response />"));
@@ -388,10 +389,10 @@ public class ServerEvaluateJsonPathExpressionAssertionTest {
 
             //check results
             Assert.assertEquals(true, pec.getVariable("jsonPath.found"));
-            Assert.assertEquals(6, pec.getVariable("jsonPath.count"));
+            Assert.assertEquals(9, pec.getVariable("jsonPath.count"));
 
             String[] expected = new String[]{
-                    "1","2","3","5","{\"bar\":{\"test\":88}}","88"
+                    "1","[2,99]","3","{\"test\":\"inarray\"}","6","inarray","5","{\"bar\":{\"test\":88}}","88"
             };
             JSONArray expectedArray = new JSONArray();
             for (String s : expected) {

@@ -73,7 +73,13 @@ public enum JsonPathEvaluator implements Evaluator {
         }
 
         /**
-         * This will traverse a json array and recurse into any elements that are also json arrays to flatten them into a single array
+         * This will traverse a json array and recurse into any elements that are also json arrays to flatten them into a single array.
+         *
+         * The JSONArrays are only flattened for 1 level. For example:
+         *
+         * JSON: {"test":[1,[2,99],3,{"test":"inarray"},6],"blah":{"test":[5],"foo":{"test":{"bar":{"test":88}}}}}
+         * Expression: $..test
+         * Result: ["1","[2,99]","3","{"test":"inarray"}","6","inarray","5","{"bar":{"test":88}}","88"]
          *
          * @param jsonArray The json array to flatten
          * @return The flattened json array
@@ -81,13 +87,19 @@ public enum JsonPathEvaluator implements Evaluator {
         @NotNull
         private List<String> flattenJSONArray(@NotNull final JSONArray jsonArray) {
             final List<String> results = new ArrayList<>();
-            jsonArray.forEach(o -> {
-                if (o instanceof Map) {
-                    results.add(new JSONObject((Map) o).toString());
-                } else if (o instanceof JSONArray) {
-                    results.addAll(flattenJSONArray((JSONArray) o));
+            jsonArray.forEach(obj -> {
+                if (obj instanceof Map) {
+                    results.add(new JSONObject((Map) obj).toString());
+                } else if (obj instanceof JSONArray) {
+                    ((JSONArray) obj).forEach(subObj -> {
+                        if (subObj instanceof Map) {
+                            results.add(new JSONObject((Map) subObj).toString());
+                        } else {
+                            results.add(subObj.toString());
+                        }
+                    });
                 } else {
-                    results.add(o.toString());
+                    results.add(obj.toString());
                 }
             });
             return results;
