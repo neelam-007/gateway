@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.quickstarttemplate.server;
 
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.external.assertions.quickstarttemplate.QuickStartTemplateAssertion;
+import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStartEncapsulatedAssertionLocator;
 import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStartEncapsulatedAssertionTemplate;
 import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStartServiceBuilder;
 import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStartServiceBuilderRestmanImpl;
@@ -11,12 +12,14 @@ import com.l7tech.identity.UserBean;
 import com.l7tech.json.InvalidJsonException;
 import com.l7tech.message.Message;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.EncapsulatedAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.wsp.WspReader;
+import com.l7tech.server.folder.FolderManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.EncapsulatedAssertionConfigManager;
 import com.l7tech.server.policy.ServerPolicyFactory;
@@ -24,8 +27,8 @@ import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.security.rbac.ProtectedEntityTracker;
 import com.l7tech.util.ExceptionUtils;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.context.ApplicationContext;
 
-import javax.inject.Inject;
 import java.io.IOException;
 import java.util.*;
 import java.util.logging.Level;
@@ -44,17 +47,26 @@ import java.util.logging.Logger;
 public class ServerQuickStartTemplateAssertion extends AbstractServerAssertion<QuickStartTemplateAssertion> {
     private static final Logger logger = Logger.getLogger(ServerQuickStartTemplateAssertion.class.getName());
 
-    @Inject private EncapsulatedAssertionConfigManager encapsulatedAssertionConfigManager;
-    @Inject private WspReader wspReader;
-    @Inject private ServerPolicyFactory serverPolicyFactory;
-    @Inject private ProtectedEntityTracker protectedEntityTracker;
+    private EncapsulatedAssertionConfigManager encapsulatedAssertionConfigManager;
+    private FolderManager folderManager;
+    private WspReader wspReader;
+    private ServerPolicyFactory serverPolicyFactory;
+    private ProtectedEntityTracker protectedEntityTracker;
+    private QuickStartEncapsulatedAssertionLocator assertionLocator;
 
-    public ServerQuickStartTemplateAssertion( final QuickStartTemplateAssertion assertion) throws PolicyAssertionException {
+    public ServerQuickStartTemplateAssertion( final QuickStartTemplateAssertion assertion, final ApplicationContext applicationContext) throws PolicyAssertionException {
         super(assertion);
+        encapsulatedAssertionConfigManager = applicationContext.getBean("encapsulatedAssertionConfigManager", EncapsulatedAssertionConfigManager.class);
+        folderManager = applicationContext.getBean("folderManager", FolderManager.class);
+        wspReader = applicationContext.getBean("wspReader", WspReader.class);
+        serverPolicyFactory = applicationContext.getBean("policyFactory", ServerPolicyFactory.class);
+        protectedEntityTracker = applicationContext.getBean("protectedEntityTracker", ProtectedEntityTracker.class);
+        assertionLocator = new QuickStartEncapsulatedAssertionLocator(encapsulatedAssertionConfigManager, folderManager,
+                new Goid(QuickStartTemplateAssertion.PROVIDED_FRAGMENT_FOLDER_GOID),
+                new Goid(QuickStartTemplateAssertion.USER_FRAGMENT_FOLDER_GOID));
     }
 
     public AssertionStatus checkRequest( final PolicyEnforcementContext context ) throws IOException, PolicyAssertionException {
-
         // TODO get YAML (later)
 
         final Object serviceObject = getJsonMap(context.getRequest()).get("Service");
@@ -152,6 +164,7 @@ public class ServerQuickStartTemplateAssertion extends AbstractServerAssertion<Q
             EncapsulatedAssertionConfig encassConfig;
             try {
                 encassConfig = encapsulatedAssertionConfigManager.findByUniqueName(encassName);
+                EncapsulatedAssertion assertion =  assertionLocator.findEncasulatedAssertion(encassName);
                 if (encassConfig == null) {
                     context.setVariable(QuickStartTemplateAssertion.QS_WARNINGS, "Unable to find encapsulated assertion template named : " + encassName);   // TODO append to existing warnings
                     logger.log(Level.WARNING, "Unable to find encapsulated assertion template named : " + encassName);

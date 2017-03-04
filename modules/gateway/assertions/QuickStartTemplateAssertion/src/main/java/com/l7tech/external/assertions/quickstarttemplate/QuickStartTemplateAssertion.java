@@ -15,6 +15,8 @@ import java.util.Map;
  * Explore how we can transfer the complexity burden to more experienced Gateway users ahead of time using encapsulated assertion templating.
  */
 public class QuickStartTemplateAssertion extends Assertion implements SetsVariables {
+    public static final String PROVIDED_FRAGMENT_FOLDER_GOID = "2a97ddf9a6e77162832b9c27bc8f57e0";
+    public static final String USER_FRAGMENT_FOLDER_GOID = "d1bf78b539c944534cc5d33d1ff4fc64";
     public static final String QS_WARNINGS = "qs.warnings";
 
     @Override
