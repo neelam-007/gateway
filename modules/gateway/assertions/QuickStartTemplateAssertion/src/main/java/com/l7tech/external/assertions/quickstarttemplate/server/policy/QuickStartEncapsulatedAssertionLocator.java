@@ -1,6 +1,5 @@
 package com.l7tech.external.assertions.quickstarttemplate.server.policy;
 
-import com.google.common.collect.Lists;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
@@ -21,26 +20,18 @@ public class QuickStartEncapsulatedAssertionLocator {
     private final EncapsulatedAssertionConfigManager encassConfigManager;
     private final FolderManager folderManager;
     private final Goid quickStartProvidedAssertionFolder;
-    private final Goid userProvidedAssertionFolder;
 
     public QuickStartEncapsulatedAssertionLocator(@NotNull final EncapsulatedAssertionConfigManager encassConfigManager,
                                                   @NotNull final FolderManager folderManager,
-                                                  @NotNull final Goid quickStartProvidedAssertionFolder,
-                                                  @NotNull final Goid userProvidedAssertionFolder) {
+                                                  @NotNull final Goid quickStartProvidedAssertionFolder) {
         this.encassConfigManager = encassConfigManager;
         this.folderManager = folderManager;
         this.quickStartProvidedAssertionFolder = quickStartProvidedAssertionFolder;
-        this.userProvidedAssertionFolder = userProvidedAssertionFolder;
     }
 
     @Nullable
     public EncapsulatedAssertion findEncasulatedAssertion(@NotNull final String name) throws FindException {
-        // Check user folders first, and if that fails, check our folders.
-        EncapsulatedAssertion assertion = findInSubfolder(userProvidedAssertionFolder, name);
-        if (assertion == null) {
-            assertion = findInSubfolder(quickStartProvidedAssertionFolder, name);
-        }
-        return assertion;
+        return findInSubfolder(quickStartProvidedAssertionFolder, name);
     }
 
     @Nullable

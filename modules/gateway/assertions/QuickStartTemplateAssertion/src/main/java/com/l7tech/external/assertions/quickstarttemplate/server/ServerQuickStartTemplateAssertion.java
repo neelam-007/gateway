@@ -62,8 +62,7 @@ public class ServerQuickStartTemplateAssertion extends AbstractServerAssertion<Q
         serverPolicyFactory = applicationContext.getBean("policyFactory", ServerPolicyFactory.class);
         protectedEntityTracker = applicationContext.getBean("protectedEntityTracker", ProtectedEntityTracker.class);
         assertionLocator = new QuickStartEncapsulatedAssertionLocator(encapsulatedAssertionConfigManager, folderManager,
-                new Goid(QuickStartTemplateAssertion.PROVIDED_FRAGMENT_FOLDER_GOID),
-                new Goid(QuickStartTemplateAssertion.USER_FRAGMENT_FOLDER_GOID));
+                new Goid(QuickStartTemplateAssertion.PROVIDED_FRAGMENT_FOLDER_GOID));
     }
 
     public AssertionStatus checkRequest( final PolicyEnforcementContext context ) throws IOException, PolicyAssertionException {

@@ -33,17 +33,16 @@ public class QuickStartEncapsulatedAssertionLocatorTest {
     @Mock
     private FolderManager folderManager;
     private Goid quickStartProvidedAssertionFolder = new Goid("ABABABABABABABABABABABABABABABAB");
-    private Goid userProvidedAssertionFolder = new Goid("12121212121212121212121212121212");
 
     @Before
     public void setUp() {
-        fixture = new QuickStartEncapsulatedAssertionLocator(encassConfigManager, folderManager, quickStartProvidedAssertionFolder, userProvidedAssertionFolder);
+        fixture = new QuickStartEncapsulatedAssertionLocator(encassConfigManager, folderManager, quickStartProvidedAssertionFolder);
     }
 
     @Test
-    public void findEncapsulatedAssertionShouldSucceedWhenFoundInUserFolder() throws Exception {
+    public void findEncapsulatedAssertionShouldSucceedWhenFoundInFolder() throws Exception {
         final Folder parentFolder = mock(Folder.class);
-        when(folderManager.findByPrimaryKey(userProvidedAssertionFolder)).thenReturn(parentFolder);
+        when(folderManager.findByPrimaryKey(quickStartProvidedAssertionFolder)).thenReturn(parentFolder);
         final Folder containingFolder = mock(Folder.class);
         final EncapsulatedAssertionConfig config = mockEncapsulatedAssertionConfig(mock(Policy.class), containingFolder);
         when(encassConfigManager.findByUniqueName("SomeName")).thenReturn(config);
@@ -52,9 +51,9 @@ public class QuickStartEncapsulatedAssertionLocatorTest {
     }
 
     @Test
-    public void findEncapsulatedAssertionShouldSucceedWhenFoundInDescendentOfUserFolder() throws Exception {
+    public void findEncapsulatedAssertionShouldSucceedWhenFoundInDescendentOfFolder() throws Exception {
         final Folder parentFolder = mock(Folder.class);
-        when(folderManager.findByPrimaryKey(userProvidedAssertionFolder)).thenReturn(parentFolder);
+        when(folderManager.findByPrimaryKey(quickStartProvidedAssertionFolder)).thenReturn(parentFolder);
         final Folder containingFolder = mock(Folder.class);
         final EncapsulatedAssertionConfig config = mockEncapsulatedAssertionConfig(mock(Policy.class), containingFolder);
         when(encassConfigManager.findByUniqueName("SomeName")).thenReturn(config);
@@ -63,42 +62,25 @@ public class QuickStartEncapsulatedAssertionLocatorTest {
     }
 
     @Test
-    public void findEncapsulatedAssertionShouldSucceedWhenFoundInDescendentOfQuickStartFolder() throws Exception {
-        final Folder userParentFolder = mock(Folder.class);
-        when(folderManager.findByPrimaryKey(userProvidedAssertionFolder)).thenReturn(userParentFolder);
-        final Folder quickStartParentFolder = mock(Folder.class);
-        when(folderManager.findByPrimaryKey(quickStartProvidedAssertionFolder)).thenReturn(quickStartParentFolder);
+    public void findEncapsulatedAssertionShouldFailWhenNotFoundInDescendentOfFolder() throws Exception {
+        final Folder parentFolder = mock(Folder.class);
+        when(folderManager.findByPrimaryKey(quickStartProvidedAssertionFolder)).thenReturn(parentFolder);
         final Folder containingFolder = mock(Folder.class);
         final EncapsulatedAssertionConfig config = mockEncapsulatedAssertionConfig(mock(Policy.class), containingFolder);
         when(encassConfigManager.findByUniqueName("SomeName")).thenReturn(config);
-        when(userParentFolder.getNesting(containingFolder)).thenReturn(-1);
-        when(quickStartParentFolder.getNesting(containingFolder)).thenReturn(3);
-        assertThat(fixture.findEncasulatedAssertion("SomeName"), notNullValue());
-    }
-
-    @Test
-    public void findEncapsulatedAssertionShouldFailWhenNotFoundInDescendentOfEitherFolder() throws Exception {
-        final Folder userParentFolder = mock(Folder.class);
-        when(folderManager.findByPrimaryKey(userProvidedAssertionFolder)).thenReturn(userParentFolder);
-        final Folder quickStartParentFolder = mock(Folder.class);
-        when(folderManager.findByPrimaryKey(quickStartProvidedAssertionFolder)).thenReturn(quickStartParentFolder);
-        final Folder containingFolder = mock(Folder.class);
-        final EncapsulatedAssertionConfig config = mockEncapsulatedAssertionConfig(mock(Policy.class), containingFolder);
-        when(encassConfigManager.findByUniqueName("SomeName")).thenReturn(config);
-        when(userParentFolder.getNesting(containingFolder)).thenReturn(-1);
-        when(quickStartParentFolder.getNesting(containingFolder)).thenReturn(-1);
+        when(parentFolder.getNesting(containingFolder)).thenReturn(-1);
         assertThat(fixture.findEncasulatedAssertion("SomeName"), nullValue());
     }
 
     @Test(expected = FindException.class)
     public void findEncapsulatedAssertionShouldThrowOnFindException() throws Exception {
-        when(folderManager.findByPrimaryKey(userProvidedAssertionFolder)).thenThrow(new FindException());
+        when(folderManager.findByPrimaryKey(quickStartProvidedAssertionFolder)).thenThrow(new FindException());
         fixture.findEncasulatedAssertion("SomeName");
     }
 
     @Test(expected = IllegalStateException.class)
     public void findEncapsulatedAssertionShouldThrowOnMissingRootFolder() throws Exception {
-        when(folderManager.findByPrimaryKey(userProvidedAssertionFolder)).thenReturn(null);
+        when(folderManager.findByPrimaryKey(quickStartProvidedAssertionFolder)).thenReturn(null);
         fixture.findEncasulatedAssertion("SomeName");
     }
 
