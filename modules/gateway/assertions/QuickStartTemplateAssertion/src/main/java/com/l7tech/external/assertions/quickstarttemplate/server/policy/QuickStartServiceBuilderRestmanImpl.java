@@ -5,63 +5,26 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.identity.UserBean;
 import com.l7tech.message.Message;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.Policy;
-import com.l7tech.policy.wsp.WspReader;
-import com.l7tech.server.policy.ServerPolicyFactory;
-import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.server.security.rbac.ProtectedEntityTracker;
 import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
 
 import javax.xml.transform.dom.DOMResult;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.logging.Logger;
 
 /**
  * Build service using restman bundle.
  */
 public class QuickStartServiceBuilderRestmanImpl implements QuickStartServiceBuilder {
-    private static final Logger logger = Logger.getLogger(QuickStartServiceBuilderRestmanImpl.class.getName());
-
-    private static final String REST_GATEWAY_MANAGEMENT_POLICY_XML =
-            "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">" +
-                    "<wsp:All wsp:Usage=\"Required\">" +
-                    "<L7p:RESTGatewayManagement>" +
-                    "<L7p:OtherTargetMessageVariable stringValue=\"request\"/>" +
-                    "<L7p:Target target=\"OTHER\"/>" +
-                    "</L7p:RESTGatewayManagement>" +
-                    "</wsp:All>" +
-                    "</wsp:Policy>";
-
     private final static String ROOT_FOLDER_GOID = Folder.ROOT_FOLDER_ID.toString();
-
-    private final @NotNull WspReader wspReader;
-    private final @NotNull ServerPolicyFactory serverPolicyFactory;
-    private final @NotNull ProtectedEntityTracker protectedEntityTracker;
     private final @NotNull QuickStartEncapsulatedAssertionTemplate quickStartEncapsulatedAssertionTemplate;
 
-    private final @Nullable UserBean authenticatedUser;
-
-    private ServerAssertion serverRestGatewayManagementAssertion = null;
-
-    public QuickStartServiceBuilderRestmanImpl(
-            @NotNull final WspReader wspReader,
-            @NotNull final ServerPolicyFactory serverPolicyFactory,
-            @NotNull final ProtectedEntityTracker protectedEntityTracker,
-            @Nullable final UserBean authenticatedUser,
-            @NotNull final QuickStartEncapsulatedAssertionTemplate quickStartEncapsulatedAssertionTemplate
-    ) {
-        this.wspReader = wspReader;
-        this.serverPolicyFactory = serverPolicyFactory;
-        this.protectedEntityTracker = protectedEntityTracker;
-        this.authenticatedUser = authenticatedUser;
+    public QuickStartServiceBuilderRestmanImpl(@NotNull final QuickStartEncapsulatedAssertionTemplate quickStartEncapsulatedAssertionTemplate) {
         this.quickStartEncapsulatedAssertionTemplate = quickStartEncapsulatedAssertionTemplate;
     }
 

@@ -20,14 +20,11 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.EncapsulatedAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.composite.AllAssertion;
-import com.l7tech.policy.wsp.WspReader;
-import com.l7tech.server.folder.FolderManager;
 import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.server.folder.FolderManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.EncapsulatedAssertionConfigManager;
-import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
-import com.l7tech.server.security.rbac.ProtectedEntityTracker;
 import com.l7tech.util.ExceptionUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationContext;
@@ -51,10 +48,6 @@ public class ServerQuickStartTemplateAssertion extends AbstractServerAssertion<Q
     private static final Logger logger = Logger.getLogger(ServerQuickStartTemplateAssertion.class.getName());
 
     private EncapsulatedAssertionConfigManager encapsulatedAssertionConfigManager;
-    private FolderManager folderManager;
-    private WspReader wspReader;
-    private ServerPolicyFactory serverPolicyFactory;
-    private ProtectedEntityTracker protectedEntityTracker;
     private QuickStartEncapsulatedAssertionLocator assertionLocator;
 
     // invoked using reflection
@@ -62,10 +55,7 @@ public class ServerQuickStartTemplateAssertion extends AbstractServerAssertion<Q
     public ServerQuickStartTemplateAssertion( final QuickStartTemplateAssertion assertion, final ApplicationContext applicationContext) throws PolicyAssertionException {
         super(assertion);
         encapsulatedAssertionConfigManager = applicationContext.getBean("encapsulatedAssertionConfigManager", EncapsulatedAssertionConfigManager.class);
-        folderManager = applicationContext.getBean("folderManager", FolderManager.class);
-        wspReader = applicationContext.getBean("wspReader", WspReader.class);
-        serverPolicyFactory = applicationContext.getBean("policyFactory", ServerPolicyFactory.class);
-        protectedEntityTracker = applicationContext.getBean("protectedEntityTracker", ProtectedEntityTracker.class);
+        final FolderManager folderManager = applicationContext.getBean("folderManager", FolderManager.class);
         assertionLocator = new QuickStartEncapsulatedAssertionLocator(encapsulatedAssertionConfigManager, folderManager,
                 new Goid(QuickStartTemplateAssertion.PROVIDED_FRAGMENT_FOLDER_GOID));
     }
@@ -92,7 +82,7 @@ public class ServerQuickStartTemplateAssertion extends AbstractServerAssertion<Q
         QuickStartServiceBuilder quickStartServiceBuilder;
         try {
             // service builder - restman
-            quickStartServiceBuilder = new QuickStartServiceBuilderRestmanImpl(wspReader, serverPolicyFactory, protectedEntityTracker, userBean, quickStartEncapsulatedAssertionTemplate);
+            quickStartServiceBuilder = new QuickStartServiceBuilderRestmanImpl(quickStartEncapsulatedAssertionTemplate);
 
             // service builder - service manager; optionally substituted with com.l7tech.server.policy.ServiceManager
             //    e.g. follow logic in ServiceAPIResourceFactory#createResourceInternal or in com.l7tech.console.panels.AbstractPublishServiceWizard#checkResolutionConflictAndSave
