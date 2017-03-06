@@ -8,12 +8,6 @@ import org.jetbrains.annotations.NotNull;
  */
 public class QuickStartServiceBuilderManagerImpl implements QuickStartServiceBuilder {
     @Override
-    public void createService() {
-        // TODO
-        throw new UnsupportedOperationException("createService not implemented");
-    }
-
-    @Override
     public <T> T createServiceBundle(@NotNull final Class<T> resType) throws Exception {
         // TODO
         throw new UnsupportedOperationException("createServiceBundle not implemented");

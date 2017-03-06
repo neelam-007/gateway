@@ -4,38 +4,24 @@ import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
-import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.identity.UserBean;
 import com.l7tech.message.Message;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.Policy;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.wsp.WspReader;
-import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.ServerPolicyException;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities;
-import com.l7tech.server.policy.bundle.ssgman.GatewayManagementInvoker;
-import com.l7tech.server.policy.bundle.ssgman.restman.RestmanInvoker;
-import com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage;
 import com.l7tech.server.security.rbac.ProtectedEntityTracker;
-import com.l7tech.util.*;
+import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.xml.sax.SAXException;
 
 import javax.xml.transform.dom.DOMResult;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -77,12 +63,6 @@ public class QuickStartServiceBuilderRestmanImpl implements QuickStartServiceBui
         this.protectedEntityTracker = protectedEntityTracker;
         this.authenticatedUser = authenticatedUser;
         this.quickStartEncapsulatedAssertionTemplate = quickStartEncapsulatedAssertionTemplate;
-    }
-
-    @Override
-    public void createService() throws Exception {
-        // TODO return import results to client?
-        importBundle(createServiceBundle(String.class));
     }
 
     /**
@@ -204,110 +184,5 @@ public class QuickStartServiceBuilderRestmanImpl implements QuickStartServiceBui
         }
 
         return mappings;
-    }
-
-    private String importBundle(@NotNull final String requestXml) throws Exception {
-        final RestmanInvoker restmanInvoker = getRestmanInvoker();
-        restmanInvoker.setAuthenticatedUser(authenticatedUser);
-
-        try {
-            final PolicyEnforcementContext pec = restmanInvoker.getContext(requestXml);
-            pec.setVariable(RestmanInvoker.VAR_RESTMAN_URI, "1.0/services");
-            pec.setVariable(RestmanInvoker.VAR_RESTMAN_ACTION, "POST");
-
-            // allow this code to "punch through" read-only entities
-            Pair<AssertionStatus, RestmanMessage> result;
-            try {
-                result = protectedEntityTracker.doWithEntityProtectionDisabled(getProtectedEntityTrackerCallable(restmanInvoker, pec, requestXml));
-            } catch (GatewayManagementDocumentUtilities.AccessDeniedManagementResponse |
-                    GatewayManagementDocumentUtilities.UnexpectedManagementResponse |
-                    InterruptedException e) {
-                throw e;
-            } catch ( Exception e ) {
-                throw new RuntimeException( e );
-            }
-
-            if (AssertionStatus.NONE != result.left) {
-                String msg = "Unable to install bundle. Failed to invoke REST Gateway Management assertion: " + result.left.getMessage();
-                logger.log(Level.WARNING, msg);
-                throw new QuickStartPolicyBuilderException(result.left.getMessage());
-            }
-
-            if (result.right.hasMappingError()) {
-                String msg = "Unable to install bundle due to mapping errors:\n" + result.right.getAsString();
-                logger.log(Level.WARNING, msg);
-                throw new QuickStartPolicyBuilderException(result.right.getAsString());
-            }
-            return result.right.getAsString();
-        } catch (GatewayManagementDocumentUtilities.AccessDeniedManagementResponse | IOException e) {
-            logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-            throw new QuickStartPolicyBuilderException(ExceptionUtils.getMessage(e), e);
-        } catch (GatewayManagementDocumentUtilities.UnexpectedManagementResponse e) {
-            logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-            throw getRestmanErrorDetail(e);
-        } catch (InterruptedException e) {
-            // do nothing
-        }
-
-        return "";
-    }
-
-    private RestmanInvoker getRestmanInvoker() throws QuickStartPolicyBuilderException {
-        // create RestmanInvoker
-        if (serverRestGatewayManagementAssertion == null) {
-            try {
-                Assertion assertion = wspReader.parseStrictly(REST_GATEWAY_MANAGEMENT_POLICY_XML, WspReader.Visibility.omitDisabled);
-                serverRestGatewayManagementAssertion = serverPolicyFactory.compilePolicy(assertion, false);
-            } catch (IOException | ServerPolicyException | LicenseException e) {
-                logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                throw new QuickStartPolicyBuilderException("Unable to initialize ServerRESTGatewayManagementAssertion.", e);
-            }
-        }
-
-        GatewayManagementInvoker invoker = context -> serverRestGatewayManagementAssertion.checkRequest(context);
-
-        return new RestmanInvoker(() -> {
-            // nothing to do in cancelled callback.
-            return true;
-        }, invoker);
-    }
-
-    /**
-     * This method will parse out the restman response and look for the <l7:Detail> tag to get the error message
-     * details.  If that string contains the word "Exception", it will create a new Exception based on that string
-     * value and throw it as a regular Exception (this is for unhandled exceptions).  Not the ideal way to
-     * do this, but given the SK codebase as is stands now, there isn't much of a choice.
-     *
-     * @param ex Restman exception
-     * @return The error message detail string
-     * @throws Exception
-     */
-    private QuickStartPolicyBuilderException getRestmanErrorDetail(@NotNull GatewayManagementDocumentUtilities.UnexpectedManagementResponse ex) throws Exception {
-        try {
-            final Document doc = XmlUtil.parse(ExceptionUtils.getMessage(ex));
-            // get error type
-            final Element msgTypeNode = XmlUtil.findExactlyOneChildElementByName(doc.getDocumentElement(), doc.getNamespaceURI(), "Type");
-            final String errorType = XmlUtil.getTextValue(msgTypeNode, true);
-            // get error message
-            final Element msgDetailsNode = XmlUtil.findExactlyOneChildElementByName(doc.getDocumentElement(), doc.getNamespaceURI(), "Detail");
-            final String detailMsg = XmlUtil.getTextValue(msgDetailsNode, true);
-            // BundleResource.importBundle fails with either CONFLICT or BAD_REQUEST (in case one of the entities in the bundle are invalid i.e. throws ResourceFactory.InvalidResourceException)
-            // CONFLICT should be handled by test so it is of no interest here
-            // BAD_REQUEST i.e. when ResourceFactory.InvalidResourceException is throw the error type is "InvalidResource", as per ExceptionMapper.handleOperationException()
-            // if one of the above methods are changed this logic must be changed as well
-            if ("InvalidResource".equalsIgnoreCase(errorType)) {
-                return new QuickStartPolicyBuilderException(detailMsg);
-            } else if (detailMsg.contains("Exception")) {
-                throw new Exception(detailMsg);
-            } else {
-                return new QuickStartPolicyBuilderException(detailMsg);
-            }
-        } catch (final SAXException | MissingRequiredElementException | TooManyChildElementsException e) {
-            throw ex;
-        }
-    }
-
-    private Callable<Pair<AssertionStatus, RestmanMessage>> getProtectedEntityTrackerCallable(final RestmanInvoker restmanInvoker, final PolicyEnforcementContext pec, final String requestXml) {
-        return () -> restmanInvoker.callManagementCheckInterrupted(pec, requestXml);
     }
 }
