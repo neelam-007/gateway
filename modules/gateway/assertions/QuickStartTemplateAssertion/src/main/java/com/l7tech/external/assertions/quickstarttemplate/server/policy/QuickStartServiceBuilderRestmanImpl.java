@@ -1,12 +1,17 @@
 package com.l7tech.external.assertions.quickstarttemplate.server.policy;
 
+import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.gateway.api.*;
+import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.identity.UserBean;
+import com.l7tech.message.Message;
+import com.l7tech.objectmodel.folder.Folder;
+import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.EncapsulatedAssertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyException;
@@ -17,18 +22,18 @@ import com.l7tech.server.policy.bundle.ssgman.GatewayManagementInvoker;
 import com.l7tech.server.policy.bundle.ssgman.restman.RestmanInvoker;
 import com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage;
 import com.l7tech.server.security.rbac.ProtectedEntityTracker;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.MissingRequiredElementException;
-import com.l7tech.util.Pair;
-import com.l7tech.util.TooManyChildElementsException;
+import com.l7tech.util.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
+import javax.xml.transform.dom.DOMResult;
 import java.io.IOException;
-import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -49,6 +54,8 @@ public class QuickStartServiceBuilderRestmanImpl implements QuickStartServiceBui
                     "</wsp:All>" +
                     "</wsp:Policy>";
 
+    private final static String ROOT_FOLDER_GOID = Folder.ROOT_FOLDER_ID.toString();
+
     private final @NotNull WspReader wspReader;
     private final @NotNull ServerPolicyFactory serverPolicyFactory;
     private final @NotNull ProtectedEntityTracker protectedEntityTracker;
@@ -58,8 +65,13 @@ public class QuickStartServiceBuilderRestmanImpl implements QuickStartServiceBui
 
     private ServerAssertion serverRestGatewayManagementAssertion = null;
 
-    public QuickStartServiceBuilderRestmanImpl(@NotNull final WspReader wspReader, @NotNull final ServerPolicyFactory serverPolicyFactory, @NotNull final ProtectedEntityTracker protectedEntityTracker,
-                                               @Nullable final UserBean authenticatedUser, @NotNull final QuickStartEncapsulatedAssertionTemplate quickStartEncapsulatedAssertionTemplate) {
+    public QuickStartServiceBuilderRestmanImpl(
+            @NotNull final WspReader wspReader,
+            @NotNull final ServerPolicyFactory serverPolicyFactory,
+            @NotNull final ProtectedEntityTracker protectedEntityTracker,
+            @Nullable final UserBean authenticatedUser,
+            @NotNull final QuickStartEncapsulatedAssertionTemplate quickStartEncapsulatedAssertionTemplate
+    ) {
         this.wspReader = wspReader;
         this.serverPolicyFactory = serverPolicyFactory;
         this.protectedEntityTracker = protectedEntityTracker;
@@ -69,75 +81,129 @@ public class QuickStartServiceBuilderRestmanImpl implements QuickStartServiceBui
 
     @Override
     public void createService() throws Exception {
-        final String encassSubResource =
-                        "        &lt;L7p:Encapsulated&gt;\n" +
-                        "            &lt;L7p:EncapsulatedAssertionConfigGuid stringValue=&quot;{0}&quot;/&gt;\n" +
-                        "            &lt;L7p:EncapsulatedAssertionConfigName stringValue=&quot;{1}&quot;/&gt;\n" +
-                        "            {2}" +
-                        "        &lt;/L7p:Encapsulated&gt;\n";
+        // TODO return import results to client?
+        importBundle(createServiceBundle(String.class));
+    }
 
-        String encassSubResourceParameterEntry =
-                        "                &lt;L7p:entry&gt;\n" +
-                        "                    &lt;L7p:key stringValue=&quot;{0}&quot;/&gt;\n" +
-                        "                    &lt;L7p:value stringValue=&quot;{1}&quot;/&gt;\n" +
-                        "                &lt;/L7p:entry&gt;\n" ;
+    /**
+     * Creates service bundle with the specified output type.
+     * <br/>
+     * Supported types:<br/>
+     * <ul>
+     *     <li>{@code ServiceMO}: RESTMan managed service object</li>
+     *     <li>{@code String}: RESTMam bundle XML</li>
+     *     <li>{@code Document}: RESTMam bundle XML</li>
+     *     <li>{@code Message}: RESTMam bundle XML</li>
+     * </ul>
+     *
+     * @param resType  required type of the service bundle
+     * @throws Exception if an error happens while creating the bundle.
+     * IllegalArgumentException is thrown when {@code resType} is unsupported.
+     */
+    @Override
+    public <T> T createServiceBundle(@NotNull final Class<T> resType) throws Exception {
+        final PublishedService publishedService = quickStartEncapsulatedAssertionTemplate.getPublishedService();
 
-        StringBuilder encassResourceSb = new StringBuilder();
-        for (EncapsulatedAssertion encapsulatedAssertion : quickStartEncapsulatedAssertionTemplate.getEncapsulatedAssertions()) {
-
-            StringBuilder encassResourceParameterSb = new StringBuilder();
-            if (encapsulatedAssertion.getParameterNames().size() > 0) {
-                encassResourceParameterSb.append("            &lt;L7p:Parameters mapValue=&quot;included&quot;&gt;\n");
-                for (String parameterName : encapsulatedAssertion.getParameterNames()) {
-                    encassResourceParameterSb.append(MessageFormat.format(encassSubResourceParameterEntry, parameterName, encapsulatedAssertion.getParameter(parameterName)));
-                }
-                encassResourceParameterSb.append("            &lt;/L7p:Parameters&gt;");
-            }
-
-            encassResourceSb.append(MessageFormat.format(encassSubResource,
-                    encapsulatedAssertion.getEncapsulatedAssertionConfigGuid(),
-                    encapsulatedAssertion.getEncapsulatedAssertionConfigName(),
-                    encassResourceParameterSb.toString()));
+        final ServiceMO serviceMO = asResource(publishedService);
+        if (ServiceMO.class.equals(resType)) {
+            return resType.cast(serviceMO);
         }
 
-        // TODO use reflection to add service attributes dynamically
-        PublishedService publishedService = quickStartEncapsulatedAssertionTemplate.getPublishedService();
+        if (String.class.equals(resType)) {
+            final DOMResult result = new DOMResult();
+            MarshallingUtils.marshal(serviceMO, result, false);
+            return resType.cast(XmlUtil.nodeToString(result.getNode()));
+        }
 
-        // TODO hardcode for now
-        final String httpMethods =
-                "                            <l7:Verb>GET</l7:Verb>\n" +
-                "                            <l7:Verb>POST</l7:Verb>\n" +
-                "                            <l7:Verb>PUT</l7:Verb>\n";
+        if (Document.class.equals(resType)) {
+            final DOMResult result = new DOMResult();
+            MarshallingUtils.marshal(serviceMO, result, false);
+            return resType.cast(result.getNode());
+        }
 
-        String serviceCreateRestmanReq =
-                "        <l7:Service xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\" version=\"0\">\n" +
-                "            <l7:ServiceDetail folderId=\"0000000000000000ffffffffffffec76\">\n" +
-                "                <l7:Name>{0}</l7:Name>\n" +
-                "                <l7:Enabled>true</l7:Enabled>\n" +
-                "                <l7:ServiceMappings>\n" +
-                "                    <l7:HttpMapping>\n" +
-                "                        <l7:UrlPattern>{1}</l7:UrlPattern>\n" +
-                "                        <l7:Verbs>\n" +
-                "                            {2}\n" +
-                "                        </l7:Verbs>\n" +
-                "                    </l7:HttpMapping>\n" +
-                "                </l7:ServiceMappings>\n" +
-                "            </l7:ServiceDetail>\n" +
-                "            <l7:Resources>\n" +
-                "                <l7:ResourceSet tag=\"policy\">\n" +
-                "                    <l7:Resource type=\"policy\" version=\"0\">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;\n" +
-                "&lt;wsp:Policy xmlns:L7p=&quot;http://www.layer7tech.com/ws/policy&quot; xmlns:wsp=&quot;http://schemas.xmlsoap.org/ws/2002/12/policy&quot;&gt;\n" +
-                "    &lt;wsp:All wsp:Usage=&quot;Required&quot;&gt;\n" +
-                "        {3}\n" +
-                "    &lt;/wsp:All&gt;\n" +
-                "&lt;/wsp:Policy&gt;\n" +
-                "</l7:Resource>\n" +
-                "                </l7:ResourceSet>\n" +
-                "            </l7:Resources>\n" +
-                "        </l7:Service>";
+        if (Message.class.equals(resType)) {
+            final DOMResult result = new DOMResult();
+            MarshallingUtils.marshal(serviceMO, result, false);
+            return resType.cast(new Message((Document) result.getNode()));
+        }
 
-        // TODO return import results to client?
-        importBundle(MessageFormat.format(serviceCreateRestmanReq, publishedService.getName(), publishedService.getRoutingUri(), httpMethods, encassResourceSb.toString()));
+        throw new IllegalArgumentException("Unsupported result class: " + resType.getName());
+    }
+
+    /**
+     * Utility method to create a RESTMan managed object from the specified {@code publishedService}
+     *
+     * <p>
+     * TODO: Consider refactoring to reuse {@code com.l7tech.external.assertions.gatewaymanagement.server.ServiceResourceFactory#asResource()}
+     * </p>
+     *
+     * @param publishedService    input service
+     *
+     * @return RESTMan managed service object {@link ServiceMO}, never {@code null}.
+     */
+    @NotNull
+    private ServiceMO asResource(@NotNull final PublishedService publishedService) {
+        final Policy policy = publishedService.getPolicy();
+
+        final ServiceMO service = ManagedObjectFactory.createService();
+        final ServiceDetail serviceDetail = ManagedObjectFactory.createServiceDetail();
+
+        //service.setId( publishedService.getId() );
+        service.setServiceDetail(serviceDetail);
+        final List<ResourceSet> resourceSets = new ArrayList<>();
+        resourceSets.add( buildPolicyResourceSet( policy ) );
+        service.setResourceSets( resourceSets );
+
+        //serviceDetail.setId( publishedService.getId() );
+        //serviceDetail.setVersion( publishedService.getVersion() );
+        serviceDetail.setFolderId( ROOT_FOLDER_GOID );
+        serviceDetail.setName( publishedService.getName() );
+        serviceDetail.setEnabled( !publishedService.isDisabled() );
+        serviceDetail.setServiceMappings( buildServiceMappings(publishedService) );
+
+        // TODO handle SecurityZone once we support it via json payload
+
+        return service;
+    }
+
+    private static final String POLICY_TAG = "policy";
+    private static final String POLICY_TYPE = "policy";
+
+    @NotNull
+    private ResourceSet buildPolicyResourceSet(@NotNull final Policy policy) {
+        final ResourceSet resourceSet = ManagedObjectFactory.createResourceSet();
+        resourceSet.setTag(POLICY_TAG);
+        final Resource resource = ManagedObjectFactory.createResource();
+        resourceSet.setResources(Collections.singletonList(resource));
+        resource.setType(POLICY_TYPE);
+        resource.setContent(policy.getXml());
+        if (policy.getVersion() != -1 ) {
+            resource.setVersion( policy.getVersion() );
+        }
+        return resourceSet;
+    }
+
+    @NotNull
+    private List<ServiceDetail.ServiceMapping> buildServiceMappings( final PublishedService publishedService ) {
+        final List<ServiceDetail.ServiceMapping> mappings = new ArrayList<>();
+
+        final ServiceDetail.HttpMapping httpMapping = ManagedObjectFactory.createHttpMapping();
+        httpMapping.setUrlPattern( publishedService.getRoutingUri() );
+        httpMapping.setVerbs( Functions.map( publishedService.getHttpMethodsReadOnly(), new Functions.Unary<String,HttpMethod>(){
+            @Override
+            public String call( final HttpMethod httpMethod ) {
+                return httpMethod.name();
+            }
+        }) );
+        mappings.add( httpMapping );
+
+        if ( publishedService.isSoap() ) {
+            ServiceDetail.SoapMapping soapMapping = ManagedObjectFactory.createSoapMapping();
+            soapMapping.setLax( publishedService.isLaxResolution() );
+            mappings.add( soapMapping );
+        }
+
+        return mappings;
     }
 
     private String importBundle(@NotNull final String requestXml) throws Exception {

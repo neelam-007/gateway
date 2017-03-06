@@ -14,16 +14,18 @@ import java.util.Map;
  * We explore how to use encapsulated assertions to help make policy format more compact and with less learning curve.
  * Explore how we can transfer the complexity burden to more experienced Gateway users ahead of time using encapsulated assertion templating.
  */
-public class QuickStartTemplateAssertion extends Assertion implements SetsVariables {
+public class QuickStartTemplateAssertion extends MessageTargetableAssertion implements SetsVariables {
     public static final String PROVIDED_FRAGMENT_FOLDER_GOID = "2a97ddf9a6e77162832b9c27bc8f57e0";
     public static final String QS_WARNINGS = "qs.warnings";
+    public static final String QS_BUNDLE = "qs.bundle";
 
     @Override
-    public VariableMetadata[] getVariablesSet() {
-        return new VariableMetadata[]{
-                new VariableMetadata(QS_WARNINGS, true, true, null, false, DataType.STRING)
-        };
-    };
+    protected VariablesSet doGetVariablesSet() {
+        return super.doGetVariablesSet().withVariables(
+                new VariableMetadata(QS_WARNINGS, true, true, null, false, DataType.STRING),
+                new VariableMetadata(QS_BUNDLE, true, true, null, false, DataType.MESSAGE)
+        );
+    }
 
     //
     // Metadata
@@ -36,7 +38,7 @@ public class QuickStartTemplateAssertion extends Assertion implements SetsVariab
             return meta;
 
         // Cluster properties used by this assertion
-        Map<String, String[]> props = new HashMap<String, String[]>();
+        Map<String, String[]> props = new HashMap<>();
         //props.put(NAME, new String[] {
         //        DESCRIPTION,
         //        DEFAULT

@@ -10,7 +10,9 @@ import java.util.List;
  * Holder of service and encapsulated assertion data required to create the service.
  */
 public class QuickStartEncapsulatedAssertionTemplate {
+    @NotNull
     private final PublishedService publishedService;
+    @NotNull
     private final List<EncapsulatedAssertion> encapsulatedAssertions;
 
     public QuickStartEncapsulatedAssertionTemplate(@NotNull final PublishedService publishedService, @NotNull final List<EncapsulatedAssertion> encapsulatedAssertions) {
@@ -18,10 +20,12 @@ public class QuickStartEncapsulatedAssertionTemplate {
         this.encapsulatedAssertions = encapsulatedAssertions;
     }
 
+    @NotNull
     PublishedService getPublishedService() {
         return publishedService;
     }
 
+    @NotNull
     List<EncapsulatedAssertion> getEncapsulatedAssertions() {
         return encapsulatedAssertions;
     }

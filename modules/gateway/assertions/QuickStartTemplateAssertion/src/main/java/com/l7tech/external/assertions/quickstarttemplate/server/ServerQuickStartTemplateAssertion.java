@@ -15,11 +15,14 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
+import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.EncapsulatedAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.folder.FolderManager;
+import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.EncapsulatedAssertionConfigManager;
 import com.l7tech.server.policy.ServerPolicyFactory;
@@ -54,6 +57,8 @@ public class ServerQuickStartTemplateAssertion extends AbstractServerAssertion<Q
     private ProtectedEntityTracker protectedEntityTracker;
     private QuickStartEncapsulatedAssertionLocator assertionLocator;
 
+    // invoked using reflection
+    @SuppressWarnings("unused")
     public ServerQuickStartTemplateAssertion( final QuickStartTemplateAssertion assertion, final ApplicationContext applicationContext) throws PolicyAssertionException {
         super(assertion);
         encapsulatedAssertionConfigManager = applicationContext.getBean("encapsulatedAssertionConfigManager", EncapsulatedAssertionConfigManager.class);
@@ -75,8 +80,8 @@ public class ServerQuickStartTemplateAssertion extends AbstractServerAssertion<Q
 
         // get service and encapsulated assertion info from json payload
         final Map serviceMap = (Map) serviceObject;
-        final PublishedService publishedService = getPublishedService(serviceMap);
         final List<EncapsulatedAssertion> encapsulatedAssertions = getEncapsulatedAssertions(serviceMap, context);
+        final PublishedService publishedService = createPublishedService(serviceMap, encapsulatedAssertions);
         final QuickStartEncapsulatedAssertionTemplate quickStartEncapsulatedAssertionTemplate = new QuickStartEncapsulatedAssertionTemplate(publishedService, encapsulatedAssertions);
 
         // set authenticated user credential to use for restman request later
@@ -96,7 +101,8 @@ public class ServerQuickStartTemplateAssertion extends AbstractServerAssertion<Q
             // TODO for next iteration, validate encass output variables match that of the next encass config input? (e.g. validate encass chaining?)
 
             // use service builder to create service
-            quickStartServiceBuilder.createService();
+            context.setVariable(QuickStartTemplateAssertion.QS_BUNDLE, quickStartServiceBuilder.createServiceBundle(Message.class));
+            //quickStartServiceBuilder.createService();
         } catch (Exception e) {
             throw new PolicyAssertionException(assertion, e);
         }
@@ -113,7 +119,11 @@ public class ServerQuickStartTemplateAssertion extends AbstractServerAssertion<Q
         }
     }
 
-    private PublishedService getPublishedService(@NotNull final Map serviceMap) throws PolicyAssertionException {
+    @NotNull
+    private PublishedService createPublishedService(
+            @NotNull final Map serviceMap,
+            @NotNull final List<EncapsulatedAssertion> encapsulatedAssertions
+    ) throws PolicyAssertionException {
         // create and validate
         final PublishedService publishedService = new PublishedService();
 
@@ -139,7 +149,23 @@ public class ServerQuickStartTemplateAssertion extends AbstractServerAssertion<Q
 
         // TODO more validation and fields?
 
+        // generate service policy based of the encaps
+        generatePolicy(publishedService, encapsulatedAssertions);
+
         return publishedService;
+    }
+
+    /**
+     * Utility method to generate the policy (from the ordered {@code encapsulatedAssertions}) for the specified {@code service}.
+     *
+     * @param service                   the {@link PublishedService} for which we are goningto generate the policy
+     * @param encapsulatedAssertions    ordered list of {@link EncapsulatedAssertion}'s to use as a source when generating the policy
+     */
+    private void generatePolicy(@NotNull final PublishedService service, @NotNull final List<EncapsulatedAssertion> encapsulatedAssertions) {
+        final Policy policy = service.getPolicy();
+        final AllAssertion allAss = new AllAssertion();
+        encapsulatedAssertions.forEach(allAss::addChild);
+        policy.setXml(WspWriter.getPolicyXml(allAss));
     }
 
     /**
