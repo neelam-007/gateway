@@ -179,7 +179,7 @@ public class ServerQuickStartTemplateAssertion extends AbstractServerAssertion<Q
             EncapsulatedAssertionConfig encassConfig;
             try {
                 encassConfig = encapsulatedAssertionConfigManager.findByUniqueName(encassName);
-                EncapsulatedAssertion assertion =  assertionLocator.findEncasulatedAssertion(encassName);
+                EncapsulatedAssertion assertion =  assertionLocator.findEncapsulatedAssertion(encassName);
                 if (encassConfig == null) {
                     context.setVariable(QuickStartTemplateAssertion.QS_WARNINGS, "Unable to find encapsulated assertion template named : " + encassName);   // TODO append to existing warnings
                     logger.log(Level.WARNING, "Unable to find encapsulated assertion template named : " + encassName);

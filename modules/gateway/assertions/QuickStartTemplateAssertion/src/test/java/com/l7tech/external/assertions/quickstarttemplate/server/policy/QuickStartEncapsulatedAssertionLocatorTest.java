@@ -5,21 +5,17 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.Policy;
-import com.l7tech.policy.assertion.EncapsulatedAssertion;
 import com.l7tech.server.folder.FolderManager;
 import com.l7tech.server.policy.EncapsulatedAssertionConfigManager;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.*;
-import static org.mockito.Matchers.isNotNull;
-import static org.mockito.Matchers.notNull;
+import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -47,7 +43,7 @@ public class QuickStartEncapsulatedAssertionLocatorTest {
         final EncapsulatedAssertionConfig config = mockEncapsulatedAssertionConfig(mock(Policy.class), containingFolder);
         when(encassConfigManager.findByUniqueName("SomeName")).thenReturn(config);
         when(parentFolder.getNesting(containingFolder)).thenReturn(0);
-        assertThat(fixture.findEncasulatedAssertion("SomeName"), notNullValue());
+        assertThat(fixture.findEncapsulatedAssertion("SomeName"), notNullValue());
     }
 
     @Test
@@ -58,7 +54,7 @@ public class QuickStartEncapsulatedAssertionLocatorTest {
         final EncapsulatedAssertionConfig config = mockEncapsulatedAssertionConfig(mock(Policy.class), containingFolder);
         when(encassConfigManager.findByUniqueName("SomeName")).thenReturn(config);
         when(parentFolder.getNesting(containingFolder)).thenReturn(3);
-        assertThat(fixture.findEncasulatedAssertion("SomeName"), notNullValue());
+        assertThat(fixture.findEncapsulatedAssertion("SomeName"), notNullValue());
     }
 
     @Test
@@ -69,19 +65,19 @@ public class QuickStartEncapsulatedAssertionLocatorTest {
         final EncapsulatedAssertionConfig config = mockEncapsulatedAssertionConfig(mock(Policy.class), containingFolder);
         when(encassConfigManager.findByUniqueName("SomeName")).thenReturn(config);
         when(parentFolder.getNesting(containingFolder)).thenReturn(-1);
-        assertThat(fixture.findEncasulatedAssertion("SomeName"), nullValue());
+        assertThat(fixture.findEncapsulatedAssertion("SomeName"), nullValue());
     }
 
     @Test(expected = FindException.class)
     public void findEncapsulatedAssertionShouldThrowOnFindException() throws Exception {
         when(folderManager.findByPrimaryKey(quickStartProvidedAssertionFolder)).thenThrow(new FindException());
-        fixture.findEncasulatedAssertion("SomeName");
+        fixture.findEncapsulatedAssertion("SomeName");
     }
 
     @Test(expected = IllegalStateException.class)
     public void findEncapsulatedAssertionShouldThrowOnMissingRootFolder() throws Exception {
         when(folderManager.findByPrimaryKey(quickStartProvidedAssertionFolder)).thenReturn(null);
-        fixture.findEncasulatedAssertion("SomeName");
+        fixture.findEncapsulatedAssertion("SomeName");
     }
 
     private EncapsulatedAssertionConfig mockEncapsulatedAssertionConfig(final Policy mockPolicy, final Folder mockFolder) {

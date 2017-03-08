@@ -30,7 +30,7 @@ public class QuickStartEncapsulatedAssertionLocator {
     }
 
     @Nullable
-    public EncapsulatedAssertion findEncasulatedAssertion(@NotNull final String name) throws FindException {
+    public EncapsulatedAssertion findEncapsulatedAssertion(@NotNull final String name) throws FindException {
         return findInSubfolder(quickStartProvidedAssertionFolder, name);
     }
 

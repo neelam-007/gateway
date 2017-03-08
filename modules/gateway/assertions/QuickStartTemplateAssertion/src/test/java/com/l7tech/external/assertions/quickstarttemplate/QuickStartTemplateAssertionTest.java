@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.quickstarttemplate;
 
+import com.l7tech.policy.AllAssertionsTest;
 import org.junit.Test;
 
 import java.util.logging.Logger;
@@ -13,7 +14,7 @@ public class QuickStartTemplateAssertionTest {
 
     @Test
     public void testCloneIsDeepCopy() throws Exception {
-//       TODO AllAssertionsTest.checkCloneIsDeepCopy(new QuickStartTemplateAssertion());
+        AllAssertionsTest.checkCloneIsDeepCopy( new QuickStartTemplateAssertion() );
     }
 
 }
