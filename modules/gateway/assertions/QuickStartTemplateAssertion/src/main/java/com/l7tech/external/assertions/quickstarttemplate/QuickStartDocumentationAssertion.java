@@ -1,6 +1,9 @@
 package com.l7tech.external.assertions.quickstarttemplate;
 
-import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.AssertionMetadata;
+import com.l7tech.policy.assertion.DefaultAssertionMetadata;
+import com.l7tech.policy.assertion.MessageTargetableAssertion;
+import com.l7tech.policy.assertion.SetsVariables;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
 
@@ -16,22 +19,23 @@ import static com.l7tech.policy.assertion.AssertionMetadata.MODULE_LOAD_LISTENER
  * We explore how to use encapsulated assertions to help make policy format more compact and with less learning curve.
  * Explore how we can transfer the complexity burden to more experienced Gateway users ahead of time using encapsulated assertion templating.
  */
-public class QuickStartTemplateAssertion extends MessageTargetableAssertion implements SetsVariables {
-    public static final String QS_WARNINGS = "qs.warnings";
-    public static final String QS_BUNDLE = "qs.bundle";
+public class QuickStartDocumentationAssertion extends MessageTargetableAssertion implements SetsVariables {
+    public static final String QS_DESCRIPTION_PROPERTY = "description";
+    public static final String QS_SCHEMA_PROPERTY = "doc_qs_schema";
+    public static final String QS_SAMPLE_PROPERTY = "doc_qs_sample";
+    public static final String QS_DOC = "qs.doc";
 
     @Override
     protected VariablesSet doGetVariablesSet() {
         return super.doGetVariablesSet().withVariables(
-                new VariableMetadata(QS_WARNINGS, true, true, null, false, DataType.STRING),
-                new VariableMetadata(QS_BUNDLE, true, true, null, false, DataType.MESSAGE)
+                new VariableMetadata(QS_DOC, true, true, null, false, DataType.STRING)
         );
     }
 
     //
     // Metadata
     //
-    private static final String META_INITIALIZED = QuickStartTemplateAssertion.class.getName() + ".metadataInitialized";
+    private static final String META_INITIALIZED = QuickStartDocumentationAssertion.class.getName() + ".metadataInitialized";
 
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
@@ -47,8 +51,8 @@ public class QuickStartTemplateAssertion extends MessageTargetableAssertion impl
         meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
 
         // Set description for GUI
-        meta.put(AssertionMetadata.SHORT_NAME, "Quick Start Template");
-        meta.put(AssertionMetadata.LONG_NAME, "Quick Start Template");
+        meta.put(AssertionMetadata.SHORT_NAME, "Quick Start Documentation");
+        meta.put(AssertionMetadata.LONG_NAME, "Quick Start Documentation");
 
         // Add to palette folder(s) 
         //   accessControl, transportLayerSecurity, xmlSecurity, xml, routing, 

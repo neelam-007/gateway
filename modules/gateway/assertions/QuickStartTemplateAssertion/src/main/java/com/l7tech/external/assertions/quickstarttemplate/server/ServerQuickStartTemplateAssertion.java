@@ -12,7 +12,6 @@ import com.l7tech.identity.UserBean;
 import com.l7tech.json.InvalidJsonException;
 import com.l7tech.message.Message;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.policy.Policy;
@@ -21,7 +20,6 @@ import com.l7tech.policy.assertion.EncapsulatedAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspWriter;
-import com.l7tech.server.folder.FolderManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.EncapsulatedAssertionConfigManager;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
@@ -55,9 +53,7 @@ public class ServerQuickStartTemplateAssertion extends AbstractServerAssertion<Q
     public ServerQuickStartTemplateAssertion( final QuickStartTemplateAssertion assertion, final ApplicationContext applicationContext) throws PolicyAssertionException {
         super(assertion);
         encapsulatedAssertionConfigManager = applicationContext.getBean("encapsulatedAssertionConfigManager", EncapsulatedAssertionConfigManager.class);
-        final FolderManager folderManager = applicationContext.getBean("folderManager", FolderManager.class);
-        assertionLocator = new QuickStartEncapsulatedAssertionLocator(encapsulatedAssertionConfigManager, folderManager,
-                new Goid(QuickStartTemplateAssertion.PROVIDED_FRAGMENT_FOLDER_GOID));
+        assertionLocator = QuickStartAssertionModuleLifecycle.getEncapsulatedAssertionLocator();
     }
 
     public AssertionStatus checkRequest( final PolicyEnforcementContext context ) throws IOException, PolicyAssertionException {
