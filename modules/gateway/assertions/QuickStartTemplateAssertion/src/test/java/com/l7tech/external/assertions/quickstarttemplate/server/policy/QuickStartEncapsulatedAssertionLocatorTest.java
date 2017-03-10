@@ -1,6 +1,6 @@
 package com.l7tech.external.assertions.quickstarttemplate.server.policy;
 
-import com.google.common.collect.Sets;
+import com.google.common.collect.ImmutableSet;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
@@ -93,7 +93,7 @@ public class QuickStartEncapsulatedAssertionLocatorTest {
         final Folder uncontainedFolder = mockPossibleChildFolder(parentFolder, -1);
         final EncapsulatedAssertionConfig nonQuickStartConfig = mockEncapsulatedAssertionConfig("OtherName", mock(Policy.class), uncontainedFolder);
 
-        when(encassConfigManager.findAll()).thenReturn(Sets.newHashSet(nonQuickStartConfig, quickStartConfig));
+        when(encassConfigManager.findAll()).thenReturn(ImmutableSet.of(nonQuickStartConfig, quickStartConfig));
 
         final Set<EncapsulatedAssertion> assertions = fixture.findEncapsulatedAssertions();
         assertThat(assertions.size(), equalTo(1));

@@ -1,0 +1,37 @@
+<html>
+<head>
+    <title>Quick Start Documentation</title>
+    <script src="https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js"></script>
+</head>
+<body>
+
+<h1>Quick Start Documentation</h1>
+
+<h2>Introduction</h2>
+<p>Blah blah blah.</p>
+
+<h2>Description of Top Level Containers and Schema</h2>
+<p>Blah blah blah?</p>
+
+<h2>Available Assertions</h2>
+{{#assertions}}
+<h3>{{config.name}}</h3>
+{{#config.properties.description}}
+<p>{{this}}</p>
+{{/config.properties.description}}
+{{#config.properties.doc_qs_schema}}
+<details>
+    <summary>Schema</summary>
+    <pre class="prettyprint">{{this}}</pre>
+</details>
+{{/config.properties.doc_qs_schema}}
+{{#config.properties.doc_qs_sample}}
+<details>
+    <summary>Sample</summary>
+    <pre class="prettyprint">{{this}}</pre>
+</details>
+{{/config.properties.doc_qs_sample}}
+{{/assertions}}
+
+</body>
+</html>
