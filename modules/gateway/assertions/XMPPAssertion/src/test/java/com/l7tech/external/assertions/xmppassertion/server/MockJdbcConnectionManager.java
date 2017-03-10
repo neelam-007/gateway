@@ -5,7 +5,6 @@ import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.jdbc.JdbcConnectionManager;
 import org.jetbrains.annotations.Nullable;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.util.Collection;
 import java.util.List;
@@ -20,11 +19,6 @@ public class MockJdbcConnectionManager implements JdbcConnectionManager {
     @Override
     public JdbcConnection getJdbcConnection(String connectionName) throws FindException {
         return null;
-    }
-
-    @Override
-    public JdbcConnection getJdbcConnectionCached(String connectionName) throws FindException {
-        throw new NotImplementedException();
     }
 
     @Nullable
@@ -129,5 +123,10 @@ public class MockJdbcConnectionManager implements JdbcConnectionManager {
     @Override
     public boolean isDriverClassSupported(String driverClass) {
         return false;
+    }
+
+    @Override
+    public void clearAllFromCache() {
+
     }
 }

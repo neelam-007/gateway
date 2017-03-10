@@ -27,6 +27,7 @@ import java.util.TreeMap;
 @Entity
 @Proxy(lazy=false)
 @Table(name="jdbc_connection")
+@org.hibernate.annotations.Cache(usage = org.hibernate.annotations.CacheConcurrencyStrategy.READ_WRITE, region = "com.l7tech.gateway.common.jdbc.JdbcConnection")
 public class JdbcConnection extends ZoneableNamedEntityImp implements Comparable {
     private String driverClass;
     private String jdbcUrl;

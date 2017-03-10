@@ -29,7 +29,7 @@ import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.persistence.Table;
-import java.lang.ref.SoftReference;
+import java.lang.ref.WeakReference;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
@@ -66,18 +66,6 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
     public static final Object NULL = new Object();
     public static final Object NOTNULL = new Object();
 
-    @SuppressWarnings({"FieldNameHidesFieldInSuperclass"})
-    private final Logger logger = Logger.getLogger(getClass().getName());
-
-    private static final boolean useOptimizedCount = ConfigFactory.getBooleanProperty( "com.l7tech.server.hibernate.useOptimizedCount", true );
-
-    private String tableName;
-    private EntityType entityType;
-
-    public void setTransactionManager(PlatformTransactionManager transactionManager) {
-        this.transactionManager = transactionManager;
-    }
-
     private final String HQL_FIND_ALL_GOIDS_AND_VERSIONS =
             "SELECT " +
                     getTableName() + "." + F_GOID + ", " +
@@ -100,9 +88,6 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
             "FROM " + getTableName() +
             " IN CLASS " + getImpClass().getName() +
             " WHERE " + getTableName() + "." + F_GOID + " = ?";
-
-    private final ReadWriteLock cacheLock = new ReentrantReadWriteLock();
-    private final Cache cache = new Cache();
 
     protected PlatformTransactionManager transactionManager; // required for TransactionTemplate
     protected ApplicationContext applicationContext;
@@ -161,12 +146,10 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
      */
     @Transactional(readOnly = true)
     protected ET findByUniqueKey(final String uniquePropertyName, final Goid uniqueKey) throws FindException {
-        if (uniquePropertyName == null) {
-            throw new NullPointerException();
-        }
-        if (uniquePropertyName.trim().isEmpty()) {
+        if (uniquePropertyName == null) throw new NullPointerException();
+        if (uniquePropertyName.trim().isEmpty())
             throw new IllegalArgumentException("uniquePropertyName cannot be empty");
-        }
+
         return findUnique( Collections.<String,Object>singletonMap(uniquePropertyName, uniqueKey) );
     }
 
@@ -498,11 +481,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
 
     @Override
     public Goid save(ET entity) throws SaveException {
-        if (logger.isLoggable(Level.FINE)) {
-            logger.log(Level.FINE, "Saving {0} ({1})",
-                    new Object[] {getImpClass().getSimpleName(), entity==null ? null : entity.toString()});
-        }
-
+        if (logger.isLoggable(Level.FINE)) logger.log(Level.FINE, "Saving {0} ({1})", new Object[] { getImpClass().getSimpleName(), entity==null ? null : entity.toString() });
         try {
             if (getUniqueType() != UniqueType.NONE) {
                 final Collection<Map<String, Object>> constraints = getUniqueConstraints(entity);
@@ -513,18 +492,14 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                     throw new SaveException("Couldn't find previous version(s) to check uniqueness", e);
                 }
 
-                if (!others.isEmpty()) {
-                    throw new DuplicateObjectException(describeAttributes(constraints));
-                }
+                if (!others.isEmpty()) throw new DuplicateObjectException(describeAttributes(constraints));
             }
 
             Object key = getHibernateTemplate().save(entity);
-            if (!(key instanceof Goid)) {
+            if (!(key instanceof Goid))
                 throw new SaveException("Primary key was a " + key.getClass().getName() + ", not a Goid");
-            }
 
             return (Goid)key;
-
         } catch (RuntimeException e) {
             throw new SaveException("Couldn't save " + entity.getClass().getSimpleName(), e);
         }
@@ -532,25 +507,14 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
 
     @Override
     public void save(@NotNull final Goid id, @NotNull final ET entity) throws SaveException {
-        if (logger.isLoggable(Level.FINE)) {
-            logger.log(Level.FINE,
-                    "Saving {0} ({1}) with id {2}",
-                    new Object[] {
-                            getImpClass().getSimpleName(),
-                            entity==null ? null : entity.toString(),
-                            id.toString()});
-        }
-
+        if (logger.isLoggable(Level.FINE)) logger.log(Level.FINE, "Saving {0} ({1}) with id {2}", new Object[] { getImpClass().getSimpleName(), entity==null ? null : entity.toString(), id.toString() });
         if(GoidRange.RESERVED_RANGE.isInRange(id)) {
             throw new SaveException("Cannot save an entity with an id in the reserved range. ID: " + id);
         }
-
         try {
             try {
                 final ET other = findByPrimaryKey(id);
-                if (other != null) {
-                    throw new DuplicateObjectException("Other entity exists with the given id: " + id);
-                }
+                if(other != null) throw new DuplicateObjectException("Other entity exists with the given id: " + id);
             } catch (FindException e) {
                 //do nothing. This means that there is no other entity with the same goid.
             }
@@ -585,9 +549,8 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
             result.append(") ");
         }
 
-        if (result.length() == 0) {
+        if (result.length() == 0)
             throw new IllegalStateException("Unique attribute map was empty");
-        }
 
         result.append(" must be unique");
         return result.toString();
@@ -887,11 +850,9 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                     if (todelete.size() == 0) {
                         // nothing to do
                     } else if (todelete.size() == 1) {
-                        @SuppressWarnings("unchecked")
-                        final ET entity = (ET) todelete.get(0);
+                        final Object entity = todelete.get(0);
                         publishRoleAwareEntityDeletionEvent(entity);
                         session.delete(entity);
-                        cache.remove(entity);
                     } else {
                         throw new RuntimeException("More than one entity found with goid = " + goid);
                     }
@@ -914,12 +875,10 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                     if (entity == null) {
                         publishRoleAwareEntityDeletionEvent(et);
                         session.delete(et);
-                        cache.remove(et);
                     } else {
                         publishRoleAwareEntityDeletionEvent(entity);
                         // Avoid NonUniqueObjectException if an older version of this is still in the Session
                         session.delete(entity);
-                        cache.remove(entity);
                     }
                     return null;
                 }
@@ -929,43 +888,35 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
         }
     }
 
+    @Transactional(propagation=SUPPORTS)
+    public boolean isCacheCurrent(Goid goid, int maxAge) {
+        Lock read = cacheLock.readLock();
+        CacheInfo cacheInfo;
+        try {
+            read.lock();
+            WeakReference<CacheInfo<ET>> ref = cacheInfoByGoid.get(goid);
+            read.unlock(); read = null;
+            cacheInfo = ref == null ? null : ref.get();
+            return cacheInfo != null && cacheInfo.timestamp + (long) maxAge >= System.currentTimeMillis();
+        } finally {
+            if (read != null) read.unlock();
+        }
+
+    }
+
     @SuppressWarnings({"unchecked"})
     @Transactional(propagation=SUPPORTS)
     public ET getCachedEntityByName(final String name, int maxAge) throws FindException {
-        if (name == null) {
-            throw new NullPointerException();
-        }
-
-        if (!(NamedEntity.class.isAssignableFrom(getImpClass()))) {
-            throw new IllegalArgumentException("This Manager's entities are not NamedEntities!");
-        }
-
+        if (name == null) throw new NullPointerException();
+        if (!(NamedEntity.class.isAssignableFrom(getImpClass()))) throw new IllegalArgumentException("This Manager's entities are not NamedEntities!");
+        Lock read = cacheLock.readLock();
         try {
-            CacheInfo<ET> cinfo = cache.get(name);
+            read.lock();
+            WeakReference<CacheInfo<ET>> ref = cacheInfoByName.get(name);
+            read.unlock(); read = null;
+            CacheInfo<ET> cinfo = ref == null ? null : ref.get();
 
-            if (cinfo != null) {
-                ET fresh = freshen(cinfo, maxAge);
-
-                // if freshen() didn't find it, it's not there
-                if (fresh == null) {
-                    return null;
-                }
-
-                // if freshen found it, and its name hasn't changed, then that's our result
-                NamedEntity namedFresh = (NamedEntity) fresh;
-                if (name.equals(namedFresh.getName())) {
-                    return fresh;
-                }
-
-                // if freshen() found it in the cache but its name in the DB is changed,
-                // then we get it by name from the DB again
-                ET foundByName = findByUniqueName(name);
-                if (foundByName != null) {
-                    return checkAndCache(foundByName);
-                }
-
-                return null;
-            }
+            if (cinfo != null) return freshen(cinfo, maxAge);
 
             return (ET) new TransactionTemplate(transactionManager).execute(new TransactionCallback() {
                 @Override
@@ -979,31 +930,11 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
                     }
                 }
             });
-
         } catch (RuntimeException e) {
             throw new FindException(ExceptionUtils.getMessage(e), e);
+        } finally {
+            if (read != null) read.unlock();
         }
-    }
-
-    private ET freshen(CacheInfo<ET> cacheInfo, int maxAge) throws FindException {
-        if (cacheInfo.timestamp + (long) maxAge < System.currentTimeMillis()) {
-            // Time for a version check (getVersion() always goes to the database)
-            Integer currentVersion = getVersion(cacheInfo.entity.getGoid());
-            if (currentVersion == null) {
-                // BALEETED
-                cacheRemove(cacheInfo.entity);
-                return null;
-            } else if (currentVersion != cacheInfo.version) {
-                // Updated
-                ET thing = findByPrimaryKey(cacheInfo.entity.getGoid());
-                return thing == null ? null : checkAndCache(thing);
-            } else {
-                // Increase it's age as there was no change in the original entity
-                cacheInfo.timestamp = System.currentTimeMillis();
-            }
-        }
-
-        return cacheInfo.entity;
     }
 
     @Override
@@ -1054,34 +985,69 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
     public ET getCachedEntity(final Goid goid, int maxAge) throws FindException {
         ET entity;
 
-        CacheInfo<ET> cacheInfo = cache.get(goid);
-        if (cacheInfo != null) {
-            return freshen(cacheInfo, maxAge);
-        }
+        Lock read = cacheLock.readLock();
+        CacheInfo<ET> cacheInfo;
+        try {
+            read.lock();
+            WeakReference<CacheInfo<ET>> ref = cacheInfoByGoid.get(goid);
+            read.unlock(); read = null;
+            cacheInfo = ref == null ? null : ref.get();
+            if (cacheInfo == null) {
+                // Might be new, or might be first run
+                entity = new TransactionTemplate(transactionManager).execute(new TransactionCallback<ET>() {
+                    @Override
+                    public ET doInTransaction(TransactionStatus transactionStatus) {
+                        try {
+                            return findByPrimaryKey(goid);
+                        } catch (FindException e) {
+//                            transactionStatus.setRollbackOnly();
+                            throw new RuntimeException(e);
+                        }
+                    }
+                });
 
-        // Might be new, or might be first run
-        entity = new TransactionTemplate(transactionManager).execute(new TransactionCallback<ET>() {
-            @Override
-            public ET doInTransaction(TransactionStatus transactionStatus) {
-                try {
-                    return findByPrimaryKey(goid);
-                } catch (FindException e) {
-                    // transactionStatus.setRollbackOnly();
-                    throw new RuntimeException(e);
-                }
+                if (entity == null) return null; // Doesn't exist
+
+                // New
+                return checkAndCache(entity);
+            } else {
+                return freshen(cacheInfo, maxAge);
             }
-        });
+        } finally {
+            if (read != null) read.unlock();
+        }
+    }
 
-        if (entity == null) {
-            return null; // Doesn't exist
+    private ET freshen(CacheInfo<ET> cacheInfo, int maxAge) throws FindException {
+        if (cacheInfo.timestamp + (long) maxAge < System.currentTimeMillis()) {
+            // Time for a version check (getVersion() always goes to the database)
+            Integer currentVersion = getVersion(cacheInfo.entity.getGoid());
+            if (currentVersion == null) {
+                // BALEETED
+                cacheRemove(cacheInfo.entity);
+                return null;
+            } else if (currentVersion != cacheInfo.version) {
+                // Updated
+                ET thing = findByPrimaryKey(cacheInfo.entity.getGoid());
+                return thing == null ? null : checkAndCache(thing);
+            }
         }
 
-        // New
-        return checkAndCache(entity);
+        return cacheInfo.entity;
     }
 
     protected void cacheRemove(PersistentEntity thing) {
-        cache.remove(thing);
+        final Lock write = cacheLock.writeLock();
+        write.lock();
+        try {
+            cacheInfoByGoid.remove(thing.getGoid());
+            if (thing instanceof NamedEntity) {
+                cacheInfoByName.remove(((NamedEntity)thing).getName());
+            }
+            removedFromCache(thing);
+        } finally {
+            write.unlock();
+        }
     }
 
     /**
@@ -1166,19 +1132,37 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
     protected ET checkAndCache(ET thing) throws FindException {
         final Goid goid = thing.getGoid();
 
-        CacheInfo<ET> infoByGoid = cache.get(goid);
-        CacheInfo<ET> infoByName = null;
-        if (thing instanceof NamedEntity) {
-            infoByName = cache.get(((NamedEntity) thing).getName());
+        CacheInfo<ET> info = null;
+
+        // Get existing cache info
+        Lock read = cacheLock.readLock();
+        try {
+            read.lock();
+            WeakReference<CacheInfo<ET>> ref = cacheInfoByGoid.get(goid);
+            info = ref == null ? null : ref.get();
+        } finally {
+            if (read != null) read.unlock();
         }
+
         Lock write = cacheLock.writeLock();
         try {
             write.lock();
 
             // new item to cache
-            if (infoByGoid == null || infoByName == null) {
-                cache.put(thing);
+            if (info == null) {
+                info = new CacheInfo<ET>();
+                WeakReference<CacheInfo<ET>> newref = new WeakReference<CacheInfo<ET>>(info);
+
+                cacheInfoByGoid.put(goid, newref);
+                if (thing instanceof NamedEntity) {
+                    cacheInfoByName.put(((NamedEntity)thing).getName(), newref);
+                }
             }
+
+            // set cached info
+            info.entity = thing;
+            info.version = thing.getVersion();
+            info.timestamp = System.currentTimeMillis();
             addedToCache(thing);
 
         } finally {
@@ -1307,9 +1291,7 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
         if ( tableName==null ) {
             Class<?> impClass = getImpClass();
             Table table = impClass.getAnnotation( Table.class );
-            if ( table == null ) {
-                throw new IllegalStateException( "Implementation class is not annotated" );
-            }
+            if ( table == null ) throw new IllegalStateException( "Implementation class is not annotated" );
             this.tableName = tableName = table.name();
         }
         return tableName;
@@ -1326,6 +1308,20 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
         return getImpClass();
     }
 
+    @SuppressWarnings({ "FieldNameHidesFieldInSuperclass" })
+    private final Logger logger = Logger.getLogger(getClass().getName());
+
+    private static final boolean useOptimizedCount = ConfigFactory.getBooleanProperty( "com.l7tech.server.hibernate.useOptimizedCount", true );
+
+    private ReadWriteLock cacheLock = new ReentrantReadWriteLock();
+    private Map<Goid, WeakReference<CacheInfo<ET>>> cacheInfoByGoid = new HashMap<Goid, WeakReference<CacheInfo<ET>>>();
+    private Map<String, WeakReference<CacheInfo<ET>>> cacheInfoByName = new HashMap<String, WeakReference<CacheInfo<ET>>>();
+    private String tableName;
+    private EntityType entityType;
+
+    public void setTransactionManager(PlatformTransactionManager transactionManager) {
+        this.transactionManager = transactionManager;
+    }
 
     /** Holds information about a cached Entity. */
     static class CacheInfo<ET extends PersistentEntity> {
@@ -1333,7 +1329,6 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
         long timestamp;
         int version;
     }
-
 
     /**
      * Prevent accidental use of ApplicationListener and PostStartupApplicationListener which triggers expensive and unnecessary transaction handling for ALL events (see SSG-13621).
@@ -1345,114 +1340,4 @@ public abstract class HibernateEntityManager<ET extends PersistentEntity, HT ext
     public final <E extends ApplicationEvent> void onApplicationEvent(E event) {
         throw new UnsupportedOperationException("Transactional HibernateEntityManager should not listen to application events since Spring transaction are expensive and can lead to poor performance.");
     }
-
-
-    @SuppressWarnings("Duplicates")
-    private class Cache {
-        private final Map<Goid, SoftReference<CacheInfo<ET>>> byGoid;
-        private final Map<String, SoftReference<CacheInfo<ET>>> byName;
-        private final Map<Goid, String> goidToName;
-
-        Cache() {
-            byGoid = new HashMap<>();
-            byName = new HashMap<>();
-            goidToName = new HashMap<>();
-        }
-
-        void put(ET entity) {
-            SoftReference<CacheInfo<ET>> refByGoid = byGoid.get(entity.getGoid());
-            CacheInfo<ET> infoByGoid = refByGoid == null ? null : refByGoid.get();
-            if (infoByGoid == null) {
-                infoByGoid = new CacheInfo<>();
-                byGoid.put(entity.getGoid(), new SoftReference<>(infoByGoid));
-            }
-
-            // set cached info
-            infoByGoid.entity = entity;
-            infoByGoid.version = entity.getVersion();
-            infoByGoid.timestamp = System.currentTimeMillis();
-
-            if (entity instanceof NamedEntity) {
-                putNamedEntity(entity);
-            }
-        }
-
-        private void putNamedEntity(ET entity) {
-            Goid goid = entity.getGoid();
-            String name = ((NamedEntity) entity).getName();
-
-            // see if it was there by another name before
-            if (goidToName.containsKey(goid) && !goidToName.get(goid).equals(name)) {
-                // if so, remove the old-named entry from the name cache
-                byName.remove(goidToName.get(goid));
-            }
-            goidToName.put(goid, name);
-
-            SoftReference<CacheInfo<ET>> refByName = byName.get(name);
-            CacheInfo<ET> infoByName = refByName == null ? null : refByName.get();
-            if (infoByName == null) {
-                infoByName = new CacheInfo<>();
-                byName.put(name, new SoftReference<>(infoByName));
-            }
-
-            // set cached info
-            infoByName.entity = entity;
-            infoByName.version = entity.getVersion();
-            infoByName.timestamp = System.currentTimeMillis();
-        }
-
-        CacheInfo<ET> get(Goid goid) throws FindException {
-            Lock read = cacheLock.readLock();
-            try {
-                read.lock();
-                SoftReference<CacheInfo<ET>> ref = byGoid.get(goid);
-                read.unlock();
-                read = null;
-                return ref == null ? null : ref.get();
-
-            } catch (RuntimeException e) {
-                throw new FindException(ExceptionUtils.getMessage(e), e);
-
-            } finally {
-                if (read != null) {
-                    read.unlock();
-                }
-            }
-        }
-
-        CacheInfo<ET> get(String name) throws FindException {
-            Lock read = cacheLock.readLock();
-            try {
-                read.lock();
-                SoftReference<CacheInfo<ET>> ref = byName.get(name);
-                read.unlock();
-                read = null;
-                return ref == null ? null : ref.get();
-
-            } catch (RuntimeException e) {
-                throw new FindException(ExceptionUtils.getMessage(e), e);
-
-            } finally {
-                if (read != null) {
-                    read.unlock();
-                }
-            }
-        }
-
-        void remove(PersistentEntity thing) {
-            final Lock write = cacheLock.writeLock();
-            write.lock();
-            try {
-                byGoid.remove(thing.getGoid());
-                if (thing instanceof NamedEntity) {
-                    byName.remove(((NamedEntity)thing).getName());
-                }
-                removedFromCache(thing);
-            } finally {
-                write.unlock();
-            }
-        }
-
-    }
-
 }

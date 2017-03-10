@@ -15,7 +15,7 @@ import java.sql.Types;
  *
  * @author Victor Kazakov
  */
-public class GoidType implements UserType {
+public class GoidType implements UserType, Serializable {
 
     public GoidType() {
     }
@@ -97,5 +97,10 @@ public class GoidType implements UserType {
     @Override
     public Object replace(Object original, Object target, Object owner) throws HibernateException {
         return original;
+    }
+
+    @Override
+    public String toString() {
+        return "";
     }
 }

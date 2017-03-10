@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="2.0" xmlns:m="http://ant.apache.org/ivy/maven">
+	<info organisation="ehcache"
+		module="hibernate-ehcache"
+		revision="3.6.9"
+		status="release"
+		publication="20111208221639"
+	>
+	</info>
+	<configurations>
+		<conf name="default" visibility="public"/>
+	</configurations>
+	<publications>
+		<artifact name="hibernate-ehcache" type="jar" ext="jar" conf="default"/>
+	</publications>
+</ivy-module>
