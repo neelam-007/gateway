@@ -15,7 +15,7 @@ import java.sql.Types;
  *
  * @author Victor Kazakov
  */
-public class GoidType implements UserType, Serializable {
+public class GoidType implements UserType {
 
     public GoidType() {
     }
