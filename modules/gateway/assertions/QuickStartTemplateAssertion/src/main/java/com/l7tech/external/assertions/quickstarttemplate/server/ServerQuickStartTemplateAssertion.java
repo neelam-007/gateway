@@ -1,19 +1,18 @@
 package com.l7tech.external.assertions.quickstarttemplate.server;
 
-import com.l7tech.common.http.HttpMethod;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Joiner;
+import com.google.common.collect.Sets;
+import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.external.assertions.quickstarttemplate.QuickStartTemplateAssertion;
-import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStartEncapsulatedAssertionLocator;
-import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStartEncapsulatedAssertionTemplate;
-import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStartServiceBuilder;
-import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStartServiceBuilderRestmanImpl;
+import com.l7tech.external.assertions.quickstarttemplate.server.parser.Service;
+import com.l7tech.external.assertions.quickstarttemplate.server.parser.ServiceContainer;
+import com.l7tech.external.assertions.quickstarttemplate.server.policy.*;
 import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.identity.User;
-import com.l7tech.identity.UserBean;
-import com.l7tech.json.InvalidJsonException;
 import com.l7tech.message.Message;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor;
-import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
+import com.l7tech.objectmodel.encass.EncapsulatedAssertionStringEncoding;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.EncapsulatedAssertion;
@@ -21,14 +20,18 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.EncapsulatedAssertionConfigManager;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.util.ExceptionUtils;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
-import java.util.*;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -44,100 +47,57 @@ import java.util.logging.Logger;
  */
 public class ServerQuickStartTemplateAssertion extends AbstractServerAssertion<QuickStartTemplateAssertion> {
     private static final Logger logger = Logger.getLogger(ServerQuickStartTemplateAssertion.class.getName());
-
-    private EncapsulatedAssertionConfigManager encapsulatedAssertionConfigManager;
     private QuickStartEncapsulatedAssertionLocator assertionLocator;
 
     // invoked using reflection
     @SuppressWarnings("unused")
     public ServerQuickStartTemplateAssertion( final QuickStartTemplateAssertion assertion, final ApplicationContext applicationContext) throws PolicyAssertionException {
         super(assertion);
-        encapsulatedAssertionConfigManager = applicationContext.getBean("encapsulatedAssertionConfigManager", EncapsulatedAssertionConfigManager.class);
         assertionLocator = QuickStartAssertionModuleLifecycle.getEncapsulatedAssertionLocator();
     }
 
     public AssertionStatus checkRequest( final PolicyEnforcementContext context ) throws IOException, PolicyAssertionException {
-        // TODO get YAML (later)
-
-        final Object serviceObject = getJsonMap(context.getRequest()).get("Service");
-        if (!(serviceObject instanceof Map)) {
-            throw new PolicyAssertionException(assertion, "Expecting service Map, but instead got " + serviceObject.getClass());
-        }
-
-        // get service and encapsulated assertion info from json payload
-        final Map serviceMap = (Map) serviceObject;
-        final List<EncapsulatedAssertion> encapsulatedAssertions = getEncapsulatedAssertions(serviceMap, context);
-        final PublishedService publishedService = createPublishedService(serviceMap, encapsulatedAssertions);
-        final QuickStartEncapsulatedAssertionTemplate quickStartEncapsulatedAssertionTemplate = new QuickStartEncapsulatedAssertionTemplate(publishedService, encapsulatedAssertions);
-
-        // set authenticated user credential to use for restman request later
-        final User currentUser = context.getDefaultAuthenticationContext().getLastAuthenticatedUser();
-        final UserBean userBean = new UserBean(currentUser.getProviderId(), currentUser.getLogin());
-        userBean.setUniqueIdentifier(currentUser.getId());
-
-        QuickStartServiceBuilder quickStartServiceBuilder;
         try {
-            // service builder - restman
-            quickStartServiceBuilder = new QuickStartServiceBuilderRestmanImpl(quickStartEncapsulatedAssertionTemplate);
+            final ServiceContainer serviceContainer;
+            try {
+                serviceContainer = parseJson(context.getRequest().getMimeKnob().getEntireMessageBodyAsInputStream(true));
+            } catch (final IOException | NoSuchPartException e) {
+                logger.log(Level.WARNING, "Invalid JSON payload: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                context.setVariable(QuickStartTemplateAssertion.QS_WARNINGS, "Invalid JSON payload: " + ExceptionUtils.getMessage(e));
+                return AssertionStatus.FAILED;
+            }
 
-            // service builder - service manager; optionally substituted with com.l7tech.server.policy.ServiceManager
-            //    e.g. follow logic in ServiceAPIResourceFactory#createResourceInternal or in com.l7tech.console.panels.AbstractPublishServiceWizard#checkResolutionConflictAndSave
-            // QuickStartServiceBuilder quickStartServiceBuilder = new QuickStartServiceBuilderManagerImpl();
+            try {
+                // get all the encapsulated assertions (and their properties) used by the service
+                final List<EncapsulatedAssertion> encapsulatedAssertions = getEncapsulatedAssertions(serviceContainer.service, context);
+                final PublishedService publishedService = createPublishedService(serviceContainer.service, encapsulatedAssertions);
 
-            // TODO for next iteration, validate encass output variables match that of the next encass config input? (e.g. validate encass chaining?)
-
-            // use service builder to create service
-            context.setVariable(QuickStartTemplateAssertion.QS_BUNDLE, quickStartServiceBuilder.createServiceBundle(Message.class));
-            //quickStartServiceBuilder.createService();
-        } catch (Exception e) {
+                final QuickStartServiceBuilder quickStartServiceBuilder = new QuickStartServiceBuilderRestmanImpl(new QuickStartEncapsulatedAssertionTemplate(publishedService, encapsulatedAssertions));
+                context.setVariable(QuickStartTemplateAssertion.QS_BUNDLE, quickStartServiceBuilder.createServiceBundle(Message.class));
+            } catch (final QuickStartPolicyBuilderException e) {
+                logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                context.setVariable(QuickStartTemplateAssertion.QS_WARNINGS, ExceptionUtils.getMessage(e));
+                return AssertionStatus.FALSIFIED;
+            }
+        } catch (final Exception e) {
+            logger.log(Level.WARNING, "Unable to create service:" + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             throw new PolicyAssertionException(assertion, e);
         }
-
         return AssertionStatus.NONE;
     }
 
-    private Map getJsonMap(@NotNull final Message request) throws IOException, PolicyAssertionException {
-        try {
-            // TODO return a modifiable copy of the map
-            return (Map) request.getJsonKnob().getJsonData().getJsonObject();
-        } catch (InvalidJsonException e) {
-            throw new PolicyAssertionException(assertion, e);
-        }
+    @VisibleForTesting
+    ServiceContainer parseJson(final InputStream is) throws IOException {
+        return new ObjectMapper().readValue(is, ServiceContainer.class);
     }
 
     @NotNull
-    private PublishedService createPublishedService(
-            @NotNull final Map serviceMap,
-            @NotNull final List<EncapsulatedAssertion> encapsulatedAssertions
-    ) throws PolicyAssertionException {
-        // create and validate
+    private PublishedService createPublishedService(@NotNull final Service service, @NotNull final List<EncapsulatedAssertion> encapsulatedAssertions) {
         final PublishedService publishedService = new PublishedService();
-
-        if (!serviceMap.containsKey("name")) {
-            throw new PolicyAssertionException(assertion, "No service name provided.");
-        }
-        publishedService.setName((String) serviceMap.remove("name"));   // remove key/value processed pairs
-
-        if (!serviceMap.containsKey("gatewayUri")) {
-            throw new PolicyAssertionException(assertion, "No service gatewayUri provided.");
-        }
-        publishedService.setRoutingUri((String) serviceMap.remove("gatewayUri"));
-
-        if (!serviceMap.containsKey("httpMethods")) {
-            throw new PolicyAssertionException(assertion, "No service httpMethods provided.");
-        }
-        // TODO hard code for now
-        Set<HttpMethod> httpMethods = new TreeSet<>();
-        httpMethods.add(HttpMethod.GET);
-        httpMethods.add(HttpMethod.POST);
-        publishedService.setHttpMethods(httpMethods);
-        serviceMap.remove("httpMethods");
-
-        // TODO more validation and fields?
-
-        // generate service policy based of the encaps
+        publishedService.setName(service.name);
+        publishedService.setRoutingUri(service.gatewayUri);
+        publishedService.setHttpMethods(Sets.newHashSet(service.httpMethods));
         generatePolicy(publishedService, encapsulatedAssertions);
-
         return publishedService;
     }
 
@@ -159,71 +119,61 @@ public class ServerQuickStartTemplateAssertion extends AbstractServerAssertion<Q
      *    - look up encass by name to get guid
      *    - if applicable set encass argument(s)
      */
-    private List<EncapsulatedAssertion> getEncapsulatedAssertions(final Map serviceMap, final PolicyEnforcementContext context) throws PolicyAssertionException {
+    @NotNull
+    private List<EncapsulatedAssertion> getEncapsulatedAssertions(@NotNull final Service service, @NotNull final PolicyEnforcementContext context)
+            throws QuickStartPolicyBuilderException, FindException {
         final List<EncapsulatedAssertion> encapsulatedAssertions = new ArrayList<>();
-        for (Object serviceMapKey : serviceMap.keySet()) {
-
-            // get encass name
-            if (!(serviceMapKey instanceof String)) {
-                context.setVariable(QuickStartTemplateAssertion.QS_WARNINGS, "Unable to find encapsulated assertion template named : " + serviceMapKey);   // TODO append to existing warnings
-                logger.log(Level.WARNING, "Unable to find encapsulated assertion template named : " + serviceMapKey);
-                continue;
+        for (final Map<String, Map<String, ?>> policyMap : service.policy) {
+            // We know there is only one thing in this map, we've previously validated this.
+            final String name = policyMap.keySet().iterator().next();
+            final EncapsulatedAssertion encapsulatedAssertion = assertionLocator.findEncapsulatedAssertion(name);
+            if (encapsulatedAssertion == null) {
+                throw new QuickStartPolicyBuilderException("Unable to find encapsulated assertion template named : " + name);
             }
-            final String encassName = (String) serviceMapKey;
-
-            // get encass config
-            EncapsulatedAssertionConfig encassConfig;
-            try {
-                encassConfig = encapsulatedAssertionConfigManager.findByUniqueName(encassName);
-                EncapsulatedAssertion assertion =  assertionLocator.findEncapsulatedAssertion(encassName);
-                if (encassConfig == null) {
-                    context.setVariable(QuickStartTemplateAssertion.QS_WARNINGS, "Unable to find encapsulated assertion template named : " + encassName);   // TODO append to existing warnings
-                    logger.log(Level.WARNING, "Unable to find encapsulated assertion template named : " + encassName);
-                    continue;
-                }
-
-            } catch (FindException e) {
-                final String message = "Unable to find encapsulated assertion template: " + ExceptionUtils.getMessage(e);
-                context.setVariable(QuickStartTemplateAssertion.QS_WARNINGS, message);   // TODO append to existing warnings
-                logger.log(Level.WARNING, message, ExceptionUtils.getDebugException(e));
-                continue;
-            }
-
-            final EncapsulatedAssertion encass = new EncapsulatedAssertion(encassConfig);
-
-            // set encass arguments
-            Object encassObject = serviceMap.get(encassName);
-            if (encassObject instanceof Map) {
-                setEncassArguments(encass, encassConfig.getArgumentDescriptors(), (Map) encassObject);
-            } else if (!(encassObject instanceof Boolean)) {
-                throw new PolicyAssertionException(assertion, "Expecting encapsulated assertion Map or Boolean, but instead got " + encassObject.getClass());
-            }
-
-            encapsulatedAssertions.add(encass);
+            setEncassArguments(encapsulatedAssertion, policyMap.get(name));
+            encapsulatedAssertions.add(encapsulatedAssertion);
         }
-
         return encapsulatedAssertions;
     }
 
-    // TODO handle nested arguments
-    private EncapsulatedAssertion setEncassArguments(@NotNull final EncapsulatedAssertion encass,
-                                                     @NotNull final Set<EncapsulatedAssertionArgumentDescriptor> encassArgumentDescriptors,
-                                                     @NotNull final Map encassMap) throws PolicyAssertionException {
 
-        for (EncapsulatedAssertionArgumentDescriptor encassArgumentDescriptor : encassArgumentDescriptors) {
-            final String argumentName = encassArgumentDescriptor.getArgumentName();
-
-            // validate EncapsulatedAssertionConfig#getArgumentDescriptor with encassMap key-value
-            if (!encassMap.containsKey(argumentName)) {
-                throw new PolicyAssertionException(assertion, "Unable to find expected argument: " +
-                        argumentName + ", for encapsulated assertion: " + encass.getEncapsulatedAssertionConfigName());
-            }
-
-            // set encass parameter with encassMap key-value
-            // TODO test passing in context variables ${ctx}
-            encass.putParameter(argumentName, encassMap.get(argumentName).toString());
+    private void setEncassArguments(@NotNull final EncapsulatedAssertion encapsulatedAssertion, @NotNull final Map<String, ?> properties) throws QuickStartPolicyBuilderException {
+        if (encapsulatedAssertion.config() == null) {
+            throw new IllegalStateException("Unable to obtain the encapsulated assertion config object.");
         }
 
-        return encass;
+        for (final Map.Entry<String, ?> entry : properties.entrySet()) {
+            final EncapsulatedAssertionArgumentDescriptor descriptor = findArgumentDescriptor(entry.getKey(), encapsulatedAssertion);
+            if (descriptor == null) {
+                throw new QuickStartPolicyBuilderException("Incorrect encapsulated assertion property: " + entry.getKey() + ", for encapsulated assertion: " + encapsulatedAssertion.config().getName());
+            }
+            // Don't know the type... Can't, so we have to check a number of different types.
+            final Object propertyValue = entry.getValue();
+            String resultingValue;
+            if (propertyValue instanceof Iterable) {
+                // If it's an iterable, we cannot pass arrays to encapsulated assertions, so we merge them together
+                // like this into a semicolon delimited string.
+                resultingValue = Joiner.on(";").join((Iterable) propertyValue);
+            } else {
+                // Convert the value using the encapsulated assertion encoding type.
+                resultingValue = EncapsulatedAssertionStringEncoding.encodeToString(descriptor.dataType(), propertyValue);
+                // If we couldn't convert it, try a string as a last resort.
+                if (resultingValue == null) {
+                    resultingValue = propertyValue.toString();
+                }
+            }
+            encapsulatedAssertion.putParameter(entry.getKey(), resultingValue);
+        }
     }
+
+    @Nullable
+    private static EncapsulatedAssertionArgumentDescriptor findArgumentDescriptor(@NotNull final String name, @NotNull final EncapsulatedAssertion ea) {
+        assert ea.config() != null;
+        assert ea.config().getArgumentDescriptors() != null;
+        return ea.config().getArgumentDescriptors().stream()
+                .filter(ad -> name.equals(ad.getArgumentName()))
+                .findFirst()
+                .orElse(null);
+    }
+
 }
