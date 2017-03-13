@@ -235,4 +235,8 @@ public interface ServerConfigParams {
 
     // ProtectedEntityTracker
     String PARAM_PROTECTED_ENTITY_TRACKER_ENABLE = "protectedEntityTracker.enable";
+
+    // CORS properties
+    String PARAM_CORS_USE_MULTI_VALUED_HEADERS = "cors.useMultiValuedHeaders";
+
 }

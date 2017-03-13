@@ -9,18 +9,18 @@ import com.l7tech.message.HeadersKnob;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.Functions;
+import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static com.l7tech.message.HeadersKnob.HEADER_TYPE_HTTP;
 
@@ -38,11 +38,13 @@ public class ServerCORSAssertion extends AbstractServerAssertion<CORSAssertion> 
     public static final String RESPONSE_ALLOW_ACCESS_HEADERS = "Access-Control-Allow-Headers";
 
     private final String[] variablesUsed;
+    private ServerConfig serverConfig;
 
-    public ServerCORSAssertion(final CORSAssertion assertion) {
+    public ServerCORSAssertion(final CORSAssertion assertion, ApplicationContext applicationContext) {
         super(assertion);
 
         variablesUsed = assertion.getVariablesUsed();
+        serverConfig = applicationContext.getBean("serverConfig", ServerConfig.class);
     }
 
     @Override
@@ -56,6 +58,8 @@ public class ServerCORSAssertion extends AbstractServerAssertion<CORSAssertion> 
 
             final boolean isPreflight = request.getHttpRequestKnob().getMethod().equals(HttpMethod.OPTIONS) &&
                     requestHeadersKnob.containsHeader(REQUEST_METHOD_HEADER, HEADER_TYPE_HTTP);
+            final boolean useMultiValuedHeaders = serverConfig.getBooleanProperty(
+                    ServerConfigParams.PARAM_CORS_USE_MULTI_VALUED_HEADERS, false);
 
             context.setVariable(assertion.getVariablePrefix() + "." + CORSAssertion.SUFFIX_IS_PREFLIGHT, isPreflight);
 
@@ -154,7 +158,8 @@ public class ServerCORSAssertion extends AbstractServerAssertion<CORSAssertion> 
                 setHeader(responseHeadersKnob, RESPONSE_ALLOW_METHODS, requestedMethod);
 
                 // set response Access-Control-Allow-Headers; only list requested headers (sufficient as per spec)
-                addHeaders(responseHeadersKnob, RESPONSE_ALLOW_ACCESS_HEADERS, requestedHeaderFieldNames);
+                addHeaders(responseHeadersKnob, RESPONSE_ALLOW_ACCESS_HEADERS,
+                        requestedHeaderFieldNames, useMultiValuedHeaders);
 
                 if (null != cacheTime) {
                     setHeader(responseHeadersKnob, RESPONSE_CACHE_TIME, cacheTime.toString());
@@ -162,7 +167,8 @@ public class ServerCORSAssertion extends AbstractServerAssertion<CORSAssertion> 
             } else {
                 // set the Access-Control-Expose-Headers
                 if (assertion.getExposedHeaders() != null) {
-                    addHeaders(responseHeadersKnob, RESPONSE_EXPOSE_HEADERS, assertion.getExposedHeaders());
+                    addHeaders(responseHeadersKnob, RESPONSE_EXPOSE_HEADERS,
+                            assertion.getExposedHeaders(), useMultiValuedHeaders);
                 }
             }
 
@@ -220,9 +226,43 @@ public class ServerCORSAssertion extends AbstractServerAssertion<CORSAssertion> 
         headersKnob.setHeader(headerName, headerValue, HEADER_TYPE_HTTP);
     }
 
-    private void addHeaders(HeadersKnob headersKnob, String header, List<String> values) {
-        for (String val : values) {
-            headersKnob.addHeader(header, val, HEADER_TYPE_HTTP);
+    private void addHeaders(HeadersKnob headersKnob, String header, List<String> values, boolean useMultiValuedHeaders) {
+        // if <use multi-valued headers> is turned on,
+        //  do not duplicate the header; add header with values separated by comma.
+        if (useMultiValuedHeaders) {
+            String csvString = toCsvString(values);
+
+            // if the csv-string is null, ignore it as it indicates there's nothing to be set.
+            if (csvString != null) {
+                headersKnob.addHeader(header, csvString, HEADER_TYPE_HTTP);
+            }
+        } else {
+            for (String val : values) {
+                headersKnob.addHeader(header, val, HEADER_TYPE_HTTP);
+            }
+        }
+    }
+
+    /**
+     * Returns value string containing all the list of values separated by comma.
+     * If the list is empty, returns null.
+     * @param values
+     * @return string value concatenation of all the list items separated by comma.
+     */
+    private String toCsvString(List<String> values) {
+        if (values.size() > 1) {
+            StringBuilder builder = new StringBuilder();
+            Iterator<String> it = values.iterator();
+
+            builder.append(it.next());
+            do {
+                builder.append(",");
+                builder.append(it.next());
+            } while (it.hasNext());
+
+            return builder.toString();
+        } else {
+            return values.size() > 0 ? values.get(0) : null;
         }
     }
 
