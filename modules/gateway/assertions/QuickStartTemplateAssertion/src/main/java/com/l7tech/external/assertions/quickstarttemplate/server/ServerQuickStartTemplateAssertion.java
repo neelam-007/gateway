@@ -60,7 +60,7 @@ public class ServerQuickStartTemplateAssertion extends AbstractServerAssertion<Q
         try {
             final ServiceContainer serviceContainer;
             try {
-                serviceContainer = parseJson(context.getRequest().getMimeKnob().getEntireMessageBodyAsInputStream(true));
+                serviceContainer = parseJson(context.getRequest().getMimeKnob().getEntireMessageBodyAsInputStream());
             } catch (final IOException | NoSuchPartException e) {
                 logger.log(Level.WARNING, "Invalid JSON payload: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                 context.setVariable(QuickStartTemplateAssertion.QS_WARNINGS, "Invalid JSON payload: " + ExceptionUtils.getMessage(e));
