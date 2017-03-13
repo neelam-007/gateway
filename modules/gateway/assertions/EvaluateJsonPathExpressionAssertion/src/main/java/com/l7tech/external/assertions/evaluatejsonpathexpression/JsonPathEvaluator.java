@@ -1,17 +1,10 @@
 package com.l7tech.external.assertions.evaluatejsonpathexpression;
 
-import com.jayway.jsonpath.Configuration;
 import com.jayway.jsonpath.InvalidPathException;
-import com.jayway.jsonpath.Option;
 import net.minidev.json.JSONArray;
-import net.minidev.json.JSONObject;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.jetbrains.annotations.NotNull;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * <p>
@@ -27,8 +20,6 @@ public enum JsonPathEvaluator implements Evaluator {
     JsonPath {
         @Override
         public JsonPathExpressionResult evaluate(final String source, final String expression) throws EvaluatorException{
-            //Checks that the source is valid json. This is needed because JsonPath.parse will allow invalid content though, it treats it like a string.
-            assertValidJSON(source);
             com.jayway.jsonpath.JsonPath path;
             try{
                 path = com.jayway.jsonpath.JsonPath.compile(expression);
@@ -41,20 +32,9 @@ public enum JsonPathEvaluator implements Evaluator {
                 final List<String> results = new ArrayList<>();
                 Object res = path.read(source, expression);
                 if(res instanceof JSONArray){
-                    if (((JSONArray) res).isEmpty()) {
-                        // Check if it found an empty array or if it actually found nothing
-                        // We need to make this check because JsonPath does not differentiate between finding a empty array and not finding anything when the path is a recursive descent (..)
-                        // For example if the source is `{"test":[]}` and the expression is `$test` or `$..something` the `res` in both cases will be an empty JSONArray.
-                        final Configuration conf = com.jayway.jsonpath.Configuration.builder()
-                                .options(Option.AS_PATH_LIST).build();
-                        // if this is a recursive descent expression that didn't find anything, the below will fail.
-                        com.jayway.jsonpath.JsonPath.using(conf).parse(source).read(expression);
-                    } else {
-                        // TODO: This is here to preserve 'ugly' backwards compatibility. This should eventually be updated to not do this flattening.
-                        results.addAll(flattenJSONArray((JSONArray) res));
+                    for(Object o : (JSONArray)res){
+                        results.add(o.toString());
                     }
-                } else if (res instanceof Map) {
-                    results.add(new JSONObject((Map) res).toString());
                 }
                 else {
                     results.add(res.toString());
@@ -70,53 +50,6 @@ public enum JsonPathEvaluator implements Evaluator {
                 }
             }
             return new JsonPathExpressionResult(null);
-        }
-
-        /**
-         * This will traverse a json array and recurse into any elements that are also json arrays to flatten them into a single array.
-         *
-         * The JSONArrays are only flattened for 1 level. For example:
-         *
-         * JSON: {"test":[1,[2,99],3,{"test":"inarray"},6],"blah":{"test":[5],"foo":{"test":{"bar":{"test":88}}}}}
-         * Expression: $..test
-         * Result: ["1","[2,99]","3","{"test":"inarray"}","6","inarray","5","{"bar":{"test":88}}","88"]
-         *
-         * @param jsonArray The json array to flatten
-         * @return The flattened json array
-         */
-        @NotNull
-        private List<String> flattenJSONArray(@NotNull final JSONArray jsonArray) {
-            final List<String> results = new ArrayList<>();
-            jsonArray.forEach(obj -> {
-                if (obj instanceof Map) {
-                    results.add(new JSONObject((Map) obj).toString());
-                } else if (obj instanceof JSONArray) {
-                    ((JSONArray) obj).forEach(subObj -> {
-                        if (subObj instanceof Map) {
-                            results.add(new JSONObject((Map) subObj).toString());
-                        } else {
-                            results.add(subObj.toString());
-                        }
-                    });
-                } else {
-                    results.add(obj.toString());
-                }
-            });
-            return results;
-        }
-
-        /**
-         * This will validate that the given string is a valid json string. If it is not an exception is thrown
-         *
-         * @param jsonString The string to validate
-         * @throws EvaluatorException This is thrown if the string is not a valid json string.
-         */
-        private void assertValidJSON(final String jsonString) throws EvaluatorException {
-            try {
-                new ObjectMapper().readTree(jsonString);
-            } catch (IOException e) {
-                throw new EvaluatorException("Invalid json object: " + e.getMessage());
-            }
         }
     };
 }
