@@ -297,14 +297,13 @@ public class ServerSamlpResponseEvaluationAssertion extends AbstractServerAssert
             matches = false;
             String expected = configAttr.getValue();
             for (Object o : actual.getAttributeValues()) {
-
-                if (configAttr.isAnyValue() && o != null) {
-                    matches = true;
-                    break;
-                }
-                if (expected.equals(o)) {
-                    matches = true;
-                    break;
+                // DE231979: attribute with xsi:nil=true represents null value which is never matched to any non-empty value.
+                // Note that <expected> can be null if any-value is set to true..
+                if (o != null) {
+                    if (configAttr.isAnyValue() || expected.equals(o)) {
+                        matches = true;
+                        break;
+                    }
                 }
             }
         }
