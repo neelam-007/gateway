@@ -254,6 +254,42 @@ public class ServerSwaggerAssertionTest {
     }
 
     @Test
+    public void testValidateWithPathAndMethodEnabled_InvalidHeadMethod_Falsified11402Audited() throws Exception {
+        String requestUri = "/store/order";
+
+        HttpRequestKnob mockRequestKnob = Mockito.mock(HttpRequestKnob.class);
+
+        assertion.setValidatePath(true);
+        assertion.setValidateMethod(true);
+
+        fixture = createServer(assertion);
+
+        when(mockRequestKnob.getMethod()).thenReturn(HttpMethod.HEAD);   // head not defined
+
+        assertFalse(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri));
+        assertEquals(1, testAudit.getAuditCount());
+        assertTrue(AssertionMessages.SWAGGER_INVALID_METHOD.getMessage(),
+                testAudit.isAuditPresent(AssertionMessages.SWAGGER_INVALID_METHOD));
+    }
+
+    @Test
+    public void testValidateWithPathAndMethodEnabled_ValidHeadMethod_SucceedsNoAudits() throws Exception {
+        String requestUri = "/store/order/{orderId}";
+
+        HttpRequestKnob mockRequestKnob = Mockito.mock(HttpRequestKnob.class);
+
+        assertion.setValidatePath(true);
+        assertion.setValidateMethod(true);
+
+        fixture = createServer(assertion);
+
+        when(mockRequestKnob.getMethod()).thenReturn(HttpMethod.HEAD);   // head defined
+
+        assertTrue(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri));
+        assertEquals(0, testAudit.getAuditCount());
+    }
+
+    @Test
     public void testValidateWithPathAndMethod_GetSwaggerDoc_Falsified11401Audited() throws Exception {
         String requestUri = "/swagger.json";    // swagger doc is not defined as a path item
 

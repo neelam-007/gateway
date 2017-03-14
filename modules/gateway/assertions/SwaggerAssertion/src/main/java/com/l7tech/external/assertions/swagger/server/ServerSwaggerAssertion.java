@@ -180,6 +180,8 @@ public class ServerSwaggerAssertion extends AbstractServerAssertion<SwaggerAsser
                         operation = requestPathModel.getOptions();
                         break;
                     case HEAD:
+                        operation = requestPathModel.getHead();
+                        break;
                     case OTHER:
                     default:
                         break;
