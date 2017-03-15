@@ -247,8 +247,7 @@ public class AuditContextImpl implements AuditContext {
                 }
             });
             for (List<AuditDetailWithInfo> list : details.values()) {
-                for (int i = list.size()-1 ; i>=0 ; i-- ){
-                    final AuditDetailWithInfo detailWithInfo = list.get(i);
+                for (final AuditDetailWithInfo detailWithInfo : list){
                     int mid = detailWithInfo.getDetail().getMessageId();
 
                     final Pair<Boolean,AuditDetailMessage> pair = MessagesUtil.getAuditDetailMessageByIdWithFilter(mid);
