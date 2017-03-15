@@ -17,6 +17,7 @@ import java.util.Set;
 import java.util.logging.Logger;
 
 public class ServerQuickStartDocumentationAssertion extends AbstractServerAssertion<QuickStartDocumentationAssertion> {
+    private static final Logger LOGGER = Logger.getLogger(ServerQuickStartDocumentationAssertion.class.getName());
     private QuickStartDocumentationBuilder documentationBuilder = new QuickStartDocumentationBuilder();
     private QuickStartEncapsulatedAssertionLocator assertionLocator;
 
@@ -29,7 +30,9 @@ public class ServerQuickStartDocumentationAssertion extends AbstractServerAssert
 
     public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         try {
+            LOGGER.warning("JMK Checking documentation request...");
             final Set<EncapsulatedAssertion> encapsulatedAssertions = assertionLocator.findEncapsulatedAssertions();
+            LOGGER.warning("JMK Found encapsulated assertions: " + encapsulatedAssertions.size());
             final String documentation = documentationBuilder.generate(encapsulatedAssertions);
             context.setVariable(QuickStartDocumentationAssertion.QS_DOC, documentation);
         } catch (final FindException e) {
