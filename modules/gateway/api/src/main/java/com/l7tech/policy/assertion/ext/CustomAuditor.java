@@ -2,9 +2,6 @@ package com.l7tech.policy.assertion.ext;
 
 /**
  * An auditor for Custom Assertions.
- *
- * @author Steve Jones, $Author$
- * @version $Revision$
  */
 public interface CustomAuditor {
 
