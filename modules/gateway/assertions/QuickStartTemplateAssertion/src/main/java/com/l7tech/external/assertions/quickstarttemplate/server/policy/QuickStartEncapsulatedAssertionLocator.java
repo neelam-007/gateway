@@ -1,6 +1,5 @@
 package com.l7tech.external.assertions.quickstarttemplate.server.policy;
 
-import com.l7tech.external.assertions.quickstarttemplate.server.ServerQuickStartDocumentationAssertion;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
@@ -46,16 +45,11 @@ public class QuickStartEncapsulatedAssertionLocator {
 
     @NotNull
     public Set<EncapsulatedAssertion> findEncapsulatedAssertions() throws FindException {
-        LOGGER.warning("JMK Getting encapsulated assertion folder for: " + quickStartProvidedAssertionFolder);
         final Folder parentFolder = getFolder(quickStartProvidedAssertionFolder);
-        LOGGER.warning("JMK Found folder named: " + parentFolder.getName());
-        LOGGER.warning("JMK There are: " + encassConfigManager.findAll().size() + " assertions total.");
-        final Set<EncapsulatedAssertion> ea = encassConfigManager.findAll().stream()
+        return encassConfigManager.findAll().stream()
                 .filter(ec -> isInFolder(parentFolder, ec))
                 .map(EncapsulatedAssertion::new)
                 .collect(Collectors.toSet());
-        LOGGER.warning("JMK There are: " + ea.size() + " after filtering.");
-        return ea;
     }
 
     @NotNull

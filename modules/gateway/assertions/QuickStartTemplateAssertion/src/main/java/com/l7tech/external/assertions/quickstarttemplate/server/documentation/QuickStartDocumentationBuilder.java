@@ -22,14 +22,12 @@ public class QuickStartDocumentationBuilder {
     private static final String TEMPLATE_RESOURCE = "documentation.html";
 
     public String generate(final Set<EncapsulatedAssertion> encapsulatedAssertions) throws IOException {
-        final List<EncapsulatedAssertion> sortedAssertions = orderByName(encapsulatedAssertions);
-        LOGGER.warning("JMK: Assertions after sorting: " + sortedAssertions.size());
         try (final InputStream i = getClass().getResourceAsStream(TEMPLATE_RESOURCE);
              final Reader r = new InputStreamReader(i)) {
             return Mustache.compiler()
                     .compile(r)
                     .execute(ImmutableMap.of(
-                            "assertions", sortedAssertions
+                            "assertions", orderByName(encapsulatedAssertions)
                     ));
         } catch (final MustacheException e) {
             // This is an internal detail of the template; rethrow as an IOException.
