@@ -8,10 +8,94 @@
 <h1>Quick Start Documentation</h1>
 
 <h2>Introduction</h2>
-<p>Blah blah blah.</p>
+<p>Quick Start is a simple, JSON-driven way of publishing services on your API Gateway using Gateway provided or
+    self-defined "building blocks" to protect or enhance your existing proxied services.</p>
+<p>Publishing a service on your API Gateway is accomplished by:</p>
+<ol>
+    <li>Create a JSON file containing your service description. (See below for schema and description.)</li>
+    <li>Apply this JSON file to your API Gateway. This can be accomplished by one of two ways:
+        <ul>
+            <li>POST the JSON content to <a href="http://localhost:8080/quickStart/1.0">http://localhost:8080/quickStart/1.0</a>,
+                using your Gateway's administrator username and password; or,</li>
+            <li>Place the JSON file in the FIXME directory in an inherited Docker image layer, and it will be read and
+                imported on startup.</li>
+        </ul>
+    </li>
+    <li>Use your service.</li>
+</ol>
 
-<h2>Description of Top Level Containers and Schema</h2>
-<p>Blah blah blah?</p>
+<h2>Extension</h2>
+<p>FIXME: Describe how to create and load your own encapsulated assertions.</p>
+
+<h2>Description of Service JSON and Schema</h2>
+<p>The service JSON file describes a single service. Different services must be defined in different files or POSTed
+    to the API Gateway independently. A service consists of a name, a URI, and a number of HTTP access methods, as
+    well as an ordered list of "policy assertions" (features that protect, secure, or enhance your API). The complete
+list of available assertions is below, but here is a sample service and the JSON schema for the services in general.</p>
+
+<h3>Sample Service JSON</h3>
+<pre class="prettyprint">{
+  "Service": {
+    "name": "SomeService",
+    "gatewayUri": "/MyService3",
+    "httpMethods": [ "get", "put" ],
+    "policy": [
+      {
+        "Cors" : {}
+      },
+      {
+        "RateLimit" : {
+          "maxRequestsPerSecond": 250,
+          "hardLimit": true,
+          "counterName": "RateLimit-${request.clientId}-b0938b7ad6ff"
+        }
+      },
+      {
+        "RouteHttp" : {
+          "targetUrl" : "http://localhost:8080/foo",
+          "httpMethod" : "GET"
+        }
+      }
+    ]
+  }
+}</pre>
+
+<h3>Service JSON Schema</h3>
+<pre class="prettyprint">{
+  "$schema": "http://json-schema.org/draft-04/schema",
+  "type": "object",
+  "properties": {
+    "Service": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "gatewayUri": {
+          "type": "string"
+        },
+        "httpMethods": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [ "get", "put", "post", "delete", "patch", "head", "options", "other" ]
+          }
+        },
+        "policy": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+            }
+          }
+        }
+      },
+      "additionalProperties" : false,
+      "required": [ "name", "gatewayUri", "httpMethods", "policy"]
+    }
+  },
+  "required": [ "Service" ]
+}</pre>
 
 <h2>Available Assertions</h2>
 {{#assertions}}
