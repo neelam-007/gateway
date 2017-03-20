@@ -7,7 +7,17 @@
 
 <h1>Quick Start Documentation</h1>
 
-<h2>Introduction</h2>
+<h2><u>Table Of Contents</u></h2>
+<ol>
+    <li><a href="#introduction">Introduction</a></li>
+    <li><a href="#description">Description of Top Level Containers and JSON Schema for Services</a></li>
+    {{#assertions}}
+    <li><a href="#{{config.name}}">Encapsulated Assertion: {{config.name}}</a></li>
+    {{/assertions}}
+</ol>
+
+
+<a name="introduction"><h2><u>Introduction</u></h2></a>
 <p>Quick Start is a simple, JSON-driven way of publishing services on your API Gateway using Gateway provided or
     self-defined "building blocks" to protect or enhance your existing proxied services.</p>
 <p>Publishing a service on your API Gateway is accomplished by:</p>
@@ -27,7 +37,7 @@
 <h2>Extension</h2>
 <p>FIXME: Describe how to create and load your own encapsulated assertions.</p>
 
-<h2>Description of Service JSON and Schema</h2>
+<a name="description"><h2><u>Description of Top Level Containers and Schema</u></h2></a>
 <p>The service JSON file describes a single service. Different services must be defined in different files or POSTed
     to the API Gateway independently. A service consists of a name, a URI, and a number of HTTP access methods, as
     well as an ordered list of "policy assertions" (features that protect, secure, or enhance your API). The complete
@@ -97,24 +107,47 @@ list of available assertions is below, but here is a sample service and the JSON
   "required": [ "Service" ]
 }</pre>
 
-<h2>Available Assertions</h2>
+<h2><u>Available Encapsulated Assertions:</u></h2>
+
 {{#assertions}}
-<h3>{{config.name}}</h3>
+<br/>
+<a name="{{config.name}}"><h3><u>Encapsulated Assertion: {{config.name}}</u></h3></a>
+
 {{#config.properties.description}}
-<p>{{this}}</p>
+<p><b>Description:</b> {{this}}</p>
 {{/config.properties.description}}
+
+<h5>Input Arguments:</h5>
+{{#config.argumentDescriptors}}
+<ul>
+    <li><em>{{argumentName}}</em></li>
+</ul>
+{{/config.argumentDescriptors}}
+
+
+<h5>Output Arguments:</h5>
+{{#config.resultDescriptors}}
+<ul>
+    <li><em>{{resultName}}</em></li>
+</ul>
+{{/config.resultDescriptors}}
+
 {{#config.properties.doc_qs_schema}}
 <details>
-    <summary>Schema</summary>
+    <summary>JSON Schema</summary>
     <pre class="prettyprint">{{this}}</pre>
 </details>
 {{/config.properties.doc_qs_schema}}
+
 {{#config.properties.doc_qs_sample}}
 <details>
-    <summary>Sample</summary>
+    <summary>Sample JSON Payload</summary>
     <pre class="prettyprint">{{this}}</pre>
 </details>
 {{/config.properties.doc_qs_sample}}
+
+<br/>
+<hr>
 {{/assertions}}
 
 </body>
