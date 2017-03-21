@@ -176,6 +176,7 @@ public class RemoteCacheEntityAdminImplTest {
     /**
      * Test libraries are found and installed
      */
+    @Ignore
     @Test
     public void testUploadedInstalledLibraries() {
         List<String> installedLibraries = remoteCacheEntityAdmin.getInstalledLibraries();
