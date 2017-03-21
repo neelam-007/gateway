@@ -176,7 +176,6 @@ public class RemoteCacheEntityAdminImplTest {
     /**
      * Test libraries are found and installed
      */
-    @Ignore
     @Test
     public void testUploadedInstalledLibraries() {
         List<String> installedLibraries = remoteCacheEntityAdmin.getInstalledLibraries();
@@ -185,7 +184,7 @@ public class RemoteCacheEntityAdminImplTest {
         assertTrue(installedLibraries.contains("terracotta-toolkit-runtime-ee.jar"));
         assertTrue(installedLibraries.contains("ehcache-ee.jar"));
         assertTrue(installedLibraries.contains("terracotta-license.key"));
-        assertTrue(installedLibraries.contains("coherence.jar"));
+     /* assertTrue(installedLibraries.contains("coherence.jar")); // too large for git */
         assertTrue(installedLibraries.contains("gemfire.jar"));
     }
 
