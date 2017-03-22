@@ -5,6 +5,7 @@ import com.l7tech.common.io.failover.Service;
 import com.l7tech.external.assertions.createroutingstrategy.CreateRoutingStrategyAssertion;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -52,11 +53,15 @@ public class ServerCreateRoutingStrategyAssertion extends AbstractServerAssertio
 
         if(routes.length > 0) {
             context.setVariable(assertion.getRouteList(), routes);
+
+            // Check the context whether it is due to service or other
+            // Use default goid if context is not because of service execution.
+            Goid serviceGoid = (context.getService() != null ? context.getService().getGoid() : Goid.DEFAULT_GOID);
             FailoverStrategy strategy = RoutingStrategyManager.getInstance().getStrategy(
-                context.getService().getGoid(), hasDynamicService, routes, assertion);
+                    serviceGoid, hasDynamicService, routes, assertion);
+
             context.setVariable(assertion.getStrategy(), strategy);
-        }
-        else {
+        } else {
             logAndAudit(AssertionMessages.ADAPTIVE_LOAD_BALANCING_CRS_NO_ROUTES);
             assertionStatus = AssertionStatus.FALSIFIED;
         }

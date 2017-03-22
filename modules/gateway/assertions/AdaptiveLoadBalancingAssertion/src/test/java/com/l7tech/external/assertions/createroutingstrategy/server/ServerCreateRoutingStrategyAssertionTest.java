@@ -104,7 +104,15 @@ public class ServerCreateRoutingStrategyAssertionTest {
         AssertionStatus result = sass.checkRequest(peCtx);
         assertEquals(AssertionStatus.NONE, result);
         assertNotNull(peCtx.getVariable(STRATEGY));
+    }
 
+    @Test
+    public void testCreateStrategyWithoutService() throws Exception {
+        peCtx.setService(null);
+        ServerAssertion sass = serverPolicyFactory.compilePolicy(assertion, false);
+        AssertionStatus result = sass.checkRequest(peCtx);
+        assertEquals(AssertionStatus.NONE, result);
+        assertNotNull(peCtx.getVariable(STRATEGY));
     }
 
     @Test

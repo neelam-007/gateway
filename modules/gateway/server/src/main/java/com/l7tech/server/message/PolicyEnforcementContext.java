@@ -140,6 +140,7 @@ public interface PolicyEnforcementContext extends AssertionOrdinalProcessor, Clo
      *
      * @return the service or null if unknown 
      */
+    @Nullable
     PublishedService getService();
 
     void setService(PublishedService service);

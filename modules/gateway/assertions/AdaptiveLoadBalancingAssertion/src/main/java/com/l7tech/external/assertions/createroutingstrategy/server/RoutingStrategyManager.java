@@ -6,6 +6,7 @@ import com.l7tech.common.io.failover.FailoverStrategyFactory;
 import com.l7tech.common.io.failover.Service;
 import com.l7tech.external.assertions.createroutingstrategy.CreateRoutingStrategyAssertion;
 import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.task.ScheduledTask;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.util.ApplicationEventProxy;
@@ -111,16 +112,33 @@ public class RoutingStrategyManager {
                     public void onApplicationEvent(ApplicationEvent event) {
                         if (event instanceof EntityInvalidationEvent) {
                             EntityInvalidationEvent eiEvent = (EntityInvalidationEvent) event;
+
+                            // Currently, routing strategy will be cached either by service or by scheduled task
                             if (PublishedService.class.equals(eiEvent.getEntityClass())) {
-                                Goid[] ids = eiEvent.getEntityIds();
-                                char[] ops = eiEvent.getEntityOperations();
-                                for (int ix = 0; ix < ids.length; ix++) {
-                                    if (EntityInvalidationEvent.UPDATE == ops[ix] ||
-                                        EntityInvalidationEvent.DELETE == ops[ix]) {
-                                        // Remove from the cache.
-                                        cachedStrategies.remove(ids[ix]);
-                                    }
-                                }
+                                invalidateCachedStrategies(eiEvent.getEntityIds(), eiEvent.getEntityOperations());
+                            } else if (ScheduledTask.class.equals(eiEvent.getEntityClass())) {
+                                invalidateDefaultCachedStrategies(eiEvent.getEntityOperations());
+                            }
+                        }
+                    }
+
+                    private void invalidateCachedStrategies(Goid[] ids, char[] ops) {
+                        for (int ix = 0; ix < ids.length; ix++) {
+                            if (EntityInvalidationEvent.UPDATE == ops[ix] ||
+                                    EntityInvalidationEvent.DELETE == ops[ix]) {
+                                // Remove from the cache.
+                                cachedStrategies.remove(ids[ix]);
+                            }
+                        }
+                    }
+
+                    private void invalidateDefaultCachedStrategies(char[] ops) {
+                        for (int ix = 0; ix < ops.length; ix++) {
+                            if (EntityInvalidationEvent.UPDATE == ops[ix] ||
+                                    EntityInvalidationEvent.DELETE == ops[ix]) {
+                                // Remove from the cache.
+                                cachedStrategies.remove(Goid.DEFAULT_GOID);
+                                break;
                             }
                         }
                     }
