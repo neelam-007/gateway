@@ -166,10 +166,8 @@ public class ServerCORSAssertion extends AbstractServerAssertion<CORSAssertion> 
                 }
             } else {
                 // set the Access-Control-Expose-Headers
-                if (assertion.getExposedHeaders() != null) {
-                    addHeaders(responseHeadersKnob, RESPONSE_EXPOSE_HEADERS,
-                            assertion.getExposedHeaders(), useMultiValuedHeaders);
-                }
+                addHeaders(responseHeadersKnob, RESPONSE_EXPOSE_HEADERS,
+                        assertion.getExposedHeaders(), useMultiValuedHeaders);
             }
 
             // if credentials are supported, set the headers to indicate such and allow the requested origin
@@ -226,19 +224,21 @@ public class ServerCORSAssertion extends AbstractServerAssertion<CORSAssertion> 
         headersKnob.setHeader(headerName, headerValue, HEADER_TYPE_HTTP);
     }
 
-    private void addHeaders(HeadersKnob headersKnob, String header, List<String> values, boolean useMultiValuedHeaders) {
-        // if <use multi-valued headers> is turned on,
-        //  do not duplicate the header; add header with values separated by comma.
-        if (useMultiValuedHeaders) {
-            String csvString = toCsvString(values);
+    private void addHeaders(HeadersKnob headersKnob, final String header, final List<String> values, final boolean useMultiValuedHeaders) {
+        if (values != null) {
+            // if <use multi-valued headers> is turned on,
+            //  do not duplicate the header; add header with values separated by comma.
+            if (useMultiValuedHeaders) {
+                String csvString = toCsvString(values);
 
-            // if the csv-string is null, ignore it as it indicates there's nothing to be set.
-            if (csvString != null) {
-                headersKnob.addHeader(header, csvString, HEADER_TYPE_HTTP);
-            }
-        } else {
-            for (String val : values) {
-                headersKnob.addHeader(header, val, HEADER_TYPE_HTTP);
+                // if the csv-string is null, ignore it as it indicates there's nothing to be set.
+                if (csvString != null) {
+                    headersKnob.addHeader(header, csvString, HEADER_TYPE_HTTP);
+                }
+            } else {
+                for (String val : values) {
+                    headersKnob.addHeader(header, val, HEADER_TYPE_HTTP);
+                }
             }
         }
     }
@@ -246,10 +246,10 @@ public class ServerCORSAssertion extends AbstractServerAssertion<CORSAssertion> 
     /**
      * Returns value string containing all the list of values separated by comma.
      * If the list is empty, returns null.
-     * @param values
+     * @param values non-null list of strings
      * @return string value concatenation of all the list items separated by comma.
      */
-    private String toCsvString(List<String> values) {
+    private String toCsvString(final List<String> values) {
         if (values.size() > 1) {
             StringBuilder builder = new StringBuilder();
             Iterator<String> it = values.iterator();

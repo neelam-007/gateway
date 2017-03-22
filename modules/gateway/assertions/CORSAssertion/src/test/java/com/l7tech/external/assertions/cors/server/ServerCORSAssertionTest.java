@@ -44,17 +44,12 @@ public class ServerCORSAssertionTest {
     private TestAudit testAudit;
     private SecurityManager originalSecurityManager;
 
-    private ApplicationContext applicationContext = ApplicationContexts.getTestApplicationContext();
-    private ServerConfig serverConfig = applicationContext.getBean("serverConfig", ServerConfigStub.class);
-
     @Before
     public void setUp() {
         testAudit = new TestAudit();
 
         originalSecurityManager = System.getSecurityManager();
         System.setSecurityManager(new GatewayPermissiveLoggingSecurityManager());
-
-        serverConfig.putProperty(ServerConfigParams.PARAM_CORS_USE_MULTI_VALUED_HEADERS, "false");
     }
 
     @After
@@ -247,123 +242,6 @@ public class ServerCORSAssertionTest {
     }
 
     @Test
-    public void testDefaultAcceptAllRequestWithExposedHeaders_useMultiValuedHeaders() throws Exception {
-        final String acceptedOrigin = "acceptedOrigin";
-
-        Message request = createRequest(HttpMethod.GET.toString());
-        configureRequestHeaders(request, acceptedOrigin, null, null);
-
-        Message response = createResponse();
-
-        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
-
-        CORSAssertion assertion = new CORSAssertion();
-        assertion.setExposedHeaders(Arrays.asList("x-ca-something", "x-ca-other"));
-
-        // Ensure multi-valued headers in use by CORS
-        serverConfig.putProperty(ServerConfigParams.PARAM_CORS_USE_MULTI_VALUED_HEADERS, "true");
-
-        ServerCORSAssertion serverAssertion = createServer(assertion);
-        AssertionStatus result = serverAssertion.checkRequest(context);
-
-        assertEquals(AssertionStatus.NONE, result);
-        assertEquals(1, testAudit.getAuditCount());
-        assertTrue(testAudit.isAuditPresentWithParameters(AssertionMessages.USERDETAIL_FINE,
-                "Origin allowed: " + acceptedOrigin));
-        assertEquals(false, context.getVariable("cors.isPreflight"));
-        assertEquals(true, context.getVariable("cors.isCors"));
-        assertEquals(true, response.getHeadersKnob().containsHeader("Access-Control-Allow-Origin", HeadersKnob.HEADER_TYPE_HTTP));
-        assertEquals(acceptedOrigin, response.getHeadersKnob().getHeaderValues("Access-Control-Allow-Origin", HeadersKnob.HEADER_TYPE_HTTP)[0]);
-        assertEquals(true, response.getHeadersKnob().containsHeader("Access-Control-Allow-Credentials", HeadersKnob.HEADER_TYPE_HTTP));
-        assertEquals("true", response.getHeadersKnob().getHeaderValues("Access-Control-Allow-Credentials", HeadersKnob.HEADER_TYPE_HTTP)[0]);
-        assertEquals(true, response.getHeadersKnob().containsHeader("Access-Control-Expose-Headers", HeadersKnob.HEADER_TYPE_HTTP));
-
-        String[] exposedHeaderValues =
-                response.getHeadersKnob().getHeaderValues("Access-Control-Expose-Headers", HeadersKnob.HEADER_TYPE_HTTP);
-
-        assertEquals(1, exposedHeaderValues.length);
-        assertEquals("x-ca-something,x-ca-other", exposedHeaderValues[0]);
-
-        assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Max-Age", HeadersKnob.HEADER_TYPE_HTTP));
-    }
-
-    @Test
-    public void testDefaultAcceptAllRequestWithOneInExposedHeaders_useMultiValuedHeaders() throws Exception {
-        final String acceptedOrigin = "acceptedOrigin";
-
-        Message request = createRequest(HttpMethod.GET.toString());
-        configureRequestHeaders(request, acceptedOrigin, null, null);
-
-        Message response = createResponse();
-
-        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
-
-        CORSAssertion assertion = new CORSAssertion();
-        assertion.setExposedHeaders(Arrays.asList("x-ca-something"));   // One in the list
-
-        // Ensure multi-valued headers in use by CORS
-        serverConfig.putProperty(ServerConfigParams.PARAM_CORS_USE_MULTI_VALUED_HEADERS, "true");
-
-        ServerCORSAssertion serverAssertion = createServer(assertion);
-        AssertionStatus result = serverAssertion.checkRequest(context);
-
-        assertEquals(AssertionStatus.NONE, result);
-        assertEquals(1, testAudit.getAuditCount());
-        assertTrue(testAudit.isAuditPresentWithParameters(AssertionMessages.USERDETAIL_FINE,
-                "Origin allowed: " + acceptedOrigin));
-        assertEquals(false, context.getVariable("cors.isPreflight"));
-        assertEquals(true, context.getVariable("cors.isCors"));
-        assertEquals(true, response.getHeadersKnob().containsHeader("Access-Control-Allow-Origin", HeadersKnob.HEADER_TYPE_HTTP));
-        assertEquals(acceptedOrigin, response.getHeadersKnob().getHeaderValues("Access-Control-Allow-Origin", HeadersKnob.HEADER_TYPE_HTTP)[0]);
-        assertEquals(true, response.getHeadersKnob().containsHeader("Access-Control-Allow-Credentials", HeadersKnob.HEADER_TYPE_HTTP));
-        assertEquals("true", response.getHeadersKnob().getHeaderValues("Access-Control-Allow-Credentials", HeadersKnob.HEADER_TYPE_HTTP)[0]);
-        assertEquals(true, response.getHeadersKnob().containsHeader("Access-Control-Expose-Headers", HeadersKnob.HEADER_TYPE_HTTP));
-
-        String[] exposedHeaderValues =
-                response.getHeadersKnob().getHeaderValues("Access-Control-Expose-Headers", HeadersKnob.HEADER_TYPE_HTTP);
-
-        assertEquals(1, exposedHeaderValues.length);
-        assertEquals("x-ca-something", exposedHeaderValues[0]);
-
-        assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Max-Age", HeadersKnob.HEADER_TYPE_HTTP));
-    }
-
-    @Test
-    public void testDefaultAcceptAllRequestWithNoneInExposedHeaders_useMultiValuedHeaders() throws Exception {
-        final String acceptedOrigin = "acceptedOrigin";
-
-        Message request = createRequest(HttpMethod.GET.toString());
-        configureRequestHeaders(request, acceptedOrigin, null, null);
-
-        Message response = createResponse();
-
-        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
-
-        CORSAssertion assertion = new CORSAssertion();
-        assertion.setExposedHeaders(Arrays.asList());   // None in the list
-
-        // Ensure multi-valued headers in use by CORS
-        serverConfig.putProperty(ServerConfigParams.PARAM_CORS_USE_MULTI_VALUED_HEADERS, "true");
-
-        ServerCORSAssertion serverAssertion = createServer(assertion);
-        AssertionStatus result = serverAssertion.checkRequest(context);
-
-        assertEquals(AssertionStatus.NONE, result);
-        assertEquals(1, testAudit.getAuditCount());
-        assertTrue(testAudit.isAuditPresentWithParameters(AssertionMessages.USERDETAIL_FINE,
-                "Origin allowed: " + acceptedOrigin));
-        assertEquals(false, context.getVariable("cors.isPreflight"));
-        assertEquals(true, context.getVariable("cors.isCors"));
-        assertEquals(true, response.getHeadersKnob().containsHeader("Access-Control-Allow-Origin", HeadersKnob.HEADER_TYPE_HTTP));
-        assertEquals(acceptedOrigin, response.getHeadersKnob().getHeaderValues("Access-Control-Allow-Origin", HeadersKnob.HEADER_TYPE_HTTP)[0]);
-        assertEquals(true, response.getHeadersKnob().containsHeader("Access-Control-Allow-Credentials", HeadersKnob.HEADER_TYPE_HTTP));
-        assertEquals("true", response.getHeadersKnob().getHeaderValues("Access-Control-Allow-Credentials", HeadersKnob.HEADER_TYPE_HTTP)[0]);
-        assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Expose-Headers", HeadersKnob.HEADER_TYPE_HTTP));
-
-        assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Max-Age", HeadersKnob.HEADER_TYPE_HTTP));
-    }
-
-    @Test
     public void testAcceptedOriginPreflight() throws Exception {
         final String acceptedOrigin = "acceptedOrigin";
 
@@ -403,50 +281,6 @@ public class ServerCORSAssertionTest {
         assertEquals("param", allowedHeaderValues[0]);
         assertEquals("x-param", allowedHeaderValues[1]);
         assertEquals("x-requested-with", allowedHeaderValues[2]);
-
-        assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Max-Age", HeadersKnob.HEADER_TYPE_HTTP));
-    }
-
-    @Test
-    public void testAcceptedOriginPreflight_useMultiValuedHeaders() throws Exception {
-        final String acceptedOrigin = "acceptedOrigin";
-
-        Message request = createRequest(HttpMethod.OPTIONS.toString());
-        configureRequestHeaders(request, acceptedOrigin, "GET", "param,x-param,x-requested-with");
-
-        Message response = createResponse();
-
-        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
-
-        CORSAssertion assertion = new CORSAssertion();
-        assertion.setAcceptedOrigins(CollectionUtils.list(acceptedOrigin));
-
-        // Ensure multi-valued headers in use by CORS
-        serverConfig.putProperty(ServerConfigParams.PARAM_CORS_USE_MULTI_VALUED_HEADERS, "true");
-
-        ServerCORSAssertion serverAssertion = createServer(assertion);
-        AssertionStatus result = serverAssertion.checkRequest(context);
-
-        assertEquals(AssertionStatus.NONE, result);
-        assertEquals(1, testAudit.getAuditCount());
-        assertTrue(testAudit.isAuditPresentWithParameters(AssertionMessages.USERDETAIL_FINE,
-                "Origin allowed: " + acceptedOrigin));
-        assertEquals(true, context.getVariable("cors.isPreflight"));
-        assertEquals(true, context.getVariable("cors.isCors"));
-        assertEquals(true, response.getHeadersKnob().containsHeader("Access-Control-Allow-Origin", HeadersKnob.HEADER_TYPE_HTTP));
-        assertEquals(acceptedOrigin, response.getHeadersKnob().getHeaderValues("Access-Control-Allow-Origin", HeadersKnob.HEADER_TYPE_HTTP)[0]);
-        assertEquals(true, response.getHeadersKnob().containsHeader("Access-Control-Allow-Credentials", HeadersKnob.HEADER_TYPE_HTTP));
-        assertEquals("true", response.getHeadersKnob().getHeaderValues("Access-Control-Allow-Credentials", HeadersKnob.HEADER_TYPE_HTTP)[0]);
-        assertEquals(true, response.getHeadersKnob().containsHeader("Access-Control-Allow-Methods", HeadersKnob.HEADER_TYPE_HTTP));
-        assertEquals("GET", response.getHeadersKnob().getHeaderValues("Access-Control-Allow-Methods", HeadersKnob.HEADER_TYPE_HTTP)[0]);
-        assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Expose-Headers", HeadersKnob.HEADER_TYPE_HTTP));
-        assertEquals(true, response.getHeadersKnob().containsHeader("Access-Control-Allow-Headers", HeadersKnob.HEADER_TYPE_HTTP));
-
-        String[] allowedHeaderValues =
-                response.getHeadersKnob().getHeaderValues("Access-Control-Allow-Headers", HeadersKnob.HEADER_TYPE_HTTP);
-
-        assertEquals(1, allowedHeaderValues.length);
-        assertEquals("param,x-param,x-requested-with", allowedHeaderValues[0]);
 
         assertEquals(false, response.getHeadersKnob().containsHeader("Access-Control-Max-Age", HeadersKnob.HEADER_TYPE_HTTP));
     }
