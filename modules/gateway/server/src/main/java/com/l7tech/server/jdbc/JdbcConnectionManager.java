@@ -22,8 +22,6 @@ public interface JdbcConnectionManager extends EntityManager<JdbcConnection, Ent
      */
     JdbcConnection getJdbcConnection(String connectionName) throws FindException;
 
-    JdbcConnection getJdbcConnectionCached(String connectionName) throws FindException;
-
     /**
      * To retrieve a list of driver classes which the JDBC Query Assertion is allowed to use.
      *
@@ -39,4 +37,10 @@ public interface JdbcConnectionManager extends EntityManager<JdbcConnection, Ent
      * @return True if the jdbc driver class is supported, False if the jdbc driver class is not supported.
      */
     boolean isDriverClassSupported(String driverClass);
+
+
+    /**
+     * Clears all query cache and cached items of type:  JdbcConnection (from the Hibernate L2 Cache)
+     */
+    void clearAllFromCache();
 }

@@ -28,7 +28,7 @@
         <dependency org="org.apache.mina" name="mina-core" rev="2.0.7" force="true" conf="core"/>
         <dependency org="commons-lang" name="commons-lang" rev="2.6" force="true" conf="core"/>
         <dependency org="commons-collections" name="commons-collections" rev="3.2.2" force="true" conf="core"/>
-        <dependency org="net.sf.ehcache" name="ehcache" rev="2.8.5" force="true" conf="core"/>
+        <dependency org="net.sf.ehcache" name="ehcache" rev="2.10.3" force="true" conf="core"/>
         <dependency org="commons-codec" name="commons-codec" rev="1.6" force="true" conf="core"/>
         <dependency org="org.apache.kerby" name="kerb-client-api-all" rev="1.0.0-RC2" force="true" conf="core"/>
         <dependency org="org.apache.kerby" name="kerb-client" rev="1.0.0-RC2" force="true" conf="core"/>

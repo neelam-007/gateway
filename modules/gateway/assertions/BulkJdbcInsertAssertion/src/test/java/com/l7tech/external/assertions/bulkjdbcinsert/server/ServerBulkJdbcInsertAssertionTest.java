@@ -21,7 +21,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import javax.naming.NamingException;
 import javax.sql.DataSource;
@@ -339,11 +338,6 @@ public class ServerBulkJdbcInsertAssertionTest {
         }
 
         @Override
-        public JdbcConnection getJdbcConnectionCached(String connectionName) throws FindException {
-            throw new NotImplementedException();
-        }
-
-        @Override
         public List<String> getSupportedDriverClass() {
             return null;
         }
@@ -351,6 +345,11 @@ public class ServerBulkJdbcInsertAssertionTest {
         @Override
         public boolean isDriverClassSupported(String driverClass) {
             return false;
+        }
+
+        @Override
+        public void clearAllFromCache() {
+
         }
 
         @Nullable

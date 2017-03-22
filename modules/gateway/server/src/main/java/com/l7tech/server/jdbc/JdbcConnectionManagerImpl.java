@@ -3,16 +3,26 @@ package com.l7tech.server.jdbc;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.NamedEntity;
 import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
+import com.l7tech.server.util.ReadOnlyHibernateCallback;
+import org.hibernate.CacheMode;
+import org.hibernate.Criteria;
+import org.hibernate.HibernateException;
+import org.hibernate.Session;
+import org.hibernate.criterion.Restrictions;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Logger;
 
 /**
  * The implementation of managing JDBC Connection Entity
@@ -23,9 +33,7 @@ import java.util.StringTokenizer;
 public class JdbcConnectionManagerImpl
     extends HibernateEntityManager<JdbcConnection, EntityHeader>
     implements JdbcConnectionManager {
-
-    private static final int JDBC_CONNECTION_CACHE_MAX_AGE = 5000;
-
+    private static final Logger logger = Logger.getLogger(JdbcConnectionManagerImpl.class.getName());
     @Override
     public Class<? extends PersistentEntity> getImpClass() {
         return JdbcConnection.class;
@@ -37,10 +45,7 @@ public class JdbcConnectionManagerImpl
     }
 
     /**
-     * <p>Retrieve a JDBC Connection entity from the database by using a connection name.</p>
-     *
-     * <p>This method hits the database every single time it is called.
-     * You might want to consider using {@link #getJdbcConnectionCached(String)} instead.</p>
+     * Retrieve a JDBC Connection entity from the database by using a connection name.
      *
      * @param connectionName: the name of a JDBC connection
      * @return a JDBC Connection entity with the name, "connectionName".
@@ -52,18 +57,34 @@ public class JdbcConnectionManagerImpl
     }
 
     /**
-     * <p>Retrieve a JDBC Connection entity from the database by using a connection name.</p>
+     * This method is overridden so that the query can be added to the query cache (prevent numerous queries for same JdbcConnection object)
      *
-     * <p>This method caches connections. Consider using this instead of {@link #getJdbcConnection(String)} unless
-     * you specifically want to hit the database with each call.</p>
-     *
-     * @param connectionName the name of a JDBC connection
-     * @return a JDBC Connection entity with the name <code>connectionName</code>
-     * @throws FindException when there is an error finding the connection
+     * @param name the name of the entity to locate.  Required.
+     * @return
+     * @throws FindException
      */
     @Override
-    public JdbcConnection getJdbcConnectionCached(String connectionName) throws FindException {
-        return getCachedEntityByName(connectionName, JDBC_CONNECTION_CACHE_MAX_AGE);
+    @Transactional(readOnly=true)
+    public JdbcConnection findByUniqueName(final String name) throws FindException {
+        if (name == null) throw new NullPointerException();
+        if (!(NamedEntity.class.isAssignableFrom(getImpClass()))) throw new IllegalArgumentException("This Manager's entities are not NamedEntities!");
+
+        try {
+            return getHibernateTemplate().execute(new ReadOnlyHibernateCallback<JdbcConnection>() {
+                @SuppressWarnings({ "unchecked" })
+                @Override
+                public JdbcConnection doInHibernateReadOnly(Session session) throws HibernateException, SQLException {
+                    Criteria criteria = session.createCriteria(getImpClass());
+                    addFindByNameCriteria(criteria);
+                    criteria.add(Restrictions.eq(F_NAME, name)).setCacheable(true).setCacheMode(CacheMode.NORMAL);
+                    final JdbcConnection et = (JdbcConnection) criteria.uniqueResult();
+                    initializeLazilyLoaded(et);
+                    return et;
+                }
+            });
+        } catch (HibernateException e) {
+            throw new FindException("Couldn't find unique entity", e);
+        }
     }
 
     @Override
@@ -93,4 +114,15 @@ public class JdbcConnectionManagerImpl
         return false;
     }
 
+    /**
+     * Clears all query cache and cached items of type:  JdbcConnection (from the Hibernate L2 Cache)
+     */
+    @Override
+    public void clearAllFromCache() {
+        if (getSessionFactory().getCache() != null) {
+            logger.warning("Clearing all cached JdbcConnection entities");
+            getSessionFactory().getCache().evictQueryRegions();
+            getSessionFactory().getCache().evictEntityRegion(JdbcConnection.class);
+        }
+    }
 }

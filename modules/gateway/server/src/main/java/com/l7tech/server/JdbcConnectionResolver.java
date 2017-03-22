@@ -41,6 +41,7 @@ public class JdbcConnectionResolver implements PostStartupApplicationListener {
                             try {
                                 JdbcConnection conn = jdbcConnectionManager.findByPrimaryKey(goid);
                                 jdbcConnectionPoolManager.updateConnectionPool(conn, false);
+                                jdbcConnectionManager.clearAllFromCache();
                                 break;
                             } catch (FindException e) {
                                 if (logger.isLoggable(Level.WARNING)) {
@@ -51,6 +52,7 @@ public class JdbcConnectionResolver implements PostStartupApplicationListener {
                         case EntityInvalidationEvent.DELETE:
                             String name = jdbcConnectionPoolManager.getConnectionName(goid);
                             jdbcConnectionPoolManager.deleteConnectionPool(name);
+                            jdbcConnectionManager.clearAllFromCache();
                             break;
                     }
                 }
