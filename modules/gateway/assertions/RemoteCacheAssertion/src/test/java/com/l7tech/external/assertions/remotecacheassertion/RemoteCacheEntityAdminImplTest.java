@@ -181,7 +181,6 @@ public class RemoteCacheEntityAdminImplTest {
         List<String> installedLibraries = remoteCacheEntityAdmin.getInstalledLibraries();
 
      /* assertEquals(5, installedLibraries.size()); */
-        assertEquals(4, installedLibraries.size());
         assertTrue(installedLibraries.contains("terracotta-toolkit-runtime-ee.jar"));
         assertTrue(installedLibraries.contains("ehcache-ee.jar"));
         assertTrue(installedLibraries.contains("terracotta-license.key"));
