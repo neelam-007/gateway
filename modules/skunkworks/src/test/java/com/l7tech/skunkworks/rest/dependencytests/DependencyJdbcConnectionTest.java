@@ -89,10 +89,10 @@ public class DependencyJdbcConnectionTest extends DependencyTestBase{
     @After
     public void after() throws Exception {
         super.after();
-        securityZoneManager.delete(securityZone);
         securePasswordManager.delete(securePassword);
         jdbcConnectionManager.delete(jdbcConnection);
         jdbcConnectionManager.delete(jdbcConnectionPassword);
+        securityZoneManager.delete(securityZone);
 
     }
 
