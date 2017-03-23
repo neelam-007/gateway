@@ -715,11 +715,11 @@ Here is an example of CacheManager level resource tuning, which will use up to 4
     defined on your system. On a standard Linux system this will be /tmp"
     -->
     <cache name="com.l7tech.gateway.common.jdbc.JdbcConnection"
-           maxElementsInMemory="20000"
-           maxEntriesLocalHeap="20000"
+           maxElementsInMemory="100"
+           maxEntriesLocalHeap="100"
            eternal="false"
-           timeToIdleSeconds="36000"
-           timeToLiveSeconds="36000"
+           timeToIdleSeconds="12000"
+           timeToLiveSeconds="12000"
            memoryStoreEvictionPolicy="LFU"
            overflowToDisk="false"
            transactionalMode="off">
