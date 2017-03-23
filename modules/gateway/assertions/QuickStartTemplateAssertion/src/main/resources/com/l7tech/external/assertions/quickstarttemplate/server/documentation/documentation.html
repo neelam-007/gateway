@@ -11,6 +11,7 @@
 <ol>
     <li><a href="#introduction">Introduction</a></li>
     <li><a href="#description">Description of Top Level Containers and JSON Schema for Services</a></li>
+    <li><a href="#custom_encass">Creating Custom Encapsulated Assertions</a></li>
     {{#assertions}}
     <li><a href="#{{config.name}}">Encapsulated Assertion: {{config.name}}</a></li>
     {{/assertions}}
@@ -18,32 +19,29 @@
 
 
 <a name="introduction"><h2><u>Introduction</u></h2></a>
-<p>Quick Start is a simple, JSON-driven way of publishing services on your API Gateway using Gateway provided or
-    self-defined "building blocks" to protect or enhance your existing proxied services.</p>
-<p>Publishing a service on your API Gateway is accomplished by:</p>
+<p> Quick Start provides a simple and fast way for users to proxy, secure and define their services.
+    Using JSON, they can create and publish services to the API Gateway and apply proxy, security, routing,
+    transformation and other logic to client requests.</p>
+<p> Users have the option to choosing from a starter pack of available template logic or building their own blocks
+    of custom logic using the Gateway's policy language to create custom encapsulated assertions.</p>
+<p>To publish a service on your API Gateway and apply service and messaging logic:</p>
 <ol>
     <li>Create a JSON file containing your service description. (See below for schema and description.)</li>
-    <li>Apply this JSON file to your API Gateway. This can be accomplished by one of two ways:
-        <ul>
-            <li>POST the JSON content to <a href="http://localhost:8080/quickStart/1.0">http://localhost:8080/quickStart/1.0</a>,
-                using your Gateway's administrator username and password; or,</li>
-            <li>Place the JSON file in the FIXME directory in an inherited Docker image layer, and it will be read and
-                imported on startup.</li>
-        </ul>
-    </li>
+    <li>Apply this JSON file to your API Gateway by submitting an HTTP PUT request with the JSON content to
+        <a href="http://localhost:8080/quickstart/1.0">http://localhost:8080/quickstart/1.0</a> using your Gateway's administrator username and password.
     <li>Use your service.</li>
 </ol>
 
-<h2>Extension</h2>
-<p>FIXME: Describe how to create and load your own encapsulated assertions.</p>
+<a name="custom_encass"><h2><u>Creating Custom Encapsulated Assertions</u></h2></a>
+<p>TODO: Describe how to create and load your own encapsulated assertions.</p>
 
 <a name="description"><h2><u>Description of Top Level Containers and Schema</u></h2></a>
-<p>The service JSON file describes a single service. Different services must be defined in different files or POSTed
-    to the API Gateway independently. A service consists of a name, a URI, and a number of HTTP access methods, as
-    well as an ordered list of "policy assertions" (features that protect, secure, or enhance your API). The complete
-list of available assertions is below, but here is a sample service and the JSON schema for the services in general.</p>
+<p> Each JSON file describes a single service. Different services must be defined in different files.</p>
+<p> A service consists of a name, a URI (service endpoint), and a number of HTTP access methods, as
+    well as an ordered list of "policy assertions" (features that protect, secure, or enhance your API).</p>
+<p> The complete list of available assertions is below, but here is a sample service and the JSON schema for the services in general.</p>
 
-<h3>Sample Service JSON</h3>
+<h3>Sample JSON file for creating a Service</h3>
 <pre class="prettyprint">{
   "Service": {
     "name": "SomeService",
@@ -70,7 +68,7 @@ list of available assertions is below, but here is a sample service and the JSON
   }
 }</pre>
 
-<h3>Service JSON Schema</h3>
+<h3>JSON Schema for Services</h3>
 <pre class="prettyprint">{
   "$schema": "http://json-schema.org/draft-04/schema",
   "type": "object",
