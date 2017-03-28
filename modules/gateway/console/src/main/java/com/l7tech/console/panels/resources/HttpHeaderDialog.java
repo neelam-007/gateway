@@ -10,13 +10,11 @@ import java.util.ResourceBundle;
  * HttpHeaderDialog  dialog.
  */
 public class HttpHeaderDialog extends JDialog {
-    private JLabel nameLabel;
     private JTextField valueTextField;
     private JTextField nameTextField;
     private JButton cancelButton;
     private JButton okButton;
     private JPanel mainPanel;
-    private JLabel valueLabel;
     private HttpConfigurationProperty data;
     private boolean wasOKed = false;
     private final InputValidator inputValidator;
@@ -37,13 +35,12 @@ public class HttpHeaderDialog extends JDialog {
         setTitle(bundle.getString("title"));
 
         inputValidator.constrainTextFieldToBeNonEmpty(bundle.getString("header.name.error"), nameTextField, null);
-        inputValidator.constrainTextFieldToBeNonEmpty(bundle.getString("header.value.error"), valueTextField, null);
 
-        cancelButton.addActionListener( e -> cancel());
+        cancelButton.addActionListener(e -> cancel());
 
         nameTextField.setText(data.getName());
         valueTextField.setText(data.getFullValue());
-        inputValidator.attachToButton( okButton, e -> ok());
+        inputValidator.attachToButton(okButton, e -> ok());
     }
 
     private void cancel() {

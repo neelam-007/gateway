@@ -32,7 +32,7 @@
             </constraints>
             <properties/>
           </component>
-          <component id="42efc" class="javax.swing.JLabel" binding="valueLabel">
+          <component id="42efc" class="javax.swing.JLabel">
             <constraints>
               <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="4" fill="0" indent="1" use-parent-layout="false"/>
             </constraints>
@@ -42,7 +42,7 @@
               <text resource-bundle="com/l7tech/console/panels/resources/HttpHeaderDialog" key="label.value"/>
             </properties>
           </component>
-          <component id="9e75f" class="javax.swing.JLabel" binding="nameLabel">
+          <component id="9e75f" class="javax.swing.JLabel">
             <constraints>
               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="4" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
