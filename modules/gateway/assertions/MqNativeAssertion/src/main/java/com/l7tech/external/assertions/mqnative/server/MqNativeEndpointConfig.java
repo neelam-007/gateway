@@ -23,6 +23,14 @@ import java.util.Hashtable;
  * Immutable endpoint configuration for runtime use.
  */
 class MqNativeEndpointConfig {
+    // MQ Native - connection pool properties
+    // This is the default maximum # of connections per connection pool.
+    private static final int DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_ACTIVE = 20;
+    // This is the default max idle time for GenericObjectPool, essentially the time to wait for an object to become available.
+    // a default value of -1 means that if no idle connections are available, wait indefinitely until one becomes available.
+    private static final long DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_WAIT = -1L;
+    // This is the default maximum number of objects that can sit idle in the pool at any time.
+    private static final int DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_IDLE = 20;
 
     private final String name;
     private final boolean dynamic;
@@ -34,6 +42,9 @@ class MqNativeEndpointConfig {
     private final MqNativeReplyType replyType;
     private final String replyToModelQueueName;
     private final Nullary<Either<MqNativeConfigException,Hashtable>> queueManagerProperties;
+    private final int connectionPoolMaxActive;
+    private final long connectionPoolMaxWait;
+    private final int connectionPoolMaxIdle;
 
     MqNativeEndpointConfig( final SsgActiveConnector originalConnector,
                             final Option<String> password,
@@ -51,6 +62,10 @@ class MqNativeEndpointConfig {
         this.replyType = connector.getEnumProperty( PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, REPLY_NONE, MqNativeReplyType.class );
         this.replyToModelQueueName = connector.getProperty( PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_TEMPORARY_QUEUE_NAME_PATTERN );
         this.queueManagerProperties = memoize(buildQueueManagerProperties(connector,password));
+        this.connectionPoolMaxActive = DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_ACTIVE;
+        this.connectionPoolMaxWait = DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_WAIT;
+        this.connectionPoolMaxIdle = DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_IDLE;
+
     }
 
     boolean isDynamic() {
@@ -161,6 +176,7 @@ class MqNativeEndpointConfig {
          *
          * @return The string representation.
          */
+        @SuppressWarnings("StringBufferReplaceableByString")
         public String toString() {
             StringBuilder sb = new StringBuilder();
 
@@ -195,15 +211,46 @@ class MqNativeEndpointConfig {
     private Nullary<Either<MqNativeConfigException,Hashtable>> buildQueueManagerProperties(
             final SsgActiveConnector connector,
             final Option<String> password ) {
-        return new Nullary<Either<MqNativeConfigException,Hashtable>>(){
-            @Override
-            public Either<MqNativeConfigException,Hashtable> call() {
-                try {
-                    return right( MqNativeUtils.buildQueueManagerConnectProperties( connector, password ) );
-                } catch ( MqNativeConfigException e ) {
-                    return left( e );
-                }
+        return () -> {
+            try {
+                return right( MqNativeUtils.buildQueueManagerConnectProperties( connector, password ) );
+            } catch ( MqNativeConfigException e ) {
+                return left( e );
             }
         };
     }
+
+    /**
+     * It controls the maximum number of objects that can be allocated by the
+     * pool (checked out to clients, or idle awaiting checkout) at a given time. When non-positive, there is no limit to the number of objects
+     * that can be managed by the pool at one time. When maxActive is reached, the pool is said to be exhausted.
+     * @return maxActive setting
+     */
+    int getConnectionPoolMaxActive() {
+        return connectionPoolMaxActive;
+    }
+
+    /**
+     * The maxWait value determines how the Connection Pool will behave when borrowing an object when none are available.
+     * The default setting is to BLOCK when no objects/connections are available.  And the default maxWait is -1, which means
+     * that borrowObject will block indefinitely until an idel instance becomes available.
+     *
+     * If a positive maxWait value is supplied, then borrowObject() will block for at most that many milliseconds, after which a NoSuchElementException
+     * will be thrown.
+     *
+     * @return maxWait setting
+     */
+    long getConnectionPoolMaxWait() {
+        return connectionPoolMaxWait;
+    }
+
+    /**
+     * Controls the maximum number of objects that can sit idle in the pool at any time.
+     * When negative, there is no limit to the number of objects that may be idle at one time.
+     * @return maxIdle setting
+     */
+    int getConnectionPoolMaxIdle() {
+        return connectionPoolMaxIdle;
+    }
+
 }
