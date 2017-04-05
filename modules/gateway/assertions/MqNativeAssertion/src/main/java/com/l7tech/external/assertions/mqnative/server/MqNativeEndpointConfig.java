@@ -25,12 +25,12 @@ import java.util.Hashtable;
 class MqNativeEndpointConfig {
     // MQ Native - connection pool properties
     // This is the default maximum # of connections per connection pool.
-    private static final int DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_ACTIVE = 20;
+    public static final int DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_ACTIVE = 20;
     // This is the default max idle time for GenericObjectPool, essentially the time to wait for an object to become available.
     // a default value of -1 means that if no idle connections are available, wait indefinitely until one becomes available.
-    private static final long DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_WAIT = -1L;
+    public static final long DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_WAIT = -1L;
     // This is the default maximum number of objects that can sit idle in the pool at any time.
-    private static final int DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_IDLE = 20;
+    public static final int DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_IDLE = 20;
 
     private final String name;
     private final boolean dynamic;

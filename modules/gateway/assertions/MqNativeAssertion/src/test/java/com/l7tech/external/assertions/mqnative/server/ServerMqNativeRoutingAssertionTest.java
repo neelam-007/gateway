@@ -54,6 +54,8 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
 import static com.ibm.mq.constants.CMQC.MQFMT_RF_HEADER_1;
@@ -76,6 +78,7 @@ public class ServerMqNativeRoutingAssertionTest {
     private PolicyEnforcementContext context;
     private ServerMqNativeRoutingAssertion fixture;
     private GenericApplicationContext applicationContext;
+    private MqNativeResourceManager resourceManagerSpy;
     // static final is needed for requestQ to workaround a potential bug in Mockito where it is operating on a different
     // copy inside the mocked method MQQueue.put().
     private static final Stack requestQ = new Stack();
@@ -179,7 +182,7 @@ public class ServerMqNativeRoutingAssertionTest {
             }
         }).when(poolableCachedConnectionFactorySpy).makeObject();
 
-        final MqNativeResourceManager resourceManagerSpy = spy(resourceManager);
+        resourceManagerSpy = spy(resourceManager);
         doAnswer(new Answer() {
             public Object answer(InvocationOnMock invocation) throws MQException {
                 final MqNativeEndpointConfig mqCfg = (MqNativeEndpointConfig) invocation.getArguments()[0];
@@ -795,5 +798,99 @@ public class ServerMqNativeRoutingAssertionTest {
         return mqMessage;
     }
 
+    /**
+     * Test concurrently sending 20 messages (default # of connections configured) asynchronously.
+     *
+     * In the main thread (while the other threads are processing due to a sleep call),
+     * assert that the GenericObjectPool.mayCreate returns false - since the pool is currently in use.
+     *
+     * @throws Exception
+     */
+    @Test
+    public void testConnectionPoolingWithMaxConnectionsAndSimpleMessages() throws Exception {
+        // setup a stubbed version of task callback
+        final AtomicReference<MqNativeEndpointConfig.MqNativeEndpointKey> key = new AtomicReference<>();
+        final CountDownLatch latch = new CountDownLatch(MqNativeEndpointConfig.DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_ACTIVE);
+        final MqNativeResourceManager.MqTaskCallback mqrc = new MqNativeResourceManager.MqTaskCallback() {
+            @Override
+            public void doWork(MQQueueManager queueManager) throws MQException {
+                // this callback just sleeps and "pretends" to do some work
+                try {
+                    latch.countDown();
+                    Thread.sleep(10000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        };
 
+        doAnswer(invocation -> {
+            final MqNativeEndpointConfig mqCfg = (MqNativeEndpointConfig) invocation.getArguments()[0];
+            key.set(mqCfg.getMqEndpointKey());
+
+            MQPoolToken token = MQEnvironment.addConnectionPoolToken();
+            MqNativeCachedConnectionPool.CachedConnection borrowedConnection = null;
+            MqNativeCachedConnectionPool cachedConnectionPool = null;
+            try {
+                cachedConnectionPool = resourceManagerSpy.getConnectionHolder().get(key.get());
+                if (cachedConnectionPool == null || !cachedConnectionPool.ref()) {
+                    cachedConnectionPool = null;
+
+                    synchronized (key.toString().intern()) { // prevent concurrent creation for a key
+                        cachedConnectionPool = resourceManagerSpy.getConnectionHolder().get(key.get()); // see if someone else created it
+                        if (cachedConnectionPool == null || !cachedConnectionPool.ref()) {
+                            cachedConnectionPool = null;
+                            cachedConnectionPool = resourceManagerSpy.newConnectionPool(mqCfg);
+                        }
+                    }
+                }
+
+                borrowedConnection = cachedConnectionPool.getCachedConnections().borrowObject();
+                mqrc.doWork(borrowedConnection.getQueueManager());
+            } catch (MQException e) {
+                throw e;
+            } catch (Exception e) {
+                throw new MqNativeRuntimeException(e);
+            } finally {
+                MQEnvironment.removeConnectionPoolToken(token);
+                if (borrowedConnection != null) {
+                    try {
+                        cachedConnectionPool.getCachedConnections().returnObject(borrowedConnection);
+                    } catch (Exception e) {
+                        //swallow
+                    }
+                }
+                if (cachedConnectionPool != null) cachedConnectionPool.unRef();
+            }
+            return null;
+        }).when(resourceManagerSpy).doWithMqResources(any(MqNativeEndpointConfig.class), any(MqNativeResourceManager.MqTaskCallback.class));
+
+        MqNativeMessagePropertyRuleSet ruleSet = new MqNativeMessagePropertyRuleSet();
+        ruleSet.setPassThroughHeaders(true);
+        ruleSet.setPassThroughMqMessageHeaders(true);
+        ruleSet.setPassThroughMqMessageProperties(true);
+        assertion.setRequestMqNativeMessagePropertyRuleSet(ruleSet);
+
+        MQMessage mqMessage = createSimpleMessage();
+        context = makeContext(mqMessage);
+        Collection<Future> futures = new ArrayList<>();
+
+        final ExecutorService pool = Executors.newFixedThreadPool(MqNativeEndpointConfig.DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_ACTIVE);
+        for (int i = 0; i < MqNativeEndpointConfig.DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_ACTIVE; i++) {
+            futures.add(pool.submit(() -> {
+                try {
+                    AssertionStatus status = fixture.checkRequest(context);
+
+                    return status != null && status == AssertionStatus.NONE;
+                } catch (Throwable t) {
+                    t.printStackTrace();
+                }
+                return Boolean.FALSE;
+            }));
+        }
+        latch.await();
+        final MqNativeCachedConnectionPool mqNativeCachedConnectionPool = resourceManagerSpy.getConnectionHolder().get(key.get());
+        assertEquals(mqNativeCachedConnectionPool.getCachedConnections().getNumIdle(),0);
+
+    }
 }
