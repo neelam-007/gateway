@@ -1,0 +1,27 @@
+# Temp files
+*~
+*.sw[a-z]
+.DS_Store
+tmp
+*.tmp
+*.out
+**/*.iml
+./**/*.ipr
+
+# Build directories/files
+build
+.idea
+**/.grunt/**
+**/target/**
+**/node/**
+**/node_modules/**
+**/_SpecRunner.html
+
+# Any local binaries copied into the checkout root directory
+*.war
+*.iml
+UneasyRooster.ipr
+*.iws
+
+# Application specific
+*.env
