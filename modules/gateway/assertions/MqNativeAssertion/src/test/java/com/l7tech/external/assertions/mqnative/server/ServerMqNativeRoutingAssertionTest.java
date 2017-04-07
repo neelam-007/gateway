@@ -871,14 +871,15 @@ public class ServerMqNativeRoutingAssertionTest {
         ruleSet.setPassThroughMqMessageProperties(true);
         assertion.setRequestMqNativeMessagePropertyRuleSet(ruleSet);
 
-        MQMessage mqMessage = createSimpleMessage();
-        context = makeContext(mqMessage);
+
         Collection<Future> futures = new ArrayList<>();
 
         final ExecutorService pool = Executors.newFixedThreadPool(MqNativeEndpointConfig.DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_ACTIVE);
         for (int i = 0; i < MqNativeEndpointConfig.DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_ACTIVE; i++) {
             futures.add(pool.submit(() -> {
                 try {
+                    MQMessage mqMessage = createSimpleMessage();
+                    context = makeContext(mqMessage);
                     AssertionStatus status = fixture.checkRequest(context);
 
                     return status != null && status == AssertionStatus.NONE;
