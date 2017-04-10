@@ -51,6 +51,7 @@ import static org.mockito.Mockito.*;
 public class ServerSwaggerAssertionTest {
 
     public static final String INVALID_SWAGGER_JSON = "{\"name\":\"value\"}";
+    public static final String INVALID_SWAGGER_NONJSON = "<name>value</name>";
     public static final String OAUTH2_AUTH_TOKEN = " bearer J1qK1c18UUGJFAzz9xnH56584l4";
     public static final String OAUTH2_PARAM_TOKEN = "J1qK1c18UUGJFAzz9xnH56584l4";
     public static final String APIKEY_TOKEN = "Jlkhbejhven789hhetbJMHeur";
@@ -109,6 +110,23 @@ public class ServerSwaggerAssertionTest {
         );
 
         pec.setVariable("swaggerDoc", INVALID_SWAGGER_JSON);
+
+        assertEquals(AssertionStatus.FAILED, fixture.checkRequest(pec));
+        assertEquals(1, testAudit.getAuditCount());
+        assertTrue(AssertionMessages.SWAGGER_INVALID_DOCUMENT.getMessage(),
+                testAudit.isAuditPresent(AssertionMessages.SWAGGER_INVALID_DOCUMENT));
+    }
+
+    @Test
+    public void testInvalidSwaggerNonJson() throws Exception {
+        assertion.setSwaggerDoc("swaggerDoc");
+        fixture = createServer(assertion);
+
+        PolicyEnforcementContext pec = createPolicyEnforcementContext(
+                createHttpRequestMessage("/svr/pet/findByStatus", "GET")
+        );
+
+        pec.setVariable("swaggerDoc", INVALID_SWAGGER_NONJSON);
 
         assertEquals(AssertionStatus.FAILED, fixture.checkRequest(pec));
         assertEquals(1, testAudit.getAuditCount());

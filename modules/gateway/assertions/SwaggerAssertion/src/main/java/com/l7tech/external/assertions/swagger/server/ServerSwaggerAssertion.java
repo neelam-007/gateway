@@ -5,6 +5,7 @@ import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.external.assertions.swagger.SwaggerAssertion;
+import com.l7tech.external.assertions.swagger.SwaggerUtil;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.Messages;
@@ -84,7 +85,7 @@ public class ServerSwaggerAssertion extends AbstractServerAssertion<SwaggerAsser
                 currentDocHashCode = swaggerModelHolder.get().getDocumentHash();
 
                 if (currentDocHashCode == 0 || currentDocHashCode != docHashCode) {
-                    Swagger newModel = parseSwaggerJson(doc);
+                    Swagger newModel = SwaggerUtil.parseSwaggerJson(doc);
 
                     //check if the document parsed properly
                     if (newModel != null) {
@@ -255,13 +256,6 @@ public class ServerSwaggerAssertion extends AbstractServerAssertion<SwaggerAsser
             //security is not required (no securityDefinitions)
             return true;
         }
-    }
-
-    protected Swagger parseSwaggerJson(String doc) {
-        SwaggerParser parser = new SwaggerParser();
-        List<AuthorizationValue> authorizationValues = new ArrayList<>();
-        authorizationValues.add(new AuthorizationValue());
-        return parser.parse(doc, authorizationValues);
     }
 
     private String getServiceRoutingUri(PublishedService service) {

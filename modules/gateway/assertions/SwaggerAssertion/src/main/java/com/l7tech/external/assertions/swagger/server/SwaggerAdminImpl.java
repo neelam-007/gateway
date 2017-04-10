@@ -3,6 +3,7 @@ package com.l7tech.external.assertions.swagger.server;
 import com.l7tech.console.action.DeleteEntityNodeAction;
 import com.l7tech.external.assertions.swagger.SwaggerAdmin;
 import com.l7tech.external.assertions.swagger.SwaggerApiMetadata;
+import com.l7tech.external.assertions.swagger.SwaggerUtil;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.server.admin.AsyncAdminMethodsImpl;
 import com.l7tech.server.event.AdminInfo;
@@ -48,7 +49,7 @@ public class SwaggerAdminImpl extends AsyncAdminMethodsImpl implements SwaggerAd
                                     DeleteEntityNodeAction.LINE_CHAR_LIMIT));
         }
 
-        Swagger model = parseSwaggerDocument(swaggerDocument);
+        Swagger model = SwaggerUtil.parseSwaggerJson(swaggerDocument);
 
         // the parser returns null if it could not parse the document
         if (null == model) {
@@ -86,13 +87,5 @@ public class SwaggerAdminImpl extends AsyncAdminMethodsImpl implements SwaggerAd
         }, 0L);
 
         return registerJob(task, SwaggerApiMetadata.class);
-    }
-
-    private Swagger parseSwaggerDocument(String swaggerDocument) {
-        SwaggerParser parser = new SwaggerParser();
-        List<AuthorizationValue> authorizationValues = new ArrayList<>();
-        authorizationValues.add(new AuthorizationValue());
-
-        return parser.parse(swaggerDocument, authorizationValues);
     }
 }
