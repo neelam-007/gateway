@@ -4,24 +4,41 @@ MODULE=$1
 LEVEL=$2
 
 # Pull in collector support functions
-#
 . ${COLLECTOR_HOME}/collectorlib
 
 preModule $MODULE
 
+
+#Define and create output folders
+KERNEL_MODULE_BaseOutputDirectory=${ALL_MODULES_BaseOutputDirectory}/${MODULE}
+KERNEL_MODULE_BaseOutputDirectory_config=${KERNEL_MODULE_BaseOutputDirectory}/config
+KERNEL_MODULE_BaseOutputDirectory_logs=${KERNEL_MODULE_BaseOutputDirectory}/logs
+mkdir -p ${KERNEL_MODULE_BaseOutputDirectory}
+#mkdir -p ${KERNEL_MODULE_BaseOutputDirectory_config}
+#mkdir -p ${KERNEL_MODULE_BaseOutputDirectory_logs}
+
+#Begin data collection
 logCommand cat /proc/version
-cat /proc/version
+cp /proc/version ${KERNEL_MODULE_BaseOutputDirectory}/proc_version.txt
 
 logCommand lsmod
-lsmod
+lsmod > ${KERNEL_MODULE_BaseOutputDirectory}/lsmod.txt
 
 logCommand cat /etc/sysctl.conf
-cat /etc/sysctl.conf
+cp /etc/sysctl.conf ${KERNEL_MODULE_BaseOutputDirectory}/etc_sysctl.conf
 
-if [ $LEVEL -ge $DETAIL ]
-then
-    logCommand cat /proc/cmdline
-    cat /proc/cmdline
-fi
+logCommand cat /proc/cmdline
+cat /proc/cmdline > ${KERNEL_MODULE_BaseOutputDirectory}/proc_cmdline.txt
+
+
+#if [ $LEVEL -ge $DETAIL ]
+#then
+#    #nothing here
+#fi
+#
+#if [ $LEVEL -ge $EVERYTHING ]
+#then
+#    #nothing here
+#fi
 
 postModule $MODULE

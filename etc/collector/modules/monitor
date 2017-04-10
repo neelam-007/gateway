@@ -4,25 +4,43 @@ MODULE=$1
 LEVEL=$2
 
 # Pull in collector support functions
-#
 . ${COLLECTOR_HOME}/collectorlib
 
 preModule $MODULE
 
+
+#Define and create output folders
+MONITOR_MODULE_BaseOutputDirectory=${ALL_MODULES_BaseOutputDirectory}/${MODULE}
+MONITOR_MODULE_BaseOutputDirectory_config=${MONITOR_MODULE_BaseOutputDirectory}/config
+MONITOR_MODULE_BaseOutputDirectory_logs=${MONITOR_MODULE_BaseOutputDirectory}/logs
+mkdir -p ${MONITOR_MODULE_BaseOutputDirectory}
+#mkdir -p ${MONITOR_MODULE_BaseOutputDirectory_config}
+#mkdir -p ${MONITOR_MODULE_BaseOutputDirectory_logs}
+
+
+#Begin data collection
 logCommand ps axjf
-ps axjf
+ps axjf > ${MONITOR_MODULE_BaseOutputDirectory}/ps_axjf.txt
 
 logCommand vmstat 1 30
-vmstat 1 30
+vmstat 1 30 >> ${MONITOR_MODULE_BaseOutputDirectory}/vmstat_1_30.txt
 
 logCommand timeout 30s netstat -i 1
-timeout 30s netstat -i 1
+timeout 30s netstat -i 1 >> ${MONITOR_MODULE_BaseOutputDirectory}/netstat_1_30.txt
 
-if [ $LEVEL -ge $DETAIL ]
-then
-    logCommand 'ps auxwww | grep gateway'
-    ps auxwww | grep gateway
+logCommand 'ps auxwww | grep gateway'
+ps auxwww | grep gateway > ${MONITOR_MODULE_BaseOutputDirectory}/ps_auxwww.txt
 
-fi
+
+
+#if [ $LEVEL -ge $DETAIL ]
+#then
+#    #nothing here
+#fi
+#
+#if [ $LEVEL -ge $EVERYTHING ]
+#then
+#    #nothing here
+#fi
 
 postModule $MODULE

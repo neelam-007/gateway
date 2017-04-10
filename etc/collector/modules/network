@@ -4,25 +4,56 @@ MODULE=$1
 LEVEL=$2
 
 # Pull in collector support functions
-#
 . ${COLLECTOR_HOME}/collectorlib
 
 
 preModule $MODULE
 
+
+#Define and create output folders
+NETWORK_MODULE_BaseOutputDirectory=${ALL_MODULES_BaseOutputDirectory}/devices
+NETWORK_MODULE_BaseOutputDirectory_config=${NETWORK_MODULE_BaseOutputDirectory}/config
+NETWORK_MODULE_BaseOutputDirectory_logs=${NETWORK_MODULE_BaseOutputDirectory}/logs
+mkdir -p ${NETWORK_MODULE_BaseOutputDirectory}
+#mkdir -p ${NETWORK_MODULE_BaseOutputDirectory_config}
+#mkdir -p ${NETWORK_MODULE_BaseOutputDirectory_logs}
+
+#Begin data collection
+
 logCommand ifconfig -a
-ifconfig -a
+ifconfig -a > ${NETWORK_MODULE_BaseOutputDirectory}/ifconfig-a.txt
 
 logCommand netstat -nr
-netstat -nr
+netstat -nr > ${NETWORK_MODULE_BaseOutputDirectory}/netstat-nr.txt
 
 logCommand iptables -nL
-iptables -nL
+iptables -nL  > ${NETWORK_MODULE_BaseOutputDirectory}/iptables-nL.txt
 
-if [ $LEVEL -ge $DETAIL ]
-then
-    logCommand iptables -v -nL
-    iptables -v -nL
-fi
+logCommand iptables -v -nL
+iptables -v -nL  > ${NETWORK_MODULE_BaseOutputDirectory}/iptables-v-nL.txt
+
+#This command should be run on every node in the cluster.
+logCommand "ss -o state established \( sport = :8080 or sport = :8443 or sport = :9443 \) \ dst 0.0.0.0/0 | egrep -v Recv-Q | wc -l"
+ss -o state established \( sport = :8080 or sport = :8443 or sport = :9443 \) \ dst 0.0.0.0/0 | egrep -v Recv-Q | wc -l > ${NETWORK_MODULE_BaseOutputDirectory}/ss_established_inbound_connections.txt
+
+#This command should be run on every node in the cluster.
+logCommand "ss -o state established \( sport = :8080 or sport = :8443 or sport = :9443 \) \ dst 0.0.0.0/0 | grep -v ^0 | egrep -v Recv-Q | wc -l"
+ss -o state established \( sport = :8080 or sport = :8443 or sport = :9443 \) \ dst 0.0.0.0/0 | grep -v ^0 | egrep -v Recv-Q | wc -l > ${NETWORK_MODULE_BaseOutputDirectory}/ss_queued_inbound_connections.txt
+
+#This command should be run on every node in the cluster.
+logCommand "ss -o state established \( dport = :http or dport = :https \) \ dst 0.0.0.0/0 | egrep -v Recv-Q | wc -l"
+ss -o state established \( dport = :http or dport = :https \) \ dst 0.0.0.0/0 | egrep -v Recv-Q | wc -l > ${NETWORK_MODULE_BaseOutputDirectory}/ss_outbound_connections.txt
+
+
+
+#if [ $LEVEL -ge $DETAIL ]
+#then
+#    #nothing here
+#fi
+#
+#if [ $LEVEL -ge $EVERYTHING ]
+#then
+#    #nothing here
+#fi
 
 postModule $MODULE

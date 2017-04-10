@@ -9,19 +9,32 @@ LEVEL=$2
 
 preModule $MODULE
 
+#Define and create output folders
+JAVA_MODULE_BaseOutputDirectory=${ALL_MODULES_BaseOutputDirectory}/${MODULE}
+JAVA_MODULE_BaseOutputDirectory_config=${JAVA_MODULE_BaseOutputDirectory}/config
+JAVA_MODULE_BaseOutputDirectory_logs=${JAVA_MODULE_BaseOutputDirectory}/logs
+mkdir -p ${JAVA_MODULE_BaseOutputDirectory}
+#mkdir -p ${JAVA_MODULE_BaseOutputDirectory_config}
+#mkdir -p ${JAVA_MODULE_BaseOutputDirectory_logs}
+
+
 logCommand /opt/SecureSpan/JDK/bin/java -version
-/opt/SecureSpan/JDK/bin/java -version
+/opt/SecureSpan/JDK/bin/java -version 2> ${JAVA_MODULE_BaseOutputDirectory}/java_version.txt
 
-if [ $LEVEL -ge $DETAIL ]
-then
-    logCommand cat /opt/SecureSpan/JDK/jre/lib/security/java.security
-    cat /opt/SecureSpan/JDK/jre/lib/security/java.security
-fi
+logCommand ls /opt/SecureSpan/JDK/jre/lib/ext
+ls -l /opt/SecureSpan/JDK/jre/lib/ext > ${JAVA_MODULE_BaseOutputDirectory}/jre_lib_ext.txt
 
-if [ $LEVEL -ge $EVERYTHING ]
-then
-    logCommand ls /opt/SecureSpan/JDK/jre/lib/ext
-    ls -l /opt/SecureSpan/JDK/jre/lib/ext
-fi
+logCommand cat /opt/SecureSpan/JDK/jre/lib/security/java.security
+cp /opt/SecureSpan/JDK/jre/lib/security/java.security ${JAVA_MODULE_BaseOutputDirectory}
+
+#if [ $LEVEL -ge $DETAIL ]
+#then
+#   #nothing here
+#fi
+#
+#if [ $LEVEL -ge $EVERYTHING ]
+#then
+#   #nothing here
+#fi
 
 postModule $MODULE

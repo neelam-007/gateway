@@ -4,62 +4,81 @@ MODULE=$1
 LEVEL=$2
 
 # Pull in collector support functions
-#
 . ${COLLECTOR_HOME}/collectorlib
+
+#Define and create output folders
+OS_MODULE_BaseOutputDirectory=${ALL_MODULES_BaseOutputDirectory}/${MODULE}
+OS_MODULE_BaseOutputDirectory_config=${OS_MODULE_BaseOutputDirectory}/config
+OS_MODULE_BaseOutputDirectory_logs=${OS_MODULE_BaseOutputDirectory}/logs
+mkdir -p ${OS_MODULE_BaseOutputDirectory}
+#mkdir -p ${OS_MODULE_BaseOutputDirectory_config}
+#mkdir -p ${OS_MODULE_BaseOutputDirectory_logs}
+
 
 preModule $MODULE
 
+#Begin data collection
 logCommand uname -a
-uname -a
+uname -a > ${OS_MODULE_BaseOutputDirectory}/uname.txt
 
 logCommand cat /etc/redhat-release
-cat /etc/redhat-release
+cat /etc/redhat-release > ${OS_MODULE_BaseOutputDirectory}/redhat-release.txt
 
+#list system services at runlevel
 logCommand chkconfig --list
-chkconfig --list
+chkconfig --list > ${OS_MODULE_BaseOutputDirectory}/chkconfig-list.txt
+
+logCommand rpm -qa
+rpm -qa > ${OS_MODULE_BaseOutputDirectory}/rpmList.txt
+
+logCommand cat /var/log/messages*
+cp /var/log/messages* ${OS_MODULE_BaseOutputDirectory}
+
+logCommand who -r
+who -r > ${OS_MODULE_BaseOutputDirectory}/who-runlevel.txt
+
+logCommand dmesg
+dmesg > ${OS_MODULE_BaseOutputDirectory}/dmesg.txt
+
+logCommand cat /etc/ntp.conf
+cp /etc/ntp.conf ${OS_MODULE_BaseOutputDirectory}
+
+logCommand ntpq -p
+ntpq -p > ${OS_MODULE_BaseOutputDirectory}/ntpq-peers.log
+
+logCommand cat /etc/security/limits.conf
+cp /etc/security/limits.conf ${OS_MODULE_BaseOutputDirectory}
+
+logCommand cat /etc/security/limits.d/*ssg*
+cp /etc/security/limits.d/*ssg* ${OS_MODULE_BaseOutputDirectory}
+
+logCommand whoami
+whoami > ${OS_MODULE_BaseOutputDirectory}/who-am-i.txt
+
+#view all soft limits
+logCommand su -c "ulimit -S -a" -s /bin/sh gateway > ${OS_MODULE_BaseOutputDirectory}/ulimit-soft.log
+su -c "ulimit -S -a" -s /bin/sh gateway >> ${OS_MODULE_BaseOutputDirectory}/ulimit-soft.log
+
+#view all hard limits
+logCommand su -c "ulimit -H -a" -s /bin/sh gateway
+su -c "ulimit -H -a" -s /bin/sh gateway >> ${OS_MODULE_BaseOutputDirectory}/ulimit-hard.log
+
 
 if [ $LEVEL -ge $DETAIL ]
 then
-    logCommand rpm -qa
-    rpm -qa
+    logCommand cat /etc/sudoers > ${OS_MODULE_BaseOutputDirectory}/etc_sudoers.txt
+    cat /etc/sudoers > ${OS_MODULE_BaseOutputDirectory}/etc_sudoers.txt
 
-    logCommand cat /var/log/messages
-    cat /var/log/messages
+    logCommand cat /etc/passwd
+    cat /etc/passwd  > ${OS_MODULE_BaseOutputDirectory}/etc_passwd.txt
 
-    logCommand who -r
-    who -r
-
-    logCommand dmesg
-    dmesg
+    logCommand cat /etc/group
+    cat /etc/group > ${OS_MODULE_BaseOutputDirectory}/etc_group.txt
 fi
-
-if [ $LEVEL -ge $EVERYTHING ]
-then
-    logCommand cat /etc/ntp.conf
-    cat /etc/ntp.conf
-
-    logCommand ntpq -p
-    ntpq -p
-
-    logCommand cat /etc/security/limits.conf
-    cat /etc/security/limits.conf
-
-    logCommand cat /etc/security/limist.d/*ssg*
-    cat /etc/security/limits.d/*ssg*
-
-    logCommand whoami
-    whoami
-
-    logCommand ulimit -S -a
-    ulimit -S -a
-
-    logCommand ulimit -H -a
-    ulimit -H -a
-fi
-
-#TODO: 
-#  extra combinations for other users.
-#  ntp config
-#  
+#
+#if [ $LEVEL -ge $EVERYTHING ]
+#then
+#    #nothing here
+#fi
 
 postModule $MODULE

@@ -1,29 +1,38 @@
 #!/bin/sh
 
-MODULE=$1
-LEVEL=$2
+#MODULE=$1
+#LEVEL=$2
 
 # Pull in collector support functions
 #
-. ${COLLECTOR_HOME}/collectorlib
+#. ${COLLECTOR_HOME}/collectorlib
+#
+#preModule $MODULE
 
-preModule $MODULE
 
-echo Template module. Does nothing but provides a template for new collector modules.
-echo BASIC level commands go here
+#Define and create output folders
+#TEMPLATE_MODULE_BaseOutputDirectory=${ALL_MODULES_BaseOutputDirectory}/${MODULE}
+#TEMPLATE_MODULE_BaseOutputDirectory_config=${TEMPLATE_MODULE_BaseOutputDirectory}/config
+#TEMPLATE_MODULE_BaseOutputDirectory_logs=${TEMPLATE_MODULE_BaseOutputDirectory}/logs
+#mkdir -p ${TEMPLATE_MODULE_BaseOutputDirectory}
+#mkdir -p ${TEMPLATE_MODULE_BaseOutputDirectory_config}
+#mkdir -p ${TEMPLATE_MODULE_BaseOutputDirectory_logs}
+
+#echo Template module. Does nothing but provides a template for new collector modules.
+#echo BASIC level commands go here
 
 # Example command
-logCommand ls /opt/SecureSpan
-ls /opt/SecureSpan
+#logCommand ls /opt/SecureSpan
+#ls /opt/SecureSpan > ${TEMPLATE_MODULE_BaseOutputDirectory_config}/template.txt
 
-if [ $LEVEL -ge $DETAIL ]
-then
-echo DETAIL level commands go here
-fi
+#if [ $LEVEL -ge $DETAIL ]
+#then
+#echo DETAIL level commands go here
+#fi
+#
+#if [ $LEVEL -ge $EVERYTHING ]
+#then
+#echo EVERYTHING level commands go here
+#fi
 
-if [ $LEVEL -ge $EVERYTHING ]
-then
-echo EVERYTHING level commands go here
-fi
-
-postModule $MODULE
+#postModule $MODULE

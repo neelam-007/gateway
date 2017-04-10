@@ -4,30 +4,45 @@ MODULE=$1
 LEVEL=$2
 
 # Pull in collector support functions
-#
 . ${COLLECTOR_HOME}/collectorlib
 
 preModule $MODULE
 
+#Define and create output folders
+DEVICES_MODULE_BaseOutputDirectory=${ALL_MODULES_BaseOutputDirectory}/${MODULE}
+DEVICES_MODULE_BaseOutputDirectory_config=${DEVICES_MODULE_BaseOutputDirectory}/config
+DEVICES_MODULE_BaseOutputDirectory_logs=${DEVICES_MODULE_BaseOutputDirectory}/logs
+mkdir -p ${DEVICES_MODULE_BaseOutputDirectory}
+#mkdir -p ${DEVICES_MODULE_BaseOutputDirectory_config}
+#mkdir -p ${DEVICES_MODULE_BaseOutputDirectory_logs}
+
+
+
+#Begin data collection
 logCommand cat /proc/meminfo
-cat /proc/meminfo
+cp /proc/meminfo ${DEVICES_MODULE_BaseOutputDirectory}
 
-if [ $LEVEL -ge $DETAIL ]
-then
-    logCommand lspci -tv
-    lspci -tv
+logCommand lspci -tv
+lspci -tv > ${DEVICES_MODULE_BaseOutputDirectory}/lspci.txt
 
-    logCommand cat /proc/cpuinfo
-    cat /proc/cpuinfo
-fi
+logCommand cat /proc/cpuinfo
+cp /proc/cpuinfo ${DEVICES_MODULE_BaseOutputDirectory}
 
-if [ $LEVEL -ge $EVERYTHING ]
-then
-    logCommand ls -Rl /dev
-    ls -Rl /dev
+logCommand ls -Rl /dev
+ls -Rl /dev > ${DEVICES_MODULE_BaseOutputDirectory}/ls_R1_dev.txt
 
-    logCommand dmidecode
-    dmidecode
-fi
+logCommand dmidecode
+dmidecode > ${DEVICES_MODULE_BaseOutputDirectory}/dmidecode.txt
+
+#
+#if [ $LEVEL -ge $DETAIL ]
+#then
+#    #nothing here
+#fi
+#
+#if [ $LEVEL -ge $EVERYTHING ]
+#then
+#    #nothing here
+#fi
 
 postModule $MODULE

@@ -5,54 +5,96 @@ LEVEL=$2
 
 SSHOME=/opt/SecureSpan
 GWDEFAULT=${SSHOME}/Gateway/node/default
+GWCONTROLLERDEFAULT=${SSHOME}/Controller
 APDEFAULT=${SSHOME}/Appliance
 JAVA_HOME=${SSHOME}/JDK
 
+#Define and create output folders
+GATEWAY_MODULE_BaseOutputDirectory=${ALL_MODULES_BaseOutputDirectory}/${MODULE}
+GATEWAY_MODULE_BaseOutputDirectory_config=${GATEWAY_MODULE_BaseOutputDirectory}/config
+#GATEWAY_MODULE_BaseOutputDirectory_logs=${GATEWAY_MODULE_BaseOutputDirectory}/logs
+GATEWAY_MODULE_BaseOutputDirectory_logs_SSG=${GATEWAY_MODULE_BaseOutputDirectory}/SSG_logs
+GATEWAY_MODULE_BaseOutputDirectory_logs_SSPC=${GATEWAY_MODULE_BaseOutputDirectory}/SSPC_logs
+GATEWAY_MODULE_BaseOutputDirectory_dump=${GATEWAY_MODULE_BaseOutputDirectory}/dumps
+mkdir -p ${GATEWAY_MODULE_BaseOutputDirectory}
+mkdir -p ${GATEWAY_MODULE_BaseOutputDirectory_config}
+#mkdir -p ${GATEWAY_MODULE_BaseOutputDirectory_logs}
+mkdir -p ${GATEWAY_MODULE_BaseOutputDirectory_logs_SSG}
+mkdir -p ${GATEWAY_MODULE_BaseOutputDirectory_logs_SSPC}
+mkdir -p ${GATEWAY_MODULE_BaseOutputDirectory_dump}
+
 # Pull in collector support functions
-#
 . ${COLLECTOR_HOME}/collectorlib
+
 
 preModule $MODULE
 
+#Begin data collection
 logCommand rpm -qa ssg ssg-appliance ssem
-rpm -qa ssg ssg-appliance ssem
+rpm -qa ssg ssg-appliance ssem > ${GATEWAY_MODULE_BaseOutputDirectory_config}/rpm_ssg_versions.txt
+
+logCommand ls -l ${GWDEFAULT}/etc/conf/omp.dat
+ls -l ${GWDEFAULT}/etc/conf/omp.dat > ${GATEWAY_MODULE_BaseOutputDirectory_config}/omp_dat_permissions.txt
 
 
-if [ $LEVEL -ge $DETAIL ]
+logCommand cat ${GWDEFAULT}/etc/conf/node.properties
+cp ${GWDEFAULT}/etc/conf/node.properties ${GATEWAY_MODULE_BaseOutputDirectory_config}
+
+
+logCommand cat ${GWDEFAULT}/etc/conf/system.properties
+cp ${GWDEFAULT}/etc/conf/system.properties ${GATEWAY_MODULE_BaseOutputDirectory_config}
+
+
+logCommand cat ${GWDEFAULT}/etc/conf/ssglog.properties
+cp ${GWDEFAULT}/etc/conf/ssglog.properties ${GATEWAY_MODULE_BaseOutputDirectory_config}
+
+
+logCommand cat ${GWDEFAULT}/var/logs/ssg*.log
+cp ${GWDEFAULT}/var/logs/*.log ${GATEWAY_MODULE_BaseOutputDirectory_logs_SSG}
+
+
+logCommand cat ${GWCONTROLLERDEFAULT}/var/logs/*.log
+cp ${GWCONTROLLERDEFAULT}/var/logs/*.log ${GATEWAY_MODULE_BaseOutputDirectory_logs_SSPC}
+
+logCommand cat ${APDEFAULT}/config/ssgsysconfig.log
+cp ${APDEFAULT}/config/ssgsysconfig.log ${GATEWAY_MODULE_BaseOutputDirectory_config}
+
+GATEWAYPID=`${JAVA_HOME}/bin/jps | awk '/Gateway/ {print $1}'`
+logCommand "su -c "${JAVA_HOME}/bin/jstack -l $GATEWAYPID" -s /bin/sh gateway (4 samples at 15s intervals)"
+if [ $GATEWAYPID ]
 then
-    logCommand ls -l ${GWDEFAULT}/etc/conf/omp.dat
-    ls -l ${GWDEFAULT}/etc/conf/omp.dat
-
-    logCommand cat ${GWDEFAULT}/etc/conf/node.properties
-    cat ${GWDEFAULT}/etc/conf/node.properties
-
-    logCommand cat ${GWDEFAULT}/etc/conf/system.properties
-    cat ${GWDEFAULT}/etc/conf/system.properties
-    
-    logCommand cat ${GWDEFAULT}/etc/conf/ssglog.properties
-    cat ${GWDEFAULT}/etc/conf/ssglog.properties
-
-    logCommand cat ${GWDEFAULT}/var/logs/ssg_0_0.log
-    cat ${GWDEFAULT}/var/logs/ssg_0_0.log
+    for i in {1..4}
+    do
+        echo "|-- Taking thread-dump sample $i."
+        su -c "${JAVA_HOME}/bin/jstack -l $GATEWAYPID" -s /bin/sh gateway > ${GATEWAY_MODULE_BaseOutputDirectory_dump}/threadDump-sample-${i}.tdump
+        sleep 15
+    done
+else
+echo "Error: Cannot get Gateway PID"
 fi
 
-if [ $LEVEL -ge $EVERYTHING ]
-then
-    logCommand cat ${APDEFAULT}/config/ssgsysconfig.log
-    cat ${APDEFAULT}/config/ssgsysconfig.log
 
-    GATEWAYPID=`${JAVA_HOME}/bin/jps | awk '/Gateway/ {print $1}'`
-    logCommand "${JAVA_HOME}/bin/jstack -F -l $GATEWAYPID"
-    if [ $GATEWAYPID ]
-    then
-	${JAVA_HOME}/bin/jstack -F -l $GATEWAYPID
-    else
-	echo "Error: Cannot get Gatway PID"
-    fi
+#if [ $LEVEL -ge $DETAIL ]
+#then
+#    #nothing here
+#fi
+#
+#if [ $LEVEL -ge $EVERYTHING ]
+#then
+#    #nothing here
+#fi
+
+
+if [ "$HEAPDUMP_ENABLED" = "true" ]
+then
+    echo "Beginning heap dump"
+    logCommand su -c "ps awwx | grep Gateway.jar | grep -v grep | awk '{print $1}' | xargs ${JAVA_HOME}/bin/jmap -dump:live,format=b,file=${GATEWAY_MODULE_BaseOutputDirectory_dump}/heap.hprof"
+    GATEWAY_HEAPDUMP_PID=$(ps awwx | grep Gateway.jar | grep -v grep | awk '{print $1}')
+    TEMP_GATEWAY_USER_DUMPFOLDER=/tmp/$(date +%s)_heapdump
+    su -c "mkdir -p ${TEMP_GATEWAY_USER_DUMPFOLDER}" -s /bin/sh gateway
+    su -c "${JAVA_HOME}/bin/jmap -dump:live,format=b,file=${TEMP_GATEWAY_USER_DUMPFOLDER}/heap.hprof ${GATEWAY_HEAPDUMP_PID}" -s /bin/sh gateway
+    mv ${TEMP_GATEWAY_USER_DUMPFOLDER}/heap.hprof ${GATEWAY_MODULE_BaseOutputDirectory_dump}/heapDump.hprof
+
 fi
 
 postModule $MODULE
-
-
-## TODO
-# take heap-dump

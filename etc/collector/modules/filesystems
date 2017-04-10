@@ -4,57 +4,71 @@ MODULE=$1
 LEVEL=$2
 
 # Pull in collector support functions
-#
 . ${COLLECTOR_HOME}/collectorlib
 
 preModule $MODULE
 
+#Define and create output folders
+FILESYSTEMS_MODULE_BaseOutputDirectory=${ALL_MODULES_BaseOutputDirectory}/${MODULE}
+FILESYSTEMS_MODULE_BaseOutputDirectory_config=${FILESYSTEMS_MODULE_BaseOutputDirectory}/config
+FILESYSTEMS_MODULE_BaseOutputDirectory_logs=${FILESYSTEMS_MODULE_BaseOutputDirectory}/logs
+mkdir -p ${FILESYSTEMS_MODULE_BaseOutputDirectory}
+#mkdir -p ${FILESYSTEMS_MODULE_BaseOutputDirectory_config}
+#mkdir -p ${FILESYSTEMS_MODULE_BaseOutputDirectory_logs}
+
+#Begin data collection
 logCommand df
-df
+df > ${FILESYSTEMS_MODULE_BaseOutputDirectory}/df.txt
 
 logCommand cat /proc/mdstat
-cat /proc/mdstat
+cp /proc/mdstat ${FILESYSTEMS_MODULE_BaseOutputDirectory}
 
 logCommand mdadm --detail --scan
-mdadm --detail --scan
+mdadm --detail --scan > ${FILESYSTEMS_MODULE_BaseOutputDirectory}/mdadm.txt
 
-if [ $LEVEL -ge $DETAIL ]
-then
-    logCommand mount
-    mount
+logCommand mount
+mount > ${FILESYSTEMS_MODULE_BaseOutputDirectory}/mount.txt
 
-    logCommand lsblk
-    lsblk
+logCommand lsblk
+lsblk > ${FILESYSTEMS_MODULE_BaseOutputDirectory}/lsblk.txt
 
-    logCommand pvdisplay
-    pvdisplay
+logCommand pvdisplay
+pvdisplay > ${FILESYSTEMS_MODULE_BaseOutputDirectory}/pvdisplay.txt
 
-    logCommand vgdisplay
-    vgdisplay
+logCommand vgdisplay
+vgdisplay > ${FILESYSTEMS_MODULE_BaseOutputDirectory}/vgdisplay.txt
 
-    logCommand lvdisplay
-    lvdisplay
+logCommand lvdisplay
+lvdisplay > ${FILESYSTEMS_MODULE_BaseOutputDirectory}/lvdisplay.txt
 
-    logCommand cat /etc/mdadm.conf
-    cat /etc/mdadm.conf
-fi
+logCommand cat /etc/mdadm.conf
+cp /etc/mdadm.conf ${FILESYSTEMS_MODULE_BaseOutputDirectory} > /dev/null 2>&1
 
-if [ $LEVEL -ge $EVERYTHING ]
-then
-    disks=(/dev/sd[a-z])
-    parts=(/dev/sd[a-z][1-9])
+disks=(/dev/sd[a-z])
+parts=(/dev/sd[a-z][1-9])
 
-    logCommand mdadm --query --detail ${disks[@]}
-    mdadm --query --detail ${disks[@]}
+logCommand mdadm --query --detail ${disks[@]}
+mdadm --query --detail ${disks[@]} >> ${FILESYSTEMS_MODULE_BaseOutputDirectory}/mdadm.txt > /dev/null 2>&1
 
-    logCommand mdadm --query --detail ${parts[@]}
-    mdadm --query --detail ${parts[@]}
+logCommand mdadm --query --detail ${parts[@]}
 
-    logCommand mdadm --examine ${disks[@]}
-    mdadm --examine ${disks[@]}
+mdadm --query --detail ${parts[@]} >> ${FILESYSTEMS_MODULE_BaseOutputDirectory}/mdadm.txt > /dev/null 2>&1
 
-    logCommand mdamd --examine ${parts[@]}
-    mdadm --examine ${parts[@]}
-fi
+logCommand mdadm --examine ${disks[@]}
+mdadm --examine ${disks[@]} >> ${FILESYSTEMS_MODULE_BaseOutputDirectory}/mdadm.txt > /dev/null 2>&1
+
+logCommand mdamd --examine ${parts[@]}
+mdadm --examine ${parts[@]} >> ${FILESYSTEMS_MODULE_BaseOutputDirectory}/mdadm.txt > /dev/null 2>&1
+
+
+#if [ $LEVEL -ge $DETAIL ]
+#then
+#    #nothing here
+#fi
+#
+#if [ $LEVEL -ge $EVERYTHING ]
+#then
+#    #nothing here
+#fi
 
 postModule $MODULE

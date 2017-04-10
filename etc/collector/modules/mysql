@@ -9,31 +9,40 @@ LEVEL=$2
 
 preModule $MODULE
 
+#Define and create output folders
+MYSQL_MODULE_BaseOutputDirectory=${ALL_MODULES_BaseOutputDirectory}/${MODULE}
+MYSQL_MODULE_BaseOutputDirectory_config=${MYSQL_MODULE_BaseOutputDirectory}/config
+MYSQL_MODULE_BaseOutputDirectory_logs=${MYSQL_MODULE_BaseOutputDirectory}/logs
+mkdir -p ${MYSQL_MODULE_BaseOutputDirectory}
+#mkdir -p ${MYSQL_MODULE_BaseOutputDirectory_config}
+#mkdir -p ${MYSQL_MODULE_BaseOutputDirectory_logs}
+
 logCommand service mysql status
-service mysql status
+service mysql status > ${MYSQL_MODULE_BaseOutputDirectory}/mysql-status.txt
 
 logCommand mysql ssg -e 'select * from ssg_version'
-mysql ssg -e 'select * from ssg_version'
+mysql ssg -e 'select * from ssg_version' > ${MYSQL_MODULE_BaseOutputDirectory}/ssg-version.txt
 
+logCommand mysql ssg -e 'show tables'
+mysql ssg -e 'show tables' > ${MYSQL_MODULE_BaseOutputDirectory}/show-tables.txt
 
+logCommand mysql ssg -e 'show slave status'
+mysql ssg -e 'show slave status' > ${MYSQL_MODULE_BaseOutputDirectory}/show-slave-status.txt
 
-if [ $LEVEL -ge $DETAIL ]
-then
-    logCommand mysql ssg -e 'show tables'
-    mysql ssg -e 'show tables'
+logCommand mysql ssg -e 'show master status'
+mysql ssg -e 'show master status' > ${MYSQL_MODULE_BaseOutputDirectory}/show-master-status.txt
 
-    logCommand mysql ssg -e 'show slave status'
-    mysql ssg -e 'show slave status'
+logCommand cat /etc/my.cnf
+cp /etc/my.cnf ${MYSQL_MODULE_BaseOutputDirectory_config}
 
-    logCommand mysql ssg -e 'show master status'
-    mysql ssg -e 'show master status'
-
-fi
-
-if [ $LEVEL -ge $EVERYTHING ]
-then
-    logCommand cat /etc/my.cnf
-    cat /etc/my.cnf
-fi
+#if [ $LEVEL -ge $DETAIL ]
+#then
+#echo DETAIL level commands go here
+#fi
+#
+#if [ $LEVEL -ge $EVERYTHING ]
+#then
+#echo EVERYTHING level commands go here
+#fi
 
 postModule $MODULE
