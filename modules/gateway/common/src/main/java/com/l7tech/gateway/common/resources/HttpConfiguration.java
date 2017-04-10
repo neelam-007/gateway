@@ -6,15 +6,12 @@ import com.l7tech.objectmodel.imp.ZoneableEntityImp;
 import com.l7tech.policy.UsesPrivateKeys;
 import com.l7tech.search.Dependency;
 import com.l7tech.security.rbac.RbacAttribute;
-import org.hibernate.annotations.*;
+import org.hibernate.annotations.Proxy;
+import org.hibernate.annotations.Type;
 
-import javax.persistence.CascadeType;
 import javax.persistence.*;
-import javax.persistence.Entity;
-import javax.persistence.Table;
 import javax.validation.Valid;
 import javax.validation.constraints.*;
-import java.util.*;
 
 /**
  * HTTP configuration persistent entity.
@@ -100,7 +97,6 @@ public class HttpConfiguration extends ZoneableEntityImp implements UsesPrivateK
         setProxyUse( httpConfiguration.getProxyUse() );
         setProxyConfiguration( new HttpProxyConfiguration(httpConfiguration.getProxyConfiguration(), lock) );
         setSecurityZone(httpConfiguration.getSecurityZone());
-        setHttpConfigurationProperties(httpConfiguration.getHttpConfigurationProperties());
         if ( lock ) lock();
     }
 
@@ -163,7 +159,7 @@ public class HttpConfiguration extends ZoneableEntityImp implements UsesPrivateK
 
     @RbacAttribute
     @Size(max = 255)
-    @Column(name="username")
+    @Column(name="username", length=255)
     public String getUsername() {
         return username;
     }
@@ -319,18 +315,6 @@ public class HttpConfiguration extends ZoneableEntityImp implements UsesPrivateK
         this.proxyUse = proxyUse;
     }
 
-    private void setHttpConfigurationProperties(Set<HttpConfigurationProperty> httpConfigurationProperties) {
-        checkLocked();
-        this.httpConfigurationProperties = httpConfigurationProperties;
-    }
-
-    @Valid
-    @OneToMany(cascade=CascadeType.ALL, fetch=FetchType.EAGER, mappedBy="httpConfiguration", orphanRemoval=true)
-    @Fetch(FetchMode.SUBSELECT)
-    public Set<HttpConfigurationProperty> getHttpConfigurationProperties() {
-        return httpConfigurationProperties;
-    }
-
     @Valid
     @Embedded
     @Dependency(searchObject = true)
@@ -362,32 +346,6 @@ public class HttpConfiguration extends ZoneableEntityImp implements UsesPrivateK
         }
     }
 
-    private void addConfigurationProperty(HttpConfigurationProperty panelHeader) {
-        if (panelHeader != null && !contains(httpConfigurationProperties, panelHeader)) {
-            panelHeader.setHttpConfiguration(this);
-            httpConfigurationProperties.add(panelHeader);
-        }
-    }
-
-    private boolean contains(final Set<HttpConfigurationProperty> httpConfigurationProperties, final HttpConfigurationProperty that) {
-        boolean contains = false;
-        for (HttpConfigurationProperty httpConfigurationProperty : httpConfigurationProperties) {
-            if(httpConfigurationProperty.equals(that)) {
-                contains = true;
-                break;
-            }
-        }
-        return contains;
-    }
-
-    public void syncConfigurationProperties(Set<HttpConfigurationProperty> panelHeaders) {
-
-        httpConfigurationProperties.removeAll(httpConfigurationProperties);
-        for (final HttpConfigurationProperty panelHeader : panelHeaders) {
-            addConfigurationProperty(panelHeader);
-        }
-    }
-
     //- PRIVATE
 
     private String host;
@@ -408,5 +366,4 @@ public class HttpConfiguration extends ZoneableEntityImp implements UsesPrivateK
     private boolean followRedirects;
     private Option proxyUse = Option.DEFAULT;
     private HttpProxyConfiguration proxyConfiguration = new HttpProxyConfiguration();
-    private Set<HttpConfigurationProperty> httpConfigurationProperties = new HashSet<>();
 }

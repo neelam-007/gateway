@@ -1,6 +1,5 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.table.HttpHeaderTableHandler;
 import com.l7tech.console.util.CipherSuiteGuiUtil;
 import com.l7tech.console.util.SecurityZoneWidget;
 import com.l7tech.gateway.common.resources.HttpConfiguration;
@@ -68,16 +67,11 @@ public class HttpConfigurationPropertiesDialog extends JDialog {
     private JLabel tlsKeyLabel;
     private JTabbedPane tabbedPanel;
     private SecurityZoneWidget zoneControl;
-    private JTable headerTable;
-    private JButton headerAddButton;
-    private JButton headerRemoveButton;
-    private JButton headerEditButton;
 
     private boolean readOnly;
     private boolean wasOk;
     private HttpConfiguration httpConfiguration;
     private String tlsCipherSuiteList;
-    private HttpHeaderTableHandler httpHeaderTableHandler;
 
     public HttpConfigurationPropertiesDialog( final Window owner,
                                               final HttpConfiguration httpConfiguration,
@@ -132,7 +126,12 @@ public class HttpConfigurationPropertiesDialog extends JDialog {
                         : "The selected TLS version is not available with the Gateway's current security provider configuration.";
             }
         });
-        validator.attachToButton( okButton, e -> doOk());
+        validator.attachToButton( okButton, new ActionListener(){
+            @Override
+            public void actionPerformed( final ActionEvent e ) {
+                doOk();
+            }
+        } );
 
         protocolComboBox.addActionListener( enableDisableListener );
         usernameTextField.getDocument().addDocumentListener( enableDisableListener );
@@ -186,27 +185,37 @@ public class HttpConfigurationPropertiesDialog extends JDialog {
             }
         });
 
-        managePrivateKeysButton.addActionListener(e -> doManageKeys());
-        manageSecurePasswordsButton.addActionListener(e -> doManagePasswords());
-        proxyManageSecurePasswordsButton.addActionListener(e -> doManagePasswords());
+        managePrivateKeysButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                doManageKeys();
+            }
+        });
+        manageSecurePasswordsButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                doManagePasswords();
+            }
+        });
+        proxyManageSecurePasswordsButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                doManagePasswords();
+            }
+        });
 
-        cancelButton.addActionListener(e -> doCancel());
+        cancelButton.addActionListener( new ActionListener(){
+            @Override
+            public void actionPerformed( final ActionEvent e ) {
+                doCancel();
+            }
+        } );
         zoneControl.configure(httpConfiguration);
         pack();
         setMinimumSize( getMinimumSize() );
         getRootPane().setDefaultButton( cancelButton );
         Utilities.setEscKeyStrokeDisposes( this );
         Utilities.centerOnParentWindow( this );
-
-        initializeHttpHeadersTabs();
-    }
-
-    private void initializeHttpHeadersTabs() {
-
-        // init req rules stuff
-        httpHeaderTableHandler = new HttpHeaderTableHandler(headerTable, headerAddButton, headerRemoveButton, headerEditButton,
-                httpConfiguration);
-        httpHeaderTableHandler.getTable().getTableHeader().setReorderingAllowed( false );
     }
 
     public boolean wasOk() {
@@ -225,14 +234,24 @@ public class HttpConfigurationPropertiesDialog extends JDialog {
     }
 
     private void doManageCipherSuites() {
-        CipherSuiteDialog.show(this, null, ModalityType.DOCUMENT_MODAL, readOnly, tlsCipherSuiteList, s -> tlsCipherSuiteList = s);
+        CipherSuiteDialog.show(this, null, ModalityType.DOCUMENT_MODAL, readOnly, tlsCipherSuiteList, new Functions.UnaryVoid<String>() {
+            @Override
+            public void call(String s) {
+                tlsCipherSuiteList = s;
+            }
+        });
     }
 
     private void doManageKeys() {
         final PrivateKeyManagerWindow privateKeyManagerWindow = new PrivateKeyManagerWindow(this);
         privateKeyManagerWindow.pack();
         Utilities.centerOnParentWindow(privateKeyManagerWindow);
-        DialogDisplayer.display(privateKeyManagerWindow, () -> ((PrivateKeysComboBox)privateKeyComboBox).repopulate());
+        DialogDisplayer.display(privateKeyManagerWindow, new Runnable() {
+            @Override
+            public void run() {
+                ((PrivateKeysComboBox)privateKeyComboBox).repopulate();
+            }
+        });
     }
 
     private void doManagePasswords() {
@@ -245,15 +264,18 @@ public class HttpConfigurationPropertiesDialog extends JDialog {
         final SecurePasswordManagerWindow securePasswordManagerWindow = new SecurePasswordManagerWindow(this);
         securePasswordManagerWindow.pack();
         Utilities.centerOnParentWindow(securePasswordManagerWindow);
-        DialogDisplayer.display(securePasswordManagerWindow, () -> {
-            passwordComboBox.reloadPasswordList();
-            proxyPasswordComboBox.reloadPasswordList();
+        DialogDisplayer.display(securePasswordManagerWindow, new Runnable() {
+            @Override
+            public void run() {
+                passwordComboBox.reloadPasswordList();
+                proxyPasswordComboBox.reloadPasswordList();
 
-            if ( password != null ) {
-                passwordComboBox.setSelectedSecurePassword( password.getGoid() );
-            }
-            if ( proxyPassword != null ) {
-                proxyPasswordComboBox.setSelectedSecurePassword( proxyPassword.getGoid() );
+                if ( password != null ) {
+                    passwordComboBox.setSelectedSecurePassword( password.getGoid() );
+                }
+                if ( proxyPassword != null ) {
+                    proxyPasswordComboBox.setSelectedSecurePassword( proxyPassword.getGoid() );
+                }
             }
         });
     }
@@ -518,10 +540,6 @@ public class HttpConfigurationPropertiesDialog extends JDialog {
 
             return error;
         }
-    }
-
-    HttpHeaderTableHandler getHttpHeaderTableHandler() {
-        return httpHeaderTableHandler;
     }
 }
 

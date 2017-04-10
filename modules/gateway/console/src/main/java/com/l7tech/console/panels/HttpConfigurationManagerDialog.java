@@ -1,9 +1,9 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.util.InetAddressUtil;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.resources.HttpConfiguration;
-import com.l7tech.gateway.common.resources.HttpConfigurationProperty;
 import com.l7tech.gateway.common.resources.HttpProxyConfiguration;
 import com.l7tech.gateway.common.resources.ResourceAdmin;
 import com.l7tech.gui.SimpleTableModel;
@@ -16,7 +16,6 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
-import com.l7tech.util.InetAddressUtil;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -27,7 +26,6 @@ import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.ResourceBundle;
-import java.util.Set;
 
 /**
  * HTTP configuration manager dialog.
@@ -241,26 +239,27 @@ public class HttpConfigurationManagerDialog extends JDialog {
     private void doEdit( final HttpConfiguration httpConfiguration,
                          final boolean readOnly ){
         final HttpConfigurationPropertiesDialog dialog = new HttpConfigurationPropertiesDialog( this, httpConfiguration, readOnly );
-        DialogDisplayer.display( dialog, () -> {
-            if ( dialog.wasOk() ) {
-                final ResourceAdmin admin = Registry.getDefault().getResourceAdmin();
-                try {
-                    Set<HttpConfigurationProperty> headers = dialog.getHttpHeaderTableHandler().getData();
-                    httpConfiguration.syncConfigurationProperties(headers);
-                    admin.saveHttpConfiguration( httpConfiguration );
-                } catch ( final DuplicateObjectException e ) {
-                    handleDuplicateError(httpConfiguration);
-                } catch ( final ObjectModelException e ) {
-                    if (ExceptionUtils.causedBy(e, DuplicateObjectException.class)) {
+        DialogDisplayer.display( dialog, new Runnable(){
+            @Override
+            public void run() {
+                if ( dialog.wasOk() ) {
+                    final ResourceAdmin admin = Registry.getDefault().getResourceAdmin();
+                    try {
+                        admin.saveHttpConfiguration( httpConfiguration );
+                    } catch ( final DuplicateObjectException e ) {
                         handleDuplicateError(httpConfiguration);
-                    } else {
-                        throw ExceptionUtils.wrap( e );
+                    } catch ( final ObjectModelException e ) {
+                        if (ExceptionUtils.causedBy(e, DuplicateObjectException.class)) {
+                            handleDuplicateError(httpConfiguration);
+                        } else {
+                            throw ExceptionUtils.wrap( e );
+                        }
                     }
-                }
 
-                loadHttpConfigurations();
+                    loadHttpConfigurations();
+                }
             }
-        });
+        } );
     }
 
     private void handleDuplicateError(final HttpConfiguration httpConfiguration) {
