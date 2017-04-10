@@ -2,51 +2,135 @@
 <head>
     <title>Quick Start Documentation</title>
     <script src="https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js"></script>
+    <style>
+        body	{
+            font-family:	clear sans, helvetica, arial, sans-serif;
+            font-size:	13px;
+            color:	#494949;
+            padding:	0;
+            margin:	20px 45px;
+            max-width:	800px;
+        }
+
+        a	{
+            color:	#09AEEF;
+            text-decoration:	none;
+        }
+
+        a:hover	{
+            color:	#078FC5;
+        }
+
+        a h2, a h3	{
+            color:	#494949;
+        }
+
+        /*ol	{
+            border-left:	4px solid #09AEEF;
+            }*/
+
+        ol li	{
+            line-height:	22px;
+        }
+
+        h2, h3	{
+            padding:	0;
+            margin:	6px 0 0 0;
+        }
+
+        h2, h3 u	{
+            text-decoration:	none;
+        }
+
+        h5	{
+            font-size:	1em;
+        }
+
+        p	{
+            padding:	0;
+            margin:	10px 0;
+        }
+
+        pre.prettyprint	{
+            border:	2px solid #494949;
+            padding:	10px 20px;
+        }
+
+        details	{
+            margin:	10px 0px;
+            /*font-size:	16px;*/
+            font-weight:	bold;
+        }
+
+        details pre.prettyprint	{
+            font-size:	13px;
+            font-weight:	normal;
+        }
+
+        summary:before	{
+            content: "[+] ";
+        }
+
+        summary	{
+            color:	#494949;
+            /*font-size:	.83em;*/
+            margin:	0 0 0 0;
+            cursor:	pointer;
+        }
+
+        div.sub-content	{
+            margin:	0px 15px;
+        }
+
+        details summary::-webkit-details-marker {
+            background: transparent;
+            color: #fff;
+            font-size: 0;
+        }
+
+        .indent {
+            margin-left: 20px;
+        }
+    </style>
 </head>
 <body>
 
 <h1>Quick Start Documentation</h1>
 
+<br/>
+<br/>
+
 <h2><u>Table Of Contents</u></h2>
 <ol>
-    <li><a href="#introduction">Introduction</a></li>
-    <li><a href="#description">Description of Top Level Containers and JSON Schema for Services</a></li>
-    <li><a href="#custom_encass">Creating Custom Encapsulated Assertions</a></li>
-    {{#assertions}}
-    <li><a href="#{{config.name}}">Encapsulated Assertion: {{config.name}}</a></li>
-    {{/assertions}}
+    <li><a href="#getingstarted">Getting Started</a></li>
+    <li><a href="#encass">Available Encapsulated Assertions</a></li>
+<!--    <li><a href="#custom">Creating Custom Encapsulated Assertions</a></li> -->
 </ol>
 
+<br/>
 
-<a name="introduction"><h2><u>Introduction</u></h2></a>
-<p> Quick Start provides a simple and fast way for users to proxy, secure and define their services.
-    Using JSON, they can create and publish services to the API Gateway and apply proxy, security, routing,
-    transformation and other logic to client requests.</p>
-<p> Users have the option to choosing from a starter pack of available template logic or building their own blocks
-    of custom logic using the Gateway's policy language to create custom encapsulated assertions.</p>
-<p>To publish a service on your API Gateway and apply service and messaging logic:</p>
-<ol>
-    <li>Create a JSON file containing your service description. (See below for schema and description.)</li>
-    <li>Apply this JSON file to your API Gateway by submitting an HTTP PUT request with the JSON content to
-        <a href="http://localhost:8080/quickstart/1.0">http://localhost:8080/quickstart/1.0</a> using your Gateway's administrator username and password.
-    <li>Use your service.</li>
-</ol>
+<a name="gettingstarted"><h2><u>Getting Started</u></h2></a>
+<br/>
+<p>Publish your service on the Gateway by sending a JSON formatted request to the Quick Start URL</p>
 
-<a name="custom_encass"><h2><u>Creating Custom Encapsulated Assertions</u></h2></a>
-<p>TODO: Describe how to create and load your own encapsulated assertions.</p>
+<p><b>URL</b></p>
+<p class="indent">Send your HTTP POST request here: http://&lt;docker-hostname-or-ip-address&gt;:8080/quickstart/1.0</p>
 
-<a name="description"><h2><u>Description of Top Level Containers and Schema</u></h2></a>
-<p> Each JSON file describes a single service. Different services must be defined in different files.</p>
-<p> A service consists of a name, a URI (service endpoint), and a number of HTTP access methods, as
-    well as an ordered list of "policy assertions" (features that protect, secure, or enhance your API).</p>
-<p> The complete list of available assertions is below, but here is a sample service and the JSON schema for the services in general.</p>
+<p><b>Authentication</b></p>
+<p class="indent">In order to access the Quick Start URL, you must be authenticated as a user with sufficient permissions on the Gateway</p>
+<p class="indent">Currently the Gateway uses Basic Authentication (i.e. a username and a password)</p>
 
-<h3>Sample JSON file for creating a Service</h3>
+<p><b>Request</b></p>
+<p class="indent">Build your JSON request body by providing information about your service and configuring the encapsulated assertions(s) you would like to use.</p>
+
+<br/>
+
+<h3>Sample Request:</h3>
 <pre class="prettyprint">{
   "Service": {
     "name": "SomeService",
-    "gatewayUri": "/MyService3",
-    "httpMethods": [ "get", "put" ],
+    "gatewayUri": "/someservice",
+    "httpMethods": [ "get", "put", "post" ],
     "policy": [
       {
         "Cors" : {}
@@ -55,12 +139,12 @@
         "RateLimit" : {
           "maxRequestsPerSecond": 250,
           "hardLimit": true,
-          "counterName": "RateLimit-${request.clientId}-b0938b7ad6ff"
+          "counterName": "RateLimit-Counter"
         }
       },
       {
         "RouteHttp" : {
-          "targetUrl" : "http://localhost:8080/foo",
+          "targetUrl" : "http://www.ca.com",
           "httpMethod" : "GET"
         }
       }
@@ -68,7 +152,9 @@
   }
 }</pre>
 
-<h3>JSON Schema for Services</h3>
+<br/>
+
+<h3>The Schema for JSON payloads:</h3>
 <pre class="prettyprint">{
   "$schema": "http://json-schema.org/draft-04/schema",
   "type": "object",
@@ -105,48 +191,77 @@
   "required": [ "Service" ]
 }</pre>
 
-<h2><u>Available Encapsulated Assertions:</u></h2>
+<br/>
+<br/>
+
+<a name="encass"><h2><u>Available Encapsulated Assertions:</u></h2></a>
+
+<ol>
+    {{#assertions}}
+    <li><a href="#{{config.name}}">Encapsulated Assertion: {{config.name}}</a></li>
+    {{/assertions}}
+</ol>
+
+
+
+<br/>
 
 {{#assertions}}
 <br/>
 <a name="{{config.name}}"><h3><u>Encapsulated Assertion: {{config.name}}</u></h3></a>
 
-{{#config.properties.description}}
-<p><b>Description:</b> {{this}}</p>
-{{/config.properties.description}}
+<!-- new container -->
 
-<h5>Input Arguments:</h5>
-{{#config.argumentDescriptors}}
-<ul>
-    <li><em>{{argumentName}}</em></li>
-</ul>
-{{/config.argumentDescriptors}}
+<div class="sub-content">
+    {{#config.properties.description}}
+
+    <p><b>Description:</b> {{this}}</p>
+    {{/config.properties.description}}
+
+    <h5>Input Arguments:</h5>
+    {{#config.argumentDescriptors}}
+    <ul>
+        <li><em>{{argumentName}}</em></li>
+    </ul>
+    {{/config.argumentDescriptors}}
 
 
-<h5>Output Arguments:</h5>
-{{#config.resultDescriptors}}
-<ul>
-    <li><em>{{resultName}}</em></li>
-</ul>
-{{/config.resultDescriptors}}
+    <h5>Output Arguments:</h5>
+    {{#config.resultDescriptors}}
+    <ul>
+        <li><em>{{resultName}}</em></li>
+    </ul>
+    {{/config.resultDescriptors}}
 
-{{#config.properties.doc_qs_schema}}
-<details>
-    <summary>JSON Schema</summary>
-    <pre class="prettyprint">{{this}}</pre>
-</details>
-{{/config.properties.doc_qs_schema}}
+    <br/>
 
-{{#config.properties.doc_qs_sample}}
-<details>
-    <summary>Sample JSON Payload</summary>
-    <pre class="prettyprint">{{this}}</pre>
-</details>
-{{/config.properties.doc_qs_sample}}
+    {{#config.properties.doc_qs_schema}}
+    <details>
+        <summary>JSON Schema</summary>
+        <pre class="prettyprint">{{this}}</pre>
+    </details>
+    {{/config.properties.doc_qs_schema}}
+
+    {{#config.properties.doc_qs_sample}}
+    <details>
+        <summary>Sample JSON Payload</summary>
+        <pre class="prettyprint">{{this}}</pre>
+    </details>
+    {{/config.properties.doc_qs_sample}}
+</div>
+
+<!-- end new container -->
 
 <br/>
 <hr>
 {{/assertions}}
+
+<br/>
+<br/>
+
+<!-- <a name="custom"><h2><u>Creating Custom Encapsulated Assertions</u></h2></a> -->
+
+<br/>
 
 </body>
 </html>
