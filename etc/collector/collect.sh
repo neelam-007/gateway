@@ -46,8 +46,6 @@ function usage ()
     echo "   3 = *Currently nothing at this level.  Note that heap dumps have a separate flag to enable."
     echo -e "\n[-D]"
     echo "Heap Dump. Use caution when taking heap dumps as this can significantly affect performance."
-    echo -e "\n[-o output-directory]"
-    echo "Default is: ${DEFAULT_BASE_PARENT_OUTPUT_DIR}_<datestamp>"
     echo -e "\n[-h help]"
     echo
 }
@@ -157,14 +155,6 @@ while getopts "hm:al:o:D" opt; do
 
       ;;
 
-      o)
-      if [ ${OPTARG#-} != $OPTARG ]
-      then
-          echo "Argument required for -o."
-          exit 1
-      fi
-      export ALL_MODULES_BaseOutputDirectory=$OPTARG
-      ;;
 
       \?)
       usage
