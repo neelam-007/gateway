@@ -44,7 +44,7 @@ public class MqNativeEndpointConfigTest {
         when(dynamicProperties.isSome()).thenReturn(true);
         when(dynamicProperties.some()).thenReturn(realDynamicProperties);
 
-        MqNativeEndpointConfig mqNativeEndpointConfig = new MqNativeEndpointConfig(ssgActiveConnector,new Option<String>("password"),dynamicProperties);
+        MqNativeEndpointConfig mqNativeEndpointConfig = new MqNativeEndpointConfig(ssgActiveConnector, new Option<>("password"), dynamicProperties, null);
 
         assertFalse(mqNativeEndpointConfig.isDynamic());
         assertNotNull(mqNativeEndpointConfig.getMqEndpointKey());

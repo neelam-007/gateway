@@ -57,6 +57,18 @@ public interface MqNativeConstants {
     String MQ_CONNECTION_CACHE_MAX_SIZE_UI_PROPERTY = "io.mqConnectionCacheSize";
     String MQ_CONNECTION_CACHE_MAX_SIZE_DESC = "The number of MQ Native connections to cache, this is not a hard limit, 0 for no caching (Integer)";
 
+    String MQ_CONNECTION_POOL_MAX_ACTIVE_PROPERTY = "mqConnectionPoolMaxActive";
+    String MQ_CONNECTION_POOL_MAX_ACTIVE_UI_PROPERTY = "mqConnectionPool.maxActive";
+    String MQ_CONNECTION_POOL_MAX_ACTIVE_DESC = "The maximum number of active connections per MQ Native connection pool. When non-positive, there is no limit to the number of active connections (Integer)";
+
+    String MQ_CONNECTION_POOL_MAX_IDLE_PROPERTY = "mqConnectionPoolMaxIdle";
+    String MQ_CONNECTION_POOL_MAX_IDLE_UI_PROPERTY = "mqConnectionPool.maxIdle";
+    String MQ_CONNECTION_POOL_MAX_IDLE_DESC = "The maximum number of idle connections allowed in a MQ Native connection pool. When negative, there is no limit to the number of idle connections (Integer)";
+
+    String MQ_CONNECTION_POOL_MAX_WAIT_PROPERTY = "mqConnectionPoolMaxWait";
+    String MQ_CONNECTION_POOL_MAX_WAIT_UI_PROPERTY = "mqConnectionPool.maxWait";
+    String MQ_CONNECTION_POOL_MAX_WAIT_DESC = "The maximum amount of time (in milliseconds) to wait for a MQ Native connection to become available. When non-positive, wait indefinitely";
+
     // configurable MQ message descriptor fields
     String MQ_PROPERTY_APPDATA = "applicationIdData";
     String MQ_PROPERTY_APPORIGIN = "applicationOriginData";

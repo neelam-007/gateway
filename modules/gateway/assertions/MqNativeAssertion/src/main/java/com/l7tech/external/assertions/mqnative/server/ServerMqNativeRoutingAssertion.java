@@ -833,7 +833,8 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
         config = new MqNativeEndpointConfig(
                 ssgActiveConnector,
                 getQueuePassword( ssgActiveConnector, securePasswordManager ),
-                dynamicProperties );
+                dynamicProperties,
+                this.config );
         config.validate();
 
         if ( !config.isDynamic() ) {

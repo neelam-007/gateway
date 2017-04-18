@@ -3,11 +3,16 @@ package com.l7tech.external.assertions.mqnative.server;
 
 import com.l7tech.external.assertions.mqnative.MqNativeDynamicProperties;
 import com.l7tech.external.assertions.mqnative.MqNativeReplyType;
+
+import static com.l7tech.external.assertions.mqnative.MqNativeConstants.MQ_CONNECTION_POOL_MAX_ACTIVE_PROPERTY;
+import static com.l7tech.external.assertions.mqnative.MqNativeConstants.MQ_CONNECTION_POOL_MAX_WAIT_PROPERTY;
+import static com.l7tech.external.assertions.mqnative.MqNativeConstants.MQ_CONNECTION_POOL_MAX_IDLE_PROPERTY;
 import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.REPLY_NONE;
 import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.REPLY_SPECIFIED_QUEUE;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.util.Config;
 import com.l7tech.util.Either;
 import static com.l7tech.util.Either.left;
 import static com.l7tech.util.Either.right;
@@ -15,6 +20,7 @@ import static com.l7tech.util.Eithers.extract;
 import com.l7tech.util.Functions.Nullary;
 import static com.l7tech.util.Functions.memoize;
 import com.l7tech.util.Option;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Hashtable;
@@ -48,7 +54,8 @@ class MqNativeEndpointConfig {
 
     MqNativeEndpointConfig( final SsgActiveConnector originalConnector,
                             final Option<String> password,
-                            final Option<MqNativeDynamicProperties> dynamicProperties ) {
+                            final Option<MqNativeDynamicProperties> dynamicProperties,
+                            final Config config) {
         final SsgActiveConnector connector = originalConnector.getCopy();
         if ( dynamicProperties.isSome() ) applyOverrides( connector, dynamicProperties.some() );
 
@@ -62,10 +69,10 @@ class MqNativeEndpointConfig {
         this.replyType = connector.getEnumProperty( PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, REPLY_NONE, MqNativeReplyType.class );
         this.replyToModelQueueName = connector.getProperty( PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_TEMPORARY_QUEUE_NAME_PATTERN );
         this.queueManagerProperties = memoize(buildQueueManagerProperties(connector,password));
-        this.connectionPoolMaxActive = DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_ACTIVE;
-        this.connectionPoolMaxWait = DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_WAIT;
-        this.connectionPoolMaxIdle = DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_IDLE;
 
+        this.connectionPoolMaxActive = retrieveMqConnectionPoolProperty(connector, config, MQ_CONNECTION_POOL_MAX_ACTIVE_PROPERTY, DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_ACTIVE);
+        this.connectionPoolMaxWait = retrieveMqConnectionPoolProperty(connector, config, MQ_CONNECTION_POOL_MAX_WAIT_PROPERTY, DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_WAIT);
+        this.connectionPoolMaxIdle = retrieveMqConnectionPoolProperty(connector, config, MQ_CONNECTION_POOL_MAX_IDLE_PROPERTY, DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_IDLE);
     }
 
     boolean isDynamic() {
@@ -187,6 +194,46 @@ class MqNativeEndpointConfig {
             sb.append("]");
 
             return sb.toString();
+        }
+    }
+
+    /**
+     * Retrieve the property value from SsgActiveConnector first.  If no such property set up, then retrieve it
+     * from the cluster property.
+     * @param connector a SsgActiveConnector object
+     * @param config cluster properties config
+     * @param propName the property name
+     * @param defaultValue the default value of the property
+     * @return a long integer of a MQ Native connection pool property
+     */
+    static long retrieveMqConnectionPoolProperty(final SsgActiveConnector connector, final Config config, final String propName, final long defaultValue) {
+        final String propValue = connector == null? null : connector.getProperty(propName);
+
+        if (StringUtils.isBlank(propValue)) {
+            if (config != null) {
+                return config.getLongProperty(propName, defaultValue);
+            } else {
+                return defaultValue;
+            }
+        } else {
+            return connector.getLongProperty(propName, defaultValue);
+        }
+    }
+
+    /**
+     * Same as the above method except the return value is an integer.
+     */
+    static int retrieveMqConnectionPoolProperty(final SsgActiveConnector connector, final Config config, final String propName, final int defaultValue) {
+        final String propValue = connector == null ? null : connector.getProperty(propName);
+
+        if (StringUtils.isBlank(propValue)) {
+            if (config != null) {
+                return config.getIntProperty(propName, defaultValue);
+            } else {
+                return defaultValue;
+            }
+        } else {
+            return connector.getIntegerProperty(propName, defaultValue);
         }
     }
 
