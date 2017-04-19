@@ -15,6 +15,12 @@ import java.util.*;
  * <p>For more information on JSONPath please refer to <link>http://code.google.com/p/json-path/</link> and <link>http://goessner.net/articles/JsonPath/</link></p>
  */
 public class EvaluateJsonPathExpressionAssertion extends MessageTargetableAssertion implements UsesVariables, SetsVariables {
+
+    /**
+     * To evaluate json path with compression : system / cluster wide property
+     */
+    public static final String PARAM_JSON_EVALJSONPATH_WITHCOMPRESSION = "json.evalJsonPathWithCompression";
+
     /**
      * The default variable prefix.
      */

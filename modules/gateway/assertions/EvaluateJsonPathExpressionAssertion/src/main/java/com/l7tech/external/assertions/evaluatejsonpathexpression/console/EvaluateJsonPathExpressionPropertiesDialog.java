@@ -1,5 +1,8 @@
 package com.l7tech.external.assertions.evaluatejsonpathexpression.console;
 
+
+import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.console.panels.TargetMessagePanel;
 import com.l7tech.console.panels.TargetVariablePanel;
@@ -17,6 +20,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * <p>A dialog to present the configuration screen to the user for the {@link EvaluateJsonPathExpressionAssertion}</p>
@@ -40,6 +44,7 @@ public class EvaluateJsonPathExpressionPropertiesDialog extends AssertionPropert
     private JTextArea testInputArea;
     private JComboBox cbEvaluator;
     private TargetMessagePanel sourcePanel = new TargetMessagePanel();
+    private static final Logger logger = Logger.getLogger(EvaluateJsonPathExpressionPropertiesDialog.class.getName());
 
     public EvaluateJsonPathExpressionPropertiesDialog(final Window owner, final EvaluateJsonPathExpressionAssertion assertion) {
         super(EvaluateJsonPathExpressionAssertion.class, owner, DIALOG_TITLE, true);
@@ -92,7 +97,9 @@ public class EvaluateJsonPathExpressionPropertiesDialog extends AssertionPropert
         for(JsonPathEvaluator s : EvaluateJsonPathExpressionAssertion.getSupportedEvaluator()){
             cbEvaluator.addItem(s.name());
         }
-        cbEvaluator.setEnabled(cbEvaluator.getItemCount() > 1);
+
+        //As we set it to JsonPath default value, in future if other evaluators are supported we will enable the drop down for the same.
+        cbEvaluator.setEnabled(false);
         testButton.addActionListener( new ActionListener() {
             @Override
             public void actionPerformed(final ActionEvent e) {
@@ -103,7 +110,7 @@ public class EvaluateJsonPathExpressionPropertiesDialog extends AssertionPropert
                     }
                     final EvaluateJsonPathExpressionAdmin admin = Registry.getDefault().getExtensionInterface(EvaluateJsonPathExpressionAdmin.class, null);
                     final JsonPathExpressionResult result = admin.testEvaluation(
-                            JsonPathEvaluator.valueOf(cbEvaluator.getSelectedItem().toString()), 
+                            JsonPathEvaluator.valueOf(cbEvaluator.getSelectedItem().toString(),isJsonCompressionEnabled()),
                             testInputArea.getText().trim(), textFieldExpression.getText().trim());
                     StringBuilder sb = new StringBuilder("found = ").append(result.isFound()).append("\r\n")
                             .append("count = ").append(result.getCount());
@@ -141,5 +148,20 @@ public class EvaluateJsonPathExpressionPropertiesDialog extends AssertionPropert
                         !textFieldExpression.getText().trim().isEmpty()
         );
         testButton.setEnabled(!textFieldExpression.getText().trim().isEmpty() && !testInputArea.getText().trim().isEmpty());
+    }
+
+
+    private boolean isJsonCompressionEnabled(){
+        boolean withCompression = false;
+        try {
+            ClusterProperty clusterProperty = Registry.getDefault().getClusterStatusAdmin().findPropertyByName("json.evalJsonPathWithCompression");
+            if (clusterProperty != null) {
+                withCompression = Boolean.parseBoolean(clusterProperty.getValue());
+            }
+        } catch (FindException e) {
+            logger.warning("could not retrieve Cluster Wide Property: \"json.evalJsonPathWithCompression\", therefore setting \"json.evalJsonPathWithCompression\" as default value i.e FALSE" + e.getMessage());
+            withCompression = false;
+        }
+        return withCompression;
     }
 }

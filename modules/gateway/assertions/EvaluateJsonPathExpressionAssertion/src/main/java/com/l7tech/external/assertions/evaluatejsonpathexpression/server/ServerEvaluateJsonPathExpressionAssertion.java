@@ -12,17 +12,21 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.Syntax;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.Map;
+
+import static com.l7tech.external.assertions.evaluatejsonpathexpression.EvaluateJsonPathExpressionAssertion.PARAM_JSON_EVALJSONPATH_WITHCOMPRESSION;
 
 /**
  * Server side implementation of the EvaluateJsonPathExpressionAssertion.
@@ -31,12 +35,15 @@ import java.util.Map;
  */
 public class ServerEvaluateJsonPathExpressionAssertion extends AbstractServerAssertion<EvaluateJsonPathExpressionAssertion> {
 
+    private final ServerConfig serverConfig;
+
     /**
      * Construct a new server assertion.
      * @param assertion the bean.
      */
-    public ServerEvaluateJsonPathExpressionAssertion( final EvaluateJsonPathExpressionAssertion assertion ) {
+    public ServerEvaluateJsonPathExpressionAssertion( final EvaluateJsonPathExpressionAssertion assertion, ApplicationContext applicationContext ) {
         super(assertion);
+        serverConfig = applicationContext.getBean("serverConfig", ServerConfig.class);
     }
 
     @Override
@@ -50,8 +57,10 @@ public class ServerEvaluateJsonPathExpressionAssertion extends AbstractServerAss
                 final String sourceJsonString = new String(IOUtils.slurpStream(firstPart.getInputStream(false)), encoding);
                 final Map<String, Object> lookup = context.getVariableMap(Syntax.getReferencedNames(assertion.getExpression()), getAudit());
                 final String expression = ExpandVariables.process(assertion.getExpression(), lookup, getAudit());
+                final boolean withCompression = serverConfig.getBooleanProperty(PARAM_JSON_EVALJSONPATH_WITHCOMPRESSION, false);
+
                 try{
-                    final Evaluator evaluator = JsonPathEvaluator.valueOf(assertion.getEvaluator());
+                    final Evaluator evaluator = JsonPathEvaluator.valueOf(assertion.getEvaluator(), withCompression);
                     if(expression == null || expression.trim().isEmpty()){
                         logAndAudit(AssertionMessages.EVALUATE_JSON_PATH_INVALID_EXPRESSION, expression);
                         status = AssertionStatus.FAILED;
