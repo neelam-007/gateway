@@ -19,8 +19,9 @@ import com.l7tech.policy.assertion.EncapsulatedAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.assertion.AbstractServerAssertion;
+import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
 import com.l7tech.server.service.ServiceCache;
 import com.l7tech.server.service.resolution.NonUniqueServiceResolutionException;
 import com.l7tech.server.service.resolution.ServiceResolutionException;
@@ -47,7 +48,7 @@ import java.util.logging.Logger;
  * @see com.l7tech.external.assertions.quickstarttemplate.QuickStartTemplateAssertion
  */
 @SuppressWarnings("unused")
-public class ServerQuickStartTemplateAssertion extends AbstractServerAssertion<QuickStartTemplateAssertion> {
+public class ServerQuickStartTemplateAssertion extends AbstractMessageTargetableServerAssertion<QuickStartTemplateAssertion> {
     private static final Logger logger = Logger.getLogger(ServerQuickStartTemplateAssertion.class.getName());
     private QuickStartEncapsulatedAssertionLocator assertionLocator;
     private QuickStartParser parser = new QuickStartParser();
@@ -61,11 +62,14 @@ public class ServerQuickStartTemplateAssertion extends AbstractServerAssertion<Q
         serviceCache = applicationContext.getBean("serviceCache", ServiceCache.class);
     }
 
-    public AssertionStatus checkRequest( final PolicyEnforcementContext context ) throws IOException, PolicyAssertionException {
+    public AssertionStatus doCheckRequest(final PolicyEnforcementContext context,
+                                          final Message message,
+                                          final String messageDescription,
+                                          final AuthenticationContext authContext ) throws IOException, PolicyAssertionException {
         try {
             final ServiceContainer serviceContainer;
             try {
-                serviceContainer = parser.parseJson(context.getRequest().getMimeKnob().getEntireMessageBodyAsInputStream(false));
+                serviceContainer = parser.parseJson(message.getMimeKnob().getEntireMessageBodyAsInputStream(false));
             } catch (final Exception e) {
                 final IllegalArgumentException arg = ExceptionUtils.getCauseIfCausedBy(e, IllegalArgumentException.class);
                 if (arg != null) {
