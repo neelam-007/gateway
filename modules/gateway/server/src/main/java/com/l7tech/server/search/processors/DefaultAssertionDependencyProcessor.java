@@ -309,7 +309,7 @@ public class DefaultAssertionDependencyProcessor<A extends Assertion> extends De
 
         if (assertion instanceof PrivateKeyable) {
             final PrivateKeyable privateKeyable = (PrivateKeyable) assertion;
-            if ((!(privateKeyable instanceof OptionalPrivateKeyable) || ((OptionalPrivateKeyable) privateKeyable).isUsesNoKey()) && privateKeyable.getKeyAlias() != null) {
+            if (!(privateKeyable instanceof OptionalPrivateKeyable && ((OptionalPrivateKeyable) privateKeyable).isUsesNoKey()) && privateKeyable.getKeyAlias() != null){
                 final SsgKeyHeader privateKeyHeader = new SsgKeyHeader(privateKeyable.getNonDefaultKeystoreId() + ":" + privateKeyable.getKeyAlias(), privateKeyable.getNonDefaultKeystoreId(), privateKeyable.getKeyAlias(), privateKeyable.getKeyAlias());
                 EntityHeader mappedHeader = DependencyProcessorUtils.findMappedHeader(replacementMap, privateKeyHeader);
                 if(mappedHeader != null) {
