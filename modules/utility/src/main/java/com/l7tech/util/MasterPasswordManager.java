@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -245,7 +246,20 @@ public class MasterPasswordManager {
     @NotNull
     public char[] decryptPassword( @NotNull String encryptedPassword) throws ParseException {
         byte[] bytes = decryptSecret(encryptedPassword);
-        return Charsets.UTF8.decode( ByteBuffer.wrap( bytes ) ).array();
+        return charsFromUtf8( bytes );
+    }
+
+    static char[] charsFromUtf8( byte[] utf8bytes ) {
+        CharBuffer buf = Charsets.UTF8.decode( ByteBuffer.wrap( utf8bytes ) );
+        char[] ret = buf.array();
+        int limit = buf.limit();
+
+        if ( ret.length != limit ) {
+            ret = new char[limit];
+            buf.get( ret );
+        }
+
+        return ret;
     }
 
     /**

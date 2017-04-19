@@ -1,15 +1,18 @@
 package com.l7tech.util;
 
 import com.l7tech.test.BenchmarkRunner;
+import com.l7tech.test.BugId;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 
+import static com.l7tech.util.MasterPasswordManager.charsFromUtf8;
 import static org.junit.Assert.*;
 
 /**
@@ -28,6 +31,25 @@ public class MasterPasswordManagerTest {
             "$L7C2$1bead,GbqMGWaG8tTmqX9ajSKfKeernvkGbJtlZ3DGOQnZmHA=$/vGwGKUeF77DCY2EUr4tOUD7TV0hI2Uz4MT4mvNluoI6MfCgvnIvnp1wcoSdzzIhz54FBlOMzojGvt5ixRd01SXa+VyJDGFKxwjOLqqzvw/+GDtDEPBGduqAsM9MJpBdb5ZElEybzh5oklVf+E+1LsKcWKcLhnVMK4fVpwga7kigIwb2DK1Wh0C8c5NFVJ3iG2h/TMUyPfODm9gSscaeMQ==";
     private static final String CIPHERTEXT_EMPTY =
             "$L7C2$1bead,Ak3+DKF9uAxiu9H7PzguFhZou4Oqx/R5Uy72BESF1rs=$AWzML/nqK2HiKd6+/d459oQBI8zvF5vd8FM7QMmmZo2910PsxERLO4MlrdKecZ4YUQN3gWK+JxSz6evAuCy+zQ==";
+    private static final String CIPHERTEXT_POUND_SIGN =
+            "$L7C2$1bead,C6Fqw04l3rRn9l5YXsJFkbDHmJsIuwAmHkAoPMQzlOI=$mobIFQGaYwhMeBWod/Nz2QHCEzQwovo8kESFG9ONWrywmKsYUrjYkuqZxAiT69peumI8HO9oX7JNTLVEcZ/AZJZ2x58Q3l4ordrE+PSWzY0=";
+    private static final String CIPHERTEXT_NON_BMP_EMOJI_CHINESE_ARABIC =
+            "$L7C2$1bead,HL+XxVxBrrHXlMItgNbGx3D77ieJsaAjeZlUDYS+kjE=$gC8ydE7hvLYUaRAyJp9UoowuI/sXBlNCIB4YUHRw4vr0aNoqNI2sbwsuZjPnYWpTzW0YV2I7KQFDh2aVo6QwcVq639a7QEEZ4q9p7nBCQ5CYOBKlf3JZSZ9ufYdRsmLG";
+
+    private static final String PLAINTEXT_POUND_SIGN;
+    private static final String PLAINTEXT_NON_BMP_EMOJI_CHINESE_ARABIC;
+    static {
+        try {
+            // password with pound sign
+            PLAINTEXT_POUND_SIGN = new String( HexUtils.unHexDump( "70617373776f7264207769746820c2a320706f756e64207369676e" ), Charsets.UTF8 );
+
+            // password with characters outside the basic multilingual plane
+            PLAINTEXT_NON_BMP_EMOJI_CHINESE_ARABIC = new String( HexUtils.unHexDump( "70617373776f7264207769746820f09f988220f0a9b7b620d8b7d981d989206e6f6e2d424d50206368617273" ), Charsets.UTF8 );
+
+        } catch ( IOException e ) {
+            throw new RuntimeException( e );
+        }
+    }
 
     private static final String CIPHERTEXT_LEGACY_TRALALA =
             "$L7C$eYr/xG/Ssax3iq/IRDweEQ==$h4717RLYSe6llHScVnGPOA==";
@@ -50,7 +72,9 @@ public class MasterPasswordManagerTest {
             new Pair<>( "7layer", CIPHERTEXT_LEGACY_7LAYER ),
             new Pair<>( "password", CIPHERTEXT_LEGACY_PASSWORD ),
             new Pair<>( "A very long password indeed!!!  asdkjfhasdjfhasdlkfjhasdfkjhadskfjhadsfkljahdsflkjhdslkjsadhljkaf", CIPHERTEXT_LEGACY_LONG ),
-            new Pair<>( "", CIPHERTEXT_LEGACY_EMPTY )
+            new Pair<>( "", CIPHERTEXT_LEGACY_EMPTY ),
+            new Pair<>( PLAINTEXT_POUND_SIGN, CIPHERTEXT_POUND_SIGN ),
+            new Pair<>( PLAINTEXT_NON_BMP_EMOJI_CHINESE_ARABIC, CIPHERTEXT_NON_BMP_EMOJI_CHINESE_ARABIC )
             ) );
 
     private static final String CIPHERTEXT_PASSWORD_NO_CIPHERTEXT =
@@ -504,6 +528,14 @@ public class MasterPasswordManagerTest {
     @Test( expected = IllegalArgumentException.class )
     public void testCreateMasterPasswordManager_nokdf_insufficientKeyMaterial() throws Exception {
         MasterPasswordManager.createMasterPasswordManager( "7layer".getBytes(), true, false );
+    }
+
+    @Test
+    @BugId( "DE247881" )
+    public void testCharsFromUtf8() throws Exception {
+        assertArrayEquals( "asdf".toCharArray(), charsFromUtf8( "asdf".getBytes( Charsets.UTF8 ) ) );
+        assertArrayEquals( PLAINTEXT_POUND_SIGN.toCharArray(), charsFromUtf8( PLAINTEXT_POUND_SIGN.getBytes( Charsets.UTF8 ) ) );
+        assertArrayEquals( PLAINTEXT_NON_BMP_EMOJI_CHINESE_ARABIC.toCharArray(), charsFromUtf8( PLAINTEXT_NON_BMP_EMOJI_CHINESE_ARABIC.getBytes( Charsets.UTF8 ) ) );
     }
 
     @Test
