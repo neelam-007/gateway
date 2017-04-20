@@ -29,6 +29,7 @@ import javax.xml.transform.Source;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.URIResolver;
 import javax.xml.xpath.XPathExpressionException;
+import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.URI;
@@ -38,6 +39,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.function.Function;
 
 import static com.l7tech.xml.xpath.XpathVersion.XPATH_1_0;
 import static com.l7tech.xml.xpath.XpathVersion.XPATH_2_0;
@@ -484,44 +486,134 @@ public class DomCompiledXpath extends CompiledXpath {
                 type = XpathResult.TYPE_STRING;
             }
 
-            return new XpathResult.XpathResultAdapter() {
-                @Override
-                public short getType() {
-                    return type;
-                }
-
-                @Override
-                public String getString() {
-                    return value.getStringValue();
-                }
-
-                @Override
-                public boolean getBoolean() {
-                    try {
-                        return value.getBooleanValue();
-                    } catch (SaxonApiException e) {
-                        return false;
-                    }
-                }
-
-                @Override
-                public double getNumber() {
-                    try {
-                        return value.getDoubleValue();
-                    } catch (SaxonApiException e) {
-                        return 0;
-                    }
-                }
-            };
-
-
-        } catch (InvalidXpathException e) {
+            return getXpathResultForAtomicValues(result, value, type);
+        } catch (InvalidXpathException | SaxonApiException e) {
             throw new XPathExpressionException(e);
-        } catch (SaxonApiException e) {
-            throw new XPathExpressionException(e);
-        } catch (RuntimeException rte) {
-            throw new XPathExpressionException(rte);
         }
+    }
+
+    private static XpathResultValueIterator getXpathResultValueIterator(XdmValue result) {
+        return new XpathResultValueIterator() {
+
+            private XdmSequenceIterator it = result.iterator();
+
+            @Override
+            public boolean hasNext() {
+                return it.hasNext();
+            }
+
+            @Override
+            public void next(XpathResultValue template) throws NoSuchElementException {
+                template.setValue(it.next());
+            }
+        };
+    }
+
+    private static XpathResultValueSet getXpathResultValueSet(XdmValue result, short type) {
+        return new XpathResultValueSet() {
+            @Override
+            public short getType() {
+                return type;
+            }
+
+            @Override
+            public boolean isEmpty() {
+                return result.size()==0;
+            }
+
+            @Override
+            public int size() {
+                return result.size();
+            }
+
+            @Override
+            public XpathResultValueIterator getIterator() {
+                return getXpathResultValueIterator(result);
+            }
+
+            @Override
+            public String[] getStringArray() {
+                return getArray(XpathResultValue::getString, String.class);
+            }
+
+            @Override
+            public Boolean[] getBooleanArray() {
+                return getArray(XpathResultValue::getBoolean, Boolean.class);
+            }
+
+            @Override
+            public Double[] getNumberArray() {
+                return getArray(XpathResultValue::getNumber, Double.class);
+            }
+
+            private <T> T[] getArray(Function<XpathResultValue, ? extends T> getter, Class<? extends T> cls) {
+                XpathResultValue value = new XpathResultValue();
+                XpathResultValueIterator valueIterator = getIterator();
+                T[] values =  (T[]) Array.newInstance(cls, size());
+                int i = 0;
+
+                while (valueIterator.hasNext()) {
+                    valueIterator.next(value);
+                    values[i++] = getter.apply(value);
+                }
+
+                return values;
+            }
+
+        };
+    }
+
+    private static XpathResult getXpathResultForAtomicValues(XdmValue result, XdmAtomicValue firstValue, short type) {
+        return new XpathResult.MultiValuedXpathResultAdapter() {
+            @Override
+            public short getType() {
+                return type;
+            }
+
+            @Override
+            public String getString() {
+                return firstValue.getStringValue();
+            }
+
+            @Override
+            public boolean getBoolean() {
+                try {
+                    return firstValue.getBooleanValue();
+                } catch (SaxonApiException e) {
+                    return false;
+                }
+            }
+
+            @Override
+            public double getNumber() {
+                try {
+                    return firstValue.getDoubleValue();
+                } catch (SaxonApiException e) {
+                    return 0;
+                }
+            }
+
+            @Override
+            public XpathResultValueSet getValueSet() {
+                return getXpathResultValueSet(result, type);
+            }
+
+            @Override
+            public String[] getStringArray() {
+                return getValueSet().getStringArray();
+            }
+
+            @Override
+            public Boolean[] getBooleanArray() {
+                return getValueSet().getBooleanArray();
+            }
+
+            @Override
+            public Double[] getNumberArray() {
+                return getValueSet().getNumberArray();
+            }
+
+        };
     }
 
     private static Node xdmItemToDomNode(XdmItem item) {

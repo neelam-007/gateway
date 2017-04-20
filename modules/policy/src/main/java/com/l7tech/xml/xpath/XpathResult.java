@@ -9,10 +9,11 @@ package com.l7tech.xml.xpath;
  * Represents the result of passing a {@link com.l7tech.xml.xpath.CompiledXpath} to {@link com.l7tech.xml.ElementCursor#getXpathResult(com.l7tech.xml.xpath.CompiledXpath)}.
  */
 public interface XpathResult {
-    public static final short TYPE_NODESET = 1;
-    public static final short TYPE_BOOLEAN = 2;
-    public static final short TYPE_NUMBER  = 3;
-    public static final short TYPE_STRING  = 4;
+
+    short TYPE_NODESET = 1;
+    short TYPE_BOOLEAN = 2;
+    short TYPE_NUMBER  = 3;
+    short TYPE_STRING  = 4;
 
     /** A utility result that is Boolean.TRUE. */
     XpathResult RESULT_TRUE = new Truth();
@@ -59,7 +60,7 @@ public interface XpathResult {
     XpathResultNodeSet getNodeSet();
 
     /** A result with no type that always returns null/zero/false. */
-    static abstract class XpathResultAdapter implements XpathResult {
+    abstract class XpathResultAdapter implements XpathResult {
         protected XpathResultAdapter() {}
 
         public boolean matches() {
@@ -93,6 +94,26 @@ public interface XpathResult {
         public XpathResultNodeSet getNodeSet() {
             return null;
         }
+    }
+
+    /* Handles MultiValuedXpathResults. */
+    abstract class MultiValuedXpathResultAdapter extends XpathResultAdapter {
+
+        protected MultiValuedXpathResultAdapter() {
+        }
+
+        /** @return the empty XpathResultValueSet object. */
+        public abstract XpathResultValueSet getValueSet();
+
+        /** @return the string array of value set. */
+        public abstract String[] getStringArray();
+
+        /** @return the boolean array of value set.*/
+        public abstract Boolean[] getBooleanArray();
+
+        /** @return the number array of value set.*/
+        public abstract Double[] getNumberArray();
+
     }
 
     /** A boolean result that is true. */

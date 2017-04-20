@@ -24,7 +24,9 @@ import org.xml.sax.SAXException;
 import javax.xml.xpath.XPathExpressionException;
 import java.io.IOException;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.logging.Level;
+import static com.l7tech.xml.xpath.XpathResult.MultiValuedXpathResultAdapter;
 
 /**
  * Abstract superclass for server assertions whose operation centers around running a single xpath against
@@ -46,6 +48,12 @@ public abstract class ServerXpathAssertion<AT extends SimpleXpathAssertion> exte
     private final boolean xpathContainsVariables;
     private final boolean xpathReferencesTargetDocument;
     private final Set<String> variablesUsedBySuccessors;
+    private String vfound;
+    private String vresult;
+    private String vmultipleResults;
+    private String vcount;
+    private String velement;
+    private String vmultipleElements;
 
     public ServerXpathAssertion(AT assertion, boolean isReq) {
         super(assertion);
@@ -93,13 +101,6 @@ public abstract class ServerXpathAssertion<AT extends SimpleXpathAssertion> exte
                 }
             }
         }
-
-        final String vfound;
-        final String vresult;
-        final String vmultipleResults;
-        final String vcount;
-        final String velement;
-        final String vmultipleElements;
 
         // Use the statically-configured variable names, if possible
         if (context instanceof HasOutputVariables) {
@@ -196,50 +197,36 @@ public abstract class ServerXpathAssertion<AT extends SimpleXpathAssertion> exte
         final short resultType = xpathResult.getType();
         switch (resultType) {
             case XpathResult.TYPE_BOOLEAN:
+                if (areAnyOutVariablesDefined()) {
+                    setVariables(xpathResult, context, XpathResult::getBoolean, MultiValuedXpathResultAdapter::getBooleanArray);
+                }
+
                 if (xpathResult.getBoolean()) {
                     logAndAudit( AssertionMessages.XPATH_RESULT_TRUE );
-                    context.setVariable(vresult, SimpleXpathAssertion.TRUE);
-                    context.setVariable(vmultipleResults, SimpleXpathAssertion.TRUE);
-                    context.setVariable(velement, SimpleXpathAssertion.TRUE);
-                    context.setVariable(vmultipleElements, SimpleXpathAssertion.TRUE);
-                    context.setVariable(vcount, "1");
                     context.setVariable(vfound, SimpleXpathAssertion.TRUE);
                     return AssertionStatus.NONE;
                 }
+
                 logAndAudit( AssertionMessages.XPATH_RESULT_FALSE );
                 logAndAudit( AssertionMessages.XPATH_PATTERN_IS, getXpath() );
-                context.setVariable(vresult, SimpleXpathAssertion.FALSE);
-                context.setVariable(vmultipleResults, SimpleXpathAssertion.FALSE);
-                context.setVariable(velement, SimpleXpathAssertion.FALSE);
-                context.setVariable(vmultipleElements, SimpleXpathAssertion.FALSE);
-                context.setVariable(vcount, "1");
                 context.setVariable(vfound, SimpleXpathAssertion.FALSE);
                 return AssertionStatus.FALSIFIED;
 
             case XpathResult.TYPE_NUMBER:
-                if (vresult != null || velement != null || vmultipleResults != null || vmultipleElements != null) {
-                    String val = Double.toString(xpathResult.getNumber());
-                    context.setVariable(vresult, val);
-                    context.setVariable(vmultipleResults, val);
-                    context.setVariable(velement, val);
-                    context.setVariable(vmultipleElements, val);
+                if (areAnyOutVariablesDefined()) {
+                    setVariables(xpathResult, context, XpathResult::getNumber, MultiValuedXpathResultAdapter::getNumberArray);
                 }
 
-                context.setVariable(vcount, "1");
                 context.setVariable(vfound, SimpleXpathAssertion.TRUE);
                 // TODO what to log for this?
                 // logAndAudit(AssertionMessages.XPATH_TEXT_NODE_FOUND);
                 return AssertionStatus.NONE;
 
             case XpathResult.TYPE_STRING:
-                if (vresult != null || velement != null || vmultipleResults != null || vmultipleElements != null) {
-                    String strVal = xpathResult.getString();
-                    context.setVariable(vresult, strVal);
-                    context.setVariable(vmultipleResults, strVal);
-                    context.setVariable(velement, strVal);
-                    context.setVariable(vmultipleElements, strVal);
+                if (areAnyOutVariablesDefined()) {
+                    setVariables(xpathResult, context, XpathResult::getString, MultiValuedXpathResultAdapter::getStringArray);
                 }
-                context.setVariable(vcount, "1");
+
                 context.setVariable(vfound, SimpleXpathAssertion.TRUE);
                 // TODO what to log for this?
                 // logAndAudit(AssertionMessages.XPATH_TEXT_NODE_FOUND);
@@ -352,7 +339,41 @@ public abstract class ServerXpathAssertion<AT extends SimpleXpathAssertion> exte
         return AssertionStatus.NONE;
     }
 
+    private <T> void setVariables(XpathResult xpathResult, PolicyEnforcementContext context, Function<XpathResult, T> getter, Function<XpathResult.MultiValuedXpathResultAdapter, T[]> arrayGetter) {
+        if (xpathResult instanceof XpathResult.MultiValuedXpathResultAdapter) {
+            XpathResult.MultiValuedXpathResultAdapter multiValuedXpathResultAdapter = (XpathResult.MultiValuedXpathResultAdapter) xpathResult;
+            setOutVariables(context, getter.apply(multiValuedXpathResultAdapter), arrayGetter.apply(multiValuedXpathResultAdapter));
+        } else {
+            setOutVariables(context, getter.apply(xpathResult));
+        }
+
+    }
+
+    private void setOutVariables(PolicyEnforcementContext context, Object val) {
+        setOutVariables(context, val, null);
+    }
+
+    private void setOutVariables(PolicyEnforcementContext context, Object val, Object[] vals) {
+        context.setVariable(vresult, val);
+        context.setVariable(velement, val);
+
+        if(vals!=null) {
+            context.setVariable(vmultipleResults, vals);
+            context.setVariable(vmultipleElements, vals);
+            context.setVariable(vcount, Integer.toString(vals.length));
+        } else {
+            context.setVariable(vmultipleResults, val);
+            context.setVariable(vmultipleElements, val);
+            context.setVariable(vcount, "1");
+        }
+    }
+
     private void auditNotXml() {
         logAndAudit( req ? AssertionMessages.XPATH_REQUEST_NOT_XML : AssertionMessages.XPATH_RESPONSE_NOT_XML );
     }
+
+    private boolean areAnyOutVariablesDefined() {
+        return (vresult != null || velement != null || vmultipleResults != null || vmultipleElements != null);
+    }
+
 }

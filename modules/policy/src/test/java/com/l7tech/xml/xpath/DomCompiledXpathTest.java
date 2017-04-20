@@ -4,6 +4,7 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.xml.DomElementCursor;
 import com.l7tech.xml.ElementCursor;
 import com.l7tech.xml.InvalidXpathException;
+import com.rsa.sslj.x.M;
 import org.junit.Before;
 import org.junit.Test;
 import org.w3c.dom.Document;
@@ -234,5 +235,54 @@ public class DomCompiledXpathTest {
         assertEquals(2, elms.size());
         assertEquals(bar, elms.get(0));
         assertEquals(baz, elms.get(1));
+    }
+
+    @Test
+    public void testXpathReturningMultipleStringValues() throws Exception {
+        DomElementCursor cursor = new DomElementCursor(XmlUtil.stringAsDocument("<foo><a>string1</a><a>string2</a><a>string3</a></foo>"));
+        DomCompiledXpath cx = new DomCompiledXpath(new XpathExpression("//foo/a/upper-case(text())", XPATH_2_0, null));
+        XpathResult.MultiValuedXpathResultAdapter multiValuedXpathResultAdapter = (XpathResult.MultiValuedXpathResultAdapter) cx.getXpathResult(cursor, null);
+        int i=1;
+        for(String a:multiValuedXpathResultAdapter.getStringArray()) {
+            assertEquals("STRING" + i, a);
+            i++;
+        }
+        assertEquals(XpathResult.TYPE_STRING, multiValuedXpathResultAdapter.getType());
+        assertEquals(true, multiValuedXpathResultAdapter instanceof XpathResult.MultiValuedXpathResultAdapter);
+    }
+
+    @Test
+    public void testXpathReturningMultipleNumberValues() throws Exception {
+        DomElementCursor cursor = new DomElementCursor(XmlUtil.stringAsDocument("<foo><a>1</a><a>2</a><a>3</a></foo>"));
+        DomCompiledXpath cx = new DomCompiledXpath(new XpathExpression("//foo/a/(number(text()))", XPATH_2_0, null));
+        XpathResult xpathResult = cx.getXpathResult(cursor, null);
+        assertEquals(true, xpathResult instanceof XpathResult.MultiValuedXpathResultAdapter);
+        XpathResult.MultiValuedXpathResultAdapter multiValuedXpathResult = (XpathResult.MultiValuedXpathResultAdapter) xpathResult;
+        assertEquals(XpathResult.TYPE_NUMBER, multiValuedXpathResult.getType());
+        Double[] numbers = {1.0, 2.0, 3.0};
+        assertArrayEquals(numbers, multiValuedXpathResult.getNumberArray());
+        assertEquals(XpathResult.TYPE_NUMBER, multiValuedXpathResult.getType());
+
+    }
+
+    @Test
+    public void testXpathReturningMultipleBooleanValues() throws Exception {
+        DomElementCursor cursor = new DomElementCursor(XmlUtil.stringAsDocument("<foo><a>true</a><a>false</a><a>true</a></foo>"));
+        DomCompiledXpath cx = new DomCompiledXpath(new XpathExpression("//foo/a/(text()=\"true\")", XPATH_2_0, null));
+        XpathResult xpathResult = cx.getXpathResult(cursor, null);
+        assertEquals(true, xpathResult instanceof XpathResult.MultiValuedXpathResultAdapter);
+        XpathResult.MultiValuedXpathResultAdapter multiValuedXpathResult = (XpathResult.MultiValuedXpathResultAdapter) xpathResult;
+        assertEquals(XpathResult.TYPE_BOOLEAN, multiValuedXpathResult.getType());
+        Boolean[] numbers = {true, false, true};
+        assertArrayEquals(numbers, multiValuedXpathResult.getBooleanArray());
+        assertEquals(XpathResult.TYPE_BOOLEAN, multiValuedXpathResult.getType());
+    }
+
+    @Test
+    public void testXpathWithAtomicValue() throws Exception {
+        DomElementCursor cursor = new DomElementCursor(XmlUtil.stringAsDocument("<foo><a>string1</a><b>string2</b><c>string3</c></foo>"));
+        DomCompiledXpath cx = new DomCompiledXpath(new XpathExpression("//foo/a", XPATH_2_0, null));
+        XpathResult xpathResult = cx.getXpathResult(cursor, null);
+        assertEquals(false, xpathResult instanceof XpathResult.MultiValuedXpathResultAdapter);
     }
 }
