@@ -10,6 +10,7 @@ import com.l7tech.external.assertions.mqnative.MqNativeAdmin;
 import com.l7tech.external.assertions.mqnative.MqNativeAdmin.MqNativeTestException;
 import com.l7tech.external.assertions.mqnative.MqNativeMessageFormatType;
 import com.l7tech.external.assertions.mqnative.MqNativeReplyType;
+import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.security.rbac.AttemptedCreateSpecific;
 import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
@@ -23,6 +24,7 @@ import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.util.ExceptionUtils;
@@ -30,6 +32,7 @@ import com.l7tech.util.Functions;
 import com.l7tech.util.GoidUpgradeMapper;
 import com.l7tech.util.Option;
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
@@ -48,6 +51,7 @@ import java.util.logging.Logger;
 import static com.l7tech.console.panels.CancelableOperationDialog.doWithDelayedCancelDialog;
 import static com.l7tech.external.assertions.mqnative.MqNativeAcknowledgementType.AUTOMATIC;
 import static com.l7tech.external.assertions.mqnative.MqNativeAcknowledgementType.ON_COMPLETION;
+import static com.l7tech.external.assertions.mqnative.MqNativeConstants.*;
 import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.*;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
 import static com.l7tech.gui.util.DialogDisplayer.showMessageDialog;
@@ -135,6 +139,9 @@ public class MqNativePropertiesDialog extends JDialog {
     private JCheckBox useConcurrencyCheckBox;
     private JLabel concurrentListenerSizeLabel;
     private SecurityZoneWidget zoneControl;
+    private JTextField maxActiveTextField;
+    private JTextField maxIdleTextField;
+    private JTextField maxWaitTextField;
     private ByteLimitPanel byteLimitPanel;
 
     private SsgActiveConnector mqNativeActiveConnector;
@@ -533,6 +540,19 @@ public class MqNativePropertiesDialog extends JDialog {
         keystoreComboBox.setEnabled(false);
         zoneControl.configure(mqNativeActiveConnector);
 
+        inputValidator.constrainTextField(
+            maxActiveTextField,
+            inputValidator.buildTextFieldNumberRangeValidationRule("Max Active", maxActiveTextField, Integer.MIN_VALUE, Integer.MAX_VALUE, true)
+        );
+        inputValidator.constrainTextField(
+            maxIdleTextField,
+            inputValidator.buildTextFieldNumberRangeValidationRule("Max Idle", maxIdleTextField, Integer.MIN_VALUE, Integer.MAX_VALUE, true)
+        );
+        inputValidator.constrainTextField(
+            maxWaitTextField,
+            inputValidator.buildTextFieldNumberRangeValidationRule("Max Wait", maxWaitTextField, Long.MIN_VALUE, Long.MAX_VALUE, true)
+        );
+
         pack();
         initializeView();
         enableOrDisableComponents();
@@ -791,6 +811,10 @@ public class MqNativePropertiesDialog extends JDialog {
                         logger.log( Level.WARNING, "Bad state - unknown MQ native replyType = " + replyType );
                         break;
                 }
+
+                loadConnectionPoolProperty(maxActiveTextField, mqNativeActiveConnector, MQ_CONNECTION_POOL_MAX_ACTIVE_PROPERTY, MQ_CONNECTION_POOL_MAX_ACTIVE_UI_PROPERTY);
+                loadConnectionPoolProperty(maxIdleTextField, mqNativeActiveConnector, MQ_CONNECTION_POOL_MAX_IDLE_PROPERTY, MQ_CONNECTION_POOL_MAX_IDLE_UI_PROPERTY);
+                loadConnectionPoolProperty(maxWaitTextField, mqNativeActiveConnector, MQ_CONNECTION_POOL_MAX_WAIT_PROPERTY, MQ_CONNECTION_POOL_MAX_WAIT_UI_PROPERTY);
             }
         } else {
             enabledCheckBox.setSelected(true);
@@ -804,6 +828,39 @@ public class MqNativePropertiesDialog extends JDialog {
         if(!populatedTheServiceList)
             ServiceComboBox.populateAndSelect(serviceNameCombo, false, PersistentEntity.DEFAULT_GOID);
         enableOrDisableComponents();
+    }
+
+    /**
+     * Load the pool settings from the connector first.  If the connector does not set that property,
+     * then load it from the cluster property. If the cluster property does not set that property,
+     * then just leave it as empty.
+     *
+     * @param texField: the text field will display the property value.
+     * @param ssgActiveConnector: the ssg active connector, which may set the property or may not.
+     * @param propName: the name of the pool property such as max active, max idle, or max wait.
+     * @param clusterPropName: the name of the pool cluster property.
+     */
+    private void loadConnectionPoolProperty(
+        @NotNull final JTextField texField,
+        @NotNull final SsgActiveConnector ssgActiveConnector,
+        @NotNull final String propName,
+        @NotNull final String clusterPropName
+    ) {
+        String propValue = ssgActiveConnector.getGoid() == Goid.DEFAULT_GOID? null : ssgActiveConnector.getProperty(propName);
+        if (StringUtils.isBlank(propValue)) {
+            try {
+                final ClusterProperty clusterProperty = Registry.getDefault().getClusterStatusAdmin().findPropertyByName(clusterPropName);
+                if (clusterProperty != null) {
+                    propValue = clusterProperty.getValue();
+                }
+            } catch (FindException e) {
+                if (logger.isLoggable(Level.INFO)) {
+                    logger.log(Level.INFO, "Error finding cluster property '" + propName + "': " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                }
+            }
+        }
+
+        texField.setText(propValue);
     }
 
     /**
@@ -1160,6 +1217,22 @@ public class MqNativePropertiesDialog extends JDialog {
                 connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_IS_COPY_CORRELATION_ID_FROM_REQUEST, Boolean.toString(outboundCorrelationIdRadioButton.isSelected()));
             } else if (outboundReplyNoneRadioButton.isSelected()) {
                 connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, REPLY_NONE.toString());
+            }
+
+            if (StringUtils.isBlank(maxActiveTextField.getText())) {
+                connector.removeProperty(MQ_CONNECTION_POOL_MAX_ACTIVE_PROPERTY);
+            } else {
+                connector.setProperty(MQ_CONNECTION_POOL_MAX_ACTIVE_PROPERTY, maxActiveTextField.getText());
+            }
+            if (StringUtils.isBlank(maxIdleTextField.getText())) {
+                connector.removeProperty(MQ_CONNECTION_POOL_MAX_IDLE_PROPERTY);
+            } else {
+                connector.setProperty(MQ_CONNECTION_POOL_MAX_IDLE_PROPERTY, maxIdleTextField.getText());
+            }
+            if (StringUtils.isBlank(maxWaitTextField.getText())) {
+                connector.removeProperty(MQ_CONNECTION_POOL_MAX_WAIT_PROPERTY);
+            } else {
+                connector.setProperty(MQ_CONNECTION_POOL_MAX_WAIT_PROPERTY, maxWaitTextField.getText());
             }
         }
     }
