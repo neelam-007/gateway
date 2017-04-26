@@ -60,10 +60,6 @@ public class GetApiIncrementAssertion extends Assertion implements UsesVariables
 
     // Cluster properties used by this assertion
     Map<String, String[]> props = new HashMap<>();
-    //props.put(NAME, new String[] {
-    //        DESCRIPTION,
-    //        DEFAULT
-    //});
     meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
 
     // Set description for GUI
