@@ -63,8 +63,8 @@ public class GetApiIncrementAssertion extends Assertion implements UsesVariables
     meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
 
     // Set description for GUI
-    meta.put(AssertionMetadata.SHORT_NAME, "Portal Get Api V2 Update");
-    meta.put(AssertionMetadata.LONG_NAME, "Portal Get Api V2 Update Json message");
+    meta.put(AssertionMetadata.SHORT_NAME, "Portal Get Api V2 Sync");
+    meta.put(AssertionMetadata.LONG_NAME, "Portal Get Api V2 Sync Json message");
 
     // Add to palette folder(s)
     //   accessControl, transportLayerSecurity, xmlSecurity, xml, routing,
