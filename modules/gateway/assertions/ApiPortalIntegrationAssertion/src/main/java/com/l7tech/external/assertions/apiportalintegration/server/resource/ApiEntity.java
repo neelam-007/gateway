@@ -43,6 +43,7 @@ public class ApiEntity {
     this.uuid = uuid;
   }
 
+  @JsonProperty( value = "ServiceEnabled")
   public Boolean getServiceEnabled() {
     return serviceEnabled;
   }
