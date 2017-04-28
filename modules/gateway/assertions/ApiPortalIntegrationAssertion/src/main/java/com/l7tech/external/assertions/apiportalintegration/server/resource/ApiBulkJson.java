@@ -8,16 +8,16 @@ import java.util.List;
 /**
  * Created by karra14 on 2017-04-25.
  */
-public class ApiV2BulkJson {
+public class ApiBulkJson {
 
-  private List<ApiV2Entity> apis = new ArrayList<>();
+  private List<ApiEntity> apis = new ArrayList<>();
 
-  @JsonProperty(value = "api2.0s")
-  public List<ApiV2Entity> getApis() {
+  @JsonProperty(value = "apis")
+  public List<ApiEntity> getApis() {
     return apis;
   }
 
-  public void setApis(List<ApiV2Entity> apis) {
+  public void setApis(List<ApiEntity> apis) {
     this.apis = apis;
   }
 }

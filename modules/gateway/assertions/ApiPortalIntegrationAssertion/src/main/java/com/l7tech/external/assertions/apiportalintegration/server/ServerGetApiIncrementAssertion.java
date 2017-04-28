@@ -4,7 +4,6 @@ import com.l7tech.external.assertions.apiportalintegration.GetApiIncrementAssert
 import com.l7tech.external.assertions.apiportalintegration.server.resource.*;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.jdbc.JdbcConnectionManager;
@@ -91,7 +90,7 @@ public class ServerGetApiIncrementAssertion extends AbstractServerAssertion<GetA
 
 
     } catch (Exception ex) {
-      final String errorMsg = "Error Retrieving Application Increment";
+      final String errorMsg = "Error Retrieving Api V2 for Sync";
       logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
           new String[]{errorMsg + ": " + ExceptionUtils.getMessage(ex)}, ExceptionUtils.getDebugException(ex));
       return AssertionStatus.FAILED;
@@ -107,14 +106,14 @@ public class ServerGetApiIncrementAssertion extends AbstractServerAssertion<GetA
    * @throws IOException
    */
   String getJsonMessage(final String nodeId, final String tenantId) throws IOException {
-    ApiV2BulkJson apiV2BulkJson = new ApiV2BulkJson();
-    apiV2BulkJson.setApis(getApis(nodeId, tenantId));
+    ApiBulkJson apiBulkJson = new ApiBulkJson();
+    apiBulkJson.setApis(getApis(nodeId, tenantId));
 
     ObjectMapper mapper = new ObjectMapper();
     mapper.setSerializationInclusion(JsonSerialize.Inclusion.NON_NULL);
     String jsonInString;
     try {
-      jsonInString = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(apiV2BulkJson);
+      jsonInString = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(apiBulkJson);
     } catch (IOException ioe) {
       throw new IOException("Unable to write json string: " + ExceptionUtils.getMessage(ioe), ioe);
     }
@@ -128,7 +127,7 @@ public class ServerGetApiIncrementAssertion extends AbstractServerAssertion<GetA
    * @param tenantId
    * @return
    */
-  private List<ApiV2Entity> getApis(String nodeId, String tenantId) {
+  private List<ApiEntity> getApis(String nodeId, String tenantId) {
     Map<String, List> results = (Map<String, List>) queryJdbc(jdbcConnectionName.toString(),
            "SELECT \n" +
             "    a.`UUID` AS `UUID`,\n" +
@@ -147,7 +146,7 @@ public class ServerGetApiIncrementAssertion extends AbstractServerAssertion<GetA
     }
 
     logger.log(Level.INFO, "Fetched " + results.size() + " V2 api from database");
-    Map<String, ApiV2Entity> apiV2EntityMap = buildApiEntities(results);
+    Map<String, ApiEntity> apiV2EntityMap = buildApiEntities(results);
 
     if (apiV2EntityMap.size() > 0) {
       String apiUuids = "'" + StringUtils.join(apiV2EntityMap.keySet(), "','") + "'";
@@ -163,23 +162,23 @@ public class ServerGetApiIncrementAssertion extends AbstractServerAssertion<GetA
    * @param results
    * @return
    */
-  private Map<String, ApiV2Entity> buildApiEntities(Map<String, List> results) {
-    Map<String, ApiV2Entity> apiV2EntityMap = new HashMap<>();
+  private Map<String, ApiEntity> buildApiEntities(Map<String, List> results) {
+    Map<String, ApiEntity> apiV2EntityMap = new HashMap<>();
     int size = results.get("uuid").size();
-    ApiV2Entity apiV2Entity;
+    ApiEntity apiEntity;
     for (int i = 0; i < size; i++) {
-      apiV2Entity = new ApiV2Entity();
+      apiEntity = new ApiEntity();
       String uuid = (String) results.get("uuid").get(i);
-      apiV2Entity.setUuid(uuid);
-      apiV2Entity.setName((String) results.get("name").get(i));
-      apiV2Entity.setServiceEnabled(isServiceEnabled((String) results.get("portal_status").get(i)));
-      apiV2Entity.setPublishedByPortal((Boolean) results.get("published_by_portal").get(i));
-      apiV2Entity.setApiLocationUrl((String) results.get("api_location_url").get(i));
-      apiV2Entity.setSsgUrl((String) results.get("ssg_url").get(i));
-      apiV2EntityMap.put(uuid, apiV2Entity);
+      apiEntity.setUuid(uuid);
+      apiEntity.setName((String) results.get("name").get(i));
+      apiEntity.setServiceEnabled(isServiceEnabled((String) results.get("portal_status").get(i)));
+      apiEntity.setPublishedByPortal((Boolean) results.get("published_by_portal").get(i));
+      apiEntity.setApiLocationUrl((String) results.get("api_location_url").get(i));
+      apiEntity.setSsgUrl((String) results.get("ssg_url").get(i));
+      apiV2EntityMap.put(uuid, apiEntity);
     }
 
-    logger.log(Level.INFO, "Build api v2 map");
+    logger.log(Level.FINE, "Build api v2 map");
 
     return apiV2EntityMap;
   }
@@ -189,7 +188,7 @@ public class ServerGetApiIncrementAssertion extends AbstractServerAssertion<GetA
    * @param apiV2EntityMap
    * @param apiUuids
    */
-  private void buildCustomFields(Map<String, ApiV2Entity> apiV2EntityMap, String apiUuids) {
+  private void buildCustomFields(Map<String, ApiEntity> apiV2EntityMap, String apiUuids) {
     Map<String, List> results = (Map<String, List>) queryJdbc(jdbcConnectionName.toString(),
            "SELECT\n" +
             "   `NAME`,\n" +
@@ -198,21 +197,21 @@ public class ServerGetApiIncrementAssertion extends AbstractServerAssertion<GetA
             "FROM `CUSTOM_FIELD_VALUE_VIEW` \n" +
             "WHERE `ENTITY_UUID` in (" + apiUuids + ")", Collections.EMPTY_LIST);
 
-    logger.log(Level.INFO, "Fetched " + results.size() + " Custom Fields from database");
+    logger.log(Level.FINE, "Fetched " + results.size() + " Custom Fields from database");
 
     if (results.size() > 0) {
       int size = results.get("name").size();
-      ApiV2Entity apiV2Entity = null;
+      ApiEntity apiEntity = null;
       CustomFieldValueEntity customFieldValueEntity;
       for (int i = 0; i < size; i++) {
         customFieldValueEntity = new CustomFieldValueEntity();
         String apiUuid = (String) results.get("entity_uuid").get(i);
         customFieldValueEntity.setValue((String) results.get("value").get(i));
         customFieldValueEntity.setName((String) results.get("name").get(i));
-        apiV2Entity = apiV2EntityMap.get(apiUuid);
-        apiV2Entity.getCustomFieldValueEntities().add(customFieldValueEntity);
+        apiEntity = apiV2EntityMap.get(apiUuid);
+        apiEntity.getCustomFieldValueEntities().add(customFieldValueEntity);
       }
-      logger.log(Level.INFO, "Linked custom fields with their respective api v2 objects");
+      logger.log(Level.FINE, "Linked custom fields with their respective api v2 objects");
     }
   }
 
@@ -221,7 +220,7 @@ public class ServerGetApiIncrementAssertion extends AbstractServerAssertion<GetA
    * @param apiV2EntityMap
    * @param apiUuids
    */
-  private void buildPolicyEntities(Map<String, ApiV2Entity> apiV2EntityMap, String apiUuids) {
+  private void buildPolicyEntities(Map<String, ApiEntity> apiV2EntityMap, String apiUuids) {
 
     Map<String, List> results = (Map<String, List>) queryJdbc(jdbcConnectionName.toString(),
            "SELECT\n" +
@@ -231,23 +230,23 @@ public class ServerGetApiIncrementAssertion extends AbstractServerAssertion<GetA
             "FROM `API_POLICY_ENTITY_XREF` \n" +
             "WHERE `API_UUID` in (" + apiUuids + ")", Collections.EMPTY_LIST);
 
-    logger.log(Level.INFO, "Fetched " + results.size() + " Policy entities from database");
+    logger.log(Level.FINE, "Fetched " + results.size() + " Policy entities from database");
 
     if (results.size() > 0) {
       int size = results.get("uuid").size();
       PolicyEntity policyEntity;
       Map<String, PolicyEntity> policyEntityMap = new HashMap<>();
-      ApiV2Entity apiV2Entity;
+      ApiEntity apiEntity;
       for (int i = 0; i < size; i++) {
         policyEntity = new PolicyEntity();
         policyEntity.setPolicyEntityUuid((String) results.get("policy_entity_uuid").get(i));
         policyEntityMap.put((String) results.get("uuid").get(i), policyEntity);
 
-        apiV2Entity = apiV2EntityMap.get((String) results.get("api_uuid").get(i));
-        apiV2Entity.getPolicyEntities().add(policyEntity);
+        apiEntity = apiV2EntityMap.get((String) results.get("api_uuid").get(i));
+        apiEntity.getPolicyEntities().add(policyEntity);
       }
 
-      logger.log(Level.INFO, "Linked policy entities with their respective api v2 object");
+      logger.log(Level.FINE, "Linked policy entities with their respective api v2 object");
 
       buildPolicyTemplateArguments(policyEntityMap, apiUuids);
     }
@@ -267,7 +266,7 @@ public class ServerGetApiIncrementAssertion extends AbstractServerAssertion<GetA
             "FROM `API_POLICY_TEMPLATE_XREF_VIEW`\n" +
             "WHERE `API_UUID` in (" + apiUuids + ")", Collections.EMPTY_LIST);
 
-    logger.log(Level.INFO, "Fetched " + results.size() + " Policy template Arguments from database");
+    logger.log(Level.FINE, "Fetched " + results.size() + " Policy template Arguments from database");
 
     if (results.size() > 0) {
       int size = results.get("name").size();
@@ -280,7 +279,7 @@ public class ServerGetApiIncrementAssertion extends AbstractServerAssertion<GetA
         policyEntity = policyEntityMap.get((String) results.get("api_policy_entity_xref_uuid").get(i));
         policyEntity.getPolicyTemplateArguments().add(templateArgument);
       }
-      logger.log(Level.INFO, "Linked policy template arguments with their respective policy entities");
+      logger.log(Level.FINE, "Linked policy template arguments with their respective policy entities");
     }
   }
 

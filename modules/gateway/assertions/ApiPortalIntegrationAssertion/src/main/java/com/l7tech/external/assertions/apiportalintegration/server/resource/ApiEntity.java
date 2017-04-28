@@ -5,7 +5,7 @@ import org.codehaus.jackson.annotate.JsonProperty;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ApiV2Entity {
+public class ApiEntity {
 
   private String uuid;
   private String name;

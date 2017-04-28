@@ -17,7 +17,7 @@ import java.util.logging.Logger;
 public class GetApiIncrementAssertion extends Assertion implements UsesVariables, SetsVariables {
   protected static final Logger logger = Logger.getLogger(GetApiIncrementAssertion.class.getName());
 
-  private String variablePrefix = "portal.sync.api.increment";
+  private static final String VARIABLE_PREFIX = "portal.sync.api.increment";
 
   public static final String SUFFIX_JDBC_CONNECTION = "jdbc";
   public static final String SUFFIX_NODE_ID = "nodeId";
@@ -27,22 +27,22 @@ public class GetApiIncrementAssertion extends Assertion implements UsesVariables
 
 
   public String getVariablePrefix() {
-    return variablePrefix;
+    return VARIABLE_PREFIX;
   }
 
   @Override
   public VariableMetadata[] getVariablesSet() {
     return new VariableMetadata[]{
-        new VariableMetadata(variablePrefix + "." + SUFFIX_JSON, false, false, null, true, DataType.STRING)
+        new VariableMetadata(VARIABLE_PREFIX + "." + SUFFIX_JSON, false, false, null, true, DataType.STRING)
     };
   }
 
   @Override
   public String[] getVariablesUsed() {
-    return VariableUseSupport.variables(variablePrefix + "." + SUFFIX_NODE_ID,
-        variablePrefix + "." + SUFFIX_JDBC_CONNECTION,
-        variablePrefix + "." + SUFFIX_TYPE,
-        variablePrefix + "." + SUFFIX_TENANT_ID).asArray();
+    return VariableUseSupport.variables(VARIABLE_PREFIX + "." + SUFFIX_NODE_ID,
+        VARIABLE_PREFIX + "." + SUFFIX_JDBC_CONNECTION,
+        VARIABLE_PREFIX + "." + SUFFIX_TYPE,
+        VARIABLE_PREFIX + "." + SUFFIX_TENANT_ID).asArray();
   }
 
   //
@@ -66,9 +66,7 @@ public class GetApiIncrementAssertion extends Assertion implements UsesVariables
     meta.put(AssertionMetadata.SHORT_NAME, "Portal Get Api V2 Sync");
     meta.put(AssertionMetadata.LONG_NAME, "Portal Get Api V2 Sync Json message");
 
-    // Add to palette folder(s)
-    //   accessControl, transportLayerSecurity, xmlSecurity, xml, routing,
-    //   misc, audit, policyLogic, threatProtection
+    //Adding internalAssertions in to PALETTE_FOLDERS
     meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"internalAssertions"});
     meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/server16.gif");
 
