@@ -228,7 +228,8 @@ public class ServerGetApiIncrementAssertion extends AbstractServerAssertion<GetA
             "   `API_UUID`,\n" +
             "   `POLICY_ENTITY_UUID`\n" +
             "FROM `API_POLICY_ENTITY_XREF` \n" +
-            "WHERE `API_UUID` in (" + apiUuids + ")", Collections.EMPTY_LIST);
+            "WHERE `API_UUID` in (" + apiUuids + ")" +
+               " ORDER BY `ORDINAL` ASC", Collections.EMPTY_LIST);
 
     logger.log(Level.FINE, "Fetched " + results.size() + " Policy entities from database");
 
