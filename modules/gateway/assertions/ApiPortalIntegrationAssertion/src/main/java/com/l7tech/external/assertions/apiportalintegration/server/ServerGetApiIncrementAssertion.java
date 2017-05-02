@@ -172,7 +172,7 @@ public class ServerGetApiIncrementAssertion extends AbstractServerAssertion<GetA
       apiEntity.setUuid(uuid);
       apiEntity.setName((String) results.get("name").get(i));
       apiEntity.setServiceEnabled(isServiceEnabled((String) results.get("portal_status").get(i)));
-      apiEntity.setPublishedByPortal((Boolean) results.get("published_by_portal").get(i));
+      apiEntity.setPortalPublished((Boolean) results.get("published_by_portal").get(i));
       apiEntity.setApiLocationUrl((String) results.get("api_location_url").get(i));
       apiEntity.setSsgUrl((String) results.get("ssg_url").get(i));
       apiV2EntityMap.put(uuid, apiEntity);

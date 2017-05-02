@@ -10,7 +10,7 @@ public class ApiEntity {
   private String uuid;
   private String name;
   private Boolean serviceEnabled;
-  private Boolean publishedByPortal;
+  private Boolean portalPublished;
   private String ssgUrl;
   private String apiLocationUrl;
   private List<CustomFieldValueEntity> customFieldValueEntities = new ArrayList<>();
@@ -52,13 +52,13 @@ public class ApiEntity {
     this.serviceEnabled = serviceEnabled;
   }
 
-  @JsonProperty( value = "PublishByPortal")
-  public Boolean getPublishedByPortal() {
-    return publishedByPortal;
+  @JsonProperty( value = "PortalPublished")
+  public Boolean getPortalPublished() {
+    return portalPublished;
   }
 
-  public void setPublishedByPortal(Boolean publishedByPortal) {
-    this.publishedByPortal = publishedByPortal;
+  public void setPortalPublished(Boolean portalPublished) {
+    this.portalPublished = portalPublished;
   }
 
   @JsonProperty( value = "ApiLocationUrl")
