@@ -272,7 +272,7 @@ public class LdapUserManagerImpl implements LdapUserManager {
     }
 
     @Override
-    public boolean authenticateBasic(String dn, String passwd) {
+    public boolean authenticateBasic(String dn, String passwd) throws AuthenticationException {
         return LdapUtils.authenticateBasic(getIdentityProvider(), getIdentityProviderConfig(), this.ldapRuntimeConfig, this.logger, dn, passwd);
     }
 

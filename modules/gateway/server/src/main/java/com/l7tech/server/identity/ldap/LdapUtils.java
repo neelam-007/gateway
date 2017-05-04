@@ -294,7 +294,12 @@ public final class LdapUtils {
      * @param passwd             password to use for bind attempt.  Authentication will automatically fail if this is null or empty.
      * @return true if we were able to successfully bind the specified DN using the specified password.
      */
-    public static boolean authenticateBasic(LdapUrlProvider urlProvider, LdapUrlBasedIdentityProviderConfig providerConfig, LdapRuntimeConfig ldapRuntimeConfig, Logger logger, String dn, String passwd) {
+    public static boolean authenticateBasic(LdapUrlProvider urlProvider,
+                                            LdapUrlBasedIdentityProviderConfig providerConfig,
+                                            LdapRuntimeConfig ldapRuntimeConfig,
+                                            Logger logger,
+                                            String dn,
+                                            String passwd) throws AuthenticationException {
         if (passwd == null || passwd.length() < 1) {
             logger.info("User: " + dn + " refused authentication because empty password provided.");
             return false;
@@ -315,10 +320,10 @@ public final class LdapUtils {
             } catch (CommunicationException e) {
                 logger.log(Level.INFO, "Could not establish context using LDAP URL " + ldapurl, e);
                 ldapurl = urlProvider.markCurrentUrlFailureAndGetFirstAvailableOne(ldapurl);
-            } catch (AuthenticationException e) {
+            } catch (AuthenticationException authenticationException) {
                 // when you get bad credentials
-                logger.info("User failed to authenticate: " + dn + " in provider " + providerConfig.getName());
-                return false;
+                logger.info("User failed to authenticate: " + dn + " in provider " + providerConfig.getName()+" Reason:"+authenticationException.toString());
+                throw authenticationException;
             } catch (NamingException e) {
                 logger.log(Level.WARNING, "General naming failure for user: " + dn + " in provider " + providerConfig.getName(), ExceptionUtils.getDebugException(e));
                 return false;

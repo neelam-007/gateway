@@ -173,7 +173,9 @@ public class LdapIdentityProviderImpl
             }
         }
 
-        if (realUser == null) return null;
+        if (realUser == null) {
+            return null;
+        }
 
         final CredentialFormat format = pc.getFormat();
         if (format == CredentialFormat.CLEARTEXT) {
@@ -270,7 +272,12 @@ public class LdapIdentityProviderImpl
 
     private AuthenticationResult authenticatePasswordCredentials(LoginCredentials pc, LdapUser realUser) throws BadCredentialsException {
         // basic authentication
-        boolean res = userManager.authenticateBasic(realUser.getDn(), new String(pc.getCredentials()));
+        boolean res;
+        try {
+            res = userManager.authenticateBasic(realUser.getDn(), new String(pc.getCredentials()));
+        } catch (javax.naming.AuthenticationException e) {
+            throw new BadCredentialsException(e.getMessage());
+        }
         if (res) {
             // success
             return new AuthenticationResult(realUser, pc.getSecurityTokens());

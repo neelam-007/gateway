@@ -6,10 +6,12 @@ package com.l7tech.server.identity.ldap;
 import com.l7tech.identity.UserManager;
 import com.l7tech.identity.ldap.LdapUser;
 
+import javax.naming.AuthenticationException;
+
 /**
  * @author alex
  */
 public interface LdapUserManager extends UserManager<LdapUser> {
     void configure(LdapIdentityProvider provider);
-    boolean authenticateBasic(String dn, String passwd);
+    boolean authenticateBasic(String dn, String passwd) throws AuthenticationException;
 }

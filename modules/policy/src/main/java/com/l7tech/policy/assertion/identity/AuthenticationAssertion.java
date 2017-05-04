@@ -11,13 +11,18 @@ import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.policy.assertion.SetsVariables;
+import com.l7tech.policy.variable.DataType;
+import com.l7tech.policy.variable.VariableMetadata;
 
 /**
  * Authenticates the credentials against a specified provider, but does not authorize any particular
  * user or group.  Otherwise known as "Wildcard Identity Assertion."
  * @author alex
  */
-public class AuthenticationAssertion extends IdentityAssertion {
+public class AuthenticationAssertion extends IdentityAssertion implements SetsVariables {
+
+    private static String LDAP_PROVIDER_ERROR_MESSAGE_VAR = "identityProvider.errorMessage";
     private String loggingIdentity;
 
     public AuthenticationAssertion() {
@@ -75,4 +80,12 @@ public class AuthenticationAssertion extends IdentityAssertion {
 
         return meta;
     }
+
+    @Override
+    protected VariablesSet doGetVariablesSet() {
+        return super.doGetVariablesSet().withVariables(
+                new VariableMetadata(LDAP_PROVIDER_ERROR_MESSAGE_VAR, false, false, null, false, DataType.STRING)
+        );
+    }
+
 }
