@@ -20,6 +20,7 @@ import com.l7tech.policy.assertion.AddHeaderAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.TargetMessageType;
+import com.l7tech.server.ServerConfigStub;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.TestStashManagerFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -39,6 +40,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
@@ -58,8 +60,8 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
-import static com.ibm.mq.constants.CMQC.MQFMT_RF_HEADER_1;
-import static com.ibm.mq.constants.CMQC.MQFMT_RF_HEADER_2;
+import static com.ibm.mq.constants.CMQC.*;
+import static com.l7tech.external.assertions.mqnative.MqNativeConstants.*;
 import static com.l7tech.external.assertions.mqnative.server.MqNativeUtils.buildMqNativeKnob;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
 import static junit.framework.Assert.assertEquals;
@@ -96,9 +98,7 @@ public class ServerMqNativeRoutingAssertionTest {
     public void init() throws Exception {
         //Prepare the ServerMqNativeRoutingAssertion
         applicationContext = new GenericApplicationContext();
-        ConstructorArgumentValues cavs = new ConstructorArgumentValues();
-        cavs.addGenericArgumentValue(new Properties());
-        RootBeanDefinition config = new RootBeanDefinition(MockConfig.class, cavs, null);
+        RootBeanDefinition config = new RootBeanDefinition(ServerConfigStub.class);
         //config.addQualifier(new AutowireCandidateQualifier(Inject.class));
         applicationContext.registerBeanDefinition("config", config);
 
@@ -893,5 +893,249 @@ public class ServerMqNativeRoutingAssertionTest {
         final MqNativeCachedConnectionPool mqNativeCachedConnectionPool = resourceManagerSpy.getConnectionHolder().get(key.get());
         assertEquals(mqNativeCachedConnectionPool.getCachedConnections().getNumIdle(),0);
 
+    }
+
+    @Test
+    public void testPutDirectionOpenOptionsDefault() throws Exception {
+        resourceManagerSpy.getConnectionHolder().clear();
+
+        MQMessage mqMessage = createSimpleMessage();
+        context = makeContext(mqMessage);
+        AssertionStatus status = fixture.checkRequest(context);
+
+        assertEquals(AssertionStatus.NONE, status);
+        ArgumentCaptor<Integer> openOptionsCaptor = ArgumentCaptor.forClass(Integer.class);
+        verify(mqQueueManager, times(1)).accessQueue(eq(REQUEST_QUEUE), openOptionsCaptor.capture());
+        assertEquals(QUEUE_OPEN_OPTIONS_OUTBOUND_PUT, openOptionsCaptor.getValue().intValue());
+    }
+
+    @Test
+    public void testPutDirectionOpenOptionsClusterWideProperty() throws Exception {
+        resourceManagerSpy.getConnectionHolder().clear();
+        ServerConfigStub config = (ServerConfigStub) applicationContext.getBean("config");
+        config.putProperty(MQ_ROUTING_PUT_OPEN_OPTIONS_PROPERTY, "7654321");
+
+        MQMessage mqMessage = createSimpleMessage();
+        context = makeContext(mqMessage);
+        AssertionStatus status = fixture.checkRequest(context);
+
+        assertEquals(AssertionStatus.NONE, status);
+        ArgumentCaptor<Integer> openOptionsCaptor = ArgumentCaptor.forClass(Integer.class);
+        verify(mqQueueManager, times(1)).accessQueue(eq(REQUEST_QUEUE), openOptionsCaptor.capture());
+        assertEquals(7654321, openOptionsCaptor.getValue().intValue());
+    }
+
+    @Test
+    public void testPutDirectionOpenOptionsOverwritten() throws Exception {
+        resourceManagerSpy.getConnectionHolder().clear();
+
+        MQMessage mqMessage = createSimpleMessage();
+        context = makeContext(mqMessage);
+        context.setVariable("customizedOptions", 1234567);
+        assertion.setOpenOptionsUsed(true);
+        assertion.setOpenOptions("${customizedOptions}");
+        AssertionStatus status = fixture.checkRequest(context);
+
+        assertEquals(AssertionStatus.NONE, status);
+        ArgumentCaptor<Integer> openOptionsCaptor = ArgumentCaptor.forClass(Integer.class);
+        verify(mqQueueManager, times(1)).accessQueue(eq(REQUEST_QUEUE), openOptionsCaptor.capture());
+        assertEquals(1234567, openOptionsCaptor.getValue().intValue());
+    }
+
+    @Test
+    public void testGetDirectionOpenOptionsDefault() throws Exception {
+        resourceManagerSpy.getConnectionHolder().clear();
+
+        MQMessage mqMessage = createSimpleMessage();
+        context = makeContext(mqMessage);
+        assertion.setPutToQueue(false);
+        AssertionStatus status = fixture.checkRequest(context);
+
+        assertEquals(AssertionStatus.NONE, status);
+        ArgumentCaptor<Integer> openOptionsCaptor = ArgumentCaptor.forClass(Integer.class);
+        verify(mqQueueManager, times(1)).accessQueue(eq(REQUEST_QUEUE), openOptionsCaptor.capture());
+        assertEquals(QUEUE_OPEN_OPTIONS_OUTBOUND_GET, openOptionsCaptor.getValue().intValue());
+    }
+
+    @Test
+    public void testGetDirectionOpenOptionsClusterWideProperty() throws Exception {
+        resourceManagerSpy.getConnectionHolder().clear();
+        ServerConfigStub config = (ServerConfigStub) applicationContext.getBean("config");
+        config.putProperty(MQ_ROUTING_GET_OPEN_OPTIONS_PROPERTY, "7654321");
+
+        MQMessage mqMessage = createSimpleMessage();
+        context = makeContext(mqMessage);
+        assertion.setPutToQueue(false);
+        AssertionStatus status = fixture.checkRequest(context);
+
+        assertEquals(AssertionStatus.NONE, status);
+        ArgumentCaptor<Integer> openOptionsCaptor = ArgumentCaptor.forClass(Integer.class);
+        verify(mqQueueManager, times(1)).accessQueue(eq(REQUEST_QUEUE), openOptionsCaptor.capture());
+        assertEquals(7654321, openOptionsCaptor.getValue().intValue());
+    }
+
+    @Test
+    public void testGetDirectionOpenOptionsOverwritten() throws Exception {
+        resourceManagerSpy.getConnectionHolder().clear();;
+
+        MQMessage mqMessage = createSimpleMessage();
+        context = makeContext(mqMessage);
+        context.setVariable("customizedOptions", 1234567);
+        assertion.setPutToQueue(false);
+        assertion.setOpenOptionsUsed(true);
+        assertion.setOpenOptions("${customizedOptions}");
+        AssertionStatus status = fixture.checkRequest(context);
+
+        assertEquals(AssertionStatus.NONE, status);
+        ArgumentCaptor<Integer> openOptionsCaptor = ArgumentCaptor.forClass(Integer.class);
+        verify(mqQueueManager, times(1)).accessQueue(eq(REQUEST_QUEUE), openOptionsCaptor.capture());
+        assertEquals(1234567, openOptionsCaptor.getValue().intValue());
+    }
+
+    @Test
+    public void testPutMessageOptionsDefault() throws Exception {
+        resourceManagerSpy.getConnectionHolder().clear();
+
+        MQMessage mqMessage = createSimpleMessage();
+        context = makeContext(mqMessage);
+        AssertionStatus status = fixture.checkRequest(context);
+
+        assertEquals(AssertionStatus.NONE, status);
+        ArgumentCaptor<MQPutMessageOptions> pmoCaptor = ArgumentCaptor.forClass(MQPutMessageOptions.class);
+        verify(requestQueue, times(1)).put(any(MQMessage.class), pmoCaptor.capture());
+        assertEquals(MQPMO_NO_SYNCPOINT, pmoCaptor.getValue().options);
+    }
+
+    @Test
+    public void testPutMessageOptionsClusterWideProperty() throws Exception {
+        resourceManagerSpy.getConnectionHolder().clear();
+        ServerConfigStub config = (ServerConfigStub) applicationContext.getBean("config");
+        config.putProperty(MQ_ROUTING_PUT_MESSAGE_OPTIONS_PROPERTY, "7654321");
+
+        MQMessage mqMessage = createSimpleMessage();
+        context = makeContext(mqMessage);
+        AssertionStatus status = fixture.checkRequest(context);
+
+        assertEquals(AssertionStatus.NONE, status);
+        ArgumentCaptor<MQPutMessageOptions> pmoCaptor = ArgumentCaptor.forClass(MQPutMessageOptions.class);
+        verify(requestQueue, times(1)).put(any(MQMessage.class), pmoCaptor.capture());
+        assertEquals(7654321, pmoCaptor.getValue().options);
+    }
+
+    @Test
+    public void testPutMessageOptionsOverwritten() throws Exception {
+        resourceManagerSpy.getConnectionHolder().clear();
+
+        MQMessage mqMessage = createSimpleMessage();
+        context = makeContext(mqMessage);
+        context.setVariable("customizedOptions", 1234567);
+        assertion.setMessageOptionsUsed(true);
+        assertion.setMessageOptions("${customizedOptions}");
+        AssertionStatus status = fixture.checkRequest(context);
+
+        assertEquals(AssertionStatus.NONE, status);
+        ArgumentCaptor<MQPutMessageOptions> pmoCaptor = ArgumentCaptor.forClass(MQPutMessageOptions.class);
+        verify(requestQueue, times(1)).put(any(MQMessage.class), pmoCaptor.capture());
+        assertEquals(1234567, pmoCaptor.getValue().options);
+    }
+
+    @Test
+    public void testGetMessageOptionsDefault() throws Exception {
+        resourceManagerSpy.getConnectionHolder().clear();
+
+        MQMessage mqMessage = createSimpleMessage();
+        context = makeContext(mqMessage);
+        assertion.setPutToQueue(false);
+        AssertionStatus status = fixture.checkRequest(context);
+
+        assertEquals(AssertionStatus.NONE, status);
+        ArgumentCaptor<MQGetMessageOptions> gmoCaptor = ArgumentCaptor.forClass(MQGetMessageOptions.class);
+        verify(requestQueue, times(1)).get(any(MQMessage.class), gmoCaptor.capture());
+        assertEquals(MQGMO_WAIT | MQGMO_NO_SYNCPOINT, gmoCaptor.getValue().options);
+    }
+
+    @Test
+    public void testGetMessageOptionsClusterWideProperty() throws Exception {
+        resourceManagerSpy.getConnectionHolder().clear();
+        ServerConfigStub config = (ServerConfigStub) applicationContext.getBean("config");
+        config.putProperty(MQ_ROUTING_GET_MESSAGE_OPTIONS_PROPERTY, "7654321");
+
+        MQMessage mqMessage = createSimpleMessage();
+        context = makeContext(mqMessage);
+        assertion.setPutToQueue(false);
+        AssertionStatus status = fixture.checkRequest(context);
+
+        assertEquals(AssertionStatus.NONE, status);
+        ArgumentCaptor<MQGetMessageOptions> gmoCaptor = ArgumentCaptor.forClass(MQGetMessageOptions.class);
+        verify(requestQueue, times(1)).get(any(MQMessage.class), gmoCaptor.capture());
+        assertEquals(7654321, gmoCaptor.getValue().options);
+    }
+
+    @Test
+    public void testGetMessageOptionsOverwritten() throws Exception {
+        resourceManagerSpy.getConnectionHolder().clear();
+
+        MQMessage mqMessage = createSimpleMessage();
+        context = makeContext(mqMessage);
+        context.setVariable("customizedOptions", 1234567);
+        assertion.setPutToQueue(false);
+        assertion.setMessageOptionsUsed(true);
+        assertion.setMessageOptions("${customizedOptions}");
+        AssertionStatus status = fixture.checkRequest(context);
+
+        assertEquals(AssertionStatus.NONE, status);
+        ArgumentCaptor<MQGetMessageOptions> gmoCaptor = ArgumentCaptor.forClass(MQGetMessageOptions.class);
+        verify(requestQueue, times(1)).get(any(MQMessage.class), gmoCaptor.capture());
+        assertEquals(1234567 | MQGMO_NO_SYNCPOINT, gmoCaptor.getValue().options);
+    }
+
+    @Test
+    public void testReplyQueueGetMessageOptionsDefault() throws Exception {
+        resourceManagerSpy.getConnectionHolder().clear();
+
+        MQMessage mqMessage = createSimpleMessage();
+        context = makeContext(mqMessage);
+        AssertionStatus status = fixture.checkRequest(context);
+
+        assertEquals(AssertionStatus.NONE, status);
+        ArgumentCaptor<MQGetMessageOptions> gmoCaptor = ArgumentCaptor.forClass(MQGetMessageOptions.class);
+        verify(replyQueue, times(1)).get(any(MQMessage.class), gmoCaptor.capture());
+        assertEquals(MQGMO_WAIT | MQGMO_NO_SYNCPOINT, gmoCaptor.getValue().options);
+    }
+
+    @Test
+    public void testReplyQueueGetMessageOptionsClusterWideProperty() throws Exception {
+        resourceManagerSpy.getConnectionHolder().clear();
+        ServerConfigStub config = (ServerConfigStub) applicationContext.getBean("config");
+        config.putProperty(MQ_LISTENER_OUTBOUND_REPLY_QUEUE_GET_MESSAGE_OPTIONS_PROPERTY, "7654321");
+
+        MQMessage mqMessage = createSimpleMessage();
+        context = makeContext(mqMessage);
+        AssertionStatus status = fixture.checkRequest(context);
+
+        assertEquals(AssertionStatus.NONE, status);
+        ArgumentCaptor<MQGetMessageOptions> gmoCaptor = ArgumentCaptor.forClass(MQGetMessageOptions.class);
+        verify(replyQueue, times(1)).get(any(MQMessage.class), gmoCaptor.capture());
+        assertEquals(7654321, gmoCaptor.getValue().options);
+    }
+
+    @Test
+    public void testReplyQueueGetMessageOptionsOverwritten() throws Exception {
+        resourceManagerSpy.getConnectionHolder().clear();
+
+        SsgActiveConnectorManager connectorManager = (SsgActiveConnectorManager) applicationContext.getBean("ssgActiveConnectorManager");
+        SsgActiveConnector connector = connectorManager.findByPrimaryKey(assertion.getSsgActiveConnectorId());
+        //noinspection ConstantConditions
+        connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_IS_REPLY_QUEUE_GET_MESSAGE_OPTIONS_USED, Boolean.toString(true));
+        connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_REPLY_QUEUE_GET_MESSAGE_OPTIONS, "1234567");
+
+        MQMessage mqMessage = createSimpleMessage();
+        context = makeContext(mqMessage);
+        AssertionStatus status = fixture.checkRequest(context);
+
+        assertEquals(AssertionStatus.NONE, status);
+        ArgumentCaptor<MQGetMessageOptions> gmoCaptor = ArgumentCaptor.forClass(MQGetMessageOptions.class);
+        verify(replyQueue, times(1)).get(any(MQMessage.class), gmoCaptor.capture());
+        assertEquals(1234567, gmoCaptor.getValue().options);
     }
 }
