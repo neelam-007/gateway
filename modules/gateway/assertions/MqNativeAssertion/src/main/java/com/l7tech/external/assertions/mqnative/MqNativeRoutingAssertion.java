@@ -1,22 +1,14 @@
 package com.l7tech.external.assertions.mqnative;
 
-import com.l7tech.console.util.Registry;
 import com.l7tech.external.assertions.mqnative.server.MqNativeAdminServerSupport;
 import com.l7tech.external.assertions.mqnative.server.MqNativeUtils;
-import com.l7tech.gateway.common.transport.SsgActiveConnector;
-import com.l7tech.gateway.common.transport.TransportAdmin;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
-import com.l7tech.policy.AssertionPath;
-import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.validator.AssertionValidator;
-import com.l7tech.policy.validator.PolicyValidationContext;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.policy.wsp.BeanTypeMapping;
@@ -87,6 +79,11 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
     private MessageTargetableSupport requestTarget = defaultRequestTarget();
     @NotNull
     private MessageTargetableSupport responseTarget = defaultResponseTarget();
+
+    private boolean isOpenOptionsUsed = false;
+    private String openOptions;
+    private boolean isMessageOptionsUsed = false;
+    private String messageOptions; // Either Put Message Options or Get Message Options.
 
     private MqNativeMessagePropertyRuleSet defaultMqNativeMessagePropertyRuleSet() {
         MqNativeMessagePropertyRuleSet mqNativeMessagePropertyRuleSet = new MqNativeMessagePropertyRuleSet();
@@ -228,6 +225,78 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
      */
     public void setPutToQueue(boolean putToQueue) {
         isPutToQueue = putToQueue;
+    }
+
+    /**
+     * Get if the configured Open Options are used.
+     *
+     * @return true if the configured Open Options are used.
+     */
+    public boolean isOpenOptionsUsed(){
+        return isOpenOptionsUsed;
+    }
+
+    /**
+     * Set if the configured Open Options are used.
+     *
+     * @param isOpenOptionsUsed indicates whether or not configured Open Options are used.
+     */
+    public void setOpenOptionsUsed( final boolean isOpenOptionsUsed ){
+        this.isOpenOptionsUsed = isOpenOptionsUsed;
+    }
+
+    /**
+     * Get the configured Open Options.
+     *
+     * @return the configured Open Options.
+     */
+    public String getOpenOptions(){
+        return openOptions;
+    }
+
+    /**
+     * Set the configured Open Options.
+     *
+     * @param openOptions the Open Options.
+     */
+    public void setOpenOptions( final String openOptions ){
+        this.openOptions = openOptions;
+    }
+
+    /**
+     * Get if the Put/Get Message Options are used.
+     *
+     * @return true if the configured Put/Get Message Options are used.
+     */
+    public boolean isMessageOptionsUsed(){
+        return isMessageOptionsUsed;
+    }
+
+    /**
+     * Set if the configured Put/Get Message Options are used.
+     *
+     * @param isMessageOptionsUsed indicates whether or not configured Put/Get Message Options are used.
+     */
+    public void setMessageOptionsUsed( final boolean isMessageOptionsUsed ){
+        this.isMessageOptionsUsed = isMessageOptionsUsed;
+    }
+
+    /**
+     * Get the configured Put/Get Message Options.
+     *
+     * @return the configured Put/Get Message Options.
+     */
+    public String getMessageOptions(){
+        return messageOptions;
+    }
+
+    /**
+     * Set the configured Put/Get Message Options.
+     *
+     * @param messageOptions the Put/Get Message Options.
+     */
+    public void setMessageOptions( final String messageOptions ){
+        this.messageOptions = messageOptions;
     }
 
     /**
@@ -528,6 +597,9 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
         }
         expressions.add(responseTimeout);
         expressions.add(responseSize);
+
+        expressions.add(openOptions);
+        expressions.add(messageOptions);
 
         return expressions( expressions.toArray(new String[expressions.size()]) )
                 .with( requestTarget.getMessageTargetVariablesUsed() )

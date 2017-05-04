@@ -8,6 +8,7 @@ import com.l7tech.util.Functions;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatcher;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -19,8 +20,12 @@ import org.springframework.test.context.junit4.AbstractJUnit4SpringContextTests;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.logging.Level;
 
+import static com.ibm.mq.constants.CMQC.*;
+import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
+import static junit.framework.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.*;
 
 /**
@@ -133,5 +138,39 @@ public class MqNativeListenerThreadTest extends AbstractJUnit4SpringContextTests
 
         mqNativeListenerThread.setOopsSleep(1L);
         mqNativeListenerThread.setPollInterval(1);
+    }
+
+    @Test
+    public void testInboundListenerGetMessageOptionsDefault() throws Exception {
+        MqNativeListener mqNativeListener = mock(MqNativeListener.class);
+        when(mqNativeListener.isStop()).thenReturn(false, true);
+        when(mqNativeListener.doWithMqNativeClient(
+                (Functions.UnaryThrows<Object, MqNativeClient.ClientBag, MQException>) argThat(new CallBackMatcher())))
+                .thenReturn(mqMessage);
+
+        MqNativeListenerThread mqNativeListenerThread = new MqNativeListenerThread(mqNativeListener, "test-thread");
+        mqNativeListenerThread.run();
+
+        ArgumentCaptor<MQGetMessageOptions> gmoCaptor = ArgumentCaptor.forClass(MQGetMessageOptions.class);
+        verify(mqNativeListener, times(1)).receiveMessage(any(MQQueue.class), gmoCaptor.capture());
+        assertEquals(MQGMO_WAIT | MQGMO_SYNCPOINT | MQGMO_FAIL_IF_QUIESCING, gmoCaptor.getValue().options);
+    }
+
+    @Test
+    public void testInboundListenerGetMessageOptionsOverwritten() throws Exception {
+        MqNativeListener mqNativeListener = mock(MqNativeListener.class);
+        when(mqNativeListener.isStop()).thenReturn(false, true);
+        when(mqNativeListener.doWithMqNativeClient(
+                (Functions.UnaryThrows<Object, MqNativeClient.ClientBag, MQException>) argThat(new CallBackMatcher())))
+                .thenReturn(mqMessage);
+        when(mqNativeListener.getConnectorBooleanProperty(eq(PROPERTIES_KEY_MQ_NATIVE_INBOUND_IS_GET_MESSAGE_OPTIONS_USED))).thenReturn(true);
+        when(mqNativeListener.getConnectorIntegerProperty(eq(PROPERTIES_KEY_MQ_NATIVE_INBOUND_GET_MESSAGE_OPTIONS), anyInt())).thenReturn(1234567);
+
+        MqNativeListenerThread mqNativeListenerThread = new MqNativeListenerThread(mqNativeListener, "test-thread");
+        mqNativeListenerThread.run();
+
+        ArgumentCaptor<MQGetMessageOptions> gmoCaptor = ArgumentCaptor.forClass(MQGetMessageOptions.class);
+        verify(mqNativeListener, times(1)).receiveMessage(any(MQQueue.class), gmoCaptor.capture());
+        assertEquals(1234567, gmoCaptor.getValue().options);
     }
 }

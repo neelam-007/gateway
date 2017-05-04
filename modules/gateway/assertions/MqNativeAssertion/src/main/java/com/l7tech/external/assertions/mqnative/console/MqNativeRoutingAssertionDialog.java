@@ -117,6 +117,10 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
     private JCheckBox responseCopyHeaderToPropertyCheckBox;
     private JCheckBox responseCopyPropertyToHeaderCheckBox;
     private JComboBox responseOverrideMqHeaderTypeComboBox;
+    private JCheckBox useOpenOptionsCheckBox;
+    private JTextField openOptionsTextField;
+    private JCheckBox useMessageOptionsCheckBox;
+    private JTextField messageOptionsTextField;
     private TargetVariablePanel targetMessageVariablePanel;
 
     private AbstractButton[] secHdrButtons = {wssIgnoreRadio, wssCleanupRadio, wssRemoveRadio, null };
@@ -248,6 +252,42 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
         responseByteLimitHolderPanel.setLayout(new BorderLayout());
         responseByteLimitHolderPanel.add(responseByteLimitPanel, BorderLayout.CENTER);
 
+        useOpenOptionsCheckBox.addChangeListener( enableDisableListener );
+        openOptionsTextField.getDocument().addDocumentListener(enableDisableListener);
+        inputValidator.addRule(new InputValidator.ComponentValidationRule(openOptionsTextField) {
+            @Override
+            public String getValidationError() {
+                String errMsg = null;
+                if (useOpenOptionsCheckBox.isSelected()) {
+                    String openOptions = openOptionsTextField.getText().trim();
+                    if ( openOptions.isEmpty() ||
+                            (!isValidInteger( openOptions, true, 1, Integer.MAX_VALUE ) &&
+                            getReferencedNames( openOptions ).length == 0) ) {
+                        errMsg = "The value for the Open Options must be a valid positive number or use context variables.";
+                    }
+                }
+                return errMsg;
+            }
+        });
+
+        useMessageOptionsCheckBox.addChangeListener( enableDisableListener );
+        messageOptionsTextField.getDocument().addDocumentListener(enableDisableListener);
+        inputValidator.addRule(new InputValidator.ComponentValidationRule(messageOptionsTextField) {
+            @Override
+            public String getValidationError() {
+                String errMsg = null;
+                if (useMessageOptionsCheckBox.isSelected()) {
+                    String messageOptions = messageOptionsTextField.getText().trim();
+                    if ( messageOptions.isEmpty() ||
+                            (!isValidInteger( messageOptions, true, 1, Integer.MAX_VALUE ) &&
+                            getReferencedNames( messageOptions ).length == 0) ) {
+                        errMsg = "The value for the Message Options must be a valid positive number or use context variables.";
+                    }
+                }
+                return errMsg;
+            }
+        });
+
         inputValidator.attachToButton( getOkButton(), super.createOkAction() );
         getOkButton().setEnabled( !readOnly );
         getCancelButton().addActionListener(new ActionListener() {
@@ -275,6 +315,9 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
             (messageTargetComboBox.isEnabled() &&  messageTargetComboBox.getSelectedItem() != null && ((MessageTargetable)messageTargetComboBox.getSelectedItem()).getTarget() == TargetMessageType.OTHER)
         );
         final boolean valid = responseByteLimitPanel.validateFields() == null;
+
+        openOptionsTextField.setEnabled(useOpenOptionsCheckBox.isSelected());
+        messageOptionsTextField.setEnabled(useMessageOptionsCheckBox.isSelected());
 
         getOkButton().setEnabled(valid);
     }
@@ -438,6 +481,19 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
         assertion.setResponseCopyHeaderToProperty(responseCopyHeaderToPropertyCheckBox.isSelected());
         assertion.setResponseCopyPropertyToHeader(responseCopyPropertyToHeaderCheckBox.isSelected());
 
+        assertion.setOpenOptionsUsed(useOpenOptionsCheckBox.isSelected());
+        if (useOpenOptionsCheckBox.isSelected()){
+            assertion.setOpenOptions(openOptionsTextField.getText().trim());
+        } else {
+            assertion.setOpenOptions(null);
+        }
+
+        assertion.setMessageOptionsUsed(useMessageOptionsCheckBox.isSelected());
+        if (useMessageOptionsCheckBox.isSelected()){
+            assertion.setMessageOptions(messageOptionsTextField.getText().trim());
+        } else {
+            assertion.setMessageOptions(null);
+        }
     }
 
     private void modelToView( final MqNativeRoutingAssertion assertion ) {
@@ -494,6 +550,16 @@ public class MqNativeRoutingAssertionDialog extends AssertionPropertiesOkCancelS
         mqResponseTimeout.setText(assertion.getResponseTimeout()==null ? "":assertion.getResponseTimeout());
 
         responseByteLimitPanel.setValue(assertion.getResponseSize(), getMqNativeAdmin().getDefaultMqMessageMaxBytes());
+
+        useOpenOptionsCheckBox.setSelected(assertion.isOpenOptionsUsed());
+        if (assertion.isOpenOptionsUsed()){
+            openOptionsTextField.setText(assertion.getOpenOptions());
+        }
+
+        useMessageOptionsCheckBox.setSelected(assertion.isMessageOptionsUsed());
+        if (assertion.isMessageOptionsUsed()){
+            messageOptionsTextField.setText(assertion.getMessageOptions());
+        }
 
         enableOrDisableComponents();
     }

@@ -221,9 +221,19 @@ public abstract class MqNativeListener {
                     some(specifiedReplyQueueName) :
                     Option.<String>none();
 
+        ServerConfig config = ServerConfig.getInstance();
+        int defaultValue = config.getIntProperty(MQ_LISTENER_INBOUND_OPEN_OPTIONS_PROPERTY, QUEUE_OPEN_OPTIONS_INBOUND);
+        int openOptions;
+        if (!getConnectorBooleanProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_IS_OPEN_OPTIONS_USED)) {
+            openOptions = defaultValue;
+        } else {
+            openOptions = getConnectorIntegerProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_OPEN_OPTIONS, defaultValue);
+        }
+
         return new MqNativeClient(
                 queueManagerName,
                 queueManagerProperties,
+                openOptions,
                 queueName,
                 replyQueueName,
                 new MqNativeClient.MqNativeConnectionListener() {
@@ -247,6 +257,13 @@ public abstract class MqNativeListener {
         return ssgActiveConnector.getProperty(name);
     }
 
+    protected int getConnectorIntegerProperty( final String name, int dflt ){
+        return ssgActiveConnector.getIntegerProperty(name, dflt);
+    }
+
+    protected boolean getConnectorBooleanProperty( final String name ) {
+        return ssgActiveConnector.getBooleanProperty(name);
+    }
     /**
      * Listens on the inbound MQ queue for a request message.  If a message is present,
      * it is returned immediately to the caller.  Otherwise, it will wait until the

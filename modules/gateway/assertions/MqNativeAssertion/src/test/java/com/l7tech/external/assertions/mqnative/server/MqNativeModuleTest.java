@@ -1,9 +1,6 @@
 package com.l7tech.external.assertions.mqnative.server;
 
-import com.ibm.mq.MQException;
-import com.ibm.mq.MQMessage;
-import com.ibm.mq.MQQueue;
-import com.ibm.mq.MQQueueManager;
+import com.ibm.mq.*;
 import com.ibm.mq.headers.MQDataException;
 import com.ibm.mq.headers.MQHeaderList;
 import com.ibm.mq.headers.MQRFH2;
@@ -40,6 +37,7 @@ import com.l7tech.util.*;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
@@ -48,21 +46,21 @@ import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.context.junit4.AbstractJUnit4SpringContextTests;
 
-import java.beans.PropertyChangeEvent;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.*;
 import java.util.logging.Logger;
 
 import static com.ibm.mq.constants.MQConstants.*;
-import static com.l7tech.external.assertions.mqnative.MqNativeConstants.MQ_CONNECT_ERROR_SLEEP_PROPERTY;
-import static com.l7tech.external.assertions.mqnative.MqNativeConstants.MQ_LISTENER_POLLING_INTERVAL_PROPERTY;
+import static com.l7tech.external.assertions.mqnative.MqNativeConstants.*;
 import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.REPLY_AUTOMATIC;
 import static com.l7tech.external.assertions.mqnative.server.MqNativeClient.ClientBag;
 import static com.l7tech.external.assertions.mqnative.server.MqNativeClient.MqNativeConnectionListener;
 import static com.l7tech.external.assertions.mqnative.server.MqNativeModule.DEFAULT_MESSAGE_MAX_BYTES;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
 import static com.l7tech.util.Functions.NullaryThrows;
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.*;
 import static org.junit.matchers.JUnitMatchers.containsString;
 import static org.mockito.Matchers.any;
@@ -584,6 +582,222 @@ public class MqNativeModuleTest extends AbstractJUnit4SpringContextTests {
         mqMessage.write(output.getBytes());
 
         mqNativeModuleSpy.handleMessageForConnector(ssgActiveConnector, mqNativeClient, mqMessage);
+    }
+
+    @Test
+    public void testInboundReplyQueuePutMessageOptionsDefault_OnTake() throws Exception {
+        handleMessageInitialize();
+
+        when(ssgActiveConnector.getEnumProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_ACKNOWLEDGEMENT_TYPE, null, MqNativeAcknowledgementType.class)).thenReturn(MqNativeAcknowledgementType.AUTOMATIC);
+        when(ssgActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_QUEUE_MANAGER_NAME)).thenReturn(queueManagerName);
+        when(ssgActiveConnector.getEnumProperty(PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, REPLY_AUTOMATIC, MqNativeReplyType.class)).thenReturn(MqNativeReplyType.REPLY_SPECIFIED_QUEUE);
+        when(ssgActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_SPECIFIED_REPLY_QUEUE_NAME)).thenReturn(replyQueueName);
+
+        @SuppressWarnings("unchecked")
+        NullaryThrows<Hashtable, MqNativeConfigException>  queueManagerProperties =
+                (NullaryThrows<Hashtable, MqNativeConfigException>) mock(NullaryThrows.class);
+
+        MqNativeConnectionListener listener = mock(MqNativeConnectionListener.class);
+
+        MqNativeClient mqNativeClient =
+                spy(new MqNativeClient("queueManager", queueManagerProperties, "", Option.<String>none(), listener));
+
+        MQQueueManager queueManager = mock(MQQueueManager.class);
+        when(queueManager.isConnected()).thenReturn(true);
+        when(queueManager.isOpen()).thenReturn(true);
+        when(queueManager.accessQueue(anyString(), anyInt())).thenReturn(mock(MQQueue.class));
+
+        ClientBag clientBag = mock(ClientBag.class);
+        MQQueue replyQueue = mock(MQQueue.class);
+        when(clientBag.getQueueManager()).thenReturn(queueManager, queueManager);
+        when(clientBag.getSpecifiedReplyQueue()).thenReturn(replyQueue);
+
+        @SuppressWarnings("unchecked")
+        Option<ClientBag> clientBagOption = (Option<ClientBag>) mock(Option.class);
+
+        when(clientBagOption.isSome()).thenReturn(true);
+        when(clientBagOption.some()).thenReturn(clientBag, clientBag);
+
+        mqNativeClient.setClientBag(clientBagOption);
+
+        mqNativeModule.sendResponse(mqMessage, new MQMessage(), ssgActiveConnector, mqNativeClient);
+
+        ArgumentCaptor<MQPutMessageOptions> pmoCaptor = ArgumentCaptor.forClass(MQPutMessageOptions.class);
+        verify(replyQueue, times(1)).put(any(MQMessage.class), pmoCaptor.capture());
+        assertEquals(MQPMO_NEW_MSG_ID | MQPMO_NO_SYNCPOINT, pmoCaptor.getValue().options);
+    }
+
+    @Test
+    public void testInboundReplyQueuePutMessageOptionsDefault_OnCompletion() throws Exception {
+        handleMessageInitialize();
+
+        when(ssgActiveConnector.getEnumProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_ACKNOWLEDGEMENT_TYPE, null, MqNativeAcknowledgementType.class)).thenReturn(MqNativeAcknowledgementType.ON_COMPLETION);
+        when(ssgActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_QUEUE_MANAGER_NAME)).thenReturn(queueManagerName);
+        when(ssgActiveConnector.getEnumProperty(PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, REPLY_AUTOMATIC, MqNativeReplyType.class)).thenReturn(MqNativeReplyType.REPLY_SPECIFIED_QUEUE);
+        when(ssgActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_SPECIFIED_REPLY_QUEUE_NAME)).thenReturn(replyQueueName);
+
+        @SuppressWarnings("unchecked")
+        NullaryThrows<Hashtable, MqNativeConfigException>  queueManagerProperties =
+                (NullaryThrows<Hashtable, MqNativeConfigException>) mock(NullaryThrows.class);
+
+        MqNativeConnectionListener listener = mock(MqNativeConnectionListener.class);
+
+        MqNativeClient mqNativeClient =
+                spy(new MqNativeClient("queueManager", queueManagerProperties, "", Option.<String>none(), listener));
+
+        MQQueueManager queueManager = mock(MQQueueManager.class);
+        when(queueManager.isConnected()).thenReturn(true);
+        when(queueManager.isOpen()).thenReturn(true);
+        when(queueManager.accessQueue(anyString(), anyInt())).thenReturn(mock(MQQueue.class));
+
+        ClientBag clientBag = mock(ClientBag.class);
+        MQQueue replyQueue = mock(MQQueue.class);
+        when(clientBag.getQueueManager()).thenReturn(queueManager, queueManager);
+        when(clientBag.getSpecifiedReplyQueue()).thenReturn(replyQueue);
+
+        @SuppressWarnings("unchecked")
+        Option<ClientBag> clientBagOption = (Option<ClientBag>) mock(Option.class);
+
+        when(clientBagOption.isSome()).thenReturn(true);
+        when(clientBagOption.some()).thenReturn(clientBag, clientBag);
+
+        mqNativeClient.setClientBag(clientBagOption);
+
+        mqNativeModule.sendResponse(mqMessage, new MQMessage(), ssgActiveConnector, mqNativeClient);
+
+        ArgumentCaptor<MQPutMessageOptions> pmoCaptor = ArgumentCaptor.forClass(MQPutMessageOptions.class);
+        verify(replyQueue, times(1)).put(any(MQMessage.class), pmoCaptor.capture());
+        assertEquals(MQPMO_NEW_MSG_ID | MQPMO_SYNCPOINT, pmoCaptor.getValue().options);
+    }
+
+    @Test
+    public void testInboundReplyQueuePutMessageOptionsOverwritten() throws Exception {
+        handleMessageInitialize();
+
+        when(ssgActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_QUEUE_MANAGER_NAME)).thenReturn(queueManagerName);
+        when(ssgActiveConnector.getEnumProperty(PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, REPLY_AUTOMATIC, MqNativeReplyType.class)).thenReturn(MqNativeReplyType.REPLY_SPECIFIED_QUEUE);
+        when(ssgActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_SPECIFIED_REPLY_QUEUE_NAME)).thenReturn(replyQueueName);
+        when(ssgActiveConnector.getBooleanProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_IS_REPLY_QUEUE_PUT_MESSAGE_OPTIONS_USED)).thenReturn(true);
+        when(ssgActiveConnector.getIntegerProperty(eq(PROPERTIES_KEY_MQ_NATIVE_INBOUND_REPLY_QUEUE_PUT_MESSAGE_OPTIONS), anyInt())).thenReturn(7654321);
+
+        @SuppressWarnings("unchecked")
+        NullaryThrows<Hashtable, MqNativeConfigException>  queueManagerProperties =
+                (NullaryThrows<Hashtable, MqNativeConfigException>) mock(NullaryThrows.class);
+
+        MqNativeConnectionListener listener = mock(MqNativeConnectionListener.class);
+
+        MqNativeClient mqNativeClient =
+                spy(new MqNativeClient("queueManager", queueManagerProperties, "", Option.<String>none(), listener));
+
+        MQQueueManager queueManager = mock(MQQueueManager.class);
+        when(queueManager.isConnected()).thenReturn(true);
+        when(queueManager.isOpen()).thenReturn(true);
+        when(queueManager.accessQueue(anyString(), anyInt())).thenReturn(mock(MQQueue.class));
+
+        ClientBag clientBag = mock(ClientBag.class);
+        MQQueue replyQueue = mock(MQQueue.class);
+        when(clientBag.getQueueManager()).thenReturn(queueManager, queueManager);
+        when(clientBag.getSpecifiedReplyQueue()).thenReturn(replyQueue);
+
+        @SuppressWarnings("unchecked")
+        Option<ClientBag> clientBagOption = (Option<ClientBag>) mock(Option.class);
+
+        when(clientBagOption.isSome()).thenReturn(true);
+        when(clientBagOption.some()).thenReturn(clientBag, clientBag);
+
+        mqNativeClient.setClientBag(clientBagOption);
+
+        mqNativeModule.sendResponse(mqMessage, new MQMessage(), ssgActiveConnector, mqNativeClient);
+
+        ArgumentCaptor<MQPutMessageOptions> pmoCaptor = ArgumentCaptor.forClass(MQPutMessageOptions.class);
+        verify(replyQueue, times(1)).put(any(MQMessage.class), pmoCaptor.capture());
+        assertEquals(7654321, pmoCaptor.getValue().options);
+    }
+
+    @Test
+    public void testInboundFailureQueuePutMessageOptionsDefault() throws Exception {
+        handleMessageInitialize();
+
+        when(ssgActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_QUEUE_MANAGER_NAME)).thenReturn(queueManagerName);
+        when(ssgActiveConnector.getBooleanProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_IS_FAILED_QUEUE_USED)).thenReturn(true);
+        when(ssgActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_FAILED_QUEUE_NAME)).thenReturn("failureQueueName");
+
+        @SuppressWarnings("unchecked")
+        NullaryThrows<Hashtable, MqNativeConfigException>  queueManagerProperties =
+                (NullaryThrows<Hashtable, MqNativeConfigException>) mock(NullaryThrows.class);
+
+        MqNativeConnectionListener listener = mock(MqNativeConnectionListener.class);
+
+        MqNativeClient mqNativeClient =
+                spy(new MqNativeClient("queueManager", queueManagerProperties, "", Option.<String>none(), listener));
+
+        MQQueueManager queueManager = mock(MQQueueManager.class);
+        MQQueue failureQueue = mock(MQQueue.class);
+        when(queueManager.isConnected()).thenReturn(true);
+        when(queueManager.isOpen()).thenReturn(true);
+        when(queueManager.accessQueue(eq("failureQueueName"), anyInt())).thenReturn(failureQueue);
+
+        ClientBag clientBag = mock(ClientBag.class);
+        when(clientBag.getQueueManager()).thenReturn(queueManager, queueManager);
+
+        @SuppressWarnings("unchecked")
+        Option<ClientBag> clientBagOption = (Option<ClientBag>) mock(Option.class);
+
+        when(clientBagOption.isSome()).thenReturn(true);
+        when(clientBagOption.some()).thenReturn(clientBag, clientBag);
+
+        mqNativeClient.setClientBag(clientBagOption);
+
+        boolean result = mqNativeModule.postMessageToFailureQueue(mqMessage, ssgActiveConnector, mqNativeClient);
+        assertTrue(result);
+
+        ArgumentCaptor<MQPutMessageOptions> pmoCaptor = ArgumentCaptor.forClass(MQPutMessageOptions.class);
+        verify(failureQueue, times(1)).put(any(MQMessage.class), pmoCaptor.capture());
+        assertEquals(MQPMO_SYNCPOINT, pmoCaptor.getValue().options);
+    }
+
+    @Test
+    public void testInboundFailureQueuePutMessageOptionsOverwritten() throws Exception {
+        handleMessageInitialize();
+
+        when(ssgActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_QUEUE_MANAGER_NAME)).thenReturn(queueManagerName);
+        when(ssgActiveConnector.getBooleanProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_IS_FAILED_QUEUE_USED)).thenReturn(true);
+        when(ssgActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_FAILED_QUEUE_NAME)).thenReturn("failureQueueName");
+        when(ssgActiveConnector.getBooleanProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_IS_FAILED_QUEUE_PUT_MESSAGE_OPTIONS_USED)).thenReturn(true);
+        when(ssgActiveConnector.getIntegerProperty(eq(PROPERTIES_KEY_MQ_NATIVE_INBOUND_FAILED_QUEUE_PUT_MESSAGE_OPTIONS), anyInt())).thenReturn(7654321);
+
+        @SuppressWarnings("unchecked")
+        NullaryThrows<Hashtable, MqNativeConfigException>  queueManagerProperties =
+                (NullaryThrows<Hashtable, MqNativeConfigException>) mock(NullaryThrows.class);
+
+        MqNativeConnectionListener listener = mock(MqNativeConnectionListener.class);
+
+        MqNativeClient mqNativeClient =
+                spy(new MqNativeClient("queueManager", queueManagerProperties, "", Option.<String>none(), listener));
+
+        MQQueueManager queueManager = mock(MQQueueManager.class);
+        MQQueue failureQueue = mock(MQQueue.class);
+        when(queueManager.isConnected()).thenReturn(true);
+        when(queueManager.isOpen()).thenReturn(true);
+        when(queueManager.accessQueue(eq("failureQueueName"), anyInt())).thenReturn(failureQueue);
+
+        ClientBag clientBag = mock(ClientBag.class);
+        when(clientBag.getQueueManager()).thenReturn(queueManager, queueManager);
+
+        @SuppressWarnings("unchecked")
+        Option<ClientBag> clientBagOption = (Option<ClientBag>) mock(Option.class);
+
+        when(clientBagOption.isSome()).thenReturn(true);
+        when(clientBagOption.some()).thenReturn(clientBag, clientBag);
+
+        mqNativeClient.setClientBag(clientBagOption);
+
+        boolean result = mqNativeModule.postMessageToFailureQueue(mqMessage, ssgActiveConnector, mqNativeClient);
+        assertTrue(result);
+
+        ArgumentCaptor<MQPutMessageOptions> pmoCaptor = ArgumentCaptor.forClass(MQPutMessageOptions.class);
+        verify(failureQueue, times(1)).put(any(MQMessage.class), pmoCaptor.capture());
+        assertEquals(7654321, pmoCaptor.getValue().options);
     }
 
     private void addHeader(PolicyEnforcementContext context, TargetMessageType targetMessageType, String name, String value) throws IOException, PolicyAssertionException {

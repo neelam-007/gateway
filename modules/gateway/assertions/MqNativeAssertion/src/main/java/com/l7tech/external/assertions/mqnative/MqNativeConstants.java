@@ -69,6 +69,42 @@ public interface MqNativeConstants {
     String MQ_CONNECTION_POOL_MAX_WAIT_UI_PROPERTY = "mq.connectionPool.maxWait";
     String MQ_CONNECTION_POOL_MAX_WAIT_DESC = "The maximum amount of time (in milliseconds) to wait for a MQ Native connection to become available. When non-positive, wait indefinitely";
 
+    String MQ_LISTENER_INBOUND_OPEN_OPTIONS_PROPERTY = "mqListenerInboundOpenOptions";
+    String MQ_LISTENER_INBOUND_OPEN_OPTIONS_UI_PROPERTY = "mq.listenerInboundOpenOptions";
+    String MQ_LISTENER_INBOUND_OPEN_OPTIONS_DESC = "The default inbound MQ Native connection open options (Integer)";
+
+    String MQ_LISTENER_INBOUND_GET_MESSAGE_OPTIONS_PROPERTY = "mqListenerInboundGetMessageOptions";
+    String MQ_LISTENER_INBOUND_GET_MESSAGE_OPTIONS_UI_PROPERTY = "mq.listenerInboundGetMessageOptions";
+    String MQ_LISTENER_INBOUND_GET_MESSAGE_OPTIONS_DESC = "The default inbound MQ Native connection get message options (Integer)";
+
+    String MQ_LISTENER_INBOUND_REPLY_QUEUE_PUT_MESSAGE_OPTIONS_PROPERTY = "mqListenerInboundReplyQueuePutMessageOptions";
+    String MQ_LISTENER_INBOUND_REPLY_QUEUE_PUT_MESSAGE_OPTIONS_UI_PROPERTY = "mq.listenerInboundReplyQueuePutMessageOptions";
+    String MQ_LISTENER_INBOUND_REPLY_QUEUE_PUT_MESSAGE_OPTIONS_DESC = "The default inbound MQ Native connection reply queue put message options (Integer)";
+
+    String MQ_LISTENER_INBOUND_FAILED_QUEUE_PUT_MESSAGE_OPTIONS_PROPERTY = "mqListenerInboundFailureQueuePutMessageOptions";
+    String MQ_LISTENER_INBOUND_FAILED_QUEUE_PUT_MESSAGE_OPTIONS_UI_PROPERTY = "mq.listenerInboundFailureQueuePutMessageOptions";
+    String MQ_LISTENER_INBOUND_FAILED_QUEUE_PUT_MESSAGE_OPTIONS_DESC = "The default inbound MQ Native connection failure queue put message options (Integer)";
+
+    String MQ_LISTENER_OUTBOUND_REPLY_QUEUE_GET_MESSAGE_OPTIONS_PROPERTY = "mqListenerOutboundReplyQueueGetMessageOptions";
+    String MQ_LISTENER_OUTBOUND_REPLY_QUEUE_GET_MESSAGE_OPTIONS_UI_PROPERTY = "mq.listenerOutboundReplyQueueGetMessageOptions";
+    String MQ_LISTENER_OUTBOUND_REPLY_QUEUE_GET_MESSAGE_OPTIONS_DESC = "The default outbound MQ Native connection reply queue get message options (Integer)";
+
+    String MQ_ROUTING_PUT_OPEN_OPTIONS_PROPERTY = "mqRoutingPutOpenOptions";
+    String MQ_ROUTING_PUT_OPEN_OPTIONS_UI_PROPERTY = "mq.routingPutOpenOptions";
+    String MQ_ROUTING_PUT_OPEN_OPTIONS_DESC = "The default outbound MQ Native connection open options for Put direction (Integer)";
+
+    String MQ_ROUTING_PUT_MESSAGE_OPTIONS_PROPERTY = "mqRoutingPutMessageOptions";
+    String MQ_ROUTING_PUT_MESSAGE_OPTIONS_UI_PROPERTY = "mq.routingPutMessageOptions";
+    String MQ_ROUTING_PUT_MESSAGE_OPTIONS_DESC = "The default outbound MQ Native connection put message options (Integer)";
+
+    String MQ_ROUTING_GET_OPEN_OPTIONS_PROPERTY = "mqRoutingGetOpenOptions";
+    String MQ_ROUTING_GET_OPEN_OPTIONS_UI_PROPERTY = "mq.routingGetOpenOptions";
+    String MQ_ROUTING_GET_OPEN_OPTIONS_DESC = "The default outbound MQ Native connection open options for Get direction (Integer)";
+
+    String MQ_ROUTING_GET_MESSAGE_OPTIONS_PROPERTY = "mqRoutingGetMessageOptions";
+    String MQ_ROUTING_GET_MESSAGE_OPTIONS_UI_PROPERTY = "mq.routingGetMessageOptions";
+    String MQ_ROUTING_GET_MESSAGE_OPTIONS_DESC = "The default outbound MQ Native connection get message options.";
+
     // configurable MQ message descriptor fields
     String MQ_PROPERTY_APPDATA = "applicationIdData";
     String MQ_PROPERTY_APPORIGIN = "applicationOriginData";

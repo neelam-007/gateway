@@ -95,10 +95,20 @@ public class SsgActiveConnector extends ZoneableNamedEntityImp {
     public static final String PROPERTIES_KEY_MQ_NATIVE_INBOUND_CONTENT_TYPE_FROM_PROPERTY = "MqNativeInboundContentTypeFromProperty";
     public static final String PROPERTIES_KEY_MQ_NATIVE_INBOUND_IS_FAILED_QUEUE_USED = "MqNativeInboundIsFailedQueueUsed";
     public static final String PROPERTIES_KEY_MQ_NATIVE_INBOUND_FAILED_QUEUE_NAME = "MqNativeInboundFailedQueueName";
+    public static final String PROPERTIES_KEY_MQ_NATIVE_INBOUND_IS_OPEN_OPTIONS_USED = "MqNativeInboundIsOpenOptionsUsed";
+    public static final String PROPERTIES_KEY_MQ_NATIVE_INBOUND_OPEN_OPTIONS = "MqNativeInboundOpenOptions";
+    public static final String PROPERTIES_KEY_MQ_NATIVE_INBOUND_IS_GET_MESSAGE_OPTIONS_USED = "MqNativeInboundIsGetMessageOptionsUsed";
+    public static final String PROPERTIES_KEY_MQ_NATIVE_INBOUND_GET_MESSAGE_OPTIONS = "MqNativeInboundGetMessageOptions";
+    public static final String PROPERTIES_KEY_MQ_NATIVE_INBOUND_IS_REPLY_QUEUE_PUT_MESSAGE_OPTIONS_USED = "MqNativeInboundIsReplyQueuePutMessageOptionsUsed";
+    public static final String PROPERTIES_KEY_MQ_NATIVE_INBOUND_REPLY_QUEUE_PUT_MESSAGE_OPTIONS = "MqNativeInboundReplyQueuePutMessageOptions";
+    public static final String PROPERTIES_KEY_MQ_NATIVE_INBOUND_IS_FAILED_QUEUE_PUT_MESSAGE_OPTIONS_USED = "MqNativeInboundIsFailedQueuePutMessageOptionsUsed";
+    public static final String PROPERTIES_KEY_MQ_NATIVE_INBOUND_FAILED_QUEUE_PUT_MESSAGE_OPTIONS = "MqNativeInboundFailedQueuePutMessageOptions";
     // MQ Native - outbound properties
     public static final String PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_IS_TEMPLATE_QUEUE = "MqNativeOutboundIsTemplateQueue";
     public static final String PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_TEMPORARY_QUEUE_NAME_PATTERN = "MqNativeOutboundTemporaryQueueNamePattern";
     public static final String PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_MESSAGE_FORMAT = "MqNativeOutboundMessageFormat";
+    public static final String PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_IS_REPLY_QUEUE_GET_MESSAGE_OPTIONS_USED = "MqNativeOutboundIsReplyQueueGetMessageOptionsUsed";
+    public static final String PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_REPLY_QUEUE_GET_MESSAGE_OPTIONS = "MqNativeOutboundReplyQueueGetMessageOptions";
 
     private boolean enabled;
     private String type;

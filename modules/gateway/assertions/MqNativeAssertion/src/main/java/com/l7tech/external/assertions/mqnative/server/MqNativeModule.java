@@ -50,8 +50,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.ibm.mq.constants.MQConstants.*;
-import static com.l7tech.external.assertions.mqnative.MqNativeConstants.MQ_LISTENER_MAX_CONCURRENT_CONNECTIONS_PROPERTY;
-import static com.l7tech.external.assertions.mqnative.MqNativeConstants.QUEUE_OPEN_OPTIONS_INBOUND_FAILURE_QUEUE;
+import static com.l7tech.external.assertions.mqnative.MqNativeConstants.*;
 import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.REPLY_AUTOMATIC;
 import static com.l7tech.external.assertions.mqnative.server.MqNativeUtils.*;
 import static com.l7tech.external.assertions.mqnative.server.MqNativeUtils.buildMqNativeKnob;
@@ -573,8 +572,20 @@ public class MqNativeModule extends ActiveTransportModule implements Application
         final boolean allowReconnect = !transactional; // allow reconnect for reply if not transactional
         final MqNativeReplyType replyType = connector.getEnumProperty(PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, REPLY_AUTOMATIC, MqNativeReplyType.class);
         final MQPutMessageOptions replyOptions = new MQPutMessageOptions();
-        replyOptions.options = MQPMO_NEW_MSG_ID |
-                ( transactional ? MQPMO_SYNCPOINT : MQPMO_NO_SYNCPOINT );
+
+        ServerConfig config = ServerConfig.getInstance();
+        int defaultValue = config.getIntProperty(
+                MQ_LISTENER_INBOUND_REPLY_QUEUE_PUT_MESSAGE_OPTIONS_PROPERTY,
+                MQPMO_NEW_MSG_ID | ( transactional ? MQPMO_SYNCPOINT : MQPMO_NO_SYNCPOINT ));
+        if (!connector.getBooleanProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_IS_REPLY_QUEUE_PUT_MESSAGE_OPTIONS_USED)) {
+            replyOptions.options = defaultValue;
+        } else {
+            replyOptions.options = connector.getIntegerProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_REPLY_QUEUE_PUT_MESSAGE_OPTIONS, defaultValue);
+        }
+        if (logger.isLoggable(Level.FINER)) {
+            logger.log(Level.FINER, "Using reply queue Put Message Options {0}", replyOptions.options);
+        }
+
         if (isOpenForSetAllContext()) {
             replyOptions.options |= MQPMO_SET_ALL_CONTEXT;
         }
@@ -662,7 +673,7 @@ public class MqNativeModule extends ActiveTransportModule implements Application
         }
     }
 
-    private boolean postMessageToFailureQueue( final MQMessage requestMessage,
+    boolean postMessageToFailureQueue( final MQMessage requestMessage,
                                                final SsgActiveConnector connector,
                                                final MqNativeClient mqNativeClient ) {
         boolean posted = false;
@@ -676,7 +687,20 @@ public class MqNativeModule extends ActiveTransportModule implements Application
                         try {
                             failedQueue = clientBag.getQueueManager().accessQueue( failedQueueName, QUEUE_OPEN_OPTIONS_INBOUND_FAILURE_QUEUE );
                             final MQPutMessageOptions pmo = new MQPutMessageOptions();
-                            pmo.options = MQPMO_SYNCPOINT;
+
+                            ServerConfig config = ServerConfig.getInstance();
+                            int defaultValue = config.getIntProperty(
+                                    MQ_LISTENER_INBOUND_FAILED_QUEUE_PUT_MESSAGE_OPTIONS_PROPERTY,
+                                    MQPMO_SYNCPOINT);
+                            if (!connector.getBooleanProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_IS_FAILED_QUEUE_PUT_MESSAGE_OPTIONS_USED)) {
+                                pmo.options = defaultValue;
+                            } else {
+                                pmo.options = connector.getIntegerProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_FAILED_QUEUE_PUT_MESSAGE_OPTIONS, defaultValue);
+                            }
+                            if (logger.isLoggable(Level.FINER)) {
+                                logger.log(Level.FINER, "Using failure queue Put Message Options {0}", pmo.options);
+                            }
+
                             failedQueue.put(requestMessage, pmo);
                             logger.log( Level.FINE, "Message sent to failure queue");
                         } finally {

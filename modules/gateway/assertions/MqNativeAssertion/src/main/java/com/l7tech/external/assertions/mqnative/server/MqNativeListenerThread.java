@@ -4,6 +4,7 @@ import com.ibm.mq.MQException;
 import com.ibm.mq.MQGetMessageOptions;
 import com.ibm.mq.MQMessage;
 import com.l7tech.external.assertions.mqnative.server.MqNativeClient.ClientBag;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions.UnaryThrows;
 
@@ -16,7 +17,9 @@ import static com.ibm.mq.constants.MQConstants.MQGMO_SYNCPOINT;
 import static com.ibm.mq.constants.MQConstants.MQGMO_WAIT;
 import static com.ibm.mq.constants.MQConstants.MQGMO_FAIL_IF_QUIESCING;
 import static java.text.MessageFormat.format;
-
+import static com.l7tech.external.assertions.mqnative.MqNativeConstants.MQ_LISTENER_INBOUND_GET_MESSAGE_OPTIONS_PROPERTY;
+import static com.l7tech.gateway.common.transport.SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_INBOUND_IS_GET_MESSAGE_OPTIONS_USED;
+import static com.l7tech.gateway.common.transport.SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_INBOUND_GET_MESSAGE_OPTIONS;
 /**
  * Listener thread responsible for receiving messages from the MQ endpoint.
  */
@@ -58,10 +61,19 @@ class MqNativeListenerThread extends Thread {
                         public MQMessage call( final ClientBag bag ) throws MQException {
                             // TODO make these options configurable through the assertion (new feature)
                             final MQGetMessageOptions getOptions = new MQGetMessageOptions();
-                            getOptions.options = MQGMO_WAIT | MQGMO_SYNCPOINT;
 
-                            // fail if the queue manager is in the quiescing state
-                            getOptions.options |= MQGMO_FAIL_IF_QUIESCING;
+                            ServerConfig config = ServerConfig.getInstance();
+                            int defaultValue = config.getIntProperty(
+                                    MQ_LISTENER_INBOUND_GET_MESSAGE_OPTIONS_PROPERTY,
+                                    MQGMO_WAIT | MQGMO_SYNCPOINT | MQGMO_FAIL_IF_QUIESCING); // fail if the queue manager is in the quiescing state
+                            if (!mqNativeListener.getConnectorBooleanProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_IS_GET_MESSAGE_OPTIONS_USED)) {
+                                getOptions.options = defaultValue;
+                            } else {
+                                getOptions.options = mqNativeListener.getConnectorIntegerProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_GET_MESSAGE_OPTIONS, defaultValue);
+                            }
+                            if (mqNativeListener.isLoggable(Level.FINER)) {
+                                mqNativeListener.log(Level.FINER, "MQ Native listener Get Message Options {0}", getOptions.options);
+                            }
 
                             getOptions.waitInterval = pollInterval.get();
                             MQMessage result = mqNativeListener.receiveMessage( bag.getTargetQueue(), getOptions );

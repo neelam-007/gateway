@@ -18,6 +18,7 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.gateway.common.transport.TransportAdmin;
 import com.l7tech.gui.MaxLengthDocument;
+import com.l7tech.gui.NumberField;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.RunOnChangeListener;
@@ -142,6 +143,17 @@ public class MqNativePropertiesDialog extends JDialog {
     private JTextField maxActiveTextField;
     private JTextField maxIdleTextField;
     private JTextField maxWaitTextField;
+    private JCheckBox useInboundOpenOptionsCheckBox;
+    private JTextField inboundOpenOptionsTextField;
+    private JCheckBox useInboundGetMessageOptionsCheckBox;
+    private JTextField inboundGetMessageOptionsTextField;
+    private JCheckBox useInboundReplyQueuePutMessageOptionsCheckBox;
+    private JTextField inboundReplyQueuePutMessageOptionsTextField;
+    private JCheckBox useInboundFailureQueuePutMessageOptionsCheckBox;
+    private JTextField inboundFailureQueuePutMessageOptionsTextField;
+    private JCheckBox useOutboundReplyQueueGetMessageOptionsCheckBox;
+    private JTextField outboundReplyQueueGetMessageOptionsTextField;
+
     private ByteLimitPanel byteLimitPanel;
 
     private SsgActiveConnector mqNativeActiveConnector;
@@ -331,6 +343,26 @@ public class MqNativePropertiesDialog extends JDialog {
         Utilities.enableGrayOnDisabled(modelQueueNameTextField);
         credentialsAreRequiredToCheckBox.addActionListener( enableDisableListener );
 
+        useInboundOpenOptionsCheckBox.addActionListener(enableDisableListener);
+        inboundOpenOptionsTextField.setDocument(new NumberField(10));
+        inboundOpenOptionsTextField.getDocument().addDocumentListener(enableDisableListener);
+
+        useInboundGetMessageOptionsCheckBox.addActionListener(enableDisableListener);
+        inboundGetMessageOptionsTextField.setDocument(new NumberField(10));
+        inboundGetMessageOptionsTextField.getDocument().addDocumentListener(enableDisableListener);
+
+        useInboundReplyQueuePutMessageOptionsCheckBox.addActionListener(enableDisableListener);
+        inboundReplyQueuePutMessageOptionsTextField.setDocument(new NumberField(10));
+        inboundReplyQueuePutMessageOptionsTextField.getDocument().addDocumentListener(enableDisableListener);
+
+        useInboundFailureQueuePutMessageOptionsCheckBox.addActionListener(enableDisableListener);
+        inboundFailureQueuePutMessageOptionsTextField.setDocument(new NumberField(10));
+        inboundFailureQueuePutMessageOptionsTextField.getDocument().addDocumentListener(enableDisableListener);
+
+        useOutboundReplyQueueGetMessageOptionsCheckBox.addActionListener(enableDisableListener);
+        outboundReplyQueueGetMessageOptionsTextField.setDocument(new NumberField(10));
+        outboundReplyQueueGetMessageOptionsTextField.getDocument().addDocumentListener(enableDisableListener);
+
         authUserNameTextBox.setDocument(new MaxLengthDocument(255));
         authUserNameTextBox.getDocument().addDocumentListener( enableDisableListener );
         Utilities.enableGrayOnDisabled(authUserNameTextBox);
@@ -486,6 +518,62 @@ public class MqNativePropertiesDialog extends JDialog {
 
         InputValidator inputValidator = new InputValidator(this, title);
         inputValidator.constrainTextFieldToNumberRange("Port number", portNumberTextField, 1L, 65535L );
+
+        inputValidator.addRule(new InputValidator.ComponentValidationRule(inboundOpenOptionsTextField) {
+            @Override
+            public String getValidationError() {
+                if (inboundRadioButton.isSelected() && useInboundOpenOptionsCheckBox.isSelected()) {
+                    return inputValidator.buildTextFieldNumberRangeValidationRule(
+                            "Open Options", inboundOpenOptionsTextField, 1L, Integer.MAX_VALUE, false).getValidationError();
+                }
+                return null;
+            }
+        });
+
+        inputValidator.addRule(new InputValidator.ComponentValidationRule(inboundGetMessageOptionsTextField) {
+            @Override
+            public String getValidationError() {
+                if (inboundRadioButton.isSelected() && useInboundGetMessageOptionsCheckBox.isSelected()) {
+                    return inputValidator.buildTextFieldNumberRangeValidationRule(
+                            "Get Message Options", inboundGetMessageOptionsTextField, 1L, Integer.MAX_VALUE, false).getValidationError();
+                }
+                return null;
+            }
+        });
+
+        inputValidator.addRule(new InputValidator.ComponentValidationRule(inboundReplyQueuePutMessageOptionsTextField) {
+            @Override
+            public String getValidationError() {
+                if (inboundRadioButton.isSelected() && !inboundReplyNoneRadioButton.isSelected() && useInboundReplyQueuePutMessageOptionsCheckBox.isSelected()) {
+                    return inputValidator.buildTextFieldNumberRangeValidationRule(
+                            "Reply Queue Put Message Options", inboundReplyQueuePutMessageOptionsTextField, 1L, Integer.MAX_VALUE, false).getValidationError();
+                }
+                return null;
+            }
+        });
+
+        inputValidator.addRule(new InputValidator.ComponentValidationRule(inboundFailureQueuePutMessageOptionsTextField) {
+            @Override
+            public String getValidationError() {
+                if (inboundRadioButton.isSelected() && useQueueForFailedCheckBox.isSelected() && useInboundFailureQueuePutMessageOptionsCheckBox.isSelected()) {
+                    return inputValidator.buildTextFieldNumberRangeValidationRule(
+                            "Failure Queue Put Message Options", inboundFailureQueuePutMessageOptionsTextField, 1L, Integer.MAX_VALUE, false).getValidationError();
+                }
+                return null;
+            }
+        });
+
+        inputValidator.addRule(new InputValidator.ComponentValidationRule(outboundReplyQueueGetMessageOptionsTextField) {
+            @Override
+            public String getValidationError() {
+                if (outboundRadioButton.isSelected() && !outboundReplyNoneRadioButton.isSelected() && useOutboundReplyQueueGetMessageOptionsCheckBox.isSelected()) {
+                    return inputValidator.buildTextFieldNumberRangeValidationRule(
+                            "Reply Queue Get Message Options", outboundReplyQueueGetMessageOptionsTextField, 1L, Integer.MAX_VALUE, false).getValidationError();
+                }
+                return null;
+            }
+        });
+
         inputValidator.attachToButton(saveButton, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -676,6 +764,27 @@ public class MqNativePropertiesDialog extends JDialog {
 
             // inbound options
             if (isInbound) {
+                boolean isOpenOptionsUsed = mqNativeActiveConnector.getBooleanProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_IS_OPEN_OPTIONS_USED);
+                useInboundOpenOptionsCheckBox.setSelected(isOpenOptionsUsed);
+                inboundOpenOptionsTextField.setEnabled(isOpenOptionsUsed);
+                if (isOpenOptionsUsed) {
+                    inboundOpenOptionsTextField.setText(mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_OPEN_OPTIONS));
+                }
+
+                boolean isGetMessageOptionsUsed = mqNativeActiveConnector.getBooleanProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_IS_GET_MESSAGE_OPTIONS_USED);
+                useInboundGetMessageOptionsCheckBox.setSelected(isGetMessageOptionsUsed);
+                inboundGetMessageOptionsTextField.setEnabled(isGetMessageOptionsUsed);
+                if (isGetMessageOptionsUsed) {
+                    inboundGetMessageOptionsTextField.setText(mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_GET_MESSAGE_OPTIONS));
+                }
+
+                boolean isReplyQueuePutMessageOptionsUsed = mqNativeActiveConnector.getBooleanProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_IS_REPLY_QUEUE_PUT_MESSAGE_OPTIONS_USED);
+                useInboundReplyQueuePutMessageOptionsCheckBox.setSelected(isReplyQueuePutMessageOptionsUsed);
+                inboundReplyQueuePutMessageOptionsTextField.setEnabled(isReplyQueuePutMessageOptionsUsed);
+                if (isReplyQueuePutMessageOptionsUsed) {
+                    inboundReplyQueuePutMessageOptionsTextField.setText(mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_REPLY_QUEUE_PUT_MESSAGE_OPTIONS));
+                }
+
                 final MqNativeAcknowledgementType acknowledgementType = mqNativeActiveConnector.getEnumProperty(
                         PROPERTIES_KEY_MQ_NATIVE_INBOUND_ACKNOWLEDGEMENT_TYPE, AUTOMATIC, MqNativeAcknowledgementType.class );
                 acknowledgementModeComboBox.setSelectedItem(acknowledgementType);
@@ -684,6 +793,15 @@ public class MqNativePropertiesDialog extends JDialog {
                     String failQueueName = mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_FAILED_QUEUE_NAME);
                     if (!StringUtils.isEmpty(failQueueName)) {
                         failureQueueNameTextField.setText(failQueueName);
+                    }
+
+                    if ( mqNativeActiveConnector.getBooleanProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_IS_FAILED_QUEUE_USED) ) {
+                        boolean isFailureQueuePutMessageOptionsUsed = mqNativeActiveConnector.getBooleanProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_IS_FAILED_QUEUE_PUT_MESSAGE_OPTIONS_USED);
+                        useInboundFailureQueuePutMessageOptionsCheckBox.setSelected(isFailureQueuePutMessageOptionsUsed);
+                        inboundFailureQueuePutMessageOptionsTextField.setEnabled(isFailureQueuePutMessageOptionsUsed);
+                        if (isFailureQueuePutMessageOptionsUsed) {
+                            inboundFailureQueuePutMessageOptionsTextField.setText(mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_FAILED_QUEUE_PUT_MESSAGE_OPTIONS));
+                        }
                     }
                 }
 
@@ -812,6 +930,13 @@ public class MqNativePropertiesDialog extends JDialog {
                         break;
                 }
 
+                boolean isReplyQueueGetMessageOptionsUsed = mqNativeActiveConnector.getBooleanProperty(PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_IS_REPLY_QUEUE_GET_MESSAGE_OPTIONS_USED);
+                useOutboundReplyQueueGetMessageOptionsCheckBox.setSelected(isReplyQueueGetMessageOptionsUsed);
+                outboundReplyQueueGetMessageOptionsTextField.setEnabled(isReplyQueueGetMessageOptionsUsed);
+                if (isReplyQueueGetMessageOptionsUsed) {
+                    outboundReplyQueueGetMessageOptionsTextField.setText(mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_REPLY_QUEUE_GET_MESSAGE_OPTIONS));
+                }
+                
                 loadConnectionPoolProperty(maxActiveTextField, mqNativeActiveConnector, MQ_CONNECTION_POOL_MAX_ACTIVE_PROPERTY, MQ_CONNECTION_POOL_MAX_ACTIVE_UI_PROPERTY);
                 loadConnectionPoolProperty(maxIdleTextField, mqNativeActiveConnector, MQ_CONNECTION_POOL_MAX_IDLE_PROPERTY, MQ_CONNECTION_POOL_MAX_IDLE_UI_PROPERTY);
                 loadConnectionPoolProperty(maxWaitTextField, mqNativeActiveConnector, MQ_CONNECTION_POOL_MAX_WAIT_PROPERTY, MQ_CONNECTION_POOL_MAX_WAIT_UI_PROPERTY);
@@ -976,6 +1101,21 @@ public class MqNativePropertiesDialog extends JDialog {
         securePasswordComboBox.setEnabled(isCredentialsRequired);
         managePasswordsButton.setEnabled(isCredentialsRequired);
 
+        useInboundOpenOptionsCheckBox.setEnabled(inboundRadioButton.isSelected());
+        inboundOpenOptionsTextField.setEnabled(inboundRadioButton.isSelected() && useInboundOpenOptionsCheckBox.isSelected());
+
+        useInboundGetMessageOptionsCheckBox.setEnabled(inboundRadioButton.isSelected());
+        inboundGetMessageOptionsTextField.setEnabled(inboundRadioButton.isSelected() && useInboundGetMessageOptionsCheckBox.isSelected());
+
+        useInboundReplyQueuePutMessageOptionsCheckBox.setEnabled(!inboundReplyNoneRadioButton.isSelected());
+        inboundReplyQueuePutMessageOptionsTextField.setEnabled(useInboundReplyQueuePutMessageOptionsCheckBox.isSelected() && !inboundReplyNoneRadioButton.isSelected());
+
+        useInboundFailureQueuePutMessageOptionsCheckBox.setEnabled(useQueueForFailedCheckBox.isSelected());
+        inboundFailureQueuePutMessageOptionsTextField.setEnabled(useQueueForFailedCheckBox.isSelected() && useInboundFailureQueuePutMessageOptionsCheckBox.isSelected());
+
+        useOutboundReplyQueueGetMessageOptionsCheckBox.setEnabled(!outboundReplyNoneRadioButton.isSelected());
+        outboundReplyQueueGetMessageOptionsTextField.setEnabled(!outboundReplyNoneRadioButton.isSelected() && useOutboundReplyQueueGetMessageOptionsCheckBox.isSelected());
+
         final boolean valid = validateForm();
         saveButton.setEnabled(valid);// && (flags.canCreateSome() || flags.canUpdateSome()));
         testButton.setEnabled(valid && !viewIsTemplate());
@@ -996,6 +1136,8 @@ public class MqNativePropertiesDialog extends JDialog {
         useQueueForFailedCheckBox.setEnabled(checkBoxEnabled);
         failureQueueLabel.setEnabled(enabled);
         failureQueueNameTextField.setEnabled(enabled);
+        useInboundFailureQueuePutMessageOptionsCheckBox.setEnabled(enabled);
+        inboundFailureQueuePutMessageOptionsTextField.setEnabled(enabled && useInboundFailureQueuePutMessageOptionsCheckBox.isSelected());
     }
 
     private void applyFormSecurity() {
@@ -1119,17 +1261,54 @@ public class MqNativePropertiesDialog extends JDialog {
         }
 
         connector.setProperty( PROPERTIES_KEY_IS_INBOUND, Boolean.toString(inboundRadioButton.isSelected()));
+
+        // Reset all open, get, and put message options.
+        connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_IS_OPEN_OPTIONS_USED, Boolean.toString(false));
+        connector.removeProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_OPEN_OPTIONS);
+        connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_IS_GET_MESSAGE_OPTIONS_USED, Boolean.toString(false));
+        connector.removeProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_GET_MESSAGE_OPTIONS);
+        connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_IS_REPLY_QUEUE_PUT_MESSAGE_OPTIONS_USED, Boolean.toString(false));
+        connector.removeProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_REPLY_QUEUE_PUT_MESSAGE_OPTIONS);
+        connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_IS_FAILED_QUEUE_PUT_MESSAGE_OPTIONS_USED, Boolean.toString(false));
+        connector.removeProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_FAILED_QUEUE_PUT_MESSAGE_OPTIONS);
+        connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_IS_REPLY_QUEUE_GET_MESSAGE_OPTIONS_USED, Boolean.toString(false));
+        connector.removeProperty(PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_REPLY_QUEUE_GET_MESSAGE_OPTIONS);
+
         if (inboundRadioButton.isSelected()) {
+            boolean isOpenOptionsUsed = useInboundOpenOptionsCheckBox.isSelected();
+            connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_IS_OPEN_OPTIONS_USED, Boolean.toString(isOpenOptionsUsed));
+            if (isOpenOptionsUsed) {
+                connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_OPEN_OPTIONS, inboundOpenOptionsTextField.getText().trim());
+            } else {
+                connector.removeProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_OPEN_OPTIONS);
+            }
+
+            boolean isGetMessageOptionsUsed = useInboundGetMessageOptionsCheckBox.isSelected();
+            connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_IS_GET_MESSAGE_OPTIONS_USED, Boolean.toString(isGetMessageOptionsUsed));
+            if (isGetMessageOptionsUsed) {
+                connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_GET_MESSAGE_OPTIONS, inboundGetMessageOptionsTextField.getText().trim());
+            } else {
+                connector.removeProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_GET_MESSAGE_OPTIONS);
+            }
+
             final MqNativeAcknowledgementType acknowledgementType = (MqNativeAcknowledgementType) acknowledgementModeComboBox.getSelectedItem();
             connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_ACKNOWLEDGEMENT_TYPE, acknowledgementType.toString());
 
             boolean isFailedQueueUsed = useQueueForFailedCheckBox.isSelected();
             connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_IS_FAILED_QUEUE_USED, Boolean.toString(isFailedQueueUsed));
-            String failedQueueName = failureQueueNameTextField.getText();
+            String failedQueueName = failureQueueNameTextField.getText().trim();
             if (!StringUtils.isEmpty(failedQueueName)) {
                 connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_FAILED_QUEUE_NAME, failedQueueName);
             } else {
                 connector.removeProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_FAILED_QUEUE_NAME);
+            }
+
+            boolean isFailedQueuePutMessageOptionsUsed = isFailedQueueUsed && useInboundFailureQueuePutMessageOptionsCheckBox.isSelected();
+            connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_IS_FAILED_QUEUE_PUT_MESSAGE_OPTIONS_USED, Boolean.toString(isFailedQueuePutMessageOptionsUsed));
+            if (isFailedQueuePutMessageOptionsUsed) {
+                connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_FAILED_QUEUE_PUT_MESSAGE_OPTIONS, inboundFailureQueuePutMessageOptionsTextField.getText().trim());
+            } else {
+                connector.removeProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_FAILED_QUEUE_PUT_MESSAGE_OPTIONS);
             }
 
             connector.removeProperty(PROPERTIES_KEY_MQ_NATIVE_SPECIFIED_REPLY_QUEUE_NAME);
@@ -1140,6 +1319,14 @@ public class MqNativePropertiesDialog extends JDialog {
             else if (inboundReplySpecifiedQueueRadioButton.isSelected()){
                 connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, REPLY_SPECIFIED_QUEUE.toString());
                 connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_SPECIFIED_REPLY_QUEUE_NAME, inboundReplySpecifiedQueueField.getText());
+            }
+
+            boolean isReplyQueuePutMessageOptionsUsed = !inboundReplyNoneRadioButton.isSelected() && useInboundReplyQueuePutMessageOptionsCheckBox.isSelected();
+            connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_IS_REPLY_QUEUE_PUT_MESSAGE_OPTIONS_USED, Boolean.toString(isReplyQueuePutMessageOptionsUsed));
+            if (isReplyQueuePutMessageOptionsUsed) {
+                connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_REPLY_QUEUE_PUT_MESSAGE_OPTIONS, inboundReplyQueuePutMessageOptionsTextField.getText().trim());
+            } else {
+                connector.removeProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_REPLY_QUEUE_PUT_MESSAGE_OPTIONS);
             }
 
             connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_IS_COPY_CORRELATION_ID_FROM_REQUEST, Boolean.toString(inboundCorrelationIdRadioButton.isSelected()));
@@ -1233,6 +1420,14 @@ public class MqNativePropertiesDialog extends JDialog {
                 connector.removeProperty(MQ_CONNECTION_POOL_MAX_WAIT_PROPERTY);
             } else {
                 connector.setProperty(MQ_CONNECTION_POOL_MAX_WAIT_PROPERTY, maxWaitTextField.getText());
+            }
+
+            boolean isReplyQueueGutMessageOptionsUsed = !outboundReplyNoneRadioButton.isSelected() && useOutboundReplyQueueGetMessageOptionsCheckBox.isSelected();
+            connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_IS_REPLY_QUEUE_GET_MESSAGE_OPTIONS_USED, Boolean.toString(isReplyQueueGutMessageOptionsUsed));
+            if (isReplyQueueGutMessageOptionsUsed) {
+                connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_REPLY_QUEUE_GET_MESSAGE_OPTIONS, outboundReplyQueueGetMessageOptionsTextField.getText().trim());
+            } else {
+                connector.removeProperty(PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_REPLY_QUEUE_GET_MESSAGE_OPTIONS);
             }
         }
     }

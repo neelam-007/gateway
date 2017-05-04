@@ -54,8 +54,7 @@ import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.REPLY_AU
 import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.REPLY_SPECIFIED_QUEUE;
 import static com.l7tech.external.assertions.mqnative.server.MqNativeUtils.*;
 import static com.l7tech.gateway.common.audit.AssertionMessages.*;
-import static com.l7tech.gateway.common.transport.SsgActiveConnector.ACTIVE_CONNECTOR_TYPE_MQ_NATIVE;
-import static com.l7tech.gateway.common.transport.SsgActiveConnector.PROPERTIES_KEY_IS_INBOUND;
+import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
 import static com.l7tech.message.Message.getMaxBytes;
 import static com.l7tech.objectmodel.EntityUtil.name;
 import static com.l7tech.server.ServerConfigParams.PARAM_IO_MQ_MESSAGE_MAX_BYTES;
@@ -327,7 +326,7 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
                 // route via write to queue
                 if (assertion.isPutToQueue()) {
                     // create the outbound queue
-                    targetQueue = queueManager.accessQueue( cfg.getQueueName(), getOutboundPutMessageOption() );
+                    targetQueue = queueManager.accessQueue( cfg.getQueueName(), getOpenOptions() );
 
                     // create replyTo or temporary queue
                     if (context.isReplyExpected()) {
@@ -336,7 +335,7 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
 
                     // write to queue
                     final MQPutMessageOptions pmo = new MQPutMessageOptions();
-                    pmo.options = MQPMO_NO_SYNCPOINT; // make message available immediately
+                    pmo.options = getMessageOptions();
                     if ( cfg.isCopyCorrelationId() && cfg.getReplyType() == REPLY_SPECIFIED_QUEUE ) {
                         if ( logger.isLoggable( Level.FINE ))
                             logger.fine("New correlationId will be generated");
@@ -359,10 +358,10 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
                     // else route via read from queue
                 } else {
                     final MQGetMessageOptions gmo = new MQGetMessageOptions();
-                    configureGetMessageOptions(gmo);
+                    gmo.options = getMessageOptions();
                     gmo.waitInterval = readTimeout;
 
-                    targetQueue = queueManager.accessQueue(cfg.getQueueName(), QUEUE_OPEN_OPTIONS_OUTBOUND_GET);
+                    targetQueue = queueManager.accessQueue(cfg.getQueueName(), getOpenOptions() );
                     mqResponseMessage = readMessageFromQueue(targetQueue, gmo);
                     if ( mqResponseMessage == null ) {
                         logAndAudit(MQ_ROUTING_NO_RESPONSE, String.valueOf(readTimeout));
@@ -475,7 +474,7 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
             final byte[] selector = getSelector( outboundRequest, cfg );
 
             final MQGetMessageOptions gmo = new MQGetMessageOptions();
-            configureGetMessageOptions(gmo);
+            gmo.options = getReplyQueueGetMessageOptions();
             gmo.waitInterval = timeout;
             gmo.matchOptions = MQMO_MATCH_MSG_ID | MQMO_MATCH_CORREL_ID;
             MQMessage mqResponse = new MQMessage();
@@ -558,8 +557,132 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
             return timeout;
         }
 
-        private void configureGetMessageOptions(MQGetMessageOptions gmo) {
-            gmo.options = MQGMO_WAIT | MQGMO_NO_SYNCPOINT;
+        /**
+         * Gets the Open Options for PUT or GET.
+         *
+         * @return the Open Options.
+         */
+        int getOpenOptions() {
+            int openOptions;
+
+            if (assertion.isPutToQueue()) {
+                int defaultValue = config.getIntProperty(MQ_ROUTING_PUT_OPEN_OPTIONS_PROPERTY, getOutboundPutMessageOption());
+                if (!assertion.isOpenOptionsUsed()) {
+                    openOptions = defaultValue;
+                } else {
+                    openOptions = getPropertyWithDefault(
+                            assertion.getOpenOptions(),
+                            1,
+                            "Open Options (PUT direction)",
+                            defaultValue,
+                            new UnaryThrows<Integer, String, NumberFormatException>() {
+                                @Override
+                                public Integer call(final String text) throws NumberFormatException {
+                                    return Integer.parseInt(text);
+                                }
+                            }, MQ_ROUTING_CONFIGURATION_ERROR);
+                }
+            } else {
+                int defaultValue = config.getIntProperty(MQ_ROUTING_GET_OPEN_OPTIONS_PROPERTY, QUEUE_OPEN_OPTIONS_OUTBOUND_GET);
+                if (!assertion.isOpenOptionsUsed()) {
+                    openOptions = defaultValue;
+                } else {
+                    openOptions = getPropertyWithDefault(
+                            assertion.getOpenOptions(),
+                            1,
+                            "Open Options (GET direction)",
+                            defaultValue,
+                            new UnaryThrows<Integer, String, NumberFormatException>() {
+                                @Override
+                                public Integer call(final String text) throws NumberFormatException {
+                                    return Integer.parseInt(text);
+                                }
+                            }, MQ_ROUTING_CONFIGURATION_ERROR);
+                }
+            }
+
+            if (logger.isLoggable(Level.FINER)) {
+                logger.log(Level.FINER, "Using Open Options {0}", openOptions);
+            }
+
+            return openOptions;
+        }
+
+        /**
+         * Gets the Message Options for PUT or GET.
+         *
+         * @return the Message Options.
+         */
+        int getMessageOptions() {
+            int messageOptions;
+
+            if (assertion.isPutToQueue()) {
+                int defaultValue = config.getIntProperty(MQ_ROUTING_PUT_MESSAGE_OPTIONS_PROPERTY, MQPMO_NO_SYNCPOINT); // make message available immediately
+                if (!assertion.isMessageOptionsUsed()) {
+                    messageOptions = defaultValue;
+                } else {
+                    messageOptions = getPropertyWithDefault(
+                            assertion.getMessageOptions(),
+                            1,
+                            "Put Message Options",
+                            defaultValue,
+                            new UnaryThrows<Integer, String, NumberFormatException>() {
+                                @Override
+                                public Integer call(final String text) throws NumberFormatException {
+                                    return Integer.parseInt(text);
+                                }
+                            }, MQ_ROUTING_CONFIGURATION_ERROR);
+                }
+            } else {
+                int defaultValue = config.getIntProperty(MQ_ROUTING_GET_MESSAGE_OPTIONS_PROPERTY, configureGetMessageOptions());
+                if (!assertion.isMessageOptionsUsed()) {
+                    messageOptions = defaultValue;
+                } else {
+                    messageOptions = getPropertyWithDefault(
+                            assertion.getMessageOptions(),
+                            1,
+                            "Get Message Options",
+                            defaultValue,
+                            new UnaryThrows<Integer, String, NumberFormatException>() {
+                                @Override
+                                public Integer call(final String text) throws NumberFormatException {
+                                    return Integer.parseInt(text);
+                                }
+                            }, MQ_ROUTING_CONFIGURATION_ERROR);
+                }
+            }
+
+            if (logger.isLoggable(Level.FINER)) {
+                logger.log(Level.FINER, "Using Message Options {0}", messageOptions);
+            }
+
+            return messageOptions;
+        }
+
+        /**
+         * Gets the Reply Queue Get Message Options.
+         *
+         * @return the Get Message Options.
+         */
+        int getReplyQueueGetMessageOptions() {
+            int getMessageOptions;
+
+            if (!cfg.isReplyQueueGetMessageOptionsUsed()) {
+                getMessageOptions = config.getIntProperty(MQ_LISTENER_OUTBOUND_REPLY_QUEUE_GET_MESSAGE_OPTIONS_PROPERTY, configureGetMessageOptions());
+            } else {
+                getMessageOptions = cfg.getReplyQueueGetMessageOptions();
+            }
+
+            if (logger.isLoggable(Level.FINER)) {
+                logger.log(Level.FINER, "Using Reply Queue Get Message Options {0}", getMessageOptions);
+            }
+
+            return getMessageOptions;
+        }
+
+        private int configureGetMessageOptions() {
+            // return default Get Message Options for GET direction.
+            return MQGMO_WAIT | MQGMO_NO_SYNCPOINT;
         }
 
         private <T extends Number> T getPropertyWithDefault( String stringValue,

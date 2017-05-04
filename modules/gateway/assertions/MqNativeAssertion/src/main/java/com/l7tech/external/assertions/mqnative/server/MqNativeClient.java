@@ -19,6 +19,8 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.Closeable;
 import java.util.Hashtable;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * MQ native client for the Gateway to access a MQ server.
@@ -33,20 +35,34 @@ class MqNativeClient implements Closeable {
         void notifyConnectionError( String message );
     }
 
+    private static final Logger logger = Logger.getLogger(MqNativeClient.class.getName());
+
     final String queueManagerName;
     final NullaryThrows<Hashtable, MqNativeConfigException> queueManagerProperties;
     final String queueName;
     final Option<String> replyQueueName;
     Option<ClientBag> clientBag = none();
     private final MqNativeConnectionListener connectionListener;
+    private final int openOptions;
+
+    MqNativeClient( @NotNull final String queueManagerName,
+                    @NotNull final NullaryThrows<Hashtable, MqNativeConfigException> queueManagerProperties,
+                    @NotNull final String queueName,
+                    @NotNull final Option<String> replyQueueName,
+                    @NotNull final MqNativeConnectionListener listener) {
+        // Use default open options
+        this(queueManagerName, queueManagerProperties, QUEUE_OPEN_OPTIONS_INBOUND, queueName, replyQueueName, listener);
+    }
 
     public MqNativeClient( @NotNull final String queueManagerName,
                            @NotNull final NullaryThrows<Hashtable, MqNativeConfigException> queueManagerProperties,
+                           final int openOptions,
                            @NotNull final String queueName,
                            @NotNull final Option<String> replyQueueName,
                            @NotNull final MqNativeConnectionListener listener) {
         this.queueManagerName = queueManagerName;
         this.queueManagerProperties = queueManagerProperties;
+        this.openOptions = openOptions;
         this.queueName = queueName;
         this.replyQueueName = replyQueueName;
         this.connectionListener = listener;
@@ -73,7 +89,11 @@ class MqNativeClient implements Closeable {
             throws MQException, MqNativeConfigException {
 
         MQQueueManager queueManager = new MQQueueManager( queueManagerName, queueManagerProperties);
-        MQQueue targetQueue = queueManager.accessQueue( queueName, QUEUE_OPEN_OPTIONS_INBOUND );
+        if (logger.isLoggable(Level.FINER)) {
+            logger.log(Level.FINER, "Using Open Options {0}", openOptions);
+        }
+
+        MQQueue targetQueue = queueManager.accessQueue( queueName, openOptions );
         MQQueue specifiedReplyQueue = replyQueueName.isSome() ?
                 queueManager.accessQueue( replyQueueName.some(), getIntboundReplyMessageOption() ) :
                 null;

@@ -51,6 +51,8 @@ class MqNativeEndpointConfig {
     private final int connectionPoolMaxActive;
     private final long connectionPoolMaxWait;
     private final int connectionPoolMaxIdle;
+    private final boolean isReplyQueueGetMessageOptionsUsed;
+    private final int replyQueueGetMessageOptions;
 
     MqNativeEndpointConfig( final SsgActiveConnector originalConnector,
                             final Option<String> password,
@@ -73,6 +75,9 @@ class MqNativeEndpointConfig {
         this.connectionPoolMaxActive = retrieveMqConnectionPoolProperty(connector, config, MQ_CONNECTION_POOL_MAX_ACTIVE_PROPERTY, DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_ACTIVE);
         this.connectionPoolMaxWait = retrieveMqConnectionPoolProperty(connector, config, MQ_CONNECTION_POOL_MAX_WAIT_PROPERTY, DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_WAIT);
         this.connectionPoolMaxIdle = retrieveMqConnectionPoolProperty(connector, config, MQ_CONNECTION_POOL_MAX_IDLE_PROPERTY, DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_IDLE);
+
+        this.isReplyQueueGetMessageOptionsUsed = connector.getBooleanProperty( PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_IS_REPLY_QUEUE_GET_MESSAGE_OPTIONS_USED );
+        this.replyQueueGetMessageOptions = connector.getIntegerProperty( PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_REPLY_QUEUE_GET_MESSAGE_OPTIONS, 0);
     }
 
     boolean isDynamic() {
@@ -298,6 +303,14 @@ class MqNativeEndpointConfig {
      */
     int getConnectionPoolMaxIdle() {
         return connectionPoolMaxIdle;
+    }
+
+    boolean isReplyQueueGetMessageOptionsUsed() {
+        return isReplyQueueGetMessageOptionsUsed;
+    }
+
+    int getReplyQueueGetMessageOptions() {
+        return replyQueueGetMessageOptions;
     }
 
 }
