@@ -4,7 +4,6 @@ import com.l7tech.external.assertions.ldapwrite.*;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.identity.IdentityProviderFactory;
@@ -15,7 +14,6 @@ import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.*;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.context.ApplicationContext;
-import org.json.*;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -40,8 +38,6 @@ import static javax.naming.directory.DirContext.*;
 public class ServerLdapWriteAssertion extends AbstractServerAssertion<LdapWriteAssertion> {
 
     private static final String BINARY_OPTION = ";binary";
-    private static final String ID_PROVIDER_KEY = "idprovider";
-    private static final String WRITE_BASE_KEY = "writebase";
 
     private enum AttributeModifyType {
         NONE, ADD, DELETE, REPLACE
@@ -50,14 +46,12 @@ public class ServerLdapWriteAssertion extends AbstractServerAssertion<LdapWriteA
     private static final Logger logger = Logger.getLogger(ServerLdapWriteAssertion.class.getName());
     private final IdentityProviderFactory identityProviderFactory;
     final String[] variablesUsed;
-    private final Config config;
 
     public ServerLdapWriteAssertion(final LdapWriteAssertion assertion,
                                     final ApplicationContext applicationContext) throws PolicyAssertionException {
         super(assertion);
         variablesUsed = assertion.getVariablesUsed();
         identityProviderFactory = applicationContext.getBean("identityProviderFactory", IdentityProviderFactory.class);
-        config = applicationContext.getBean("serverConfig", Config.class);
     }
 
     @Override
@@ -68,33 +62,30 @@ public class ServerLdapWriteAssertion extends AbstractServerAssertion<LdapWriteA
 
         try {
 
-            // Check if DN is part of WriteBase
-            final String writeBase = getWriteBase(assertion.getLdapProviderId());
-            if (StringUtils.isEmpty(writeBase)) {
+            final Map<String, Object> varMap = policyEnforcementContext.getVariableMap(variablesUsed, getAudit());
+            final LdapIdentityProvider identityProvider = getLdapIdentityProvider();
+
+            final String writeBase;
+            // Only proceed with this assertion if the LDAP Identity Provider writable.
+            if (identityProvider.getConfig().isWritable()){
+
+                writeBase = identityProvider.getConfig().getWriteBase();
+
+                if (StringUtils.isEmpty(writeBase)) {
+                    throw new LdapException("The LDAP Provider selected does not have permission to write to the LDAP Identity Provider.");
+                }
+            } else {
                 throw new LdapException("The LDAP Provider selected does not have permission to write to the LDAP Identity Provider.");
             }
-
-            final Map<String, Object> varMap = policyEnforcementContext.getVariableMap(variablesUsed, getAudit());
-
-            final LdapIdentityProvider identityProvider = getLdapIdentityProvider();
 
             dirContext = identityProvider.getBrowseContext();
 
             updateLdapServer(varMap, dirContext, writeBase);
 
-        } catch (FindException | NamingException | LdapException | JSONException e) {
+        } catch (FindException | NamingException | LdapException e) {
 
-            final StringBuilder errorMsg = new StringBuilder();
-            if (e instanceof JSONException) {
-                errorMsg.append("Error parsing cluster-wide property:").
-                        append(LdapWriteConfig.LDAP_IDENTITY_PROVIDER_LIST_WITH_WRITE_ACCESS).
-                        append(". Reason:").
-                        append(e.toString());
-            } else {
-                errorMsg.append(e.toString());
-            }
             policyEnforcementContext.setVariable(assertion.getVariablePrefix() + LdapWriteConfig.VARIABLE_OUTPUT_SUFFIX_ERROR_MSG,
-                    errorMsg.toString());
+                    e.toString());
             getAudit().logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
                     "Failed to perform LDAP operation:" + ExceptionUtils.getMessage(e));
 
@@ -318,7 +309,9 @@ public class ServerLdapWriteAssertion extends AbstractServerAssertion<LdapWriteA
                 bExpectingValue = true;
 
                 // look ahead to see if there is a value to delete
-                if (((i + 1) < attributeList.size()) && (attributeList.get(i + 1).getKey().equals("-"))) {
+                // If the next line is a dash or if there are no other lines, just delete.
+                if (((i + 1) < attributeList.size()) && (attributeList.get(i + 1).getKey().equals("-")) ||
+                        ((i + 1) == attributeList.size())) {
 
                     // no value specified, so just delete the attribute.
                     modificationList.add(new LdifModificationItem(REMOVE_ATTRIBUTE, new LdifAttribute(attributeName, ""), false));
@@ -458,44 +451,6 @@ public class ServerLdapWriteAssertion extends AbstractServerAssertion<LdapWriteA
         }
 
         return modificationItems;
-    }
-
-
-    // This function will return the WriteBase of the LDAP Identity Provider.
-    // If the LDAP Identity Provider was not configured in the cluster-wide property to permit write, then
-    // this function will return null.
-    // Input: jsonPayload
-    // The jsonPayload consists of one or more ldapProvider record(s).  The first record attribute is the string
-    // repsentation of a id/Goid of the LDAP Identity Provider.  The second record attribute is the write base -
-    // the top level DN/root from which the assertion has permission to MODIFY.
-    //    [{
-    //        "idprovider":"a5a3d5aba3ea0236f52677478cdcafac",
-    //        "writebase":"ou=employee, dc=company, dc=com"
-    //    },
-    //    {
-    //        "idprovider":"a3a3d5cbc3ea0211f52444478cccaaac",
-    //        "writebase":"ou=role, dc=company, dc=com"
-    //    }]
-    private String getWriteBase(final Goid goid) throws JSONException {
-
-        final String ldapIDProviderListWithWriteBaseJson = config.getProperty(LdapWriteConfig.CLUSTER_PROP_LDAP_IDENTITY_PROVIDER_LIST_WITH_WRITE_ACCESS);
-
-        if (StringUtils.isEmpty(ldapIDProviderListWithWriteBaseJson)) {
-            return null;
-        }
-
-        final JSONArray jsonArrayLdapProviders = new JSONArray(ldapIDProviderListWithWriteBaseJson);
-
-        int index = 0;
-        while (index < jsonArrayLdapProviders.length()) {
-
-            final JSONObject jsonObject = (JSONObject) jsonArrayLdapProviders.get(index);
-            if (goid.toString().compareToIgnoreCase(jsonObject.get(ID_PROVIDER_KEY).toString()) == 0) {
-                return jsonObject.get(WRITE_BASE_KEY).toString();
-            }
-            index++;
-        }
-        return null;
     }
 
 

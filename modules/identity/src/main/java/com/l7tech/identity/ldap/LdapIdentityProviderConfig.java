@@ -59,7 +59,15 @@ public class LdapIdentityProviderConfig extends LdapUrlBasedIdentityProviderConf
     @Override
     @Transient
     public boolean isWritable() {
-        return false;
+        if (getProperty(WRITEABLE)==null){
+            return false;
+        } else {
+            return (boolean)getProperty(WRITEABLE);
+        }
+    }
+
+    public void setWritable(boolean writable) {
+        setProperty(WRITEABLE, writable);
     }
 
     /**
@@ -75,6 +83,21 @@ public class LdapIdentityProviderConfig extends LdapUrlBasedIdentityProviderConf
      */
     public void setSearchBase(String searchBase) {
         setProperty(SEARCH_BASE, searchBase);
+    }
+
+    /**
+     * the write base for users and groups
+     */
+    @Transient
+    public String getWriteBase() {
+        return (String)getProperty(WRITE_BASE);
+    }
+
+    /**
+     * the write base for users and groups
+     */
+    public void setWriteBase(String writeBase) {
+        setProperty(WRITE_BASE, writeBase);
     }
 
     /**
@@ -499,6 +522,8 @@ public class LdapIdentityProviderConfig extends LdapUrlBasedIdentityProviderConf
     }
 
     public static final String SEARCH_BASE = "ldapsearchbase";
+    public static final String WRITE_BASE = "ldapwritebase";
+    public static final String WRITEABLE = "writable";
     private static final String GROUP_MAPPINGS = "grpmappings";
     private static final String USER_MAPPINGS = "usrmappings";
     private static final String BIND_DN = "ldapBindDN";

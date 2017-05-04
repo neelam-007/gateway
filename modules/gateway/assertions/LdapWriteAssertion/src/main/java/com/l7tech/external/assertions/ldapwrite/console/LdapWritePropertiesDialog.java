@@ -83,10 +83,11 @@ public class LdapWritePropertiesDialog extends AssertionPropertiesOkCancelSuppor
     @Override
     public void setData(final LdapWriteAssertion assertion) {
 
+        ldapConnectorCb.setSelectedIndex(-1);
         final Goid id = assertion.getLdapProviderId();
 
-        // Test to see if the ldapProviderId exists in the gateway.
         try {
+            // Test to see if the ldapProviderId exists in the gateway. Throw exception if not found.
             Registry.getDefault().getIdentityAdmin().findIdentityProviderConfigByID(id);
 
             final IdentityProviderCbItem identityProviderCBitem = new IdentityProviderCbItem();
@@ -156,8 +157,8 @@ public class LdapWritePropertiesDialog extends AssertionPropertiesOkCancelSuppor
 
         super.initComponents();
 
-        final Object[] ldapProviders = populateLdapProviders();
-        DefaultComboBoxModel defaultComboBoxModel = new DefaultComboBoxModel(ldapProviders);
+        final Object[] writableLdapProviders = getWritableLdapProviders();
+        DefaultComboBoxModel defaultComboBoxModel = new DefaultComboBoxModel(writableLdapProviders);
         ldapConnectorCb.setModel(defaultComboBoxModel);
 
         populateOperation();
@@ -280,7 +281,7 @@ public class LdapWritePropertiesDialog extends AssertionPropertiesOkCancelSuppor
     }
 
 
-    private Object[] populateLdapProviders() {
+    private Object[] getWritableLdapProviders() {
 
         final IdentityAdmin identityAdmin = Registry.getDefault().getIdentityAdmin();
         identityProviderCBItems.clear();
@@ -293,7 +294,7 @@ public class LdapWritePropertiesDialog extends AssertionPropertiesOkCancelSuppor
             }
             for (EntityHeader header : identityProviderConfigs) {
                 final IdentityProviderConfig cfg = identityAdmin.findIdentityProviderConfigByID(header.getGoid());
-                if (IdentityProviderType.fromVal(cfg.getTypeVal()) == IdentityProviderType.LDAP) {
+                if (cfg.isWritable() && (IdentityProviderType.fromVal(cfg.getTypeVal()) == IdentityProviderType.LDAP)) {
                     IdentityProviderCbItem item = new IdentityProviderCbItem();
                     item.id = header.getGoid();
                     item.name = cfg.getName();

@@ -10,6 +10,7 @@ import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.ExceptionUtils;
+import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
 import java.awt.*;
@@ -51,6 +52,8 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel<L
     private SecurityZoneWidget zoneControl;
     private JTextField reconnectTimeoutTextField;
     private JCheckBox useDefaultReconnectCheckbox;
+    private JCheckBox allowUpdatesCheckBox;
+    private JTextField ldapWriteBaseTextField;
 
     private LdapUrlListPanel ldapUrlListPanel;
 
@@ -87,6 +90,13 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel<L
 
         ldapSearchBaseTextField.addKeyListener(keyListener);
         PasswordGuiUtils.configureOptionalSecurePasswordField(ldapBindPasswordField, showPasswordCheckBox, plaintextPasswordWarningLabel);
+
+        ldapWriteBaseTextField.setEnabled(false);
+        ldapWriteBaseTextField.addKeyListener(keyListener);
+
+        allowUpdatesCheckBox.addActionListener(e -> {
+            updateControlButtonState();
+        });
 
         reconnectTimeoutTextField.addKeyListener(keyListener);
         useDefaultReconnectCheckbox.addActionListener(e -> {
@@ -205,13 +215,19 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel<L
                 //getLdapHostTextField().getText().length() > 0 &&
                 providerTypesCombo.getSelectedItem() instanceof LdapIdentityProviderConfig &&
                 !ldapUrlListPanel.isUrlListEmpty() &&
-                ldapSearchBaseTextField.getText().length() > 0) {
+                ldapSearchBaseTextField.getText().length() > 0 &&
+                (!allowUpdatesCheckBox.isSelected() || (allowUpdatesCheckBox.isSelected() && !(ldapWriteBaseTextField.getText().trim().isEmpty())))) {
             // can advance to next panel only when the above 4 fields are not empty
             advanceAllowed = true;
             finishAllowed = true;
         } else {
             advanceAllowed = false;
             finishAllowed = false;
+        }
+        if (allowUpdatesCheckBox.isSelected()){
+            ldapWriteBaseTextField.setEnabled(true);
+        } else {
+            ldapWriteBaseTextField.setEnabled(false);
         }
 
         // notify the wizard to update the state of the control buttons
@@ -243,6 +259,8 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel<L
             ldapBindPasswordField.setText(iProviderConfig.getBindPasswd());
             ldapBindDNTextField.setText(iProviderConfig.getBindDN());
             ldapSearchBaseTextField.setText(iProviderConfig.getSearchBase());
+            allowUpdatesCheckBox.setSelected(iProviderConfig.isWritable());
+            ldapWriteBaseTextField.setText(iProviderConfig.getWriteBase());
             adminEnabledCheckbox.setSelected(iProviderConfig.isAdminEnabled());
             final boolean clientAuthEnabled = iProviderConfig.isClientAuthEnabled();
             ldapUrlListPanel.setClientAuthEnabled(clientAuthEnabled);
@@ -319,6 +337,13 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel<L
         ldapSettings.setLdapUrl(newlist);
         ldapSettings.setName(providerNameTextField.getText());
         ldapSettings.setSearchBase(ldapSearchBaseTextField.getText());
+        ldapSettings.setWritable(allowUpdatesCheckBox.isSelected());
+        if (allowUpdatesCheckBox.isSelected()) {
+            ldapSettings.setWriteBase(ldapWriteBaseTextField.getText().trim());
+        } else {
+            ldapSettings.setWriteBase(StringUtils.EMPTY);
+        }
+
         ldapSettings.setBindDN(ldapBindDNTextField.getText());
         ldapSettings.setBindPasswd(String.valueOf(ldapBindPasswordField.getPassword()));
         ldapSettings.setAdminEnabled(adminEnabledCheckbox.isSelected());

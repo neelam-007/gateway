@@ -340,6 +340,8 @@ class EntityPropertiesHelper {
             "typeVal",
             "userMappings",
             "version",
+            "writable",
+            "writeBase",
             "ntlmAuthenticationProviderProperties",
             "securityZone"
         ) )

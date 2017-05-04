@@ -5,8 +5,8 @@ import static org.mockito.Mockito.mock;
 
 import com.l7tech.external.assertions.ldapwrite.LdapOperationsEnum;
 import com.l7tech.external.assertions.ldapwrite.LdapWriteAssertion;
-import com.l7tech.external.assertions.ldapwrite.LdapWriteConfig;
 import com.l7tech.external.assertions.ldapwrite.LdifAttribute;
+import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.identity.IdentityProviderFactory;
@@ -39,24 +39,6 @@ public class ServerLdapWriteAssertionTest {
     private static String VALID_WRITE_BASE = "ou=employee, dc=company, dc=com";
     private static String INVALID_WRITE_BASE = "ou=contractor, dc=company, dc=com";
 
-    private static String VALID_CLUSTER_PROP_VALUE = "[{\n" +
-            "    \"idprovider\":\"a5a3d5aba3ea0236f52677478cdcafac\",\n" +
-            "    \"writebase\":\"ou=employee, dc=company, dc=com\"\n" +
-            "    },\n" +
-            "    {\n" +
-            "    \"idprovider\":\"a3a3d5cbc3ea0211f52444478cccaaac\",\n" +
-            "    \"writebase\":\"ou=role, dc=company, dc=com\"\n" +
-            "}]";
-
-    private static String INVALID_CLUSTER_PROP_VALUE = "{\n" +
-            "    \"idprovider\":\"a5a3d5aba3ea0236f52677478cdcafac\",\n" +
-            "    \"writebase\":\"ou=employee, dc=company, dc=com\"\n" +
-            "    },\n" +
-            "    {\n" +
-            "    \"idprovider\":\"a3a3d5cbc3ea0211f52444478cccaaac\",\n" +
-            "    \"writebase\":\"ou=role, dc=company, dc=com\"\n" +
-            "}";
-
     private static String base64EncodedPic = "/9j/4AAQSkZJRgABAQEAeAB4AAD/2wBDAAIBAQIBAQICAgICAgICAwUDAwMDAwYEBAMFBwYHBwcGBwcICQsJCAgKCAcHCg0KCgsMDAwMBwkODw0MDgsMDAz/2wBDAQICAgMDAwYDAwYMCAcIDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAz/wAARCAAWABcDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD92734s+FtMuGhufEnh+3mjJVkl1GFGUjrkFs14x8NvitNrHxiv9cnkaO11Bgm2Q7fKtQSI0weECKfOc9ikv8AeOcv9oH4KL8M5or7Sro2+i6pci3jgXb5thKQz4j3Aq0RVG4IynQZGNvC+CdUSTT7Kxj1TUodYt2332wW7XVoqqzE3AaPaEbCBWRFLk7kJTc1fxb4geKXFlHinD5djMNHDxwdT2r5ZuSqwcZRi3LlVouLno1fmesbpH6Zl2S5fHAyq0ZOftVyptJWs9Vbve3Xpo7an2JpHjHSdfk8uw1PTr5wM7be5SQ/kpNFeS/CH4Tr8RNH/tbXJpLvTb3dstWmLeZtYr82D8gDL0U7iVGSo3IxX9PcLZ9m2bZZSzGthY0vaLmUXUd+V6xbtBpXWtr6HxeNweDw9aVF1ZNx0dop69Vdyj+Re/aR8Lal488X+ENH09rJfP8Atk+Lp3WPcgh5O0EnCNIAOM7sZHWq2t/sr3n/AAi+2x8SXU+rtuaUXUYWyuMnJUIoLQ8/xAueTkPxgor4XG8A5BnWb5zi80w6q1LQhduV1H2MHaNpLl1b1jZ6vWzZ7VPNMThcJgoUJWT5m9E7++11T/r0Rt/so3kkvwxmtZNoGn6nc264OedwdufTe749sdOlFFFfdeHMVHhbL4LaNGml6KKS/BHi8QJLMq9v5mf/2Q==";
 
     private static String VALID_GOID = "a5a3d5aba3ea0236f52677478cdcafac";
@@ -78,6 +60,9 @@ public class ServerLdapWriteAssertionTest {
     @Mock
     private Config config;
 
+    @Mock
+    private LdapIdentityProviderConfig ldapIdentityProviderConfig;
+
 
     @Before
     public void setUp() throws Exception {
@@ -94,8 +79,7 @@ public class ServerLdapWriteAssertionTest {
         Mockito.when(identityProviderFactory.getProvider(Mockito.any(Goid.class))).thenReturn(ldapIdentityProvider);
         Mockito.when(ldapIdentityProvider.getBrowseContext()).thenReturn(dirContext);
 
-        Mockito.when(applicationContext.getBean("serverConfig", Config.class)).thenReturn(config);
-        Mockito.when(config.getProperty(LdapWriteConfig.CLUSTER_PROP_LDAP_IDENTITY_PROVIDER_LIST_WITH_WRITE_ACCESS)).thenReturn(VALID_CLUSTER_PROP_VALUE);
+        Mockito.when(ldapIdentityProvider.getConfig()).thenReturn(ldapIdentityProviderConfig);
 
     }
 
@@ -122,47 +106,8 @@ public class ServerLdapWriteAssertionTest {
     @Test
     public void testEmptyClusterProperty() throws Exception {
 
-        Mockito.when(config.getProperty(LdapWriteConfig.CLUSTER_PROP_LDAP_IDENTITY_PROVIDER_LIST_WITH_WRITE_ACCESS)).thenReturn("");
-
-        assertion = new LdapWriteAssertion();
-        assertion.setLdapProviderId(new Goid(VALID_GOID));
-        assertion.setDn("uid=jsmith, ou=employee, dc=company,dc=com");
-        assertion.setOperation(LdapOperationsEnum.ADD);
-        assertion.setAttributeList(getValidAddAttributeList());
-
-        serverLdapWriteAssertion = new ServerLdapWriteAssertion(assertion, applicationContext);
-        AssertionStatus status = serverLdapWriteAssertion.checkRequest(peCtx);
-
-        assertEquals(AssertionStatus.FALSIFIED, status);
-
-    }
-
-    @Test
-    public void testMissingClusterProperty() throws Exception {
-
-        Mockito.when(config.getProperty(LdapWriteConfig.CLUSTER_PROP_LDAP_IDENTITY_PROVIDER_LIST_WITH_WRITE_ACCESS)).
-                thenReturn("");
-
-        assertion = new LdapWriteAssertion();
-        assertion.setLdapProviderId(new Goid(VALID_GOID));
-        assertion.setDn("uid=jsmith, ou=employee, dc=company,dc=com");
-        assertion.setOperation(LdapOperationsEnum.ADD);
-        assertion.setAttributeList(getValidAddAttributeList());
-
-        serverLdapWriteAssertion = new ServerLdapWriteAssertion(assertion, applicationContext);
-        AssertionStatus status = serverLdapWriteAssertion.checkRequest(peCtx);
-
-        assertEquals(AssertionStatus.FALSIFIED, status);
-
-    }
-
-
-
-    @Test
-    public void testInvalidClusterProperty() throws Exception {
-
-        Mockito.when(config.getProperty(LdapWriteConfig.CLUSTER_PROP_LDAP_IDENTITY_PROVIDER_LIST_WITH_WRITE_ACCESS)).
-                thenReturn(INVALID_CLUSTER_PROP_VALUE);
+        Mockito.when(ldapIdentityProviderConfig.isWritable()).thenReturn(true);
+        Mockito.when(ldapIdentityProviderConfig.getWriteBase()).thenReturn("");
 
         assertion = new LdapWriteAssertion();
         assertion.setLdapProviderId(new Goid(VALID_GOID));
@@ -181,6 +126,8 @@ public class ServerLdapWriteAssertionTest {
     @Test
     public void testAddErrorLdapProviderNotPermittedForWrite() throws Exception {
 
+        Mockito.when(ldapIdentityProviderConfig.isWritable()).thenReturn(false);
+
         assertion = new LdapWriteAssertion();
         assertion.setLdapProviderId(new Goid("a5a3d5aba3ab0236f52677478cdcafac")); //Goid not in config
         assertion.setDn("uid=jsmith, ou=employee, dc=company,dc=com");
@@ -197,9 +144,12 @@ public class ServerLdapWriteAssertionTest {
     @Test
     public void testAddErrorMissingDn() throws Exception {
 
+        Mockito.when(ldapIdentityProviderConfig.isWritable()).thenReturn(true);
+        Mockito.when(ldapIdentityProviderConfig.getWriteBase()).thenReturn(VALID_WRITE_BASE);
+
         assertion = new LdapWriteAssertion();
         assertion.setLdapProviderId(new Goid(VALID_GOID));
-        //assertion.setDn("uid=jsmith, ou=employee, dc=test,dc=com");
+        //assertion.setDn("uid=jsmith, ou=employee, dc=test,dc=com"); DN is missing
         assertion.setOperation(LdapOperationsEnum.ADD);
         assertion.setAttributeList(getValidAddAttributeList());
 
@@ -211,6 +161,9 @@ public class ServerLdapWriteAssertionTest {
 
     @Test
     public void testAddErrorDnOutsideOfWriteBase() throws Exception {
+
+        Mockito.when(ldapIdentityProviderConfig.isWritable()).thenReturn(true);
+        Mockito.when(ldapIdentityProviderConfig.getWriteBase()).thenReturn(VALID_WRITE_BASE);
 
         assertion = new LdapWriteAssertion();
         assertion.setLdapProviderId(new Goid(VALID_GOID));
@@ -227,6 +180,9 @@ public class ServerLdapWriteAssertionTest {
 
     @Test
     public void testAddSuccess() throws Exception {
+
+        Mockito.when(ldapIdentityProviderConfig.isWritable()).thenReturn(true);
+        Mockito.when(ldapIdentityProviderConfig.getWriteBase()).thenReturn(VALID_WRITE_BASE);
 
         assertion = new LdapWriteAssertion();
 
@@ -246,6 +202,9 @@ public class ServerLdapWriteAssertionTest {
     @Test
     public void testAddErrorUserOutsideOfWriteBase() throws Exception {
 
+        Mockito.when(ldapIdentityProviderConfig.isWritable()).thenReturn(true);
+        Mockito.when(ldapIdentityProviderConfig.getWriteBase()).thenReturn(VALID_WRITE_BASE);
+
         assertion = new LdapWriteAssertion();
         assertion.setLdapProviderId(new Goid(VALID_GOID));
         assertion.setDn("uid=jsmith," + INVALID_WRITE_BASE);
@@ -262,6 +221,9 @@ public class ServerLdapWriteAssertionTest {
 
     @Test
     public void testAddErrorUidAlreadyExists() throws Exception {
+
+        Mockito.when(ldapIdentityProviderConfig.isWritable()).thenReturn(true);
+        Mockito.when(ldapIdentityProviderConfig.getWriteBase()).thenReturn(VALID_WRITE_BASE);
 
         Mockito.when(dirContext.createSubcontext(Mockito.anyString(), Mockito.any(BasicAttributes.class))).
                 thenThrow(new NameAlreadyBoundException("LDAP: error code 68 - Entry Already Exists"));
@@ -282,6 +244,9 @@ public class ServerLdapWriteAssertionTest {
 
     @Test
     public void testModifyErrorNonMatchingAttributeNameOnDifferentLines() throws Exception {
+
+        Mockito.when(ldapIdentityProviderConfig.isWritable()).thenReturn(true);
+        Mockito.when(ldapIdentityProviderConfig.getWriteBase()).thenReturn(VALID_WRITE_BASE);
 
         assertion = new LdapWriteAssertion();
         assertion.setLdapProviderId(new Goid(VALID_GOID));
@@ -309,6 +274,9 @@ public class ServerLdapWriteAssertionTest {
     @Test
     public void testModifyErrorAddAttributeAlreadyExists() throws Exception {
 
+        Mockito.when(ldapIdentityProviderConfig.isWritable()).thenReturn(true);
+        Mockito.when(ldapIdentityProviderConfig.getWriteBase()).thenReturn(VALID_WRITE_BASE);
+
         Mockito.doThrow(new NamingException("LDAP: error code 20 - modify/add: telephoneNumber: value #0 already exists")).
                 when(dirContext).modifyAttributes(Mockito.anyString(), Mockito.any(ModificationItem[].class));
 
@@ -333,6 +301,9 @@ public class ServerLdapWriteAssertionTest {
 
     @Test
     public void testModifySuccess() throws Exception {
+
+        Mockito.when(ldapIdentityProviderConfig.isWritable()).thenReturn(true);
+        Mockito.when(ldapIdentityProviderConfig.getWriteBase()).thenReturn(VALID_WRITE_BASE);
 
         assertion = new LdapWriteAssertion();
         assertion.setLdapProviderId(new Goid(VALID_GOID));
@@ -363,13 +334,16 @@ public class ServerLdapWriteAssertionTest {
     @Test
     public void testModrdnErrorMissingRequiredAttributeKeyword() throws Exception {
 
+        Mockito.when(ldapIdentityProviderConfig.isWritable()).thenReturn(true);
+        Mockito.when(ldapIdentityProviderConfig.getWriteBase()).thenReturn(VALID_WRITE_BASE);
+
         assertion = new LdapWriteAssertion();
         assertion.setLdapProviderId(new Goid(VALID_GOID));
         assertion.setDn("uid=jsmith," + VALID_WRITE_BASE);
         assertion.setOperation(LdapOperationsEnum.MODRDN);
 
         final List<LdifAttribute> ldifAttributeList = new ArrayList<>();
-        assertion.setAttributeList(ldifAttributeList);
+        assertion.setAttributeList(ldifAttributeList); // the attribute modification is empty
 
         serverLdapWriteAssertion = new ServerLdapWriteAssertion(assertion, applicationContext);
         AssertionStatus status = serverLdapWriteAssertion.checkRequest(peCtx);
@@ -379,6 +353,9 @@ public class ServerLdapWriteAssertionTest {
 
     @Test
     public void testModrdnErrorRequiredAttributeKeywordIncorrect() throws Exception {
+
+        Mockito.when(ldapIdentityProviderConfig.isWritable()).thenReturn(true);
+        Mockito.when(ldapIdentityProviderConfig.getWriteBase()).thenReturn(VALID_WRITE_BASE);
 
         assertion = new LdapWriteAssertion();
         assertion.setLdapProviderId(new Goid(VALID_GOID));
@@ -397,6 +374,10 @@ public class ServerLdapWriteAssertionTest {
 
     @Test
     public void testModrdnErrorDnOutsideOfWriteBase() throws Exception {
+
+        Mockito.when(ldapIdentityProviderConfig.isWritable()).thenReturn(true);
+        Mockito.when(ldapIdentityProviderConfig.getWriteBase()).thenReturn(VALID_WRITE_BASE);
+
         assertion = new LdapWriteAssertion();
         assertion.setLdapProviderId(new Goid(VALID_GOID));
         assertion.setDn("uid=jsmith," + VALID_WRITE_BASE);
@@ -415,6 +396,8 @@ public class ServerLdapWriteAssertionTest {
     @Test
     public void testModrdnSuccessWithRdn() throws Exception {
 
+        Mockito.when(ldapIdentityProviderConfig.isWritable()).thenReturn(true);
+        Mockito.when(ldapIdentityProviderConfig.getWriteBase()).thenReturn(VALID_WRITE_BASE);
 
         assertion = new LdapWriteAssertion();
         assertion.setLdapProviderId(new Goid(VALID_GOID));
@@ -434,6 +417,9 @@ public class ServerLdapWriteAssertionTest {
     @Test
     public void testModrdnSuccessWithFullyQualifiedDn() throws Exception {
 
+        Mockito.when(ldapIdentityProviderConfig.isWritable()).thenReturn(true);
+        Mockito.when(ldapIdentityProviderConfig.getWriteBase()).thenReturn(VALID_WRITE_BASE);
+
         assertion = new LdapWriteAssertion();
         assertion.setLdapProviderId(new Goid(VALID_GOID));
         assertion.setDn("uid=jsmith," + VALID_WRITE_BASE);
@@ -452,6 +438,9 @@ public class ServerLdapWriteAssertionTest {
     @Test
     public void testDeleteErrorDnOutsideOfWriteBase() throws Exception {
 
+        Mockito.when(ldapIdentityProviderConfig.isWritable()).thenReturn(true);
+        Mockito.when(ldapIdentityProviderConfig.getWriteBase()).thenReturn(VALID_WRITE_BASE);
+
         assertion = new LdapWriteAssertion();
         assertion.setLdapProviderId(new Goid(VALID_GOID));
         assertion.setDn("uid=jsmith,ou=retired,dc=company,dc=com");
@@ -466,6 +455,9 @@ public class ServerLdapWriteAssertionTest {
 
     @Test
     public void testDeleteDnSuccess() throws Exception {
+
+        Mockito.when(ldapIdentityProviderConfig.isWritable()).thenReturn(true);
+        Mockito.when(ldapIdentityProviderConfig.getWriteBase()).thenReturn(VALID_WRITE_BASE);
 
         assertion = new LdapWriteAssertion();
         assertion.setLdapProviderId(new Goid(VALID_GOID));
