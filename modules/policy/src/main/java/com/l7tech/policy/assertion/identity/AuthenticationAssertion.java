@@ -11,7 +11,6 @@ import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.policy.assertion.SetsVariables;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
 
@@ -20,9 +19,10 @@ import com.l7tech.policy.variable.VariableMetadata;
  * user or group.  Otherwise known as "Wildcard Identity Assertion."
  * @author alex
  */
-public class AuthenticationAssertion extends IdentityAssertion implements SetsVariables {
+public class AuthenticationAssertion extends IdentityAssertion {
 
-    private static String LDAP_PROVIDER_ERROR_MESSAGE_VAR = "identityProvider.errorMessage";
+    public static final String LDAP_PROVIDER_ERROR_LOGIN = "idp.error.login";
+    public static final String LDAP_PROVIDER_ERROR_MESSAGE = "idp.error.message";
     private String loggingIdentity;
 
     public AuthenticationAssertion() {
@@ -84,7 +84,8 @@ public class AuthenticationAssertion extends IdentityAssertion implements SetsVa
     @Override
     protected VariablesSet doGetVariablesSet() {
         return super.doGetVariablesSet().withVariables(
-                new VariableMetadata(LDAP_PROVIDER_ERROR_MESSAGE_VAR, false, false, null, false, DataType.STRING)
+                new VariableMetadata(LDAP_PROVIDER_ERROR_LOGIN, true, true, null, false, DataType.STRING),
+                new VariableMetadata(LDAP_PROVIDER_ERROR_MESSAGE, true, true, null, false, DataType.STRING)
         );
     }
 

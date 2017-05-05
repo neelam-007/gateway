@@ -14,7 +14,6 @@ import com.l7tech.util.Config;
 import com.l7tech.util.ConfigFactory;
 import org.jetbrains.annotations.Nullable;
 
-import javax.naming.AuthenticationException;
 import java.util.Set;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -119,13 +118,12 @@ public class BindOnlyLdapUserManagerImpl implements BindOnlyLdapUserManager {
     }
 
     @Override
-    public boolean authenticateBasic(String dn, String passwd) throws AuthenticationException {
+    public boolean authenticateBasic(String dn, String passwd) throws BadCredentialsException {
         return LdapUtils.authenticateBasic(identityProvider, identityProviderConfig, ldapRuntimeConfig, logger, dn, passwd);
     }
 
     @Override
-    public AuthenticationResult authenticatePasswordCredentials(LoginCredentials pc)
-            throws BadCredentialsException, BadUsernamePatternException, AuthenticationException {
+    public AuthenticationResult authenticatePasswordCredentials(LoginCredentials pc) throws BadCredentialsException, BadUsernamePatternException {
         // basic authentication
         final String login = pc.getLogin();
         final String dn = makeDn(login);

@@ -32,8 +32,6 @@ import java.util.logging.Level;
  * is authorized to do so.
  */
 public abstract class ServerIdentityAssertion<AT extends IdentityAssertion> extends AbstractMessageTargetableServerAssertion<AT> {
-
-    private static final String LDAP_PROVIDER_ERROR_MESSAGE_VAR = "ldapProvider.errorMessage";
     private final IdentityProviderFactory identityProviderFactory;
 
     public ServerIdentityAssertion(AT data, ApplicationContext ctx) {
@@ -155,7 +153,6 @@ public abstract class ServerIdentityAssertion<AT extends IdentityAssertion> exte
                 lastStatus = authFailed(pc, mce);
             } catch (AuthenticationException ae) {
                 logAndAudit(AssertionMessages.IDENTITY_CREDENTIAL_FAILED, pc.getLogin(), ExceptionUtils.getMessage(ae));
-                context.setVariable(LDAP_PROVIDER_ERROR_MESSAGE_VAR ,ExceptionUtils.getMessage(ae));
                 lastStatus = authFailed(pc, ae);
             }
         }
@@ -216,7 +213,7 @@ public abstract class ServerIdentityAssertion<AT extends IdentityAssertion> exte
         return AssertionStatus.NONE.equals( status );
     }
 
-    private AssertionStatus authFailed(LoginCredentials pc, Exception e) {
+    protected AssertionStatus authFailed(LoginCredentials pc, Exception e) {
         // we were losing the details of this authentication failure. important for debugging saml stuff
         logger.log(Level.FINE, "ServerIdentityAssertion failed", e);
         String name = pc.getLogin();

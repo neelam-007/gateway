@@ -60,8 +60,6 @@ public class BindOnlyLdapIdentityProviderImpl implements BindOnlyLdapIdentityPro
             } catch (BindOnlyLdapUserManager.BadUsernamePatternException e) {
                 auditor.logAndAudit(SystemMessages.EXCEPTION_INFO_WITH_MORE_INFO, "Username contains characters disallowed by current Simple LDAP username pattern");
                 throw new BadCredentialsException("credentials did not authenticate");
-            } catch (javax.naming.AuthenticationException e) {
-                throw new BadCredentialsException(e.getMessage());
             }
         }
 
@@ -171,7 +169,7 @@ public class BindOnlyLdapIdentityProviderImpl implements BindOnlyLdapIdentityPro
             getUserManager().authenticatePasswordCredentials(LoginCredentials.makeLoginCredentials(new HttpBasicToken(testUser, testPassword), HttpBasic.class));
             // We don't care about the AuthenticationResult, just that it succeeded
 
-        } catch (BadCredentialsException | javax.naming.AuthenticationException e) {
+        } catch (BadCredentialsException e) {
             throw new InvalidIdProviderCfgException("Test credentials failed to authenticate: " + ExceptionUtils.getMessage(e), e);
         } catch (BindOnlyLdapUserManager.BadUsernamePatternException e) {
             throw new InvalidIdProviderCfgException("Test credentials failed to authenticate: " + ExceptionUtils.getMessage(e));

@@ -1,5 +1,6 @@
 package com.l7tech.server.identity.ldap;
 
+import com.l7tech.identity.BadCredentialsException;
 import com.l7tech.identity.ldap.LdapUrlBasedIdentityProviderConfig;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.ServerConfigParams;
@@ -293,13 +294,14 @@ public final class LdapUtils {
      * @param dn                 full DN to attempt to bind.  Required.
      * @param passwd             password to use for bind attempt.  Authentication will automatically fail if this is null or empty.
      * @return true if we were able to successfully bind the specified DN using the specified password.
+     * @throws BadCredentialsException If the password is bad or expired, etc.
      */
     public static boolean authenticateBasic(LdapUrlProvider urlProvider,
                                             LdapUrlBasedIdentityProviderConfig providerConfig,
                                             LdapRuntimeConfig ldapRuntimeConfig,
                                             Logger logger,
                                             String dn,
-                                            String passwd) throws AuthenticationException {
+                                            String passwd) throws BadCredentialsException {
         if (passwd == null || passwd.length() < 1) {
             logger.info("User: " + dn + " refused authentication because empty password provided.");
             return false;
@@ -320,10 +322,10 @@ public final class LdapUtils {
             } catch (CommunicationException e) {
                 logger.log(Level.INFO, "Could not establish context using LDAP URL " + ldapurl, e);
                 ldapurl = urlProvider.markCurrentUrlFailureAndGetFirstAvailableOne(ldapurl);
-            } catch (AuthenticationException authenticationException) {
+            } catch (AuthenticationException e) {
                 // when you get bad credentials
-                logger.info("User failed to authenticate: " + dn + " in provider " + providerConfig.getName()+" Reason:"+authenticationException.toString());
-                throw authenticationException;
+                logger.info("User failed to authenticate: " + dn + " in provider " + providerConfig.getName());
+                throw new BadCredentialsException(e.getMessage());
             } catch (NamingException e) {
                 logger.log(Level.WARNING, "General naming failure for user: " + dn + " in provider " + providerConfig.getName(), ExceptionUtils.getDebugException(e));
                 return false;
