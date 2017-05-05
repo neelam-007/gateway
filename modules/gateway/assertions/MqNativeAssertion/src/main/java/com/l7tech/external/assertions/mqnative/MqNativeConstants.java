@@ -59,15 +59,15 @@ public interface MqNativeConstants {
 
     String MQ_CONNECTION_POOL_MAX_ACTIVE_PROPERTY = "MqNativeOutboundConnectionPoolMaxActive";
     String MQ_CONNECTION_POOL_MAX_ACTIVE_UI_PROPERTY = "mq.connectionPool.maxActive";
-    String MQ_CONNECTION_POOL_MAX_ACTIVE_DESC = "The maximum number of active connections per MQ Native connection pool. When non-positive, there is no limit to the number of active connections (Integer)";
+    String MQ_CONNECTION_POOL_MAX_ACTIVE_DESC = "Maximum number of active connections per MQ Native connection pool. Zero or negative value indicates unlimited active connections (Integer)";
 
     String MQ_CONNECTION_POOL_MAX_IDLE_PROPERTY = "MqNativeOutboundConnectionPoolMaxIdle";
     String MQ_CONNECTION_POOL_MAX_IDLE_UI_PROPERTY = "mq.connectionPool.maxIdle";
-    String MQ_CONNECTION_POOL_MAX_IDLE_DESC = "The maximum number of idle connections allowed in a MQ Native connection pool. When negative, there is no limit to the number of idle connections (Integer)";
+    String MQ_CONNECTION_POOL_MAX_IDLE_DESC = "Maximum number of idle connections allowed in a MQ Native connection pool. Negative value indicates unlimited idle connections (Integer)";
 
     String MQ_CONNECTION_POOL_MAX_WAIT_PROPERTY = "MqNativeOutboundConnectionPoolMaxWait";
     String MQ_CONNECTION_POOL_MAX_WAIT_UI_PROPERTY = "mq.connectionPool.maxWait";
-    String MQ_CONNECTION_POOL_MAX_WAIT_DESC = "The maximum amount of time (in milliseconds) to wait for a MQ Native connection to become available. When non-positive, wait indefinitely";
+    String MQ_CONNECTION_POOL_MAX_WAIT_DESC = "Maximum amount of time to wait for a MQ Native connection to become available. Value is in milliseconds. The default (-1) is to wait indefinitely.";
 
     String MQ_LISTENER_INBOUND_OPEN_OPTIONS_PROPERTY = "mqListenerInboundOpenOptions";
     String MQ_LISTENER_INBOUND_OPEN_OPTIONS_UI_PROPERTY = "mq.listenerInboundOpenOptions";
