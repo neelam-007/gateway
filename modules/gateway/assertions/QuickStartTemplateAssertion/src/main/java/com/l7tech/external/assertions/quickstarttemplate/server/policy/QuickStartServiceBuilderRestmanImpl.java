@@ -34,9 +34,9 @@ public class QuickStartServiceBuilderRestmanImpl implements QuickStartServiceBui
      * Supported types:<br/>
      * <ul>
      *     <li>{@code ServiceMO}: RESTMan managed service object</li>
-     *     <li>{@code String}: RESTMam bundle XML</li>
-     *     <li>{@code Document}: RESTMam bundle XML</li>
-     *     <li>{@code Message}: RESTMam bundle XML</li>
+     *     <li>{@code String}: RESTMan bundle XML</li>
+     *     <li>{@code Document}: RESTMan bundle XML</li>
+     *     <li>{@code Message}: RESTMan bundle XML</li>
      * </ul>
      *
      * @param resType  required type of the service bundle

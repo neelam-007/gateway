@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.quickstarttemplate.server;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Sets;
+import com.l7tech.common.http.HttpMethod;
 import com.l7tech.external.assertions.quickstarttemplate.QuickStartTemplateAssertion;
 import com.l7tech.external.assertions.quickstarttemplate.server.parser.QuickStartMapper;
 import com.l7tech.external.assertions.quickstarttemplate.server.parser.QuickStartParser;
@@ -36,14 +37,11 @@ import java.util.Collection;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
- * PROOF-OF-CONCEPT!
- *
  * Server side implementation of the QuickStartTemplateAssertion.
- *
- * TODO How to consume the template file during deployment? Can we somehow pull from code repository and perform a cURL post it in the Docker file? In OpenShift? Solve by moving to  into restman?
- *
  *
  * @see com.l7tech.external.assertions.quickstarttemplate.QuickStartTemplateAssertion
  */
@@ -51,6 +49,7 @@ import java.util.logging.Logger;
 public class ServerQuickStartTemplateAssertion extends AbstractMessageTargetableServerAssertion<QuickStartTemplateAssertion> {
     private static final Logger logger = Logger.getLogger(ServerQuickStartTemplateAssertion.class.getName());
     private QuickStartEncapsulatedAssertionLocator assertionLocator;
+    private QuickStartPublishedServiceLocator serviceLocator;
     private QuickStartParser parser = new QuickStartParser();
     private QuickStartMapper mapper;
     private final ServiceCache serviceCache;
@@ -58,6 +57,7 @@ public class ServerQuickStartTemplateAssertion extends AbstractMessageTargetable
     public ServerQuickStartTemplateAssertion( final QuickStartTemplateAssertion assertion, final ApplicationContext applicationContext) throws PolicyAssertionException {
         super(assertion);
         assertionLocator = QuickStartAssertionModuleLifecycle.getEncapsulatedAssertionLocator();
+        serviceLocator = QuickStartAssertionModuleLifecycle.getPublishedServiceLocator();
         mapper = new QuickStartMapper(assertionLocator);
         serviceCache = applicationContext.getBean("serviceCache", ServiceCache.class);
     }
@@ -66,45 +66,52 @@ public class ServerQuickStartTemplateAssertion extends AbstractMessageTargetable
                                           final Message message,
                                           final String messageDescription,
                                           final AuthenticationContext authContext ) throws IOException, PolicyAssertionException {
-        try {
-            final ServiceContainer serviceContainer;
+
+        if ((message.getHttpRequestKnob().getMethod() == HttpMethod.PUT) || (message.getHttpRequestKnob().getMethod() == HttpMethod.POST)) {
             try {
-                serviceContainer = parser.parseJson(message.getMimeKnob().getEntireMessageBodyAsInputStream(false));
+                final ServiceContainer serviceContainer;
+                try {
+                    serviceContainer = parser.parseJson(message.getMimeKnob().getEntireMessageBodyAsInputStream(false));
+                } catch (final Exception e) {
+                    final IllegalArgumentException arg = ExceptionUtils.getCauseIfCausedBy(e, IllegalArgumentException.class);
+                    if (arg != null) {
+                        logger.log(Level.WARNING, ExceptionUtils.getMessage(arg), ExceptionUtils.getDebugException(arg));
+                        context.setVariable(QuickStartTemplateAssertion.QS_WARNINGS, ExceptionUtils.getMessage(arg));
+                        return AssertionStatus.FALSIFIED;
+                    } else {
+                        logger.log(Level.WARNING, "Unable to parse JSON payload: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                        context.setVariable(QuickStartTemplateAssertion.QS_WARNINGS, "Unable to parse JSON payload: " + ExceptionUtils.getMessage(e));
+                        return AssertionStatus.FALSIFIED;
+                    }
+                }
+
+                try {
+                    // get all the encapsulated assertions (and their properties) used by the service
+                    final List<EncapsulatedAssertion> encapsulatedAssertions = mapper.getEncapsulatedAssertions(serviceContainer.service);
+
+                    PublishedService publishedService;
+                    String url = message.getHttpRequestKnob().getRequestUrl();
+                    Pattern pattern = Pattern.compile("/([0-9a-f]{32})?$");
+                    Matcher matcher = pattern.matcher(url);
+
+                    if ((message.getHttpRequestKnob().getMethod() == HttpMethod.PUT) && (matcher.find())) {
+                        Goid goid = new Goid(matcher.group(1));
+                        publishedService = updatePublishedService(goid, serviceContainer.service, encapsulatedAssertions);
+                    } else {
+                        publishedService = createPublishedService(serviceContainer.service, encapsulatedAssertions);
+                    }
+
+                    final QuickStartServiceBuilder quickStartServiceBuilder = new QuickStartServiceBuilderRestmanImpl(new QuickStartEncapsulatedAssertionTemplate(publishedService, encapsulatedAssertions));
+                    context.setVariable(QuickStartTemplateAssertion.QS_BUNDLE, quickStartServiceBuilder.createServiceBundle(Message.class));
+                } catch (final QuickStartPolicyBuilderException e) {
+                    logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                    context.setVariable(QuickStartTemplateAssertion.QS_WARNINGS, ExceptionUtils.getMessage(e));
+                    return AssertionStatus.FALSIFIED;
+                }
             } catch (final Exception e) {
-                final IllegalArgumentException arg = ExceptionUtils.getCauseIfCausedBy(e, IllegalArgumentException.class);
-                if (arg != null) {
-                    logger.log(Level.WARNING, ExceptionUtils.getMessage(arg), ExceptionUtils.getDebugException(arg));
-                    context.setVariable(QuickStartTemplateAssertion.QS_WARNINGS, ExceptionUtils.getMessage(arg));
-                    return AssertionStatus.FALSIFIED;
-                } else {
-                    logger.log(Level.WARNING, "Unable to parse JSON payload: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                    context.setVariable(QuickStartTemplateAssertion.QS_WARNINGS, "Unable to parse JSON payload: " + ExceptionUtils.getMessage(e));
-                    return AssertionStatus.FALSIFIED;
-                }
+                logger.log(Level.WARNING, "Unable to create service:" + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                throw new PolicyAssertionException(assertion, e);
             }
-
-            try {
-                // get all the encapsulated assertions (and their properties) used by the service
-                final List<EncapsulatedAssertion> encapsulatedAssertions = mapper.getEncapsulatedAssertions(serviceContainer.service);
-                final PublishedService publishedService = createPublishedService(serviceContainer.service, encapsulatedAssertions);
-
-                // make sure service uri doesn't conflict
-                if ( hasResolutionConflict(publishedService) ) {
-                    throw new QuickStartPolicyBuilderException("Resolution parameters conflict for service '" + publishedService.getName() + "' " +
-                                    "because an existing service is already using the URI " + publishedService.getRoutingUri() + ". " +
-                                    "Try publishing this service using a different routing URI.");
-                }
-
-                final QuickStartServiceBuilder quickStartServiceBuilder = new QuickStartServiceBuilderRestmanImpl(new QuickStartEncapsulatedAssertionTemplate(publishedService, encapsulatedAssertions));
-                context.setVariable(QuickStartTemplateAssertion.QS_BUNDLE, quickStartServiceBuilder.createServiceBundle(Message.class));
-            } catch (final QuickStartPolicyBuilderException e) {
-                logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                context.setVariable(QuickStartTemplateAssertion.QS_WARNINGS, ExceptionUtils.getMessage(e));
-                return AssertionStatus.FALSIFIED;
-            }
-        } catch (final Exception e) {
-            logger.log(Level.WARNING, "Unable to create service:" + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-            throw new PolicyAssertionException(assertion, e);
         }
         return AssertionStatus.NONE;
     }
@@ -150,10 +157,29 @@ public class ServerQuickStartTemplateAssertion extends AbstractMessageTargetable
     }
 
     @NotNull
-    private PublishedService createPublishedService(@NotNull final Service service, @NotNull final List<EncapsulatedAssertion> encapsulatedAssertions) {
+    private PublishedService createPublishedService(@NotNull final Service service, @NotNull final List<EncapsulatedAssertion> encapsulatedAssertions) throws QuickStartPolicyBuilderException {
         final PublishedService publishedService = new PublishedService();
         publishedService.setName(service.name);
+
+        // Set the Uri and make sure it doesn't conflict
         publishedService.setRoutingUri(service.gatewayUri);
+        if (hasResolutionConflict(publishedService)) {
+            throw new QuickStartPolicyBuilderException("Resolution parameters conflict for service '" + publishedService.getName() + "' " +
+                    "because an existing service is already using the URI " + publishedService.getRoutingUri() + ". " +
+                    "Try publishing this service using a different routing URI.");
+        }
+
+        publishedService.setHttpMethods(Sets.newHashSet(service.httpMethods));
+        generatePolicy(publishedService, encapsulatedAssertions);
+
+        return publishedService;
+    }
+
+    @NotNull
+    private PublishedService updatePublishedService(@NotNull Goid goid, @NotNull final Service service,
+                                                    @NotNull final List<EncapsulatedAssertion> encapsulatedAssertions) throws FindException {
+        final PublishedService publishedService = serviceLocator.findByGoid(goid);
+        publishedService.setName(service.name);
         publishedService.setHttpMethods(Sets.newHashSet(service.httpMethods));
         generatePolicy(publishedService, encapsulatedAssertions);
         return publishedService;
