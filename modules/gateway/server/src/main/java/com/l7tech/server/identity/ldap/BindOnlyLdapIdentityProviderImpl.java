@@ -2,7 +2,6 @@ package com.l7tech.server.identity.ldap;
 
 import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.identity.*;
-import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.ldap.BindOnlyLdapIdentityProviderConfig;
 import com.l7tech.identity.ldap.BindOnlyLdapUser;
