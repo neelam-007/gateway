@@ -67,7 +67,7 @@ public interface MqNativeConstants {
 
     String MQ_CONNECTION_POOL_MAX_WAIT_PROPERTY = "MqNativeOutboundConnectionPoolMaxWait";
     String MQ_CONNECTION_POOL_MAX_WAIT_UI_PROPERTY = "mq.connectionPool.maxWait";
-    String MQ_CONNECTION_POOL_MAX_WAIT_DESC = "Maximum amount of time to wait for a MQ Native connection to become available. Value is in milliseconds. The default (-1) is to wait indefinitely.";
+    String MQ_CONNECTION_POOL_MAX_WAIT_DESC = "Maximum amount of time to wait for a MQ Native connection to become available. Value is in milliseconds. Zero or negative value indicates wait indefinitely.";
 
     String MQ_LISTENER_INBOUND_OPEN_OPTIONS_PROPERTY = "mqListenerInboundOpenOptions";
     String MQ_LISTENER_INBOUND_OPEN_OPTIONS_UI_PROPERTY = "mq.listenerInboundOpenOptions";

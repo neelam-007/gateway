@@ -963,7 +963,7 @@
                     </constraints>
                     <properties>
                       <text value="Maximum active connections:"/>
-                      <toolTipText value="The maximum number of active connections per MQ Native connection pool. When non-positive, there is no limit to the number of active connections (Integer)."/>
+                      <toolTipText value=""/>
                     </properties>
                   </component>
                   <hspacer id="47207">
@@ -985,7 +985,7 @@
                     </constraints>
                     <properties>
                       <text value="Maximum idle connections:"/>
-                      <toolTipText value="The maximum number of idle connections allowed in a MQ Native connection pool. When negative, there is no limit to the number of idle connections (Integer)."/>
+                      <toolTipText value=""/>
                     </properties>
                   </component>
                   <component id="bae7b" class="javax.swing.JTextField" binding="maxIdleTextField">
@@ -1002,7 +1002,7 @@
                     </constraints>
                     <properties>
                       <text value="Maximum wait time for free connections (ms):"/>
-                      <toolTipText value="The maximum amount of time (in milliseconds) to wait for a MQ Native connection to become available. When non-positive, wait indefinitely."/>
+                      <toolTipText value=""/>
                     </properties>
                   </component>
                   <component id="73e37" class="javax.swing.JTextField" binding="maxWaitTextField">
