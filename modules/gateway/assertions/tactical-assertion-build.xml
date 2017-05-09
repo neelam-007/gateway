@@ -14,13 +14,13 @@
             <arg value="log" />
             <arg value="-1" />
             <arg value="--pretty=format:%H" />
-            <arg value="." />
+            <arg value="${basedir}" />
         </exec>
-        <echo message="Git commit hash for ${moduleName}: ${modass.commit.hash}"/>
+        <echo message="Git commit hash for '${basedir}' directory: ${modass.commit.hash}"/>
 
         <jar update="true" file="build/${moduleName}.${moduleFileExtension}">
             <manifest>
-                <attribute name="SCM-Revision" value="${modass.commit.hash}"/>
+                <attribute name="Git-Commit-Hash" value="${modass.commit.hash}"/>
             </manifest>
         </jar>
     </target>
