@@ -10,7 +10,6 @@ import com.l7tech.external.assertions.mqnative.MqNativeAdmin;
 import com.l7tech.external.assertions.mqnative.MqNativeAdmin.MqNativeTestException;
 import com.l7tech.external.assertions.mqnative.MqNativeMessageFormatType;
 import com.l7tech.external.assertions.mqnative.MqNativeReplyType;
-import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.security.rbac.AttemptedCreateSpecific;
 import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
@@ -25,7 +24,6 @@ import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.util.ExceptionUtils;
@@ -937,9 +935,9 @@ public class MqNativePropertiesDialog extends JDialog {
                     outboundReplyQueueGetMessageOptionsTextField.setText(mqNativeActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_REPLY_QUEUE_GET_MESSAGE_OPTIONS));
                 }
                 
-                loadConnectionPoolProperty(maxActiveTextField, mqNativeActiveConnector, MQ_CONNECTION_POOL_MAX_ACTIVE_PROPERTY, MQ_CONNECTION_POOL_MAX_ACTIVE_UI_PROPERTY);
-                loadConnectionPoolProperty(maxIdleTextField, mqNativeActiveConnector, MQ_CONNECTION_POOL_MAX_IDLE_PROPERTY, MQ_CONNECTION_POOL_MAX_IDLE_UI_PROPERTY);
-                loadConnectionPoolProperty(maxWaitTextField, mqNativeActiveConnector, MQ_CONNECTION_POOL_MAX_WAIT_PROPERTY, MQ_CONNECTION_POOL_MAX_WAIT_UI_PROPERTY);
+                loadConnectionPoolProperty(maxActiveTextField, mqNativeActiveConnector, MQ_CONNECTION_POOL_MAX_ACTIVE_PROPERTY);
+                loadConnectionPoolProperty(maxIdleTextField, mqNativeActiveConnector, MQ_CONNECTION_POOL_MAX_IDLE_PROPERTY);
+                loadConnectionPoolProperty(maxWaitTextField, mqNativeActiveConnector, MQ_CONNECTION_POOL_MAX_WAIT_PROPERTY);
             }
         } else {
             enabledCheckBox.setSelected(true);
@@ -956,36 +954,21 @@ public class MqNativePropertiesDialog extends JDialog {
     }
 
     /**
-     * Load the pool settings from the connector first.  If the connector does not set that property,
-     * then load it from the cluster property. If the cluster property does not set that property,
-     * then just leave it as empty.
+     * Load the pool settings from the connector.  If the connector does not set that property, then leave the text field as empty.
      *
      * @param texField: the text field will display the property value.
      * @param ssgActiveConnector: the ssg active connector, which may set the property or may not.
      * @param propName: the name of the pool property such as max active, max idle, or max wait.
-     * @param clusterPropName: the name of the pool cluster property.
      */
     private void loadConnectionPoolProperty(
         @NotNull final JTextField texField,
         @NotNull final SsgActiveConnector ssgActiveConnector,
-        @NotNull final String propName,
-        @NotNull final String clusterPropName
+        @NotNull final String propName
     ) {
-        String propValue = ssgActiveConnector.getGoid() == Goid.DEFAULT_GOID? null : ssgActiveConnector.getProperty(propName);
-        if (StringUtils.isBlank(propValue)) {
-            try {
-                final ClusterProperty clusterProperty = Registry.getDefault().getClusterStatusAdmin().findPropertyByName(clusterPropName);
-                if (clusterProperty != null) {
-                    propValue = clusterProperty.getValue();
-                }
-            } catch (FindException e) {
-                if (logger.isLoggable(Level.INFO)) {
-                    logger.log(Level.INFO, "Error finding cluster property '" + propName + "': " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                }
-            }
+        final String propValue = ssgActiveConnector.getProperty(propName);
+        if (! StringUtils.isBlank(propValue)) {
+            texField.setText(propValue);
         }
-
-        texField.setText(propValue);
     }
 
     /**
