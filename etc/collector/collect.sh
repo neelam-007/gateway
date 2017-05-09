@@ -5,8 +5,9 @@ DATESTRING=$(date +%s"_"T%R_%B_%d_%Y_%Z%z | sed 's/://g')
 DEFAULTMODULE=
 DEFAULTLEVEL=1
 DEFAULTGROUP=all
-DEFAULT_BASE_PARENT_OUTPUT_DIR=/home/ssgconfig/datacollector
-DEFAULT_BASE_DATED_OUTPUT_DIR="${DEFAULT_BASE_PARENT_OUTPUT_DIR}"_"${DATESTRING}"
+OUTPUT_HOME=/home/ssgconfig
+DATED_OUTPUT_NAME="dct_${DATESTRING}"
+DEFAULT_BASE_DATED_OUTPUT_DIR="${OUTPUT_HOME}/${DATED_OUTPUT_NAME}"
 DEFAULTMODE="module"
 
 DEBUG=0
@@ -194,9 +195,9 @@ createSymlinksToEveryFile
 #Compress all the output into one folder
 if [ -e ${ALL_MODULES_BaseOutputDirectory} ]
 then
-    FINAL_ZIP_NAME=${BASE_OUTPUT_DIR}/SSG_DataCollection_${DATESTRING}.tar.gz
+    FINAL_ZIP_NAME=${BASE_OUTPUT_DIR}/${DATED_OUTPUT_NAME}.tar.gz
     beginCompression
-    tar -zcvf ${FINAL_ZIP_NAME} --exclude='*.tar.gz' ${BASE_OUTPUT_DIR}
+    tar -zcvf ${FINAL_ZIP_NAME} --exclude='*.tar.gz' -C ${OUTPUT_HOME} ${DATED_OUTPUT_NAME}
     endCompression "${FINAL_ZIP_NAME}"
 
 else
