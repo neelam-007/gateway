@@ -2,6 +2,7 @@ package com.l7tech.server.identity;
 
 import com.l7tech.common.io.WhirlycacheFactory;
 import com.l7tech.identity.AuthenticationException;
+import com.l7tech.identity.BadCredentialsException;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
@@ -151,7 +152,9 @@ public final class AuthCache {
      * @param maxSuccessAge the maximum age, in milliseconds, to cache successful authentications
      * @param maxFailAge    the maximum age, in milliseconds, to cache failed authentications
      * @return the cached AuthenticationResult if one was available from cache, or null if not.
-     * @throws AuthenticationException if the authentication could not be performed for some low-level reason
+     * @throws AuthenticationException if the authentication could not be performed for some low-level reason.
+     *         If the authentication failed because the password was incorrect, or password expired, etc it will
+     *         throw a BadCredentialsException.
      */
     public AuthenticationResult getCachedAuthResult(LoginCredentials creds, IdentityProvider idp,
                                                     int maxSuccessAge, int maxFailAge)
@@ -162,7 +165,9 @@ public final class AuthCache {
         final CacheKey ckey = new CacheKey(providerOid, creds);
         Object cached = getCacheEntry(ckey, credString, idp, maxSuccessAge, maxFailAge);
         if (cached instanceof AuthenticationResult) {
-            return new AuthenticationResult((AuthenticationResult)cached, creds.getSecurityTokens());
+            return new AuthenticationResult((AuthenticationResult) cached, creds.getSecurityTokens());
+        } else if (cached instanceof AuthenticationResultFailure) {
+            throw new BadCredentialsException(((AuthenticationResultFailure) cached).getFailureReason());
         } else if (cached != null) {
             return null;
         }
@@ -216,7 +221,8 @@ public final class AuthCache {
 
         if (!failureCacheDisabled && result == null) {
             which = "failed";
-            failureCache.store(ckey, currentTimeMillis());
+            AuthenticationResultFailure authFailure = new AuthenticationResultFailure(currentTimeMillis(),thrown.getMessage());
+            failureCache.store(ckey, authFailure);
         }else if(!successCacheDisabled){
             which = "successful";
             successCache.store(ckey, result);
@@ -260,14 +266,18 @@ public final class AuthCache {
                 cachedAuthResult = (AuthenticationResult)cachedObj;
             }
         }
+
+        AuthenticationResultFailure authFailure=null;
         //it doesn't have it or it's disabled
         if(cachedAuthResult == null){
             //If no success cache and failure cache is enabled, check it
             if(!failureCacheDisabled){
                 //check if it's a fail for these creds
                 Object cachedObj = failureCache.retrieve(ckey);
-                if(cachedObj != null && cachedObj instanceof Long){
-                    cachedFailureTime = (Long)cachedObj;
+                if(cachedObj != null && cachedObj instanceof AuthenticationResultFailure){
+                    authFailure = (AuthenticationResultFailure) cachedObj;
+                    cachedFailureTime = authFailure.getCacheFailureTime();
+
                 }else{
                     //as miss in failureCache also, return null
                     return null;
@@ -286,7 +296,7 @@ public final class AuthCache {
             cacheAddedTime = cachedFailureTime;
             log = "failure";
             maxAge = maxFailAge;
-            returnValue = cachedFailureTime;
+            returnValue = authFailure;
         } else {
             cacheAddedTime = cachedAuthResult.getTimestamp();
             log = "success";
@@ -312,4 +322,34 @@ public final class AuthCache {
     private long currentTimeMillis() {
         return timeSource.currentTimeMillis();
     }
+
+    /**
+     * Created for failed authentications.
+     */
+    public class AuthenticationResultFailure {
+
+        Long cacheFailureTime;
+        String failureReason;
+
+        /**
+         * Create an authentication result for failed authentications.
+         *
+         * @param currTimeMilliseconds The CacheFailureTime (required)
+         * @param failureReason The reason why the authentication failed. (required)
+         */
+        AuthenticationResultFailure(Long currTimeMilliseconds, String failureReason){
+
+            this.cacheFailureTime = currTimeMilliseconds;
+            this.failureReason = failureReason;
+        }
+
+        public long getCacheFailureTime(){
+            return this.cacheFailureTime;
+        }
+
+        public String getFailureReason(){
+            return this.failureReason;
+        }
+    }
+
 }
