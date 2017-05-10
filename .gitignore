@@ -7,6 +7,7 @@ tmp
 *.out
 **/*.iml
 ./**/*.ipr
+idea-classes/
 
 # Build directories/files
 build
