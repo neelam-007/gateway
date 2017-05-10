@@ -32,6 +32,7 @@ public class DecodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
 
     private JComboBox validationType;
     private JCheckBox isBase64EncodedCheckBox;
+    private JCheckBox failOnInvalidSignatureCheckBox;
 
     public DecodeJsonWebTokenPropertiesDialog(final Frame parent, final DecodeJsonWebTokenAssertion assertion) {
         super(DecodeJsonWebTokenAssertion.class, parent, String.valueOf((Object) assertion.meta().get(AssertionMetadata.PROPERTIES_ACTION_NAME)), true);
@@ -100,6 +101,7 @@ public class DecodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
         targetVariable.setAssertion(assertion, getPreviousAssertion());
 
         isBase64EncodedCheckBox.setSelected(assertion.isBase64Encoded());
+        failOnInvalidSignatureCheckBox.setSelected(assertion.isFailUnverifiedSignature());
     }
 
     @Override
@@ -130,7 +132,7 @@ public class DecodeJsonWebTokenPropertiesDialog extends AssertionPropertiesOkCan
         }
         assertion.setTargetVariablePrefix(targetVariable.getVariable());
         assertion.setBase64Encoded(isBase64EncodedCheckBox.isSelected());
-
+        assertion.setFailUnverifiedSignature(failOnInvalidSignatureCheckBox.isSelected());
         return assertion;
     }
 
