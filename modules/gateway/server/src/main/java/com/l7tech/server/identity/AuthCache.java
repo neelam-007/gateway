@@ -343,7 +343,7 @@ public final class AuthCache {
             this.failureReason = failureReason;
         }
 
-        public long getCacheFailureTime(){
+        public Long getCacheFailureTime(){
             return this.cacheFailureTime;
         }
 
