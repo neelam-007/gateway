@@ -15,6 +15,7 @@ import com.l7tech.server.TestDefaultKey;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
+import com.l7tech.test.BugId;
 import com.l7tech.util.HexUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -177,6 +178,23 @@ public class ServerDecodeJsonWebTokenAssertionTest {
         Assert.assertEquals(Lists.newArrayList("alg"), context.getVariable("result.header.names"));
         Assert.assertEquals("yabbadabbadoo", context.getVariable("result.payload"));
         Assert.assertEquals("widHhV78UyVWXA_hzwY88B0p6jMOS2vZMntVT6xxFHQ", context.getVariable("result.signature"));
+        Assert.assertEquals("false", context.getVariable("result.valid"));
+    }
+
+    @BugId("US341928")
+    @Test
+    public void test_verifyInvalidJWSFailAssertion() throws Exception {
+        PolicyEnforcementContext context = getContext();
+        DecodeJsonWebTokenAssertion assertion = new DecodeJsonWebTokenAssertion();
+        assertion.setSourcePayload("eyJhbGciOiJIUzI1NiJ9.eWFiYmFkYWJiYWRvbw.widHhV78UyVWXA_hzwY88B0p6jMOS2vZMntVT6xxFHQ");
+        assertion.setValidationType(JsonWebTokenConstants.VALIDATION_USING_SECRET);
+        assertion.setSignatureSecret("hJtXIZ2uSN5kbQfbtTNWbpdmhkV8FJG-Onbc6mxCcYh");
+        assertion.setTargetVariablePrefix("result");
+        assertion.setFailUnverifiedSignature(true); // fail the assertion if the signature is not verified
+
+        ServerDecodeJsonWebTokenAssertion sass = new ServerDecodeJsonWebTokenAssertion(assertion);
+        AssertionStatus status = sass.checkRequest(context);
+        Assert.assertEquals(AssertionStatus.FALSIFIED, status);
         Assert.assertEquals("false", context.getVariable("result.valid"));
     }
 

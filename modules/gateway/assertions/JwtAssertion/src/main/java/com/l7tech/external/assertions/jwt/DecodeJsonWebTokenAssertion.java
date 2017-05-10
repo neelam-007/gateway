@@ -15,6 +15,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.l7tech.policy.assertion.AssertionMetadata.POLICY_ADVICE_CLASSNAME;
+
 
 public class DecodeJsonWebTokenAssertion extends Assertion implements UsesVariables, SetsVariables, UsesEntities {
 
@@ -32,6 +34,7 @@ public class DecodeJsonWebTokenAssertion extends Assertion implements UsesVariab
     private String keyType;
     private String keyId;
     private String targetVariablePrefix;
+    private boolean failUnverifiedSignature;
 
     public String getSourcePayload() {
         return sourcePayload;
@@ -105,6 +108,14 @@ public class DecodeJsonWebTokenAssertion extends Assertion implements UsesVariab
         this.targetVariablePrefix = targetVariablePrefix;
     }
 
+    public boolean isFailUnverifiedSignature() {
+        return failUnverifiedSignature;
+    }
+
+    public void setFailUnverifiedSignature(final boolean failUnverifiedSignature) {
+        this.failUnverifiedSignature = failUnverifiedSignature;
+    }
+
     //
     // Metadata
     //
@@ -134,8 +145,7 @@ public class DecodeJsonWebTokenAssertion extends Assertion implements UsesVariab
 
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/external/assertions/jsonwebtoken/console/resources/openidConnect.gif");
 
-        // Enable automatic policy advice (default is no advice unless a matching Advice subclass exists)
-        meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
+        meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "com.l7tech.external.assertions.jwt.DecodeJsonWebTokenAssertionAdvice");
 
         // Set nice, informative policy node name for GUI
         meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/external/assertions/jsonwebtoken/console/resources/openidConnect.gif");
@@ -222,7 +232,7 @@ public class DecodeJsonWebTokenAssertion extends Assertion implements UsesVariab
         public String getAssertionName( final DecodeJsonWebTokenAssertion assertion, final boolean decorate) {
             final StringBuilder sb = new StringBuilder("Decode Json Web Token");
             if(decorate){
-                if(assertion.getValidationType().equals(JsonWebTokenConstants.VALIDATION_USING_PK)){
+                if(JsonWebTokenConstants.VALIDATION_USING_PK.equals(assertion.getValidationType())){
                     if(assertion.getKeyGoid() != null && assertion.getKeyAlias() == null){
                         sb.append(": validate using recipient key (Key: <Default SSL Key>)");
                     }
