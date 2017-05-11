@@ -1,18 +1,13 @@
 package com.l7tech.external.assertions.mqnative.server;
 
-
 import com.l7tech.external.assertions.mqnative.MqNativeDynamicProperties;
 import com.l7tech.external.assertions.mqnative.MqNativeReplyType;
 
-import static com.l7tech.external.assertions.mqnative.MqNativeConstants.MQ_CONNECTION_POOL_MAX_ACTIVE_PROPERTY;
-import static com.l7tech.external.assertions.mqnative.MqNativeConstants.MQ_CONNECTION_POOL_MAX_WAIT_PROPERTY;
-import static com.l7tech.external.assertions.mqnative.MqNativeConstants.MQ_CONNECTION_POOL_MAX_IDLE_PROPERTY;
 import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.REPLY_NONE;
 import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.REPLY_SPECIFIED_QUEUE;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.util.Config;
 import com.l7tech.util.Either;
 import static com.l7tech.util.Either.left;
 import static com.l7tech.util.Either.right;
@@ -20,7 +15,6 @@ import static com.l7tech.util.Eithers.extract;
 import com.l7tech.util.Functions.Nullary;
 import static com.l7tech.util.Functions.memoize;
 import com.l7tech.util.Option;
-import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Hashtable;
@@ -48,16 +42,15 @@ class MqNativeEndpointConfig {
     private final MqNativeReplyType replyType;
     private final String replyToModelQueueName;
     private final Nullary<Either<MqNativeConfigException,Hashtable>> queueManagerProperties;
-    private final int connectionPoolMaxActive;
-    private final long connectionPoolMaxWait;
-    private final int connectionPoolMaxIdle;
     private final boolean isReplyQueueGetMessageOptionsUsed;
     private final int replyQueueGetMessageOptions;
 
     MqNativeEndpointConfig( final SsgActiveConnector originalConnector,
                             final Option<String> password,
                             final Option<MqNativeDynamicProperties> dynamicProperties,
-                            final Config config) {
+                            final int connectionPoolMaxActive,
+                            final int connectionPoolMaxIdle,
+                            final long connectionPoolMaxWait ) {
         final SsgActiveConnector connector = originalConnector.getCopy();
         if ( dynamicProperties.isSome() ) applyOverrides( connector, dynamicProperties.some() );
 
@@ -65,19 +58,22 @@ class MqNativeEndpointConfig {
         this.dynamic = connector.getBooleanProperty( PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_IS_TEMPLATE_QUEUE );
         this.queueName = connector.getProperty( PROPERTIES_KEY_MQ_NATIVE_TARGET_QUEUE_NAME );
         this.replyToQueueName = connector.getProperty( PROPERTIES_KEY_MQ_NATIVE_SPECIFIED_REPLY_QUEUE_NAME );
-        this.key = new MqNativeEndpointKey( connector.getGoid(), connector.getVersion() );
+        this.key = new MqNativeEndpointKey( connector.getGoid(), connector.getVersion(), connectionPoolMaxActive, connectionPoolMaxIdle, connectionPoolMaxWait );
         this.copyCorrelationId = connector.getBooleanProperty( PROPERTIES_KEY_MQ_NATIVE_IS_COPY_CORRELATION_ID_FROM_REQUEST );
         this.queueManagerName = connector.getProperty( PROPERTIES_KEY_MQ_NATIVE_QUEUE_MANAGER_NAME );
         this.replyType = connector.getEnumProperty( PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, REPLY_NONE, MqNativeReplyType.class );
         this.replyToModelQueueName = connector.getProperty( PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_TEMPORARY_QUEUE_NAME_PATTERN );
         this.queueManagerProperties = memoize(buildQueueManagerProperties(connector,password));
-
-        this.connectionPoolMaxActive = retrieveMqConnectionPoolProperty(connector, config, MQ_CONNECTION_POOL_MAX_ACTIVE_PROPERTY, DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_ACTIVE);
-        this.connectionPoolMaxWait = retrieveMqConnectionPoolProperty(connector, config, MQ_CONNECTION_POOL_MAX_WAIT_PROPERTY, DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_WAIT);
-        this.connectionPoolMaxIdle = retrieveMqConnectionPoolProperty(connector, config, MQ_CONNECTION_POOL_MAX_IDLE_PROPERTY, DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_IDLE);
-
         this.isReplyQueueGetMessageOptionsUsed = connector.getBooleanProperty( PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_IS_REPLY_QUEUE_GET_MESSAGE_OPTIONS_USED );
         this.replyQueueGetMessageOptions = connector.getIntegerProperty( PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_REPLY_QUEUE_GET_MESSAGE_OPTIONS, 0);
+    }
+
+    void setPoolProperties(int maxActive, int maxIdle, long maxWait) {
+        if (key != null) {
+            key.setMaxActive(maxActive);
+            key.setMaxIdle(maxIdle);
+            key.setMaxWait(maxWait);
+        }
     }
 
     boolean isDynamic() {
@@ -137,19 +133,29 @@ class MqNativeEndpointConfig {
     }
 
     /**
-     * Represents all endpoint properties necessary to identify an appropriate MQQueueManager.
+     * Represents all endpoint properties necessary to identify a MqNativeCachedConnectionPool.
      *
-     * <p>If any dynamic properties effect the lookup of an MQQueueManager then
+     * <p>If any properties effect the lookup of a MqNativeCachedConnectionPool then
      * these properties must be added to the key.</p>
      */
     static final class MqNativeEndpointKey {
         private final Goid id;
         private final int version;
 
+        private int maxActive = DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_ACTIVE;
+        private int maxIdle = DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_IDLE;
+        private long maxWait = DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_WAIT;
+
         MqNativeEndpointKey( final Goid id,
-                             final int version ) {
+                             final int version,
+                             final int maxActive,
+                             final int maxIdle,
+                             final long maxWait ) {
             this.id = id;
             this.version = version;
+            this.maxActive = maxActive;
+            this.maxIdle = maxIdle;
+            this.maxWait = maxWait;
         }
 
         Goid getId() {
@@ -158,6 +164,30 @@ class MqNativeEndpointConfig {
 
         int getVersion() {
             return version;
+        }
+
+        public int getMaxActive() {
+            return maxActive;
+        }
+
+        public void setMaxActive(int maxActive) {
+            this.maxActive = maxActive;
+        }
+
+        public int getMaxIdle() {
+            return maxIdle;
+        }
+
+        public void setMaxIdle(int maxIdle) {
+            this.maxIdle = maxIdle;
+        }
+
+        public long getMaxWait() {
+            return maxWait;
+        }
+
+        public void setMaxWait(long maxWait) {
+            this.maxWait = maxWait;
         }
 
         @SuppressWarnings({ "RedundantIfStatement" })
@@ -170,6 +200,9 @@ class MqNativeEndpointConfig {
 
             if ( !id.equals(that.id) ) return false;
             if ( version != that.version ) return false;
+            if (maxActive != that.maxActive) return false;
+            if (maxIdle != that.maxIdle) return false;
+            if (maxWait != that.maxWait) return false;
 
             return true;
         }
@@ -177,7 +210,10 @@ class MqNativeEndpointConfig {
         @Override
         public int hashCode() {
             int result = id.hashCode();
-            result += 31 * result + version;
+            result = 31 * result + version;
+            result = 31 * result + maxActive;
+            result = 31 * result + maxIdle;
+            result = 31 * result + (int) (maxWait ^ (maxWait >>> 32));
             return result;
         }
 
@@ -189,56 +225,15 @@ class MqNativeEndpointConfig {
          * @return The string representation.
          */
         @SuppressWarnings("StringBufferReplaceableByString")
+        @Override
         public String toString() {
-            StringBuilder sb = new StringBuilder();
-
-            sb.append("MqNativeEndpointKey[");
-            sb.append(getId());
-            sb.append(',');
-            sb.append(getVersion());
-            sb.append("]");
-
-            return sb.toString();
-        }
-    }
-
-    /**
-     * Retrieve the property value from SsgActiveConnector first.  If no such property set up, then retrieve it
-     * from the cluster property.
-     * @param connector a SsgActiveConnector object
-     * @param config cluster properties config
-     * @param propName the property name
-     * @param defaultValue the default value of the property
-     * @return a long integer of a MQ Native connection pool property
-     */
-    static long retrieveMqConnectionPoolProperty(final SsgActiveConnector connector, final Config config, final String propName, final long defaultValue) {
-        final String propValue = connector == null? null : connector.getProperty(propName);
-
-        if (StringUtils.isBlank(propValue)) {
-            if (config != null) {
-                return config.getLongProperty(propName, defaultValue);
-            } else {
-                return defaultValue;
-            }
-        } else {
-            return connector.getLongProperty(propName, defaultValue);
-        }
-    }
-
-    /**
-     * Same as the above method except the return value is an integer.
-     */
-    static int retrieveMqConnectionPoolProperty(final SsgActiveConnector connector, final Config config, final String propName, final int defaultValue) {
-        final String propValue = connector == null ? null : connector.getProperty(propName);
-
-        if (StringUtils.isBlank(propValue)) {
-            if (config != null) {
-                return config.getIntProperty(propName, defaultValue);
-            } else {
-                return defaultValue;
-            }
-        } else {
-            return connector.getIntegerProperty(propName, defaultValue);
+            return "MqNativeEndpointKey{" +
+                    "id=" + id +
+                    ", version=" + version +
+                    ", maxActive=" + maxActive +
+                    ", maxIdle=" + maxIdle +
+                    ", maxWait=" + maxWait +
+                    '}';
         }
     }
 
@@ -279,7 +274,7 @@ class MqNativeEndpointConfig {
      * @return maxActive setting
      */
     int getConnectionPoolMaxActive() {
-        return connectionPoolMaxActive;
+        return key != null? key.getMaxActive() : DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_ACTIVE;
     }
 
     /**
@@ -293,7 +288,7 @@ class MqNativeEndpointConfig {
      * @return maxWait setting
      */
     long getConnectionPoolMaxWait() {
-        return connectionPoolMaxWait;
+        return key != null? key.getMaxWait() : DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_WAIT;
     }
 
     /**
@@ -302,7 +297,7 @@ class MqNativeEndpointConfig {
      * @return maxIdle setting
      */
     int getConnectionPoolMaxIdle() {
-        return connectionPoolMaxIdle;
+        return key != null? key.getMaxIdle() : DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_IDLE;
     }
 
     boolean isReplyQueueGetMessageOptionsUsed() {
@@ -312,5 +307,4 @@ class MqNativeEndpointConfig {
     int getReplyQueueGetMessageOptions() {
         return replyQueueGetMessageOptions;
     }
-
 }
