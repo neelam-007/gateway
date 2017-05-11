@@ -187,7 +187,7 @@ elif [ "$MODE" == "all" ]
 then
     doAll $LEVEL
 else
-    echo "ERROR: No module was specified.  Please enter a module."
+    echo "ERROR: No module was specified.  Please enter a module or say collect.sh -h for help."
 fi
 
 createSymlinksToEveryFile
