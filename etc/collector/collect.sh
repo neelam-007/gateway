@@ -188,6 +188,7 @@ then
     doAll $LEVEL
 else
     echo "ERROR: No module was specified.  Please enter a module or say collect.sh -h for help."
+    exit 1
 fi
 
 createSymlinksToEveryFile
