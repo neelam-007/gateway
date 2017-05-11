@@ -68,13 +68,13 @@ public class ServerAuthenticationAssertion extends ServerIdentityAssertion<Authe
     @Override
     protected AssertionStatus authFailed(LoginCredentials pc, Exception e) {
 
-        final AssertionStatus assertionStatus = super.authFailed(pc, e);
+        final AssertionStatus status = super.authFailed(pc, e);
 
         if (e instanceof BadCredentialsException){
             userIdList.add(pc.getLogin());
             userErrorList.add(ExceptionUtils.getMessage(e));
         }
 
-        return assertionStatus;
+        return status;
     }
 }

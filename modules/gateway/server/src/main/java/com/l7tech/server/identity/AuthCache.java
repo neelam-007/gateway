@@ -190,7 +190,10 @@ public final class AuthCache {
                 cached = getCacheEntry(ckey, credString, idp, maxSuccessAge, maxFailAge);
                 if (cached instanceof AuthenticationResult) {
                     // Someone else got there first with a success
-                    return new AuthenticationResult((AuthenticationResult)cached, creds.getSecurityTokens());
+                    return new AuthenticationResult((AuthenticationResult) cached, creds.getSecurityTokens());
+                } else if (cached instanceof AuthenticationResultFailure) {
+                        // authentication failed.
+                        throw new BadCredentialsException(((AuthenticationResultFailure) cached).getFailureReason());
                 } else if (cached != null) {
                     // Someone else got there first with a failure
                     return null;
@@ -221,7 +224,7 @@ public final class AuthCache {
 
         if (!failureCacheDisabled && result == null) {
             which = "failed";
-            AuthenticationResultFailure authFailure = new AuthenticationResultFailure(currentTimeMillis(),thrown.getMessage());
+            AuthenticationResultFailure authFailure = new AuthenticationResultFailure(currentTimeMillis(),thrown != null ? thrown.getMessage() : null);
             failureCache.store(ckey, authFailure);
         }else if(!successCacheDisabled){
             which = "successful";
@@ -249,7 +252,7 @@ public final class AuthCache {
      * Fails fast by returning null when both the successCache and the failureCache are disabled.
      * In the case when one is disabled, it will proceed with the lookup and then return null when not found
      * , null will always be found for the cache entry which is disabled
-     * @return Object either an AuthenticationResult on a success hit, or a Long on a failure hit, null when both caches
+     * @return Object either an AuthenticationResult on a success hit, or a AuthenticationResultFailure on a failure hit, null when both caches
      * miss OR there was a hit but the cache values have expired and have not yet been cleaned from the cache
      */
     private Object getCacheEntry(CacheKey ckey, String credString, IdentityProvider idp, int maxSuccessAge, int maxFailAge) {
@@ -267,7 +270,7 @@ public final class AuthCache {
             }
         }
 
-        AuthenticationResultFailure authFailure=null;
+        AuthenticationResultFailure cacheAuthFailureResult=null;
         //it doesn't have it or it's disabled
         if(cachedAuthResult == null){
             //If no success cache and failure cache is enabled, check it
@@ -275,8 +278,8 @@ public final class AuthCache {
                 //check if it's a fail for these creds
                 Object cachedObj = failureCache.retrieve(ckey);
                 if(cachedObj != null && cachedObj instanceof AuthenticationResultFailure){
-                    authFailure = (AuthenticationResultFailure) cachedObj;
-                    cachedFailureTime = authFailure.getCacheFailureTime();
+                    cacheAuthFailureResult = (AuthenticationResultFailure) cachedObj;
+                    cachedFailureTime = cacheAuthFailureResult.getCacheFailureTime();
 
                 }else{
                     //as miss in failureCache also, return null
@@ -296,7 +299,7 @@ public final class AuthCache {
             cacheAddedTime = cachedFailureTime;
             log = "failure";
             maxAge = maxFailAge;
-            returnValue = authFailure;
+            returnValue = cacheAuthFailureResult;
         } else {
             cacheAddedTime = cachedAuthResult.getTimestamp();
             log = "success";
@@ -322,34 +325,4 @@ public final class AuthCache {
     private long currentTimeMillis() {
         return timeSource.currentTimeMillis();
     }
-
-    /**
-     * Created for failed authentications.
-     */
-    public class AuthenticationResultFailure {
-
-        Long cacheFailureTime;
-        String failureReason;
-
-        /**
-         * Create an authentication result for failed authentications.
-         *
-         * @param currTimeMilliseconds The CacheFailureTime (required)
-         * @param failureReason The reason why the authentication failed. (required)
-         */
-        AuthenticationResultFailure(Long currTimeMilliseconds, String failureReason){
-
-            this.cacheFailureTime = currTimeMilliseconds;
-            this.failureReason = failureReason;
-        }
-
-        public Long getCacheFailureTime(){
-            return this.cacheFailureTime;
-        }
-
-        public String getFailureReason(){
-            return this.failureReason;
-        }
-    }
-
 }
