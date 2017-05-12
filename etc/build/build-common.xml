@@ -2,7 +2,7 @@
   Common build file for all modules
 -->
 <project name="common"
-         xmlns:ivy="antlib:org.apache.ivy.ant">
+         xmlns:ivy="antlib:org.apache.ivy.ant" xmlns:jacoco="antlib:org.jacoco.ant">
 
     <!-- Get any user properties -->
     <property file="${user.home}/build.properties"/>
@@ -337,6 +337,14 @@
                 <fail unless="@{module}.included.dependencies" message="Missing included module JAR(s) for applet ${@{module}.layer7.dependency.path.text}"/>
             </sequential>
         </macrodef>
+		
+		<!--
+		Jacoco taskdef
+		-->
+		<taskdef uri="antlib:org.jacoco.ant" resource="org/jacoco/ant/antlib.xml">
+			<classpath path="${src.root}/lib/tools/jacocoant.jar"/>
+		</taskdef>
+	
     </target>
 
     <!--
@@ -506,51 +514,53 @@
             depends="compile-test-all">
         <mkdir dir="${report.test.dir}"/>
 
-        <junit printsummary="yes"
-               haltonfailure="yes"
-               fork="on"
-               forkmode="once"
-               errorproperty="test.error"
-               failureproperty="test.failure"
-               maxmemory="2560m">
-            <jvmarg value="-ea"/>
+		<jacoco:coverage destfile="build/jacoco.exec">
+			<junit printsummary="yes"
+				   haltonfailure="yes"
+				   fork="on"
+				   forkmode="once"
+				   errorproperty="test.error"
+				   failureproperty="test.failure"
+				   maxmemory="2560m">
+				<jvmarg value="-ea"/>
 
-            <classpath>
-                <pathelement location="${classes.test.dir}"/>
-                <path refid="full.test.path.id"/>
-            </classpath>
+				<classpath>
+					<pathelement location="${classes.test.dir}"/>
+					<path refid="full.test.path.id"/>
+				</classpath>
 
-            <formatter type="plain" unless="build.junit.xmlformat"/>
-            <formatter type="xml" if="build.junit.xmlformat"/>
+				<formatter type="plain" unless="build.junit.xmlformat"/>
+				<formatter type="xml" if="build.junit.xmlformat"/>
 
-            <sysproperty key="src.root" value="${src.root}"/>
-            <syspropertyset>
-                <propertyref prefix="com.l7tech"/>
-                <propertyref name="module.skip.forms"/>
-                <!-- This property is used to specify the build type. For example nightly or daily
-                Example: -Dbuild.type="nightly" -->
-                <propertyref name="build.type"/>
-                <!-- This is used to set the random generator. On tests we use /dev/urandom otherwise the tests will block waiting for entropy.
-                 Example: run tests with: -Djava.security.egd=file:/dev/./urandom-->
-                <propertyref name="java.security.egd"/>
-                <!-- use this property to tweak the timeout for creating source and target environments  during migration
-                 Example: -Dtest.migration.waitTimeMinutes=15 -->
-                <propertyref name="test.migration.waitTimeMinutes"/>
-                <!-- use this property to set the current code signing certificate inside /etc/ssgKeyStore
-                 Example: -Dcode.signer.cert.alias=signer6 -->
-                <propertyref name="code.signer.cert.alias"/>
-                <!-- use this property to tweak the code signing certificate expiry period (in days) threshold
-                nightly builds will fail when the current code signing certificate already expired or will expire within the specified threshold
-                 Example: -Dcode.signer.cert.expiry.reminder.days=180 -->
-                <propertyref name="code.signer.cert.expiry.reminder.days"/>
-            </syspropertyset>
+				<sysproperty key="src.root" value="${src.root}"/>
+				<syspropertyset>
+					<propertyref prefix="com.l7tech"/>
+					<propertyref name="module.skip.forms"/>
+					<!-- This property is used to specify the build type. For example nightly or daily
+					Example: -Dbuild.type="nightly" -->
+					<propertyref name="build.type"/>
+					<!-- This is used to set the random generator. On tests we use /dev/urandom otherwise the tests will block waiting for entropy.
+					 Example: run tests with: -Djava.security.egd=file:/dev/./urandom-->
+					<propertyref name="java.security.egd"/>
+					<!-- use this property to tweak the timeout for creating source and target environments  during migration
+					 Example: -Dtest.migration.waitTimeMinutes=15 -->
+					<propertyref name="test.migration.waitTimeMinutes"/>
+					<!-- use this property to set the current code signing certificate inside /etc/ssgKeyStore
+					 Example: -Dcode.signer.cert.alias=signer6 -->
+					<propertyref name="code.signer.cert.alias"/>
+					<!-- use this property to tweak the code signing certificate expiry period (in days) threshold
+					nightly builds will fail when the current code signing certificate already expired or will expire within the specified threshold
+					 Example: -Dcode.signer.cert.expiry.reminder.days=180 -->
+					<propertyref name="code.signer.cert.expiry.reminder.days"/>
+				</syspropertyset>
 
-            <batchtest haltonfailure="no" todir="${report.test.dir}">
-                <fileset dir="${classes.test.dir}">
-                    <include name="**/*Test.class"/>
-                </fileset>
-            </batchtest>
-        </junit>
+				<batchtest haltonfailure="no" todir="${report.test.dir}">
+					<fileset dir="${classes.test.dir}">
+						<include name="**/*Test.class"/>
+					</fileset>
+				</batchtest>
+			</junit>
+		</jacoco:coverage>
 
         <!-- Fail on error or failure -->
         <fail if="test.failure">One or more JUnit tests failed.</fail>
