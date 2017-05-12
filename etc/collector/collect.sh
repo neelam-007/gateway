@@ -72,7 +72,7 @@ function doesOutputDirectoryExist ()
 function doModule ()
 {
     script=(${COLLECTOR_HOME}/modules/$1)
-    if [ -e $script ] 
+    if [ -x $script ]
     then
       $script $MODULE $2 2>&1
     else 
