@@ -28,17 +28,21 @@ import com.l7tech.server.service.resolution.NonUniqueServiceResolutionException;
 import com.l7tech.server.service.resolution.ServiceResolutionException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Triple;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static com.l7tech.external.assertions.quickstarttemplate.QuickStartTemplateAssertion.PROPERTY_QS_REGISTRAR_TMS;
 
 /**
  * Server side implementation of the QuickStartTemplateAssertion.
@@ -163,6 +167,7 @@ public class ServerQuickStartTemplateAssertion extends AbstractMessageTargetable
     private PublishedService createPublishedService(@NotNull final Service service, @NotNull final List<EncapsulatedAssertion> encapsulatedAssertions) throws QuickStartPolicyBuilderException {
         final PublishedService publishedService = new PublishedService();
         publishedService.setName(service.name);
+        publishedService.putProperty(PROPERTY_QS_REGISTRAR_TMS, String.valueOf(new Date().getTime()));
 
         // Set the service URI and fail if there is an existing service with the same URI (service URI conflict resolution)
         publishedService.setRoutingUri(service.gatewayUri);
@@ -191,6 +196,12 @@ public class ServerQuickStartTemplateAssertion extends AbstractMessageTargetable
 
         publishedService.putProperty("touchTimeStamp", System.currentTimeMillis() + "");
         publishedService.setName(service.name);
+        final String registrarTime = publishedService.getProperty(PROPERTY_QS_REGISTRAR_TMS);
+        if (StringUtils.isNotEmpty(registrarTime)) {
+            publishedService.putProperty(PROPERTY_QS_REGISTRAR_TMS, String.valueOf(Long.valueOf(registrarTime) + 1));
+        } else {
+            publishedService.putProperty(PROPERTY_QS_REGISTRAR_TMS, String.valueOf(new Date().getTime()));
+        }
         publishedService.setHttpMethods(Sets.newHashSet(service.httpMethods));
         generatePolicy(publishedService, encapsulatedAssertions);
         return publishedService;
