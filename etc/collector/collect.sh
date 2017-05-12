@@ -56,6 +56,9 @@ function usage ()
     echo "   3 = *Currently nothing at this level.  Note that heap dumps have a separate flag to enable."
     echo -e "\n[-D]"
     echo "Heap Dump. Use caution when taking heap dumps as this can significantly affect performance."
+    echo -e "\n[-d <output-directory>]"
+    echo "Where to put the files containing the output. By default, this is rooted in /home/ssgconfig."
+    echo "  Specify another root path here if you want them somewhere else."
     echo -e "\n[-h help]"
     echo
 }
