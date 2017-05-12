@@ -7,25 +7,34 @@ DEFAULTLEVEL=1
 DEFAULTGROUP=all
 OUTPUT_HOME=/home/ssgconfig
 DATED_OUTPUT_NAME="dct_${DATESTRING}"
-DEFAULT_BASE_DATED_OUTPUT_DIR="${OUTPUT_HOME}/${DATED_OUTPUT_NAME}"
 DEFAULTMODE="module"
 
 DEBUG=0
 
-BASE_OUTPUT_DIR="${DEFAULT_BASE_DATED_OUTPUT_DIR}"
 MODULE=$DEFAULTMODULE
 LEVEL=$DEFAULTLEVEL
 GROUP=$DEFAULTGROUP
 MODE=
 HEAPDUMP_ENABLED=
 
-export ALL_MODULES_BaseOutputDirectory="${DEFAULT_BASE_DATED_OUTPUT_DIR}/categorized-by-module"
 export COLLECTOR_HOME=/opt/SecureSpan/Collector
 
 # Pull in collector support functions
 . ${COLLECTOR_HOME}/collectorlib
 
-function usage () 
+
+function calculatePaths()
+{
+    DEFAULT_BASE_DATED_OUTPUT_DIR="${OUTPUT_HOME}/${DATED_OUTPUT_NAME}"
+    BASE_OUTPUT_DIR="${DEFAULT_BASE_DATED_OUTPUT_DIR}"
+    export ALL_MODULES_BaseOutputDirectory="${DEFAULT_BASE_DATED_OUTPUT_DIR}/categorized-by-module"
+}
+
+# set variables for the values of several file system locations based on BASE_OUTPUT_DIR
+calculatePaths
+
+
+function usage ()
 {
     echo "Usage:"
     echo -e "\nAPI Gateway Data Collection Utility version ${VERSION}"
@@ -75,7 +84,7 @@ function doModule ()
     if [ -x $script ]
     then
       $script $MODULE $2 2>&1
-    else 
+    else
       echo "Error there is no module named $1"
     fi
 }
@@ -103,8 +112,22 @@ function createSymlinksToEveryFile ()
      | xargs -I{} ln -s {} "${ALL_OUTPUT_IN_ONE_FOLDER}"
 }
 
+# Parameters $1 = directory where you want your output stored
+function recalculatePaths()
+{
+    if [ ! -w $1 ]
+    then
+        echo "Your desired output directory $1 does not exist or is not writable. \
+            Please specify a different one or amend its permissions."
+        exit 1
+    fi
 
-while getopts "hm:al:o:D" opt; do
+    OUTPUT_HOME=$1
+    calculatePaths
+}
+
+
+while getopts "hm:al:o:Dd:" opt; do
 
   case $opt in
 
@@ -153,9 +176,17 @@ while getopts "hm:al:o:D" opt; do
           exit 1
       fi
       LEVEL=$OPTARG
-
       ;;
 
+      d)
+      if [ ${OPTARG#-} != $OPTARG ]
+      then
+          echo "Argument required for -d."
+          usage
+          exit 1
+      fi
+      recalculatePaths $OPTARG
+      ;;
 
       \?)
       usage
