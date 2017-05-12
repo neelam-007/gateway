@@ -137,7 +137,7 @@ while getopts "hm:al:o:D" opt; do
       a)
       if [ $MODE ]
       then
-          echo "Only one of -m or -g may be selected"
+          echo "Only one of -m or -a may be selected"
           usage
           exit 1
       fi
