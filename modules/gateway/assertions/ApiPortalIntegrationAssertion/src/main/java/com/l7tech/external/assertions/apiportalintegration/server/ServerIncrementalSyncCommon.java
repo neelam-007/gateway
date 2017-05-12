@@ -23,7 +23,6 @@ public class ServerIncrementalSyncCommon {
     static final String BULK_SYNC_TRUE = "true";
     static final String BULK_SYNC_FALSE = "false";
     static final String ENTITY_TYPE_APPLICATION = "APPLICATION";
-    static final String ENTITY_TYPE_API = "API";
 
     public ServerIncrementalSyncCommon() {
     }
