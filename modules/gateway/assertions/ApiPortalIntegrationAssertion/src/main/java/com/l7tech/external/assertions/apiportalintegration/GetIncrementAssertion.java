@@ -67,19 +67,13 @@ public class GetIncrementAssertion extends Assertion implements UsesVariables, S
 
         // Cluster properties used by this assertion
         Map<String, String[]> props = new HashMap<>();
-        //props.put(NAME, new String[] {
-        //        DESCRIPTION,
-        //        DEFAULT
-        //});
         meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
 
         // Set description for GUI
         meta.put(AssertionMetadata.SHORT_NAME, "Portal Get Incremental Update");
         meta.put(AssertionMetadata.LONG_NAME, "Portal Get Incremental Update Json message");
 
-        // Add to palette folder(s) 
-        //   accessControl, transportLayerSecurity, xmlSecurity, xml, routing, 
-        //   misc, audit, policyLogic, threatProtection 
+        //Adding internalAssertions in to PALETTE_FOLDERS
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "internalAssertions" });
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/server16.gif");
 
