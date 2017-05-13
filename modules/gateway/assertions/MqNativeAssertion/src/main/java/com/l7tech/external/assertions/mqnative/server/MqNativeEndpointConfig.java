@@ -68,14 +68,6 @@ class MqNativeEndpointConfig {
         this.replyQueueGetMessageOptions = connector.getIntegerProperty( PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_REPLY_QUEUE_GET_MESSAGE_OPTIONS, 0);
     }
 
-    void setPoolProperties(int maxActive, int maxIdle, long maxWait) {
-        if (key != null) {
-            key.setMaxActive(maxActive);
-            key.setMaxIdle(maxIdle);
-            key.setMaxWait(maxWait);
-        }
-    }
-
     boolean isDynamic() {
         return dynamic;
     }
@@ -170,24 +162,12 @@ class MqNativeEndpointConfig {
             return maxActive;
         }
 
-        public void setMaxActive(int maxActive) {
-            this.maxActive = maxActive;
-        }
-
         public int getMaxIdle() {
             return maxIdle;
         }
 
-        public void setMaxIdle(int maxIdle) {
-            this.maxIdle = maxIdle;
-        }
-
         public long getMaxWait() {
             return maxWait;
-        }
-
-        public void setMaxWait(long maxWait) {
-            this.maxWait = maxWait;
         }
 
         @SuppressWarnings({ "RedundantIfStatement" })
@@ -274,7 +254,7 @@ class MqNativeEndpointConfig {
      * @return maxActive setting
      */
     int getConnectionPoolMaxActive() {
-        return key != null? key.getMaxActive() : DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_ACTIVE;
+        return key.getMaxActive();
     }
 
     /**
@@ -288,7 +268,7 @@ class MqNativeEndpointConfig {
      * @return maxWait setting
      */
     long getConnectionPoolMaxWait() {
-        return key != null? key.getMaxWait() : DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_WAIT;
+        return key.getMaxWait();
     }
 
     /**
@@ -297,7 +277,7 @@ class MqNativeEndpointConfig {
      * @return maxIdle setting
      */
     int getConnectionPoolMaxIdle() {
-        return key != null? key.getMaxIdle() : DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_IDLE;
+        return key.getMaxIdle();
     }
 
     boolean isReplyQueueGetMessageOptionsUsed() {
