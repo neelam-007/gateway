@@ -326,7 +326,7 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
                 // route via write to queue
                 if (assertion.isPutToQueue()) {
                     // create the outbound queue
-                    targetQueue = queueManager.accessQueue( cfg.getQueueName(), getOpenOptions() );
+                    targetQueue = queueManager.accessQueue(cfg.getQueueName(), getOpenOptions());
 
                     // create replyTo or temporary queue
                     if (context.isReplyExpected()) {
@@ -361,7 +361,7 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
                     gmo.options = getMessageOptions();
                     gmo.waitInterval = readTimeout;
 
-                    targetQueue = queueManager.accessQueue(cfg.getQueueName(), getOpenOptions() );
+                    targetQueue = queueManager.accessQueue(cfg.getQueueName(), getOpenOptions());
                     mqResponseMessage = readMessageFromQueue(targetQueue, gmo);
                     if ( mqResponseMessage == null ) {
                         logAndAudit(MQ_ROUTING_NO_RESPONSE, String.valueOf(readTimeout));
