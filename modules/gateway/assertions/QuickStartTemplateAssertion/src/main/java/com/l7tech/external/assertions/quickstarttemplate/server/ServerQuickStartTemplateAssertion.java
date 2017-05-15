@@ -187,10 +187,10 @@ public class ServerQuickStartTemplateAssertion extends AbstractMessageTargetable
                                                     @NotNull final List<EncapsulatedAssertion> encapsulatedAssertions) throws FindException, QuickStartPolicyBuilderException {
         final PublishedService publishedService = serviceLocator.findByGoid(goid);
 
-        // Fail if the serviceID of the service to be updated does not exist
-        if (publishedService == null) {
-            throw new QuickStartPolicyBuilderException("Unable to find a service with ServiceID " + goid.toString());
-        }
+        // DO NOT Fail -> if the serviceID of the service to be updated does not exist
+        //if (publishedService == null) {
+        //    throw new QuickStartPolicyBuilderException("Unable to find a service with ServiceID " + goid.toString());
+        //}
 
         publishedService.setName(service.name);
         final String registrarTime = publishedService.getProperty(PROPERTY_QS_REGISTRAR_TMS);
