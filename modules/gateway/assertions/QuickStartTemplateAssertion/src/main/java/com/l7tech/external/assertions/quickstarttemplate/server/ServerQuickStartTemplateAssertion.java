@@ -35,7 +35,6 @@ import org.springframework.context.ApplicationContext;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -167,7 +166,7 @@ public class ServerQuickStartTemplateAssertion extends AbstractMessageTargetable
     private PublishedService createPublishedService(@NotNull final Service service, @NotNull final List<EncapsulatedAssertion> encapsulatedAssertions) throws QuickStartPolicyBuilderException {
         final PublishedService publishedService = new PublishedService();
         publishedService.setName(service.name);
-        publishedService.putProperty(PROPERTY_QS_REGISTRAR_TMS, String.valueOf(new Date().getTime()));
+        publishedService.putProperty(PROPERTY_QS_REGISTRAR_TMS, String.valueOf(System.currentTimeMillis()));
 
         // Set the service URI and fail if there is an existing service with the same URI (service URI conflict resolution)
         publishedService.setRoutingUri(service.gatewayUri);
@@ -177,7 +176,6 @@ public class ServerQuickStartTemplateAssertion extends AbstractMessageTargetable
                     "Try publishing this service using a different routing URI.");
         }
 
-        //publishedService.putProperty("touchTimeStamp", String.valueOf(System.currentTimeMillis()));
         publishedService.setHttpMethods(Sets.newHashSet(service.httpMethods));
         generatePolicy(publishedService, encapsulatedAssertions);
 
@@ -194,13 +192,12 @@ public class ServerQuickStartTemplateAssertion extends AbstractMessageTargetable
             throw new QuickStartPolicyBuilderException("Unable to find a service with ServiceID " + goid.toString());
         }
 
-        publishedService.putProperty("touchTimeStamp", System.currentTimeMillis() + "");
         publishedService.setName(service.name);
         final String registrarTime = publishedService.getProperty(PROPERTY_QS_REGISTRAR_TMS);
         if (StringUtils.isNotEmpty(registrarTime)) {
             publishedService.putProperty(PROPERTY_QS_REGISTRAR_TMS, String.valueOf(Long.valueOf(registrarTime) + 1));
         } else {
-            publishedService.putProperty(PROPERTY_QS_REGISTRAR_TMS, String.valueOf(new Date().getTime()));
+            publishedService.putProperty(PROPERTY_QS_REGISTRAR_TMS, String.valueOf(System.currentTimeMillis()));
         }
         publishedService.setHttpMethods(Sets.newHashSet(service.httpMethods));
         generatePolicy(publishedService, encapsulatedAssertions);
