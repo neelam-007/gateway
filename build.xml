@@ -4250,5 +4250,5 @@
 		</taskdef>
 		<sonar:sonar />
 	</target>
-
+	
 </project>

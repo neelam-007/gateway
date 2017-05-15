@@ -192,7 +192,9 @@ public class ServerDecodeJsonWebTokenAssertion extends AbstractServerAssertion<D
         try {
             if (structure instanceof JsonWebSignature) {
                 final JsonWebSignature jws = (JsonWebSignature) structure;
-                context.setVariable(assertion.getTargetVariablePrefix() + ".valid", String.valueOf(jws.verifySignature()));
+                if (!verifySignature(context, jws) && assertion.isFailUnverifiedSignature()) {
+                    return AssertionStatus.FALSIFIED;
+                }
             }
             if (structure instanceof JsonWebEncryption) {
                 final AlgorithmFactory<KeyManagementAlgorithm> algorithmFactory = AlgorithmFactoryFactory.getInstance().getJweKeyManagementAlgorithmFactory();
@@ -287,7 +289,9 @@ public class ServerDecodeJsonWebTokenAssertion extends AbstractServerAssertion<D
         try {
             if (structure instanceof JsonWebSignature) {
                 structure.setKey(new HmacKey(secret));
-                context.setVariable(assertion.getTargetVariablePrefix() + ".valid", String.valueOf(((JsonWebSignature) structure).verifySignature()));
+                if (!verifySignature(context, (JsonWebSignature) structure) && assertion.isFailUnverifiedSignature()) {
+                    return AssertionStatus.FALSIFIED;
+                }
             }
             if (structure instanceof JsonWebEncryption) {
                 structure.setKey(new SecretKeySpec(secret, AesKey.ALGORITHM));
@@ -300,6 +304,15 @@ public class ServerDecodeJsonWebTokenAssertion extends AbstractServerAssertion<D
         }
         
         return AssertionStatus.NONE;
+    }
+
+    private boolean verifySignature(final PolicyEnforcementContext context, final JsonWebSignature structure) throws JoseException {
+        boolean verified = structure.verifySignature();
+        context.setVariable(assertion.getTargetVariablePrefix() + ".valid", String.valueOf(verified));
+        if (!verified) {
+            logAndAudit(AssertionMessages.JWT_GENERAL_DECODE_ERROR, "Signature not verified");
+        }
+        return verified;
     }
 
     private byte[] toByteArray(Object obj, String what) throws ContextVariableUtils.NoBinaryRepresentationException {

@@ -13,9 +13,7 @@ import org.jetbrains.annotations.NotNull;
 import org.w3c.dom.Document;
 
 import javax.xml.transform.dom.DOMResult;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 /**
  * Build service using restman bundle.
@@ -103,6 +101,12 @@ public class QuickStartServiceBuilderRestmanImpl implements QuickStartServiceBui
         serviceDetail.setName( publishedService.getName() );
         serviceDetail.setEnabled( !publishedService.isDisabled() );
         serviceDetail.setServiceMappings( buildServiceMappings(publishedService) );
+
+        final Map<String, Object> properties = new HashMap<>(publishedService.getProperties().size());
+        for (final String key: publishedService.getProperties().keySet()) {
+            properties.put(key, publishedService.getProperty(key));
+        }
+        serviceDetail.setProperties(properties);
 
         // TODO handle SecurityZone once we support it via json payload
 

@@ -28,6 +28,7 @@ import com.l7tech.server.service.resolution.NonUniqueServiceResolutionException;
 import com.l7tech.server.service.resolution.ServiceResolutionException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Triple;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationContext;
 
@@ -39,6 +40,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static com.l7tech.external.assertions.quickstarttemplate.QuickStartTemplateAssertion.PROPERTY_QS_REGISTRAR_TMS;
 
 /**
  * Server side implementation of the QuickStartTemplateAssertion.
@@ -67,52 +70,55 @@ public class ServerQuickStartTemplateAssertion extends AbstractMessageTargetable
                                           final String messageDescription,
                                           final AuthenticationContext authContext ) throws IOException, PolicyAssertionException {
 
-        if ((message.getHttpRequestKnob().getMethod() == HttpMethod.PUT) || (message.getHttpRequestKnob().getMethod() == HttpMethod.POST)) {
+        try {
+            final ServiceContainer serviceContainer;
             try {
-                final ServiceContainer serviceContainer;
-                try {
-                    serviceContainer = parser.parseJson(message.getMimeKnob().getEntireMessageBodyAsInputStream(false));
-                } catch (final Exception e) {
-                    final IllegalArgumentException arg = ExceptionUtils.getCauseIfCausedBy(e, IllegalArgumentException.class);
-                    if (arg != null) {
-                        logger.log(Level.WARNING, ExceptionUtils.getMessage(arg), ExceptionUtils.getDebugException(arg));
-                        context.setVariable(QuickStartTemplateAssertion.QS_WARNINGS, ExceptionUtils.getMessage(arg));
-                        return AssertionStatus.FALSIFIED;
-                    } else {
-                        logger.log(Level.WARNING, "Unable to parse JSON payload: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                        context.setVariable(QuickStartTemplateAssertion.QS_WARNINGS, "Unable to parse JSON payload: " + ExceptionUtils.getMessage(e));
-                        return AssertionStatus.FALSIFIED;
-                    }
+                serviceContainer = parser.parseJson(message.getMimeKnob().getEntireMessageBodyAsInputStream(false));
+            } catch (final Exception e) {
+                final IllegalArgumentException arg = ExceptionUtils.getCauseIfCausedBy(e, IllegalArgumentException.class);
+                if (arg != null) {
+                    logger.log(Level.WARNING, ExceptionUtils.getMessage(arg), ExceptionUtils.getDebugException(arg));
+                    context.setVariable(QuickStartTemplateAssertion.QS_WARNINGS, ExceptionUtils.getMessage(arg));
+                    return AssertionStatus.FALSIFIED;
+                } else {
+                    logger.log(Level.WARNING, "Unable to parse JSON payload: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                    context.setVariable(QuickStartTemplateAssertion.QS_WARNINGS, "Unable to parse JSON payload: " + ExceptionUtils.getMessage(e));
+                    return AssertionStatus.FALSIFIED;
                 }
+            }
 
-                try {
-                    // get all the encapsulated assertions (and their properties) used by the service
-                    final List<EncapsulatedAssertion> encapsulatedAssertions = mapper.getEncapsulatedAssertions(serviceContainer.service);
+            try {
+                // get all the encapsulated assertions (and their properties) used by the service
+                final List<EncapsulatedAssertion> encapsulatedAssertions = mapper.getEncapsulatedAssertions(serviceContainer.service);
+                PublishedService publishedService;
 
-                    PublishedService publishedService;
+                if ( (message.isHttpRequest()) && (message.getHttpRequestKnob().getMethod() == HttpMethod.PUT)) {
                     String url = message.getHttpRequestKnob().getRequestUrl();
                     Pattern pattern = Pattern.compile("/([0-9a-f]{32})?$");
                     Matcher matcher = pattern.matcher(url);
 
-                    if ((message.getHttpRequestKnob().getMethod() == HttpMethod.PUT) && (matcher.find())) {
+                    if ( (matcher.find()) && (matcher.group(1) != null) ) {
                         Goid goid = new Goid(matcher.group(1));
                         publishedService = updatePublishedService(goid, serviceContainer.service, encapsulatedAssertions);
                     } else {
                         publishedService = createPublishedService(serviceContainer.service, encapsulatedAssertions);
                     }
-
-                    final QuickStartServiceBuilder quickStartServiceBuilder = new QuickStartServiceBuilderRestmanImpl(new QuickStartEncapsulatedAssertionTemplate(publishedService, encapsulatedAssertions));
-                    context.setVariable(QuickStartTemplateAssertion.QS_BUNDLE, quickStartServiceBuilder.createServiceBundle(Message.class));
-                } catch (final QuickStartPolicyBuilderException e) {
-                    logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                    context.setVariable(QuickStartTemplateAssertion.QS_WARNINGS, ExceptionUtils.getMessage(e));
-                    return AssertionStatus.FALSIFIED;
+                } else {
+                    publishedService = createPublishedService(serviceContainer.service, encapsulatedAssertions);
                 }
-            } catch (final Exception e) {
-                logger.log(Level.WARNING, "Unable to create service:" + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                throw new PolicyAssertionException(assertion, e);
+
+                final QuickStartServiceBuilder quickStartServiceBuilder = new QuickStartServiceBuilderRestmanImpl(new QuickStartEncapsulatedAssertionTemplate(publishedService, encapsulatedAssertions));
+                context.setVariable(QuickStartTemplateAssertion.QS_BUNDLE, quickStartServiceBuilder.createServiceBundle(Message.class));
+            } catch (final QuickStartPolicyBuilderException e) {
+                logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                context.setVariable(QuickStartTemplateAssertion.QS_WARNINGS, ExceptionUtils.getMessage(e));
+                return AssertionStatus.FALSIFIED;
             }
+        } catch (final Exception e) {
+            logger.log(Level.WARNING, "Unable to create service:" + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            throw new PolicyAssertionException(assertion, e);
         }
+
         return AssertionStatus.NONE;
     }
 
@@ -160,8 +166,9 @@ public class ServerQuickStartTemplateAssertion extends AbstractMessageTargetable
     private PublishedService createPublishedService(@NotNull final Service service, @NotNull final List<EncapsulatedAssertion> encapsulatedAssertions) throws QuickStartPolicyBuilderException {
         final PublishedService publishedService = new PublishedService();
         publishedService.setName(service.name);
+        publishedService.putProperty(PROPERTY_QS_REGISTRAR_TMS, String.valueOf(System.currentTimeMillis()));
 
-        // Set the Uri and make sure it doesn't conflict
+        // Set the service URI and fail if there is an existing service with the same URI (service URI conflict resolution)
         publishedService.setRoutingUri(service.gatewayUri);
         if (hasResolutionConflict(publishedService)) {
             throw new QuickStartPolicyBuilderException("Resolution parameters conflict for service '" + publishedService.getName() + "' " +
@@ -177,9 +184,21 @@ public class ServerQuickStartTemplateAssertion extends AbstractMessageTargetable
 
     @NotNull
     private PublishedService updatePublishedService(@NotNull Goid goid, @NotNull final Service service,
-                                                    @NotNull final List<EncapsulatedAssertion> encapsulatedAssertions) throws FindException {
+                                                    @NotNull final List<EncapsulatedAssertion> encapsulatedAssertions) throws FindException, QuickStartPolicyBuilderException {
         final PublishedService publishedService = serviceLocator.findByGoid(goid);
+
+        // DO NOT Fail -> if the serviceID of the service to be updated does not exist
+        //if (publishedService == null) {
+        //    throw new QuickStartPolicyBuilderException("Unable to find a service with ServiceID " + goid.toString());
+        //}
+
         publishedService.setName(service.name);
+        final String registrarTime = publishedService.getProperty(PROPERTY_QS_REGISTRAR_TMS);
+        if (StringUtils.isNotEmpty(registrarTime)) {
+            publishedService.putProperty(PROPERTY_QS_REGISTRAR_TMS, String.valueOf(Long.valueOf(registrarTime) + 1));
+        } else {
+            publishedService.putProperty(PROPERTY_QS_REGISTRAR_TMS, String.valueOf(System.currentTimeMillis()));
+        }
         publishedService.setHttpMethods(Sets.newHashSet(service.httpMethods));
         generatePolicy(publishedService, encapsulatedAssertions);
         return publishedService;

@@ -10,8 +10,6 @@ import java.util.Map;
 import static com.l7tech.policy.assertion.AssertionMetadata.MODULE_LOAD_LISTENER_CLASSNAME;
 
 /**
- * PROOF-OF_CONCEPT!
- *
  * Make it easier to start using the Gateway without needing to learn how to write complex policy.
  * We explore how to use encapsulated assertions to help make policy format more compact and with less learning curve.
  * Explore how we can transfer the complexity burden to more experienced Gateway users ahead of time using encapsulated assertion templating.
@@ -19,6 +17,7 @@ import static com.l7tech.policy.assertion.AssertionMetadata.MODULE_LOAD_LISTENER
 public class QuickStartTemplateAssertion extends MessageTargetableAssertion implements SetsVariables {
     public static final String QS_WARNINGS = "qs.warnings";
     public static final String QS_BUNDLE = "qs.bundle";
+    public static final String PROPERTY_QS_REGISTRAR_TMS = "property.qs.registrar.tms";
 
     @Override
     protected VariablesSet doGetVariablesSet() {
