@@ -139,8 +139,7 @@ while getopts "hm:al:o:Dd:" opt; do
       ;;
 
       D)
-      export HEAPDUMP_ENABLED="true"
-      echo "Heap-dump enabled"
+      HEAP=true
       ;;
 
       m)
@@ -219,9 +218,13 @@ then
 elif [ "$MODE" == "all" ]
 then
     doAll $LEVEL
-else
+elif ! [ "$HEAP" ]
     echo "ERROR: No module was specified.  Please enter a module or execute collect.sh -h for help."
-    exit 1
+fi
+
+if [ $HEAP ]
+then
+    ${COLLECTOR_HOME}/heap.sh
 fi
 
 createSymlinksToEveryFile
