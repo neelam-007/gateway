@@ -3,7 +3,7 @@
   <grid id="2d7b7" binding="mainPanel" layout-manager="GridLayoutManager" row-count="5" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="15">
     <margin top="10" left="10" bottom="10" right="10"/>
     <constraints>
-      <xy x="63" y="41" width="409" height="362"/>
+      <xy x="63" y="41" width="449" height="362"/>
     </constraints>
     <properties/>
     <border type="none"/>
@@ -58,7 +58,7 @@
           <component id="e9f44" class="javax.swing.JFormattedTextField" binding="suffix">
             <constraints>
               <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="1" indent="0" use-parent-layout="false">
-                <preferred-size width="40" height="-1"/>
+                <preferred-size width="80" height="-1"/>
               </grid>
             </constraints>
             <properties>

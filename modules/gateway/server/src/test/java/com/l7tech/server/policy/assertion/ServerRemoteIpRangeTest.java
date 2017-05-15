@@ -1,12 +1,18 @@
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.gateway.common.audit.TestAudit;
 import com.l7tech.message.Message;
+import com.l7tech.message.TcpKnob;
+import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.RemoteIpRange;
 import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.test.BugNumber;
+import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.InetAddressUtil;
 import org.junit.Before;
 import org.junit.Test;
@@ -14,6 +20,8 @@ import org.junit.Test;
 import java.net.InetAddress;
 
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Test logic of ServerRemoteIpRange.
@@ -25,11 +33,17 @@ import static org.junit.Assert.*;
  */
 public class ServerRemoteIpRangeTest {
 
+    private RemoteIpRange assertion;
+    private ServerRemoteIpRange serverAssertion;
+    private AssertionStatus status;
+
+    private TestAudit testAudit;
     private PolicyEnforcementContext peCtx;
 
     @Before
     public void setUp() throws Exception {
         peCtx = makeContext("<myrequest/>", "<myresponse/>");
+        testAudit = new TestAudit();
     }
 
     public void testInclusions() throws Exception {
@@ -154,6 +168,58 @@ public class ServerRemoteIpRangeTest {
         }
     }
 
+    @Test
+    public void testIpRangeWithDefinedVariables() throws Exception {
+        assertion = new RemoteIpRange();
+        assertion.setAddressRange("192.168.${partialIp}.12", "${prefix}");
+        assertion.setIpSourceContextVariable("sourceIp");
+        peCtx.setVariable("partialIp", "11");
+        peCtx.setVariable("prefix", "30");
+
+        peCtx.setVariable("sourceIp", "192.168.11.12");
+        serverAssertion = createServer(assertion);
+        status = serverAssertion.checkRequest(peCtx);
+        assertEquals(AssertionStatus.NONE, status);
+
+        peCtx.setVariable("sourceIp", "192.168.11.13");
+        serverAssertion = createServer(assertion);
+        status = serverAssertion.checkRequest(peCtx);
+        assertEquals(AssertionStatus.NONE, status);
+
+        peCtx.setVariable("sourceIp", "192.168.11.15");
+        serverAssertion = createServer(assertion);
+        status = serverAssertion.checkRequest(peCtx);
+        assertEquals(AssertionStatus.NONE, status);
+    }
+
+    @Test
+    public void testIpRangeWithDefinedVariablesForRejection() throws Exception {
+        assertion = new RemoteIpRange();
+        assertion.setAddressRange("192.168.${partialIp}.12", "${prefix}");
+        assertion.setIpSourceContextVariable("sourceIp");
+
+        peCtx.setVariable("partialIp", "11");
+        peCtx.setVariable("prefix", "30");
+        peCtx.setVariable("sourceIp", "192.168.11.16");
+
+        serverAssertion = createServer(assertion);
+        status = serverAssertion.checkRequest(peCtx);
+        assertEquals(AssertionStatus.FALSIFIED, status);
+        assertEquals(1, testAudit.getAuditCount());
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.IP_REJECTED));
+    }
+
+    @Test
+    public void testDefaultServerAssertionState() throws Exception {
+        TcpKnob tcpKnob = mock(TcpKnob.class);
+        when(tcpKnob.getRemoteAddress()).thenReturn("192.168.1.12");
+        peCtx.getRequest().attachKnob(tcpKnob, TcpKnob.class);
+
+        serverAssertion = createServer(new RemoteIpRange());
+        status = serverAssertion.checkRequest(peCtx);
+        assertEquals(AssertionStatus.NONE, status);
+    }
+
     private PolicyEnforcementContext makeContext(String req, String res) {
         Message request = new Message();
         request.initialize(XmlUtil.stringAsDocument(req));
@@ -161,4 +227,16 @@ public class ServerRemoteIpRangeTest {
         response.initialize(XmlUtil.stringAsDocument(res));
         return PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
     }
+
+    private ServerRemoteIpRange createServer(RemoteIpRange assertion) {
+        ServerRemoteIpRange serverAssertion = new ServerRemoteIpRange(assertion);
+
+        ApplicationContexts.inject(serverAssertion, CollectionUtils.<String, Object>mapBuilder()
+                .put("auditFactory", testAudit.factory())
+                .unmodifiableMap()
+        );
+
+        return serverAssertion;
+    }
+
 }

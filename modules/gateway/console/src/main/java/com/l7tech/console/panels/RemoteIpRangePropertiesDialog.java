@@ -67,12 +67,6 @@ public class RemoteIpRangePropertiesDialog extends LegacyAssertionPropertyDialog
                 resources.getString("includeExcludeCombo.include"),
                 resources.getString("includeExcludeCombo.exclude")}));
 
-        suffix.setFormatterFactory(new DefaultFormatterFactory(new NumberFormatter() {{
-            setMinimum(1);
-            setMaximum(IPV6_MAX_PREFIX);
-        }}
-        ));
-
         setCallbacks();
         setInitialValues();
     }
@@ -98,18 +92,20 @@ public class RemoteIpRangePropertiesDialog extends LegacyAssertionPropertyDialog
 
         // get rule
         int index = includeExcludeCombo.getSelectedIndex();
-        // get address
+        // get address and  prefix (or network mask)
         String addressStrOrig = address.getText();
+        String prefixStrOrig = suffix.getText();
 
         //since we really can't know the value of the variables until run time, replace them accordingly
         //at least we can test a valid format (assuming the variables resolve to a proper value on runtime)
         //before the user actually saves the values of this assertion
-        String addressStr = subject.formatStringWithVariables(addressStrOrig, true);
+        String addressStr = subject.formatStartIpStringWithDefaultValue(addressStrOrig);
+        String prefixStr = subject.formatNetworkMaskStringWithDefaultValue(prefixStrOrig);
 
         // get prefix
         Integer prefix;
         try {
-            prefix = Integer.parseInt(suffix.getText());
+            prefix = Integer.parseInt(prefixStr);
         } catch (NumberFormatException e) {
             bark(resources.getString("error.badmask"));
             return;
@@ -137,7 +133,7 @@ public class RemoteIpRangePropertiesDialog extends LegacyAssertionPropertyDialog
                     subject.setAllowRange(false);
                     break;
             }
-            subject.setAddressRange(addressStrOrig, prefix);
+            subject.setAddressRange(addressStrOrig, prefixStrOrig);
             subject.setIpSourceContextVariable(contextval);
             oked = true;
         }
@@ -159,10 +155,10 @@ public class RemoteIpRangePropertiesDialog extends LegacyAssertionPropertyDialog
             includeExcludeCombo.setPreferredSize(new Dimension(100, 25));
             this.address.setText(subject.getStartIp());
             // bug 4796: any existing 0's should be changed to 32 when edited.
-            if (subject.getNetworkMask() == 0) {
-                subject.setNetworkMask(IPV4_MAX_PREFIX);
+            if (subject.getNetworkMaskValueOrVariable().equals("0")) {
+                subject.setNetworkMaskValueOrVariable(String.valueOf(IPV4_MAX_PREFIX));
             }
-            suffix.setText("" + subject.getNetworkMask());
+            suffix.setText("" + subject.getNetworkMaskValueOrVariable());
             if (subject.getIpSourceContextVariable() == null) {
                 contextVarRadio.setSelected(false);
                 tcpRadio.setSelected(true);

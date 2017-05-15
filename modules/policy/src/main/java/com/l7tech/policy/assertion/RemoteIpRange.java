@@ -37,6 +37,7 @@ public class RemoteIpRange extends Assertion implements UsesVariables {
     public RemoteIpRange() {
         startIp = DEFAULT_START_IP;
         networkMask = DEFAULT_NETWORK_PREFIX;
+        networkMaskValueOrVariable = DEFAULT_NETWORK_PREFIX_STR;
         allowRange = true;
     }
 
@@ -48,9 +49,16 @@ public class RemoteIpRange extends Assertion implements UsesVariables {
      * @param allowRange    true if addresses is this range are authorised, false if they are unauthorized
      */
     public RemoteIpRange(String startIp, int networkPrefix, boolean allowRange) {
-        validateRange(startIp, networkPrefix, true);
+        validateUnformattedRange(startIp, String.valueOf(networkPrefix));
         this.startIp = startIp;
         this.networkMask = networkPrefix;
+        this.allowRange = allowRange;
+    }
+
+    public RemoteIpRange(String startIp, String networkMaskValueOrVariable, boolean allowRange) {
+        validateUnformattedRange(startIp, networkMaskValueOrVariable);
+        this.startIp = startIp;
+        this.networkMaskValueOrVariable = networkMaskValueOrVariable;
         this.allowRange = allowRange;
     }
 
@@ -70,25 +78,57 @@ public class RemoteIpRange extends Assertion implements UsesVariables {
 
     /**
      * the network mask that goes with the start ip for the ip range specified by this assertion
+     * Note: If network mask is a defined as variable, returns default network mask number.
      */
     public int getNetworkMask() {
-        return networkMask;
+        if (networkMaskValueOrVariable == null || networkMaskValueOrVariable.isEmpty() ||
+                networkMaskValueOrVariable.equals(DEFAULT_NETWORK_PREFIX_STR)) {
+            return networkMask;
+        } else {
+            return DEFAULT_NETWORK_PREFIX;
+        }
     }
 
     /**
      * the network mask that goes with the start ip for the ip range specified by this assertion
+     * Note: It has no effect if the #setNetworkMaskValueOrVariable is called before.
      *
      * @param networkMask valid values are 0..32
      */
     public void setNetworkMask(int networkMask) {
         this.networkMask = networkMask;
+        if (networkMaskValueOrVariable == null || networkMaskValueOrVariable.isEmpty() ||
+                networkMaskValueOrVariable.equals(DEFAULT_NETWORK_PREFIX_STR)) {
+            this.networkMaskValueOrVariable = String.valueOf(networkMask);
+        }
     }
 
-    public void setAddressRange(String address, int prefix) {
-        validateRange(address, prefix, true);
-        this.startIp = address;
-        this.networkMask = prefix;
+    /**
+     * the network mask context variable that goes with the start ip for the ip range specified by this assertion
+     */
+    public String getNetworkMaskValueOrVariable() {
+        if (networkMaskValueOrVariable == null || networkMaskValueOrVariable.isEmpty()) {
+            networkMaskValueOrVariable = String.valueOf(networkMask);
+        }
+
+        return networkMaskValueOrVariable;
     }
+
+    /**
+     * the network mask that goes with the start ip for the ip range specified by this assertion
+     *
+     * @param networkMaskValueOrVariable is ca context variable
+     */
+    public void setNetworkMaskValueOrVariable(String networkMaskValueOrVariable) {
+        this.networkMaskValueOrVariable = networkMaskValueOrVariable;
+    }
+
+    public void setAddressRange(String address,String prefixValueOrVariable) {
+        validateUnformattedRange(address, prefixValueOrVariable);
+        this.startIp = address;
+        this.networkMaskValueOrVariable = prefixValueOrVariable;
+    }
+
 
     /**
      * whether the range specified by this assertion represents an inclusion or an exclusion
@@ -137,7 +177,7 @@ public class RemoteIpRange extends Assertion implements UsesVariables {
             sb.append(" [");
             sb.append(assertion.getStartIp());
             sb.append("/");
-            sb.append(assertion.getNetworkMask());
+            sb.append(assertion.getNetworkMaskValueOrVariable());
             sb.append("]");
             return sb.toString();
         }
@@ -178,26 +218,43 @@ public class RemoteIpRange extends Assertion implements UsesVariables {
         return variables.toArray(ret);
     }
 
+    public static void validateUnformattedRange(String startIp, String networkPrefix) {
+        validateRange(
+                formatStartIpStringWithDefaultValue(startIp),
+                formatNetworkMaskStringWithDefaultValue(networkPrefix));
+    }
+
     /**
      * @throws IllegalArgumentException if the startIp/networkPrefix combination are not a valid IPv4 or IPv6 address range.
      */
-    public static void validateRange(String startIp, int networkPrefix, boolean useDefault) {
-        startIp = formatStringWithVariables(startIp, useDefault);
+    public static void validateRange(String startIp, String networkPrefix) {
         String errMsg = null;
-        String pattern = startIp + "/" + Integer.toString(networkPrefix);
+        String pattern = startIp + "/" + networkPrefix;
 
         if (InetAddressUtil.isValidIpv4Pattern(pattern)) {
-            if (networkPrefix < 0 || networkPrefix > IPV4_MAX_PREFIX)
+            if (!isValidNetworkPrefix(networkPrefix, IPV4_MAX_PREFIX)) {
                 errMsg = "Invalid IPv4 network prefix" + networkPrefix;
+            }
         } else if (InetAddressUtil.isValidIpv6Pattern(pattern)) {
-            if (networkPrefix < 0 || networkPrefix > IPV6_MAX_PREFIX)
+            if (!isValidNetworkPrefix(networkPrefix, IPV6_MAX_PREFIX)) {
                 errMsg = "Invalid IPv6 network prefix: " + networkPrefix;
+            }
         } else {
             errMsg = "Invalid IP address range: " + pattern;
         }
 
-        if (errMsg != null)
+        if (errMsg != null) {
             throw new IllegalArgumentException(errMsg);
+        }
+    }
+
+    public static boolean isValidNetworkPrefix(String networkPrefix, int upperLimit) {
+        try {
+            int networkPrefixValue = Integer.parseInt(networkPrefix);
+            return networkPrefixValue >= 0 && networkPrefixValue <= upperLimit;
+        } catch (NumberFormatException e) {
+            return false;
+        }
     }
 
     private static Pattern getSearchPattern(String varWithIndex, Map<String, Pattern> varPatternMap) {
@@ -211,27 +268,33 @@ public class RemoteIpRange extends Assertion implements UsesVariables {
         return searchPattern;
     }
 
-    public static String formatStringWithVariables(String str, boolean useDefault) {
-        if (!useDefault) {    //do nothing
-            return str;
-        }
+    public static String formatStartIpStringWithDefaultValue(String startIp) {
+        return formatStringWithVariablesWithDefaultValue(startIp, DEFAULT_NUM, DEFAULT_START_IP);
+    }
+
+    public static String formatNetworkMaskStringWithDefaultValue(String networkMask) {
+        return formatStringWithVariablesWithDefaultValue(networkMask, DEFAULT_NUM, DEFAULT_NETWORK_PREFIX_STR);
+    }
+
+    public static String formatStringWithVariablesWithDefaultValue(String str, final String defaultStrPerMatch, final String defaultStrPerFullMatch) {
         final String[] strWithIndex = Syntax.getReferencedNamesIndexedVarsNotOmitted(str);
-        if (strWithIndex.length < 1) {
-            return str;//nothing to format
-        }
-        final Map<String, Pattern> varPatternMap = new HashMap<String, Pattern>();
-        boolean hasMatch = false;
-        for (final String varWithIndex : strWithIndex) {
-            final Pattern searchPattern = getSearchPattern(varWithIndex, varPatternMap);
-            Matcher matcher = searchPattern.matcher(str);
-            if (useDefault) { //validating for UI/dialog only. use 1
-                str = matcher.replaceFirst(DEFAULT_NUM);
+
+        if (strWithIndex.length > 0) {
+            final Map<String, Pattern> varPatternMap = new HashMap<String, Pattern>();
+            boolean hasMatch = false;
+
+            for (final String varWithIndex : strWithIndex) {
+                final Pattern searchPattern = getSearchPattern(varWithIndex, varPatternMap);
+                final Matcher matcher = searchPattern.matcher(str);
+                str = matcher.replaceFirst(defaultStrPerMatch);
                 hasMatch = true;
             }
+
+            if (defaultStrPerMatch.equals(str) && strWithIndex.length == 1 && hasMatch) {
+                return defaultStrPerFullMatch; //will only happen when testing from gui and the whole range is a single variable
+            }
         }
-        if (DEFAULT_NUM.equals(str) && strWithIndex.length == 1 && useDefault && hasMatch) {
-            return DEFAULT_START_IP;//will only happen when testing from gui and the whole range is a single variable
-        }
+
         return str;
     }
 
@@ -239,10 +302,12 @@ public class RemoteIpRange extends Assertion implements UsesVariables {
 
     private static final String DEFAULT_START_IP = "192.168.1.0";
     private static final int DEFAULT_NETWORK_PREFIX = 24;
+    private static final String DEFAULT_NETWORK_PREFIX_STR = String.valueOf(DEFAULT_NETWORK_PREFIX);
     private final static String DEFAULT_NUM = "1";
 
     private String startIp;
     private int networkMask;
+    private String networkMaskValueOrVariable;
     private boolean allowRange;
     private String ipSourceContextVariable = null;
 }
