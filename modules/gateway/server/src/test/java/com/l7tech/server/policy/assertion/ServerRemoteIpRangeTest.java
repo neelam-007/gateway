@@ -220,6 +220,39 @@ public class ServerRemoteIpRangeTest {
         assertEquals(AssertionStatus.NONE, status);
     }
 
+    @Test
+    public void testInvalidIpRange() throws Exception {
+        assertion = new RemoteIpRange();
+        assertion.setAddressRange("192.168.${partialIp}.12", "${prefix}");
+        assertion.setIpSourceContextVariable("sourceIp");
+
+        peCtx.setVariable("partialIp", "11");
+        peCtx.setVariable("prefix", "3#0");
+        peCtx.setVariable("sourceIp", "192.168.11.16");
+
+        serverAssertion = createServer(assertion);
+        status = serverAssertion.checkRequest(peCtx);
+        assertEquals(AssertionStatus.FAILED, status);
+        assertEquals(1, testAudit.getAuditCount());
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.IP_INVALID_RANGE));
+    }
+
+    @Test
+    public void testInvalidIpRangeDueToNoSuchVariable() throws Exception {
+        assertion = new RemoteIpRange();
+        assertion.setAddressRange("192.168.${partialIp}.12", "${prefix}");
+        assertion.setIpSourceContextVariable("sourceIp");
+
+        peCtx.setVariable("partialIp", "11");
+        peCtx.setVariable("sourceIp", "192.168.11.16");
+
+        serverAssertion = createServer(assertion);
+        status = serverAssertion.checkRequest(peCtx);
+        assertEquals(AssertionStatus.SERVER_ERROR, status);
+        assertEquals(1, testAudit.getAuditCount());
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.NO_SUCH_VARIABLE));
+    }
+
     private PolicyEnforcementContext makeContext(String req, String res) {
         Message request = new Message();
         request.initialize(XmlUtil.stringAsDocument(req));

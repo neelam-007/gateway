@@ -154,11 +154,12 @@ public class RemoteIpRangePropertiesDialog extends LegacyAssertionPropertyDialog
             includeExcludeCombo.setSelectedIndex(index);
             includeExcludeCombo.setPreferredSize(new Dimension(100, 25));
             this.address.setText(subject.getStartIp());
+
             // bug 4796: any existing 0's should be changed to 32 when edited.
-            if (subject.getNetworkMaskValueOrVariable().equals("0")) {
-                subject.setNetworkMaskValueOrVariable(String.valueOf(IPV4_MAX_PREFIX));
+            if ("0".equals(subject.getNetworkMask())) {
+                subject.setNetworkMask(String.valueOf(IPV4_MAX_PREFIX));
             }
-            suffix.setText("" + subject.getNetworkMaskValueOrVariable());
+            suffix.setText(subject.getNetworkMask());
             if (subject.getIpSourceContextVariable() == null) {
                 contextVarRadio.setSelected(false);
                 tcpRadio.setSelected(true);
