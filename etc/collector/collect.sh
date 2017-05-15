@@ -23,7 +23,7 @@ export COLLECTOR_HOME=/opt/SecureSpan/Collector
 . ${COLLECTOR_HOME}/collectorlib
 
 
-function calculatePaths()
+function calculatePaths
 {
     DEFAULT_BASE_DATED_OUTPUT_DIR="${OUTPUT_HOME}/${DATED_OUTPUT_NAME}"
     BASE_OUTPUT_DIR="${DEFAULT_BASE_DATED_OUTPUT_DIR}"
@@ -34,7 +34,7 @@ function calculatePaths()
 calculatePaths
 
 
-function usage ()
+function usage
 {
     echo "Usage:"
     echo -e "\nAPI Gateway Data Collection Utility version ${VERSION}"
@@ -64,7 +64,7 @@ function usage ()
 }
 
 # Prevent unintentional overwriting of past results.
-function doesOutputDirectoryExist ()
+function doesOutputDirectoryExist
 {
     if [ -e ${BASE_OUTPUT_DIR} ]
     then
@@ -81,7 +81,7 @@ function doesOutputDirectoryExist ()
 # Process an individual module
 # Paramters $1 = modules name,
 #           $2 = detail level
-function doModule ()
+function doModule
 {
     script=(${COLLECTOR_HOME}/modules/$1)
     if [ -x $script ]
@@ -94,7 +94,7 @@ function doModule ()
 
 # Process an individual module
 # Paramters $1 = detail level
-function doAll ()
+function doAll
 {
     for script in $COLLECTOR_HOME/modules/*
     do
@@ -107,7 +107,7 @@ function doAll ()
 }
 
 #Place all files in one folder for easier viewability
-function createSymlinksToEveryFile ()
+function createSymlinksToEveryFile
 {
     ALL_OUTPUT_IN_ONE_FOLDER="${BASE_OUTPUT_DIR}"/links-to-all-files
     mkdir -p "${ALL_OUTPUT_IN_ONE_FOLDER}"
@@ -116,7 +116,7 @@ function createSymlinksToEveryFile ()
 }
 
 # Parameters $1 = directory where you want your output stored
-function recalculatePaths()
+function recalculatePaths
 {
     if [ ! -w $1 ]
     then
