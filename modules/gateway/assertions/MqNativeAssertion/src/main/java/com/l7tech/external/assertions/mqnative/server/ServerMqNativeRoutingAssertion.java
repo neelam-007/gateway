@@ -11,6 +11,7 @@ import com.l7tech.external.assertions.mqnative.server.MqNativeResourceManager.Mq
 import com.l7tech.external.assertions.mqnative.server.decorator.*;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.AuditDetailMessage;
+import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.message.*;
 import com.l7tech.objectmodel.FindException;
@@ -52,6 +53,9 @@ import static com.ibm.mq.constants.MQConstants.*;
 import static com.l7tech.external.assertions.mqnative.MqNativeConstants.*;
 import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.REPLY_AUTOMATIC;
 import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.REPLY_SPECIFIED_QUEUE;
+import static com.l7tech.external.assertions.mqnative.server.MqNativeEndpointConfig.DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_ACTIVE;
+import static com.l7tech.external.assertions.mqnative.server.MqNativeEndpointConfig.DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_IDLE;
+import static com.l7tech.external.assertions.mqnative.server.MqNativeEndpointConfig.DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_WAIT;
 import static com.l7tech.external.assertions.mqnative.server.MqNativeUtils.*;
 import static com.l7tech.gateway.common.audit.AssertionMessages.*;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
@@ -953,11 +957,18 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
             throw new MqNativeConfigException( message.toString() );
         }
 
+        final int connectionPoolMaxActive = retrieveIntPoolProperty(ssgActiveConnector, this.config, MQ_CONNECTION_POOL_MAX_ACTIVE_PROPERTY, DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_ACTIVE);
+        final int connectionPoolMaxIdle = retrieveIntPoolProperty(ssgActiveConnector, this.config, MQ_CONNECTION_POOL_MAX_IDLE_PROPERTY, DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_IDLE);
+        final long connectionPoolMaxWait = retrieveLongPoolProperty(ssgActiveConnector, this.config, MQ_CONNECTION_POOL_MAX_WAIT_PROPERTY, DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_WAIT);
+
         config = new MqNativeEndpointConfig(
                 ssgActiveConnector,
                 getQueuePassword( ssgActiveConnector, securePasswordManager ),
                 dynamicProperties,
-                this.config );
+                connectionPoolMaxActive,
+                connectionPoolMaxIdle,
+                connectionPoolMaxWait
+        );
         config.validate();
 
         if ( !config.isDynamic() ) {
@@ -967,6 +978,59 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
         }
 
         return config;
+    }
+
+    /**
+     * Retrieve the property value from SsgActiveConnector first.  If no such property set up, then retrieve it
+     * from the cluster property.
+     * @param connector a SsgActiveConnector object
+     * @param config cluster properties config
+     * @param propName the property name
+     * @param defaultValue the default value of the property
+     * @return a short or long integer of a MQ Native connection pool property
+     */
+    private <T> T retrievePoolProperty(
+            final SsgActiveConnector connector, final Config config, final String propName, final T defaultValue,
+            final Functions.Unary<T, SsgActiveConnector> connGetter, final Functions.Unary<T, Config> confGetter) {
+        final String propValue = connector == null ? null : connector.getProperty(propName);
+        if (StringUtils.isBlank(propValue)) {
+            return config == null ? defaultValue : confGetter.call(config);
+        } else {
+            return connGetter.call(connector);
+        }
+    }
+
+    // Apply the above basic method to retrieve a pool property with an integer value.
+    private int retrieveIntPoolProperty(final SsgActiveConnector connector, final Config config, final String propName, final int defaultValue) {
+        return retrievePoolProperty(connector, config, propName, defaultValue,
+                new Functions.Unary<Integer, SsgActiveConnector>() {
+                    @Override
+                    public Integer call(SsgActiveConnector connector) {
+                        return connector.getIntegerProperty(propName, defaultValue);
+                    }
+                },
+                new Functions.Unary<Integer, Config>() {
+                    @Override
+                    public Integer call(Config config) {
+                        return config.getIntProperty(propName, defaultValue);
+                    }
+                });
+    }
+
+    // Apply the above basic method to retrieve a pool property with an long value.
+    private long retrieveLongPoolProperty(final SsgActiveConnector connector, final Config config, final String propName, final long defaultValue) {
+        return retrievePoolProperty(connector, config, propName, defaultValue,
+                new Functions.Unary<Long, SsgActiveConnector>() {
+                    @Override
+                    public Long call(SsgActiveConnector connector) {
+                        return connector.getLongProperty(propName, defaultValue);
+                    }
+                }, new Functions.Unary<Long, Config>() {
+                    @Override
+                    public Long call(Config config) {
+                        return config.getLongProperty(propName, defaultValue);
+                    }
+                });
     }
 
     private void setCodesOnContext(final PolicyEnforcementContext context, final MQException e) {
@@ -1012,6 +1076,16 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
                                 logger.log(Level.CONFIG, "Flagging MQ endpoint information for update ''{0}'' (#{1})",
                                     new Object[]{mqEndpointConfig.getName(), mqEndpointConfig.getMqEndpointKey().getId()});
                             }
+                        }
+                    }
+                } else if (ClusterProperty.class.isAssignableFrom(eie.getEntityClass())) {
+                    final String propName = ((ClusterProperty) eie.getSource()).getName();
+                    if (MqNativeConstants.MQ_CONNECTION_POOL_MAX_ACTIVE_UI_PROPERTY.equals(propName) ||
+                            MqNativeConstants.MQ_CONNECTION_POOL_MAX_IDLE_UI_PROPERTY.equals(propName) ||
+                            MqNativeConstants.MQ_CONNECTION_POOL_MAX_WAIT_UI_PROPERTY.equals(propName)) {
+
+                        synchronized (serverMqRoutingAssertion.endpointConfigSync) {
+                            serverMqRoutingAssertion.endpointConfig = null;
                         }
                     }
                 }

@@ -25,9 +25,8 @@ export COLLECTOR_HOME=/opt/SecureSpan/Collector
 
 function calculatePaths
 {
-    DEFAULT_BASE_DATED_OUTPUT_DIR="${OUTPUT_HOME}/${DATED_OUTPUT_NAME}"
-    BASE_OUTPUT_DIR="${DEFAULT_BASE_DATED_OUTPUT_DIR}"
-    export ALL_MODULES_BaseOutputDirectory="${DEFAULT_BASE_DATED_OUTPUT_DIR}/categorized-by-module"
+    BASE_OUTPUT_DIR="${OUTPUT_HOME}/${DATED_OUTPUT_NAME}"
+    export ALL_MODULES_BaseOutputDirectory="${BASE_OUTPUT_DIR}/categorized-by-module"
 }
 
 # set variables for the values of several file system locations based on BASE_OUTPUT_DIR
@@ -232,12 +231,10 @@ if [ -e ${ALL_MODULES_BaseOutputDirectory} ]
 then
     FINAL_ZIP_NAME=${BASE_OUTPUT_DIR}/${DATED_OUTPUT_NAME}.tar.gz
     beginCompression
-    tar -zcvf ${FINAL_ZIP_NAME} --exclude='*.tar.gz' -C ${OUTPUT_HOME} ${DATED_OUTPUT_NAME}
+    tar -zcvf ${FINAL_ZIP_NAME} -C ${OUTPUT_HOME} -T <(echo -e "$DATED_OUTPUT_NAME/categorized-by-module\n$DATED_OUTPUT_NAME/links-to-all-files")
     endCompression "${FINAL_ZIP_NAME}"
 
 else
     echo
     echo "ERROR: There is no collected output at ${ALL_MODULES_BaseOutputDirectory}.  Check console output for errors."
 fi
-
-
