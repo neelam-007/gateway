@@ -9,6 +9,9 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import static com.l7tech.external.assertions.mqnative.server.MqNativeEndpointConfig.DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_ACTIVE;
+import static com.l7tech.external.assertions.mqnative.server.MqNativeEndpointConfig.DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_IDLE;
+import static com.l7tech.external.assertions.mqnative.server.MqNativeEndpointConfig.DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_WAIT;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.anyString;
@@ -44,7 +47,14 @@ public class MqNativeEndpointConfigTest {
         when(dynamicProperties.isSome()).thenReturn(true);
         when(dynamicProperties.some()).thenReturn(realDynamicProperties);
 
-        MqNativeEndpointConfig mqNativeEndpointConfig = new MqNativeEndpointConfig(ssgActiveConnector, new Option<>("password"), dynamicProperties, null);
+        MqNativeEndpointConfig mqNativeEndpointConfig = new MqNativeEndpointConfig(
+                ssgActiveConnector,
+                new Option<>("password"),
+                dynamicProperties,
+                DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_ACTIVE,
+                DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_IDLE,
+                DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_WAIT
+        );
 
         assertFalse(mqNativeEndpointConfig.isDynamic());
         assertNotNull(mqNativeEndpointConfig.getMqEndpointKey());
@@ -61,9 +71,16 @@ public class MqNativeEndpointConfigTest {
 
         assertEquals(endEndpointKey.getId(),new Goid(0,0));
         assertEquals(endEndpointKey.getVersion(),0);
-        assertTrue(endEndpointKey.equals(new MqNativeEndpointConfig.MqNativeEndpointKey(new Goid(0,0), 0)));
-        assertFalse(endEndpointKey.equals(new MqNativeEndpointConfig.MqNativeEndpointKey(new Goid(0,1), 0)));
-        assertEquals(endEndpointKey.toString(),"MqNativeEndpointKey["+new Goid(0,0).toString()+",0]");
+        assertTrue(endEndpointKey.equals(new MqNativeEndpointConfig.MqNativeEndpointKey(new Goid(0,0), 0,
+                DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_ACTIVE, DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_IDLE, DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_WAIT)));
+        assertFalse(endEndpointKey.equals(new MqNativeEndpointConfig.MqNativeEndpointKey(new Goid(0,1), 0,
+                DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_ACTIVE, DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_IDLE, DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_WAIT)));
+        assertEquals(endEndpointKey.toString(),"MqNativeEndpointKey{" +
+                "id=" + new Goid(0, 0) +
+                ", version=" + 0 +
+                ", maxActive=" + DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_ACTIVE +
+                ", maxIdle=" + DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_IDLE +
+                ", maxWait=" + DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_WAIT +
+                '}');
     }
-
 }
