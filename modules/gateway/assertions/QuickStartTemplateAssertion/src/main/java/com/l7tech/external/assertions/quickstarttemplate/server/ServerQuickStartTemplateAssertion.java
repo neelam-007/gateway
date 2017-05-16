@@ -185,22 +185,30 @@ public class ServerQuickStartTemplateAssertion extends AbstractMessageTargetable
     @NotNull
     private PublishedService updatePublishedService(@NotNull Goid goid, @NotNull final Service service,
                                                     @NotNull final List<EncapsulatedAssertion> encapsulatedAssertions) throws FindException, QuickStartPolicyBuilderException {
-        final PublishedService publishedService = serviceLocator.findByGoid(goid);
+        PublishedService publishedService = serviceLocator.findByGoid(goid);
 
         // DO NOT Fail -> if the serviceID of the service to be updated does not exist
         //if (publishedService == null) {
         //    throw new QuickStartPolicyBuilderException("Unable to find a service with ServiceID " + goid.toString());
         //}
 
-        publishedService.setName(service.name);
-        final String registrarTime = publishedService.getProperty(PROPERTY_QS_REGISTRAR_TMS);
-        if (StringUtils.isNotEmpty(registrarTime)) {
-            publishedService.putProperty(PROPERTY_QS_REGISTRAR_TMS, String.valueOf(Long.valueOf(registrarTime) + 1));
+        if (publishedService == null) {
+            //
+            publishedService = createPublishedService(service, encapsulatedAssertions);
+            //
         } else {
-            publishedService.putProperty(PROPERTY_QS_REGISTRAR_TMS, String.valueOf(System.currentTimeMillis()));
+
+            publishedService.setName(service.name);
+            final String registrarTime = publishedService.getProperty(PROPERTY_QS_REGISTRAR_TMS);
+            if (StringUtils.isNotEmpty(registrarTime)) {
+                publishedService.putProperty(PROPERTY_QS_REGISTRAR_TMS, String.valueOf(Long.valueOf(registrarTime) + 1));
+            } else {
+                publishedService.putProperty(PROPERTY_QS_REGISTRAR_TMS, String.valueOf(System.currentTimeMillis()));
+            }
+            publishedService.setHttpMethods(Sets.newHashSet(service.httpMethods));
+            generatePolicy(publishedService, encapsulatedAssertions);
         }
-        publishedService.setHttpMethods(Sets.newHashSet(service.httpMethods));
-        generatePolicy(publishedService, encapsulatedAssertions);
+        //
         return publishedService;
     }
 
