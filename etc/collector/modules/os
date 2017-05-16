@@ -7,7 +7,7 @@ LEVEL=$2
 . ${COLLECTOR_HOME}/collectorlib
 
 #Define and create output folders
-OS_MODULE_BaseOutputDirectory=${ALL_MODULES_BaseOutputDirectory}/${MODULE}
+OS_MODULE_BaseOutputDirectory=${ALL_MODULES_BASE_OUTPUT_DIR}/${MODULE}
 OS_MODULE_BaseOutputDirectory_config=${OS_MODULE_BaseOutputDirectory}/config
 OS_MODULE_BaseOutputDirectory_logs=${OS_MODULE_BaseOutputDirectory}/logs
 mkdir -p ${OS_MODULE_BaseOutputDirectory}

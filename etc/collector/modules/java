@@ -10,7 +10,7 @@ LEVEL=$2
 preModule $MODULE
 
 #Define and create output folders
-JAVA_MODULE_BaseOutputDirectory=${ALL_MODULES_BaseOutputDirectory}/${MODULE}
+JAVA_MODULE_BaseOutputDirectory=${ALL_MODULES_BASE_OUTPUT_DIR}/${MODULE}
 JAVA_MODULE_BaseOutputDirectory_config=${JAVA_MODULE_BaseOutputDirectory}/config
 JAVA_MODULE_BaseOutputDirectory_logs=${JAVA_MODULE_BaseOutputDirectory}/logs
 mkdir -p ${JAVA_MODULE_BaseOutputDirectory}

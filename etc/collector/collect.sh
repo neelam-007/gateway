@@ -17,7 +17,7 @@ MODULE=$DEFAULTMODULE
 LEVEL=$DEFAULTLEVEL
 GROUP=$DEFAULTGROUP
 MODE=
-HEAPDUMP_ENABLED=
+HEAP_DUMP=
 
 export COLLECTOR_HOME=/opt/SecureSpan/Collector
 
@@ -28,7 +28,7 @@ export COLLECTOR_HOME=/opt/SecureSpan/Collector
 function calculatePaths
 {
     BASE_OUTPUT_DIR="${OUTPUT_HOME}/${DATED_OUTPUT_NAME}"
-    export ALL_MODULES_BaseOutputDirectory="${BASE_OUTPUT_DIR}/categorized-by-module"
+    export ALL_MODULES_BASE_OUTPUT_DIR="${BASE_OUTPUT_DIR}/categorized-by-module"
 }
 
 # set variables for the values of several file system locations based on BASE_OUTPUT_DIR
@@ -50,7 +50,7 @@ function usage
     echo -e "\n[-a] all"
     echo "Collect data from all modules"
     echo -e "\n[-l detail-level]"
-    echo "1 = Basic, 2 = Medium, 3 = High.  Default is "${DEFAULTLEVEL}"."
+    echo "1 = Basic, 2 = Medium, 3 = High.  Default is ${DEFAULTLEVEL}."
     echo " Examples of data collected from the detail levels:"
     echo "   1 = SSG logs, node.properties, my.cnf"
     echo "   2 = /etc/sudoers, /etc/passwd, /etc/group"
@@ -67,7 +67,7 @@ function usage
 # Prevent unintentional overwriting of past results.
 function doesOutputDirectoryExist
 {
-    if [ -e ${BASE_OUTPUT_DIR} ]
+    if [ -e "${BASE_OUTPUT_DIR}" ]
     then
         echo "WARNING: The output directory already exists at ${BASE_OUTPUT_DIR}.  If you proceed, data in that folder may be overwritten."
         read -p "Do you wish to proceed?  Choose y or n:  " yn
@@ -84,10 +84,10 @@ function doesOutputDirectoryExist
 #           $2 = detail level
 function doModule
 {
-    script=(${COLLECTOR_HOME}/modules/$1)
-    if [ -x $script ]
+    script=("${COLLECTOR_HOME}"/modules/$1)
+    if [ -x "$script" ]
     then
-      $script $MODULE $2 2>&1
+      $script "$MODULE" "$2" 2>&1
     else
       echo "Error there is no module named $1"
     fi
@@ -97,12 +97,12 @@ function doModule
 # Paramters $1 = detail level
 function doAll
 {
-    for script in $COLLECTOR_HOME/modules/*
+    for script in "$COLLECTOR_HOME"/modules/*
     do
-       MODULE=`basename $script`
-       if [ -x $script ]
+       MODULE=$(basename "$script")
+       if [ -x "$script" ]
        then
-       $script $MODULE $1 2>&1
+       $script "$MODULE" "$1" 2>&1
        fi
     done
 }
@@ -112,14 +112,14 @@ function createSymlinksToEveryFile
 {
     ALL_OUTPUT_IN_ONE_FOLDER="${BASE_OUTPUT_DIR}"/links-to-all-files
     mkdir -p "${ALL_OUTPUT_IN_ONE_FOLDER}"
-    find "${ALL_MODULES_BaseOutputDirectory}" -type f 2>/dev/null \
+    find "${ALL_MODULES_BASE_OUTPUT_DIR}" -type f 2>/dev/null \
      | xargs -I{} ln -s {} "${ALL_OUTPUT_IN_ONE_FOLDER}"
 }
 
 # Parameters $1 = directory where you want your output stored
 function recalculatePaths
 {
-    if [ ! -w $1 ]
+    if [ ! -w "$1" ]
     then
         echo "Your desired output directory $1 does not exist or is not writable. \
             Please specify a different one or amend its permissions."
@@ -135,40 +135,39 @@ function getHeapDump
 {
     echo "Beginning heap dump"
 
-    GATEWAY_DUMP_DIR=${ALL_MODULES_BaseOutputDirectory}/gateway/dumps
+    GATEWAY_DUMP_DIR="${ALL_MODULES_BASE_OUTPUT_DIR}/gateway/dumps"
     GW_PID=$(ps awwx | grep Gateway.jar | grep -v grep | awk '{print $1}')
 
-    if [ $GW_PID ]
-    then
-        logAndRunCmd su -c \"mkdir -p ${TEMP_GATEWAY_USER_DUMPFOLDER}\" -s /bin/sh gateway
+    if [ "$GW_PID" != "" ]; then
+        logAndRunCmd su -c \"mkdir -p "${TEMP_GATEWAY_USER_DUMPFOLDER}"\" -s /bin/sh gateway
         if [ $? -ne 0 ]
         then
             echo "Could not create temp directory"
             return 1
         fi
 
-        logAndRunCmd su -c \"${JAVA_HOME}/bin/jmap -dump:live,format=b,file=${TEMP_GATEWAY_USER_DUMPFOLDER}/heap.hprof ${GW_PID}\" -s /bin/sh gateway
+        logAndRunCmd su -c \""${JAVA_HOME}"/bin/jmap -dump:live,format=b,file="${TEMP_GATEWAY_USER_DUMPFOLDER}"/heap.hprof "${GW_PID}"\" -s /bin/sh gateway
         if [ $? -ne 0 ]
         then
             echo "Could not create heap dump"
             return 1
         fi
 
-        logAndRunCmd mkdir -p ${GATEWAY_DUMP_DIR}
+        logAndRunCmd mkdir -p "${GATEWAY_DUMP_DIR}"
         if [ $? -ne 0 ]
         then
             echo "Could not create gateway dump folder"
             return 1
         fi
 
-        logAndRunCmd mv ${TEMP_GATEWAY_USER_DUMPFOLDER}/heap.hprof ${GATEWAY_DUMP_DIR}/heapDump.hprof
+        logAndRunCmd mv "${TEMP_GATEWAY_USER_DUMPFOLDER}"/heap.hprof "${GATEWAY_DUMP_DIR}/heapDump.hprof"
         if [ $? -ne 0 ]
         then
             echo "Could not move heap dump file"
             return 1
         fi
 
-        logAndRunCmd rm -rf ${TEMP_GATEWAY_USER_DUMPFOLDER}
+        logAndRunCmd rm -rf "${TEMP_GATEWAY_USER_DUMPFOLDER}"
         if [ $? -ne 0 ]
         then
             echo "Could not remove temp directory"
@@ -193,38 +192,38 @@ while getopts "hm:al:o:Dd:" opt; do
       ;;
 
       D)
-      HEAP_DUMP=true
+      HEAP_DUMP="true"
       ;;
 
       m)
-      if [ $MODE ]
+      if [ "$MODE" ]
       then
           echo "Only one of -m or -a may be selected"
           usage
           exit 1
       fi
       MODE=module
-      if [ ${OPTARG#-} != $OPTARG ]
+      if [ "${OPTARG#-}" != "$OPTARG" ]
       then
           echo "Argument required for -m."
           exit 1
       fi
-      export MODULE=$OPTARG
+      export MODULE="$OPTARG"
       ;;
 
       a)
-      if [ $MODE ]
+      if [ "$MODE" ]
       then
           echo "Only one of -m or -a may be selected"
           usage
           exit 1
       fi
       MODE=all
-      GROUP=$OPTARG
+      GROUP="$OPTARG"
       ;;
 
       l)
-      if [ ${OPTARG#-} != $OPTARG ]
+      if [ "${OPTARG#-}" != "$OPTARG" ]
       then
           echo "Argument required for -l."
           usage
@@ -234,13 +233,13 @@ while getopts "hm:al:o:Dd:" opt; do
       ;;
 
       d)
-      if [ ${OPTARG#-} != $OPTARG ]
+      if [ "${OPTARG#-}" != "$OPTARG" ]
       then
           echo "Argument required for -d."
           usage
           exit 1
       fi
-      recalculatePaths $OPTARG
+      recalculatePaths "$OPTARG"
       ;;
 
       \?)
@@ -267,16 +266,16 @@ doesOutputDirectoryExist
 
 if [ "$MODE" == "module" ]
 then
-    doModule $MODULE $LEVEL
+    doModule "$MODULE" "$LEVEL"
 elif [ "$MODE" == "all" ]
 then
-    doAll $LEVEL
-elif ! [ $HEAP_DUMP ]
+    doAll "$LEVEL"
+elif ! [ "$HEAP_DUMP" ]
 then
     echo "ERROR: No module was specified.  Please enter a module or execute collect.sh -h for help."
 fi
 
-if [ $HEAP_DUMP ]
+if [ "$HEAP_DUMP" ]
 then
     getHeapDump
 fi
@@ -284,14 +283,14 @@ fi
 createSymlinksToEveryFile
 
 #Compress all the output into one folder
-if [ -e ${ALL_MODULES_BaseOutputDirectory} ]
+if [ -e "${ALL_MODULES_BASE_OUTPUT_DIR}" ]
 then
-    FINAL_ZIP_NAME=${BASE_OUTPUT_DIR}/${DATED_OUTPUT_NAME}.tar.gz
+    FINAL_ZIP_NAME="${BASE_OUTPUT_DIR}/${DATED_OUTPUT_NAME}".tar.gz
     beginCompression
     tar -zcvf ${FINAL_ZIP_NAME} -C ${OUTPUT_HOME} -T <(echo -e "$DATED_OUTPUT_NAME/categorized-by-module\n$DATED_OUTPUT_NAME/links-to-all-files")
     endCompression "${FINAL_ZIP_NAME}"
 
 else
     echo
-    echo "ERROR: There is no collected output at ${ALL_MODULES_BaseOutputDirectory}.  Check console output for errors."
+    echo "ERROR: There is no collected output at ${ALL_MODULES_BASE_OUTPUT_DIR}.  Check console output for errors."
 fi

@@ -12,7 +12,7 @@ preModule $MODULE
 
 
 #Define and create output folders
-VMWARE_MODULE_BaseOutputDirectory=${ALL_MODULES_BaseOutputDirectory}/${MODULE}
+VMWARE_MODULE_BaseOutputDirectory=${ALL_MODULES_BASE_OUTPUT_DIR}/${MODULE}
 VMWARE_MODULE_BaseOutputDirectory_config=${VMWARE_MODULE_BaseOutputDirectory}/config
 VMWARE_MODULE_BaseOutputDirectory_logs=${VMWARE_MODULE_BaseOutputDirectory}/logs
 mkdir -p ${VMWARE_MODULE_BaseOutputDirectory}

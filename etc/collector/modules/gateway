@@ -10,7 +10,7 @@ APDEFAULT=${SSHOME}/Appliance
 JAVA_HOME=${SSHOME}/JDK
 
 #Define and create output folders
-GATEWAY_MODULE_BaseOutputDirectory=${ALL_MODULES_BaseOutputDirectory}/${MODULE}
+GATEWAY_MODULE_BaseOutputDirectory=${ALL_MODULES_BASE_OUTPUT_DIR}/${MODULE}
 GATEWAY_MODULE_BaseOutputDirectory_config=${GATEWAY_MODULE_BaseOutputDirectory}/config
 #GATEWAY_MODULE_BaseOutputDirectory_logs=${GATEWAY_MODULE_BaseOutputDirectory}/logs
 GATEWAY_MODULE_BaseOutputDirectory_logs_SSG=${GATEWAY_MODULE_BaseOutputDirectory}/SSG_logs
