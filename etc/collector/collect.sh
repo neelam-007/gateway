@@ -167,7 +167,7 @@ function getHeapDump
             return 1
         fi
 
-        logAndRunCmd rm -rf "${TEMP_GATEWAY_USER_DUMPFOLDER}"
+        logAndRunCmd rmdir "${TEMP_GATEWAY_USER_DUMPFOLDER}"
         if [ $? -ne 0 ]
         then
             echo "Could not remove temp directory"
