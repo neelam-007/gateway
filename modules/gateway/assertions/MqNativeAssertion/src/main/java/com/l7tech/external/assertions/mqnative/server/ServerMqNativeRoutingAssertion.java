@@ -989,8 +989,9 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
      * @param defaultValue the default value of the property
      * @return a short or long integer of a MQ Native connection pool property
      */
-    private <T> T retrievePoolProperty(final SsgActiveConnector connector, final Config config, final String propName, final T defaultValue,
-                           final Functions.Unary<T, SsgActiveConnector> connGetter, final Functions.Unary<T, Config> confGetter) {
+    private <T> T retrievePoolProperty(
+            final SsgActiveConnector connector, final Config config, final String propName, final T defaultValue,
+            final Functions.Unary<T, SsgActiveConnector> connGetter, final Functions.Unary<T, Config> confGetter) {
         final String propValue = connector == null ? null : connector.getProperty(propName);
         if (StringUtils.isBlank(propValue)) {
             return config == null ? defaultValue : confGetter.call(config);
@@ -1002,15 +1003,34 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
     // Apply the above basic method to retrieve a pool property with an integer value.
     private int retrieveIntPoolProperty(final SsgActiveConnector connector, final Config config, final String propName, final int defaultValue) {
         return retrievePoolProperty(connector, config, propName, defaultValue,
-                conn -> conn.getIntegerProperty(propName, defaultValue),
-                conf -> conf.getIntProperty(propName, defaultValue));
+                new Functions.Unary<Integer, SsgActiveConnector>() {
+                    @Override
+                    public Integer call(SsgActiveConnector connector) {
+                        return connector.getIntegerProperty(propName, defaultValue);
+                    }
+                },
+                new Functions.Unary<Integer, Config>() {
+                    @Override
+                    public Integer call(Config config) {
+                        return config.getIntProperty(propName, defaultValue);
+                    }
+                });
     }
 
     // Apply the above basic method to retrieve a pool property with an long value.
     private long retrieveLongPoolProperty(final SsgActiveConnector connector, final Config config, final String propName, final long defaultValue) {
         return retrievePoolProperty(connector, config, propName, defaultValue,
-                conn -> conn.getLongProperty(propName, defaultValue),
-                conf -> conf.getLongProperty(propName, defaultValue));
+                new Functions.Unary<Long, SsgActiveConnector>() {
+                    @Override
+                    public Long call(SsgActiveConnector connector) {
+                        return connector.getLongProperty(propName, defaultValue);
+                    }
+                }, new Functions.Unary<Long, Config>() {
+                    @Override
+                    public Long call(Config config) {
+                        return config.getLongProperty(propName, defaultValue);
+                    }
+                });
     }
 
     private void setCodesOnContext(final PolicyEnforcementContext context, final MQException e) {
