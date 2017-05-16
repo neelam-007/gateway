@@ -8,6 +8,8 @@ DEFAULTGROUP=all
 OUTPUT_HOME=/home/ssgconfig
 DATED_OUTPUT_NAME="dct_${DATESTRING}"
 DEFAULTMODE="module"
+JAVA_HOME=/opt/SecureSpan/JDK
+TEMP_GATEWAY_USER_DUMPFOLDER=/tmp/heapdump_$(date +%s)
 
 DEBUG=0
 
@@ -128,6 +130,58 @@ function recalculatePaths
     calculatePaths
 }
 
+# Collect a heap dump from the gateway process
+function getHeapDump
+{
+    echo "Beginning heap dump"
+
+    GATEWAY_DUMP_DIR=${ALL_MODULES_BaseOutputDirectory}/gateway/dumps
+    GW_PID=$(ps awwx | grep Gateway.jar | grep -v grep | awk '{print $1}')
+
+    if [ $GW_PID ]
+    then
+        logAndRunCmd su -c \"mkdir -p ${TEMP_GATEWAY_USER_DUMPFOLDER}\" -s /bin/sh gateway
+        if [ $? -ne 0 ]
+        then
+            echo "Could not create temp directory"
+            return 1
+        fi
+
+        logAndRunCmd su -c \"${JAVA_HOME}/bin/jmap -dump:live,format=b,file=${TEMP_GATEWAY_USER_DUMPFOLDER}/heap.hprof ${GW_PID}\" -s /bin/sh gateway
+        if [ $? -ne 0 ]
+        then
+            echo "Could not create heap dump"
+            return 1
+        fi
+
+        logAndRunCmd mkdir -p ${GATEWAY_DUMP_DIR}
+        if [ $? -ne 0 ]
+        then
+            echo "Could not create gateway dump folder"
+            return 1
+        fi
+
+        logAndRunCmd mv ${TEMP_GATEWAY_USER_DUMPFOLDER}/heap.hprof ${GATEWAY_DUMP_DIR}/heapDump.hprof
+        if [ $? -ne 0 ]
+        then
+            echo "Could not move heap dump file"
+            return 1
+        fi
+
+        logAndRunCmd rm -rf ${TEMP_GATEWAY_USER_DUMPFOLDER}
+        if [ $? -ne 0 ]
+        then
+            echo "Could not remove temp directory"
+            return 1
+        fi
+    else
+        echo "Could not get Gateway PID"
+        return 1
+    fi
+
+    echo "Finished heap dump"
+}
+
 
 while getopts "hm:al:o:Dd:" opt; do
 
@@ -139,7 +193,7 @@ while getopts "hm:al:o:Dd:" opt; do
       ;;
 
       D)
-      HEAP=true
+      HEAP_DUMP=true
       ;;
 
       m)
@@ -214,17 +268,17 @@ doesOutputDirectoryExist
 if [ "$MODE" == "module" ]
 then
     doModule $MODULE $LEVEL
-
 elif [ "$MODE" == "all" ]
 then
     doAll $LEVEL
-elif ! [ "$HEAP" ]
+elif ! [ $HEAP_DUMP ]
+then
     echo "ERROR: No module was specified.  Please enter a module or execute collect.sh -h for help."
 fi
 
-if [ $HEAP ]
+if [ $HEAP_DUMP ]
 then
-    ${COLLECTOR_HOME}/heap.sh
+    getHeapDump
 fi
 
 createSymlinksToEveryFile

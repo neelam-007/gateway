@@ -73,28 +73,4 @@ else
 echo "Error: Cannot get Gateway PID"
 fi
 
-
-#if [ $LEVEL -ge $DETAIL ]
-#then
-#    #nothing here
-#fi
-#
-#if [ $LEVEL -ge $EVERYTHING ]
-#then
-#    #nothing here
-#fi
-
-
-if [ "$HEAPDUMP_ENABLED" = "true" ]
-then
-    echo "Beginning heap dump"
-    logCommand su -c "ps awwx | grep Gateway.jar | grep -v grep | awk '{print $1}' | xargs ${JAVA_HOME}/bin/jmap -dump:live,format=b,file=${GATEWAY_MODULE_BaseOutputDirectory_dump}/heap.hprof"
-    GATEWAY_HEAPDUMP_PID=$(ps awwx | grep Gateway.jar | grep -v grep | awk '{print $1}')
-    TEMP_GATEWAY_USER_DUMPFOLDER=/tmp/$(date +%s)_heapdump
-    su -c "mkdir -p ${TEMP_GATEWAY_USER_DUMPFOLDER}" -s /bin/sh gateway
-    su -c "${JAVA_HOME}/bin/jmap -dump:live,format=b,file=${TEMP_GATEWAY_USER_DUMPFOLDER}/heap.hprof ${GATEWAY_HEAPDUMP_PID}" -s /bin/sh gateway
-    mv ${TEMP_GATEWAY_USER_DUMPFOLDER}/heap.hprof ${GATEWAY_MODULE_BaseOutputDirectory_dump}/heapDump.hprof
-
-fi
-
 postModule $MODULE

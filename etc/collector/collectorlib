@@ -28,7 +28,7 @@ function logCommand
 	echo "|- COMMAND: $*"
 }
 
-function logAndRunCmd ()
+function logAndRunCmd
 {
     logCommand "$*"
     bash -c "$*"
