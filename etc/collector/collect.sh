@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 VERSION="1.1"
 DATESTRING=$(date +%s"_"T%R_%B_%d_%Y_%Z%z | sed 's/://g')
@@ -7,25 +7,33 @@ DEFAULTLEVEL=1
 DEFAULTGROUP=all
 OUTPUT_HOME=/home/ssgconfig
 DATED_OUTPUT_NAME="dct_${DATESTRING}"
-DEFAULT_BASE_DATED_OUTPUT_DIR="${OUTPUT_HOME}/${DATED_OUTPUT_NAME}"
 DEFAULTMODE="module"
 
 DEBUG=0
 
-BASE_OUTPUT_DIR="${DEFAULT_BASE_DATED_OUTPUT_DIR}"
 MODULE=$DEFAULTMODULE
 LEVEL=$DEFAULTLEVEL
 GROUP=$DEFAULTGROUP
 MODE=
 HEAPDUMP_ENABLED=
 
-export ALL_MODULES_BaseOutputDirectory="${DEFAULT_BASE_DATED_OUTPUT_DIR}/categorized-by-module"
 export COLLECTOR_HOME=/opt/SecureSpan/Collector
 
 # Pull in collector support functions
 . ${COLLECTOR_HOME}/collectorlib
 
-function usage () 
+
+function calculatePaths
+{
+    BASE_OUTPUT_DIR="${OUTPUT_HOME}/${DATED_OUTPUT_NAME}"
+    export ALL_MODULES_BaseOutputDirectory="${BASE_OUTPUT_DIR}/categorized-by-module"
+}
+
+# set variables for the values of several file system locations based on BASE_OUTPUT_DIR
+calculatePaths
+
+
+function usage
 {
     echo "Usage:"
     echo -e "\nAPI Gateway Data Collection Utility version ${VERSION}"
@@ -47,12 +55,15 @@ function usage ()
     echo "   3 = *Currently nothing at this level.  Note that heap dumps have a separate flag to enable."
     echo -e "\n[-D]"
     echo "Heap Dump. Use caution when taking heap dumps as this can significantly affect performance."
+    echo -e "\n[-d <output-directory>]"
+    echo "Where to put the files containing the output. By default, this is rooted in /home/ssgconfig."
+    echo "  Specify another root path here if you want them somewhere else."
     echo -e "\n[-h help]"
     echo
 }
 
 # Prevent unintentional overwriting of past results.
-function doesOutputDirectoryExist ()
+function doesOutputDirectoryExist
 {
     if [ -e ${BASE_OUTPUT_DIR} ]
     then
@@ -69,20 +80,20 @@ function doesOutputDirectoryExist ()
 # Process an individual module
 # Paramters $1 = modules name,
 #           $2 = detail level
-function doModule ()
+function doModule
 {
     script=(${COLLECTOR_HOME}/modules/$1)
-    if [ -e $script ] 
+    if [ -x $script ]
     then
       $script $MODULE $2 2>&1
-    else 
+    else
       echo "Error there is no module named $1"
     fi
 }
 
 # Process an individual module
 # Paramters $1 = detail level
-function doAll ()
+function doAll
 {
     for script in $COLLECTOR_HOME/modules/*
     do
@@ -95,7 +106,7 @@ function doAll ()
 }
 
 #Place all files in one folder for easier viewability
-function createSymlinksToEveryFile ()
+function createSymlinksToEveryFile
 {
     ALL_OUTPUT_IN_ONE_FOLDER="${BASE_OUTPUT_DIR}"/links-to-all-files
     mkdir -p "${ALL_OUTPUT_IN_ONE_FOLDER}"
@@ -103,8 +114,22 @@ function createSymlinksToEveryFile ()
      | xargs -I{} ln -s {} "${ALL_OUTPUT_IN_ONE_FOLDER}"
 }
 
+# Parameters $1 = directory where you want your output stored
+function recalculatePaths
+{
+    if [ ! -w $1 ]
+    then
+        echo "Your desired output directory $1 does not exist or is not writable. \
+            Please specify a different one or amend its permissions."
+        exit 1
+    fi
 
-while getopts "hm:al:o:D" opt; do
+    OUTPUT_HOME=$1
+    calculatePaths
+}
+
+
+while getopts "hm:al:o:Dd:" opt; do
 
   case $opt in
 
@@ -137,7 +162,7 @@ while getopts "hm:al:o:D" opt; do
       a)
       if [ $MODE ]
       then
-          echo "Only one of -m or -g may be selected"
+          echo "Only one of -m or -a may be selected"
           usage
           exit 1
       fi
@@ -153,9 +178,17 @@ while getopts "hm:al:o:D" opt; do
           exit 1
       fi
       LEVEL=$OPTARG
-
       ;;
 
+      d)
+      if [ ${OPTARG#-} != $OPTARG ]
+      then
+          echo "Argument required for -d."
+          usage
+          exit 1
+      fi
+      recalculatePaths $OPTARG
+      ;;
 
       \?)
       usage
@@ -187,7 +220,8 @@ elif [ "$MODE" == "all" ]
 then
     doAll $LEVEL
 else
-    echo "ERROR: No module was specified.  Please enter a module."
+    echo "ERROR: No module was specified.  Please enter a module or execute collect.sh -h for help."
+    exit 1
 fi
 
 createSymlinksToEveryFile
@@ -197,12 +231,10 @@ if [ -e ${ALL_MODULES_BaseOutputDirectory} ]
 then
     FINAL_ZIP_NAME=${BASE_OUTPUT_DIR}/${DATED_OUTPUT_NAME}.tar.gz
     beginCompression
-    tar -zcvf ${FINAL_ZIP_NAME} --exclude='*.tar.gz' -C ${OUTPUT_HOME} ${DATED_OUTPUT_NAME}
+    tar -zcvf ${FINAL_ZIP_NAME} -C ${OUTPUT_HOME} -T <(echo -e "$DATED_OUTPUT_NAME/categorized-by-module\n$DATED_OUTPUT_NAME/links-to-all-files")
     endCompression "${FINAL_ZIP_NAME}"
 
 else
     echo
     echo "ERROR: There is no collected output at ${ALL_MODULES_BaseOutputDirectory}.  Check console output for errors."
 fi
-
-

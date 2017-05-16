@@ -232,7 +232,7 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
      *
      * @return true if the configured Open Options are used.
      */
-    public boolean isOpenOptionsUsed(){
+    public boolean isOpenOptionsUsed() {
         return isOpenOptionsUsed;
     }
 
@@ -241,7 +241,7 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
      *
      * @param isOpenOptionsUsed indicates whether or not configured Open Options are used.
      */
-    public void setOpenOptionsUsed( final boolean isOpenOptionsUsed ){
+    public void setOpenOptionsUsed(final boolean isOpenOptionsUsed) {
         this.isOpenOptionsUsed = isOpenOptionsUsed;
     }
 
@@ -250,7 +250,7 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
      *
      * @return the configured Open Options.
      */
-    public String getOpenOptions(){
+    public String getOpenOptions() {
         return openOptions;
     }
 
@@ -259,7 +259,7 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
      *
      * @param openOptions the Open Options.
      */
-    public void setOpenOptions( final String openOptions ){
+    public void setOpenOptions(final String openOptions) {
         this.openOptions = openOptions;
     }
 
@@ -268,7 +268,7 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
      *
      * @return true if the configured Put/Get Message Options are used.
      */
-    public boolean isMessageOptionsUsed(){
+    public boolean isMessageOptionsUsed() {
         return isMessageOptionsUsed;
     }
 
@@ -277,7 +277,7 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
      *
      * @param isMessageOptionsUsed indicates whether or not configured Put/Get Message Options are used.
      */
-    public void setMessageOptionsUsed( final boolean isMessageOptionsUsed ){
+    public void setMessageOptionsUsed(final boolean isMessageOptionsUsed) {
         this.isMessageOptionsUsed = isMessageOptionsUsed;
     }
 
@@ -286,7 +286,7 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
      *
      * @return the configured Put/Get Message Options.
      */
-    public String getMessageOptions(){
+    public String getMessageOptions() {
         return messageOptions;
     }
 
@@ -295,7 +295,7 @@ public class MqNativeRoutingAssertion extends RoutingAssertion implements UsesEn
      *
      * @param messageOptions the Put/Get Message Options.
      */
-    public void setMessageOptions( final String messageOptions ){
+    public void setMessageOptions(final String messageOptions) {
         this.messageOptions = messageOptions;
     }
 

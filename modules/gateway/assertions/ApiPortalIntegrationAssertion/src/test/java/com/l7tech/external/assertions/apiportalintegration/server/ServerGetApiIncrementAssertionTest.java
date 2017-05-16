@@ -31,11 +31,11 @@ public class ServerGetApiIncrementAssertionTest {
   @Test
   public void testGetJsonMessage() throws Exception {
     final String ref = "{\n" +
-        "  \"api2.0s\" : [ {\n" +
-        "    \"serviceEnabled\" : true,\n" +
+        "  \"apis\" : [ {\n" +
         "    \"Uuid\" : \"e7c076e3-790d-49d7-8cd8-33e93e25ee88\",\n" +
         "    \"Name\" : \"apitest\",\n" +
-        "    \"PublishByPortal\" : true,\n" +
+        "    \"ServiceEnabled\" : true,\n" +
+        "    \"PortalPublished\" : true,\n" +
         "    \"SsgUrl\" : \"apitest\",\n" +
         "    \"ApiLocationUrl\" : \"http://localhost:8080/echo\",\n" +
         "    \"CustomFields\" : [ {\n" +
@@ -89,10 +89,10 @@ public class ServerGetApiIncrementAssertionTest {
         "      } ]\n" +
         "    } ]\n" +
         "  }, {\n" +
-        "    \"serviceEnabled\" : true,\n" +
         "    \"Uuid\" : \"17c076e3-790d-49d7-8cd8-33e93e25ee88\",\n" +
         "    \"Name\" : \"apitest2\",\n" +
-        "    \"PublishByPortal\" : false,\n" +
+        "    \"ServiceEnabled\" : true,\n" +
+        "    \"PortalPublished\" : false,\n" +
         "    \"SsgUrl\" : \"apitest2\",\n" +
         "    \"ApiLocationUrl\" : \"http://localhost:8080/echo\",\n" +
         "    \"CustomFields\" : [ ],\n" +
