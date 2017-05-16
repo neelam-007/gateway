@@ -31,12 +31,12 @@ public class RemoteIpRange extends Assertion implements UsesVariables {
 
     // - PUBLIC
 
-    public static final int IPV4_MAX_PREFIX = 32;
-    public static final int IPV6_MAX_PREFIX = 128;
+    public static final int IPV4_MAX_NETWORK_MASK= 32;
+    public static final int IPV6_MAX_NETWORK_MASK = 128;
 
     public RemoteIpRange() {
         startIp = DEFAULT_START_IP;
-        networkMask = DEFAULT_NETWORK_PREFIX;
+        networkMask = DEFAULT_NETWORK_MASK;
         allowRange = true;
     }
 
@@ -227,11 +227,11 @@ public class RemoteIpRange extends Assertion implements UsesVariables {
         String pattern = startIp + "/" + networkPrefix;
 
         if (InetAddressUtil.isValidIpv4Pattern(pattern)) {
-            if (!isValidNetworkPrefix(networkPrefix, IPV4_MAX_PREFIX)) {
+            if (!isValidNetworkPrefix(networkPrefix, IPV4_MAX_NETWORK_MASK)) {
                 errMsg = "Invalid IPv4 network prefix" + networkPrefix;
             }
         } else if (InetAddressUtil.isValidIpv6Pattern(pattern)) {
-            if (!isValidNetworkPrefix(networkPrefix, IPV6_MAX_PREFIX)) {
+            if (!isValidNetworkPrefix(networkPrefix, IPV6_MAX_NETWORK_MASK)) {
                 errMsg = "Invalid IPv6 network prefix: " + networkPrefix;
             }
         } else {
@@ -268,10 +268,17 @@ public class RemoteIpRange extends Assertion implements UsesVariables {
     }
 
     public static String formatNetworkMaskStringWithDefaultValue(String networkMask) {
-        return formatStringWithVariablesWithDefaultValue(networkMask, DEFAULT_NUM, DEFAULT_NETWORK_PREFIX);
+        return formatStringWithVariablesWithDefaultValue(networkMask, DEFAULT_NUM, DEFAULT_NETWORK_MASK);
     }
 
-    public static String formatStringWithVariablesWithDefaultValue(String str, final String defaultStrPerMatch, final String defaultStrPerFullMatch) {
+    /**
+     * Provides formatted string to validate the user input.
+     * @param str: Value or Context Variable.
+     * @param defaultStrPerMatch : Default substitution for every variable reference occurrence.
+     * @param defaultStrPerFullMatch: Default substitution if there is only one occurrence of variable reference.
+     * @return formatted string without variable references.
+     */
+    private static String formatStringWithVariablesWithDefaultValue(String str, final String defaultStrPerMatch, final String defaultStrPerFullMatch) {
         final String[] strWithIndex = Syntax.getReferencedNamesIndexedVarsNotOmitted(str);
 
         if (strWithIndex.length > 0) {
@@ -296,7 +303,7 @@ public class RemoteIpRange extends Assertion implements UsesVariables {
     // - PRIVATE
 
     private static final String DEFAULT_START_IP = "192.168.1.0";
-    private static final String DEFAULT_NETWORK_PREFIX = "24";
+    private static final String DEFAULT_NETWORK_MASK = "24";
     private final static String DEFAULT_NUM = "1";
 
     private String startIp;
