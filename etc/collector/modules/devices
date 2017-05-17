@@ -9,7 +9,7 @@ LEVEL=$2
 preModule $MODULE
 
 #Define and create output folders
-DEVICES_MODULE_BaseOutputDirectory=${ALL_MODULES_BaseOutputDirectory}/${MODULE}
+DEVICES_MODULE_BaseOutputDirectory=${ALL_MODULES_BASE_OUTPUT_DIR}/${MODULE}
 DEVICES_MODULE_BaseOutputDirectory_config=${DEVICES_MODULE_BaseOutputDirectory}/config
 DEVICES_MODULE_BaseOutputDirectory_logs=${DEVICES_MODULE_BaseOutputDirectory}/logs
 mkdir -p ${DEVICES_MODULE_BaseOutputDirectory}
