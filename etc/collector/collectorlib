@@ -7,7 +7,7 @@ EVERYTHING=3
 #
 #  Library of routines supporting collector scripts
 
-function preModule ()
+function preModule
 {
 
     echo "**********"
@@ -15,7 +15,7 @@ function preModule ()
     echo "*"
 }
 
-function postModule ()
+function postModule
 {
     echo "*"
     echo "* END MODULE: $1"
@@ -23,19 +23,25 @@ function postModule ()
     echo
 }
 
-function logCommand ()
+function logCommand
 {
 	echo "|- COMMAND: $*"
-}  
+}
 
-function beginCompression ()
+function logAndRunCmd
+{
+    logCommand "$*"
+    bash -c "$*"
+}
+
+function beginCompression
 {
     echo "**********"
     echo "* BEGIN COMPRESSION OF ALL COLLECTED DATA"
     echo "*"
 }
 
-function endCompression ()
+function endCompression
 {
     echo "**********"
     echo "*"
