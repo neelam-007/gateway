@@ -111,7 +111,7 @@ function doAll
 function createSymlinksToEveryFile
 {
     ALL_OUTPUT_IN_ONE_FOLDER="${BASE_OUTPUT_DIR}"/links-to-all-files
-    PREFIX_LENGTH=$(echo "${BASE_OUTPUT_DIR}" | wc -c)
+    PREFIX_LENGTH=$(echo "${BASE_OUTPUT_DIR}" | wc -m)
     mkdir -p "${ALL_OUTPUT_IN_ONE_FOLDER}"
     find "${ALL_MODULES_BASE_OUTPUT_DIR}" -type f 2>/dev/null \
      | cut -c"$PREFIX_LENGTH"- \
