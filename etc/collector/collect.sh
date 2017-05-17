@@ -120,8 +120,7 @@ function recalculatePaths
 {
     if [ ! -w $1 ]
     then
-        echo "Your desired output directory $1 does not exist or is not writable. \
-            Please specify a different one or amend its permissions."
+        echo "Your desired output directory $1 does not exist or is not writable. Please specify a different one or amend its permissions."
         exit 1
     fi
 
