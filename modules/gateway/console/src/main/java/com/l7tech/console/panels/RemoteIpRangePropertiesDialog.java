@@ -15,8 +15,8 @@ import java.awt.event.ActionListener;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
-import static com.l7tech.policy.assertion.RemoteIpRange.IPV4_MAX_PREFIX;
-import static com.l7tech.policy.assertion.RemoteIpRange.IPV6_MAX_PREFIX;
+import static com.l7tech.policy.assertion.RemoteIpRange.IPV4_MAX_NETWORK_MASK;
+import static com.l7tech.policy.assertion.RemoteIpRange.IPV6_MAX_NETWORK_MASK;
 
 /**
  * Dialog for viewing and editing a RemoteIpRange assertion.
@@ -31,7 +31,7 @@ public class RemoteIpRangePropertiesDialog extends LegacyAssertionPropertyDialog
     private JButton cancelButton;
     private JButton helpButton;
     private JFormattedTextField address;
-    private JFormattedTextField suffix;
+    private JFormattedTextField networkMask;
     private JComboBox includeExcludeCombo;
     private JPanel mainPanel;
 
@@ -67,12 +67,6 @@ public class RemoteIpRangePropertiesDialog extends LegacyAssertionPropertyDialog
                 resources.getString("includeExcludeCombo.include"),
                 resources.getString("includeExcludeCombo.exclude")}));
 
-        suffix.setFormatterFactory(new DefaultFormatterFactory(new NumberFormatter() {{
-            setMinimum(1);
-            setMaximum(IPV6_MAX_PREFIX);
-        }}
-        ));
-
         setCallbacks();
         setInitialValues();
     }
@@ -98,18 +92,20 @@ public class RemoteIpRangePropertiesDialog extends LegacyAssertionPropertyDialog
 
         // get rule
         int index = includeExcludeCombo.getSelectedIndex();
-        // get address
+        // get address and network mask
         String addressStrOrig = address.getText();
+        String networkMaskStrOrig = networkMask.getText();
 
         //since we really can't know the value of the variables until run time, replace them accordingly
         //at least we can test a valid format (assuming the variables resolve to a proper value on runtime)
         //before the user actually saves the values of this assertion
-        String addressStr = subject.formatStringWithVariables(addressStrOrig, true);
+        String addressStr = RemoteIpRange.formatStartIpStringWithDefaultValue(addressStrOrig);
+        String networkMaskStr = RemoteIpRange.formatNetworkMaskStringWithDefaultValue(networkMaskStrOrig);
 
-        // get prefix
-        Integer prefix;
+        // get networkMask
+        Integer networkMask;
         try {
-            prefix = Integer.parseInt(suffix.getText());
+            networkMask = Integer.parseInt(networkMaskStr);
         } catch (NumberFormatException e) {
             bark(resources.getString("error.badmask"));
             return;
@@ -122,7 +118,7 @@ public class RemoteIpRangePropertiesDialog extends LegacyAssertionPropertyDialog
             return;
         }
 
-        if (isIpv4 && prefix > IPV4_MAX_PREFIX || prefix > IPV6_MAX_PREFIX) {
+        if (isIpv4 && networkMask > IPV4_MAX_NETWORK_MASK || networkMask > IPV6_MAX_NETWORK_MASK) {
             bark(resources.getString("error.badmask"));
             return;
         }
@@ -137,7 +133,7 @@ public class RemoteIpRangePropertiesDialog extends LegacyAssertionPropertyDialog
                     subject.setAllowRange(false);
                     break;
             }
-            subject.setAddressRange(addressStrOrig, prefix);
+            subject.setAddressRange(addressStrOrig, networkMaskStrOrig);
             subject.setIpSourceContextVariable(contextval);
             oked = true;
         }
@@ -158,11 +154,12 @@ public class RemoteIpRangePropertiesDialog extends LegacyAssertionPropertyDialog
             includeExcludeCombo.setSelectedIndex(index);
             includeExcludeCombo.setPreferredSize(new Dimension(100, 25));
             this.address.setText(subject.getStartIp());
+
             // bug 4796: any existing 0's should be changed to 32 when edited.
-            if (subject.getNetworkMask() == 0) {
-                subject.setNetworkMask(IPV4_MAX_PREFIX);
+            if ("0".equals(subject.getNetworkMask())) {
+                subject.setNetworkMask(String.valueOf(IPV4_MAX_NETWORK_MASK));
             }
-            suffix.setText("" + subject.getNetworkMask());
+            networkMask.setText(subject.getNetworkMask());
             if (subject.getIpSourceContextVariable() == null) {
                 contextVarRadio.setSelected(false);
                 tcpRadio.setSelected(true);
