@@ -324,17 +324,19 @@ class MqNativeResourceManager implements ApplicationListener {
                     );
 
             for (final Map.Entry<MqNativeEndpointKey, MqNativeCachedConnectionPool> cachedConnectionEntry : connectionHolder.entrySet()) {
+                final MqNativeEndpointKey endpointKey = cachedConnectionEntry.getKey();
+
                 if ((timeNow - cachedConnectionEntry.getValue().getCreatedTime()) > cacheConfig.maximumAge && cacheConfig.maximumAge > 0) {
                     evict(connectionHolder, cachedConnectionEntry.getKey(), cachedConnectionEntry.getValue());
                     // debug only - to be removed
-                    taskLogger.log(Level.INFO, "Evicting MQ connection pool {0}:{1} due to max age exceeded",
-                            new Object[]{cachedConnectionEntry.getKey().getId(), cachedConnectionEntry.getKey().getVersion()});
+                    taskLogger.log(Level.INFO, "Evicting MQ connection pool {0}:{1}:{2}:{3}:{4} due to max age exceeded",
+                            new Object[]{endpointKey.getId(), endpointKey.getVersion(), endpointKey.getMaxActive(), endpointKey.getMaxIdle(), endpointKey.getMaxWait()});
 
                 } else if ((timeNow - cachedConnectionEntry.getValue().getLastAccessTime().get()) > cacheConfig.maximumIdleTime && cacheConfig.maximumIdleTime > 0) {
                     evict(connectionHolder, cachedConnectionEntry.getKey(), cachedConnectionEntry.getValue());
                     // debug only - to be removed
-                    taskLogger.log(Level.INFO, "Evicting MQ connection pool {0}:{1} due to max idleTime exceeded",
-                            new Object[]{cachedConnectionEntry.getKey().getId(), cachedConnectionEntry.getKey().getVersion()});
+                    taskLogger.log(Level.INFO, "Evicting MQ connection pool {0}:{1}:{2}:{3}:{4} due to max idleTime exceeded",
+                            new Object[]{endpointKey.getId(), endpointKey.getVersion(), endpointKey.getMaxActive(), endpointKey.getMaxIdle(), endpointKey.getMaxWait()});
 
                 } else if ( overSize > 0 ) {
                     evictionCandidates.add( cachedConnectionEntry );

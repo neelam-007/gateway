@@ -9,7 +9,7 @@ LEVEL=$2
 preModule $MODULE
 
 #Define and create output folders
-FILESYSTEMS_MODULE_BaseOutputDirectory=${ALL_MODULES_BaseOutputDirectory}/${MODULE}
+FILESYSTEMS_MODULE_BaseOutputDirectory=${ALL_MODULES_BASE_OUTPUT_DIR}/${MODULE}
 FILESYSTEMS_MODULE_BaseOutputDirectory_config=${FILESYSTEMS_MODULE_BaseOutputDirectory}/config
 FILESYSTEMS_MODULE_BaseOutputDirectory_logs=${FILESYSTEMS_MODULE_BaseOutputDirectory}/logs
 mkdir -p ${FILESYSTEMS_MODULE_BaseOutputDirectory}

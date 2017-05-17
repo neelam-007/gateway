@@ -10,7 +10,7 @@ preModule $MODULE
 
 
 #Define and create output folders
-MONITOR_MODULE_BaseOutputDirectory=${ALL_MODULES_BaseOutputDirectory}/${MODULE}
+MONITOR_MODULE_BaseOutputDirectory=${ALL_MODULES_BASE_OUTPUT_DIR}/${MODULE}
 MONITOR_MODULE_BaseOutputDirectory_config=${MONITOR_MODULE_BaseOutputDirectory}/config
 MONITOR_MODULE_BaseOutputDirectory_logs=${MONITOR_MODULE_BaseOutputDirectory}/logs
 mkdir -p ${MONITOR_MODULE_BaseOutputDirectory}
