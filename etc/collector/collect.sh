@@ -87,9 +87,9 @@ function doModule
     script=("${COLLECTOR_HOME}"/modules/$1)
     if [ -x "$script" ]
     then
-      $script "$MODULE" "$2" 2>&1
+        $script "$MODULE" "$2" 2>&1
     else
-      echo "Error there is no module named $1"
+        echo "Error there is no module named $1"
     fi
 }
 
@@ -102,7 +102,7 @@ function doAll
        MODULE=$(basename "$script")
        if [ -x "$script" ]
        then
-       $script "$MODULE" "$1" 2>&1
+           $script "$MODULE" "$1" 2>&1
        fi
     done
 }
@@ -113,6 +113,11 @@ function createSymlinksToEveryFile
     ALL_OUTPUT_IN_ONE_FOLDER="${BASE_OUTPUT_DIR}"/links-to-all-files
     PREFIX_LENGTH=$(echo "${BASE_OUTPUT_DIR}" | wc -m)
     mkdir -p "${ALL_OUTPUT_IN_ONE_FOLDER}"
+    if [ ! -w "${ALL_OUTPUT_IN_ONE_FOLDER}" ]
+    then
+        echo "Unable to create directory ${ALL_OUTPUT_IN_ONE_FOLDER}"
+        exit 1
+    fi
     find "${ALL_MODULES_BASE_OUTPUT_DIR}" -type f 2>/dev/null \
      | cut -c"$PREFIX_LENGTH"- \
      | xargs -I{} ln -s ..{} "${ALL_OUTPUT_IN_ONE_FOLDER}"
