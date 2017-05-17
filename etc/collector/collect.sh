@@ -111,9 +111,11 @@ function doAll
 function createSymlinksToEveryFile
 {
     ALL_OUTPUT_IN_ONE_FOLDER="${BASE_OUTPUT_DIR}"/links-to-all-files
+    PREFIX_LENGTH=$(echo "${BASE_OUTPUT_DIR}" | wc -c)
     mkdir -p "${ALL_OUTPUT_IN_ONE_FOLDER}"
     find "${ALL_MODULES_BASE_OUTPUT_DIR}" -type f 2>/dev/null \
-     | xargs -I{} ln -s {} "${ALL_OUTPUT_IN_ONE_FOLDER}"
+     | cut -c"$PREFIX_LENGTH"- \
+     | xargs -I{} ln -s ..{} "${ALL_OUTPUT_IN_ONE_FOLDER}"
 }
 
 # Parameters $1 = directory where you want your output stored
