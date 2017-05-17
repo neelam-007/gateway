@@ -357,6 +357,10 @@ public class GatewayFeatureSets {
                 "The necessary assertions to enable Identity Attributes extraction functionality",
                 mass("assertion:IdentityAttributes"));
 
+        GatewayFeatureSet ldapWriteAssertion = fsr("set:LdapWrite:Assertions",
+                "The necessary assertions to write to the LDAP Provider",
+                mass("assertion:LdapWrite"));
+
         //
         // Declare "building block" feature sets
         // (feature sets built out of "twig" feature sets, and which may include other building block feature sets,
@@ -417,6 +421,7 @@ public class GatewayFeatureSets {
             ass(RemoteDomainIdentityInjection.class),
             mass("assertion:SamlIssuer"),
             mass("assertion:LDAPQuery"),
+            fs(ldapWriteAssertion),
             fs(identityAttributesAssertion),
             mass("assertion:CertificateAttributes"),
             mass("assertion:ValidateNonSoapSamlToken"));
@@ -1232,6 +1237,7 @@ public class GatewayFeatureSets {
                 ass(XpathCredentialSource.class),
                 ass(SamlBrowserArtifact.class),
                 mass("assertion:LDAPQuery"),
+                fs(ldapWriteAssertion),
                 mass("assertion:CertificateAttributes"),
                 fs(nonSoapXmlSigning),
                 fs(nonSoapXmlEncryption),
