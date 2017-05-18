@@ -64,6 +64,7 @@ public class ServerConfig extends DefaultConfig implements ClusterPropertyListen
                 if (info.defaultValue != null) _properties.setProperty(info.name + SUFFIX_DEFAULT, info.defaultValue);
                 if (info.description != null) _properties.setProperty(info.name + SUFFIX_DESC, info.description);
                 if (info.clusterPropName != null) _properties.setProperty(info.name + SUFFIX_CLUSTER_KEY, info.clusterPropName);
+                if (info.validationType != null) _properties.setProperty(info.name + SUFFIX_VALIDATION_TYPE, info.validationType);
             } finally {
                 propLock.writeLock().unlock();
             }
@@ -458,6 +459,7 @@ public class ServerConfig extends DefaultConfig implements ClusterPropertyListen
         @Nullable private final String clusterPropName;
         @Nullable private final String description;
         @Nullable private final String defaultValue;
+        @Nullable private final String validationType;
 
         public PropertyRegistrationInfo( @NotNull  final String name,
                                          @Nullable final String clusterPropName,
@@ -467,6 +469,19 @@ public class ServerConfig extends DefaultConfig implements ClusterPropertyListen
             this.clusterPropName = clusterPropName;
             this.description = description;
             this.defaultValue = defaultValue;
+            this.validationType = null;
+        }
+
+        public PropertyRegistrationInfo( @NotNull  final String name,
+                                         @Nullable final String clusterPropName,
+                                         @Nullable final String description,
+                                         @Nullable final String defaultValue,
+                                         @Nullable final String validationType ) {
+            this.name = name;
+            this.clusterPropName = clusterPropName;
+            this.description = description;
+            this.defaultValue = defaultValue;
+            this.validationType = validationType;
         }
 
         public static PropertyRegistrationInfo prInfo( @NotNull  final String propName,
@@ -474,6 +489,14 @@ public class ServerConfig extends DefaultConfig implements ClusterPropertyListen
                                                        @Nullable final String description,
                                                        @Nullable final String defaultValue ) {
             return new PropertyRegistrationInfo( propName, clusterPropName, description, defaultValue );
+        }
+
+        public static PropertyRegistrationInfo prInfo(@NotNull  final String propName,
+                                                      @Nullable final String clusterPropName,
+                                                      @Nullable final String description,
+                                                      @Nullable final String defaultValue,
+                                                      @Nullable final String validationType ) {
+            return new PropertyRegistrationInfo( propName, clusterPropName, description, defaultValue, validationType );
         }
 
         @NotNull
@@ -540,6 +563,7 @@ public class ServerConfig extends DefaultConfig implements ClusterPropertyListen
     private static final String SUFFIX_SETSYSPROP = ".setSystemProperty";
     private static final String SUFFIX_DESC = ".description";
     private static final String SUFFIX_DEFAULT = ".default";
+    private static final String SUFFIX_VALIDATION_TYPE = ".validation.type";
     private static final String SUFFIX_VISIBLE = ".visible";
     private static final String SUFFIX_CLUSTER_KEY = ".clusterProperty";
 
