@@ -79,11 +79,21 @@ function doesOutputDirectoryExist
     fi
 }
 
+function checkForSpace
+{
+    if [ $(($(stat -f --format="%a*%S" "${OUTPUT_HOME}"))) -eq 0 ]
+    then
+        echo "Out of space on ${OUTPUT_HOME}. Terminating data collection."
+        exit 1
+    fi
+}
+
 # Process an individual module
 # Paramters $1 = modules name,
 #           $2 = detail level
 function doModule
 {
+    checkForSpace
     script=("${COLLECTOR_HOME}"/modules/$1)
     if [ -x "$script" ]
     then
@@ -99,11 +109,12 @@ function doAll
 {
     for script in "$COLLECTOR_HOME"/modules/*
     do
-       MODULE=$(basename "$script")
-       if [ -x "$script" ]
-       then
-           $script "$MODULE" "$1" 2>&1
-       fi
+        checkForSpace
+        MODULE=$(basename "$script")
+        if [ -x "$script" ]
+        then
+            $script "$MODULE" "$1" 2>&1
+        fi
     done
 }
 
@@ -139,6 +150,7 @@ function recalculatePaths
 # Collect a heap dump from the gateway process
 function getHeapDump
 {
+    checkForSpace
     echo "Beginning heap dump"
 
     GATEWAY_DUMP_DIR="${ALL_MODULES_BASE_OUTPUT_DIR}/gateway/dumps"
