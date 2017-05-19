@@ -3,7 +3,6 @@ package com.l7tech.external.assertions.websocket.server;
 import com.l7tech.server.message.AuthenticationContext;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.HashMap;
 
 /**
  * Created with IntelliJ IDEA.
@@ -17,15 +16,15 @@ public class WebSocketMetadata {
     private String id;
     private AuthenticationContext authenticationContext;
     private String accessToken;
-    private HashMap contextVariables;
+    private String outboundUrl;
 
 
 
-    public WebSocketMetadata(String id, AuthenticationContext authenticationContext, HttpServletRequest request, HashMap contextVariables) {
+    public WebSocketMetadata(String id, AuthenticationContext authenticationContext, HttpServletRequest request, String outboundUrl) {
         this.id = id;
         this.authenticationContext = authenticationContext;
         this.accessToken = extractOAuthToken(request);
-        this.contextVariables = contextVariables;
+        this.outboundUrl = outboundUrl;
     }
 
     private String extractOAuthToken( HttpServletRequest request) {
@@ -57,7 +56,7 @@ public class WebSocketMetadata {
         return accessToken;
     }
 
-    public HashMap getContextVariables() {
-        return contextVariables;
+    public String getOutboundUrl() {
+        return outboundUrl;
     }
 }

@@ -4,6 +4,7 @@ import com.l7tech.external.assertions.websocket.WebSocketConnectionEntity;
 import com.l7tech.external.assertions.websocket.WebSocketConstants;
 import com.l7tech.external.assertions.websocket.WebSocketUtils;
 import com.l7tech.gateway.common.LicenseManager;
+import com.l7tech.gateway.common.audit.AuditFactory;
 import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
@@ -60,6 +61,7 @@ public class WebSocketLoadListener {
     private static FirewallRulesManager fwManager;
     private static LicenseManager licenseManager;
     private static TransportAdminHelper transportAdminHelper;
+    private static AuditFactory auditFactory;
 
     private static boolean isStarted = false;
 
@@ -76,6 +78,7 @@ public class WebSocketLoadListener {
         licenseManager = context.getBean("licenseManager", LicenseManager.class);
         final DefaultKey defaultKey = context.getBean("defaultKey", DefaultKey.class);
         transportAdminHelper = new TransportAdminHelper(defaultKey);
+        auditFactory = context.getBean("auditFactory", AuditFactory.class);
 
         init(context);
 
@@ -251,7 +254,7 @@ public class WebSocketLoadListener {
                         server.addConnector(connector);
                     }
 
-                    WebSocketInboundHandler webSocketInboundHandler = new WebSocketInboundHandler(messageProcessor, connectionEntity);
+                    WebSocketInboundHandler webSocketInboundHandler = new WebSocketInboundHandler(messageProcessor, connectionEntity, auditFactory);
                     server.setHandler(webSocketInboundHandler);
 
                     //Register Inbound Handler

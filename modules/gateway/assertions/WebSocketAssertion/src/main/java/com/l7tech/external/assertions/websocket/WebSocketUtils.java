@@ -33,30 +33,6 @@ public class WebSocketUtils {
     }
 
     /*
-    * Simple normalizer to make the hostname:port entry into the form ws://hostname:port. It doesn't check hostname validity,
-    * but it does check for a port.  If no port specified, default is set to 80 (for ws://) or 443 (for wss://). (MAG-173)
-    * This part just looks for the ws:// or wss:// prefix, and prepends them if necessary.
-    */
-    public static String normalizeUrl(String url, boolean useSSL) {
-
-        if (url == null || "".equals(url)) {
-            return validatePort(url, useSSL);
-        }
-
-        if (url.contains("://")) {
-            if (useSSL) {
-                return validatePort("wss://" + url.substring(url.indexOf("://")+3), useSSL);
-            }
-            return validatePort("ws://" + url.substring(url.indexOf("://")+3), useSSL);
-        }
-        if (useSSL)
-        {
-            return validatePort("wss://" + url, useSSL);
-        }
-        return validatePort("ws://" + url, useSSL);
-    }
-
-    /*
      * Validates the port of the passed string.  Returns the string with a proper port if not already set.
      * This part looks for the port number and appends/inserts it if needed.
      * If the port is already specified, even if the protocol changes (like SSL on but port 80 already
@@ -133,6 +109,7 @@ public class WebSocketUtils {
             target.setInboundPrivateKeyAlias(source.getInboundPrivateKeyAlias());
             target.setInboundPrivateKeyId(source.getInboundPrivateKeyId());
             target.setInboundSsl(source.isInboundSsl());
+            target.setConnectionPolicyGOID(source.getConnectionPolicyGOID());
 
             target.setOutboundClientAuthentication(source.isOutboundClientAuthentication());
             target.setOutboundMaxIdleTime(source.getOutboundMaxIdleTime());
