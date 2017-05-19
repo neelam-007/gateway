@@ -465,11 +465,7 @@ public class ServerConfig extends DefaultConfig implements ClusterPropertyListen
                                          @Nullable final String clusterPropName,
                                          @Nullable final String description,
                                          @Nullable final String defaultValue ) {
-            this.name = name;
-            this.clusterPropName = clusterPropName;
-            this.description = description;
-            this.defaultValue = defaultValue;
-            this.validationType = null;
+            this(name, clusterPropName, description, defaultValue, null);
         }
 
         public PropertyRegistrationInfo( @NotNull  final String name,
