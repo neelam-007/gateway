@@ -3,13 +3,17 @@ package com.l7tech.external.assertions.websocket.server;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.websocket.WebSocketConnectionEntity;
 import com.l7tech.external.assertions.websocket.WebSocketConstants;
+import com.l7tech.gateway.common.audit.Audit;
+import com.l7tech.gateway.common.audit.AuditFactory;
 import com.l7tech.message.*;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.ResourceUtils;
 import org.apache.commons.lang.StringUtils;
 import org.eclipse.jetty.server.HttpConnection;
@@ -23,6 +27,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -48,7 +53,8 @@ public class WebSocketInboundHandler extends WebSocketHandlerBase {
     private final Map<String, SSGInboundWebSocket> webSocketIdWebSocketMap = new ConcurrentHashMap<>();
     private final Map<String, List<String>> socketReverseLookup = new ConcurrentHashMap<>();
     private String handlerId;
-    private String unresolvedOutboundUrl;
+    private String outboundUrl;
+    private final Audit audit;
 
     public Goid getConnectionPolicyGoid() {
         return connectionPolicyGoid;
@@ -86,7 +92,7 @@ public class WebSocketInboundHandler extends WebSocketHandlerBase {
         return loopback;
     }
 
-    public WebSocketInboundHandler(MessageProcessor messageProcessor, WebSocketConnectionEntity connectionEntity) {
+    public WebSocketInboundHandler(MessageProcessor messageProcessor, WebSocketConnectionEntity connectionEntity,AuditFactory auditFactory) {
         super(messageProcessor);
         this.handlerId = connectionEntity.getId();
         this.serviceGoid = connectionEntity.getInboundPolicyOID();
@@ -94,7 +100,8 @@ public class WebSocketInboundHandler extends WebSocketHandlerBase {
         this.loopback = connectionEntity.isLoopback();
         this.maxIdleTime = getMaxIdleTime(connectionEntity.getInboundMaxIdleTime(), WebSocketConstants.ConnectionType.Inbound);
         this.maxConnections = getMaxConnections(connectionEntity.getInboundMaxConnections());
-        this.unresolvedOutboundUrl = connectionEntity.getOutboundUrl();
+        this.outboundUrl = connectionEntity.getOutboundUrl();
+        this.audit = auditFactory.newInstance(this, logger);
     }
 
     @Override
@@ -129,42 +136,67 @@ public class WebSocketInboundHandler extends WebSocketHandlerBase {
                     sendResponseErrorAndSetHandled(request, response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, null);
                 }
 
-                ProcessResults processResults = processConnectionMessage(getConnectionPolicyGoid(), msg, new HttpServletRequestKnob(request), new HttpServletResponseKnob(response), null);
+                ProcessMessageResults processMessageResults = processConnectionMessage(getConnectionPolicyGoid(), msg, new HttpServletRequestKnob(request), new HttpServletResponseKnob(response), null);
 
-                if (processResults.webSocketMessage == null) {
+                if (processMessageResults == null || processMessageResults.getWebSocketMsg() == null) {
                     logger.log(Level.WARNING, "WebSocket handshake policy failed, can not complete connection");
                     sendResponseErrorAndSetHandled(request, response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, null);
                 } else {
-                    request.setAttribute(WebSocketConstants.REQUEST_CONTEXT_VARIABLES, processResults.getContextVariable());
-                    request.setAttribute(WebSocketConstants.AUTHENTICATION_CONTEXT_REQ_ATTRIB, processResults.webSocketMessage.getAuthCtx());
-                    if (AssertionStatus.AUTH_REQUIRED.getMessage().equals(processResults.getMsg().getStatus())) {
+					if (processMessageResults.getOutboundUrl() != null ){
+						request.setAttribute(WebSocketConstants.OUTBOUND_URL, processMessageResults.getOutboundUrl());
+					}
+                    
+                    request.setAttribute(WebSocketConstants.AUTHENTICATION_CONTEXT_REQ_ATTRIB, processMessageResults.getWebSocketMsg().getAuthCtx());
+                    if (AssertionStatus.AUTH_REQUIRED.getMessage().equals(processMessageResults.getWebSocketMsg().getStatus())) {
                         if (response.containsHeader("WWW-Authenticate")) {
                             logger.log(Level.INFO, "Http Basic Authentication required for WebSocket");
                             response.addHeader("WWW-Authenticate", "Basic");
-                            sendResponseErrorAndSetHandled(request, response, HttpServletResponse.SC_UNAUTHORIZED, processResults.getMsg().getStatus());
+                            sendResponseErrorAndSetHandled(request, response, HttpServletResponse.SC_UNAUTHORIZED, processMessageResults.getWebSocketMsg().getStatus());
                         } else {
                             logger.log(Level.WARNING, "WebSocket handshake policy failed");
-                            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, processResults.getMsg().getStatus());
+                            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, processMessageResults.getWebSocketMsg().getStatus());
                         }
-                    } else if (AssertionStatus.AUTH_FAILED.getMessage().equals(processResults.getMsg().getStatus())) {
+                    } else if (AssertionStatus.AUTH_FAILED.getMessage().equals(processMessageResults.getWebSocketMsg().getStatus())) {
                         if (request.getHeader("Authorization") != null && request.getHeader("Authorization").startsWith("Basic")) {
                             logger.log(Level.INFO, "Http Basic Authentication required for WebSocket");
                             response.addHeader("WWW-Authenticate", "Basic");
-                            sendResponseErrorAndSetHandled(request, response, HttpServletResponse.SC_UNAUTHORIZED, processResults.getMsg().getStatus());
+                            sendResponseErrorAndSetHandled(request, response, HttpServletResponse.SC_UNAUTHORIZED, processMessageResults.getWebSocketMsg().getStatus());
                         } else {
                             logger.log(Level.INFO, "Authentication failed.");
-                            sendResponseErrorAndSetHandled(request, response, HttpServletResponse.SC_UNAUTHORIZED, processResults.getMsg().getStatus());
+                            sendResponseErrorAndSetHandled(request, response, HttpServletResponse.SC_UNAUTHORIZED, processMessageResults.getWebSocketMsg().getStatus());
                         }
-                    } else if (!AssertionStatus.NONE.getMessage().equals(processResults.getMsg().getStatus())) {
+                    } else if (!AssertionStatus.NONE.getMessage().equals(processMessageResults.getWebSocketMsg().getStatus())) {
                         logger.log(Level.WARNING, "WebSocket handshake policy failed");
-                        sendResponseErrorAndSetHandled(request, response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, processResults.getMsg().getStatus());
+                        sendResponseErrorAndSetHandled(request, response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, processMessageResults.getWebSocketMsg().getStatus());
                     }
+                }
+            } else {
+                if (isValidURI(getOutboundUrl())) {
+                    request.setAttribute(WebSocketConstants.OUTBOUND_URL,getOutboundUrl());
+                } else {
+                    logger.log(Level.WARNING, "The outbound URL: {0} is not valid. WebSocket handshake failed.",getOutboundUrl());
+                    sendResponseErrorAndSetHandled(request, response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, null);
                 }
             }
         }
         super.handle(target, baseRequest, request, response);
     }
 
+
+    private static boolean isValidURI(String uriStr) {
+        try {
+            String uriStrLowerCase = uriStr.toLowerCase();
+            if ((!uriStrLowerCase.startsWith("ws://")) && !uriStrLowerCase.startsWith("wss://")) {
+                return false;
+            }
+
+            URI uri = new URI(uriStr);
+            return true;
+        }
+        catch (URISyntaxException e) {
+            return false;
+        }
+    }
 
     protected SSGInboundWebSocket createWebSocket(HttpServletRequest httpServletRequest, WebSocketMetadata metaData) throws WebSocketCreationException, URISyntaxException {
 
@@ -228,13 +260,13 @@ public class WebSocketInboundHandler extends WebSocketHandlerBase {
     }
 
 
-    protected ProcessResults processConnectionMessage(Goid serviceGoid,
-                                                      WebSocketMessage message,
-                                                      HttpServletRequestKnob requestKnob,
-                                                      @Nullable HttpServletResponseKnob responseKnob,
-                                                      @Nullable AuthenticationContext authContext) {
+    protected ProcessMessageResults processConnectionMessage(Goid serviceGoid,
+                                                             WebSocketMessage message,
+                                                             HttpServletRequestKnob requestKnob,
+                                                             @Nullable HttpServletResponseKnob responseKnob,
+                                                             @Nullable AuthenticationContext authContext) {
 
-        ProcessResults messageContextVariable = new ProcessResults();
+        ProcessMessageResults processMessageResults = new ProcessMessageResults();
         PolicyEnforcementContext context = null;
         try {
             Message request = new Message();
@@ -259,7 +291,25 @@ public class WebSocketInboundHandler extends WebSocketHandlerBase {
             AssertionStatus status = messageProcessor.processMessage(context);
             message.setAuthCtx(context.getAuthenticationContext(request));
 
-            messageContextVariable.contextVariable = new HashMap<>(context.getAllVariables());
+            processMessageResults.setOutboundUrl(outboundUrl);
+
+            // check if the outbound URL has any context variables and resolve them.
+            String[] variablesUsed = Syntax.getReferencedNames(getOutboundUrl());
+            Map<String, Object> varMap = context.getVariableMap(variablesUsed, audit);
+
+            if(ExpandVariables.isVariableReferencedNotFound(getOutboundUrl(), varMap, audit)){
+                logger.log(Level.WARNING, "Error, the outbound URL:{0} could not resolve all the context variables.",outboundUrl);
+                return null;
+            }
+
+            String resolvedOutboundUrl = ExpandVariables.process(getOutboundUrl(), varMap, audit);
+
+            if (isValidURI(resolvedOutboundUrl)){
+                processMessageResults.setOutboundUrl(resolvedOutboundUrl);
+            } else {
+                logger.log(Level.WARNING, "Error, the outbound URL:{0} is not valid.",resolvedOutboundUrl);
+                return null;
+            }
 
             //Check for challenges and process them
             if (response.isHttpResponse() && response.getHttpResponseKnob() instanceof HttpServletResponseKnob) {
@@ -274,12 +324,12 @@ public class WebSocketInboundHandler extends WebSocketHandlerBase {
             }
 
             message.setStatus(status.getMessage());
-            messageContextVariable.webSocketMessage = message;
+            processMessageResults.setWebSocketMsg(message);
 
-            return messageContextVariable;
+            return processMessageResults;
 
         } catch (Exception e) {
-            logger.log(Level.WARNING, "Could not pass websocket message to policy");
+            logger.log(Level.WARNING, "Could not process message {0}",e.toString());
         } finally {
             if (context != null)
                 ResourceUtils.closeQuietly(context);
@@ -326,20 +376,29 @@ public class WebSocketInboundHandler extends WebSocketHandlerBase {
         }
     }
 
-    private class ProcessResults {
-        private WebSocketMessage webSocketMessage;
-        private HashMap contextVariable;
+    private String getOutboundUrl() {
+        return outboundUrl;
+    }
 
-        private WebSocketMessage getMsg() {
+    private class ProcessMessageResults {
+        private WebSocketMessage webSocketMessage;
+        private String outboundUrl;
+
+        private WebSocketMessage getWebSocketMsg() {
             return webSocketMessage;
         }
 
-        private HashMap getContextVariable() {
-            return contextVariable;
+        private void setWebSocketMsg(WebSocketMessage webSocketMessage) {
+            this.webSocketMessage = webSocketMessage;
+        }
+
+        private String getOutboundUrl() {
+            return outboundUrl;
+        }
+
+        private void setOutboundUrl(String url) {
+            outboundUrl = url;
         }
     }
 
-    public String getUnresolvedOutboundUrl() {
-        return unresolvedOutboundUrl;
-    }
 }

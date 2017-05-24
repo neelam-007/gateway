@@ -14,11 +14,8 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
-import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Created by chaja24 on 4/4/2016.
@@ -34,8 +31,7 @@ public class SSGInboundWebSocket extends WebSocketAdapter {
     private final MockHttpServletRequest mockHttpServletRequest;
     private final WebSocketInboundHandler webSocketInboundHandler;
     private final String protocol;
-    private final String resolvedOutboundConnectionUrl;
-    private static final String contextVariablePattern = "(\\$\\{.*?\\})";
+    private final String outboundConnectionUrl;
     private boolean isLoopback = false;
 
     protected static final Logger logger = Logger.getLogger(SSGInboundWebSocket.class.getName());
@@ -49,45 +45,11 @@ public class SSGInboundWebSocket extends WebSocketAdapter {
         this.authContext = webSocketMetadata.getAuthenticationContext();
         this.protocol = httpServletRequest.getRemoteAddr();
         this.clientId = generateClientId(webSocketMetadata, this.protocol);
-        this.resolvedOutboundConnectionUrl = resolveOutboundUrl(this.webSocketInboundHandler.getUnresolvedOutboundUrl(), webSocketMetadata.getContextVariables());
+        this.outboundConnectionUrl = webSocketMetadata.getOutboundUrl();
+
         webSocketInboundHandler.registerClientId(clientId, webSocketId);
         this.isLoopback = webSocketInboundHandler.isLoopback();
     }
-
-    private String resolveOutboundUrl(String originalOutboundUrl, HashMap contextVariables) throws URISyntaxException {
-
-        if (isOutboundUrlNeedResolution(originalOutboundUrl)) {
-            if ((contextVariables == null) || contextVariables.isEmpty()) {
-                throw new URISyntaxException("No context variables found.", "Cannot resolve outbound URL:" + originalOutboundUrl.toString());
-            }
-
-            StringBuilder resolvedUri = new StringBuilder(originalOutboundUrl);
-
-            Matcher matcher = Pattern.compile(contextVariablePattern).matcher(resolvedUri);
-
-            while (matcher.find()) {
-
-                String contextVarToFind = matcher.group().replaceAll("[${}]", "");
-                Object resolvedContextVariableObj = contextVariables.get(contextVarToFind);
-                if (resolvedContextVariableObj != null) {
-                    resolvedUri.replace(matcher.start(), matcher.end(), resolvedContextVariableObj.toString());
-                }
-            }
-            if (isOutboundUrlNeedResolution(resolvedUri.toString())) {
-                throw new URISyntaxException("Not all context variables have been resolved:" + resolvedUri.toString(), "Cannot resolve outbound URL.");
-            }
-            return resolvedUri.toString();
-        }
-        return originalOutboundUrl;
-
-    }
-
-    private boolean isOutboundUrlNeedResolution(String uri) {
-
-        Matcher matcher = Pattern.compile(contextVariablePattern).matcher(uri);
-        return (matcher.find());
-    }
-
 
     private String generateClientId(WebSocketMetadata metadata, String protocol) {
         if (authContext != null && authContext.isAuthenticated()) {
@@ -116,7 +78,7 @@ public class SSGInboundWebSocket extends WebSocketAdapter {
 
         WebSocketOutboundHandler obh = webSocketInboundHandler.getOutboundHandler(webSocketInboundHandler.getHandlerId());
 
-        obh.createConnection(resolvedOutboundConnectionUrl, webSocketId, message, mockHttpServletRequest);
+        obh.createConnection(outboundConnectionUrl, webSocketId, message, mockHttpServletRequest);
     }
 
     private void processOnMessage(WebSocketMessage message) throws WebSocketConnectionManagerException, WebSocketInvalidTypeException, IOException {
@@ -188,7 +150,7 @@ public class SSGInboundWebSocket extends WebSocketAdapter {
 
     public void cleanupOnClose(int closeStatus, String msg) {
 
-        logger.log(Level.INFO, "Terminating SSGInboundWebSocket for URL:" + resolvedOutboundConnectionUrl + " websocket id=" + webSocketId + ". " + msg);
+        logger.log(Level.INFO, "Terminating SSGInboundWebSocket for URL:" + outboundConnectionUrl + " websocket id=" + webSocketId + ". " + msg);
 
         if (isConnected()) {
             getSession().close(closeStatus, msg);
@@ -202,7 +164,7 @@ public class SSGInboundWebSocket extends WebSocketAdapter {
     private void sendOutboundMessage(WebSocketMessage message) throws WebSocketConnectionManagerException {
         try {
             //Send to outbound
-            webSocketInboundHandler.getOutboundHandler(webSocketInboundHandler.getHandlerId()).sendMessage(resolvedOutboundConnectionUrl, webSocketId, message, mockHttpServletRequest, authContext);
+            webSocketInboundHandler.getOutboundHandler(webSocketInboundHandler.getHandlerId()).sendMessage(outboundConnectionUrl, webSocketId, message, mockHttpServletRequest, authContext);
         } catch (WebSocketInvalidTypeException e) {
             logger.log(Level.WARNING, "Failed to send Outbound message." + ExceptionUtils.getMessageWithCause(e) + "'." + ExceptionUtils.getDebugException(e));
             disconnectAndNotify(StatusCode.SERVER_ERROR, "Outbound handler not available yet");
