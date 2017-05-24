@@ -199,6 +199,7 @@ public class ServerQuickStartTemplateAssertion extends AbstractMessageTargetable
         } else {
 
             publishedService.setName(service.name);
+            publishedService.setRoutingUri(service.gatewayUri);
             final String registrarTime = publishedService.getProperty(PROPERTY_QS_REGISTRAR_TMS);
             if (StringUtils.isNotEmpty(registrarTime)) {
                 publishedService.putProperty(PROPERTY_QS_REGISTRAR_TMS, String.valueOf(Long.valueOf(registrarTime) + 1));
