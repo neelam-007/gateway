@@ -7,7 +7,6 @@ import org.eclipse.jetty.websocket.servlet.ServletUpgradeResponse;
 import org.eclipse.jetty.websocket.servlet.WebSocketCreator;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -61,16 +60,19 @@ public class InboundSocketCreator implements WebSocketCreator {
             authenticationContext = (AuthenticationContext) authenticationContextObj;
         }
 
-        // must pass in context variables to the websocket to help resolve dynamic url before connection to backend server.
-        HashMap contextVariables = null;
-        Object contextVariablesObj = httpServletRequest.getAttribute(
-                WebSocketConstants.REQUEST_CONTEXT_VARIABLES);
+        // retreive the resolved outbound URL if it exists from the httpServletRequest.
+        Object outboundUrlObj = httpServletRequest.getAttribute(
+                WebSocketConstants.OUTBOUND_URL);
 
-        if (contextVariablesObj instanceof HashMap) {
-            contextVariables = (HashMap) contextVariablesObj;
-        }
+        String outboundUrl = null;
 
-        return new WebSocketMetadata(gen_webSocketid, authenticationContext, httpServletRequest, contextVariables);
+		if (outboundUrlObj != null) {
+	        if (outboundUrlObj instanceof String) {
+	            outboundUrl = (String) outboundUrlObj;
+	        }
+		}
+
+        return new WebSocketMetadata(gen_webSocketid, authenticationContext, httpServletRequest, outboundUrl);
     }
 
     private String generateWebSocketId(String protocol) {
