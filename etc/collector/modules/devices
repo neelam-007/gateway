@@ -32,7 +32,7 @@ logCommand ls -Rl /dev
 ls -Rl /dev > ${DEVICES_MODULE_BaseOutputDirectory}/ls_R1_dev.txt
 
 logCommand dmidecode
-dmidecode > ${DEVICES_MODULE_BaseOutputDirectory}/dmidecode.txt
+dmidecode -t 1 > ${DEVICES_MODULE_BaseOutputDirectory}/dmidecode.txt
 
 #
 #if [ $LEVEL -ge $DETAIL ]
