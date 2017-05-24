@@ -102,6 +102,7 @@
         <dependency name="SwaggerAssertion" rev="latest.integration" conf="module"/>
         <dependency name="BulkJdbcInsertAssertion" rev="latest.integration" conf="module"/>
         <dependency name="CORSAssertion" rev="latest.integration" conf="module"/>
+        <dependency name="LdapWriteAssertion" rev="latest.integration" conf="module"/>
         <!-- Optional Modular Assertions are copied to "dist" but not packaged -->
         <dependency name="CaWsdmAssertion" rev="latest.integration" conf="module-optional"/>
     </dependencies>

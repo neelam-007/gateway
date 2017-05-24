@@ -79,17 +79,27 @@ function doesOutputDirectoryExist
     fi
 }
 
+function checkForSpace
+{
+    if [ $(($(stat -f --format="%a*%S" "${OUTPUT_HOME}"))) -eq 0 ]
+    then
+        echo "Out of space on ${OUTPUT_HOME}. Terminating data collection."
+        exit 1
+    fi
+}
+
 # Process an individual module
 # Paramters $1 = modules name,
 #           $2 = detail level
 function doModule
 {
+    checkForSpace
     script=("${COLLECTOR_HOME}"/modules/$1)
     if [ -x "$script" ]
     then
-      $script "$MODULE" "$2" 2>&1
+        $script "$MODULE" "$2" 2>&1
     else
-      echo "Error there is no module named $1"
+        echo "Error there is no module named $1"
     fi
 }
 
@@ -99,11 +109,12 @@ function doAll
 {
     for script in "$COLLECTOR_HOME"/modules/*
     do
-       MODULE=$(basename "$script")
-       if [ -x "$script" ]
-       then
-       $script "$MODULE" "$1" 2>&1
-       fi
+        checkForSpace
+        MODULE=$(basename "$script")
+        if [ -x "$script" ]
+        then
+            $script "$MODULE" "$1" 2>&1
+        fi
     done
 }
 
@@ -111,9 +122,16 @@ function doAll
 function createSymlinksToEveryFile
 {
     ALL_OUTPUT_IN_ONE_FOLDER="${BASE_OUTPUT_DIR}"/links-to-all-files
+    PREFIX_LENGTH=$(echo "${BASE_OUTPUT_DIR}" | wc -m)
     mkdir -p "${ALL_OUTPUT_IN_ONE_FOLDER}"
+    if [ ! -w "${ALL_OUTPUT_IN_ONE_FOLDER}" ]
+    then
+        echo "Unable to create directory ${ALL_OUTPUT_IN_ONE_FOLDER}"
+        exit 1
+    fi
     find "${ALL_MODULES_BASE_OUTPUT_DIR}" -type f 2>/dev/null \
-     | xargs -I{} ln -s {} "${ALL_OUTPUT_IN_ONE_FOLDER}"
+     | cut -c"$PREFIX_LENGTH"- \
+     | xargs -I{} ln -s ..{} "${ALL_OUTPUT_IN_ONE_FOLDER}"
 }
 
 # Parameters $1 = directory where you want your output stored
@@ -121,8 +139,7 @@ function recalculatePaths
 {
     if [ ! -w "$1" ]
     then
-        echo "Your desired output directory $1 does not exist or is not writable. \
-            Please specify a different one or amend its permissions."
+        echo "Your desired output directory $1 does not exist or is not writable. Please specify a different one or amend its permissions."
         exit 1
     fi
 
@@ -133,6 +150,7 @@ function recalculatePaths
 # Collect a heap dump from the gateway process
 function getHeapDump
 {
+    checkForSpace
     echo "Beginning heap dump"
 
     GATEWAY_DUMP_DIR="${ALL_MODULES_BASE_OUTPUT_DIR}/gateway/dumps"

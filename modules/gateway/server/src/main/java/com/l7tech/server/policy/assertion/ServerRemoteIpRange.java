@@ -31,6 +31,11 @@ import java.util.regex.Pattern;
  */
 public class ServerRemoteIpRange extends AbstractServerAssertion<RemoteIpRange> {
 
+    // - PRIVATE
+    private String startIp;
+    private String networkMask;
+    private String remoteAddress;
+
     // - PUBLIC
 
     public ServerRemoteIpRange(RemoteIpRange rule) {
@@ -39,18 +44,20 @@ public class ServerRemoteIpRange extends AbstractServerAssertion<RemoteIpRange> 
 
     @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+        // get ip range
         try {
-            String startIp = formatStringWithVariables(assertion.getStartIp(), context);
-            RemoteIpRange.validateRange(startIp, assertion.getNetworkMask(), false);
+            startIp = formatStringWithVariables(assertion.getStartIp(), context);
+            networkMask = formatStringWithVariables(assertion.getNetworkMask(), context);
+            RemoteIpRange.validateRange(startIp, networkMask);
         } catch (IllegalArgumentException e) {
             logAndAudit(AssertionMessages.IP_INVALID_RANGE, e.getMessage());
             return AssertionStatus.FAILED;
         } catch (NoSuchVariableException e) {
-            logger.log(Level.WARNING, assertion.getStartIp() + " - referenced context variable unavailable. Possible policy error", ExceptionUtils.getDebugException(e));
+            logger.log(Level.WARNING, assertion.getStartIp() + "/" + assertion.getNetworkMask() +
+                    " - referenced context variable unavailable. Possible policy error", ExceptionUtils.getDebugException(e));
             return AssertionStatus.SERVER_ERROR;
         }
 
-        String remoteAddress;
         // get remote address
         final String ipSourceContextVariable = assertion.getIpSourceContextVariable();
         if (ipSourceContextVariable == null) {
@@ -81,18 +88,12 @@ public class ServerRemoteIpRange extends AbstractServerAssertion<RemoteIpRange> 
             return AssertionStatus.FALSIFIED;
         }
 
-        try {
-            if (assertAddress(addr, context)) {
-                logAndAudit(AssertionMessages.IP_ACCEPTED, remoteAddress);
-                return AssertionStatus.NONE;
-            } else {
-                logAndAudit(AssertionMessages.IP_REJECTED, remoteAddress);
-                return AssertionStatus.FALSIFIED;
-            }
-        } catch (NoSuchVariableException e) {
-            logger.log(Level.WARNING, assertion.getStartIp() + " - referenced context variable unavailable. Possible policy error", ExceptionUtils.getDebugException(e));
-            logAndAudit(AssertionMessages.NO_SUCH_VARIABLE, assertion.getStartIp());
-            return AssertionStatus.SERVER_ERROR;
+        if (assertAddress(addr, startIp, networkMask)) {
+            logAndAudit(AssertionMessages.IP_ACCEPTED, remoteAddress);
+            return AssertionStatus.NONE;
+        } else {
+            logAndAudit(AssertionMessages.IP_REJECTED, remoteAddress);
+            return AssertionStatus.FALSIFIED;
         }
     }
 
@@ -131,8 +132,13 @@ public class ServerRemoteIpRange extends AbstractServerAssertion<RemoteIpRange> 
     }
     // - PACKAGE
 
+    boolean assertAddress(InetAddress addressToCheck, String startIp, String networkMask) {
+        return InetAddressUtil.patternMatchesAddress(startIp + "/" + networkMask, addressToCheck) ^ !assertion.isAllowRange();
+    }
+
     boolean assertAddress(InetAddress addressToCheck, PolicyEnforcementContext context) throws NoSuchVariableException {
         String startIp = formatStringWithVariables(assertion.getStartIp(), context);
-        return InetAddressUtil.patternMatchesAddress(startIp + "/" + assertion.getNetworkMask(), addressToCheck) ^ !assertion.isAllowRange();
+        String networkMask = formatStringWithVariables(assertion.getNetworkMask(), context);
+        return assertAddress(addressToCheck, startIp, networkMask);
     }
 }

@@ -56,7 +56,7 @@ public class LdapWriteAssertion extends Assertion implements UsesEntities, UsesV
         meta.put(DESCRIPTION, "Modify attributes and entries on a LDAP server.");
         meta.put(PALETTE_FOLDERS, new String[]{"accessControl"});
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/Properties16.gif");
-        meta.put(FEATURE_SET_NAME, "set:modularAssertions");
+        meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
         meta.put(SERVER_ASSERTION_CLASSNAME, "com.l7tech.external.assertions.ldapwrite.server.ServerLdapWriteAssertion");
         meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.ldapwrite.console.LdapWritePropertiesDialog");
         meta.put(AssertionMetadata.MODULE_LOAD_LISTENER_CLASSNAME, "com.l7tech.external.assertions.ldapwrite.LdapWriteAssertionModuleLoadListener");

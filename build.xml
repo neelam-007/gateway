@@ -3687,6 +3687,7 @@
                 <include name="runtime/modules/assertions/**/JwtAssertion-*.aar"/>
                 <include name="runtime/modules/assertions/**/KerberosAuthenticationAssertion-*.aar"/>
                 <include name="runtime/modules/assertions/**/LDAPQueryAssertion-*.aar"/>
+                <include name="runtime/modules/assertions/**/LdapWriteAssertion-*.aar"/>
                 <include name="runtime/modules/assertions/**/LookupDynamicContextVariablesAssertion-*.aar"/>
                 <include name="runtime/modules/assertions/**/ManageCookieAssertion-*.aar"/>
                 <include name="runtime/modules/assertions/**/ManipulateMultiValuedVariableAssertion-*.aar"/>
