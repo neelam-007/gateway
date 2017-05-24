@@ -125,7 +125,7 @@ function doAllInDirectory
     do
         checkForSpace
         MODULE=$(basename "$script")
-        if [ -x "$script" ]
+        if [ -x "$script" ] && [ -f "$script" ]
         then
             $script "$MODULE" 2>&1
         fi
