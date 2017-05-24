@@ -36,7 +36,7 @@ calculatePaths
 
 function usage
 {
-    echo "Usage:"
+    echo "Usage: ./collect.sh [options...]"
     echo -e "\nAPI Gateway Data Collection Utility version ${VERSION}"
     echo "- For collecting valuable troubleshooting data for CA Support."
     echo "- Collects logs, configurations, and system metrics such as disk usage, thread dumps and heap dumps."
