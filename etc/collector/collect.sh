@@ -3,7 +3,6 @@
 VERSION="1.1"
 DATESTRING=$(date +%s"_"T%R_%B_%d_%Y_%Z%z | sed 's/://g')
 DEFAULTMODULE=
-DEFAULTLEVEL=1
 DEFAULTGROUP=all
 OUTPUT_HOME=/home/ssgconfig
 DATED_OUTPUT_NAME="dct_${DATESTRING}"
@@ -14,10 +13,10 @@ TEMP_GATEWAY_USER_DUMPFOLDER=/tmp/heapdump_$(date +%s)
 DEBUG=0
 
 MODULE=$DEFAULTMODULE
-LEVEL=$DEFAULTLEVEL
 GROUP=$DEFAULTGROUP
 MODE=
 HEAP_DUMP=
+INCL_SENSITIVE_DATA=
 
 export COLLECTOR_HOME=/opt/SecureSpan/Collector
 
@@ -49,18 +48,14 @@ function usage
     echo "Collect data from a single module. Valid values:";ls /opt/SecureSpan/Collector/modules
     echo -e "\n[-a] all"
     echo "Collect data from all modules"
-    echo -e "\n[-l detail-level]"
-    echo "1 = Basic, 2 = Medium, 3 = High.  Default is ${DEFAULTLEVEL}."
-    echo " Examples of data collected from the detail levels:"
-    echo "   1 = SSG logs, node.properties, my.cnf"
-    echo "   2 = /etc/sudoers, /etc/passwd, /etc/group"
-    echo "   3 = *Currently nothing at this level.  Note that heap dumps have a separate flag to enable."
     echo -e "\n[-D]"
-    echo "Heap Dump. Use caution when taking heap dumps as this can significantly affect performance."
+    echo "Collect a heap dump. Use caution as this can significantly affect performance."
     echo -e "\n[-d <output-directory>]"
     echo "Where to put the files containing the output. By default, this is rooted in /home/ssgconfig."
     echo "  Specify another root path here if you want them somewhere else."
     echo -e "\n[-h help]"
+    echo -e "\n[-s]"
+    echo "Include sensitive data such as /etc/passwd."
     echo
 }
 
@@ -89,31 +84,48 @@ function checkForSpace
 }
 
 # Process an individual module
-# Paramters $1 = modules name,
-#           $2 = detail level
+# Parameters $1 = module's name
 function doModule
 {
     checkForSpace
     script=("${COLLECTOR_HOME}"/modules/$1)
     if [ -x "$script" ]
     then
-        $script "$MODULE" "$2" 2>&1
+        $script "$MODULE" 2>&1
     else
         echo "Error there is no module named $1"
     fi
 }
 
-# Process an individual module
-# Paramters $1 = detail level
+# Process all modules
+# Parameters $1 = include sensitive data
 function doAll
 {
-    for script in "$COLLECTOR_HOME"/modules/*
+    doAllInDirectory "$COLLECTOR_HOME"/modules
+}
+
+# Process all sensitive modules
+function doSensitive
+{
+    if [ "$INCL_SENSITIVE_DATA" ]
+    then
+        doAllInDirectory "$COLLECTOR_HOME"/modules/sensitive
+    else
+        echo "Skipping sensitive data. Specify -s to include sensitive data."
+    fi
+}
+
+# Process all modules in a directory (non-recursive)
+# Parameters $1 = directory
+function doAllInDirectory
+{
+    for script in "$1"/*
     do
         checkForSpace
         MODULE=$(basename "$script")
         if [ -x "$script" ]
         then
-            $script "$MODULE" "$1" 2>&1
+            $script "$MODULE" 2>&1
         fi
     done
 }
@@ -200,7 +212,7 @@ function getHeapDump
 }
 
 
-while getopts "hm:al:o:Dd:" opt; do
+while getopts "hm:aDd:s" opt; do
 
   case $opt in
 
@@ -240,16 +252,6 @@ while getopts "hm:al:o:Dd:" opt; do
       GROUP="$OPTARG"
       ;;
 
-      l)
-      if [ "${OPTARG#-}" != "$OPTARG" ]
-      then
-          echo "Argument required for -l."
-          usage
-          exit 1
-      fi
-      LEVEL=$OPTARG
-      ;;
-
       d)
       if [ "${OPTARG#-}" != "$OPTARG" ]
       then
@@ -258,6 +260,10 @@ while getopts "hm:al:o:Dd:" opt; do
           exit 1
       fi
       recalculatePaths "$OPTARG"
+      ;;
+
+      s)
+      INCL_SENSITIVE_DATA="true"
       ;;
 
       \?)
@@ -277,17 +283,18 @@ then
     echo "Running Mode: $MODE"
     echo "MODULE: $MODULE"
     echo "GROUP: $GROUP"
-    echo "LEVEL: $LEVEL"
 fi
 
 doesOutputDirectoryExist
 
 if [ "$MODE" == "module" ]
 then
-    doModule "$MODULE" "$LEVEL"
+    doModule "$MODULE"
+    doSensitive
 elif [ "$MODE" == "all" ]
 then
-    doAll "$LEVEL"
+    doAll
+    doSensitive
 elif ! [ "$HEAP_DUMP" ]
 then
     echo "ERROR: No module was specified.  Please enter a module or execute collect.sh -h for help."

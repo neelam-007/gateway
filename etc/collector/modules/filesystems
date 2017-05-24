@@ -1,7 +1,6 @@
 #!/bin/sh
 
 MODULE=$1
-LEVEL=$2
 
 # Pull in collector support functions
 . ${COLLECTOR_HOME}/collectorlib
@@ -59,16 +58,5 @@ mdadm --examine ${disks[@]} >> ${FILESYSTEMS_MODULE_BaseOutputDirectory}/mdadm.t
 
 logCommand mdamd --examine ${parts[@]}
 mdadm --examine ${parts[@]} >> ${FILESYSTEMS_MODULE_BaseOutputDirectory}/mdadm.txt > /dev/null 2>&1
-
-
-#if [ $LEVEL -ge $DETAIL ]
-#then
-#    #nothing here
-#fi
-#
-#if [ $LEVEL -ge $EVERYTHING ]
-#then
-#    #nothing here
-#fi
 
 postModule $MODULE

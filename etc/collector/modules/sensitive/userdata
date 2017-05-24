@@ -1,0 +1,18 @@
+#!/bin/sh
+
+# Pull in collector support functions
+. ${COLLECTOR_HOME}/collectorlib
+
+preModule userdata
+
+#Define and create output folders
+USERDATA_DIR=${ALL_MODULES_BASE_OUTPUT_DIR}/sensitive/userdata
+mkdir -p ${USERDATA_DIR}
+
+logAndRunCmd "cat /etc/sudoers &> ${USERDATA_DIR}/etc_sudoers.txt"
+
+logAndRunCmd "cat /etc/passwd  &> ${USERDATA_DIR}/etc_passwd.txt"
+
+logAndRunCmd "cat /etc/group &> ${USERDATA_DIR}/etc_group.txt"
+
+postModule userdata

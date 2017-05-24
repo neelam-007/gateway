@@ -1,7 +1,6 @@
 #!/bin/sh
 
 #MODULE=$1
-#LEVEL=$2
 
 # Pull in collector support functions
 #
@@ -24,15 +23,5 @@
 # Example command
 #logCommand ls /opt/SecureSpan
 #ls /opt/SecureSpan > ${TEMPLATE_MODULE_BaseOutputDirectory_config}/template.txt
-
-#if [ $LEVEL -ge $DETAIL ]
-#then
-#echo DETAIL level commands go here
-#fi
-#
-#if [ $LEVEL -ge $EVERYTHING ]
-#then
-#echo EVERYTHING level commands go here
-#fi
 
 #postModule $MODULE

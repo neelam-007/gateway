@@ -1,7 +1,6 @@
 #!/bin/sh
 
 MODULE=$1
-LEVEL=$2
 
 SSHOME=/opt/SecureSpan
 GWDEFAULT=${SSHOME}/Gateway/node/default
