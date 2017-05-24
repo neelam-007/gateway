@@ -45,7 +45,8 @@ function usage
     echo "The user is responsible for managing the cleanup of these folders."
     echo -e "\nCommands:"
     echo -e "\n[-m <collection-module>]"
-    echo "Collect data from a single module. Valid values:";ls /opt/SecureSpan/Collector/modules
+    echo "Collect data from a single module."
+    echo "Valid values:";ls -p /opt/SecureSpan/Collector/modules | grep -v /
     echo -e "\n[-a] all"
     echo "Collect data from all modules"
     echo -e "\n[-D]"
@@ -89,11 +90,12 @@ function doModule
 {
     checkForSpace
     script=("${COLLECTOR_HOME}"/modules/$1)
-    if [ -x "$script" ]
+    if [ -x "$script" ] && [ -f "$script" ]
     then
         $script "$MODULE" 2>&1
     else
         echo "Error there is no module named $1"
+        return 1
     fi
 }
 
@@ -289,8 +291,10 @@ doesOutputDirectoryExist
 
 if [ "$MODE" == "module" ]
 then
-    doModule "$MODULE"
-    doSensitive
+    if doModule "$MODULE"
+    then
+        doSensitive
+    fi
 elif [ "$MODE" == "all" ]
 then
     doAll
