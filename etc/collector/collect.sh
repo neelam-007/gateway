@@ -43,7 +43,7 @@ function usage
     echo "- The final output is categorized by module, has shortcuts to every gathered file and a compressed folder containing the same."
     echo -e "\nNote that since the output folder is uniquely named, each run will take up more disk space."
     echo "The user is responsible for managing the cleanup of these folders."
-    echo -e "\nCommands:"
+    echo -e "\nOptions:"
     echo -e "\n[-m <collection-module>]"
     echo "Collect data from a single module."
     echo "Valid values:";ls -p /opt/SecureSpan/Collector/modules | grep -v /
