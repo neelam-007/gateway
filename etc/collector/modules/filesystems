@@ -1,9 +1,9 @@
-#!/bin/sh
+#!/bin/bash
 
 MODULE=$1
 
 # Pull in collector support functions
-. ${COLLECTOR_HOME}/collectorlib
+. "${COLLECTOR_HOME}"/collectorlib
 
 preModule "$MODULE"
 
