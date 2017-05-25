@@ -1,7 +1,6 @@
 #!/bin/sh
 
 MODULE=$1
-LEVEL=$2
 
 # Pull in collector support functions
 . ${COLLECTOR_HOME}/collectorlib
@@ -29,16 +28,5 @@ cp /etc/sysctl.conf ${KERNEL_MODULE_BaseOutputDirectory}/etc_sysctl.conf
 
 logCommand cat /proc/cmdline
 cat /proc/cmdline > ${KERNEL_MODULE_BaseOutputDirectory}/proc_cmdline.txt
-
-
-#if [ $LEVEL -ge $DETAIL ]
-#then
-#    #nothing here
-#fi
-#
-#if [ $LEVEL -ge $EVERYTHING ]
-#then
-#    #nothing here
-#fi
 
 postModule $MODULE

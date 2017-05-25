@@ -1,7 +1,6 @@
 #!/bin/sh
 
 MODULE=$1
-LEVEL=$2
 
 # Pull in collector support functions
 . ${COLLECTOR_HOME}/collectorlib
@@ -33,16 +32,5 @@ ls -Rl /dev > ${DEVICES_MODULE_BaseOutputDirectory}/ls_R1_dev.txt
 
 logCommand dmidecode
 dmidecode > ${DEVICES_MODULE_BaseOutputDirectory}/dmidecode.txt
-
-#
-#if [ $LEVEL -ge $DETAIL ]
-#then
-#    #nothing here
-#fi
-#
-#if [ $LEVEL -ge $EVERYTHING ]
-#then
-#    #nothing here
-#fi
 
 postModule $MODULE

@@ -1,7 +1,6 @@
 #!/bin/sh
 
 MODULE=$1
-LEVEL=$2
 
 # Pull in collector support functions
 . ${COLLECTOR_HOME}/collectorlib
@@ -62,23 +61,5 @@ su -c "ulimit -S -a" -s /bin/sh gateway >> ${OS_MODULE_BaseOutputDirectory}/ulim
 #view all hard limits
 logCommand su -c "ulimit -H -a" -s /bin/sh gateway
 su -c "ulimit -H -a" -s /bin/sh gateway >> ${OS_MODULE_BaseOutputDirectory}/ulimit-hard.log
-
-
-if [ $LEVEL -ge $DETAIL ]
-then
-    logCommand cat /etc/sudoers > ${OS_MODULE_BaseOutputDirectory}/etc_sudoers.txt
-    cat /etc/sudoers > ${OS_MODULE_BaseOutputDirectory}/etc_sudoers.txt
-
-    logCommand cat /etc/passwd
-    cat /etc/passwd  > ${OS_MODULE_BaseOutputDirectory}/etc_passwd.txt
-
-    logCommand cat /etc/group
-    cat /etc/group > ${OS_MODULE_BaseOutputDirectory}/etc_group.txt
-fi
-#
-#if [ $LEVEL -ge $EVERYTHING ]
-#then
-#    #nothing here
-#fi
 
 postModule $MODULE
