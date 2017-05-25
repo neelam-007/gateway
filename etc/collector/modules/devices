@@ -19,20 +19,15 @@ mkdir -p ${DEVICES_MODULE_BaseOutputDirectory}
 
 
 #Begin data collection
-logCommand cat /proc/meminfo
-cp /proc/meminfo ${DEVICES_MODULE_BaseOutputDirectory}
+logAndRunCmd cp /proc/meminfo "${DEVICES_MODULE_BaseOutputDirectory}"
 
-logCommand lspci -tv
-lspci -tv > ${DEVICES_MODULE_BaseOutputDirectory}/lspci.txt
+logAndRunCmd lspci -tv &> "${DEVICES_MODULE_BaseOutputDirectory}"/lspci.txt
 
-logCommand cat /proc/cpuinfo
-cp /proc/cpuinfo ${DEVICES_MODULE_BaseOutputDirectory}
+logAndRunCmd cp /proc/cpuinfo "${DEVICES_MODULE_BaseOutputDirectory}"
 
-logCommand ls -Rl /dev
-ls -Rl /dev > ${DEVICES_MODULE_BaseOutputDirectory}/ls_R1_dev.txt
+logAndRunCmd ls -Rl /dev &> "${DEVICES_MODULE_BaseOutputDirectory}"/ls_R1_dev.txt
 
-logCommand dmidecode
-dmidecode -t 1 > ${DEVICES_MODULE_BaseOutputDirectory}/dmidecode.txt
+logAndRunCmd dmidecode -t 1 &> "${DEVICES_MODULE_BaseOutputDirectory}"/dmidecode.txt
 
 #
 #if [ $LEVEL -ge $DETAIL ]
