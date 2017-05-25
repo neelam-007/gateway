@@ -1,7 +1,6 @@
 #!/bin/sh
 
 MODULE=$1
-LEVEL=$2
 
 # Pull in collector support functions
 #
@@ -34,15 +33,5 @@ mysql ssg -e 'show master status' > ${MYSQL_MODULE_BaseOutputDirectory}/show-mas
 
 logCommand cat /etc/my.cnf
 cp /etc/my.cnf ${MYSQL_MODULE_BaseOutputDirectory_config}
-
-#if [ $LEVEL -ge $DETAIL ]
-#then
-#echo DETAIL level commands go here
-#fi
-#
-#if [ $LEVEL -ge $EVERYTHING ]
-#then
-#echo EVERYTHING level commands go here
-#fi
 
 postModule $MODULE
