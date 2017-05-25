@@ -9,35 +9,20 @@ LEVEL=$2
 preModule $MODULE
 
 #Define and create output folders
-DEVICES_MODULE_BaseOutputDirectory=${ALL_MODULES_BASE_OUTPUT_DIR}/${MODULE}
-DEVICES_MODULE_BaseOutputDirectory_config=${DEVICES_MODULE_BaseOutputDirectory}/config
-DEVICES_MODULE_BaseOutputDirectory_logs=${DEVICES_MODULE_BaseOutputDirectory}/logs
-mkdir -p ${DEVICES_MODULE_BaseOutputDirectory}
-#mkdir -p ${DEVICES_MODULE_BaseOutputDirectory_config}
-#mkdir -p ${DEVICES_MODULE_BaseOutputDirectory_logs}
-
-
+DEVICES_MODULE_BASE_OUTPUT_DIRECTORY="${ALL_MODULES_BASE_OUTPUT_DIR}/${MODULE}"
+DEVICES_MODULE_BASE_OUTPUT_DIRECTORY_config="${DEVICES_MODULE_BASE_OUTPUT_DIRECTORY}/config"
+DEVICES_MODULE_BASE_OUTPUT_DIRECTORY_logs="${DEVICES_MODULE_BASE_OUTPUT_DIRECTORY}/logs"
+mkdir -p "${DEVICES_MODULE_BASE_OUTPUT_DIRECTORY}"
 
 #Begin data collection
-logAndRunCmd cp /proc/meminfo "${DEVICES_MODULE_BaseOutputDirectory}"
+logAndRunCmd cp /proc/meminfo "${DEVICES_MODULE_BASE_OUTPUT_DIRECTORY}"
 
-logAndRunCmd lspci -tv &> "${DEVICES_MODULE_BaseOutputDirectory}"/lspci.txt
+logAndRunCmd lspci -tv &> "${DEVICES_MODULE_BASE_OUTPUT_DIRECTORY}/lspci.txt"
 
-logAndRunCmd cp /proc/cpuinfo "${DEVICES_MODULE_BaseOutputDirectory}"
+logAndRunCmd cp /proc/cpuinfo "${DEVICES_MODULE_BASE_OUTPUT_DIRECTORY}"
 
-logAndRunCmd ls -Rl /dev &> "${DEVICES_MODULE_BaseOutputDirectory}"/ls_R1_dev.txt
+logAndRunCmd ls -Rl /dev &> "${DEVICES_MODULE_BASE_OUTPUT_DIRECTORY}/ls_R1_dev.txt"
 
-logAndRunCmd dmidecode -t 1 &> "${DEVICES_MODULE_BaseOutputDirectory}"/dmidecode.txt
-
-#
-#if [ $LEVEL -ge $DETAIL ]
-#then
-#    #nothing here
-#fi
-#
-#if [ $LEVEL -ge $EVERYTHING ]
-#then
-#    #nothing here
-#fi
+logAndRunCmd dmidecode -t 1 &> "${DEVICES_MODULE_BASE_OUTPUT_DIRECTORY}/dmidecode.txt"
 
 postModule $MODULE
