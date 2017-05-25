@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/bin/sh
 
-MODULE=$1
+MODULE="$1"
 
 # Pull in collector support functions
 . "${COLLECTOR_HOME}"/collectorlib
@@ -13,35 +13,35 @@ mkdir -p "${FILESYSTEMS_DIR}"
 
 #Begin data collection
 
-logAndRunCmd "free -m &> ${FILESYSTEMS_DIR}/free.txt"
+logAndRunCmd "free -m &> \"${FILESYSTEMS_DIR}\"/free.txt"
 
-logAndRunCmd "df &> ${FILESYSTEMS_DIR}/df.txt"
+logAndRunCmd "df &> \"${FILESYSTEMS_DIR}\"/df.txt"
 
-logAndRunCmd "cp /proc/mdstat ${FILESYSTEMS_DIR} > /dev/null 2>&1"
+logAndRunCmd "cp /proc/mdstat \"${FILESYSTEMS_DIR}\" &> /dev/null"
 
-logAndRunCmd "mdadm --detail --scan &> ${FILESYSTEMS_DIR}/mdadm.txt"
+logAndRunCmd "mdadm --detail --scan &> \"${FILESYSTEMS_DIR}\"/mdadm.txt"
 
-logAndRunCmd "mount &> ${FILESYSTEMS_DIR}/mount.txt"
+logAndRunCmd "mount &> \"${FILESYSTEMS_DIR}\"/mount.txt"
 
-logAndRunCmd "lsblk &> ${FILESYSTEMS_DIR}/lsblk.txt"
+logAndRunCmd "lsblk &> \"${FILESYSTEMS_DIR}\"/lsblk.txt"
 
-logAndRunCmd "pvdisplay &> ${FILESYSTEMS_DIR}/pvdisplay.txt"
+logAndRunCmd "pvdisplay &> \"${FILESYSTEMS_DIR}\"/pvdisplay.txt"
 
-logAndRunCmd "vgdisplay &> ${FILESYSTEMS_DIR}/vgdisplay.txt"
+logAndRunCmd "vgdisplay &> \"${FILESYSTEMS_DIR}\"/vgdisplay.txt"
 
-logAndRunCmd "lvdisplay &> ${FILESYSTEMS_DIR}/lvdisplay.txt"
+logAndRunCmd "lvdisplay &> \"${FILESYSTEMS_DIR}\"/lvdisplay.txt"
 
-logAndRunCmd "cp /etc/mdadm.conf ${FILESYSTEMS_DIR} > /dev/null 2>&1"
+logAndRunCmd "cp /etc/mdadm.conf \"${FILESYSTEMS_DIR}\" &> /dev/null"
 
-disks=(/dev/sd[a-z])
-parts=(/dev/sd[a-z][1-9])
+DISKS=(/dev/sd[a-z])
+PARTS=(/dev/sd[a-z][1-9])
 
-logAndRunCmd "mdadm --query --detail ${disks[@]} &>> ${FILESYSTEMS_DIR}/mdadm.txt"
+logAndRunCmd "mdadm --query --detail \"${DISKS[@]}\" &>> \"${FILESYSTEMS_DIR}\"/mdadm.txt"
 
-logAndRunCmd "mdadm --query --detail ${parts[@]} &>> ${FILESYSTEMS_DIR}/mdadm.txt"
+logAndRunCmd "mdadm --query --detail \"${PARTS[@]}\" &>> \"${FILESYSTEMS_DIR}\"/mdadm.txt"
 
-logAndRunCmd "mdadm --examine ${disks[@]} &>> ${FILESYSTEMS_DIR}/mdadm.txt"
+logAndRunCmd "mdadm --examine \"${DISKS[@]}\" &>> \"${FILESYSTEMS_DIR}\"/mdadm.txt"
 
-logAndRunCmd "mdadm --examine ${parts[@]} &>> ${FILESYSTEMS_DIR}/mdadm.txt"
+logAndRunCmd "mdadm --examine \"${PARTS[@]}\" &>> \"${FILESYSTEMS_DIR}\"/mdadm.txt"
 
 postModule "$MODULE"
