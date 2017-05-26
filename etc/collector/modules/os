@@ -1,65 +1,54 @@
 #!/bin/sh
 
-MODULE=$1
-
+MODULE="$1"
 # Pull in collector support functions
-. ${COLLECTOR_HOME}/collectorlib
-
+. "${COLLECTOR_HOME}"/collectorlib
 #Define and create output folders
-OS_MODULE_BaseOutputDirectory=${ALL_MODULES_BASE_OUTPUT_DIR}/${MODULE}
-OS_MODULE_BaseOutputDirectory_config=${OS_MODULE_BaseOutputDirectory}/config
-OS_MODULE_BaseOutputDirectory_logs=${OS_MODULE_BaseOutputDirectory}/logs
-mkdir -p ${OS_MODULE_BaseOutputDirectory}
-#mkdir -p ${OS_MODULE_BaseOutputDirectory_config}
-#mkdir -p ${OS_MODULE_BaseOutputDirectory_logs}
+OS_DIR="${ALL_MODULES_BASE_OUTPUT_DIR}/${MODULE}"
 
+preModule "$MODULE"
+mkdir -p "${OS_DIR}"
 
-preModule $MODULE
+if [ -w "${OS_DIR}" ]
+then
+    #Begin data collection
 
-#Begin data collection
-logCommand uname -a
-uname -a > ${OS_MODULE_BaseOutputDirectory}/uname.txt
+    logAndRunCmd "uname -a &> \"${OS_DIR}\"/uname.txt"
 
-logCommand cat /etc/redhat-release
-cat /etc/redhat-release > ${OS_MODULE_BaseOutputDirectory}/redhat-release.txt
+    logAndRunCmd "cat /etc/redhat-release &> \"${OS_DIR}\"/redhat-release.txt"
 
-#list system services at runlevel
-logCommand chkconfig --list
-chkconfig --list > ${OS_MODULE_BaseOutputDirectory}/chkconfig-list.txt
+    #list system services at runlevel
+    logAndRunCmd "chkconfig --list &> \"${OS_DIR}\"/chkconfig-list.txt"
 
-logCommand rpm -qa
-rpm -qa > ${OS_MODULE_BaseOutputDirectory}/rpmList.txt
+    logAndRunCmd "rpm -qa &> \"${OS_DIR}\"/rpmList.txt"
 
-logCommand cat /var/log/messages*
-cp /var/log/messages* ${OS_MODULE_BaseOutputDirectory}
+    logAndRunCmd "cp /var/log/messages* \"${OS_DIR}"\"
 
-logCommand who -r
-who -r > ${OS_MODULE_BaseOutputDirectory}/who-runlevel.txt
+    logAndRunCmd "who -r &> \"${OS_DIR}\"/who-runlevel.txt"
 
-logCommand dmesg
-dmesg > ${OS_MODULE_BaseOutputDirectory}/dmesg.txt
+    logAndRunCmd "dmesg &> \"${OS_DIR}\"/dmesg.txt"
 
-logCommand cat /etc/ntp.conf
-cp /etc/ntp.conf ${OS_MODULE_BaseOutputDirectory}
+    logAndRunCmd "cp /etc/ntp.conf \"${OS_DIR}\""
 
-logCommand ntpq -p
-ntpq -p > ${OS_MODULE_BaseOutputDirectory}/ntpq-peers.log
+    logAndRunCmd "ntpq -p &> \"${OS_DIR}\"/ntpq-peers.log"
 
-logCommand cat /etc/security/limits.conf
-cp /etc/security/limits.conf ${OS_MODULE_BaseOutputDirectory}
+    logAndRunCmd "cp /etc/security/limits.conf \"${OS_DIR}\""
 
-logCommand cat /etc/security/limits.d/*ssg*
-cp /etc/security/limits.d/*ssg* ${OS_MODULE_BaseOutputDirectory}
+    logAndRunCmd "cp /etc/security/limits.d/*ssg* \"${OS_DIR}\""
 
-logCommand whoami
-whoami > ${OS_MODULE_BaseOutputDirectory}/who-am-i.txt
+    logAndRunCmd "whoami &> \"${OS_DIR}\"/who-am-i.txt"
 
-#view all soft limits
-logCommand su -c "ulimit -S -a" -s /bin/sh gateway > ${OS_MODULE_BaseOutputDirectory}/ulimit-soft.log
-su -c "ulimit -S -a" -s /bin/sh gateway >> ${OS_MODULE_BaseOutputDirectory}/ulimit-soft.log
+    #view all soft limits
+    logAndRunCmd "su -c \"ulimit -S -a\" -s /bin/sh gateway &>> \"${OS_DIR}\"/ulimit-soft.log"
 
-#view all hard limits
-logCommand su -c "ulimit -H -a" -s /bin/sh gateway
-su -c "ulimit -H -a" -s /bin/sh gateway >> ${OS_MODULE_BaseOutputDirectory}/ulimit-hard.log
+    #view all hard limits
+    logAndRunCmd "su -c \"ulimit -H -a\" -s /bin/sh gateway &>> \"${OS_DIR}\"/ulimit-hard.log"
 
-postModule $MODULE
+    logAndRunCmd "cat /var/log/bash_commands.log &> \"${OS_DIR}\"/bash_commands.log"
+
+    logAndRunCmd "top -b -n 1 &> \"${OS_DIR}\"/top.txt"
+else
+    echo "Unable to create os output directory"
+fi
+
+postModule "$MODULE"
