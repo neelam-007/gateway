@@ -1,32 +1,35 @@
 #!/bin/sh
 
-MODULE=$1
+MODULE="$1"
+GATEWAYPID=$(ps awwx | grep Gateway.jar | grep -v grep | awk '{print $1}')
 
 # Pull in collector support functions
-. ${COLLECTOR_HOME}/collectorlib
+. "${COLLECTOR_HOME}"/collectorlib
 
-preModule $MODULE
-
+preModule "$MODULE"
 
 #Define and create output folders
-KERNEL_MODULE_BaseOutputDirectory=${ALL_MODULES_BASE_OUTPUT_DIR}/${MODULE}
-KERNEL_MODULE_BaseOutputDirectory_config=${KERNEL_MODULE_BaseOutputDirectory}/config
-KERNEL_MODULE_BaseOutputDirectory_logs=${KERNEL_MODULE_BaseOutputDirectory}/logs
-mkdir -p ${KERNEL_MODULE_BaseOutputDirectory}
-#mkdir -p ${KERNEL_MODULE_BaseOutputDirectory_config}
-#mkdir -p ${KERNEL_MODULE_BaseOutputDirectory_logs}
+KERNEL_MODULE_OUTPUTDIR="${ALL_MODULES_BASE_OUTPUT_DIR}/${MODULE}"
+KERNEL_MODULE_CONFIG_OUPUTDIR="${KERNEL_MODULE_OUTPUTDIR}"/config
+KERNEL_MODULE_LOGS_OUTPUTDIR="${KERNEL_MODULE_OUTPUTDIR}"/logs
+mkdir -p "${KERNEL_MODULE_OUTPUTDIR}"
 
 #Begin data collection
-logCommand cat /proc/version
-cp /proc/version ${KERNEL_MODULE_BaseOutputDirectory}/proc_version.txt
+logAndRunCmd "cat /proc/version &> \"${KERNEL_MODULE_OUTPUTDIR}\"/proc_version.txt"
+logAndRunCmd "lsmod &> \"${KERNEL_MODULE_OUTPUTDIR}\"/lsmod.txt"
+logAndRunCmd "cat /etc/sysctl.conf &> \"${KERNEL_MODULE_OUTPUTDIR}\"/etc_sysctl.conf"
+logAndRunCmd "cat /proc/cmdline &> \"${KERNEL_MODULE_OUTPUTDIR}\"/proc_cmdline.txt"
+logAndRunCmd "ps awwx -mo pid,lwp,stime,time,c,cmd &> \"${KERNEL_MODULE_OUTPUTDIR}\"/ps_awwx.txt"
+logAndRunCmd "ps -e -o pid,args --forest &> \"${KERNEL_MODULE_OUTPUTDIR}\"/ps_forest.txt"
 
-logCommand lsmod
-lsmod > ${KERNEL_MODULE_BaseOutputDirectory}/lsmod.txt
+if [ -n "$GATEWAYPID" ]
+then
+    logAndRunCmd "cat /proc/\"${GATEWAYPID}\"/status &> \"${KERNEL_MODULE_OUTPUTDIR}\"/proc_\"${GATEWAYPID}\"_s:tatus.txt"
+    logAndRunCmd "ls -l /proc/\"${GATEWAYPID}\"/fd/ &> \"${KERNEL_MODULE_OUTPUTDIR}\"/proc_\"${GATEWAYPID}\"_fd.txt"
+    logAndRunCmd "cat /proc/\"${GATEWAYPID}\"/environ | sed -e \"s/\x0/\n/g\" &> \"${KERNEL_MODULE_OUTPUTDIR}\"/proc_\"${GATEWAYPID}\"_environ.txt"
+    logAndRunCmd "cat /proc/\"${GATEWAYPID}\"/net/netstat &> \"${KERNEL_MODULE_OUTPUTDIR}\"/proc_\"${GATEWAYPID}\"_net_netstat.txt"
+    logAndRunCmd "cat /proc/\"${GATEWAYPID}\"/net/sockstat &> \"${KERNEL_MODULE_OUTPUTDIR}\"/proc_\"${GATEWAYPID}\"_net_sockstat.txt"
+    logAndRunCmd "cat /proc/\"${GATEWAYPID}\"/cmdline | sed -e \"s/\x0/\n/g\" &> \"${KERNEL_MODULE_OUTPUTDIR}\"/proc_\"${GATEWAYPID}\"_cmdline.txt"
+fi
 
-logCommand cat /etc/sysctl.conf
-cp /etc/sysctl.conf ${KERNEL_MODULE_BaseOutputDirectory}/etc_sysctl.conf
-
-logCommand cat /proc/cmdline
-cat /proc/cmdline > ${KERNEL_MODULE_BaseOutputDirectory}/proc_cmdline.txt
-
-postModule $MODULE
+postModule "$MODULE"
