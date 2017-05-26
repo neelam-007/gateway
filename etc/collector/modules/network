@@ -1,7 +1,6 @@
 #!/bin/sh
 
 MODULE=$1
-LEVEL=$2
 
 # Pull in collector support functions
 . ${COLLECTOR_HOME}/collectorlib
@@ -43,17 +42,5 @@ ss -o state established \( sport = :8080 or sport = :8443 or sport = :9443 \) \ 
 #This command should be run on every node in the cluster.
 logCommand "ss -o state established \( dport = :http or dport = :https \) \ dst 0.0.0.0/0 | egrep -v Recv-Q | wc -l"
 ss -o state established \( dport = :http or dport = :https \) \ dst 0.0.0.0/0 | egrep -v Recv-Q | wc -l > ${NETWORK_MODULE_BaseOutputDirectory}/ss_outbound_connections.txt
-
-
-
-#if [ $LEVEL -ge $DETAIL ]
-#then
-#    #nothing here
-#fi
-#
-#if [ $LEVEL -ge $EVERYTHING ]
-#then
-#    #nothing here
-#fi
 
 postModule $MODULE

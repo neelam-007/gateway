@@ -1,12 +1,11 @@
 #!/bin/sh
 
-MODULE=$1
-LEVEL=$2
+MODULE="$1"
 
 # Pull in collector support functions
-. ${COLLECTOR_HOME}/collectorlib
+. "${COLLECTOR_HOME}"/collectorlib
 
-preModule $MODULE
+preModule "${MODULE}"
 
 #Define and create output folders
 DEVICES_MODULE_BASE_OUTPUT_DIRECTORY="${ALL_MODULES_BASE_OUTPUT_DIR}/${MODULE}"
@@ -15,14 +14,14 @@ DEVICES_MODULE_BASE_OUTPUT_DIRECTORY_logs="${DEVICES_MODULE_BASE_OUTPUT_DIRECTOR
 mkdir -p "${DEVICES_MODULE_BASE_OUTPUT_DIRECTORY}"
 
 #Begin data collection
-logAndRunCmd cp /proc/meminfo "${DEVICES_MODULE_BASE_OUTPUT_DIRECTORY}"
+logAndRunCmd "cp /proc/meminfo \"${DEVICES_MODULE_BASE_OUTPUT_DIRECTORY}\""
 
-logAndRunCmd lspci -tv &> "${DEVICES_MODULE_BASE_OUTPUT_DIRECTORY}/lspci.txt"
+logAndRunCmd "lspci -tv &> \"${DEVICES_MODULE_BASE_OUTPUT_DIRECTORY}\"/lspci.txt"
 
-logAndRunCmd cp /proc/cpuinfo "${DEVICES_MODULE_BASE_OUTPUT_DIRECTORY}"
+logAndRunCmd "cp /proc/cpuinfo \"${DEVICES_MODULE_BASE_OUTPUT_DIRECTORY}\""
 
-logAndRunCmd ls -Rl /dev &> "${DEVICES_MODULE_BASE_OUTPUT_DIRECTORY}/ls_R1_dev.txt"
+logAndRunCmd "ls -Rl /dev &> \"${DEVICES_MODULE_BASE_OUTPUT_DIRECTORY}\"/ls_R1_dev.txt"
 
-logAndRunCmd dmidecode -t 1 &> "${DEVICES_MODULE_BASE_OUTPUT_DIRECTORY}/dmidecode.txt"
+logAndRunCmd "dmidecode -t 1 &> \"${DEVICES_MODULE_BASE_OUTPUT_DIRECTORY}\"/dmidecode.txt"
 
 postModule $MODULE
