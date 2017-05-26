@@ -1,36 +1,27 @@
 #!/bin/sh
 
-MODULE=$1
+MODULE="$1"
 
 # Pull in collector support functions
-. ${COLLECTOR_HOME}/collectorlib
+. "${COLLECTOR_HOME}"/collectorlib
 
-preModule $MODULE
+preModule "${MODULE}"
 
 #Define and create output folders
-DEVICES_MODULE_BaseOutputDirectory=${ALL_MODULES_BASE_OUTPUT_DIR}/${MODULE}
-DEVICES_MODULE_BaseOutputDirectory_config=${DEVICES_MODULE_BaseOutputDirectory}/config
-DEVICES_MODULE_BaseOutputDirectory_logs=${DEVICES_MODULE_BaseOutputDirectory}/logs
-mkdir -p ${DEVICES_MODULE_BaseOutputDirectory}
-#mkdir -p ${DEVICES_MODULE_BaseOutputDirectory_config}
-#mkdir -p ${DEVICES_MODULE_BaseOutputDirectory_logs}
-
-
+DEVICES_MODULE_BASE_OUTPUT_DIRECTORY="${ALL_MODULES_BASE_OUTPUT_DIR}/${MODULE}"
+DEVICES_MODULE_BASE_OUTPUT_DIRECTORY_config="${DEVICES_MODULE_BASE_OUTPUT_DIRECTORY}/config"
+DEVICES_MODULE_BASE_OUTPUT_DIRECTORY_logs="${DEVICES_MODULE_BASE_OUTPUT_DIRECTORY}/logs"
+mkdir -p "${DEVICES_MODULE_BASE_OUTPUT_DIRECTORY}"
 
 #Begin data collection
-logCommand cat /proc/meminfo
-cp /proc/meminfo ${DEVICES_MODULE_BaseOutputDirectory}
+logAndRunCmd "cp /proc/meminfo \"${DEVICES_MODULE_BASE_OUTPUT_DIRECTORY}\""
 
-logCommand lspci -tv
-lspci -tv > ${DEVICES_MODULE_BaseOutputDirectory}/lspci.txt
+logAndRunCmd "lspci -tv &> \"${DEVICES_MODULE_BASE_OUTPUT_DIRECTORY}\"/lspci.txt"
 
-logCommand cat /proc/cpuinfo
-cp /proc/cpuinfo ${DEVICES_MODULE_BaseOutputDirectory}
+logAndRunCmd "cp /proc/cpuinfo \"${DEVICES_MODULE_BASE_OUTPUT_DIRECTORY}\""
 
-logCommand ls -Rl /dev
-ls -Rl /dev > ${DEVICES_MODULE_BaseOutputDirectory}/ls_R1_dev.txt
+logAndRunCmd "ls -Rl /dev &> \"${DEVICES_MODULE_BASE_OUTPUT_DIRECTORY}\"/ls_R1_dev.txt"
 
-logCommand dmidecode
-dmidecode > ${DEVICES_MODULE_BaseOutputDirectory}/dmidecode.txt
+logAndRunCmd "dmidecode -t 1 &> \"${DEVICES_MODULE_BASE_OUTPUT_DIRECTORY}\"/dmidecode.txt"
 
 postModule $MODULE
