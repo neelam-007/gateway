@@ -51,7 +51,7 @@ function usage
     echo "Collect data from all modules"
     echo -e "\n[-D]"
     echo "Collect a heap dump. Use caution as this can significantly affect performance."
-    echo -e "\n[-d <output-directory>]"
+    echo -e "\n[-f <output-directory>]"
     echo "Where to put the files containing the output. By default, this is rooted in /home/ssgconfig."
     echo "  Specify another root path here if you want them somewhere else."
     echo -e "\n[-h help]"
@@ -214,7 +214,7 @@ function getHeapDump
 }
 
 
-while getopts "hm:aDd:s" opt; do
+while getopts "hm:aDf:s" opt; do
 
   case $opt in
 
@@ -254,10 +254,10 @@ while getopts "hm:aDd:s" opt; do
       GROUP="$OPTARG"
       ;;
 
-      d)
+      f)
       if [ "${OPTARG#-}" != "$OPTARG" ]
       then
-          echo "Argument required for -d."
+          echo "Argument required for -f."
           usage
           exit 1
       fi
