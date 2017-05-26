@@ -96,7 +96,7 @@ public class QuickStartServiceBuilderRestmanImpl implements QuickStartServiceBui
         service.setResourceSets( resourceSets );
 
         //serviceDetail.setId( publishedService.getId() );
-        //serviceDetail.setVersion( publishedService.getVersion() );
+        serviceDetail.setVersion( publishedService.getVersion() );
         serviceDetail.setFolderId( ROOT_FOLDER_GOID );
         serviceDetail.setName( publishedService.getName() );
         serviceDetail.setEnabled( !publishedService.isDisabled() );
