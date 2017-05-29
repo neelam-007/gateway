@@ -13,6 +13,7 @@ import com.l7tech.util.HexUtils;
 import org.springframework.context.ApplicationContext;
 
 import javax.crypto.*;
+import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.ByteArrayInputStream;
@@ -20,6 +21,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.*;
+import java.security.spec.AlgorithmParameterSpec;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -265,12 +267,17 @@ public class ServerSymmetricKeyEncryptionDecryptionAssertion extends AbstractSer
         logger.log(Level.INFO, "ServerSymmetricKeyEncryptionDecryptionAssertion is preparing itself to be unloaded");
     }
 
-    private int getProperBlockSize(String algorithmName) {
+    private int getProperBlockSize(String algorithmName, String blockMode) {
         int toReturn = 0;
 
         if (algorithmName.equalsIgnoreCase(SymmetricKeyEncryptionDecryptionAssertion.ALGORITHM_AES)) {
-            // if its AES, then the IV has to be 16 blocks
-            toReturn = 16;
+            if(SymmetricKeyEncryptionDecryptionAssertion.BLOCK_MODE_GCM.equalsIgnoreCase(blockMode)) {
+                // if its AES and block mode is GCM, then the IV has to be 12 blocks
+                toReturn = 12;
+            } else {
+                // if its AES, then the IV has to be 16 blocks
+                toReturn = 16;
+            }
         } else if (algorithmName.equalsIgnoreCase(SymmetricKeyEncryptionDecryptionAssertion.ALGORITHM_DES)
                 || algorithmName.equalsIgnoreCase(SymmetricKeyEncryptionDecryptionAssertion.ALGORITHM_TRIPLE_DES)) {
             toReturn = 8;
@@ -283,7 +290,7 @@ public class ServerSymmetricKeyEncryptionDecryptionAssertion extends AbstractSer
 
 
     /*
-    * The only supported Block Mode right now is CBC.  If this method returns a byte array with size 0, its because it ran into a block mode problem.
+    * The only supported Block Mode right now are CBC and GCM.  If this method returns a byte array with size 0, its because it ran into a block mode problem.
     * Namely an incorrect block mode (ie: not CBC) is being used.
     */
     private byte[] encrypt(Cipher cipher, SecretKeySpec skeySpec, byte[] inputbytes, String algorithmName, String blockMode) throws InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, ShortBufferException, BadPaddingException {
@@ -293,10 +300,11 @@ public class ServerSymmetricKeyEncryptionDecryptionAssertion extends AbstractSer
             return toReturn;
         }
 
-        int ivBytesSize = getProperBlockSize(algorithmName);
+        int ivBytesSize = getProperBlockSize(algorithmName, blockMode);
 
-        if (blockMode.equals(SymmetricKeyEncryptionDecryptionAssertion.BLOCK_MODE_CBC) && inputbytes.length > 0 && ivBytesSize > 0) {
-            // CBC means we need an IV
+        if ((SymmetricKeyEncryptionDecryptionAssertion.BLOCK_MODE_CBC.equals(blockMode) || SymmetricKeyEncryptionDecryptionAssertion.BLOCK_MODE_GCM.equals(blockMode))
+                && inputbytes.length > 0 && ivBytesSize > 0) {
+            // CBC or GCM means we need an IV
             byte[] ivBytes = new byte[ivBytesSize];
             byte[] interimOutput;
 
@@ -306,8 +314,17 @@ public class ServerSymmetricKeyEncryptionDecryptionAssertion extends AbstractSer
             // generate it using SecureRandom.
             SecureRandom random = JceProvider.getInstance().getSecureRandom();
             random.nextBytes(ivBytes);
-            IvParameterSpec ivSpec = new IvParameterSpec(ivBytes);
-            cipher.init(Cipher.ENCRYPT_MODE, skeySpec, ivSpec);
+
+            AlgorithmParameterSpec algorithmParamSpec;
+            if (SymmetricKeyEncryptionDecryptionAssertion.BLOCK_MODE_CBC.equals(blockMode)) {
+                algorithmParamSpec = new IvParameterSpec(ivBytes);
+            } else if (SymmetricKeyEncryptionDecryptionAssertion.BLOCK_MODE_GCM.equals(blockMode)) {
+                algorithmParamSpec = new GCMParameterSpec(SymmetricKeyEncryptionDecryptionAssertion.GCM_AUTHENTICATION_TAG_LENGTH_BITS, ivBytes);
+            } else {
+                throw new UnsupportedOperationException("Unexpected block mode '"+ blockMode + "'.");
+            }
+
+            cipher.init(Cipher.ENCRYPT_MODE, skeySpec, algorithmParamSpec);
             interimOutput = cipher.doFinal(inputbytes);
             // Lets make sure interimOutput actually contains something.
             if (interimOutput == null || interimOutput.length <= 0) {
@@ -336,7 +353,7 @@ public class ServerSymmetricKeyEncryptionDecryptionAssertion extends AbstractSer
             return toReturn;
         }
 
-        int ivBytesSize = getProperBlockSize(algorithmName);
+        int ivBytesSize = getProperBlockSize(algorithmName, blockMode);
         int sizeOfTextToDecrypt = inputbytes.length - ivBytesSize;
         boolean fetchIvFromBytes = true;
 
@@ -353,20 +370,32 @@ public class ServerSymmetricKeyEncryptionDecryptionAssertion extends AbstractSer
         }
 
         // We will only try to decrypt if the block mode is CBC, the IV size is greater than 0, the input size is greater than 0, and the difference between the IV size and the input size is greater than zero (the amount of text to decrypt)
-        if (blockMode.equals(SymmetricKeyEncryptionDecryptionAssertion.BLOCK_MODE_CBC)
+        if ((SymmetricKeyEncryptionDecryptionAssertion.BLOCK_MODE_CBC.equals(blockMode) || SymmetricKeyEncryptionDecryptionAssertion.BLOCK_MODE_GCM.equals(blockMode))
                 && ivBytesSize > 0 && inputbytes.length > 0 && sizeOfTextToDecrypt > 0) {
 
             // CBC means we need an IV
             byte[] ivBytes = null;
             byte[] intermedBytes= null;
-            IvParameterSpec ivSpec;
+            AlgorithmParameterSpec algorithmParamSpec;
 
-            if (fetchIvFromBytes) {
-                ivBytes = new byte[ivBytesSize];
-                System.arraycopy(inputbytes, 0, ivBytes, 0, ivBytesSize);
-                ivSpec = new IvParameterSpec(ivBytes);
+            if (SymmetricKeyEncryptionDecryptionAssertion.BLOCK_MODE_CBC.equals(blockMode)) {
+                if (fetchIvFromBytes) {
+                    ivBytes = new byte[ivBytesSize];
+                    System.arraycopy(inputbytes, 0, ivBytes, 0, ivBytesSize);
+                    algorithmParamSpec = new IvParameterSpec(ivBytes);
+                } else {
+                    algorithmParamSpec = new IvParameterSpec(passedIvBytes);
+                }
+            } else if (SymmetricKeyEncryptionDecryptionAssertion.BLOCK_MODE_GCM.equals(blockMode)) {
+                if (fetchIvFromBytes) {
+                    ivBytes = new byte[ivBytesSize];
+                    System.arraycopy(inputbytes, 0, ivBytes, 0, ivBytesSize);
+                    algorithmParamSpec = new GCMParameterSpec(SymmetricKeyEncryptionDecryptionAssertion.GCM_AUTHENTICATION_TAG_LENGTH_BITS, ivBytes);
+                } else {
+                    algorithmParamSpec = new GCMParameterSpec(SymmetricKeyEncryptionDecryptionAssertion.GCM_AUTHENTICATION_TAG_LENGTH_BITS, passedIvBytes);
+                }
             } else {
-                ivSpec = new IvParameterSpec(passedIvBytes);
+                throw new UnsupportedOperationException("Unexpected block mode '"+ blockMode + "'.");
             }
 
             // remove the IV if not already specified...
@@ -374,7 +403,7 @@ public class ServerSymmetricKeyEncryptionDecryptionAssertion extends AbstractSer
             System.arraycopy(inputbytes, (fetchIvFromBytes ? ivBytesSize : 0), intermedBytes, 0, sizeOfTextToDecrypt);
 
             // run the decrypt
-            cipher.init(Cipher.DECRYPT_MODE, skeySpec, ivSpec);
+            cipher.init(Cipher.DECRYPT_MODE, skeySpec, algorithmParamSpec);
             toReturn = cipher.doFinal(intermedBytes);
         }
 

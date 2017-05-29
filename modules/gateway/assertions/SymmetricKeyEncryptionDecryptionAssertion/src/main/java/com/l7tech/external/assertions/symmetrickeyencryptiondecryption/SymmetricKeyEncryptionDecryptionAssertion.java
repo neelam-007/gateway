@@ -24,6 +24,8 @@ public class SymmetricKeyEncryptionDecryptionAssertion extends Assertion impleme
     public static final String ALGORITHM_DES = "DES";
     public static final String ALGORITHM_TRIPLE_DES = "DESede";
     public static final String BLOCK_MODE_CBC = "CBC";
+    public static final String BLOCK_MODE_GCM = "GCM";
+    public static final int GCM_AUTHENTICATION_TAG_LENGTH_BITS = 128; // Default is 16 bytes (which is 128 bits)
 
     private boolean isEncrypt = IS_ENCRYPT_VALUE;
 
@@ -36,6 +38,8 @@ public class SymmetricKeyEncryptionDecryptionAssertion extends Assertion impleme
 
     // AES Transformation
     public static final String TRANS_AES_CBC_PKCS5Padding = "AES/CBC/PKCS5Padding";
+
+    public static final String TRANS_AES_GCM_NoPadding = "AES/GCM/NoPadding";
 
     // DES Transformation
     public static final String TRANS_DES_CBC_PKCS5Padding = "DES/CBC/PKCS5Padding";

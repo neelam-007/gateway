@@ -123,8 +123,9 @@ public class SymmetricKeyEncryptionDecryptionAssertionDialog extends AssertionPr
             this.pgpPassPhrase.setEnabled(false);
             this.keyTextField.setEnabled(true);
             // IV Is only Used for Decrypt, not Encrypt.
-            boolean cbcSelected =( (algorithmComboBox.getSelectedItem() != null) && (algorithmComboBox.getSelectedItem().toString().equals(SymmetricKeyEncryptionDecryptionAssertion.TRANS_AES_CBC_PKCS5Padding)) );
-            this.ivTextField.setEnabled(decryptRadioButton.isSelected() && cbcSelected);
+            boolean cbcSelected = ( (algorithmComboBox.getSelectedItem() != null) && (algorithmComboBox.getSelectedItem().toString().equals(SymmetricKeyEncryptionDecryptionAssertion.TRANS_AES_CBC_PKCS5Padding)) );
+            boolean gcmSelected = ( (algorithmComboBox.getSelectedItem() != null) && (algorithmComboBox.getSelectedItem().toString().equals(SymmetricKeyEncryptionDecryptionAssertion.TRANS_AES_GCM_NoPadding)) );
+            this.ivTextField.setEnabled(decryptRadioButton.isSelected() && (cbcSelected || gcmSelected));
         }
 
     }
@@ -151,6 +152,7 @@ public class SymmetricKeyEncryptionDecryptionAssertionDialog extends AssertionPr
     private void loadAlgorithmComboBox(String selectedAlgorithmDisplay) {
 
         this.algorithmComboBox.addItem(SymmetricKeyEncryptionDecryptionAssertion.TRANS_AES_CBC_PKCS5Padding);
+        this.algorithmComboBox.addItem(SymmetricKeyEncryptionDecryptionAssertion.TRANS_AES_GCM_NoPadding);
         this.algorithmComboBox.addItem(SymmetricKeyEncryptionDecryptionAssertion.TRANS_DES_CBC_PKCS5Padding);
         this.algorithmComboBox.addItem(SymmetricKeyEncryptionDecryptionAssertion.TRANS_DESede_CBC_PKCS5Padding);
         this.algorithmComboBox.addItem(SymmetricKeyEncryptionDecryptionAssertion.TRANS_PGP);
