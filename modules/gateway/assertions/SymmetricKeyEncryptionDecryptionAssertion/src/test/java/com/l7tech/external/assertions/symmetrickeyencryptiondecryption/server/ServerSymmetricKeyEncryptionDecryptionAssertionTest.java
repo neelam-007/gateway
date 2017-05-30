@@ -9,7 +9,7 @@ import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.HexUtils;
-import junit.framework.Assert;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -24,9 +24,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 import java.util.logging.Logger;
 
-import static junit.framework.Assert.fail;
+import static org.junit.Assert.fail;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
@@ -604,6 +605,172 @@ public class ServerSymmetricKeyEncryptionDecryptionAssertionTest {
         } catch (IOException e) {
             fail("An exception has been thrown which prevents this test from continuing");
         }
+    }
+
+    @Test
+    public void testAesGcmNoPaddingRoundTrip() throws Exception {
+        // Setup test data.
+        String textToSign = "hello world";
+        byte[] key = new byte[128/8]; // 128 bit key.
+        new Random().nextBytes(key);
+        String algorithm = SymmetricKeyEncryptionDecryptionAssertion.TRANS_AES_GCM_NoPadding;
+        String outVariableName = "encrypted";
+
+        // Encrypt.
+        SymmetricKeyEncryptionDecryptionAssertion ass = new SymmetricKeyEncryptionDecryptionAssertion();
+        setUpAssertion(ass, HexUtils.encodeBase64(textToSign.getBytes(Charsets.UTF8)), HexUtils.encodeBase64(key), outVariableName, algorithm, true, null);
+
+        ServerSymmetricKeyEncryptionDecryptionAssertion sass = new ServerSymmetricKeyEncryptionDecryptionAssertion(ass, mockApplicationContext);
+        AssertionStatus status = sass.checkRequest(mockPolicyEnforcementContext);
+        Assert.assertEquals("Encryption failed.", AssertionStatus.NONE, status);
+
+        String encryptedB64 = getOutputString(outVariableName);
+        Assert.assertTrue("Cipher text is empty.", encryptedB64.length() > 0);
+
+        // Decrypt
+        outVariableName = "decrypted";
+        ass = new SymmetricKeyEncryptionDecryptionAssertion();
+        setUpAssertion(ass, encryptedB64, HexUtils.encodeBase64(key), outVariableName, algorithm, false, null);
+
+        sass = new ServerSymmetricKeyEncryptionDecryptionAssertion(ass, mockApplicationContext);
+        status = sass.checkRequest(mockPolicyEnforcementContext);
+        Assert.assertEquals("Decryption failed.", AssertionStatus.NONE, status);
+
+        String decryptedB64 = getOutputString(outVariableName);
+        Assert.assertTrue("Decrypted text is empty.", decryptedB64.length() > 0);
+
+        // Check decrypted text matches original text.
+        String decryptedText = new String(HexUtils.decodeBase64(decryptedB64));
+        Assert.assertEquals(textToSign, decryptedText);
+    }
+
+    @Test
+    public void testAesGcmNoPaddingRoundTripIvProvided() throws Exception {
+        // Setup test data.
+        String textToSign = "hello world";
+        byte[] key = new byte[128/8]; // 128 bit key.
+        new Random().nextBytes(key);
+        String algorithm = SymmetricKeyEncryptionDecryptionAssertion.TRANS_AES_GCM_NoPadding;
+        String outVariableName = "encrypted";
+
+        // Encrypt.
+        SymmetricKeyEncryptionDecryptionAssertion ass = new SymmetricKeyEncryptionDecryptionAssertion();
+        setUpAssertion(ass, HexUtils.encodeBase64(textToSign.getBytes(Charsets.UTF8)), HexUtils.encodeBase64(key), outVariableName, algorithm, true, null);
+
+        ServerSymmetricKeyEncryptionDecryptionAssertion sass = new ServerSymmetricKeyEncryptionDecryptionAssertion(ass, mockApplicationContext);
+        AssertionStatus status = sass.checkRequest(mockPolicyEnforcementContext);
+        Assert.assertEquals("Encryption failed.", AssertionStatus.NONE, status);
+
+        String encryptedB64 = getOutputString(outVariableName);
+        Assert.assertTrue("Cipher text is empty.", encryptedB64.length() > 0);
+        byte[] encryptedBytes = HexUtils.decodeBase64(encryptedB64);
+
+        // Split IV and cipher text from encrypted result.
+        // By default, IV is 12 bytes for GCM block mode.
+        int ivBytesSize = 12;
+        Assert.assertTrue("Cipher text is too short.", encryptedBytes.length > ivBytesSize);
+
+        byte[] ivBytes = new byte[ivBytesSize];
+        System.arraycopy(encryptedBytes, 0, ivBytes, 0, ivBytesSize);
+        byte[] cipherTextBytes = new byte[encryptedBytes.length - ivBytesSize];
+        System.arraycopy(encryptedBytes, ivBytesSize, cipherTextBytes, 0, encryptedBytes.length - ivBytesSize);
+
+        // Decrypt using provided IV
+        outVariableName = "decrypted";
+        ass = new SymmetricKeyEncryptionDecryptionAssertion();
+        setUpAssertion(ass, HexUtils.encodeBase64(cipherTextBytes), HexUtils.encodeBase64(key), outVariableName, algorithm, false, null);
+        ass.setIv(HexUtils.encodeBase64(ivBytes));
+
+        sass = new ServerSymmetricKeyEncryptionDecryptionAssertion(ass, mockApplicationContext);
+        status = sass.checkRequest(mockPolicyEnforcementContext);
+        Assert.assertEquals("Decryption failed.", AssertionStatus.NONE, status);
+
+        String decryptedB64 = getOutputString(outVariableName);
+        Assert.assertTrue("Decrypted text is empty.", decryptedB64.length() > 0);
+
+        // Check decrypted text matches original text.
+        String decryptedText = new String(HexUtils.decodeBase64(decryptedB64));
+        Assert.assertEquals(textToSign, decryptedText);
+    }
+
+    /*
+     * Attempt to decrypt using wrong key.
+     */
+    @Test
+    public void testAesGcmNoPaddingRoundTripFailure() throws Exception {
+        // Setup test data.
+        String textToSign = "hello world";
+        byte[] key = new byte[128/8]; // 128 bit key.
+        new Random().nextBytes(key);
+        String algorithm = SymmetricKeyEncryptionDecryptionAssertion.TRANS_AES_GCM_NoPadding;
+        String outVariableName = "encrypted";
+
+        // Encrypt.
+        SymmetricKeyEncryptionDecryptionAssertion ass = new SymmetricKeyEncryptionDecryptionAssertion();
+        setUpAssertion(ass, HexUtils.encodeBase64(textToSign.getBytes(Charsets.UTF8)), HexUtils.encodeBase64(key), outVariableName, algorithm, true, null);
+
+        ServerSymmetricKeyEncryptionDecryptionAssertion sass = new ServerSymmetricKeyEncryptionDecryptionAssertion(ass, mockApplicationContext);
+        AssertionStatus status = sass.checkRequest(mockPolicyEnforcementContext);
+        Assert.assertEquals("Encryption failed.", AssertionStatus.NONE, status);
+
+        String encryptedB64 = getOutputString(outVariableName);
+        Assert.assertTrue("Cipher text is empty.", encryptedB64.length() > 0);
+
+        // Decrypt using a wrong key
+        new Random().nextBytes(key);
+        outVariableName = "decrypted";
+        ass = new SymmetricKeyEncryptionDecryptionAssertion();
+        setUpAssertion(ass, encryptedB64, HexUtils.encodeBase64(key), outVariableName, algorithm, false, null);
+
+        sass = new ServerSymmetricKeyEncryptionDecryptionAssertion(ass, mockApplicationContext);
+        status = sass.checkRequest(mockPolicyEnforcementContext);
+        Assert.assertEquals("Decryption should fail!.", AssertionStatus.FAILED, status);
+    }
+
+    /*
+     * Attempt to decrypt using wrong IV.
+     */
+    @Test
+    public void testAesGcmNoPaddingRoundTripIvProvidedFailure() throws Exception {
+        // Setup test data.
+        String textToSign = "hello world";
+        byte[] key = new byte[128/8]; // 128 bit key.
+        new Random().nextBytes(key);
+        String algorithm = SymmetricKeyEncryptionDecryptionAssertion.TRANS_AES_GCM_NoPadding;
+        String outVariableName = "encrypted";
+
+        // Encrypt.
+        SymmetricKeyEncryptionDecryptionAssertion ass = new SymmetricKeyEncryptionDecryptionAssertion();
+        setUpAssertion(ass, HexUtils.encodeBase64(textToSign.getBytes(Charsets.UTF8)), HexUtils.encodeBase64(key), outVariableName, algorithm, true, null);
+
+        ServerSymmetricKeyEncryptionDecryptionAssertion sass = new ServerSymmetricKeyEncryptionDecryptionAssertion(ass, mockApplicationContext);
+        AssertionStatus status = sass.checkRequest(mockPolicyEnforcementContext);
+        Assert.assertEquals("Encryption failed.", AssertionStatus.NONE, status);
+
+        String encryptedB64 = getOutputString(outVariableName);
+        Assert.assertTrue("Cipher text is empty.", encryptedB64.length() > 0);
+        byte[] encryptedBytes = HexUtils.decodeBase64(encryptedB64);
+
+        // Split IV and cipher text from encrypted result.
+        // By default, IV is 12 bytes for GCM block mode.
+        int ivBytesSize = 12;
+        Assert.assertTrue("Cipher text is too short.", encryptedBytes.length > ivBytesSize);
+
+        // Decrypt using a wrong IV
+        byte[] ivBytes = new byte[ivBytesSize];
+        new Random().nextBytes(ivBytes);
+        byte[] cipherTextBytes = new byte[encryptedBytes.length - ivBytesSize];
+        System.arraycopy(encryptedBytes, ivBytesSize, cipherTextBytes, 0, encryptedBytes.length - ivBytesSize);
+
+        // Decrypt using provided IV
+        outVariableName = "decrypted";
+        ass = new SymmetricKeyEncryptionDecryptionAssertion();
+        setUpAssertion(ass, HexUtils.encodeBase64(cipherTextBytes), HexUtils.encodeBase64(key), outVariableName, algorithm, false, null);
+        ass.setIv(HexUtils.encodeBase64(ivBytes));
+
+        sass = new ServerSymmetricKeyEncryptionDecryptionAssertion(ass, mockApplicationContext);
+        status = sass.checkRequest(mockPolicyEnforcementContext);
+        Assert.assertEquals("Decryption should fail!.", AssertionStatus.FAILED, status);
     }
 
     /**
