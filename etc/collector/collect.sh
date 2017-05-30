@@ -95,7 +95,7 @@ function doModule
         $script "$MODULE" 2>&1
     else
         echo "Error there is no module named $1"
-        return 1
+        exit 1
     fi
 }
 
@@ -302,6 +302,7 @@ then
 elif ! [ "$HEAP_DUMP" ]
 then
     echo "ERROR: No module was specified.  Please enter a module or execute collect.sh -h for help."
+    exit 1
 fi
 
 if [ "$HEAP_DUMP" ]
