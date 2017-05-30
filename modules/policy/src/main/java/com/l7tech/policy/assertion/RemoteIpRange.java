@@ -245,8 +245,9 @@ public class RemoteIpRange extends Assertion implements UsesVariables {
 
     public static boolean isValidNetworkPrefix(String networkPrefix, int upperLimit) {
         try {
+            // DE296405 : network prefix cannot be zero.
             int networkPrefixValue = Integer.parseInt(networkPrefix);
-            return networkPrefixValue >= 0 && networkPrefixValue <= upperLimit;
+            return networkPrefixValue > 0 && networkPrefixValue <= upperLimit;
         } catch (NumberFormatException e) {
             return false;
         }
