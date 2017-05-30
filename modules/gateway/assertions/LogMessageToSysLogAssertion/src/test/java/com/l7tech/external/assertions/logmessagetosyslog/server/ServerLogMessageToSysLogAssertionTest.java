@@ -96,25 +96,7 @@ public class ServerLogMessageToSysLogAssertionTest {
         ServerLogMessageToSysLogAssertion serverAssertion = new ServerLogMessageToSysLogAssertion(assertion, applicationContext);
         serverAssertion.checkRequest(peCtx);
 
-        assertTrue(applicationContext.getSyslogManager().getSyslogMock().getLogMessage(), applicationContext.getSyslogManager().getSyslogMock().getLogMessage().matches("[a-z0-9]{16}[-][a-z0-9]"));
-    }
-
-    @org.junit.Test
-    public void testClusterProperty() throws Exception {
-
-        // CEF enabled, process == ""
-        assertion.setCEFEnabled(true);
-        ServerLogMessageToSysLogAssertion serverAssertion = new ServerLogMessageToSysLogAssertion(assertion, applicationContext);
-        serverAssertion.checkRequest(peCtx);
-
-        assertEquals("", applicationContext.getSyslogManager().getSyslogMock().getProcess());
-
-        // CEF disabled, process = SSG[<requestId>]
-        assertion.setCEFEnabled(false);
-        serverAssertion = new ServerLogMessageToSysLogAssertion(assertion, applicationContext);
-        serverAssertion.checkRequest(peCtx);
-
-        assertTrue(applicationContext.getSyslogManager().getSyslogMock().getProcess(), applicationContext.getSyslogManager().getSyslogMock().getProcess().matches("SSG\\[[a-z0-9]{16}[-][a-z0-9]\\]"));
+        assertTrue(applicationContext.getSyslogManager().getSyslogMock().getLogMessage(), applicationContext.getSyslogManager().getSyslogMock().getLogMessage().matches("[a-z0-9]{16}[-][a-z0-9]+"));
     }
 
     @org.junit.Test
@@ -278,10 +260,124 @@ public class ServerLogMessageToSysLogAssertionTest {
 
             String expectedHeader = "CEF:0|Layer7 Technologies Inc.|SecureSpan Gateway|" + BuildInfo.getFormalProductVersion() + "|sigID|sig|";
             assertTrue("'" + loggedMessage + "'", loggedMessage.startsWith(expectedHeader));
-            assertTrue("'" + loggedMessage + "'", loggedMessage.substring(expectedHeader.length()).matches("1\\|externalId=[a-z0-9]{16}[-][a-z0-9] "));
+            assertTrue("'" + loggedMessage + "'", loggedMessage.substring(expectedHeader.length()).matches("1\\|externalId=[a-z0-9]{16}[-][a-z0-9]+ "));
         } catch (Exception e) {
             fail(e.getMessage());
         }
+    }
+
+    @Test
+    public void testCEFHeaderNormalCase() throws Exception {
+        peCtx.setVariable("sigId", "12321"); // declared but unused CV
+        peCtx.setVariable("sigName", "John"); // declared but unused CV
+
+        assertion.setCEFEnabled(true);
+        assertion.setCefSeverity(1);
+        assertion.setCefSignatureId("abc");
+        assertion.setCefSignatureName("name");
+
+        AssertionStatus status = serverAssertion.checkRequest(peCtx);
+        assertEquals(AssertionStatus.NONE, status);
+
+        String loggedMessage = applicationContext.getSyslogManager().getSyslogMock().getLogMessage();
+
+        String expectedHeader = "CEF:0|Layer7 Technologies Inc.|SecureSpan Gateway|" + BuildInfo.getFormalProductVersion() + "|abc|name|";
+        assertTrue(loggedMessage.startsWith(expectedHeader));
+    }
+
+    @Test
+    public void testCEFHeaderSingleContextVariableCase() throws Exception {
+        peCtx.setVariable("sigId", "12321"); // unused but declared CV
+        peCtx.setVariable("sigName", "John");
+
+        assertion.setCEFEnabled(true);
+        assertion.setCefSeverity(1);
+        assertion.setCefSignatureId("abc");
+        assertion.setCefSignatureName("${sigName}");
+
+        AssertionStatus status = serverAssertion.checkRequest(peCtx);
+
+        String loggedMessage = applicationContext.getSyslogManager().getSyslogMock().getLogMessage();
+        assertEquals(AssertionStatus.NONE, status);
+
+        String expectedHeader = "CEF:0|Layer7 Technologies Inc.|SecureSpan Gateway|" + BuildInfo.getFormalProductVersion() + "|abc|John|";
+        assertTrue(loggedMessage.startsWith(expectedHeader));
+    }
+
+    @Test
+    public void testCEFHeaderNotMissingRequiredVariables() throws Exception {
+        peCtx.setVariable("sigId", "12321");
+        peCtx.setVariable("sigName", "John");
+
+        assertion.setCEFEnabled(true);
+        assertion.setCefSeverity(1);
+        assertion.setCefSignatureId("${sigId}");
+        assertion.setCefSignatureName("${sigName}");
+
+        AssertionStatus status = serverAssertion.checkRequest(peCtx);
+        assertEquals(AssertionStatus.NONE, status);
+
+        String loggedMessage = applicationContext.getSyslogManager().getSyslogMock().getLogMessage();
+
+        String expectedHeader = "CEF:0|Layer7 Technologies Inc.|SecureSpan Gateway|" + BuildInfo.getFormalProductVersion() + "|12321|John|";
+        assertTrue(loggedMessage.startsWith(expectedHeader));
+    }
+
+    @Test
+    public void testCEFHeaderMissingBothRequiredVariables() throws Exception {
+        assertion.setCEFEnabled(true);
+        assertion.setCefSeverity(1);
+        assertion.setCefSignatureId("${sigId}");
+        assertion.setCefSignatureName("${sigName}");
+
+        AssertionStatus status = serverAssertion.checkRequest(peCtx);
+        assertEquals(AssertionStatus.FAILED, status);
+    }
+
+    @Test
+    public void testCEFHeaderMissingRequiredVariableSignatureName() throws Exception {
+        peCtx.setVariable("sigId", "12321");
+
+        assertion.setCEFEnabled(true);
+        assertion.setCefSeverity(1);
+        assertion.setCefSignatureId("${sigId}");
+        assertion.setCefSignatureName("${sigName}");
+
+        AssertionStatus status = serverAssertion.checkRequest(peCtx);
+        assertEquals(AssertionStatus.FAILED, status);
+    }
+
+    @Test
+    public void testCEFHeaderMissingRequiredVariableSignatureID() throws Exception {
+        peCtx.setVariable("sigName", "John");
+
+        assertion.setCEFEnabled(true);
+        assertion.setCefSeverity(1);
+        assertion.setCefSignatureId("${sigId}");
+        assertion.setCefSignatureName("${sigName}");
+
+        AssertionStatus status = serverAssertion.checkRequest(peCtx);
+        assertEquals(AssertionStatus.FAILED, status);
+    }
+
+    @org.junit.Test
+    public void testClusterProperty() throws Exception {
+
+        // CEF enabled, process == ""
+        assertion.setCefSignatureId("sigId");
+        assertion.setCefSignatureName("sigName");
+        assertion.setCEFEnabled(true);
+        ServerLogMessageToSysLogAssertion serverAssertion = new ServerLogMessageToSysLogAssertion(assertion, applicationContext);
+        serverAssertion.checkRequest(peCtx);
+
+        assertEquals("", applicationContext.getSyslogManager().getSyslogMock().getProcess());
+
+        // CEF disabled, process = SSG[<requestId>]
+        assertion.setCEFEnabled(false);
+        serverAssertion = new ServerLogMessageToSysLogAssertion(assertion, applicationContext);
+        serverAssertion.checkRequest(peCtx);
+
+        assertTrue(applicationContext.getSyslogManager().getSyslogMock().getProcess(), applicationContext.getSyslogManager().getSyslogMock().getProcess().matches("SSG\\[[a-z0-9]{16}[-][a-z0-9]+\\]"));
     }
 
     private PolicyEnforcementContext makeContext(String req, String res) {
