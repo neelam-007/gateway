@@ -228,7 +228,7 @@ public class RemoteIpRange extends Assertion implements UsesVariables {
 
         if (InetAddressUtil.isValidIpv4Pattern(pattern)) {
             if (!isValidNetworkPrefix(networkPrefix, IPV4_MAX_NETWORK_MASK)) {
-                errMsg = "Invalid IPv4 network prefix" + networkPrefix;
+                errMsg = "Invalid IPv4 network prefix: " + networkPrefix;
             }
         } else if (InetAddressUtil.isValidIpv6Pattern(pattern)) {
             if (!isValidNetworkPrefix(networkPrefix, IPV6_MAX_NETWORK_MASK)) {
