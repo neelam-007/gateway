@@ -15,20 +15,20 @@ mkdir -p "${KERNEL_MODULE_OUTPUTDIR}"
 if [ -w "${KERNEL_MODULE_OUTPUTDIR}" ]
 then
     #Begin data collection
-    logAndRunCmd "cat /proc/version &> \"${KERNEL_MODULE_OUTPUTDIR}\"/proc_version.txt"
+    logAndRunCmd "cp /proc/version -T \"${KERNEL_MODULE_OUTPUTDIR}\"/proc_version.txt"
     logAndRunCmd "lsmod &> \"${KERNEL_MODULE_OUTPUTDIR}\"/lsmod.txt"
-    logAndRunCmd "cat /etc/sysctl.conf &> \"${KERNEL_MODULE_OUTPUTDIR}\"/etc_sysctl.conf"
-    logAndRunCmd "cat /proc/cmdline &> \"${KERNEL_MODULE_OUTPUTDIR}\"/proc_cmdline.txt"
+    logAndRunCmd "cp /etc/sysctl.conf -T \"${KERNEL_MODULE_OUTPUTDIR}\"/etc_sysctl.conf"
+    logAndRunCmd "cp /proc/cmdline -T \"${KERNEL_MODULE_OUTPUTDIR}\"/proc_cmdline.txt"
     logAndRunCmd "ps awwx -mo pid,lwp,stime,time,c,cmd &> \"${KERNEL_MODULE_OUTPUTDIR}\"/ps_awwx.txt"
     logAndRunCmd "ps -e -o pid,args --forest &> \"${KERNEL_MODULE_OUTPUTDIR}\"/ps_forest.txt"
 
     if [ -n "$GATEWAYPID" ]
     then
-        logAndRunCmd "cat /proc/\"${GATEWAYPID}\"/status &> \"${KERNEL_MODULE_OUTPUTDIR}\"/proc_\"${GATEWAYPID}\"_status.txt"
+        logAndRunCmd "cp /proc/\"${GATEWAYPID}\"/status -T \"${KERNEL_MODULE_OUTPUTDIR}\"/proc_\"${GATEWAYPID}\"_status.txt"
         logAndRunCmd "ls -l /proc/\"${GATEWAYPID}\"/fd/ &> \"${KERNEL_MODULE_OUTPUTDIR}\"/proc_\"${GATEWAYPID}\"_fd.txt"
         logAndRunCmd "cat /proc/\"${GATEWAYPID}\"/environ | sed -e \"s/\x0/\n/g\" &> \"${KERNEL_MODULE_OUTPUTDIR}\"/proc_\"${GATEWAYPID}\"_environ.txt"
-        logAndRunCmd "cat /proc/\"${GATEWAYPID}\"/net/netstat &> \"${KERNEL_MODULE_OUTPUTDIR}\"/proc_\"${GATEWAYPID}\"_net_netstat.txt"
-        logAndRunCmd "cat /proc/\"${GATEWAYPID}\"/net/sockstat &> \"${KERNEL_MODULE_OUTPUTDIR}\"/proc_\"${GATEWAYPID}\"_net_sockstat.txt"
+        logAndRunCmd "cp /proc/\"${GATEWAYPID}\"/net/netstat -T \"${KERNEL_MODULE_OUTPUTDIR}\"/proc_\"${GATEWAYPID}\"_net_netstat.txt"
+        logAndRunCmd "cp /proc/\"${GATEWAYPID}\"/net/sockstat -T \"${KERNEL_MODULE_OUTPUTDIR}\"/proc_\"${GATEWAYPID}\"_net_sockstat.txt"
         logAndRunCmd "cat /proc/\"${GATEWAYPID}\"/cmdline | sed -e \"s/\x0/\n/g\" &> \"${KERNEL_MODULE_OUTPUTDIR}\"/proc_\"${GATEWAYPID}\"_cmdline.txt"
     fi
 else
