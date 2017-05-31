@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 VERSION="1.1"
 DATESTRING=$(date +%s"_"T%R_%B_%d_%Y_%Z%z | sed 's/://g')
@@ -317,9 +317,8 @@ if [ -e "${ALL_MODULES_BASE_OUTPUT_DIR}" ]
 then
     FINAL_ZIP_NAME="${BASE_OUTPUT_DIR}/${DATED_OUTPUT_NAME}".tar.gz
     beginCompression
-    tar -zcvf ${FINAL_ZIP_NAME} -C ${OUTPUT_HOME} -T <(echo -e "$DATED_OUTPUT_NAME/categorized-by-module\n$DATED_OUTPUT_NAME/links-to-all-files")
+    tar -zcvf "${FINAL_ZIP_NAME}" -C "${OUTPUT_HOME}" "${DATED_OUTPUT_NAME}"/categorized-by-module "${DATED_OUTPUT_NAME}"/links-to-all-files
     endCompression "${FINAL_ZIP_NAME}"
-
 else
     echo
     echo "ERROR: There is no collected output at ${ALL_MODULES_BASE_OUTPUT_DIR}.  Check console output for errors."

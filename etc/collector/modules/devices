@@ -9,19 +9,18 @@ preModule "${MODULE}"
 
 #Define and create output folders
 DEVICES_MODULE_BASE_OUTPUT_DIRECTORY="${ALL_MODULES_BASE_OUTPUT_DIR}/${MODULE}"
-DEVICES_MODULE_BASE_OUTPUT_DIRECTORY_config="${DEVICES_MODULE_BASE_OUTPUT_DIRECTORY}/config"
-DEVICES_MODULE_BASE_OUTPUT_DIRECTORY_logs="${DEVICES_MODULE_BASE_OUTPUT_DIRECTORY}/logs"
 mkdir -p "${DEVICES_MODULE_BASE_OUTPUT_DIRECTORY}"
 
-#Begin data collection
-logAndRunCmd "cp /proc/meminfo \"${DEVICES_MODULE_BASE_OUTPUT_DIRECTORY}\""
+if [ -w "${DEVICES_MODULE_BASE_OUTPUT_DIRECTORY}" ]
+then
+    #Begin data collection
+    logAndRunCmd "cp /proc/meminfo \"${DEVICES_MODULE_BASE_OUTPUT_DIRECTORY}\""
+    logAndRunCmd "lspci -tv &> \"${DEVICES_MODULE_BASE_OUTPUT_DIRECTORY}\"/lspci.txt"
+    logAndRunCmd "cp /proc/cpuinfo \"${DEVICES_MODULE_BASE_OUTPUT_DIRECTORY}\""
+    logAndRunCmd "ls -Rl /dev &> \"${DEVICES_MODULE_BASE_OUTPUT_DIRECTORY}\"/ls_R1_dev.txt"
+    logAndRunCmd "dmidecode -t 1 &> \"${DEVICES_MODULE_BASE_OUTPUT_DIRECTORY}\"/dmidecode.txt"
+else
+    echo "Could not create devices module output directory."
+fi
 
-logAndRunCmd "lspci -tv &> \"${DEVICES_MODULE_BASE_OUTPUT_DIRECTORY}\"/lspci.txt"
-
-logAndRunCmd "cp /proc/cpuinfo \"${DEVICES_MODULE_BASE_OUTPUT_DIRECTORY}\""
-
-logAndRunCmd "ls -Rl /dev &> \"${DEVICES_MODULE_BASE_OUTPUT_DIRECTORY}\"/ls_R1_dev.txt"
-
-logAndRunCmd "dmidecode -t 1 &> \"${DEVICES_MODULE_BASE_OUTPUT_DIRECTORY}\"/dmidecode.txt"
-
-postModule $MODULE
+postModule "$MODULE"

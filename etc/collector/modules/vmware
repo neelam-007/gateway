@@ -1,51 +1,35 @@
 #!/bin/sh
 
-MODULE=$1
-
+MODULE="$1"
 VMWARE_CMDDIR=/usr/sbin
 
 # Pull in collector support functions
-. ${COLLECTOR_HOME}/collectorlib
+. "${COLLECTOR_HOME}"/collectorlib
 
-preModule $MODULE
-
+preModule "$MODULE"
 
 #Define and create output folders
-VMWARE_MODULE_BaseOutputDirectory=${ALL_MODULES_BASE_OUTPUT_DIR}/${MODULE}
-VMWARE_MODULE_BaseOutputDirectory_config=${VMWARE_MODULE_BaseOutputDirectory}/config
-VMWARE_MODULE_BaseOutputDirectory_logs=${VMWARE_MODULE_BaseOutputDirectory}/logs
-mkdir -p ${VMWARE_MODULE_BaseOutputDirectory}
-#mkdir -p ${VMWARE_MODULE_BaseOutputDirectory_config}
-#mkdir -p ${VMWARE_MODULE_BaseOutputDirectory_logs}
+VMWARE_OUTPUT_DIR="${ALL_MODULES_BASE_OUTPUT_DIR}/${MODULE}"
+mkdir -p "${VMWARE_OUTPUT_DIR}"
 
 #Begin data collection
-if [ -x ${VMWARE_CMDDIR}/vmware-checkvm ]
+if [ -x "${VMWARE_CMDDIR}"/vmware-checkvm ]
 then
-    logCommand vmware-checkvm
-    vmware-checkvm > ${VMWARE_MODULE_BaseOutputDirectory}/vmware-checkvm.txt
-
-    logCommand vmware-checkvm -hp
-    vmware-checkvm -hp > ${VMWARE_MODULE_BaseOutputDirectory}/vmware-checkvm-hp.txt
-
-    logCommand vmware-toolbox-cmd stat balloon
-    vmware-toolbox-cmd stat balloon > ${VMWARE_MODULE_BaseOutputDirectory}/vmware-toolbox-cmd-stat-balloon.txt
-
-    logCommand vmware-toolbox-cmd stat memlimit
-    vmware-toolbox-cmd stat memlimit > ${VMWARE_MODULE_BaseOutputDirectory}/vmware-toolbox-cmd-stat-memlimit.txt
-
-    logCommand vmware-toolbox-cmd stat memres
-    vmware-toolbox-cmd stat memres > ${VMWARE_MODULE_BaseOutputDirectory}/vmware-toolbox-cmd-stat-memres.txt
-
-    logCommand vmware-toolbox-cmd stat cpures
-    vmware-toolbox-cmd stat cpures > ${VMWARE_MODULE_BaseOutputDirectory}/vmware-toolbox-cmd-stat-cpures.txt
-
-    logCommand vmware-toolbox-cmd stat cpulimit
-    vmware-toolbox-cmd stat cpulimit > ${VMWARE_MODULE_BaseOutputDirectory}/vmware-toolbox-cmd-stat-cpulimit.txt
-
-    logCommand vmware-toolbox-cmd timesync status
-    vmware-toolbox-cmd timesync status > ${VMWARE_MODULE_BaseOutputDirectory}/vmware-toolbox-cmd-timesync-status.txt
+    if [ -w "${VMWARE_OUTPUT_DIR}" ]
+    then
+        logAndRunCmd "vmware-checkvm &> \"${VMWARE_OUTPUT_DIR}\"/vmware-checkvm.txt"
+        logAndRunCmd "vmware-checkvm -hp &> \"${VMWARE_OUTPUT_DIR}\"/vmware-checkvm-hp.txt"
+        logAndRunCmd "vmware-toolbox-cmd stat balloon &> \"${VMWARE_OUTPUT_DIR}\"/vmware-toolbox-cmd-stat-balloon.txt"
+        logAndRunCmd "vmware-toolbox-cmd stat memlimit &> \"${VMWARE_OUTPUT_DIR}\"/vmware-toolbox-cmd-stat-memlimit.txt"
+        logAndRunCmd "vmware-toolbox-cmd stat memres &> \"${VMWARE_OUTPUT_DIR}\"/vmware-toolbox-cmd-stat-memres.txt"
+        logAndRunCmd "vmware-toolbox-cmd stat cpures &> \"${VMWARE_OUTPUT_DIR}\"/vmware-toolbox-cmd-stat-cpures.txt"
+        logAndRunCmd "vmware-toolbox-cmd stat cpulimit &> \"${VMWARE_OUTPUT_DIR}\"/vmware-toolbox-cmd-stat-cpulimit.txt"
+        logAndRunCmd "vmware-toolbox-cmd timesync status &> \"${VMWARE_OUTPUT_DIR}\"/vmware-toolbox-cmd-timesync-status.txt"
+    else
+        echo "Unable to create vmware module output directory."
+    fi
 else
   echo "Error: vmware-checkvm command missing, likely not a virtual machine"
 fi
 
-postModule $MODULE
+postModule "$MODULE"
