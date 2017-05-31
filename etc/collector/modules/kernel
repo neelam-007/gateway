@@ -24,7 +24,7 @@ then
 
     if [ -n "$GATEWAYPID" ]
     then
-        logAndRunCmd "cat /proc/\"${GATEWAYPID}\"/status &> \"${KERNEL_MODULE_OUTPUTDIR}\"/proc_\"${GATEWAYPID}\"_s:tatus.txt"
+        logAndRunCmd "cat /proc/\"${GATEWAYPID}\"/status &> \"${KERNEL_MODULE_OUTPUTDIR}\"/proc_\"${GATEWAYPID}\"_status.txt"
         logAndRunCmd "ls -l /proc/\"${GATEWAYPID}\"/fd/ &> \"${KERNEL_MODULE_OUTPUTDIR}\"/proc_\"${GATEWAYPID}\"_fd.txt"
         logAndRunCmd "cat /proc/\"${GATEWAYPID}\"/environ | sed -e \"s/\x0/\n/g\" &> \"${KERNEL_MODULE_OUTPUTDIR}\"/proc_\"${GATEWAYPID}\"_environ.txt"
         logAndRunCmd "cat /proc/\"${GATEWAYPID}\"/net/netstat &> \"${KERNEL_MODULE_OUTPUTDIR}\"/proc_\"${GATEWAYPID}\"_net_netstat.txt"
