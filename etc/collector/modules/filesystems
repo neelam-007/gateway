@@ -7,41 +7,31 @@ MODULE="$1"
 
 preModule "$MODULE"
 
-#Define and create output folders
 FILESYSTEMS_DIR="${ALL_MODULES_BASE_OUTPUT_DIR}/${MODULE}"
-mkdir -p "${FILESYSTEMS_DIR}"
-
-#Begin data collection
-
-logAndRunCmd "free -m &> \"${FILESYSTEMS_DIR}\"/free.txt"
-
-logAndRunCmd "df &> \"${FILESYSTEMS_DIR}\"/df.txt"
-
-logAndRunCmd "cp /proc/mdstat \"${FILESYSTEMS_DIR}\" &> /dev/null"
-
-logAndRunCmd "mdadm --detail --scan &> \"${FILESYSTEMS_DIR}\"/mdadm.txt"
-
-logAndRunCmd "mount &> \"${FILESYSTEMS_DIR}\"/mount.txt"
-
-logAndRunCmd "lsblk &> \"${FILESYSTEMS_DIR}\"/lsblk.txt"
-
-logAndRunCmd "pvdisplay &> \"${FILESYSTEMS_DIR}\"/pvdisplay.txt"
-
-logAndRunCmd "vgdisplay &> \"${FILESYSTEMS_DIR}\"/vgdisplay.txt"
-
-logAndRunCmd "lvdisplay &> \"${FILESYSTEMS_DIR}\"/lvdisplay.txt"
-
-logAndRunCmd "cp /etc/mdadm.conf \"${FILESYSTEMS_DIR}\" &> /dev/null"
-
 DISKS=(/dev/sd[a-z])
 PARTS=(/dev/sd[a-z][1-9])
 
-logAndRunCmd "mdadm --query --detail \"${DISKS[@]}\" &>> \"${FILESYSTEMS_DIR}\"/mdadm.txt"
+mkdir -p "${FILESYSTEMS_DIR}"
 
-logAndRunCmd "mdadm --query --detail \"${PARTS[@]}\" &>> \"${FILESYSTEMS_DIR}\"/mdadm.txt"
-
-logAndRunCmd "mdadm --examine \"${DISKS[@]}\" &>> \"${FILESYSTEMS_DIR}\"/mdadm.txt"
-
-logAndRunCmd "mdadm --examine \"${PARTS[@]}\" &>> \"${FILESYSTEMS_DIR}\"/mdadm.txt"
+if [ -w "${FILESYSTEMS_DIR}" ]
+then
+    #Begin data collection
+    logAndRunCmd "free -m &> \"${FILESYSTEMS_DIR}\"/free.txt"
+    logAndRunCmd "df &> \"${FILESYSTEMS_DIR}\"/df.txt"
+    logAndRunCmd "cp /proc/mdstat \"${FILESYSTEMS_DIR}\" &> /dev/null"
+    logAndRunCmd "mdadm --detail --scan &> \"${FILESYSTEMS_DIR}\"/mdadm.txt"
+    logAndRunCmd "mount &> \"${FILESYSTEMS_DIR}\"/mount.txt"
+    logAndRunCmd "lsblk &> \"${FILESYSTEMS_DIR}\"/lsblk.txt"
+    logAndRunCmd "pvdisplay &> \"${FILESYSTEMS_DIR}\"/pvdisplay.txt"
+    logAndRunCmd "vgdisplay &> \"${FILESYSTEMS_DIR}\"/vgdisplay.txt"
+    logAndRunCmd "lvdisplay &> \"${FILESYSTEMS_DIR}\"/lvdisplay.txt"
+    logAndRunCmd "cp /etc/mdadm.conf \"${FILESYSTEMS_DIR}\" &> /dev/null"
+    logAndRunCmd "mdadm --query --detail \"${DISKS[@]}\" &>> \"${FILESYSTEMS_DIR}\"/mdadm.txt"
+    logAndRunCmd "mdadm --query --detail \"${PARTS[@]}\" &>> \"${FILESYSTEMS_DIR}\"/mdadm.txt"
+    logAndRunCmd "mdadm --examine \"${DISKS[@]}\" &>> \"${FILESYSTEMS_DIR}\"/mdadm.txt"
+    logAndRunCmd "mdadm --examine \"${PARTS[@]}\" &>> \"${FILESYSTEMS_DIR}\"/mdadm.txt"
+else
+    echo "Could not create filesystems output directory."
+fi
 
 postModule "$MODULE"
