@@ -9,8 +9,10 @@ preModule "$MODULE"
 
 #Define and create output folders
 MYSQL_MODULE_BASEOUTPUTDIR="${ALL_MODULES_BASE_OUTPUT_DIR}/${MODULE}"
-MYSQL_MODULE_CONFIGOUTPUTDIR="${MYSQL_MODULE_BASEOUTPUTDIR}"/config
 mkdir -p "${MYSQL_MODULE_BASEOUTPUTDIR}"
+
+MYSQL_MODULE_CONFIGOUTPUTDIR="${MYSQL_MODULE_BASEOUTPUTDIR}"/config
+mkdir -p "${MYSQL_MODULE_CONFIGOUTPUTDIR}"
 
 if [ -w "${MYSQL_MODULE_BASEOUTPUTDIR}" ]
 then
@@ -19,7 +21,6 @@ then
     logAndRunCmd "mysql ssg -e 'show tables' &> \"${MYSQL_MODULE_BASEOUTPUTDIR}\"/show-tables.txt"
     logAndRunCmd "mysql ssg -e 'show slave status' &> > \"${MYSQL_MODULE_BASEOUTPUTDIR}\"/show-slave-status.txt"
     logAndRunCmd "mysql ssg -e 'show master status' &> \"${MYSQL_MODULE_BASEOUTPUTDIR}\"/show-master-status.txt"
-    logAndRunCmd "cp /etc/my.cnf \"${MYSQL_MODULE_CONFIGOUTPUTDIR}\""
     logAndRunCmd "mysql -u root 'show grants' &> \"${MYSQL_MODULE_BASEOUTPUTDIR}\"/show-grants.txt"
     logAndRunCmd "mysqladmin -u root processlist &> \"${MYSQL_MODULE_BASEOUTPUTDIR}\"/processlist.txt"
     logAndRunCmd "mysql ssg -e 'select count(*) as count_audit_main from audit_main' \
@@ -42,8 +43,16 @@ then
             mappings, uninstall_bundle, hex(parent_goid) parent_goid \
         FROM solution_kit' \
         &> \"${MYSQL_MODULE_BASEOUTPUTDIR}\"/solution-kits.txt"
+
+    if [ -w "${MYSQL_MODULE_CONFIGOUTPUTDIR}" ]
+    then
+        logAndRunCmd "cp /etc/my.cnf \"${MYSQL_MODULE_CONFIGOUTPUTDIR}\""
+    else
+        echo "ERROR: Could not create mysql config module output directory - my.cnf file not copied."
+    fi
+
 else
-    echo "Could not create mysql module output directory."
+    echo "ERROR: Could not create mysql module output directory."
 fi
 
 postModule "$MODULE"
