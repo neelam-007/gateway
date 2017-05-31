@@ -11,9 +11,9 @@ mkdir -p "${USERDATA_DIR}"
 
 if [ -w "${USERDATA_DIR}" ]
 then
-    logAndRunCmd "cp /etc/sudoers &> \"${USERDATA_DIR}\""
-    logAndRunCmd "cp /etc/passwd  &> \"${USERDATA_DIR}\""
-    logAndRunCmd "cp /etc/group &> \"${USERDATA_DIR}\""
+    logAndRunCmd "cp /etc/sudoers \"${USERDATA_DIR}\""
+    logAndRunCmd "cp /etc/passwd \"${USERDATA_DIR}\""
+    logAndRunCmd "cp /etc/group \"${USERDATA_DIR}\""
 else
     echo "Could not create userdata output directory."
 fi
