@@ -118,7 +118,8 @@ public class RemoteIpRangePropertiesDialog extends LegacyAssertionPropertyDialog
             return;
         }
 
-        if (isIpv4 && networkMask > IPV4_MAX_NETWORK_MASK || networkMask > IPV6_MAX_NETWORK_MASK) {
+        // DE296405 : Invalidate if network mask is negative or zero or greater than the permissive maximum value
+        if (networkMask <= 0 || networkMask > (isIpv4 ? IPV4_MAX_NETWORK_MASK : IPV6_MAX_NETWORK_MASK)) {
             bark(resources.getString("error.badmask"));
             return;
         }

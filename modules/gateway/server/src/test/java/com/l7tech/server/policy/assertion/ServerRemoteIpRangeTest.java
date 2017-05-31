@@ -11,6 +11,7 @@ import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.test.BugId;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.InetAddressUtil;
@@ -228,6 +229,24 @@ public class ServerRemoteIpRangeTest {
 
         peCtx.setVariable("partialIp", "11");
         peCtx.setVariable("prefix", "3#0");
+        peCtx.setVariable("sourceIp", "192.168.11.16");
+
+        serverAssertion = createServer(assertion);
+        status = serverAssertion.checkRequest(peCtx);
+        assertEquals(AssertionStatus.FAILED, status);
+        assertEquals(1, testAudit.getAuditCount());
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.IP_INVALID_RANGE));
+    }
+
+    @BugId("DE296405")
+    @Test
+    public void testInvalidIpRangeDueToZeroNetworkMask() throws Exception {
+        assertion = new RemoteIpRange();
+        assertion.setAddressRange("192.168.${partialIp}.12", "${prefix}");
+        assertion.setIpSourceContextVariable("sourceIp");
+
+        peCtx.setVariable("partialIp", "11");
+        peCtx.setVariable("prefix", "0");
         peCtx.setVariable("sourceIp", "192.168.11.16");
 
         serverAssertion = createServer(assertion);
