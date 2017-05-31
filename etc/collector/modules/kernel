@@ -12,7 +12,7 @@ preModule "$MODULE"
 KERNEL_MODULE_OUTPUTDIR="${ALL_MODULES_BASE_OUTPUT_DIR}/${MODULE}"
 mkdir -p "${KERNEL_MODULE_OUTPUTDIR}"
 
-if [ -z "${KERNEL_MODULE_OUTPUTDIR}" ]
+if [ -w "${KERNEL_MODULE_OUTPUTDIR}" ]
 then
     #Begin data collection
     logAndRunCmd "cat /proc/version &> \"${KERNEL_MODULE_OUTPUTDIR}\"/proc_version.txt"
