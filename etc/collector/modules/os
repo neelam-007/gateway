@@ -29,7 +29,7 @@ then
     logAndRunCmd "su -c \"ulimit -S -a\" -s /bin/sh gateway &>> \"${OS_DIR}\"/ulimit-soft.txt"
     #view all hard limits
     logAndRunCmd "su -c \"ulimit -H -a\" -s /bin/sh gateway &>> \"${OS_DIR}\"/ulimit-hard.txt"
-    logAndRunCmd "cat /var/log/bash_commands.log &> \"${OS_DIR}\"/bash_commands.log"
+    logAndRunCmd "cp /var/log/bash_commands.log \"${OS_DIR}\""
     logAndRunCmd "top -b -n 1 &> \"${OS_DIR}\"/top.txt"
 else
     echo "Unable to create os output directory"
