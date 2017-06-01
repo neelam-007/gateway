@@ -22,6 +22,9 @@ then
     logAndRunCmd "mysql ssg -e 'show slave status' &> \"${MYSQL_MODULE_BASEOUTPUTDIR}\"/show-slave-status.txt"
     logAndRunCmd "mysql ssg -e 'show master status' &> \"${MYSQL_MODULE_BASEOUTPUTDIR}\"/show-master-status.txt"
     logAndRunCmd "mysqladmin -u root processlist &> \"${MYSQL_MODULE_BASEOUTPUTDIR}\"/processlist.txt"
+    logAndRunCmd "cp /var/lib/mysql/localhost-slow.log \"${MYSQL_MODULE_BASEOUTPUTDIR}\""
+    logAndRunCmd "cp /var/log/mysqld.log \"${MYSQL_MODULE_BASEOUTPUTDIR}\""
+
     logAndRunCmd "mysql ssg -e 'select count(*) as count_audit_main from audit_main' \
         &> \"${MYSQL_MODULE_BASEOUTPUTDIR}\"/count-audit-main.txt"
     logAndRunCmd "mysql ssg -e 'SELECT hex(ps.goid) goid, ps.name name, routing_uri, f.name folder, \
