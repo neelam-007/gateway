@@ -19,9 +19,8 @@ then
     logAndRunCmd "service mysql status &> \"${MYSQL_MODULE_BASEOUTPUTDIR}\"/mysql-status.txt"
     logAndRunCmd "mysql ssg -e 'select * from ssg_version' &> \"${MYSQL_MODULE_BASEOUTPUTDIR}\"/ssg-version.txt"
     logAndRunCmd "mysql ssg -e 'show tables' &> \"${MYSQL_MODULE_BASEOUTPUTDIR}\"/show-tables.txt"
-    logAndRunCmd "mysql ssg -e 'show slave status' &> > \"${MYSQL_MODULE_BASEOUTPUTDIR}\"/show-slave-status.txt"
+    logAndRunCmd "mysql ssg -e 'show slave status' &> \"${MYSQL_MODULE_BASEOUTPUTDIR}\"/show-slave-status.txt"
     logAndRunCmd "mysql ssg -e 'show master status' &> \"${MYSQL_MODULE_BASEOUTPUTDIR}\"/show-master-status.txt"
-    logAndRunCmd "mysql -u root 'show grants' &> \"${MYSQL_MODULE_BASEOUTPUTDIR}\"/show-grants.txt"
     logAndRunCmd "mysqladmin -u root processlist &> \"${MYSQL_MODULE_BASEOUTPUTDIR}\"/processlist.txt"
     logAndRunCmd "mysql ssg -e 'select count(*) as count_audit_main from audit_main' \
         &> \"${MYSQL_MODULE_BASEOUTPUTDIR}\"/count-audit-main.txt"
@@ -43,6 +42,11 @@ then
             mappings, uninstall_bundle, hex(parent_goid) parent_goid \
         FROM solution_kit' \
         &> \"${MYSQL_MODULE_BASEOUTPUTDIR}\"/solution-kits.txt"
+
+    for user in $(mysql --silent --skip-column-names ssg -e "select concat('\'',user,'\'@\'',host,'\'') as user from mysql.user")
+    do
+        logAndRunCmd "mysql ssg -e \"show grants for ${user}\" &>> \"${MYSQL_MODULE_BASEOUTPUTDIR}\"/show-grants.txt"
+    done
 
     if [ -w "${MYSQL_MODULE_CONFIGOUTPUTDIR}" ]
     then
