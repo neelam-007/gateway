@@ -226,6 +226,9 @@ public class IdentityProviderResourceFactory extends SecurityZoneableEntityManag
             }
             detail.setSearchBase( ldapIdentityProviderConfig.getSearchBase() );
             detail.setBindDn( ldapIdentityProviderConfig.getBindDN() );
+            detail.setWritable(ldapIdentityProviderConfig.isWritable());
+            detail.setWriteBase(ldapIdentityProviderConfig.getWriteBase());
+
             detail.setReconnectTimeout(ldapIdentityProviderConfig.getReconnectTimeout());
             detail.setUserMappings( buildMappings( ldapIdentityProviderConfig.getUserMappings() ) );
             detail.setGroupMappings( buildMappings( ldapIdentityProviderConfig.getGroupMappings() ) );
@@ -446,6 +449,8 @@ public class IdentityProviderResourceFactory extends SecurityZoneableEntityManag
             }
             ldapIdentityProviderConfig.setSearchBase( detail.getSearchBase() );
             ldapIdentityProviderConfig.setBindDN( detail.getBindDn() );
+            ldapIdentityProviderConfig.setWritable(detail.isWritable());
+            ldapIdentityProviderConfig.setWriteBase(detail.getWriteBase());
             ldapIdentityProviderConfig.setReconnectTimeout(detail.getReconnectTimeout());
             ldapIdentityProviderConfig.setBindPasswd( detail.getBindPassword() );
             ldapIdentityProviderConfig.setUserMappings( detail.hasUserMappings() ? buildUserMappings( detail.getUserMappings() ) : template.getUserMappings() );

@@ -56,18 +56,21 @@ public class LdapIdentityProviderConfig extends LdapUrlBasedIdentityProviderConf
         return config;
     }
 
+    /**
+     * stores whether the LDAP provider can be written to.
+     */
     @Override
     @Transient
     public boolean isWritable() {
-        if (getProperty(WRITEABLE)==null){
-            return false;
-        } else {
-            return (boolean)getProperty(WRITEABLE);
-        }
+        return getBooleanProperty(WRITABLE,false);
     }
 
+
+    /**
+     * stores whether the LDAP provider can be written to.
+     */
     public void setWritable(boolean writable) {
-        setProperty(WRITEABLE, writable);
+        setProperty(WRITABLE, writable);
     }
 
     /**
@@ -523,7 +526,7 @@ public class LdapIdentityProviderConfig extends LdapUrlBasedIdentityProviderConf
 
     public static final String SEARCH_BASE = "ldapsearchbase";
     public static final String WRITE_BASE = "ldapwritebase";
-    public static final String WRITEABLE = "writable";
+    public static final String WRITABLE = "writable";
     private static final String GROUP_MAPPINGS = "grpmappings";
     private static final String USER_MAPPINGS = "usrmappings";
     private static final String BIND_DN = "ldapBindDN";
