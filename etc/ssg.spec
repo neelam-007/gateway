@@ -135,8 +135,9 @@ rm -fr %{buildroot}
 /opt/SecureSpan/Collector/modules/mysql
 /opt/SecureSpan/Collector/modules/network
 /opt/SecureSpan/Collector/modules/os
-/opt/SecureSpan/Collector/modules/template
 /opt/SecureSpan/Collector/modules/vmware
+%dir /opt/SecureSpan/Collector/modules/sensitive
+/opt/SecureSpan/Collector/modules/sensitive/userdata
 
 %pre
 grep -q ^gateway: /etc/group || groupadd gateway
