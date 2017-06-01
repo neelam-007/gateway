@@ -19,6 +19,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.EncapsulatedAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.composite.AllAssertion;
+import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -68,7 +69,7 @@ public class ServerQuickStartTemplateAssertion extends AbstractMessageTargetable
     public AssertionStatus doCheckRequest(final PolicyEnforcementContext context,
                                           final Message message,
                                           final String messageDescription,
-                                          final AuthenticationContext authContext ) throws IOException, PolicyAssertionException {
+                                          final AuthenticationContext authContext) throws IOException, PolicyAssertionException {
 
         try {
             final ServiceContainer serviceContainer;
@@ -92,13 +93,9 @@ public class ServerQuickStartTemplateAssertion extends AbstractMessageTargetable
                 final List<EncapsulatedAssertion> encapsulatedAssertions = mapper.getEncapsulatedAssertions(serviceContainer.service);
                 PublishedService publishedService;
 
-                if ( (message.isHttpRequest()) && (message.getHttpRequestKnob().getMethod() == HttpMethod.PUT)) {
-                    String url = message.getHttpRequestKnob().getRequestUrl();
-                    Pattern pattern = Pattern.compile("/([0-9a-f]{32})?$");
-                    Matcher matcher = pattern.matcher(url);
-
-                    if ( (matcher.find()) && (matcher.group(1) != null) ) {
-                        Goid goid = new Goid(matcher.group(1));
+                if (isUpdate(context, message)) {
+                    Goid goid = parseServiceId(context, message);
+                    if (goid != null) {
                         publishedService = updatePublishedService(goid, serviceContainer.service, encapsulatedAssertions);
                     } else {
                         publishedService = createPublishedService(serviceContainer.service, encapsulatedAssertions);
@@ -120,6 +117,37 @@ public class ServerQuickStartTemplateAssertion extends AbstractMessageTargetable
         }
 
         return AssertionStatus.NONE;
+    }
+
+    private boolean isUpdate(@NotNull final PolicyEnforcementContext context, @NotNull final Message message) {
+        boolean isUpdate = false;
+        try {
+            isUpdate = (message.isHttpRequest() && message.getHttpRequestKnob().getMethod() == HttpMethod.PUT) || HttpMethod.PUT.toString().equals(String.valueOf(context.getVariable("invokerMethod")));
+        } catch (NoSuchVariableException e) {
+            // do nothing
+        }
+        return isUpdate;
+    }
+
+    private Goid parseServiceId(@NotNull final PolicyEnforcementContext context, @NotNull final Message message) {
+        Goid goid = null;
+        if (message.isHttpRequest()) {
+            String url = message.getHttpRequestKnob().getRequestUrl();
+            Pattern pattern = Pattern.compile("/([0-9a-f]{32})?$");
+            Matcher matcher = pattern.matcher(url);
+
+            if ( (matcher.find()) && (matcher.group(1) != null) ) {
+                goid = new Goid(matcher.group(1));
+            }
+        } else {
+            try {
+                final String serviceId = String.valueOf(context.getVariable("serviceId"));
+                goid = new Goid(serviceId.startsWith("/") ? serviceId.substring(1) : serviceId);
+            } catch (NoSuchVariableException e) {
+                // do nothing
+            }
+        }
+        return goid;
     }
 
     // TODO in the future, refactor out common code from com.l7tech.console.panels.PublishInternalServiceWizard.saveNonSoapServiceWithResolutionCheck()
@@ -199,6 +227,7 @@ public class ServerQuickStartTemplateAssertion extends AbstractMessageTargetable
         } else {
 
             publishedService.setName(service.name);
+            publishedService.setRoutingUri(service.gatewayUri);
             final String registrarTime = publishedService.getProperty(PROPERTY_QS_REGISTRAR_TMS);
             if (StringUtils.isNotEmpty(registrarTime)) {
                 publishedService.putProperty(PROPERTY_QS_REGISTRAR_TMS, String.valueOf(Long.valueOf(registrarTime) + 1));
