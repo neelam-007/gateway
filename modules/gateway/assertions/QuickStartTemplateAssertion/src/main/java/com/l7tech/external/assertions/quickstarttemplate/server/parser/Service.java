@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.quickstarttemplate.server.parser;
 
 import com.l7tech.common.http.HttpMethod;
+import com.l7tech.util.ValidationUtils;
 import org.apache.commons.lang.StringUtils;
 import org.codehaus.jackson.annotate.JsonCreator;
 import org.codehaus.jackson.annotate.JsonProperty;
@@ -28,6 +29,9 @@ public class Service {
         this.name = name;
         if (StringUtils.isBlank(gatewayUri)) {
             throw new IllegalArgumentException("Service must have a gatewayUri.");
+        }
+        if (gatewayUri.indexOf("/") != 0 || !ValidationUtils.isValidUri(gatewayUri)) {
+            throw new IllegalArgumentException("Service gatewayUri is incorrect. It must start with / or have the valid format.");
         }
         this.gatewayUri = gatewayUri;
         if (httpMethods == null) {
