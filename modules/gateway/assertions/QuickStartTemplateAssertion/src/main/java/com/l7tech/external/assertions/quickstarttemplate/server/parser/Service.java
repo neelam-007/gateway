@@ -27,10 +27,7 @@ public class Service {
             throw new IllegalArgumentException("Service must have a name.");
         }
         this.name = name;
-        if (StringUtils.isBlank(gatewayUri)) {
-            throw new IllegalArgumentException("Service must have a gatewayUri.");
-        }
-        if (gatewayUri.indexOf("/") != 0 || !ValidationUtils.isValidUri(gatewayUri)) {
+        if (!ValidationUtils.isValidUri(gatewayUri) || !gatewayUri.startsWith("/")) {
             throw new IllegalArgumentException("Service gatewayUri is incorrect. It must start with / or have the valid format.");
         }
         this.gatewayUri = gatewayUri;
