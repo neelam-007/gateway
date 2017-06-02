@@ -28,7 +28,7 @@ public class Service {
         }
         this.name = name;
         if (!ValidationUtils.isValidUri(gatewayUri) || !gatewayUri.startsWith("/")) {
-            throw new IllegalArgumentException("Service gatewayUri is incorrect. It must start with / or have the valid format.");
+            throw new IllegalArgumentException("Service gatewayUri is invalid. Service must have a valid URI starting with a '/'.");
         }
         this.gatewayUri = gatewayUri;
         if (httpMethods == null) {
