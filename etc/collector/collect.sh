@@ -37,12 +37,14 @@ calculatePaths
 function usage
 {
     echo "Usage: ./collect.sh [options...]"
-    echo -e "\nAPI Gateway Data Collection Utility version ${VERSION}"
+    echo -e "\nCA API Gateway Data Collection Utility version ${VERSION}"
     echo "- For collecting valuable troubleshooting data for CA Support."
     echo "- Collects logs, configurations, and system metrics such as disk usage, thread dumps and heap dumps."
+    echo "- Requires root privileges to execute."
     echo "- The final output is categorized by module, has shortcuts to every gathered file and a compressed folder containing the same."
-    echo -e "\nNote that since the output folder is uniquely named, each run will take up more disk space."
-    echo "The user is responsible for managing the cleanup of these folders."
+    echo "- Output may differ depending on the state and/or configuration of the CA API Gateway at the time of execution"
+    echo "- Note that since the output folder is uniquely named, each run will take up more disk space."
+    echo "- The user is responsible for managing the cleanup of output files and directories."
     echo -e "\nOptions:"
     echo -e "\n[-m <collection-module>]"
     echo "Collect data from a single module."
@@ -213,6 +215,10 @@ function getHeapDump
     echo "Finished heap dump"
 }
 
+if ! [ $(id -u) = 0 ]; then
+   echo "The Data Collection Utility must be executed by root."
+   exit 1
+fi
 
 while getopts "hm:aDf:s" opt; do
 
