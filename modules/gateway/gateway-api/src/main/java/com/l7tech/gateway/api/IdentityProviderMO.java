@@ -658,7 +658,11 @@ public class IdentityProviderMO extends SecurityZoneableObject {
          * @return true if the LDAP provider can be written to. False otherwise.
          */
         public boolean isWritable() {
-            return get(writable);
+            if (get(writable)==null){
+                return false;
+            } else {
+                return get(writable);
+            }
         }
 
         /**
@@ -667,7 +671,6 @@ public class IdentityProviderMO extends SecurityZoneableObject {
          * @param writable true if the LDAP provider can be written to. False otherwise.
          */
         public void setWritable(boolean writable) {
-
             this.writable = set(this.writable,writable);
         }
 
@@ -686,7 +689,6 @@ public class IdentityProviderMO extends SecurityZoneableObject {
          * @param writeBase
          */
         public void setWriteBase( String writeBase) {
-
             this.writeBase = set(this.writeBase, writeBase);
         }
 
@@ -856,7 +858,7 @@ public class IdentityProviderMO extends SecurityZoneableObject {
             this.bindPassword = bindPassword;
         }
 
-        @XmlElement(name="Writable",required=true)
+        @XmlElement(name="Writable")
         protected AttributeExtensibleBoolean getWritableValue() {
             return writable;
         }
@@ -865,7 +867,7 @@ public class IdentityProviderMO extends SecurityZoneableObject {
             this.writable = writable;
         }
 
-        @XmlElement(name="WriteBase",required=true)
+        @XmlElement(name="WriteBase")
         protected AttributeExtensibleString getWriteBaseValue() {
             return writeBase;
         }

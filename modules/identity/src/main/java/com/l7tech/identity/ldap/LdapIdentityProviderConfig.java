@@ -57,7 +57,7 @@ public class LdapIdentityProviderConfig extends LdapUrlBasedIdentityProviderConf
     }
 
     /**
-     * stores whether the LDAP provider can be written to.
+     * @return true if the LDAP provider can be written to. False otherwise.
      */
     @Override
     @Transient
@@ -67,7 +67,7 @@ public class LdapIdentityProviderConfig extends LdapUrlBasedIdentityProviderConf
 
 
     /**
-     * stores whether the LDAP provider can be written to.
+     * @param writable - whether the LDAP provider can be written to.
      */
     public void setWritable(boolean writable) {
         setProperty(WRITABLE, writable);
@@ -89,7 +89,7 @@ public class LdapIdentityProviderConfig extends LdapUrlBasedIdentityProviderConf
     }
 
     /**
-     * the write base for users and groups
+     * @return the write base for users and groups
      */
     @Transient
     public String getWriteBase() {
@@ -97,7 +97,7 @@ public class LdapIdentityProviderConfig extends LdapUrlBasedIdentityProviderConf
     }
 
     /**
-     * the write base for users and groups
+     * @param writeBase - the write base for users and groups
      */
     public void setWriteBase(String writeBase) {
         setProperty(WRITE_BASE, writeBase);
