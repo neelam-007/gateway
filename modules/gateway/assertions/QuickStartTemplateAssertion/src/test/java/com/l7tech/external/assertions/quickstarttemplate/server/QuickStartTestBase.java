@@ -1,9 +1,9 @@
 package com.l7tech.external.assertions.quickstarttemplate.server;
 
-import com.google.common.collect.ImmutableMap;
 import com.l7tech.external.assertions.quickstarttemplate.QuickStartDocumentationAssertion;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.policy.assertion.EncapsulatedAssertion;
+import org.junit.Ignore;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -11,6 +11,7 @@ import java.util.Map;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+@Ignore
 public class QuickStartTestBase {
 
     protected static EncapsulatedAssertion mockEncapsulatedAssertion(final String name, final String description,
