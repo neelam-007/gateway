@@ -336,17 +336,28 @@ public class ClusterPropertyDialog extends JDialog {
 
     private void remove() {
         ClusterProperty prop = properties.get(propsTable.getSelectedRow());
-        Registry reg = Registry.getDefault();
-        if (reg != null && reg.getClusterStatusAdmin() != null) {
-            try {
-                reg.getClusterStatusAdmin().deleteProperty(prop);
-            } catch (DeleteException e) {
-                logger.log(Level.SEVERE, "exception removing property", e);
-            }
-            populate();
-        } else {
-            logger.severe("cannot get cluster status admin for removing property");
-        }
+        DialogDisplayer.showConfirmDialog(removeButton,
+                "Are you sure you want to delete the property " + prop.getName() + "?",
+                "Confirm Delete",
+                JOptionPane.WARNING_MESSAGE,
+                new DialogDisplayer.OptionListener() {
+                    @Override
+                    public void reportResult(int option) {
+                        if (option != JOptionPane.OK_OPTION)
+                            return;
+                        Registry reg = Registry.getDefault();
+                        if (reg != null && reg.getClusterStatusAdmin() != null) {
+                            try {
+                                reg.getClusterStatusAdmin().deleteProperty(prop);
+                            } catch (DeleteException e) {
+                                logger.log(Level.SEVERE, "exception removing property", e);
+                            }
+                            populate();
+                        } else {
+                            logger.severe("cannot get cluster status admin for removing property");
+                        }
+                    }
+                });
     }
 
     private void help() {

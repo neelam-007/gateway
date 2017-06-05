@@ -1,74 +1,37 @@
 #!/bin/sh
 
-MODULE=$1
-LEVEL=$2
+MODULE="$1"
 
 # Pull in collector support functions
-. ${COLLECTOR_HOME}/collectorlib
+. "${COLLECTOR_HOME}"/collectorlib
 
-preModule $MODULE
+preModule "$MODULE"
 
-#Define and create output folders
-FILESYSTEMS_MODULE_BaseOutputDirectory=${ALL_MODULES_BASE_OUTPUT_DIR}/${MODULE}
-FILESYSTEMS_MODULE_BaseOutputDirectory_config=${FILESYSTEMS_MODULE_BaseOutputDirectory}/config
-FILESYSTEMS_MODULE_BaseOutputDirectory_logs=${FILESYSTEMS_MODULE_BaseOutputDirectory}/logs
-mkdir -p ${FILESYSTEMS_MODULE_BaseOutputDirectory}
-#mkdir -p ${FILESYSTEMS_MODULE_BaseOutputDirectory_config}
-#mkdir -p ${FILESYSTEMS_MODULE_BaseOutputDirectory_logs}
+FILESYSTEMS_DIR="${ALL_MODULES_BASE_OUTPUT_DIR}/${MODULE}"
+DISKS=(/dev/sd[a-z])
+PARTS=(/dev/sd[a-z][1-9])
 
-#Begin data collection
-logCommand df
-df > ${FILESYSTEMS_MODULE_BaseOutputDirectory}/df.txt
+mkdir -p "${FILESYSTEMS_DIR}"
 
-logCommand cat /proc/mdstat
-cp /proc/mdstat ${FILESYSTEMS_MODULE_BaseOutputDirectory}
+if [ -w "${FILESYSTEMS_DIR}" ]
+then
+    #Begin data collection
+    logAndRunCmd "free -m &> \"${FILESYSTEMS_DIR}\"/free.txt"
+    logAndRunCmd "df &> \"${FILESYSTEMS_DIR}\"/df.txt"
+    logAndRunCmd "cp /proc/mdstat \"${FILESYSTEMS_DIR}\" &> /dev/null"
+    logAndRunCmd "mdadm --detail --scan &> \"${FILESYSTEMS_DIR}\"/mdadm.txt"
+    logAndRunCmd "mount &> \"${FILESYSTEMS_DIR}\"/mount.txt"
+    logAndRunCmd "lsblk &> \"${FILESYSTEMS_DIR}\"/lsblk.txt"
+    logAndRunCmd "pvdisplay &> \"${FILESYSTEMS_DIR}\"/pvdisplay.txt"
+    logAndRunCmd "vgdisplay &> \"${FILESYSTEMS_DIR}\"/vgdisplay.txt"
+    logAndRunCmd "lvdisplay &> \"${FILESYSTEMS_DIR}\"/lvdisplay.txt"
+    logAndRunCmd "cp /etc/mdadm.conf \"${FILESYSTEMS_DIR}\" &> /dev/null"
+    logAndRunCmd "mdadm --query --detail \"${DISKS[@]}\" &>> \"${FILESYSTEMS_DIR}\"/mdadm.txt"
+    logAndRunCmd "mdadm --query --detail \"${PARTS[@]}\" &>> \"${FILESYSTEMS_DIR}\"/mdadm.txt"
+    logAndRunCmd "mdadm --examine \"${DISKS[@]}\" &>> \"${FILESYSTEMS_DIR}\"/mdadm.txt"
+    logAndRunCmd "mdadm --examine \"${PARTS[@]}\" &>> \"${FILESYSTEMS_DIR}\"/mdadm.txt"
+else
+    echo "Could not create filesystems output directory."
+fi
 
-logCommand mdadm --detail --scan
-mdadm --detail --scan > ${FILESYSTEMS_MODULE_BaseOutputDirectory}/mdadm.txt
-
-logCommand mount
-mount > ${FILESYSTEMS_MODULE_BaseOutputDirectory}/mount.txt
-
-logCommand lsblk
-lsblk > ${FILESYSTEMS_MODULE_BaseOutputDirectory}/lsblk.txt
-
-logCommand pvdisplay
-pvdisplay > ${FILESYSTEMS_MODULE_BaseOutputDirectory}/pvdisplay.txt
-
-logCommand vgdisplay
-vgdisplay > ${FILESYSTEMS_MODULE_BaseOutputDirectory}/vgdisplay.txt
-
-logCommand lvdisplay
-lvdisplay > ${FILESYSTEMS_MODULE_BaseOutputDirectory}/lvdisplay.txt
-
-logCommand cat /etc/mdadm.conf
-cp /etc/mdadm.conf ${FILESYSTEMS_MODULE_BaseOutputDirectory} > /dev/null 2>&1
-
-disks=(/dev/sd[a-z])
-parts=(/dev/sd[a-z][1-9])
-
-logCommand mdadm --query --detail ${disks[@]}
-mdadm --query --detail ${disks[@]} >> ${FILESYSTEMS_MODULE_BaseOutputDirectory}/mdadm.txt > /dev/null 2>&1
-
-logCommand mdadm --query --detail ${parts[@]}
-
-mdadm --query --detail ${parts[@]} >> ${FILESYSTEMS_MODULE_BaseOutputDirectory}/mdadm.txt > /dev/null 2>&1
-
-logCommand mdadm --examine ${disks[@]}
-mdadm --examine ${disks[@]} >> ${FILESYSTEMS_MODULE_BaseOutputDirectory}/mdadm.txt > /dev/null 2>&1
-
-logCommand mdamd --examine ${parts[@]}
-mdadm --examine ${parts[@]} >> ${FILESYSTEMS_MODULE_BaseOutputDirectory}/mdadm.txt > /dev/null 2>&1
-
-
-#if [ $LEVEL -ge $DETAIL ]
-#then
-#    #nothing here
-#fi
-#
-#if [ $LEVEL -ge $EVERYTHING ]
-#then
-#    #nothing here
-#fi
-
-postModule $MODULE
+postModule "$MODULE"

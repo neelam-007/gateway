@@ -1,40 +1,23 @@
 #!/bin/sh
 
-MODULE=$1
-LEVEL=$2
+MODULE="$1"
 
 # Pull in collector support functions
-#
-. ${COLLECTOR_HOME}/collectorlib
+. "${COLLECTOR_HOME}"/collectorlib
 
-preModule $MODULE
+preModule "$MODULE"
 
 #Define and create output folders
-JAVA_MODULE_BaseOutputDirectory=${ALL_MODULES_BASE_OUTPUT_DIR}/${MODULE}
-JAVA_MODULE_BaseOutputDirectory_config=${JAVA_MODULE_BaseOutputDirectory}/config
-JAVA_MODULE_BaseOutputDirectory_logs=${JAVA_MODULE_BaseOutputDirectory}/logs
-mkdir -p ${JAVA_MODULE_BaseOutputDirectory}
-#mkdir -p ${JAVA_MODULE_BaseOutputDirectory_config}
-#mkdir -p ${JAVA_MODULE_BaseOutputDirectory_logs}
+JAVA_OUTPUT_DIR="${ALL_MODULES_BASE_OUTPUT_DIR}/${MODULE}"
+mkdir -p "${JAVA_OUTPUT_DIR}"
 
+if [ -w "${JAVA_OUTPUT_DIR}" ]
+then
+    logAndRunCmd "/opt/SecureSpan/JDK/bin/java -version &> \"${JAVA_OUTPUT_DIR}\"/java_version.txt"
+    logAndRunCmd "ls -l /opt/SecureSpan/JDK/jre/lib/ext &> \"${JAVA_OUTPUT_DIR}\"/jre_lib_ext.txt"
+    logAndRunCmd "cp /opt/SecureSpan/JDK/jre/lib/security/java.security \"${JAVA_OUTPUT_DIR}\""
+else
+    echo "Could not create java module directory."
+fi
 
-logCommand /opt/SecureSpan/JDK/bin/java -version
-/opt/SecureSpan/JDK/bin/java -version 2> ${JAVA_MODULE_BaseOutputDirectory}/java_version.txt
-
-logCommand ls /opt/SecureSpan/JDK/jre/lib/ext
-ls -l /opt/SecureSpan/JDK/jre/lib/ext > ${JAVA_MODULE_BaseOutputDirectory}/jre_lib_ext.txt
-
-logCommand cat /opt/SecureSpan/JDK/jre/lib/security/java.security
-cp /opt/SecureSpan/JDK/jre/lib/security/java.security ${JAVA_MODULE_BaseOutputDirectory}
-
-#if [ $LEVEL -ge $DETAIL ]
-#then
-#   #nothing here
-#fi
-#
-#if [ $LEVEL -ge $EVERYTHING ]
-#then
-#   #nothing here
-#fi
-
-postModule $MODULE
+postModule "$MODULE"
