@@ -1,0 +1,21 @@
+#!/bin/sh
+
+# Pull in collector support functions
+. "${COLLECTOR_HOME}"/collectorlib
+
+preModule userdata
+
+#Define and create output folders
+USERDATA_DIR="${ALL_MODULES_BASE_OUTPUT_DIR}"/sensitive/userdata
+mkdir -p "${USERDATA_DIR}"
+
+if [ -w "${USERDATA_DIR}" ]
+then
+    logAndRunCmd "cp /etc/sudoers \"${USERDATA_DIR}\""
+    logAndRunCmd "cp /etc/passwd \"${USERDATA_DIR}\""
+    logAndRunCmd "cp /etc/group \"${USERDATA_DIR}\""
+else
+    echo "Could not create userdata output directory."
+fi
+
+postModule userdata

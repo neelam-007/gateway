@@ -1,9 +1,8 @@
-#!/bin/bash
+#!/bin/sh
 
 VERSION="1.1"
 DATESTRING=$(date +%s"_"T%R_%B_%d_%Y_%Z%z | sed 's/://g')
 DEFAULTMODULE=
-DEFAULTLEVEL=1
 DEFAULTGROUP=all
 OUTPUT_HOME=/home/ssgconfig
 DATED_OUTPUT_NAME="dct_${DATESTRING}"
@@ -14,10 +13,10 @@ TEMP_GATEWAY_USER_DUMPFOLDER=/tmp/heapdump_$(date +%s)
 DEBUG=0
 
 MODULE=$DEFAULTMODULE
-LEVEL=$DEFAULTLEVEL
 GROUP=$DEFAULTGROUP
 MODE=
 HEAP_DUMP=
+INCL_SENSITIVE_DATA=
 
 export COLLECTOR_HOME=/opt/SecureSpan/Collector
 
@@ -37,30 +36,27 @@ calculatePaths
 
 function usage
 {
-    echo "Usage:"
+    echo "Usage: ./collect.sh [options...]"
     echo -e "\nAPI Gateway Data Collection Utility version ${VERSION}"
     echo "- For collecting valuable troubleshooting data for CA Support."
     echo "- Collects logs, configurations, and system metrics such as disk usage, thread dumps and heap dumps."
     echo "- The final output is categorized by module, has shortcuts to every gathered file and a compressed folder containing the same."
     echo -e "\nNote that since the output folder is uniquely named, each run will take up more disk space."
     echo "The user is responsible for managing the cleanup of these folders."
-    echo -e "\nCommands:"
+    echo -e "\nOptions:"
     echo -e "\n[-m <collection-module>]"
-    echo "Collect data from a single module. Valid values:";ls /opt/SecureSpan/Collector/modules
+    echo "Collect data from a single module."
+    echo "Valid values:";ls -p /opt/SecureSpan/Collector/modules | grep -v /
     echo -e "\n[-a] all"
     echo "Collect data from all modules"
-    echo -e "\n[-l detail-level]"
-    echo "1 = Basic, 2 = Medium, 3 = High.  Default is ${DEFAULTLEVEL}."
-    echo " Examples of data collected from the detail levels:"
-    echo "   1 = SSG logs, node.properties, my.cnf"
-    echo "   2 = /etc/sudoers, /etc/passwd, /etc/group"
-    echo "   3 = *Currently nothing at this level.  Note that heap dumps have a separate flag to enable."
     echo -e "\n[-D]"
-    echo "Heap Dump. Use caution when taking heap dumps as this can significantly affect performance."
-    echo -e "\n[-d <output-directory>]"
+    echo "Collect a heap dump. Use caution as this can significantly affect performance."
+    echo -e "\n[-f <output-directory>]"
     echo "Where to put the files containing the output. By default, this is rooted in /home/ssgconfig."
     echo "  Specify another root path here if you want them somewhere else."
     echo -e "\n[-h help]"
+    echo -e "\n[-s]"
+    echo "Include sensitive data such as /etc/passwd."
     echo
 }
 
@@ -89,31 +85,49 @@ function checkForSpace
 }
 
 # Process an individual module
-# Paramters $1 = modules name,
-#           $2 = detail level
+# Parameters $1 = module's name
 function doModule
 {
     checkForSpace
     script=("${COLLECTOR_HOME}"/modules/$1)
-    if [ -x "$script" ]
+    if [ -x "$script" ] && [ -f "$script" ]
     then
-        $script "$MODULE" "$2" 2>&1
+        $script "$MODULE" 2>&1
     else
         echo "Error there is no module named $1"
+        exit 1
     fi
 }
 
-# Process an individual module
-# Paramters $1 = detail level
+# Process all modules
+# Parameters $1 = include sensitive data
 function doAll
 {
-    for script in "$COLLECTOR_HOME"/modules/*
+    doAllInDirectory "$COLLECTOR_HOME"/modules
+}
+
+# Process all sensitive modules
+function doSensitive
+{
+    if [ "$INCL_SENSITIVE_DATA" ]
+    then
+        doAllInDirectory "$COLLECTOR_HOME"/modules/sensitive
+    else
+        echo "Skipping sensitive data. Specify -s to include sensitive data."
+    fi
+}
+
+# Process all modules in a directory (non-recursive)
+# Parameters $1 = directory
+function doAllInDirectory
+{
+    for script in "$1"/*
     do
         checkForSpace
         MODULE=$(basename "$script")
-        if [ -x "$script" ]
+        if [ -x "$script" ] && [ -f "$script" ]
         then
-            $script "$MODULE" "$1" 2>&1
+            $script "$MODULE" 2>&1
         fi
     done
 }
@@ -200,7 +214,7 @@ function getHeapDump
 }
 
 
-while getopts "hm:al:o:Dd:" opt; do
+while getopts "hm:aDf:s" opt; do
 
   case $opt in
 
@@ -240,24 +254,18 @@ while getopts "hm:al:o:Dd:" opt; do
       GROUP="$OPTARG"
       ;;
 
-      l)
+      f)
       if [ "${OPTARG#-}" != "$OPTARG" ]
       then
-          echo "Argument required for -l."
-          usage
-          exit 1
-      fi
-      LEVEL=$OPTARG
-      ;;
-
-      d)
-      if [ "${OPTARG#-}" != "$OPTARG" ]
-      then
-          echo "Argument required for -d."
+          echo "Argument required for -f."
           usage
           exit 1
       fi
       recalculatePaths "$OPTARG"
+      ;;
+
+      s)
+      INCL_SENSITIVE_DATA="true"
       ;;
 
       \?)
@@ -277,20 +285,24 @@ then
     echo "Running Mode: $MODE"
     echo "MODULE: $MODULE"
     echo "GROUP: $GROUP"
-    echo "LEVEL: $LEVEL"
 fi
 
 doesOutputDirectoryExist
 
 if [ "$MODE" == "module" ]
 then
-    doModule "$MODULE" "$LEVEL"
+    if doModule "$MODULE"
+    then
+        doSensitive
+    fi
 elif [ "$MODE" == "all" ]
 then
-    doAll "$LEVEL"
+    doAll
+    doSensitive
 elif ! [ "$HEAP_DUMP" ]
 then
     echo "ERROR: No module was specified.  Please enter a module or execute collect.sh -h for help."
+    exit 1
 fi
 
 if [ "$HEAP_DUMP" ]
@@ -305,9 +317,8 @@ if [ -e "${ALL_MODULES_BASE_OUTPUT_DIR}" ]
 then
     FINAL_ZIP_NAME="${BASE_OUTPUT_DIR}/${DATED_OUTPUT_NAME}".tar.gz
     beginCompression
-    tar -zcvf ${FINAL_ZIP_NAME} -C ${OUTPUT_HOME} -T <(echo -e "$DATED_OUTPUT_NAME/categorized-by-module\n$DATED_OUTPUT_NAME/links-to-all-files")
+    tar -zcvf "${FINAL_ZIP_NAME}" -C "${OUTPUT_HOME}" "${DATED_OUTPUT_NAME}"/categorized-by-module "${DATED_OUTPUT_NAME}"/links-to-all-files
     endCompression "${FINAL_ZIP_NAME}"
-
 else
     echo
     echo "ERROR: There is no collected output at ${ALL_MODULES_BASE_OUTPUT_DIR}.  Check console output for errors."
