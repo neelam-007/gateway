@@ -170,9 +170,9 @@ function getHeapDump
     echo "Beginning heap dump"
 
     GATEWAY_DUMP_DIR="${ALL_MODULES_BASE_OUTPUT_DIR}/gateway/dumps"
-    GW_PID=$(ps awwx | grep Gateway.jar | grep -v grep | awk '{print $1}')
+    setGatewayPID
 
-    if [ "$GW_PID" != "" ]; then
+    if [ -n "$GATEWAYPID" ]; then
         logAndRunCmd su -c \"mkdir -p "${TEMP_GATEWAY_USER_DUMPFOLDER}"\" -s /bin/sh gateway
         if [ $? -ne 0 ]
         then
@@ -180,7 +180,7 @@ function getHeapDump
             return 1
         fi
 
-        logAndRunCmd su -c \""${JAVA_HOME}"/bin/jmap -dump:live,format=b,file="${TEMP_GATEWAY_USER_DUMPFOLDER}"/heap.hprof "${GW_PID}"\" -s /bin/sh gateway
+        logAndRunCmd su -c \""${JAVA_HOME}"/bin/jmap -dump:live,format=b,file="${TEMP_GATEWAY_USER_DUMPFOLDER}"/heap.hprof "${GATEWAYPID}"\" -s /bin/sh gateway
         if [ $? -ne 0 ]
         then
             echo "Could not create heap dump"
@@ -208,7 +208,6 @@ function getHeapDump
             return 1
         fi
     else
-        echo "Could not get Gateway PID"
         return 1
     fi
 
