@@ -38,6 +38,7 @@ public class QuickStartJsonServiceInstaller {
     private final QuickStartServiceBuilder serviceBuilder;
     private final ServiceManager serviceManager;
     private final PolicyVersionManager policyVersionManager;
+    private final QuickStartParser parser = new QuickStartParser();
 
     public QuickStartJsonServiceInstaller(
             @NotNull final QuickStartServiceBuilder serviceBuilder,
@@ -139,7 +140,7 @@ public class QuickStartJsonServiceInstaller {
     @NotNull
     private ServiceContainer parseJsonPayload(@NotNull final InputStream fileStream) throws InstallException {
         try {
-            return (new QuickStartParser()).parseJson(fileStream);
+            return parser.parseJson(fileStream);
         } catch (Exception ex) {
             final IllegalArgumentException arg = ExceptionUtils.getCauseIfCausedBy(ex, IllegalArgumentException.class);
             if (arg != null) {
