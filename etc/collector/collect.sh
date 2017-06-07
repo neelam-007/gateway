@@ -320,9 +320,11 @@ createSymlinksToEveryFile
 #Compress all the output into one folder
 if [ -e "${ALL_MODULES_BASE_OUTPUT_DIR}" ]
 then
-    FINAL_ZIP_NAME="${BASE_OUTPUT_DIR}/${DATED_OUTPUT_NAME}".tar.gz
+    FINAL_ZIP_NAME="${BASE_OUTPUT_DIR}/${DATED_OUTPUT_NAME}".zip
     beginCompression
-    tar -zcvf "${FINAL_ZIP_NAME}" -C "${OUTPUT_HOME}" "${DATED_OUTPUT_NAME}"/categorized-by-module "${DATED_OUTPUT_NAME}"/links-to-all-files
+    pushd "${OUTPUT_HOME}"
+    zip -r --symlinks "${FINAL_ZIP_NAME}" "${DATED_OUTPUT_NAME}"/categorized-by-module "${DATED_OUTPUT_NAME}"/links-to-all-files
+    popd
     endCompression "${FINAL_ZIP_NAME}"
 else
     echo
