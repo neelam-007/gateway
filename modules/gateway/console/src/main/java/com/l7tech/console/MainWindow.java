@@ -1837,13 +1837,14 @@ public class MainWindow extends JFrame implements SheetHolder {
     }
 
     /**
-     * Refresh the selected node.
+     * Refresh selected nodes.
      */
-    public void refreshPoliciesNode() {
-        TreePath path = servicesAndPoliciesTree.getSelectionPath();
-        AbstractTreeNode selectedNode = (AbstractTreeNode)path.getLastPathComponent();
-        selectedNode.clearIcons();
-        servicesAndPoliciesTree.refresh(selectedNode);
+    public void refreshSelectedNodes() {
+        final List<AbstractTreeNode> selectedNodesList = servicesAndPoliciesTree.getSmartSelectedNodes();
+        for (AbstractTreeNode selectedNode : selectedNodesList) {
+            selectedNode.clearIcons();
+            servicesAndPoliciesTree.refresh(selectedNode);
+        }
     }
 
     public void refreshIdentityProvidersTree() {
