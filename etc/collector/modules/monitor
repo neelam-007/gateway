@@ -8,7 +8,7 @@ MODULE="$1"
 preModule "$MODULE"
 
 #Define and create output folders
-MONITOR_OUTPUT_DIR="${ALL_MODULES_BASE_OUTPUT_DIR}/${MODULE}"
+MONITOR_OUTPUT_DIR="${BASE_OUTPUT_DIR}/${MODULE}"
 mkdir -p "${MONITOR_OUTPUT_DIR}"
 
 if [ -w "${MONITOR_OUTPUT_DIR}" ]

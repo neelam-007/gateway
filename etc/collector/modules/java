@@ -8,7 +8,7 @@ MODULE="$1"
 preModule "$MODULE"
 
 #Define and create output folders
-JAVA_OUTPUT_DIR="${ALL_MODULES_BASE_OUTPUT_DIR}/${MODULE}"
+JAVA_OUTPUT_DIR="${BASE_OUTPUT_DIR}/${MODULE}"
 mkdir -p "${JAVA_OUTPUT_DIR}"
 
 if [ -w "${JAVA_OUTPUT_DIR}" ]
