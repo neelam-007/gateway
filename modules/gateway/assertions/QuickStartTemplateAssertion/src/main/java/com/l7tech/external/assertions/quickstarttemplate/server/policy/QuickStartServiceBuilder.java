@@ -13,7 +13,6 @@ import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.EncapsulatedAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.server.folder.FolderManager;
