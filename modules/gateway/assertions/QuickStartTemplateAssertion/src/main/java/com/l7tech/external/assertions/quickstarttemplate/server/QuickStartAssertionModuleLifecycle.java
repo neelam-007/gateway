@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.quickstarttemplate.server;
 
+import com.l7tech.external.assertions.quickstarttemplate.server.parser.QuickStartParser;
 import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStartEncapsulatedAssertionLocator;
 import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStartJsonServiceInstaller;
 import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStartPublishedServiceLocator;
@@ -51,7 +52,7 @@ public class QuickStartAssertionModuleLifecycle {
         if (jsonServiceInstaller == null) {
             final ServiceManager serviceManager = context.getBean("serviceManager", ServiceManager.class);
             final PolicyVersionManager policyVersionManager = context.getBean("policyVersionManager", PolicyVersionManager.class);
-            jsonServiceInstaller = new QuickStartJsonServiceInstaller(serviceBuilder, serviceManager, policyVersionManager);
+            jsonServiceInstaller = new QuickStartJsonServiceInstaller(serviceBuilder, serviceManager, policyVersionManager, new QuickStartParser());
         }
 
         //////////////////////////////////////////////////////////////////////////////////////////////////

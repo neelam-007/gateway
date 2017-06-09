@@ -13,7 +13,10 @@ import com.l7tech.server.policy.PolicyVersionManager;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
+import org.codehaus.jackson.map.JsonMappingException;
+import org.codehaus.jackson.map.exc.UnrecognizedPropertyException;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -32,22 +35,24 @@ public class QuickStartJsonServiceInstaller {
     private static final Logger logger = Logger.getLogger(QuickStartJsonServiceInstaller.class.getName());
 
     private static final String BOOTSTRAP_FOLDER = ConfigFactory.getProperty("bootstrap.folder");
-    private static final String BOOTSTRAP_QST_FOLDER_SUFFIX = "qs";
+    private static final String BOOTSTRAP_QST_FOLDER_PREFIX = "qs";
     private static final String JSON_SERVICE_FILES_GLOB = "*.json";
 
     private final QuickStartServiceBuilder serviceBuilder;
     private final ServiceManager serviceManager;
     private final PolicyVersionManager policyVersionManager;
-    private final QuickStartParser parser = new QuickStartParser();
+    private final QuickStartParser parser;
 
     public QuickStartJsonServiceInstaller(
             @NotNull final QuickStartServiceBuilder serviceBuilder,
             @NotNull final ServiceManager serviceManager,
-            @NotNull final PolicyVersionManager policyVersionManager
+            @NotNull final PolicyVersionManager policyVersionManager,
+            @NotNull final QuickStartParser parser
     ) {
         this.serviceBuilder = serviceBuilder;
         this.serviceManager = serviceManager;
         this.policyVersionManager = policyVersionManager;
+        this.parser = parser;
     }
 
     /**
@@ -58,14 +63,43 @@ public class QuickStartJsonServiceInstaller {
     @NotNull
     Path getBootstrapFolder() throws InvalidPathException {
         assert BOOTSTRAP_FOLDER != null;
-        return Paths.get(BOOTSTRAP_FOLDER, BOOTSTRAP_QST_FOLDER_SUFFIX);
+        return Paths.get(BOOTSTRAP_FOLDER, BOOTSTRAP_QST_FOLDER_PREFIX);
     }
 
     /**
-     * Just a tag exception
+     * Tag installing json exception
      */
-    private static class InstallException extends Exception {
+    private static abstract class InstallException extends Exception {
+        InstallException(@NotNull final String message, @NotNull final Throwable cause) {
+            super(message, cause);
+        }
+    }
 
+    /**
+     * Indicates that an error happen while parsing json payload
+     */
+    static class ParseJsonPayload extends InstallException {
+        ParseJsonPayload(@NotNull final String message, @NotNull final Throwable cause) {
+            super(message, cause);
+        }
+    }
+
+    /**
+     * Indicates that an error happen while creating {@link PublishedService service} out of {@link ServiceContainer parsed json object}.
+     */
+    static class CreateServiceException extends InstallException {
+        CreateServiceException(@NotNull final String message, @NotNull final Throwable cause) {
+            super(message, cause);
+        }
+    }
+
+    /**
+     * Indicates that an error happen while saving the {@link PublishedService service} object.
+     */
+    static class SaveServiceException extends InstallException {
+        SaveServiceException(@NotNull final String message, @NotNull final Throwable cause) {
+            super(message, cause);
+        }
     }
 
     /**
@@ -80,18 +114,17 @@ public class QuickStartJsonServiceInstaller {
                     StreamSupport.stream(stream.spliterator(), false)
                             .sorted((path1, path2) -> path1.getFileName().compareTo(path2.getFileName()))
                             .forEach(this::installJsonService);
-                    //stream.forEach(this::installJsonService);
                     return null;
                 }).call();
             } catch (NotDirectoryException | NoSuchFileException e) {
-                logger.log(Level.FINE, "JSON services bootstrap folder \"" + jsonFolder + "\" doesn't exist", ExceptionUtils.getDebugException(e));
+                handleError(Level.FINE, "JSON services bootstrap folder \"" + jsonFolder + "\" doesn't exist", e);
             } catch (IOException e) {
-                logger.log(Level.WARNING, "Failed to read content of JSON services bootstrap folder: \"" + jsonFolder + "\": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                handleError("Failed to read content of JSON services bootstrap folder: \"" + jsonFolder + "\": " + ExceptionUtils.getMessage(e), e);
+            } catch (Throwable e) {
+                handleError("Failed to install JSON services: " + ExceptionUtils.getMessageWithCause(e), e);
             }
         } catch (InvalidPathException e) {
-            logger.log(Level.WARNING, "Invalid JSON services bootstrap folder path : \"" + BOOTSTRAP_FOLDER + File.separator + BOOTSTRAP_QST_FOLDER_SUFFIX + "\"", ExceptionUtils.getDebugException(e));
-        } catch (Throwable e) {
-            logger.log(Level.WARNING, "Failed to install JSON services: " + ExceptionUtils.getMessageWithCause(e), ExceptionUtils.getDebugException(e));
+            handleError("Invalid JSON services bootstrap folder path : \"" + BOOTSTRAP_FOLDER + File.separator + BOOTSTRAP_QST_FOLDER_PREFIX + "\"", e);
         }
     }
 
@@ -110,10 +143,14 @@ public class QuickStartJsonServiceInstaller {
         try (final InputStream stream = new BufferedInputStream(Files.newInputStream(jsonFile, StandardOpenOption.READ))) {
             installJsonService(stream);
             logger.info("Successfully installed JSON service file: " + jsonFile);
-        } catch (IOException ex) {
-            logger.log(Level.WARNING, "Error while reading JSON service file: \"" + jsonFile + "\": " + ExceptionUtils.getMessage(ex), ExceptionUtils.getDebugException(ex));
+        } catch (IOException e) {
+            handleError("Error while reading JSON service file: \"" + jsonFile + "\": " + ExceptionUtils.getMessage(e), e);
         } catch (InstallException e) {
-            logger.warning("Failed to install JSON service file: " + jsonFile);
+            final Throwable cause = e.getCause();
+            if (cause != null) {
+                handleError(ExceptionUtils.getMessage(e), cause);
+            }
+            handleError("Failed to install JSON service file: " + jsonFile, e);
         }
     }
 
@@ -131,25 +168,29 @@ public class QuickStartJsonServiceInstaller {
     }
 
     /**
-     * Parse the the {@code json} payload, specified with the {@code fileStream}, and return a {@link ServiceContainer service container pojo}.
+     * Parse the {@code json} payload, specified with the {@code fileStream}, and return a {@link ServiceContainer service container pojo}.
      *
      * @param fileStream    {@code InputStream} to the {@code json} file to install. Mandatory and cannot be {@code null}.
      * @return {@link ServiceContainer service container pojo}, never {@code null}.
-     * @throws InstallException if an error occurs while parsing the {@code json} payload.
+     * @throws ParseJsonPayload if an error occurs while parsing the {@code json} payload.
      */
     @NotNull
-    private ServiceContainer parseJsonPayload(@NotNull final InputStream fileStream) throws InstallException {
+    private ServiceContainer parseJsonPayload(@NotNull final InputStream fileStream) throws ParseJsonPayload {
         try {
             return parser.parseJson(fileStream);
-        } catch (Exception ex) {
-            final IllegalArgumentException arg = ExceptionUtils.getCauseIfCausedBy(ex, IllegalArgumentException.class);
+        } catch (UnrecognizedPropertyException e) {
+            throw new ParseJsonPayload("Unrecognized property \"" + e.getUnrecognizedPropertyName() + "\" for object \"" + e.getReferringClass().getSimpleName() + "\"", e);
+        } catch (JsonMappingException e) {
+            final IllegalArgumentException arg = ExceptionUtils.getCauseIfCausedBy(e, IllegalArgumentException.class);
             if (arg != null) {
-                logger.log(Level.WARNING, ExceptionUtils.getMessage(arg), ExceptionUtils.getDebugException(arg));
-            } else {
-                logger.log(Level.WARNING, "Unable to parse JSON service payload from: " + ExceptionUtils.getMessage(ex), ExceptionUtils.getDebugException(ex));
+                throw new ParseJsonPayload(ExceptionUtils.getMessage(arg), e);
             }
+            throw new ParseJsonPayload(ExceptionUtils.getMessage(e), e);
+        } catch (IOException e) {
+            throw new ParseJsonPayload("Unable to parse JSON service payload: " + ExceptionUtils.getMessage(e), e);
+        } catch (Exception e) {
+            throw new ParseJsonPayload("Unhandled exception while parsing JSON service payload: " + ExceptionUtils.getMessage(e), e);
         }
-        throw new InstallException();
     }
 
     /**
@@ -157,29 +198,28 @@ public class QuickStartJsonServiceInstaller {
      *
      * @param serviceContainer    input {@link ServiceContainer service container pojo}. Mandatory and cannot be {@code null}.
      * @return {@link PublishedService service} object, never {@code null}.
-     * @throws InstallException if an error occurs while creating the {@link PublishedService service} object.
+     * @throws CreateServiceException if an error occurs while creating the {@link PublishedService service} object.
      */
     @NotNull
-    private PublishedService createService(@NotNull final ServiceContainer serviceContainer) throws InstallException {
+    private PublishedService createService(@NotNull final ServiceContainer serviceContainer) throws CreateServiceException {
         try {
             final PublishedService service = serviceBuilder.createService(serviceContainer);
             service.putProperty(QuickStartTemplateAssertion.PROPERTY_QS_CREATE_METHOD, String.valueOf(QuickStartTemplateAssertion.QsServiceCreateMethod.BOOTSTRAP));
             return service;
         } catch (QuickStartPolicyBuilderException e) {
-            logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            throw new CreateServiceException(ExceptionUtils.getMessage(e), e);
         } catch (FindException e) {
-            logger.log(Level.WARNING, "Unable to create service: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            throw new CreateServiceException("Unable to create service: " + ExceptionUtils.getMessage(e), e);
         }
-        throw new InstallException();
     }
 
     /**
      * Save the specified {@link PublishedService service} into the {@code Gateway}, using {@code Gateway} api i.e. {@link ServiceManager}.
      *
      * @param service    {@link PublishedService service} object to save. Mandatory and cannot be {@code null}.
-     * @throws InstallException if an error occurs while saving the {@link PublishedService service} into the {@code Gateway}.
+     * @throws SaveServiceException if an error occurs while saving the {@link PublishedService service} into the {@code Gateway}.
      */
-    private void saveService(@NotNull final PublishedService service) throws InstallException {
+    private void saveService(@NotNull final PublishedService service) throws SaveServiceException {
         final Policy policy = service.getPolicy();
         try {
             serviceManager.save(service);
@@ -188,8 +228,33 @@ public class QuickStartJsonServiceInstaller {
             }
             serviceManager.createRoles(service);
         } catch (ObjectModelException e) {
-            logger.log(Level.WARNING, "Unable to save service: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-            throw new InstallException();
+            throw new SaveServiceException("Unable to save service: " + ExceptionUtils.getMessage(e), e);
         }
+    }
+
+    /**
+     * Exception handler, which for now only loges the exception.
+     * <p/>
+     * Package visible for testing, should not be invoked from outside.
+     *
+     * @param level      level.  Mandatory and cannot be {@code null}.
+     * @param message    message.  Mandatory and cannot be {@code null}.
+     * @param e          exception. Optional and can be {@code null}.
+     */
+    @VisibleForTesting
+    void handleError(@NotNull final Level level, @NotNull final String message, @Nullable final Throwable e) {
+        logger.log(level, message, ExceptionUtils.getDebugException(e));
+    }
+
+    /**
+     * Convenient method with {@link Level#WARNING warning} level.
+     *
+     * @param message    message.  Mandatory and cannot be {@code null}.
+     * @param e          exception. Optional and can be {@code null}.
+     *
+     * @see #handleError(Level, String, Throwable)
+     */
+    private void handleError(@NotNull final String message, @Nullable final Throwable e) {
+        handleError(Level.WARNING, message, e);
     }
 }

@@ -12,7 +12,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @Ignore
-public class QuickStartTestBase {
+public abstract class QuickStartTestBase {
 
     protected static EncapsulatedAssertion mockEncapsulatedAssertion(final String name, final String description,
                                                            final String schema, final String sample) {

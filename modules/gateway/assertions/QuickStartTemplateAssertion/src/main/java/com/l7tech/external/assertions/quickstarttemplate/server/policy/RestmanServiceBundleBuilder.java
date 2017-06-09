@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.quickstarttemplate.server.policy;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.*;
@@ -68,7 +69,8 @@ public class RestmanServiceBundleBuilder {
         throw new IllegalArgumentException("Unsupported result class: " + resType.getName());
     }
 
-    private static final String PROPERTY_PREFIX = "property.";
+    @VisibleForTesting
+    static final String PROPERTY_PREFIX = "property.";
 
     /**
      * Utility method to create a RESTMan managed object from the specified {@code publishedService}
@@ -113,8 +115,10 @@ public class RestmanServiceBundleBuilder {
         return service;
     }
 
-    private static final String POLICY_TAG = "policy";
-    private static final String POLICY_TYPE = "policy";
+    @VisibleForTesting
+    static final String POLICY_TAG = "policy";
+    @VisibleForTesting
+    static final String POLICY_TYPE = "policy";
 
     @NotNull
     private ResourceSet buildPolicyResourceSet(@NotNull final Policy policy) {
