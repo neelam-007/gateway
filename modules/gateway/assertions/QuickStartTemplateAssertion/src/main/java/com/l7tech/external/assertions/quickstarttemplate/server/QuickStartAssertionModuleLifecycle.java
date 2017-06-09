@@ -1,8 +1,8 @@
 package com.l7tech.external.assertions.quickstarttemplate.server;
 
 import com.l7tech.external.assertions.quickstarttemplate.server.parser.QuickStartParser;
+import com.l7tech.external.assertions.quickstarttemplate.server.policy.OneTimeJsonServiceInstaller;
 import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStartEncapsulatedAssertionLocator;
-import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStartJsonServiceInstaller;
 import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStartPublishedServiceLocator;
 import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStartServiceBuilder;
 import com.l7tech.objectmodel.Goid;
@@ -29,7 +29,7 @@ public class QuickStartAssertionModuleLifecycle {
     private static QuickStartEncapsulatedAssertionLocator assertionLocator = null;
     private static QuickStartPublishedServiceLocator serviceLocator = null;
     private static QuickStartServiceBuilder serviceBuilder = null;
-    private static QuickStartJsonServiceInstaller jsonServiceInstaller = null;
+    private static OneTimeJsonServiceInstaller jsonServiceInstaller = null;
 
     @SuppressWarnings("unused")
     public static synchronized void onModuleLoaded(final ApplicationContext context) {
@@ -52,7 +52,7 @@ public class QuickStartAssertionModuleLifecycle {
         if (jsonServiceInstaller == null) {
             final ServiceManager serviceManager = context.getBean("serviceManager", ServiceManager.class);
             final PolicyVersionManager policyVersionManager = context.getBean("policyVersionManager", PolicyVersionManager.class);
-            jsonServiceInstaller = new QuickStartJsonServiceInstaller(serviceBuilder, serviceManager, policyVersionManager, new QuickStartParser());
+            jsonServiceInstaller = new OneTimeJsonServiceInstaller(serviceBuilder, serviceManager, policyVersionManager, new QuickStartParser());
         }
 
         //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -77,7 +77,7 @@ public class QuickStartAssertionModuleLifecycle {
     }
 
     /**
-     * Utility method that actually invokes {@link QuickStartJsonServiceInstaller#installJsonServices()} and
+     * Utility method that actually invokes {@link OneTimeJsonServiceInstaller#installJsonServices()} and
      * loges any exception thrown (though there shouldn't be any at this point).
      */
     private static void installJsonServices() {

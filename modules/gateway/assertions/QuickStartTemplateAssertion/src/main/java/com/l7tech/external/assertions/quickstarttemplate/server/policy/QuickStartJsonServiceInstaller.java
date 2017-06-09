@@ -29,7 +29,7 @@ import java.util.logging.Logger;
 import java.util.stream.StreamSupport;
 
 /**
- * Utility class for installing JSON file in the gatewa
+ * Utility class for installing JSON file in the gateway
  */
 public class QuickStartJsonServiceInstaller {
     private static final Logger logger = Logger.getLogger(QuickStartJsonServiceInstaller.class.getName());
