@@ -72,7 +72,7 @@ public abstract class AbstractEncapsulatedAssertionAction extends SecureAction {
                             SwingUtilities.invokeLater( new Runnable() {
                                 @Override
                                 public void run() {
-                                    TopComponents.getInstance().refreshPoliciesFolderNode();
+                                    TopComponents.getInstance().refreshPoliciesNode();
                                     TopComponents.getInstance().getTopParent().repaint();
                                 }
                             } );

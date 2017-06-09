@@ -52,7 +52,7 @@ public class RefreshTreeNodeAction extends RefreshAction {
             int index = model.getIndexOfChild(parent, node);
 
             rootNode.hasLoadedChildren = false;
-            model.reload();
+            model.reload(node);
 
             if (parent != null && index >= 0) {
                 TreeNode updatedNode = (TreeNode)model.getChild(parent, index);

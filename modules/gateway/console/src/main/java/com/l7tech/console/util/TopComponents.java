@@ -124,6 +124,10 @@ public class TopComponents {
         getMainWindow().refreshPoliciesFolderNode();
     }
 
+    public void refreshPoliciesNode() {
+        getMainWindow().refreshPoliciesNode();
+    }
+
     public void refreshEntitiesProtectionCache() {
         getMainWindow().refreshEntitiesProtectionCache();
     }
