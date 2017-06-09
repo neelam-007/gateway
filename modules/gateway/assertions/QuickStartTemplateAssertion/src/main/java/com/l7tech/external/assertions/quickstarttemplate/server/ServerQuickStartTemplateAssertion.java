@@ -12,6 +12,7 @@ import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.message.Message;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
@@ -45,6 +46,12 @@ public class ServerQuickStartTemplateAssertion extends AbstractMessageTargetable
     public ServerQuickStartTemplateAssertion(final QuickStartTemplateAssertion assertion, final ApplicationContext applicationContext) throws PolicyAssertionException {
         super(assertion);
         this.serviceBuilder = QuickStartAssertionModuleLifecycle.getServiceBuilder();
+
+        // TODO verify this - QuickStartAssertionModuleLifecycle.onModuleLoaded# is too early - "Error creating bean with name 'assertionRegistry': Requested bean is currently in creation: Is there an unresolvable circular reference?"
+        serviceBuilder.setAssertionRegistry(applicationContext.getBean("assertionRegistry", AssertionRegistry.class));
+
+        // TODO allow new (or override) of display to internal names (properties file or assertion UI)
+        // TODO allow new (or override) of supported assertion set (properties file or assertion UI)
     }
 
     public AssertionStatus doCheckRequest(final PolicyEnforcementContext context,

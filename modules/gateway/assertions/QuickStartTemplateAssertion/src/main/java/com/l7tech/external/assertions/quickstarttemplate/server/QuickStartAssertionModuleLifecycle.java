@@ -26,7 +26,7 @@ public class QuickStartAssertionModuleLifecycle {
     private static final Logger logger = Logger.getLogger(QuickStartAssertionModuleLifecycle.class.getName());
     private static final String PROVIDED_FRAGMENT_FOLDER_GOID = "2a97ddf9a6e77162832b9c27bc8f57e0";
 
-    private static QuickStartEncapsulatedAssertionLocator assertionLocator = null;
+    private static QuickStartEncapsulatedAssertionLocator assertionLocator = null;   // TODO rename these locators to something like GatewayManagerHolder?
     private static QuickStartPublishedServiceLocator serviceLocator = null;
     private static QuickStartServiceBuilder serviceBuilder = null;
     private static OneTimeJsonServiceInstaller jsonServiceInstaller = null;

@@ -13,8 +13,6 @@ import java.util.Map;
 import static com.l7tech.policy.assertion.AssertionMetadata.MODULE_LOAD_LISTENER_CLASSNAME;
 
 /**
- * PROOF-OF_CONCEPT!
- *
  * Make it easier to start using the Gateway without needing to learn how to write complex policy.
  * We explore how to use encapsulated assertions to help make policy format more compact and with less learning curve.
  * Explore how we can transfer the complexity burden to more experienced Gateway users ahead of time using encapsulated assertion templating.
@@ -57,7 +55,7 @@ public class QuickStartDocumentationAssertion extends MessageTargetableAssertion
         // Add to palette folder(s) 
         //   accessControl, transportLayerSecurity, xmlSecurity, xml, routing, 
         //   misc, audit, policyLogic, threatProtection 
-        meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "misc" });
+        meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "internalAssertions" });
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/Map16.gif");
 
         // Enable automatic policy advice (default is no advice unless a matching Advice subclass exists)

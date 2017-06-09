@@ -10,7 +10,9 @@ import com.l7tech.gateway.common.service.ServiceDocumentWsdlStrategy;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.folder.Folder;
+import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.Policy;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.EncapsulatedAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspWriter;
@@ -50,6 +52,11 @@ public class QuickStartServiceBuilder {
         this.mapper = new QuickStartMapper(assertionLocator);
     }
 
+    // TODO is there a better time in the assertion lifecycle to set assertion registry?
+    public void setAssertionRegistry(AssertionRegistry assertionRegistry) {
+        mapper.setAssertionRegistry(assertionRegistry);
+    }
+
     /**
      * Creates a new {@link PublishedService service} using the specified {@link ServiceContainer service JSON object} as source.
      *
@@ -62,7 +69,7 @@ public class QuickStartServiceBuilder {
     @NotNull
     public PublishedService createService(@NotNull final ServiceContainer serviceContainer) throws FindException, QuickStartPolicyBuilderException {
         final Service service = serviceContainer.service;
-        final List<EncapsulatedAssertion> encapsulatedAssertions = mapper.getEncapsulatedAssertions(service);
+        final List<Assertion> assertions = mapper.getAssertions(service);
 
         final PublishedService publishedService = new PublishedService();
         publishedService.setName(service.name);
@@ -79,7 +86,7 @@ public class QuickStartServiceBuilder {
         }
 
         publishedService.setHttpMethods(Sets.newHashSet(service.httpMethods));
-        generatePolicy(publishedService, encapsulatedAssertions);
+        generatePolicy(publishedService, assertions);
         publishedService.setTracingEnabled(false);
         publishedService.parseWsdlStrategy(new ServiceDocumentWsdlStrategy(null));
         try {
@@ -123,11 +130,11 @@ public class QuickStartServiceBuilder {
             publishedService.setGoid(goid);
         } else {
             final Service service = serviceContainer.service;
-            final List<EncapsulatedAssertion> encapsulatedAssertions = mapper.getEncapsulatedAssertions(service);
+            final List<Assertion> assertions = mapper.getAssertions(service);
             publishedService.setName(service.name);
             publishedService.setRoutingUri(service.gatewayUri);
             publishedService.setHttpMethods(Sets.newHashSet(service.httpMethods));
-            generatePolicy(publishedService, encapsulatedAssertions);
+            generatePolicy(publishedService, assertions);
         }
 
         return publishedService;
@@ -194,17 +201,17 @@ public class QuickStartServiceBuilder {
     /**
      * Utility method to generate the policy (from the ordered {@code encapsulatedAssertions}) for the specified {@code service}.
      *
-     * @param service                   the {@link PublishedService} for which we are going to generate the policy
-     * @param encapsulatedAssertions    ordered list of {@link EncapsulatedAssertion}'s to use as a source when generating the policy
+     * @param service       the {@link PublishedService} for which we are going to generate the policy
+     * @param assertions    ordered list of {@link Assertion}'s to use as a source when generating the policy
      */
-    private static void generatePolicy(@NotNull final PublishedService service, @NotNull final List<EncapsulatedAssertion> encapsulatedAssertions) {
+    private static void generatePolicy(@NotNull final PublishedService service, @NotNull final List<Assertion> assertions) {
         final Policy policy = service.getPolicy();
         assert policy != null;
         if (policy.getGuid() == null) {
             policy.setGuid(UUID.randomUUID().toString());
         }
         final AllAssertion allAss = new AllAssertion();
-        encapsulatedAssertions.forEach(allAss::addChild);
+        assertions.forEach(allAss::addChild);
         policy.setXml(WspWriter.getPolicyXml(allAss));
     }
 }

@@ -99,7 +99,7 @@ public class QuickStartTemplateAssertion extends MessageTargetableAssertion impl
         // Add to palette folder(s) 
         //   accessControl, transportLayerSecurity, xmlSecurity, xml, routing, 
         //   misc, audit, policyLogic, threatProtection 
-        meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "misc" });
+        meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "internalAssertions" });
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/Map16.gif");
 
         // Enable automatic policy advice (default is no advice unless a matching Advice subclass exists)

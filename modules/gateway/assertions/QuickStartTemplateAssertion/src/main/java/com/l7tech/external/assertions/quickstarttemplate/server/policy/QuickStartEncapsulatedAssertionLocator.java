@@ -4,7 +4,9 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.objectmodel.folder.Folder;
+import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.Policy;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.EncapsulatedAssertion;
 import com.l7tech.server.folder.FolderManager;
 import com.l7tech.server.policy.EncapsulatedAssertionConfigManager;
@@ -18,10 +20,11 @@ import java.util.stream.Collectors;
 /**
  * A class to find and return encapsulated assertions for use in Quick Start.
  */
-public class QuickStartEncapsulatedAssertionLocator {
+public class QuickStartEncapsulatedAssertionLocator {  //TODO rename to QuickStartAssertionLocator (no longer just encass)
     private final EncapsulatedAssertionConfigManager encassConfigManager;
     private final FolderManager folderManager;
     private final Goid quickStartProvidedAssertionFolder;
+    private AssertionRegistry assertionRegistry;
 
     public QuickStartEncapsulatedAssertionLocator(@NotNull final EncapsulatedAssertionConfigManager encassConfigManager,
                                                   @NotNull final FolderManager folderManager,
@@ -29,6 +32,11 @@ public class QuickStartEncapsulatedAssertionLocator {
         this.encassConfigManager = encassConfigManager;
         this.folderManager = folderManager;
         this.quickStartProvidedAssertionFolder = quickStartProvidedAssertionFolder;
+    }
+
+    // TODO is there a better time in the assertion lifecycle to set assertion registry?
+    public void setAssertionRegistry(AssertionRegistry assertionRegistry) {
+        this.assertionRegistry = assertionRegistry;
     }
 
     @Nullable
@@ -39,6 +47,12 @@ public class QuickStartEncapsulatedAssertionLocator {
             return new EncapsulatedAssertion(encassConfig);
         }
         return null;
+    }
+
+    @Nullable
+    public Assertion findAssertion(@NotNull final String name) {
+        final Assertion assertion = assertionRegistry.findByExternalName(name);
+        return assertion == null ? null : assertion.getCopy();   // don't mess with registry's copy
     }
 
     @NotNull
