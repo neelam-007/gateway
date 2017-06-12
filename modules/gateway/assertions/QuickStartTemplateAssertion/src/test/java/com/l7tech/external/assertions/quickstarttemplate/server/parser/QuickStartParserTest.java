@@ -100,6 +100,34 @@ public class QuickStartParserTest {
     }
 
     @Test(expected = JsonMappingException.class)
+    public void parseJsonMissingName() throws Exception {
+        final InputStream is = new ByteArrayInputStream(("{\n" +
+                "  \"Service\": {\n" +
+                "    \"gatewayUri\": \"/MyService1\",\n" +
+                "    \"httpMethods\": [ \"get\", \"put\" ],\n" +
+                "    \"policy\": [\n" +
+                "      {\n" +
+                "        \"RequireSSL\" : {\n" +
+                "          \"clientCert\": \"optional\"\n" +
+                "        }\n" +
+                "      },\n" +
+                "      {\n" +
+                "        \"Cors\" : {}\n" +
+                "      },\n" +
+                "      {\n" +
+                "        \"RateLimit\" : {\n" +
+                "          \"maxRequestsPerSecond\": 250,\n" +
+                "          \"hardLimit\": true,\n" +
+                "          \"counterName\": \"RateLimit-${request.clientId}-b0938b7ad6ff\"\n" +
+                "        }\n" +
+                "      }\n" +
+                "    ]\n" +
+                "  }\n" +
+                "}").getBytes("UTF-8"));
+        fixture.parseJson(is);
+    }
+
+    @Test(expected = JsonMappingException.class)
     public void parseJsonMissingHttpMethods() throws Exception {
         final InputStream is = new ByteArrayInputStream(("{\n" +
                 "  \"Service\": {\n" +
