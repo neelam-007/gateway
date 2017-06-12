@@ -198,6 +198,8 @@ public class LogMessageToSysLogAssertion extends Assertion implements UsesVariab
 //        meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
+        meta.put(AssertionMetadata.MODULE_LOAD_LISTENER_CLASSNAME,
+                "com.l7tech.external.assertions.logmessagetosyslog.server.LogMessageToSysLogModuleLoadListener");
         return meta;
     }
 }
