@@ -6,7 +6,7 @@
 preModule userdata
 
 #Define and create output folders
-USERDATA_DIR="${ALL_MODULES_BASE_OUTPUT_DIR}"/sensitive/userdata
+USERDATA_DIR="${BASE_OUTPUT_DIR}"/sensitive/userdata
 mkdir -p "${USERDATA_DIR}"
 
 if [ -w "${USERDATA_DIR}" ]
