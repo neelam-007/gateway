@@ -155,10 +155,6 @@ public class LogMessageToSysLogExternalReference extends ExternalReference {
     @Override
     protected boolean localizeAssertion(@Nullable Assertion assertionToLocalize) {
         logger.log(Level.SEVERE, "lmtslER: localize it now!");
-        if (localizeType == LocalizeAction.DELETE) {
-            logger.info("Deleted this assertion from the tree.");
-            return false;
-        }
         if (localizeType != LocalizeAction.IGNORE) {
             if (assertionToLocalize instanceof LogMessageToSysLogAssertion) {
                 final LogMessageToSysLogAssertion logMessageToSysLogAssertion = (LogMessageToSysLogAssertion) assertionToLocalize;
@@ -166,6 +162,9 @@ public class LogMessageToSysLogExternalReference extends ExternalReference {
                 if (sinkId != null) {
                     if (localizeType == LocalizeAction.REPLACE) {
                         logMessageToSysLogAssertion.setSyslogGoid(this.goid);
+                    } else if (localizeType == LocalizeAction.DELETE) {
+                        logger.info("Deleted this assertion from the tree.");
+                        return false;
                     }
                 }
             }

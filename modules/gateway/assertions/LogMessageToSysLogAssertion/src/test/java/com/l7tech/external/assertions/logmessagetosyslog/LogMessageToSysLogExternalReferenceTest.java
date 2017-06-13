@@ -7,6 +7,7 @@ import com.l7tech.gateway.common.log.SinkConfiguration;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.exporter.ExternalReferenceFinder;
+import com.l7tech.util.InvalidDocumentFormatException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -35,27 +36,41 @@ public class LogMessageToSysLogExternalReferenceTest {
     private static final String REFERENCES_END =
             "</exp:References>";
 
+    private static final String SINK_NAME = "syslogwrite_test12345";
+    private static final String SINK_DESC = "abc12345";
+    private static final String SINK_TYPE = "SYSLOG";
+    private static final String SINK_SEVR = "ALL";
+
+    private static final String REF_EL_GOID_MATCH_VARS =
+            "    <LogMessageToSysLogExternalReference RefType=\"com.l7tech.external.assertions.logmessagetosyslog.LogMessageToSysLogExternalReference\">\n" +
+            "        <GOID>00000000000000010000000000000000</GOID>\n" +
+            "        <LogSinkName>"+SINK_NAME+"</LogSinkName>\n" +
+            "        <LogSinkDescription>"+SINK_DESC+"</LogSinkDescription>\n" +
+            "        <LogSinkType>"+SINK_TYPE+"</LogSinkType>\n" +
+            "        <LogSinkSeverity>"+SINK_SEVR+"</LogSinkSeverity>\n" +
+            "    </LogMessageToSysLogExternalReference>\n";
+
+    private static final String REF_EL_GOID_MATCH_VARS_MALFORMED =
+            "    <LogMessageToSysLogExternalReference RefType=\"com.l7tech.external.assertions.logmessagetosyslog.LogMessageToSysLogExternalReference\">\n" +
+            "        <GOID>00000000000000010000000000000000</GOID>\n" +
+            // "        <LogSinkName>"+SINK_NAME+"</LogSinkName>\n" +
+            "        <LogSinkDescription>"+SINK_DESC+"</LogSinkDescription>\n" +
+            "        <LogSinkType>"+SINK_TYPE+"</LogSinkType>\n" +
+            "        <LogSinkSeverity>"+SINK_SEVR+"</LogSinkSeverity>\n" +
+            "    </LogMessageToSysLogExternalReference>\n";
+
+    private static final String REF_EL_GOID_MATCH_VARS_WRONG_ASSERTION =
+            "    <SiteMinderConfigurationReference RefType=\"com.l7tech.external.assertions.siteminder.SiteMinderExternalReference\">\n" +
+            "        <GOID>00000000000000010000000000000000</GOID>\n" +
+            "        <LogSinkName>"+SINK_NAME+"</LogSinkName>\n" +
+            "        <LogSinkDescription>"+SINK_DESC+"</LogSinkDescription>\n" +
+            "        <LogSinkType>"+SINK_TYPE+"</LogSinkType>\n" +
+            "        <LogSinkSeverity>"+SINK_SEVR+"</LogSinkSeverity>\n" +
+            "    </SiteMinderConfigurationReference>\n";
+
     private static final String REF_EL_GOID_MATCH =
             "    <LogMessageToSysLogExternalReference RefType=\"com.l7tech.external.assertions.logmessagetosyslog.LogMessageToSysLogExternalReference\">\n" +
             "        <GOID>00000000000000010000000000000000</GOID>\n" +
-            "        <LogSinkName>syslogwrite_test</LogSinkName>\n" +
-            "        <LogSinkDescription>abc</LogSinkDescription>\n" +
-            "        <LogSinkType>SYSLOG</LogSinkType>\n" +
-            "        <LogSinkSeverity>ALL</LogSinkSeverity>\n" +
-            "    </LogMessageToSysLogExternalReference>\n";
-
-    private static final String REF_EL_NAME_TYPE_MATCH =
-            "    <LogMessageToSysLogExternalReference RefType=\"com.l7tech.external.assertions.logmessagetosyslog.LogMessageToSysLogExternalReference\">\n" +
-            "        <GOID>f5417f19de8ed6d5f1b25cbee2be2684</GOID>\n" +
-            "        <LogSinkName>syslogwrite_test</LogSinkName>\n" +
-            "        <LogSinkDescription>abc</LogSinkDescription>\n" +
-            "        <LogSinkType>SYSLOG</LogSinkType>\n" +
-            "        <LogSinkSeverity>ALL</LogSinkSeverity>\n" +
-            "    </LogMessageToSysLogExternalReference>\n";
-
-    private static final String REF_EL_NO_MATCH =
-            "    <LogMessageToSysLogExternalReference RefType=\"com.l7tech.external.assertions.logmessagetosyslog.LogMessageToSysLogExternalReference\">\n" +
-            "        <GOID>f5417f19de8ed6d5f1b25cbee2be2684</GOID>\n" +
             "        <LogSinkName>syslogwrite_test</LogSinkName>\n" +
             "        <LogSinkDescription>abc</LogSinkDescription>\n" +
             "        <LogSinkType>SYSLOG</LogSinkType>\n" +
@@ -186,10 +201,12 @@ public class LogMessageToSysLogExternalReferenceTest {
 
     @Test
     public void testLocalizeAssertionWithDelete() throws Exception {
-        LogMessageToSysLogAssertion assertion = new LogMessageToSysLogAssertion();
+        LogMessageToSysLogAssertion mockAssertion = mock(LogMessageToSysLogAssertion.class);
+        when(mockAssertion.getSyslogGoid()).thenReturn(new Goid(0,0));
+
         fixture.setLocalizeDelete();
 
-        Boolean res = fixture.localizeAssertion(assertion);
+        Boolean res = fixture.localizeAssertion(mockAssertion);
 
         assertFalse(res);
     }
@@ -205,5 +222,32 @@ public class LogMessageToSysLogExternalReferenceTest {
         assertEquals(goid.toString(), fixture.getRefId());
         assertEquals("00000000000000000000000000000001", fixture.getRefId());
         assertTrue(res);
+    }
+
+    @Test
+    public void testStaticParseNormalCase() throws Exception {
+        LogMessageToSysLogExternalReference reference = LogMessageToSysLogExternalReference.parseFromElement(finder, XmlUtil.parse(REF_EL_GOID_MATCH_VARS).getDocumentElement());
+        assert reference != null;
+        assertEquals(SINK_NAME, reference.getLogSinkName());
+        assertEquals(SINK_DESC, reference.getLogSinkDescription());
+        assertEquals(SINK_TYPE, reference.getLogSinkType().toString());
+        assertEquals(SINK_SEVR, reference.getLogSinkSeverity().toString());
+        System.out.println(reference.getLogSinkName());
+    }
+
+    @Test
+    public void testStaticParseMissingFieldCase() throws Exception {
+        LogMessageToSysLogExternalReference reference = LogMessageToSysLogExternalReference.parseFromElement(finder, XmlUtil.parse(REF_EL_GOID_MATCH_VARS_MALFORMED).getDocumentElement());
+        assert reference != null;
+        assertEquals(null, reference.getLogSinkName());
+        assertEquals(SINK_DESC, reference.getLogSinkDescription());
+        assertEquals(SINK_TYPE, reference.getLogSinkType().toString());
+        assertEquals(SINK_SEVR, reference.getLogSinkSeverity().toString());
+        System.out.println(reference.getLogSinkName());
+    }
+
+    @Test(expected = InvalidDocumentFormatException.class)
+    public void testStaticParseWrongAssertionCase() throws Exception {
+        LogMessageToSysLogExternalReference reference = LogMessageToSysLogExternalReference.parseFromElement(finder, XmlUtil.parse(REF_EL_GOID_MATCH_VARS_WRONG_ASSERTION).getDocumentElement());
     }
 }

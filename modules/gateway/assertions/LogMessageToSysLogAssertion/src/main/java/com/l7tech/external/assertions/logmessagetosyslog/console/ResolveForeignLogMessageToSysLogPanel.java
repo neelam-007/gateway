@@ -49,6 +49,11 @@ public class ResolveForeignLogMessageToSysLogPanel extends WizardStepPanel {
     }
 
     @Override
+    public boolean canFinish() {
+        return !hasNextPanel();
+    }
+
+    @Override
     public String getStepLabel() {
         return "Unresolved Log Message to Syslog log sink";
     }
