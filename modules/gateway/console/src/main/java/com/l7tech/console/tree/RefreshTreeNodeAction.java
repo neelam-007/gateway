@@ -53,10 +53,9 @@ public class RefreshTreeNodeAction extends RefreshAction {
 
             rootNode.hasLoadedChildren = false;
 
-            if(!isMultipleSelection) {
+            if (!isMultipleSelection) {
                 model.reload(node);
-            }
-            else {
+            } else {
                 model.reload();
             }
 
