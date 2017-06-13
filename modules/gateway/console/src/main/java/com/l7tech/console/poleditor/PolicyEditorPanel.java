@@ -693,7 +693,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         policyTree.getSelectionModel().addTreeSelectionListener(ClipboardActions.getTreeUpdateListener());
         policyTreePane = new NumberedPolicyTreePane(policyTree);
         policyTreePane.setNumbersVisible(Boolean.parseBoolean(getTabSettingFromPolicyTabProperty(POLICY_TAB_PROPERTY_ASSERTION_SHOW_NUMBERS,
-            SHOW_ASSERTION_NUMBERS, "false", getPolicyGoid(), getVersionNumber())));
+            SHOW_ASSERTION_NUMBERS, Boolean.toString(preferences.showAssertionNumbers()), getPolicyGoid(), getVersionNumber())));
         return policyTreePane;
     }
 
@@ -2414,7 +2414,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
                 private boolean isShowing(){
                     final String showState = getTabSettingFromPolicyTabProperty(POLICY_TAB_PROPERTY_ASSERTION_SHOW_COMMENTS,
-                        SHOW_COMMENTS, null, getPolicyGoid(), getVersionNumber());
+                        SHOW_COMMENTS, Boolean.toString(preferences.showComments()), getPolicyGoid(), getVersionNumber());
                     return Boolean.parseBoolean(showState);
                 }
             };

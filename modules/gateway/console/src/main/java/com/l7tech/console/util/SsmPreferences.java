@@ -45,6 +45,10 @@ public interface SsmPreferences {
 
     String ENABLE_POLICY_VALIDATION_ID = "enable.policy.validation";
 
+    String ENABLE_SHOW_ASSERTION_NUMBERS = "enable.show.assertion.numbers";
+
+    String ENABLE_SHOW_COMMENTS = "enable.show.comments";
+
     /*
     * key for value for how many ssg url's the Manager remembers 
     * */
@@ -333,6 +337,20 @@ public interface SsmPreferences {
      * @return the 'remember login ID' value as boolean.
      */
     boolean rememberLoginId();
+
+    /**
+     * Returns the show comments property value.
+     *
+     * @return if the 'show comments' is enabled.
+     */
+    boolean showComments();
+
+    /**
+     * Returns the show assertion numbers property value.
+     *
+     * @return if the 'show assertion numbers' is enabled.
+     */
+    boolean showAssertionNumbers();
 
     /**
      * Returns the shortcut bar  visible propery value.

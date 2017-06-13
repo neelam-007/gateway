@@ -51,6 +51,8 @@ public class PreferencesDialog extends JDialog {
     private JRadioButton scrollTabsRadioButton;
     private JPanel settingsPane;
     private JPanel buttonsPane;
+    private JCheckBox showCommentsCheckBox;
+    private JCheckBox showAssertionNumbersCheckBox;
 
     /** preferences instance */
     private Properties props;
@@ -137,6 +139,52 @@ public class PreferencesDialog extends JDialog {
                     getPreferences().
                         setProperty(SsmPreferences.ENABLE_POLICY_VALIDATION_ID,
                             (Boolean.valueOf(((JCheckBox) e.getSource()).isSelected())).toString());
+                } catch (IOException ex) {
+                    // swallow
+                }
+            }
+        });
+
+        // new in 9.3 checkbox to turn on/off show comments
+        try {
+            String sb = getPreferences().getProperty(SsmPreferences.ENABLE_SHOW_COMMENTS);
+            boolean b = Boolean.valueOf(sb);
+
+            showCommentsCheckBox.setSelected(b);
+        } catch (IOException e) {
+            log.log(Level.WARNING, "initComponents()", e);
+        }
+
+        showCommentsCheckBox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    getPreferences().
+                            setProperty(SsmPreferences.ENABLE_SHOW_COMMENTS,
+                                    (Boolean.valueOf(((JCheckBox) e.getSource()).isSelected())).toString());
+                } catch (IOException ex) {
+                    // swallow
+                }
+            }
+        });
+
+        // new in 9.3 checkbox to turn on/off show assertion number
+        try {
+            String sb = getPreferences().getProperty(SsmPreferences.ENABLE_SHOW_ASSERTION_NUMBERS);
+            boolean b = Boolean.valueOf(sb);
+
+            showAssertionNumbersCheckBox.setSelected(b);
+        } catch (IOException e) {
+            log.log(Level.WARNING, "initComponents()", e);
+        }
+
+        showAssertionNumbersCheckBox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    getPreferences().
+                            setProperty(SsmPreferences.ENABLE_SHOW_ASSERTION_NUMBERS,
+                                    (Boolean.valueOf(((JCheckBox) e.getSource()).isSelected())).toString());
                 } catch (IOException ex) {
                     // swallow
                 }
