@@ -59,7 +59,15 @@ function usage
     echo -e "\n[-h help]"
     echo -e "\n[-s]"
     echo "Include sensitive data such as /etc/passwd."
-    echo
+    echo -e "\nExamples:"
+    echo -e "\ncollect data from all modules"
+    echo "  ./collect.sh -a"
+    echo -e "\ncollect data from the gateway module"
+    echo "  ./collect.sh -m gateway"
+    echo -e "\ncollect a heap dump"
+    echo "  ./collect.sh -D"
+    echo -e "\ncollect data from all modules including a heap dump and sensitive data and output the files to /tmp"
+    echo "  ./collect.sh -a -D -s -f /tmp"
 }
 
 # Prevent unintentional overwriting of past results.
