@@ -86,9 +86,7 @@ public class LogMessageToSysLogExternalReferenceTest {
     private Goid goid;
     private SinkConfiguration mockSinkConfiguration;
 
-
     @Before
-    @PrepareForTest(Registry.class)
     public void setUp() throws Exception {
         mockSinkConfiguration = new SinkConfiguration();
         mockSinkConfiguration.setGoid(new Goid(1, 0)); // 00000000000000010000000000000000
