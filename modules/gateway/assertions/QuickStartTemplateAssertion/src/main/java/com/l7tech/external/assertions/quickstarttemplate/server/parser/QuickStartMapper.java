@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.quickstarttemplate.server.parser;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStartEncapsulatedAssertionLocator;
 import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStartPolicyBuilderException;
@@ -28,7 +29,7 @@ public class QuickStartMapper {
     private static final Logger logger = Logger.getLogger(QuickStartMapper.class.getName());
 
     // allowed assertions (does not include encasses, all encasses allowed)
-    private static final HashSet<String> supportedAssertionNames = new HashSet<>(8);
+    private static final HashSet<String> supportedAssertionNames = new HashSet<>(9);
     static {
         supportedAssertionNames.add("CodeInjectionProtection");   // TODO handle setProtections(array) e.g. "Protections" : ["htmlJavaScriptInjection", "phpEvalInjection"]
         supportedAssertionNames.add("CORS");
@@ -53,27 +54,6 @@ public class QuickStartMapper {
     // TODO is there a better time in the assertion lifecycle to set assertion registry?
     public void setAssertionRegistry(AssertionRegistry assertionRegistry) {
         assertionLocator.setAssertionRegistry(assertionRegistry);
-    }
-    /**
-     * For each name
-     *    - look up encass by name to get guid
-     *    - if applicable set encass argument(s)
-     */
-    @NotNull
-    public List<EncapsulatedAssertion> getEncapsulatedAssertions(@NotNull final Service service)
-            throws QuickStartPolicyBuilderException, FindException {
-        final List<EncapsulatedAssertion> encapsulatedAssertions = new ArrayList<>();
-        for (final Map<String, Map<String, ?>> policyMap : service.policy) {
-            // We know there is only one thing in this map, we've previously validated this.
-            final String name = policyMap.keySet().iterator().next();
-            final EncapsulatedAssertion encapsulatedAssertion = assertionLocator.findEncapsulatedAssertion(name);
-            if (encapsulatedAssertion == null) {
-                throw new QuickStartPolicyBuilderException("Unable to find encapsulated assertion template named : " + name);
-            }
-            setEncassArguments(encapsulatedAssertion, policyMap.get(name));
-            encapsulatedAssertions.add(encapsulatedAssertion);
-        }
-        return encapsulatedAssertions;
     }
 
     /**

@@ -8,9 +8,11 @@ import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStar
 import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStartPolicyBuilderException;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
+import com.l7tech.policy.AssertionRegistry;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.EncapsulatedAssertion;
 import com.l7tech.policy.variable.DataType;
-import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -37,10 +39,15 @@ public class QuickStartMapperTest {
     @InjectMocks
     private QuickStartMapper fixture;
 
+    @BeforeClass
+    public static void init() throws Exception {
+        AssertionRegistry.installEnhancedMetadataDefaults();
+    }
+
     @Test
-    public void getEncapsulatedAssertionsShouldReturnEmptyList() throws Exception {
+    public void getAssertionsShouldReturnEmptyList() throws Exception {
         final Service service = mockService();
-        final List<EncapsulatedAssertion> assertions = fixture.getEncapsulatedAssertions(service);
+        final List<Assertion> assertions = fixture.getAssertions(service);
         assertThat(assertions.size(), equalTo(0));
     }
 
@@ -49,9 +56,9 @@ public class QuickStartMapperTest {
         final Service service = mockService(
                 mockPolicy("SomeAssertion", ImmutableMap.of("someKey", "someValue"))
         );
-        final EncapsulatedAssertion ea1 = mockAssertion(ImmutableMap.of("someKey", DataType.STRING));
+        final EncapsulatedAssertion ea1 = mockEncapsulatedAssertion(ImmutableMap.of("someKey", DataType.STRING));
         when(locator.findEncapsulatedAssertion("SomeAssertion")).thenReturn(ea1);
-        final List<EncapsulatedAssertion> assertions = fixture.getEncapsulatedAssertions(service);
+        final List<Assertion> assertions = fixture.getAssertions(service);
         assertThat(assertions, contains(ea1));
         verify(ea1).putParameter("someKey", "someValue");
     }
@@ -61,9 +68,9 @@ public class QuickStartMapperTest {
         final Service service = mockService(
                 mockPolicy("SomeAssertion", ImmutableMap.of("someKey", true))
         );
-        final EncapsulatedAssertion ea1 = mockAssertion(ImmutableMap.of("someKey", DataType.BOOLEAN));
+        final EncapsulatedAssertion ea1 = mockEncapsulatedAssertion(ImmutableMap.of("someKey", DataType.BOOLEAN));
         when(locator.findEncapsulatedAssertion("SomeAssertion")).thenReturn(ea1);
-        final List<EncapsulatedAssertion> assertions = fixture.getEncapsulatedAssertions(service);
+        final List<Assertion> assertions = fixture.getAssertions(service);
         assertThat(assertions, contains(ea1));
         verify(ea1).putParameter("someKey", "true");
     }
@@ -73,9 +80,9 @@ public class QuickStartMapperTest {
         final Service service = mockService(
                 mockPolicy("SomeAssertion", ImmutableMap.of("someKey", 42))
         );
-        final EncapsulatedAssertion ea1 = mockAssertion(ImmutableMap.of("someKey", DataType.INTEGER));
+        final EncapsulatedAssertion ea1 = mockEncapsulatedAssertion(ImmutableMap.of("someKey", DataType.INTEGER));
         when(locator.findEncapsulatedAssertion("SomeAssertion")).thenReturn(ea1);
-        final List<EncapsulatedAssertion> assertions = fixture.getEncapsulatedAssertions(service);
+        final List<Assertion> assertions = fixture.getAssertions(service);
         assertThat(assertions, contains(ea1));
         verify(ea1).putParameter("someKey", "42");
     }
@@ -85,9 +92,9 @@ public class QuickStartMapperTest {
         final Service service = mockService(
                 mockPolicy("SomeAssertion", ImmutableMap.of("someKey", Lists.newArrayList("hi", 13, true)))
         );
-        final EncapsulatedAssertion ea1 = mockAssertion(ImmutableMap.of("someKey", DataType.STRING));
+        final EncapsulatedAssertion ea1 = mockEncapsulatedAssertion(ImmutableMap.of("someKey", DataType.STRING));
         when(locator.findEncapsulatedAssertion("SomeAssertion")).thenReturn(ea1);
-        final List<EncapsulatedAssertion> assertions = fixture.getEncapsulatedAssertions(service);
+        final List<Assertion> assertions = fixture.getAssertions(service);
         assertThat(assertions, contains(ea1));
         verify(ea1).putParameter("someKey", "hi;13;true");
     }
@@ -97,9 +104,9 @@ public class QuickStartMapperTest {
         final Service service = mockService(
                 mockPolicy("SomeAssertion", ImmutableMap.of())
         );
-        final EncapsulatedAssertion ea1 = mockAssertion(ImmutableMap.of());
+        final EncapsulatedAssertion ea1 = mockEncapsulatedAssertion(ImmutableMap.of());
         when(locator.findEncapsulatedAssertion("SomeAssertion")).thenReturn(ea1);
-        final List<EncapsulatedAssertion> assertions = fixture.getEncapsulatedAssertions(service);
+        final List<Assertion> assertions = fixture.getAssertions(service);
         assertThat(assertions, contains(ea1));
         verify(ea1, never()).putParameter(anyString(), anyString());
     }
@@ -109,9 +116,9 @@ public class QuickStartMapperTest {
         final Service service = mockService(
                 mockPolicy("SomeAssertion", ImmutableMap.of("someKey", Lists.newArrayList("somParameter")))
         );
-        final EncapsulatedAssertion ea1 = mockAssertion(ImmutableMap.of());
+        final EncapsulatedAssertion ea1 = mockEncapsulatedAssertion(ImmutableMap.of());
         when(locator.findEncapsulatedAssertion("SomeAssertion")).thenReturn(ea1);
-        fixture.getEncapsulatedAssertions(service);
+        fixture.getAssertions(service);
     }
 
     @Test
@@ -119,11 +126,11 @@ public class QuickStartMapperTest {
         final Service service = mockService(
                 mockPolicy("SomeAssertion", ImmutableMap.of("someKey", "someValue"))
         );
-        final EncapsulatedAssertion ea1 = mockAssertion(ImmutableMap.of(
+        final EncapsulatedAssertion ea1 = mockEncapsulatedAssertion(ImmutableMap.of(
                 "someKey", DataType.STRING,
                 "someOtherKey", DataType.STRING));
         when(locator.findEncapsulatedAssertion("SomeAssertion")).thenReturn(ea1);
-        final List<EncapsulatedAssertion> assertions = fixture.getEncapsulatedAssertions(service);
+        final List<Assertion> assertions = fixture.getAssertions(service);
         assertThat(assertions, contains(ea1));
         verify(ea1).putParameter("someKey", "someValue");
         verify(ea1, never()).putParameter(eq("someOtherKey"), anyString());
@@ -135,7 +142,7 @@ public class QuickStartMapperTest {
                 mockPolicy("SomeAssertion", ImmutableMap.of("someKey", "someValue"))
         );
         when(locator.findEncapsulatedAssertion("SomeAssertion")).thenReturn(null);
-        fixture.getEncapsulatedAssertions(service);
+        fixture.getAssertions(service);
     }
 
     // TODO add unit tests
@@ -148,7 +155,7 @@ public class QuickStartMapperTest {
         return ImmutableMap.of(name, attributes);
     }
 
-    private static EncapsulatedAssertion mockAssertion(final Map<String, DataType> descriptorMap) {
+    private static EncapsulatedAssertion mockEncapsulatedAssertion(final Map<String, DataType> descriptorMap) {
         final Set<EncapsulatedAssertionArgumentDescriptor> descriptors =
                 descriptorMap.entrySet().stream().map(e -> mockDescriptor(e.getKey(), e.getValue())).collect(Collectors.toSet());
         final EncapsulatedAssertionConfig config = mock(EncapsulatedAssertionConfig.class);
