@@ -25,7 +25,6 @@ import java.util.logging.Logger;
 public class LogMessageToSysLogExternalReference extends ExternalReference {
     public static final String El_NAME_REF = "LogMessageToSysLogExternalReference";
     public static final String EL_NAME_GOID = "GOID";
-    // public static final String EL_NAME_OLD_OID = "OID";
     public static final String EL_NAME_LOG_SINK_NAME = "LogSinkName";
     public static final String EL_NAME_LOG_SINK_DESCRIPTION = "LogSinkDescription";
     public static final String EL_NAME_LOG_SINK_TYPE = "LogSinkType";
@@ -49,6 +48,7 @@ public class LogMessageToSysLogExternalReference extends ExternalReference {
     public LogMessageToSysLogExternalReference(ExternalReferenceFinder finder, final Goid sinkId) {
         this(finder);
         goid = sinkId;
+
         try {
             SinkConfiguration sinkConfiguration = logSinkAdmin.getSinkConfigurationByPrimaryKey(goid);
 
@@ -80,6 +80,11 @@ public class LogMessageToSysLogExternalReference extends ExternalReference {
 
     public SinkConfiguration.SeverityThreshold getLogSinkSeverity() {
         return logSinkSeverity;
+    }
+
+    @Override
+    public String getRefId() {
+        return goid.toString();
     }
 
     @Override
@@ -150,6 +155,10 @@ public class LogMessageToSysLogExternalReference extends ExternalReference {
     @Override
     protected boolean localizeAssertion(@Nullable Assertion assertionToLocalize) {
         logger.log(Level.SEVERE, "lmtslER: localize it now!");
+        if (localizeType == LocalizeAction.DELETE) {
+            logger.info("Deleted this assertion from the tree.");
+            return false;
+        }
         if (localizeType != LocalizeAction.IGNORE) {
             if (assertionToLocalize instanceof LogMessageToSysLogAssertion) {
                 final LogMessageToSysLogAssertion logMessageToSysLogAssertion = (LogMessageToSysLogAssertion) assertionToLocalize;
@@ -157,9 +166,6 @@ public class LogMessageToSysLogExternalReference extends ExternalReference {
                 if (sinkId != null) {
                     if (localizeType == LocalizeAction.REPLACE) {
                         logMessageToSysLogAssertion.setSyslogGoid(this.goid);
-                    } else if (localizeType == LocalizeAction.DELETE) {
-                        logger.info("Deleted this assertion from the tree.");
-                        return false;
                     }
                 }
             }
