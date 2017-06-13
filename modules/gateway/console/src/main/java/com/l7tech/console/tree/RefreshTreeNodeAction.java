@@ -51,11 +51,10 @@ public class RefreshTreeNodeAction extends RefreshAction {
             TreeNode parent = node.getParent();
             int index = model.getIndexOfChild(parent, node);
 
-            rootNode.hasLoadedChildren = false;
-
             if (!isMultipleSelection) {
                 model.reload(node);
             } else {
+                rootNode.hasLoadedChildren = false;
                 model.reload();
             }
 
