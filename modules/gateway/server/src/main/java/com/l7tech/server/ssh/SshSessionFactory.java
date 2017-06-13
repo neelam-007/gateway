@@ -84,7 +84,7 @@ public class SshSessionFactory implements KeyedPoolableObjectFactory<SshSessionK
             final FingerprintCheckingHostKeyRepository hostKeyRepository = new FingerprintCheckingHostKeyRepository(jsch);
             jsch.setHostKeyRepository(hostKeyRepository);
             //add the fingerprint to the host key repository.
-            hostKeyRepository.add(sshSessionKey.getHost(), sshSessionKey.getFingerPrint());
+            hostKeyRepository.add(sshSessionKey.getHost(), sshSessionKey.getPort(), sshSessionKey.getFingerPrint());
         } else {
             //if no fingerprint is provided we need to turn off strict host key checking.
             session.setConfig("StrictHostKeyChecking", "no");
@@ -247,13 +247,19 @@ public class SshSessionFactory implements KeyedPoolableObjectFactory<SshSessionK
         }
 
         /**
-         * This will add a fingerprint to the repository for the given host.
+         * This will add a fingerprint to the repository for the given host and port.
          *
-         * @param host        The host the the fingerprint belongs to
+         * @param host        The host the fingerprint belongs to
+         * @param port        The port the fingerprint belongs to
          * @param fingerprint The fingerprint of the host.
          */
-        public void add(String host, String fingerprint) {
-            hostFingerPrints.put(host, fingerprint);
+        public void add(String host, int port, String fingerprint) {
+            if (port == 22) {
+                hostFingerPrints.put(host, fingerprint);
+            } else {
+                // For non default SSH ports, the host key is "[host]:port".
+                hostFingerPrints.put("[" + host + "]:" + port, fingerprint);
+            }
         }
 
         /**
