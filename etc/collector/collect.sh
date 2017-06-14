@@ -1,11 +1,11 @@
 #!/bin/sh
 
 VERSION="1.1"
-DATESTRING=$(date +%s"_"T%R_%B_%d_%Y_%Z%z | sed 's/://g')
+DATESTRING=$(date +%Y-%m-%d_T%H%M%S_%Z%z)
 DEFAULTMODULE=
 DEFAULTGROUP=all
 OUTPUT_HOME=/home/ssgconfig
-DATED_OUTPUT_NAME="dct_${DATESTRING}"
+DATED_OUTPUT_NAME="ssg-dct_${DATESTRING}"
 DEFAULTMODE="module"
 JAVA_HOME=/opt/SecureSpan/JDK
 TEMP_GATEWAY_USER_DUMPFOLDER=/tmp/heapdump_$(date +%s)
