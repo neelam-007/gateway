@@ -28,7 +28,6 @@ public class LogMessageToSysLogExternalReferenceFactory extends ExternalReferenc
             throw new IllegalArgumentException("The assertion isn't a Log Message to SysLog Assertion.");
         }
         LogMessageToSysLogAssertion lmtslAssertion = ((LogMessageToSysLogAssertion) assertion);
-        logger.log(Level.SEVERE, "lmtslERF: test1");
         return new LogMessageToSysLogExternalReference(finder, lmtslAssertion.getSyslogGoid());
     }
 
@@ -39,7 +38,6 @@ public class LogMessageToSysLogExternalReferenceFactory extends ExternalReferenc
 
     @Override
     public Object getResolveExternalReferenceWizardStepPanel(ExternalReference externalReference) {
-        logger.log(Level.SEVERE, "lmtslERF: trying to create the configuration wizard now");
         if (! (externalReference instanceof LogMessageToSysLogExternalReference)) return null;
 
         return new ResolveForeignLogMessageToSysLogPanel(null, (LogMessageToSysLogExternalReference)externalReference);

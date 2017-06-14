@@ -15,6 +15,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
+import sun.rmi.runtime.Log;
 
 import javax.swing.*;
 import java.awt.*;
@@ -31,7 +32,7 @@ public class ResolveForeignLogMessageToSysLogPanel extends WizardStepPanel {
 
     private LogMessageToSysLogExternalReference foreignRef;
     private JPanel mainPanel;
-    private JRadioButton removeAssertionsThatUseRadioButton;
+    private JRadioButton removeAssertionThatReferRadioButton;
     private JRadioButton changeAssertionToUseRadioButton;
     private JRadioButton importErroneousAssertionAsRadioButton;
     private JComboBox logSinkChoice;
@@ -55,7 +56,7 @@ public class ResolveForeignLogMessageToSysLogPanel extends WizardStepPanel {
 
     @Override
     public String getStepLabel() {
-        return "Unresolved Log Message to Syslog log sink";
+        return "Unresolved Log Sink " + foreignRef.getLogSinkName();
     }
 
     @Override
@@ -72,11 +73,11 @@ public class ResolveForeignLogMessageToSysLogPanel extends WizardStepPanel {
         typeField.setText(foreignRef.getLogSinkType().toString());
         severityField.setText(foreignRef.getLogSinkSeverity().toString());
 
-        removeAssertionsThatUseRadioButton.setSelected(true);
+        removeAssertionThatReferRadioButton.setSelected(true);
         logSinkChoice.setEnabled(false);
 
         changeAssertionToUseRadioButton.addActionListener(e -> logSinkChoice.setEnabled(true));
-        removeAssertionsThatUseRadioButton.addActionListener(e -> logSinkChoice.setEnabled(false));
+        removeAssertionThatReferRadioButton.addActionListener(e -> logSinkChoice.setEnabled(false));
         importErroneousAssertionAsRadioButton.addActionListener(e -> logSinkChoice.setEnabled(false));
 
         logSinkChoice.setRenderer(new TextListCellRenderer<SinkConfiguration>(sinkConfig -> getConnectorInfo(sinkConfig)));
@@ -94,7 +95,7 @@ public class ResolveForeignLogMessageToSysLogPanel extends WizardStepPanel {
 
             final SinkConfiguration logSink = (SinkConfiguration) logSinkChoice.getSelectedItem();
             foreignRef.setLocalizeReplace(logSink.getId());
-        } else if (removeAssertionsThatUseRadioButton.isSelected()) {
+        } else if (removeAssertionThatReferRadioButton.isSelected()) {
             foreignRef.setLocalizeDelete();
         } else if (importErroneousAssertionAsRadioButton.isSelected()) {
             foreignRef.setLocalizeIgnore();
@@ -107,7 +108,7 @@ public class ResolveForeignLogMessageToSysLogPanel extends WizardStepPanel {
         changeAssertionToUseRadioButton.setEnabled(enableSelection);
 
         if (!changeAssertionToUseRadioButton.isEnabled() && changeAssertionToUseRadioButton.isSelected()) {
-            removeAssertionsThatUseRadioButton.setSelected(true);
+            removeAssertionThatReferRadioButton.setSelected(true);
         }
     }
 
@@ -127,19 +128,21 @@ public class ResolveForeignLogMessageToSysLogPanel extends WizardStepPanel {
                 }
             }
 
-            Collections.sort((List<SinkConfiguration>) sysLogSinks, (o1, o2)
-                    -> o1.getName().compareToIgnoreCase(o2.getName()));
+            if (sysLogSinks.size() > 0) {
+                Collections.sort((List<SinkConfiguration>) sysLogSinks, (o1, o2)
+                        -> o1.getName().compareToIgnoreCase(o2.getName()));
 
-            logSinkChoice.setModel(Utilities.comboBoxModel(sysLogSinks));
+                logSinkChoice.setModel(Utilities.comboBoxModel(sysLogSinks));
 
-            if (selectedItem != null && logSinkChoice.getModel().getSize() > 0) {
-                logSinkChoice.setSelectedItem(selectedItem);
-                if (logSinkChoice.getSelectedIndex() == -1) {
-                    logSinkChoice.setSelectedIndex(0);
+                if (selectedItem != null && logSinkChoice.getModel().getSize() > 0) {
+                    logSinkChoice.setSelectedItem(selectedItem);
+                    if (logSinkChoice.getSelectedIndex() == -1) {
+                        logSinkChoice.setSelectedIndex(0);
+                    }
                 }
             }
         } catch (FindException e) {
-            e.printStackTrace();
+            logger.warning("Cannot find log sink");
         }
     }
 
@@ -180,12 +183,11 @@ public class ResolveForeignLogMessageToSysLogPanel extends WizardStepPanel {
                             SinkConfiguration curConfig = (SinkConfiguration) logSinkChoice.getItemAt(i);
                             if (curConfig.getName().equals(sinkConfiguration.getName())) {
                                 logSinkChoice.setSelectedItem(curConfig);
+                                changeAssertionToUseRadioButton.setEnabled(true);
+                                changeAssertionToUseRadioButton.setSelected(true);
+                                logSinkChoice.setEnabled(true);
                             }
                         }
-                        changeAssertionToUseRadioButton.setEnabled(true);
-                        changeAssertionToUseRadioButton.setSelected(true);
-                        logSinkChoice.setEnabled(true);
-
                     } catch (SaveException | UpdateException e) {
                         logger.log(Level.WARNING, "Log Sink save failed");
                         DialogDisplayer.showMessageDialog(logSinkManagerWindow,

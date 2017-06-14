@@ -12,7 +12,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.w3c.dom.Element;
 
@@ -230,7 +229,6 @@ public class LogMessageToSysLogExternalReferenceTest {
         assertEquals(SINK_DESC, reference.getLogSinkDescription());
         assertEquals(SINK_TYPE, reference.getLogSinkType().toString());
         assertEquals(SINK_SEVR, reference.getLogSinkSeverity().toString());
-        System.out.println(reference.getLogSinkName());
     }
 
     @Test
@@ -241,7 +239,6 @@ public class LogMessageToSysLogExternalReferenceTest {
         assertEquals(SINK_DESC, reference.getLogSinkDescription());
         assertEquals(SINK_TYPE, reference.getLogSinkType().toString());
         assertEquals(SINK_SEVR, reference.getLogSinkSeverity().toString());
-        System.out.println(reference.getLogSinkName());
     }
 
     @Test(expected = InvalidDocumentFormatException.class)

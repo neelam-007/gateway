@@ -17,18 +17,14 @@ public class LogMessageToSysLogModuleLoadListener {
     private static LogMessageToSysLogExternalReferenceFactory externalReferenceFactory;
 
     public static synchronized void onModuleLoaded(final ApplicationContext context) {
-        logger.log(Level.WARNING, "LMTSLModuleLoadListener: made it here");
         registerExternalReferenceFactory(context);
     }
 
     public static synchronized void onModuleUnloaded() {
-        logger.log(Level.WARNING, "LMTSLModuleLoadListener: abcdefg");
         unregisterExternalReferenceFactory();
     }
 
     private static void registerExternalReferenceFactory(final ApplicationContext context) {
-        logger.log(Level.WARNING, "LMTSLModuleLoadListener: reg");
-
         unregisterExternalReferenceFactory();
 
         if (policyExporterImporterManager == null) {
@@ -40,8 +36,6 @@ public class LogMessageToSysLogModuleLoadListener {
     }
 
     private static void unregisterExternalReferenceFactory() {
-        logger.log(Level.WARNING, "LMTSLModuleLoadListener: unreg");
-
         if (policyExporterImporterManager != null && externalReferenceFactory != null) {
             policyExporterImporterManager.unregister(externalReferenceFactory);
             externalReferenceFactory = null;

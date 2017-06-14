@@ -23,12 +23,12 @@ import java.util.logging.Logger;
  * Created by huaal03 on 2017-06-05.
  */
 public class LogMessageToSysLogExternalReference extends ExternalReference {
-    public static final String El_NAME_REF = "LogMessageToSysLogExternalReference";
-    public static final String EL_NAME_GOID = "GOID";
-    public static final String EL_NAME_LOG_SINK_NAME = "LogSinkName";
-    public static final String EL_NAME_LOG_SINK_DESCRIPTION = "LogSinkDescription";
-    public static final String EL_NAME_LOG_SINK_TYPE = "LogSinkType";
-    public static final String EL_NAME_LOG_SINK_SEVERITY = "LogSinkSeverity";
+    private static final String El_NAME_REF = "LogMessageToSysLogExternalReference";
+    private static final String EL_NAME_GOID = "GOID";
+    private static final String EL_NAME_LOG_SINK_NAME = "LogSinkName";
+    private static final String EL_NAME_LOG_SINK_DESCRIPTION = "LogSinkDescription";
+    private static final String EL_NAME_LOG_SINK_TYPE = "LogSinkType";
+    private static final String EL_NAME_LOG_SINK_SEVERITY = "LogSinkSeverity";
 
     private static final Logger logger = Logger.getLogger(LogMessageToSysLogExternalReference.class.getName());
 
@@ -42,7 +42,6 @@ public class LogMessageToSysLogExternalReference extends ExternalReference {
 
     public LogMessageToSysLogExternalReference(ExternalReferenceFinder finder) {
         super(finder);
-        logger.log(Level.SEVERE, "lmtslER: test0");
     }
 
     public LogMessageToSysLogExternalReference(ExternalReferenceFinder finder, final Goid sinkId) {
@@ -63,7 +62,6 @@ public class LogMessageToSysLogExternalReference extends ExternalReference {
         } catch (FindException e) {
             logger.log(Level.WARNING, "Cannot retrieve entire log sink, partial reference is created instead");
         }
-        logger.log(Level.SEVERE, "lmtslER: test1");
     }
 
     public String getLogSinkName() {
@@ -127,26 +125,25 @@ public class LogMessageToSysLogExternalReference extends ExternalReference {
             try {
                 Collection<SinkConfiguration> allLogSinks = logSinkAdmin.findAllSinkConfigurations();
                 if (logSinkAdmin.getSinkConfigurationByPrimaryKey(this.goid) != null) {
-                    logger.log(Level.SEVERE, "lmtslER: Found exact match (GOID match)" + goid.toString());
-
+                    logger.fine("The log message to syslog assertion log sink found an exact GOID match: " + goid.toString());
                     return true;
                 }
-
                 for (SinkConfiguration oneLogSink : allLogSinks) {
                     if (oneLogSink.getName().equals(this.logSinkName) && oneLogSink.getType() == this.logSinkType) {
-                        logger.log(Level.SEVERE, "lmtslER: Found partial match (name and type match)");
-                        logger.log(Level.SEVERE, "lmtslER old GOID: " + goid.toString());
+                        logger.fine("The log message to syslog assertion log sink was resolved from GOID '" +
+                                goid.toString() + "' to '" + oneLogSink.getGoid());
 
                         this.goid = oneLogSink.getGoid();
-
-                        logger.log(Level.SEVERE, "lmtslER new GOID: " + goid.toString());
                         localizeType = LocalizeAction.REPLACE;
                         return true;
                     }
                 }
-                logger.log(Level.SEVERE, "lmtslER: Cannot find a match");
             } catch (FindException e) {
-                e.printStackTrace();
+                if (goid != null){
+                    logger.warning("Cannot find a log sink with that goid, " + goid.toString());
+                } else {
+                    logger.warning("Cannot find a log sink with that goid. The Goid is null");
+                }
             }
         }
         return false;
@@ -154,7 +151,6 @@ public class LogMessageToSysLogExternalReference extends ExternalReference {
 
     @Override
     protected boolean localizeAssertion(@Nullable Assertion assertionToLocalize) {
-        logger.log(Level.SEVERE, "lmtslER: localize it now!");
         if (localizeType != LocalizeAction.IGNORE) {
             if (assertionToLocalize instanceof LogMessageToSysLogAssertion) {
                 final LogMessageToSysLogAssertion logMessageToSysLogAssertion = (LogMessageToSysLogAssertion) assertionToLocalize;
@@ -174,13 +170,11 @@ public class LogMessageToSysLogExternalReference extends ExternalReference {
 
     public static LogMessageToSysLogExternalReference parseFromElement(ExternalReferenceFinder context, Element el)
             throws InvalidDocumentFormatException {
-        logger.log(Level.WARNING, "lmtslER: test abcd");
         if (!el.getNodeName().equals(El_NAME_REF)) {
             throw new InvalidDocumentFormatException("Expecting element of connectorName " + El_NAME_REF);
         }
 
         LogMessageToSysLogExternalReference parsedExternalReference = new LogMessageToSysLogExternalReference(context);
-        logger.log(Level.WARNING, "lmtslER: test efgh");
 
         String parsedElement = getParamFromEl(el, EL_NAME_GOID);
         if (parsedElement != null) {
@@ -195,8 +189,6 @@ public class LogMessageToSysLogExternalReference extends ExternalReference {
         parsedExternalReference.logSinkDescription = getParamFromEl(el, EL_NAME_LOG_SINK_DESCRIPTION);
         parsedExternalReference.logSinkType = SinkConfiguration.SinkType.valueOf(getParamFromEl(el, EL_NAME_LOG_SINK_TYPE));
         parsedExternalReference.logSinkSeverity = SinkConfiguration.SeverityThreshold.valueOf(getParamFromEl(el, EL_NAME_LOG_SINK_SEVERITY));
-
-        logger.log(Level.WARNING, "lmtslER: test efgh");
 
         return parsedExternalReference;
     }
