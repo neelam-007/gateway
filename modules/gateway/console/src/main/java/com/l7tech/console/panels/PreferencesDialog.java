@@ -8,6 +8,7 @@ import com.l7tech.gui.MaxLengthDocument;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.SsmPreferences;
 import com.l7tech.console.util.History;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
@@ -98,98 +99,20 @@ public class PreferencesDialog extends JDialog {
         inactivityTextField.setDocument(new MaxLengthDocument(2));
 
         // remember last login ID
-        try {
-            String sb = getPreferences().getProperty(SsmPreferences.SAVE_LAST_LOGIN_ID);
-            boolean b = Boolean.valueOf(sb);
-
-            rememberLastIdCheckBox.setSelected(b);
-        } catch (IOException e) {
-            log.log(Level.WARNING, "initComponents()", e);
-        }
-
-        rememberLastIdCheckBox.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                try {
-                    getPreferences().
-                        setProperty(SsmPreferences.SAVE_LAST_LOGIN_ID,
-                            (Boolean.valueOf(((JCheckBox) e.getSource()).isSelected())).toString());
-                } catch (IOException ex) {
-                    // swallow
-                }
-            }
-        });
+        setSelected(rememberLastIdCheckBox, SsmPreferences.SAVE_LAST_LOGIN_ID, false);
+        rememberLastIdCheckBox.addActionListener(getCheckboxActionListener(SsmPreferences.SAVE_LAST_LOGIN_ID));
 
         // new in 4.0 checkbox to turn on/off validation
-        try {
-            String sb = getPreferences().getProperty(SsmPreferences.ENABLE_POLICY_VALIDATION_ID);
-            boolean b = Boolean.valueOf(sb);
-            if (sb == null || sb.length() < 1) {
-                b = true;
-            }
-            enableValidationCheckBox.setSelected(b);
-        } catch (IOException e) {
-            log.log(Level.WARNING, "initComponents()", e);
-        }
-
-        enableValidationCheckBox.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                try {
-                    getPreferences().
-                        setProperty(SsmPreferences.ENABLE_POLICY_VALIDATION_ID,
-                            (Boolean.valueOf(((JCheckBox) e.getSource()).isSelected())).toString());
-                } catch (IOException ex) {
-                    // swallow
-                }
-            }
-        });
+        setSelected(enableValidationCheckBox, SsmPreferences.ENABLE_POLICY_VALIDATION_ID, true);
+        enableValidationCheckBox.addActionListener(getCheckboxActionListener(SsmPreferences.ENABLE_POLICY_VALIDATION_ID));
 
         // new in 9.3 checkbox to turn on/off show comments
-        try {
-            String sb = getPreferences().getProperty(SsmPreferences.ENABLE_SHOW_COMMENTS);
-            boolean b = Boolean.valueOf(sb);
-
-            showCommentsCheckBox.setSelected(b);
-        } catch (IOException e) {
-            log.log(Level.WARNING, "initComponents()", e);
-        }
-
-        showCommentsCheckBox.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                try {
-                    getPreferences().
-                            setProperty(SsmPreferences.ENABLE_SHOW_COMMENTS,
-                                    (Boolean.valueOf(((JCheckBox) e.getSource()).isSelected())).toString());
-                } catch (IOException ex) {
-                    // swallow
-                }
-            }
-        });
+        setSelected(showCommentsCheckBox, SsmPreferences.ENABLE_SHOW_COMMENTS, false);
+        showCommentsCheckBox.addActionListener(getCheckboxActionListener(SsmPreferences.ENABLE_SHOW_COMMENTS));
 
         // new in 9.3 checkbox to turn on/off show assertion number
-        try {
-            String sb = getPreferences().getProperty(SsmPreferences.ENABLE_SHOW_ASSERTION_NUMBERS);
-            boolean b = Boolean.valueOf(sb);
-
-            showAssertionNumbersCheckBox.setSelected(b);
-        } catch (IOException e) {
-            log.log(Level.WARNING, "initComponents()", e);
-        }
-
-        showAssertionNumbersCheckBox.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                try {
-                    getPreferences().
-                            setProperty(SsmPreferences.ENABLE_SHOW_ASSERTION_NUMBERS,
-                                    (Boolean.valueOf(((JCheckBox) e.getSource()).isSelected())).toString());
-                } catch (IOException ex) {
-                    // swallow
-                }
-            }
-        });
+        setSelected(showAssertionNumbersCheckBox, SsmPreferences.ENABLE_SHOW_ASSERTION_NUMBERS, false);
+        showAssertionNumbersCheckBox.addActionListener(getCheckboxActionListener(SsmPreferences.ENABLE_SHOW_ASSERTION_NUMBERS));
 
         //new in 5.0 allow configurable SSG history in Logon dialog
         numHostsHistoryTextField.setDocument(new MaxLengthDocument(2));
@@ -261,6 +184,31 @@ public class PreferencesDialog extends JDialog {
             // The height in applet is less than the height in non-applet, since some fields are not available in applet.
             isApplet? (settingsPaneDim.height + buttonsPaneDim.height + 60) : getPreferredSize().height
         ));
+    }
+
+    @NotNull
+    private ActionListener getCheckboxActionListener(@NotNull final String property) {
+        return e -> {
+            try {
+                getPreferences().
+                        setProperty(property,
+                                (Boolean.valueOf(((JCheckBox) e.getSource()).isSelected())).toString());
+            } catch (IOException ex) {
+                log.log(Level.WARNING, "Could not set property: " + property, e);
+            }
+        };
+    }
+
+    private void setSelected(@NotNull final JCheckBox checkbox, @NotNull final String property, final boolean defaultValue) {
+        final String booleanString;
+        try {
+            booleanString = getPreferences().getProperty(property);
+        } catch (IOException e) {
+            log.log(Level.WARNING, "Could not get property: " + property, e);
+            return;
+        }
+        boolean b = booleanString == null || booleanString.isEmpty() ? defaultValue : Boolean.valueOf(booleanString);
+        checkbox.setSelected(b);
     }
 
     /**
