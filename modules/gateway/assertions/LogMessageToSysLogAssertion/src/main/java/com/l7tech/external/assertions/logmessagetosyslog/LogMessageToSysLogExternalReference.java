@@ -56,7 +56,7 @@ public class LogMessageToSysLogExternalReference extends ExternalReference {
             SinkConfiguration sinkConfiguration = logSinkAdmin.getSinkConfigurationByPrimaryKey(goid);
 
             if (sinkConfiguration == null) {
-                throw new IllegalArgumentException("Cannot export policy, Log Sink id: " + sinkId.toString() + " does not exist");
+                throw new IllegalArgumentException("Log Sink id: " + sinkId.toHexString() + " does not exist");
             }
 
             logSinkName = sinkConfiguration.getName();
