@@ -23,6 +23,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.*;
+import java.util.Comparator;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -112,7 +113,7 @@ public class QuickStartJsonServiceInstaller {
                 logger.info("installing JSON services from bootstrap folder: " + jsonFolder);
                 AdminInfo.find(false).wrapCallable((Callable<Void>) () -> {
                     StreamSupport.stream(stream.spliterator(), false)
-                            .sorted((path1, path2) -> path1.getFileName().compareTo(path2.getFileName()))
+                            .sorted(Comparator.comparing(Path::getFileName))
                             .forEach(this::installJsonService);
                     return null;
                 }).call();
@@ -205,6 +206,7 @@ public class QuickStartJsonServiceInstaller {
         try {
             final PublishedService service = serviceBuilder.createService(serviceContainer);
             service.putProperty(QuickStartTemplateAssertion.PROPERTY_QS_CREATE_METHOD, String.valueOf(QuickStartTemplateAssertion.QsServiceCreateMethod.BOOTSTRAP));
+            service.putProperty(QuickStartTemplateAssertion.PROPERTY_QS_REGISTRAR_TMS, String.valueOf(System.currentTimeMillis()));
             return service;
         } catch (QuickStartPolicyBuilderException e) {
             throw new CreateServiceException(ExceptionUtils.getMessage(e), e);
