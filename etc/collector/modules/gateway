@@ -12,7 +12,7 @@ APPLIANCE_HOME="${SS_HOME}"/Appliance
 JAVA_HOME="${SS_HOME}"/JDK
 
 #Define and create output folders
-GATEWAY_MODULE_BASE_OUTPUT_DIRECTORY="${ALL_MODULES_BASE_OUTPUT_DIR}"/"${MODULE}"
+GATEWAY_MODULE_BASE_OUTPUT_DIRECTORY="${BASE_OUTPUT_DIR}"/"${MODULE}"
 GATEWAY_MODULE_BASE_OUTPUT_DIRECTORY_RPMS="${GATEWAY_MODULE_BASE_OUTPUT_DIRECTORY}"/rpms
 GATEWAY_MODULE_BASE_OUTPUT_DIRECTORY_MODULES="${GATEWAY_MODULE_BASE_OUTPUT_DIRECTORY}"/modules
 GATEWAY_MODULE_BASE_OUTPUT_DIRECTORY_CONFIG="${GATEWAY_MODULE_BASE_OUTPUT_DIRECTORY}"/config
@@ -74,6 +74,7 @@ then
         if [ -w "${GATEWAY_MODULE_BASE_OUTPUT_DIRECTORY_LOGS_SSG}" ]
         then
             logAndRunCmd "cp \"${GW_NODE_DEFAULT}\"/var/logs/*.log \"${GATEWAY_MODULE_BASE_OUTPUT_DIRECTORY_LOGS_SSG}\""
+            logAndRunCmd "cp \"${GW_NODE_DEFAULT}\"/var/logs/ssg_gc.log.* \"${GATEWAY_MODULE_BASE_OUTPUT_DIRECTORY_LOGS_SSG}\""
         else
             echo "Unable to create gateway_logs output directory"
         fi
@@ -103,7 +104,7 @@ then
     mkdir -p "${GATEWAY_MODULE_BASE_OUTPUT_DIRECTORY_DUMPS}"
     if [ -w "${GATEWAY_MODULE_BASE_OUTPUT_DIRECTORY_DUMPS}" ]
     then
-        GATEWAYPID=`"${JAVA_HOME}"/bin/jps | awk '/Gateway/ {print $1}'`
+        setGatewayPID
         if [ -n "$GATEWAYPID" ]
         then
             for i in {1..4}
@@ -112,8 +113,6 @@ then
                 logAndRunCmd "su -c \"\"${JAVA_HOME}\"/bin/jstack -l \"${GATEWAYPID}\"\" -s /bin/sh gateway > \"${GATEWAY_MODULE_BASE_OUTPUT_DIRECTORY_DUMPS}\"/threadDump-sample-\"${i}\".tdump"
                 sleep 15
             done
-        else
-        echo "Error: Cannot get Gateway PID"
         fi
     else
         echo "Unable to create thread dumps output directory"

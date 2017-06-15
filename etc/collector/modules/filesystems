@@ -7,7 +7,7 @@ MODULE="$1"
 
 preModule "$MODULE"
 
-FILESYSTEMS_DIR="${ALL_MODULES_BASE_OUTPUT_DIR}/${MODULE}"
+FILESYSTEMS_DIR="${BASE_OUTPUT_DIR}/${MODULE}"
 DISKS=(/dev/sd[a-z])
 PARTS=(/dev/sd[a-z][1-9])
 

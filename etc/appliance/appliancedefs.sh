@@ -27,6 +27,8 @@ SSG_JAVA_HOME="/opt/SecureSpan/JDK"
 
 # Setting larger permsize for java 1.6
 NODE_OPTS="-Xmx${java_ram}k -Xss256k -XX:+UseParallelOldGC"
+NODE_OPTS="$NODE_OPTS -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+UseGCLogFileRotation"
+NODE_OPTS="$NODE_OPTS -XX:NumberOfGCLogFiles=10 -XX:GCLogFileSize=20M -Xloggc:var/logs/ssg_gc.log"
 [ "${jvmarch}" == "x86_64" ] && NODE_OPTS="$NODE_OPTS -XX:+UseCompressedOops"
 
 # Reserve ports 7001 and 7100 on the appliance

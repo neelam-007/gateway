@@ -1,7 +1,6 @@
 #!/bin/sh
 
 MODULE="$1"
-GATEWAYPID=$(ps awwx | grep Gateway.jar | grep -v grep | awk '{print $1}')
 
 # Pull in collector support functions
 . "${COLLECTOR_HOME}"/collectorlib
@@ -9,7 +8,7 @@ GATEWAYPID=$(ps awwx | grep Gateway.jar | grep -v grep | awk '{print $1}')
 preModule "$MODULE"
 
 #Define and create output folders
-KERNEL_MODULE_OUTPUTDIR="${ALL_MODULES_BASE_OUTPUT_DIR}/${MODULE}"
+KERNEL_MODULE_OUTPUTDIR="${BASE_OUTPUT_DIR}/${MODULE}"
 mkdir -p "${KERNEL_MODULE_OUTPUTDIR}"
 
 if [ -w "${KERNEL_MODULE_OUTPUTDIR}" ]
@@ -22,6 +21,7 @@ then
     logAndRunCmd "ps awwx -mo pid,lwp,stime,time,c,cmd &> \"${KERNEL_MODULE_OUTPUTDIR}\"/ps_awwx.txt"
     logAndRunCmd "ps -e -o pid,args --forest &> \"${KERNEL_MODULE_OUTPUTDIR}\"/ps_forest.txt"
 
+    setGatewayPID
     if [ -n "$GATEWAYPID" ]
     then
         logAndRunCmd "cp /proc/\"${GATEWAYPID}\"/status -T \"${KERNEL_MODULE_OUTPUTDIR}\"/proc_\"${GATEWAYPID}\"_status.txt"
