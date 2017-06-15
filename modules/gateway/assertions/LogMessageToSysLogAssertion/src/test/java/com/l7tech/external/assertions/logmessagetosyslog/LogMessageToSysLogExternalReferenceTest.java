@@ -119,7 +119,7 @@ public class LogMessageToSysLogExternalReferenceTest {
 
         LogMessageToSysLogExternalReference ref = new LogMessageToSysLogExternalReference(finder, goid);
 
-        assertEquals(mockSinkConfiguration.getGoid().toString(), ref.getRefId());
+        assertEquals(mockSinkConfiguration.getGoid().toHexString(), ref.getRefId());
         assertEquals(mockSinkConfiguration.getName(), ref.getLogSinkName());
         assertEquals(mockSinkConfiguration.getDescription(), ref.getLogSinkDescription());
         assertEquals(mockSinkConfiguration.getType(), ref.getLogSinkType());
@@ -182,7 +182,7 @@ public class LogMessageToSysLogExternalReferenceTest {
 
         assertTrue(fixture.verifyReference());
 
-        assertEquals(mockSinkConfiguration.getGoid().toString(), fixture.getRefId());
+        assertEquals(mockSinkConfiguration.getGoid().toHexString(), fixture.getRefId());
     }
 
     @Test
@@ -221,7 +221,7 @@ public class LogMessageToSysLogExternalReferenceTest {
 
         Boolean res = fixture.localizeAssertion(assertion);
 
-        assertEquals(goid.toString(), fixture.getRefId());
+        assertEquals(goid.toHexString(), fixture.getRefId());
         assertEquals("00000000000000000000000000000001", fixture.getRefId());
         assertTrue(res);
     }

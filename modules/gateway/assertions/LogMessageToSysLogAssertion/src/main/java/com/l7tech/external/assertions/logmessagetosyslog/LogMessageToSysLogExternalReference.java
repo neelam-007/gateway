@@ -130,7 +130,7 @@ public class LogMessageToSysLogExternalReference extends ExternalReference {
     /**
      * {@inheritDoc}
      *
-     * @return true if the log message to syslog assertion can be imported with user intervention, false otherwise
+     * @return true if the log message to syslog assertion can be imported without user intervention, false otherwise
      * @throws InvalidPolicyStreamException thrown if a policy document cannot be parsed into a policy tree for reasons
      *         due to the content of the policy document.
      */
@@ -150,7 +150,7 @@ public class LogMessageToSysLogExternalReference extends ExternalReference {
                     if (oneLogSink.getName().equals(this.logSinkName) && oneLogSink.getType() == this.logSinkType) {
                         if (logger.isLoggable(Level.FINE)) {
                             logger.fine("The log message to syslog assertion log sink was resolved from GOID '" +
-                                    goid.toHexString() + "' to '" + oneLogSink.getGoid());
+                                    goid.toHexString() + "' to '" + oneLogSink.getGoid().toHexString());
                         }
                         this.goid = oneLogSink.getGoid();
                         localizeType = LocalizeAction.REPLACE;
