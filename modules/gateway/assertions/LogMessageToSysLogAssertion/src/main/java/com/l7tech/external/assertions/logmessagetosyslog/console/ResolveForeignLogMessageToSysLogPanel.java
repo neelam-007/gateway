@@ -5,6 +5,7 @@ import com.l7tech.console.panels.SinkConfigurationPropertiesDialog;
 import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.external.assertions.logmessagetosyslog.LogMessageToSysLogAssertion;
 import com.l7tech.external.assertions.logmessagetosyslog.LogMessageToSysLogExternalReference;
 import com.l7tech.gateway.common.log.LogSinkAdmin;
 import com.l7tech.gateway.common.log.SinkConfiguration;
@@ -15,7 +16,6 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
-import sun.rmi.runtime.Log;
 
 import javax.swing.*;
 import java.awt.*;
@@ -23,9 +23,18 @@ import java.util.*;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
- * Created by huaal03 on 2017-06-07.
+ * ResolveForeignLogMessageToSysLogPanel represents a panel in the WizardStepPanel which is created when a user imports
+ * a policy containing a Log Message to Syslog Assertion referring to an unknown log sink.
+ *
+ * The user has the choice to intervene and create a new log sink, change the log sink reference, remove the assertion
+ * or import the erroneous assertion as-is.
+ *
+ * @author huaal03
+ * @see WizardStepPanel
+ * @see LogMessageToSysLogExternalReference
  */
 public class ResolveForeignLogMessageToSysLogPanel extends WizardStepPanel {
     protected static final Logger logger = Logger.getLogger(ResolveForeignLogMessageToSysLogPanel.class.getName());
@@ -49,21 +58,42 @@ public class ResolveForeignLogMessageToSysLogPanel extends WizardStepPanel {
         initialize();
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * The user can only finish if they are on the last step panel
+     *
+     * @return {@inheritDoc}
+     */
     @Override
     public boolean canFinish() {
         return !hasNextPanel();
     }
 
+    /**
+     * Provides a short message on the left step panel describing the current issue requiring user action
+     *
+     * @return {@inheritDoc}
+     */
     @Override
     public String getStepLabel() {
         return "Unresolved Log Sink " + foreignRef.getLogSinkName();
     }
 
+    /**
+     * The text shown in the bottom right panel of the wizard
+     *
+     * @return a more detailed message of the issue requiring action
+     */
     @Override
     public String getDescription() {
         return "There is an unresolved log sink reference in the 'Log Message to Syslog Assertion'";
     }
 
+    /**
+     * Initializes the Log Message to Syslog Assertion wizard step panel when the user imports a policy containing this
+     * assertion and the log message to syslog external reference references an unknown log sink
+     */
     public void initialize() {
         setLayout(new BorderLayout());
         add(mainPanel);
@@ -88,6 +118,11 @@ public class ResolveForeignLogMessageToSysLogPanel extends WizardStepPanel {
         enableAndDisableComponents();
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @return {@inheritDoc}
+     */
     @Override
     public boolean onNextButton() {
         if (changeAssertionToUseRadioButton.isSelected()) {
@@ -119,16 +154,13 @@ public class ResolveForeignLogMessageToSysLogPanel extends WizardStepPanel {
         Collection<SinkConfiguration> allLogSinks;
         try {
             allLogSinks = logSinkAdmin.findAllSinkConfigurations();
-            Collection<SinkConfiguration> sysLogSinks = new ArrayList<>();
 
-            for (SinkConfiguration sinkConfig : allLogSinks) {
-                if (sinkConfig.getType() == SinkConfiguration.SinkType.SYSLOG
-                        && sinkConfig.getName().startsWith("syslogwrite_")) {
-                    sysLogSinks.add(sinkConfig);
-                }
-            }
+            Collection<SinkConfiguration> sysLogSinks = allLogSinks.stream()
+                    .filter(oneLogSink -> (oneLogSink.getType() == SinkConfiguration.SinkType.SYSLOG
+                            && oneLogSink.getName().startsWith(LogMessageToSysLogAssertion.SYSLOG_LOG_SINK_PREFIX)))
+                    .collect(Collectors.toList());
 
-            if (sysLogSinks.size() > 0) {
+            if (!sysLogSinks.isEmpty()) {
                 Collections.sort((List<SinkConfiguration>) sysLogSinks, (o1, o2)
                         -> o1.getName().compareToIgnoreCase(o2.getName()));
 
@@ -201,8 +233,6 @@ public class ResolveForeignLogMessageToSysLogPanel extends WizardStepPanel {
     }
 
     private String getConnectorInfo(final SinkConfiguration sink) {
-        final StringBuilder builder = new StringBuilder();
-        builder.append(sink.getName());
-        return builder.toString();
+        return sink.getName();
     }
 }

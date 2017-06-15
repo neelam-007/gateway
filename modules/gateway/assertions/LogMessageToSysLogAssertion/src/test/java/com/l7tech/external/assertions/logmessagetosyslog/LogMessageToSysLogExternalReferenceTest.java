@@ -25,8 +25,13 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
- * Created by huaal03 on 2017-06-12.
+ * This class tests the behaviour of the LogMessageToSysLogExternalReference class to ensure that the correct behaviour
+ * is observed on export and import of a policy containing the Log Message to Syslog assertion
+ *
+ * @author huaal03
+ * @see LogMessageToSysLogExternalReference
  */
+
 @RunWith(PowerMockRunner.class)
 public class LogMessageToSysLogExternalReferenceTest {
     private static final String REFERENCES_START =

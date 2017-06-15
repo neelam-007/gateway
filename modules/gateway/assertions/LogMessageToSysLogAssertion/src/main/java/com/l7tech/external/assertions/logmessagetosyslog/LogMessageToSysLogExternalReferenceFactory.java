@@ -8,20 +8,29 @@ import com.l7tech.policy.exporter.ExternalReferenceFinder;
 import com.l7tech.util.InvalidDocumentFormatException;
 import org.w3c.dom.Element;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 /**
- * Created by huaal03 on 2017-06-05.
+ * The purpose of the LogMessageToSysLogExternalReferenceFactory is to create an external reference, parse an external
+ * reference, and deliver a wizard step panel for references to unresolved log sinks.
+ *
+ * @author huaal03
+ * @see LogMessageToSysLogAssertion
+ * @see ExternalReference
+ * @see LogMessageToSysLogExternalReference
+ * @see com.l7tech.external.assertions.logmessagetosyslog.server.LogMessageToSysLogModuleLoadListener
  */
 public class LogMessageToSysLogExternalReferenceFactory extends ExternalReferenceFactory<ExternalReference, ExternalReferenceFinder> {
-
-    private static final Logger logger = Logger.getLogger(LogMessageToSysLogExternalReference.class.getName());
 
     public LogMessageToSysLogExternalReferenceFactory() {
         super(LogMessageToSysLogAssertion.class, LogMessageToSysLogExternalReference.class);
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @param finder: External Reference Finder
+     * @param assertion: provide searching information to the finder to retrieve reference details
+     * @return a new LogMessageToSysLogExternalReference object to be used as part of the policy export
+     */
     @Override
     public ExternalReference createExternalReference(ExternalReferenceFinder finder, Assertion assertion) {
         if (!(assertion instanceof LogMessageToSysLogAssertion)) {
@@ -31,11 +40,25 @@ public class LogMessageToSysLogExternalReferenceFactory extends ExternalReferenc
         return new LogMessageToSysLogExternalReference(finder, lmtslAssertion.getSyslogGoid());
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @param finder: ExternalReferenceFinder
+     * @param el: external reference element
+     * @return a log message to syslog ExternalReference
+     * @throws InvalidDocumentFormatException {@inheritDoc}
+     */
     @Override
     public ExternalReference parseFromElement(ExternalReferenceFinder finder, Element el) throws InvalidDocumentFormatException {
         return LogMessageToSysLogExternalReference.parseFromElement(finder, el);
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @param externalReference: used to fill out the reference details in the wizard step panel
+     * @return {@inheritDoc}
+     */
     @Override
     public Object getResolveExternalReferenceWizardStepPanel(ExternalReference externalReference) {
         if (! (externalReference instanceof LogMessageToSysLogExternalReference)) return null;

@@ -20,7 +20,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Created by huaal03 on 2017-06-05.
+ * The LogMessageToSysLogExternalReference class is responsible for creating and parsing the XML elements that relate
+ * to some log sink that the Log Message To SysLog Assertion references on Import or Export of a policy
+ *
+ * @author huaal03
+ * @see ExternalReference
  */
 public class LogMessageToSysLogExternalReference extends ExternalReference {
     private static final String El_NAME_REF = "LogMessageToSysLogExternalReference";
@@ -82,7 +86,7 @@ public class LogMessageToSysLogExternalReference extends ExternalReference {
 
     @Override
     public String getRefId() {
-        return goid.toString();
+        return goid.toHexString();
     }
 
     @Override
@@ -103,6 +107,11 @@ public class LogMessageToSysLogExternalReference extends ExternalReference {
         localizeType = LocalizeAction.IGNORE;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @param referencesParentElement the references element that contains all assertions' external references
+     */
     @Override
     protected void serializeToRefElement(Element referencesParentElement) {
         Element refEl = referencesParentElement.getOwnerDocument().createElementNS(null, El_NAME_REF);
@@ -118,6 +127,13 @@ public class LogMessageToSysLogExternalReference extends ExternalReference {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @return true if the log message to syslog assertion can be imported with user intervention, false otherwise
+     * @throws InvalidPolicyStreamException thrown if a policy document cannot be parsed into a policy tree for reasons
+     *         due to the content of the policy document.
+     */
     @Override
     protected boolean verifyReference() throws InvalidPolicyStreamException {
         if (logSinkAdmin != null) {
@@ -125,14 +141,17 @@ public class LogMessageToSysLogExternalReference extends ExternalReference {
             try {
                 Collection<SinkConfiguration> allLogSinks = logSinkAdmin.findAllSinkConfigurations();
                 if (logSinkAdmin.getSinkConfigurationByPrimaryKey(this.goid) != null) {
-                    logger.fine("The log message to syslog assertion log sink found an exact GOID match: " + goid.toString());
+                    if (logger.isLoggable(Level.FINE)) {
+                        logger.fine("The log message to syslog assertion log sink found an exact GOID match: " + goid.toHexString());
+                    }
                     return true;
                 }
                 for (SinkConfiguration oneLogSink : allLogSinks) {
                     if (oneLogSink.getName().equals(this.logSinkName) && oneLogSink.getType() == this.logSinkType) {
-                        logger.fine("The log message to syslog assertion log sink was resolved from GOID '" +
-                                goid.toString() + "' to '" + oneLogSink.getGoid());
-
+                        if (logger.isLoggable(Level.FINE)) {
+                            logger.fine("The log message to syslog assertion log sink was resolved from GOID '" +
+                                    goid.toHexString() + "' to '" + oneLogSink.getGoid());
+                        }
                         this.goid = oneLogSink.getGoid();
                         localizeType = LocalizeAction.REPLACE;
                         return true;
@@ -140,7 +159,7 @@ public class LogMessageToSysLogExternalReference extends ExternalReference {
                 }
             } catch (FindException e) {
                 if (goid != null){
-                    logger.warning("Cannot find a log sink with that goid, " + goid.toString());
+                    logger.warning("Cannot find a log sink with that goid, " + goid.toHexString());
                 } else {
                     logger.warning("Cannot find a log sink with that goid. The Goid is null");
                 }
@@ -149,6 +168,13 @@ public class LogMessageToSysLogExternalReference extends ExternalReference {
         return false;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @param assertionToLocalize will be fixed once this method returns.  If null, this method will take no action.
+     * @return true if on import of an unresolved log sink, the user chooses to replace the unresolved log sink with an
+     *         existing one or if the user chooses to ignore the warning, false otherwise
+     */
     @Override
     protected boolean localizeAssertion(@Nullable Assertion assertionToLocalize) {
         if (localizeType != LocalizeAction.IGNORE) {
@@ -159,7 +185,7 @@ public class LogMessageToSysLogExternalReference extends ExternalReference {
                     if (localizeType == LocalizeAction.REPLACE) {
                         logMessageToSysLogAssertion.setSyslogGoid(this.goid);
                     } else if (localizeType == LocalizeAction.DELETE) {
-                        logger.info("Deleted this assertion from the tree.");
+                        if (logger.isLoggable(Level.INFO)) logger.info("Deleted this assertion from the tree.");
                         return false;
                     }
                 }
@@ -168,13 +194,21 @@ public class LogMessageToSysLogExternalReference extends ExternalReference {
         return true;
     }
 
-    public static LogMessageToSysLogExternalReference parseFromElement(ExternalReferenceFinder context, Element el)
+    /**
+     * Parses a new LogMessageToSysLogExternalReference object from a policy containing the LogMessageToSyslog assertion
+     *
+     * @param finder the external reference finder
+     * @param el the xml element containing the external references
+     * @return A LogMessageToSysLogExternalReference whose fields match those of the policy's element values
+     * @throws InvalidDocumentFormatException if the element to parse does not have a LogMessageToSyslog opening tag
+     */
+    public static LogMessageToSysLogExternalReference parseFromElement(ExternalReferenceFinder finder, Element el)
             throws InvalidDocumentFormatException {
         if (!el.getNodeName().equals(El_NAME_REF)) {
-            throw new InvalidDocumentFormatException("Expecting element of connectorName " + El_NAME_REF);
+            throw new InvalidDocumentFormatException("Expecting element of name " + El_NAME_REF);
         }
 
-        LogMessageToSysLogExternalReference parsedExternalReference = new LogMessageToSysLogExternalReference(context);
+        LogMessageToSysLogExternalReference parsedExternalReference = new LogMessageToSysLogExternalReference(finder);
 
         String parsedElement = getParamFromEl(el, EL_NAME_GOID);
         if (parsedElement != null) {
