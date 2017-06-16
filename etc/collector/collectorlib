@@ -50,3 +50,13 @@ function endCompression
     echo "**********"
 }
 
+# obtain and set SSG PID
+function setGatewayPID
+{
+    GATEWAYPID=$(ps awwx | grep Gateway.jar | grep -v grep | awk '{print $1}')
+    if [ -z "$GATEWAYPID" ]
+    then
+        echo "Error: Cannot get Gateway PID"
+    fi
+}
+

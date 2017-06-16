@@ -3,6 +3,7 @@ package com.l7tech.external.assertions.quickstarttemplate;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -17,7 +18,53 @@ import static com.l7tech.policy.assertion.AssertionMetadata.MODULE_LOAD_LISTENER
 public class QuickStartTemplateAssertion extends MessageTargetableAssertion implements SetsVariables {
     public static final String QS_WARNINGS = "qs.warnings";
     public static final String QS_BUNDLE = "qs.bundle";
-    public static final String PROPERTY_QS_REGISTRAR_TMS = "property.qs.registrar.tms";
+    /**
+     * Indicates the service timestamp (should be used exclusively by the scalar).
+     */
+    public static final String PROPERTY_QS_REGISTRAR_TMS = "qs.registrar.tms";
+    /**
+     * Indicates the service creation method, see {@link QsServiceCreateMethod} vor possible values.
+     */
+    public static final String PROPERTY_QS_CREATE_METHOD = "qs.create.method";
+
+    /**
+     * Possible values for {@link #PROPERTY_QS_CREATE_METHOD}
+     */
+    public enum QsServiceCreateMethod {
+        /**
+         * The service has been created during bootstrap (i.e. bootstrapping its {@code json} file)
+         */
+        BOOTSTRAP("bootstrap"),
+        /**
+         * The service has been cerated by the scalar.
+         */
+        SCALAR("scalar");
+
+        @NotNull
+        private final String displayName;
+
+        QsServiceCreateMethod(@NotNull final String displayName) {
+            this.displayName = displayName;
+        }
+
+        @Override
+        public String toString() {
+            return displayName;
+        }
+
+        @SuppressWarnings("unused")
+        public static QsServiceCreateMethod findMethod(final String displayName) {
+            if (displayName == null) {
+                throw new NullPointerException("DisplayName is null");
+            }
+            for (final QsServiceCreateMethod method : values()) {
+                if (displayName.equals(method.toString())) {
+                    return method;
+                }
+            }
+            throw new IllegalArgumentException("No QsServiceCreateMethod with DisplayName: " + displayName);
+        }
+    }
 
     @Override
     protected VariablesSet doGetVariablesSet() {
