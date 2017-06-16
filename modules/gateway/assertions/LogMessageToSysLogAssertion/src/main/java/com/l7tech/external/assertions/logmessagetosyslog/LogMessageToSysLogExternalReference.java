@@ -56,7 +56,8 @@ public class LogMessageToSysLogExternalReference extends ExternalReference {
             SinkConfiguration sinkConfiguration = logSinkAdmin.getSinkConfigurationByPrimaryKey(goid);
 
             if (sinkConfiguration == null) {
-                throw new IllegalArgumentException("Log Sink id: " + sinkId.toHexString() + " does not exist");
+                throw new IllegalArgumentException("'Log Message to Syslog Assertion' refers to Log Sink id: "
+                        + sinkId.toHexString() + " which does not exist");
             }
 
             logSinkName = sinkConfiguration.getName();
