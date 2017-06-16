@@ -19,7 +19,6 @@ import java.util.logging.Logger;
  * Time: 11:37 AM
  */
 public class WebSocketEntityManagerServerSupport {
-    protected static final Logger logger = Logger.getLogger(WebSocketEntityManagerServerSupport.class.getName());
 
     private static WebSocketEntityManagerServerSupport instance;
     private GenericEntityManager gem;
@@ -43,9 +42,4 @@ public class WebSocketEntityManagerServerSupport {
         ExtensionInterfaceBinding binding = new ExtensionInterfaceBinding<>(WebSocketConnectionEntityAdmin.class, null, new WebSocketConnectionEntityAdminImpl(entityManager));
         return Collections.singletonList(binding);
     }
-
-    public synchronized EntityManager<WebSocketConnectionEntity, GenericEntityHeader> getEntityManager() {
-        return entityManager;
-    }
-
 }

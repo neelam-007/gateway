@@ -5,11 +5,9 @@ import com.l7tech.external.assertions.websocket.WebSocketConstants;
 import com.l7tech.external.assertions.websocket.WebSocketUtils;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.audit.AuditFactory;
-import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.GenericEntity;
-import com.l7tech.policy.GenericEntityHeader;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.GatewayFeatureSets;
 import com.l7tech.server.GatewayState;
@@ -55,7 +53,6 @@ public class WebSocketLoadListener {
     private static MessageProcessor messageProcessor;
     private static Map<WebSocketConnectionEntity, Server> servers;
     private static ClusterPropertyManager clusterPropertyManager;
-    private static EntityManager<WebSocketConnectionEntity, GenericEntityHeader> entityManager;
     private static SsgKeyStoreManager keyStoreManager;
     private static TrustManager trustManager;
     private static SecureRandom secureRandom;
@@ -65,6 +62,8 @@ public class WebSocketLoadListener {
     private static TransportAdminHelper transportAdminHelper;
     private static AuditFactory auditFactory;
     private static GenericEntityManager gem;
+    private static ApplicationEventProxy applicationEventProxy;
+    private static ApplicationListener applicationListener;
 
     private static boolean isStarted = false;
 
@@ -92,7 +91,7 @@ public class WebSocketLoadListener {
             }
         }
         // Only initialize all the WebSocket inbound/outbound resource managers when the SSG is "ready for messages"
-        ApplicationEventProxy applicationEventProxy = context.getBean("applicationEventProxy", ApplicationEventProxy.class);
+        applicationEventProxy = context.getBean("applicationEventProxy", ApplicationEventProxy.class);
         applicationEventProxy.addApplicationListener(new ApplicationListener() {
             @Override
             public void onApplicationEvent(ApplicationEvent event) {
@@ -195,14 +194,13 @@ public class WebSocketLoadListener {
     public static synchronized void onModuleUnloaded() {
         unregisterGenericEntities();
         contextDestroyed();
+        applicationEventProxy.removeApplicationListener(applicationListener);
+        applicationListener = null;
     }
 
     private static void init(ApplicationContext context) {
         servers = new ConcurrentHashMap<>();
-
         registerGenericEntities(context);
-        WebSocketEntityManagerServerSupport webSocketEntityManagerServerSupport = WebSocketEntityManagerServerSupport.getInstance(context);
-        entityManager = webSocketEntityManagerServerSupport.getEntityManager();
     }
 
     /**
@@ -210,7 +208,7 @@ public class WebSocketLoadListener {
      */
     private static void contextInitialized() throws FindException {
 
-        Collection<WebSocketConnectionEntity> connections = entityManager.findAll();
+        Collection<WebSocketConnectionEntity> connections = gem.getEntityManager(WebSocketConnectionEntity.class).findAll();
         try {
             WebSocketConnectionManager.createConnectionManager(keyStoreManager,trustManager,secureRandom,defaultKey);
             for (WebSocketConnectionEntity connection : connections) {
