@@ -3329,9 +3329,9 @@
                 <chmod file="@{dir}/collect.sh" perm="755"/>
 
                 <!-- Copy data collection utility module files -->
-                <copy todir="@{dir}/${install.src.col.modules}" flatten="true">
+                <copy todir="@{dir}/${install.src.col.modules}">
                     <fileset dir="${src.root}/etc/collector/modules" casesensitive="yes">
-                        <include name="*"/>
+                        <include name="**/*"/>
                     </fileset>
                 </copy>
 

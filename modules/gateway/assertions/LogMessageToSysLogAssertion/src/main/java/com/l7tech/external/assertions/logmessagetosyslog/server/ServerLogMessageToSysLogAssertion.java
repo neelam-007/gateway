@@ -114,8 +114,25 @@ public class ServerLogMessageToSysLogAssertion extends AbstractServerAssertion<L
         /* get values from assertion */
         Map<String, Object> vars = context.getVariableMap(assertion.getVariablesUsed(), getAudit());
 
+        if (assertion.isCEFEnabled()) {
+            String signatureId = ExpandVariables.process(assertion.getCefSignatureId(), vars, getAudit());
+            String signatureName = ExpandVariables.process(assertion.getCefSignatureName(), vars, getAudit());
+            boolean isLogMessageToSyslogAssertionFailed = false;
+            if (signatureId.isEmpty()) {
+                getAudit().logAndAudit(AssertionMessages.ASSERTION_MISCONFIGURED, "CEF Header's Signature-ID was not set");
+                isLogMessageToSyslogAssertionFailed = true;
+            }
+            if (signatureName.isEmpty()) {
+                getAudit().logAndAudit(AssertionMessages.ASSERTION_MISCONFIGURED, "CEF Header's Signature Name was not set");
+                isLogMessageToSyslogAssertionFailed = true;
+            }
+            if (isLogMessageToSyslogAssertionFailed) {
+                return AssertionStatus.FAILED;
+            }
+        }
+
         // Block of code to verify all required data has been submitted
-        String str = ExpandVariables.process(assertion.getMessageToBeLogged(), vars, getAudit(), true);
+        String str = ExpandVariables.process(assertion.getMessageToBeLogged(), vars, getAudit());
         final StringBuilder sbSysLogMessage = new StringBuilder(str == null ? "" : str);
         if (sbSysLogMessage.length() == 0) {
             getAudit().logAndAudit(AssertionMessages.ASSERTION_MISCONFIGURED, "No Message has been set to send");

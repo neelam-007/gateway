@@ -1,48 +1,65 @@
 #!/bin/sh
 
-MODULE=$1
-LEVEL=$2
+MODULE="$1"
 
 # Pull in collector support functions
-#
-. ${COLLECTOR_HOME}/collectorlib
+. "${COLLECTOR_HOME}"/collectorlib
 
-preModule $MODULE
+preModule "$MODULE"
 
 #Define and create output folders
-MYSQL_MODULE_BaseOutputDirectory=${ALL_MODULES_BASE_OUTPUT_DIR}/${MODULE}
-MYSQL_MODULE_BaseOutputDirectory_config=${MYSQL_MODULE_BaseOutputDirectory}/config
-MYSQL_MODULE_BaseOutputDirectory_logs=${MYSQL_MODULE_BaseOutputDirectory}/logs
-mkdir -p ${MYSQL_MODULE_BaseOutputDirectory}
-#mkdir -p ${MYSQL_MODULE_BaseOutputDirectory_config}
-#mkdir -p ${MYSQL_MODULE_BaseOutputDirectory_logs}
+MYSQL_MODULE_BASEOUTPUTDIR="${BASE_OUTPUT_DIR}/${MODULE}"
+mkdir -p "${MYSQL_MODULE_BASEOUTPUTDIR}"
 
-logCommand service mysql status
-service mysql status > ${MYSQL_MODULE_BaseOutputDirectory}/mysql-status.txt
+MYSQL_MODULE_CONFIGOUTPUTDIR="${MYSQL_MODULE_BASEOUTPUTDIR}"/config
+mkdir -p "${MYSQL_MODULE_CONFIGOUTPUTDIR}"
 
-logCommand mysql ssg -e 'select * from ssg_version'
-mysql ssg -e 'select * from ssg_version' > ${MYSQL_MODULE_BaseOutputDirectory}/ssg-version.txt
+if [ -w "${MYSQL_MODULE_BASEOUTPUTDIR}" ]
+then
+    logAndRunCmd "service mysql status &> \"${MYSQL_MODULE_BASEOUTPUTDIR}\"/mysql-status.txt"
+    logAndRunCmd "mysql ssg -e 'select * from ssg_version' &> \"${MYSQL_MODULE_BASEOUTPUTDIR}\"/ssg-version.txt"
+    logAndRunCmd "mysql ssg -e 'show tables' &> \"${MYSQL_MODULE_BASEOUTPUTDIR}\"/show-tables.txt"
+    logAndRunCmd "mysql ssg -e 'show slave status' &> \"${MYSQL_MODULE_BASEOUTPUTDIR}\"/show-slave-status.txt"
+    logAndRunCmd "mysql ssg -e 'show master status' &> \"${MYSQL_MODULE_BASEOUTPUTDIR}\"/show-master-status.txt"
+    logAndRunCmd "mysqladmin -u root processlist &> \"${MYSQL_MODULE_BASEOUTPUTDIR}\"/processlist.txt"
+    logAndRunCmd "cp /var/lib/mysql/*-slow.log \"${MYSQL_MODULE_BASEOUTPUTDIR}\""
+    logAndRunCmd "cp /var/log/mysqld.log \"${MYSQL_MODULE_BASEOUTPUTDIR}\""
 
-logCommand mysql ssg -e 'show tables'
-mysql ssg -e 'show tables' > ${MYSQL_MODULE_BaseOutputDirectory}/show-tables.txt
+    logAndRunCmd "mysql ssg -e 'select count(*) as count_audit_main from audit_main' \
+        &> \"${MYSQL_MODULE_BASEOUTPUTDIR}\"/count-audit-main.txt"
+    logAndRunCmd "mysql ssg -e 'SELECT hex(ps.goid) goid, ps.name name, routing_uri, f.name folder, \
+            su.requestnr, su.authorizedreqnr, su.completedreqnr \
+        FROM ssg.service_usage su \
+        INNER JOIN ssg.published_service ps on ps.goid = su.serviceid \
+        INNER JOIN folder f on f.goid = ps.folder_goid' \
+        &> \"${MYSQL_MODULE_BASEOUTPUTDIR}\"/service-usage.txt"
+    logAndRunCmd "mysql ssg -e 'SELECT hex(goid), name, disabled, soap, internal, routing_uri, \
+            default_routing_url, http_methods \
+        FROM published_service' \
+        &> \"${MYSQL_MODULE_BASEOUTPUTDIR}\"/published-services.txt"
+    logAndRunCmd "mysql ssg -e 'SELECT hex(goid), propkey, propvalue, properties FROM cluster_properties' \
+        &> \"${MYSQL_MODULE_BASEOUTPUTDIR}\"/cluster-properties.txt"
+    logAndRunCmd "mysql ssg -e 'SELECT name, hex(goid), module_type, properties FROM server_module_file' \
+        &> \"${MYSQL_MODULE_BASEOUTPUTDIR}\"/server-modules.txt"
+    logAndRunCmd "mysql ssg -e 'SELECT name, hex(goid) goid, sk_version, properties, install_properties, \
+            mappings, uninstall_bundle, hex(parent_goid) parent_goid \
+        FROM solution_kit' \
+        &> \"${MYSQL_MODULE_BASEOUTPUTDIR}\"/solution-kits.txt"
 
-logCommand mysql ssg -e 'show slave status'
-mysql ssg -e 'show slave status' > ${MYSQL_MODULE_BaseOutputDirectory}/show-slave-status.txt
+    for user in $(mysql --silent --skip-column-names ssg -e "select concat('\'',user,'\'@\'',host,'\'') as user from mysql.user")
+    do
+        logAndRunCmd "mysql ssg -e \"show grants for ${user}\" &>> \"${MYSQL_MODULE_BASEOUTPUTDIR}\"/show-grants.txt"
+    done
 
-logCommand mysql ssg -e 'show master status'
-mysql ssg -e 'show master status' > ${MYSQL_MODULE_BaseOutputDirectory}/show-master-status.txt
+    if [ -w "${MYSQL_MODULE_CONFIGOUTPUTDIR}" ]
+    then
+        logAndRunCmd "cp /etc/my.cnf \"${MYSQL_MODULE_CONFIGOUTPUTDIR}\""
+    else
+        echo "ERROR: Could not create mysql config module output directory - my.cnf file not copied."
+    fi
 
-logCommand cat /etc/my.cnf
-cp /etc/my.cnf ${MYSQL_MODULE_BaseOutputDirectory_config}
+else
+    echo "ERROR: Could not create mysql module output directory."
+fi
 
-#if [ $LEVEL -ge $DETAIL ]
-#then
-#echo DETAIL level commands go here
-#fi
-#
-#if [ $LEVEL -ge $EVERYTHING ]
-#then
-#echo EVERYTHING level commands go here
-#fi
-
-postModule $MODULE
+postModule "$MODULE"

@@ -2,7 +2,6 @@
 *~
 *.sw[a-z]
 .DS_Store
-tmp
 *.tmp
 *.out
 **/*.iml
@@ -14,7 +13,6 @@ build
 .idea
 **/.grunt/**
 **/target/**
-**/node/**
 **/node_modules/**
 **/_SpecRunner.html
 

@@ -13,14 +13,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Set;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
  * A class to find and return encapsulated assertions for use in Quick Start.
  */
 public class QuickStartEncapsulatedAssertionLocator {
-    private static final Logger LOGGER = Logger.getLogger(QuickStartEncapsulatedAssertionLocator.class.getName());
     private final EncapsulatedAssertionConfigManager encassConfigManager;
     private final FolderManager folderManager;
     private final Goid quickStartProvidedAssertionFolder;

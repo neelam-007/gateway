@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.quickstarttemplate.server.policy;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.*;
@@ -18,12 +19,11 @@ import java.util.*;
 /**
  * Build service using restman bundle.
  */
-public class QuickStartServiceBuilderRestmanImpl implements QuickStartServiceBuilder {
-    private final static String ROOT_FOLDER_GOID = Folder.ROOT_FOLDER_ID.toString();
-    private final @NotNull QuickStartEncapsulatedAssertionTemplate quickStartEncapsulatedAssertionTemplate;
+public class RestmanServiceBundleBuilder {
+    @NotNull private final PublishedService publishedService;
 
-    public QuickStartServiceBuilderRestmanImpl(@NotNull final QuickStartEncapsulatedAssertionTemplate quickStartEncapsulatedAssertionTemplate) {
-        this.quickStartEncapsulatedAssertionTemplate = quickStartEncapsulatedAssertionTemplate;
+    public RestmanServiceBundleBuilder(@NotNull final PublishedService publishedService) {
+        this.publishedService = publishedService;
     }
 
     /**
@@ -41,9 +41,7 @@ public class QuickStartServiceBuilderRestmanImpl implements QuickStartServiceBui
      * @throws Exception if an error happens while creating the bundle.
      * IllegalArgumentException is thrown when {@code resType} is unsupported.
      */
-    @Override
-    public <T> T createServiceBundle(@NotNull final Class<T> resType) throws Exception {
-        final PublishedService publishedService = quickStartEncapsulatedAssertionTemplate.getPublishedService();
+    public <T> T createBundle(@NotNull final Class<T> resType) throws Exception {
 
         final ServiceMO serviceMO = asResource(publishedService);
         if (ServiceMO.class.equals(resType)) {
@@ -71,6 +69,9 @@ public class QuickStartServiceBuilderRestmanImpl implements QuickStartServiceBui
         throw new IllegalArgumentException("Unsupported result class: " + resType.getName());
     }
 
+    @VisibleForTesting
+    static final String PROPERTY_PREFIX = "property.";
+
     /**
      * Utility method to create a RESTMan managed object from the specified {@code publishedService}
      *
@@ -96,15 +97,16 @@ public class QuickStartServiceBuilderRestmanImpl implements QuickStartServiceBui
         service.setResourceSets( resourceSets );
 
         //serviceDetail.setId( publishedService.getId() );
-        //serviceDetail.setVersion( publishedService.getVersion() );
-        serviceDetail.setFolderId( ROOT_FOLDER_GOID );
+        serviceDetail.setVersion( publishedService.getVersion() );
+        final Folder folder = publishedService.getFolder();
+        serviceDetail.setFolderId( folder != null ? folder.getId() : null );
         serviceDetail.setName( publishedService.getName() );
         serviceDetail.setEnabled( !publishedService.isDisabled() );
         serviceDetail.setServiceMappings( buildServiceMappings(publishedService) );
 
         final Map<String, Object> properties = new HashMap<>(publishedService.getProperties().size());
         for (final String key: publishedService.getProperties().keySet()) {
-            properties.put(key, publishedService.getProperty(key));
+            properties.put(PROPERTY_PREFIX + key, publishedService.getProperty(key));
         }
         serviceDetail.setProperties(properties);
 
@@ -113,8 +115,10 @@ public class QuickStartServiceBuilderRestmanImpl implements QuickStartServiceBui
         return service;
     }
 
-    private static final String POLICY_TAG = "policy";
-    private static final String POLICY_TYPE = "policy";
+    @VisibleForTesting
+    static final String POLICY_TAG = "policy";
+    @VisibleForTesting
+    static final String POLICY_TYPE = "policy";
 
     @NotNull
     private ResourceSet buildPolicyResourceSet(@NotNull final Policy policy) {

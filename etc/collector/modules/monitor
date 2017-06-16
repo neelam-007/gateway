@@ -1,46 +1,24 @@
 #!/bin/sh
 
-MODULE=$1
-LEVEL=$2
+MODULE="$1"
 
 # Pull in collector support functions
-. ${COLLECTOR_HOME}/collectorlib
+. "${COLLECTOR_HOME}"/collectorlib
 
-preModule $MODULE
-
+preModule "$MODULE"
 
 #Define and create output folders
-MONITOR_MODULE_BaseOutputDirectory=${ALL_MODULES_BASE_OUTPUT_DIR}/${MODULE}
-MONITOR_MODULE_BaseOutputDirectory_config=${MONITOR_MODULE_BaseOutputDirectory}/config
-MONITOR_MODULE_BaseOutputDirectory_logs=${MONITOR_MODULE_BaseOutputDirectory}/logs
-mkdir -p ${MONITOR_MODULE_BaseOutputDirectory}
-#mkdir -p ${MONITOR_MODULE_BaseOutputDirectory_config}
-#mkdir -p ${MONITOR_MODULE_BaseOutputDirectory_logs}
+MONITOR_OUTPUT_DIR="${BASE_OUTPUT_DIR}/${MODULE}"
+mkdir -p "${MONITOR_OUTPUT_DIR}"
 
+if [ -w "${MONITOR_OUTPUT_DIR}" ]
+then
+    logAndRunCmd "ps axjf &> \"${MONITOR_OUTPUT_DIR}\"/ps_axjf.txt"
+    logAndRunCmd "vmstat 1 30 &>> \"${MONITOR_OUTPUT_DIR}\"/vmstat_1_30.txt"
+    logAndRunCmd "timeout 30s netstat -i 1 &>> \"${MONITOR_OUTPUT_DIR}\"/netstat_1_30.txt"
+    logAndRunCmd "ps auxwww | grep gateway &> \"${MONITOR_OUTPUT_DIR}\"/ps_auxwww.txt"
+else
+    echo "Unable to create monitor output directory."
+fi
 
-#Begin data collection
-logCommand ps axjf
-ps axjf > ${MONITOR_MODULE_BaseOutputDirectory}/ps_axjf.txt
-
-logCommand vmstat 1 30
-vmstat 1 30 >> ${MONITOR_MODULE_BaseOutputDirectory}/vmstat_1_30.txt
-
-logCommand timeout 30s netstat -i 1
-timeout 30s netstat -i 1 >> ${MONITOR_MODULE_BaseOutputDirectory}/netstat_1_30.txt
-
-logCommand 'ps auxwww | grep gateway'
-ps auxwww | grep gateway > ${MONITOR_MODULE_BaseOutputDirectory}/ps_auxwww.txt
-
-
-
-#if [ $LEVEL -ge $DETAIL ]
-#then
-#    #nothing here
-#fi
-#
-#if [ $LEVEL -ge $EVERYTHING ]
-#then
-#    #nothing here
-#fi
-
-postModule $MODULE
+postModule "$MODULE"
