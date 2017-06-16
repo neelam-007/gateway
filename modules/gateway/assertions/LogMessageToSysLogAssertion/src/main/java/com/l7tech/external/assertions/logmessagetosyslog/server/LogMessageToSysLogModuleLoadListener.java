@@ -22,6 +22,7 @@ public class LogMessageToSysLogModuleLoadListener {
      *
      * @param context the current application context
      */
+    @SuppressWarnings("UnusedDeclaration")
     public static synchronized void onModuleLoaded(final ApplicationContext context) {
         registerExternalReferenceFactory(context);
     }
@@ -29,6 +30,7 @@ public class LogMessageToSysLogModuleLoadListener {
     /**
      * Deregisters a LogMessageToSysLogExternalReferenceFactory when the Log Message to Syslog Assertion is unloaded
      */
+    @SuppressWarnings("UnusedDeclaration")
     public static synchronized void onModuleUnloaded() {
         unregisterExternalReferenceFactory();
     }

@@ -81,49 +81,49 @@ public class LogMessageToSysLogExternalReferenceTest {
             "        <LogSinkSeverity>ALL</LogSinkSeverity>\n" +
             "    </LogMessageToSysLogExternalReference>\n";
 
-    private ExternalReferenceFinder finder;
+    private ExternalReferenceFinder finder = null;
     private LogMessageToSysLogExternalReference fixture;
+    private SinkConfiguration sinkConfiguration;
+    private Goid goid;
 
     @Mock
     private Registry mockRegistry;
+
+    @Mock
     private LogSinkAdmin mockLogSinkAdmin;
-    private Goid goid;
-    private SinkConfiguration mockSinkConfiguration;
 
     @Before
     public void setUp() throws Exception {
-        mockSinkConfiguration = new SinkConfiguration();
-        mockSinkConfiguration.setGoid(new Goid(1, 0)); // 00000000000000010000000000000000
-        mockSinkConfiguration.setName("syslogwrite_test");
-        mockSinkConfiguration.setEnabled(false);
-        mockSinkConfiguration.setDescription("abc");
-        mockSinkConfiguration.setType(SinkConfiguration.SinkType.SYSLOG);
-        mockSinkConfiguration.setSeverity(SinkConfiguration.SeverityThreshold.ALL);
-        mockSinkConfiguration.addSyslogHostEntry("0.0.0.0:514");
-        mockSinkConfiguration.setCategories(SinkConfiguration.CATEGORY_AUDITS + ',' +SinkConfiguration.CATEGORY_GATEWAY_LOGS);
+        sinkConfiguration = new SinkConfiguration();
+        sinkConfiguration.setGoid(new Goid(1, 0)); // 00000000000000010000000000000000
+        sinkConfiguration.setName("syslogwrite_test");
+        sinkConfiguration.setEnabled(false);
+        sinkConfiguration.setDescription("abc");
+        sinkConfiguration.setType(SinkConfiguration.SinkType.SYSLOG);
+        sinkConfiguration.setSeverity(SinkConfiguration.SeverityThreshold.ALL);
+        sinkConfiguration.addSyslogHostEntry("0.0.0.0:514");
+        sinkConfiguration.setCategories(SinkConfiguration.CATEGORY_AUDITS + ',' +SinkConfiguration.CATEGORY_GATEWAY_LOGS);
 
         Registry.setDefault(mockRegistry);
-        mockLogSinkAdmin = mock(LogSinkAdmin.class);
 
         when(mockRegistry.getLogSinkAdmin()).thenReturn(mockLogSinkAdmin);
-        when(mockLogSinkAdmin.getSinkConfigurationByPrimaryKey(mockSinkConfiguration.getGoid())).thenReturn(mockSinkConfiguration);
+        when(mockLogSinkAdmin.getSinkConfigurationByPrimaryKey(sinkConfiguration.getGoid())).thenReturn(sinkConfiguration);
 
-        fixture = new LogMessageToSysLogExternalReference(finder, mockSinkConfiguration.getGoid());
+        fixture = new LogMessageToSysLogExternalReference(finder, sinkConfiguration.getGoid());
         goid = new Goid(1, 0);
     }
 
     @Test
     public void constructorNormalCase() throws Exception {
-
-        when(mockLogSinkAdmin.getSinkConfigurationByPrimaryKey(goid)).thenReturn(mockSinkConfiguration);
+        when(mockLogSinkAdmin.getSinkConfigurationByPrimaryKey(goid)).thenReturn(sinkConfiguration);
 
         LogMessageToSysLogExternalReference ref = new LogMessageToSysLogExternalReference(finder, goid);
 
-        assertEquals(mockSinkConfiguration.getGoid().toHexString(), ref.getRefId());
-        assertEquals(mockSinkConfiguration.getName(), ref.getLogSinkName());
-        assertEquals(mockSinkConfiguration.getDescription(), ref.getLogSinkDescription());
-        assertEquals(mockSinkConfiguration.getType(), ref.getLogSinkType());
-        assertEquals(mockSinkConfiguration.getSeverity(), ref.getLogSinkSeverity());
+        assertEquals(sinkConfiguration.getGoid().toHexString(), ref.getRefId());
+        assertEquals(sinkConfiguration.getName(), ref.getLogSinkName());
+        assertEquals(sinkConfiguration.getDescription(), ref.getLogSinkDescription());
+        assertEquals(sinkConfiguration.getType(), ref.getLogSinkType());
+        assertEquals(sinkConfiguration.getSeverity(), ref.getLogSinkSeverity());
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -131,16 +131,14 @@ public class LogMessageToSysLogExternalReferenceTest {
         goid = new Goid(1234, 5678);
         when(mockLogSinkAdmin.getSinkConfigurationByPrimaryKey(goid)).thenReturn(null);
 
-        LogMessageToSysLogExternalReference ref = new LogMessageToSysLogExternalReference(finder, goid);
+        new LogMessageToSysLogExternalReference(finder, goid);
     }
 
     @Test(expected = NullPointerException.class)
     public void constructorFindException() throws Exception {
         when(mockLogSinkAdmin.getSinkConfigurationByPrimaryKey(goid)).thenThrow(new FindException());
-        goid = null;
 
-        LogMessageToSysLogExternalReference ref = new LogMessageToSysLogExternalReference(finder, goid);
-        assertTrue(true);
+        new LogMessageToSysLogExternalReference(finder, null);
     }
 
     @Test
@@ -155,7 +153,7 @@ public class LogMessageToSysLogExternalReferenceTest {
 
     @Test
     public void verifyTrueWhenReferenceGoidMatch() throws Exception {
-        when(mockLogSinkAdmin.getSinkConfigurationByPrimaryKey(goid)).thenReturn(mockSinkConfiguration);
+        when(mockLogSinkAdmin.getSinkConfigurationByPrimaryKey(goid)).thenReturn(sinkConfiguration);
         assertTrue(fixture.verifyReference());
     }
 
@@ -165,24 +163,24 @@ public class LogMessageToSysLogExternalReferenceTest {
 
         when(mockLogSinkAdmin.getSinkConfigurationByPrimaryKey(goid)).thenReturn(null);
 
-        mockSinkConfiguration = new SinkConfiguration();
-        mockSinkConfiguration.setGoid(new Goid(111, 222));
-        mockSinkConfiguration.setName("syslogwrite_test");
-        mockSinkConfiguration.setEnabled(false);
-        mockSinkConfiguration.setDescription("Switched sink configuration");
-        mockSinkConfiguration.setType(SinkConfiguration.SinkType.SYSLOG);
-        mockSinkConfiguration.setSeverity(SinkConfiguration.SeverityThreshold.ALL);
-        mockSinkConfiguration.addSyslogHostEntry("0.0.0.0:514");
-        mockSinkConfiguration.setCategories(SinkConfiguration.CATEGORY_AUDITS + ',' + SinkConfiguration.CATEGORY_GATEWAY_LOGS);
+        sinkConfiguration = new SinkConfiguration();
+        sinkConfiguration.setGoid(new Goid(111, 222));
+        sinkConfiguration.setName("syslogwrite_test");
+        sinkConfiguration.setEnabled(false);
+        sinkConfiguration.setDescription("Switched sink configuration");
+        sinkConfiguration.setType(SinkConfiguration.SinkType.SYSLOG);
+        sinkConfiguration.setSeverity(SinkConfiguration.SeverityThreshold.ALL);
+        sinkConfiguration.addSyslogHostEntry("0.0.0.0:514");
+        sinkConfiguration.setCategories(SinkConfiguration.CATEGORY_AUDITS + ',' + SinkConfiguration.CATEGORY_GATEWAY_LOGS);
 
-        list.add(mockSinkConfiguration);
+        list.add(sinkConfiguration);
 
         when(mockLogSinkAdmin.getSinkConfigurationByPrimaryKey(goid)).thenReturn(null);
         when(mockLogSinkAdmin.findAllSinkConfigurations()).thenReturn(list);
 
         assertTrue(fixture.verifyReference());
 
-        assertEquals(mockSinkConfiguration.getGoid().toHexString(), fixture.getRefId());
+        assertEquals(sinkConfiguration.getGoid().toHexString(), fixture.getRefId());
     }
 
     @Test
@@ -248,6 +246,6 @@ public class LogMessageToSysLogExternalReferenceTest {
 
     @Test(expected = InvalidDocumentFormatException.class)
     public void testStaticParseWrongAssertionCase() throws Exception {
-        LogMessageToSysLogExternalReference reference = LogMessageToSysLogExternalReference.parseFromElement(finder, XmlUtil.parse(REF_EL_GOID_MATCH_VARS_WRONG_ASSERTION).getDocumentElement());
+        LogMessageToSysLogExternalReference.parseFromElement(finder, XmlUtil.parse(REF_EL_GOID_MATCH_VARS_WRONG_ASSERTION).getDocumentElement());
     }
 }

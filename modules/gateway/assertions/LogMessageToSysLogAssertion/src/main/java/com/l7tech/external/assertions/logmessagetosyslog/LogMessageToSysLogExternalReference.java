@@ -44,11 +44,11 @@ public class LogMessageToSysLogExternalReference extends ExternalReference {
     private LocalizeAction localizeType;
     private LogSinkAdmin logSinkAdmin = Registry.getDefault().getLogSinkAdmin();
 
-    public LogMessageToSysLogExternalReference(ExternalReferenceFinder finder) {
+    private LogMessageToSysLogExternalReference(ExternalReferenceFinder finder) {
         super(finder);
     }
 
-    public LogMessageToSysLogExternalReference(ExternalReferenceFinder finder, final Goid sinkId) {
+    LogMessageToSysLogExternalReference(ExternalReferenceFinder finder, final Goid sinkId) {
         this(finder);
         goid = sinkId;
 
@@ -202,7 +202,7 @@ public class LogMessageToSysLogExternalReference extends ExternalReference {
      * @return A LogMessageToSysLogExternalReference whose fields match those of the policy's element values
      * @throws InvalidDocumentFormatException if the element to parse does not have a LogMessageToSyslog opening tag
      */
-    public static LogMessageToSysLogExternalReference parseFromElement(ExternalReferenceFinder finder, Element el)
+    static LogMessageToSysLogExternalReference parseFromElement(ExternalReferenceFinder finder, Element el)
             throws InvalidDocumentFormatException {
         if (!el.getNodeName().equals(El_NAME_REF)) {
             throw new InvalidDocumentFormatException("Expecting element of name " + El_NAME_REF);

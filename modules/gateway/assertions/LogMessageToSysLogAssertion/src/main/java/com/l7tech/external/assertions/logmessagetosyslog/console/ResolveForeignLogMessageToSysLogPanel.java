@@ -16,6 +16,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.policy.exporter.ExternalReference;
 
 import javax.swing.*;
 import java.awt.*;
@@ -36,23 +37,22 @@ import java.util.stream.Collectors;
  * @see WizardStepPanel
  * @see LogMessageToSysLogExternalReference
  */
-public class ResolveForeignLogMessageToSysLogPanel extends WizardStepPanel {
-    protected static final Logger logger = Logger.getLogger(ResolveForeignLogMessageToSysLogPanel.class.getName());
+public class ResolveForeignLogMessageToSysLogPanel extends WizardStepPanel<ExternalReference> {
+    private static final Logger logger = Logger.getLogger(ResolveForeignLogMessageToSysLogPanel.class.getName());
 
     private LogMessageToSysLogExternalReference foreignRef;
     private JPanel mainPanel;
     private JRadioButton removeAssertionThatReferRadioButton;
     private JRadioButton changeAssertionToUseRadioButton;
     private JRadioButton importErroneousAssertionAsRadioButton;
-    private JComboBox logSinkChoice;
+    private JComboBox<SinkConfiguration> logSinkChoice;
     private JButton createANewLogButton;
     private JTextField nameField;
     private JTextField descField;
     private JTextField typeField;
     private JTextField severityField;
-    private JPanel Action;
 
-    public ResolveForeignLogMessageToSysLogPanel(WizardStepPanel next, LogMessageToSysLogExternalReference foreignRef) {
+    public ResolveForeignLogMessageToSysLogPanel(WizardStepPanel<ExternalReference> next, LogMessageToSysLogExternalReference foreignRef) {
         super(next);
         this.foreignRef = foreignRef;
         initialize();
@@ -94,7 +94,7 @@ public class ResolveForeignLogMessageToSysLogPanel extends WizardStepPanel {
      * Initializes the Log Message to Syslog Assertion wizard step panel when the user imports a policy containing this
      * assertion and the log message to syslog external reference references an unknown log sink
      */
-    public void initialize() {
+    private void initialize() {
         setLayout(new BorderLayout());
         add(mainPanel);
 
@@ -110,7 +110,7 @@ public class ResolveForeignLogMessageToSysLogPanel extends WizardStepPanel {
         removeAssertionThatReferRadioButton.addActionListener(e -> logSinkChoice.setEnabled(false));
         importErroneousAssertionAsRadioButton.addActionListener(e -> logSinkChoice.setEnabled(false));
 
-        logSinkChoice.setRenderer(new TextListCellRenderer<SinkConfiguration>(sinkConfig -> getConnectorInfo(sinkConfig)));
+        logSinkChoice.setRenderer(new TextListCellRenderer<>(this::getConnectorInfo));
 
         createANewLogButton.addActionListener(actionEvent -> createLogSink());
 
@@ -161,7 +161,7 @@ public class ResolveForeignLogMessageToSysLogPanel extends WizardStepPanel {
                     .collect(Collectors.toList());
 
             if (!sysLogSinks.isEmpty()) {
-                Collections.sort((List<SinkConfiguration>) sysLogSinks, (o1, o2)
+                ((List<SinkConfiguration>) sysLogSinks).sort((o1, o2)
                         -> o1.getName().compareToIgnoreCase(o2.getName()));
 
                 logSinkChoice.setModel(Utilities.comboBoxModel(sysLogSinks));
@@ -194,39 +194,31 @@ public class ResolveForeignLogMessageToSysLogPanel extends WizardStepPanel {
                 sinkConfiguration, false);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
-        DialogDisplayer.display(dlg, new Runnable() {
-            @Override
-            public void run() {
-                if (dlg.isConfirmed()) {
-                    Runnable reedit = new Runnable() {
-                        @Override
-                        public void run() {
-                            editAndSave(sinkConfiguration);
-                        }
-                    };
-                    try {
-                        LogSinkAdmin logSinkAdmin = Registry.getDefault().getLogSinkAdmin();
-                        Goid oid = logSinkAdmin.saveSinkConfiguration(sinkConfiguration);
-                        if (!Goid.equals(oid, sinkConfiguration.getGoid())) sinkConfiguration.setGoid(oid);
+        DialogDisplayer.display(dlg, () -> {
+            if (dlg.isConfirmed()) {
+                Runnable reedit = () -> editAndSave(sinkConfiguration);
+                try {
+                    LogSinkAdmin logSinkAdmin = Registry.getDefault().getLogSinkAdmin();
+                    Goid oid = logSinkAdmin.saveSinkConfiguration(sinkConfiguration);
+                    if (!Goid.equals(oid, sinkConfiguration.getGoid())) sinkConfiguration.setGoid(oid);
 
-                        populateComboBox();
+                    populateComboBox();
 
-                        for (int i = 0; i < logSinkChoice.getModel().getSize(); i++) {
-                            SinkConfiguration curConfig = (SinkConfiguration) logSinkChoice.getItemAt(i);
-                            if (curConfig.getName().equals(sinkConfiguration.getName())) {
-                                logSinkChoice.setSelectedItem(curConfig);
-                                changeAssertionToUseRadioButton.setEnabled(true);
-                                changeAssertionToUseRadioButton.setSelected(true);
-                                logSinkChoice.setEnabled(true);
-                            }
+                    for (int i = 0; i < logSinkChoice.getModel().getSize(); i++) {
+                        SinkConfiguration curConfig = logSinkChoice.getItemAt(i);
+                        if (curConfig.getName().equals(sinkConfiguration.getName())) {
+                            logSinkChoice.setSelectedItem(curConfig);
+                            changeAssertionToUseRadioButton.setEnabled(true);
+                            changeAssertionToUseRadioButton.setSelected(true);
+                            logSinkChoice.setEnabled(true);
                         }
-                    } catch (SaveException | UpdateException e) {
-                        logger.log(Level.WARNING, "Log Sink save failed");
-                        DialogDisplayer.showMessageDialog(logSinkManagerWindow,
-                                "Cannot save Log Sink: (name) must be unique",
-                                "Error Saving new Log Sink",
-                                JOptionPane.ERROR_MESSAGE, reedit);
                     }
+                } catch (SaveException | UpdateException e) {
+                    logger.log(Level.WARNING, "Log Sink save failed");
+                    DialogDisplayer.showMessageDialog(logSinkManagerWindow,
+                            "Cannot save Log Sink: (name) must be unique",
+                            "Error Saving new Log Sink",
+                            JOptionPane.ERROR_MESSAGE, reedit);
                 }
             }
         });
