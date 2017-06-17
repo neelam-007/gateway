@@ -4,7 +4,7 @@ MODULE="$1"
 VMWARE_CMDDIR=/usr/sbin
 
 # Pull in collector support functions
-. "${COLLECTOR_HOME}"/collectorlib
+. ./collectorlib
 
 preModule "$MODULE"
 

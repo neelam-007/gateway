@@ -3,7 +3,7 @@
 MODULE="$1"
 
 # Pull in collector support functions
-. "${COLLECTOR_HOME}"/collectorlib
+. ./collectorlib
 
 preModule "$MODULE"
 
