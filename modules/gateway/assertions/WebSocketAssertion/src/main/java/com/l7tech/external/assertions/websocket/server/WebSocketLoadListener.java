@@ -92,7 +92,7 @@ public class WebSocketLoadListener {
         }
         // Only initialize all the WebSocket inbound/outbound resource managers when the SSG is "ready for messages"
         applicationEventProxy = context.getBean("applicationEventProxy", ApplicationEventProxy.class);
-        applicationEventProxy.addApplicationListener(new ApplicationListener() {
+        applicationListener = new ApplicationListener() {
             @Override
             public void onApplicationEvent(ApplicationEvent event) {
                 if (event instanceof ReadyForMessages) {
@@ -144,7 +144,9 @@ public class WebSocketLoadListener {
                     }
                 }
             }
-        });
+        };
+
+        applicationEventProxy.addApplicationListener(applicationListener);
     }
 
     private static void loadPropAndStartServer(){
