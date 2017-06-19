@@ -1,15 +1,15 @@
 package com.l7tech.external.assertions.quickstarttemplate.server.parser;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
+import com.l7tech.common.http.HttpMethod;
 import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStartEncapsulatedAssertionLocator;
 import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStartPolicyBuilderException;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.CodeInjectionProtectionType;
 import com.l7tech.policy.assertion.EncapsulatedAssertion;
 import com.l7tech.policy.variable.DataType;
 import org.junit.BeforeClass;
@@ -19,15 +19,14 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -39,9 +38,279 @@ public class QuickStartMapperTest {
     @InjectMocks
     private QuickStartMapper fixture;
 
+    private static AssertionRegistry assertionRegistry = new AssertionRegistry();
+
     @BeforeClass
     public static void init() throws Exception {
-        AssertionRegistry.installEnhancedMetadataDefaults();
+//        assertionRegistry.registerAssertion(QuickStartMapperTestAssertion.class);
+    }
+
+    @Test
+    public void callAssertionSetter() throws Exception {
+        final AtomicBoolean wasAttributeSet = new AtomicBoolean(false);
+        final Assertion assertion = new Assertion() {
+            @SuppressWarnings("UnusedDeclaration")
+            public void setTypeAttribute(String s) {
+                wasAttributeSet.set(true);
+            }
+
+            @SuppressWarnings("UnusedDeclaration")
+            public void setProtections(CodeInjectionProtectionType[] s) {
+                wasAttributeSet.set(true);
+            }
+
+            @SuppressWarnings("UnusedDeclaration")
+            public void setTypeAttribute(Date[] s) {
+                wasAttributeSet.set(true);
+            }
+
+            @SuppressWarnings("UnusedDeclaration")
+            public void setTypeAttribute(List<Date> s) {
+                wasAttributeSet.set(true);
+            }
+        };
+
+        // exact type match
+        fixture.callAssertionSetter(assertion, ImmutableMap.of("TypeAttribute", "aString"));
+        assertTrue(wasAttributeSet.get());
+        wasAttributeSet.set(false);
+
+        // TODO
+//        fixture.callAssertionSetter(assertion, ImmutableMap.of("Protection", CodeInjectionProtectionType.fromWspName("htmlJavaScriptInjection")));
+//        List<String> codeInjectionProtectionTypes = Arrays.asList("htmlJavaScriptInjection", "phpEvalInjection");
+//        fixture.callAssertionSetter(assertion, ImmutableMap.of("Protection", codeInjectionProtectionTypes));
+//        assertTrue(wasAttributeSet.get());
+//        wasAttributeSet.set(false);
+
+        // exact type array match
+        fixture.callAssertionSetter(assertion, ImmutableMap.of("TypeAttribute", new Date[] {new Date(), new Date(), new Date()}));
+        assertTrue(wasAttributeSet.get());
+        wasAttributeSet.set(false);
+
+        // TODO can't convert, throw exception
+    }
+
+    @Test
+    public void callAssertionSetterWithPrimitive() throws Exception {
+        final AtomicBoolean wasAttributeSet = new AtomicBoolean(false);
+        final Assertion assertion = new Assertion() {
+            @SuppressWarnings("UnusedDeclaration")
+            public void setPrimitiveAttribute(int i) {
+                wasAttributeSet.set(true);
+            }
+
+            @SuppressWarnings("UnusedDeclaration")
+            public void setPrimitiveWrapperAttribute(Double d) {
+                wasAttributeSet.set(true);
+            }
+        };
+
+        // primitive
+        fixture.callAssertionSetter(assertion, ImmutableMap.of("PrimitiveAttribute", 1));
+        assertTrue(wasAttributeSet.get());
+        wasAttributeSet.set(false);
+
+        // autobox primitive wrapper to primitive
+        fixture.callAssertionSetter(assertion, ImmutableMap.of("PrimitiveAttribute", Integer.valueOf("1")));
+        assertTrue(wasAttributeSet.get());
+        wasAttributeSet.set(false);
+
+        // primitive wrapper
+        fixture.callAssertionSetter(assertion, ImmutableMap.of("PrimitiveWrapperAttribute", Double.valueOf("1.0")));
+        assertTrue(wasAttributeSet.get());
+        wasAttributeSet.set(false);
+
+        // autobox primitive to primitive wrapper - in case map autobox changes
+        fixture.callAssertionSetter(assertion, ImmutableMap.of("PrimitiveWrapperAttribute", 1.0));
+        assertTrue(wasAttributeSet.get());
+        wasAttributeSet.set(false);
+    }
+
+    @Test
+    public void callAssertionSetterWithPrimitiveArray() throws Exception {
+        final AtomicBoolean wasAttributeSet = new AtomicBoolean(false);
+        final Assertion assertion = new Assertion() {
+            @SuppressWarnings("UnusedDeclaration")
+            public void setPrimitiveAttribute(boolean[] a) {
+                wasAttributeSet.set(true);
+            }
+
+            @SuppressWarnings("UnusedDeclaration")
+            public void setPrimitiveAttribute(byte[] a) {
+                wasAttributeSet.set(true);
+            }
+
+            @SuppressWarnings("UnusedDeclaration")
+            public void setPrimitiveAttribute(char[] a) {
+                wasAttributeSet.set(true);
+            }
+
+            @SuppressWarnings("UnusedDeclaration")
+            public void setPrimitiveAttribute(short[] a) {
+                wasAttributeSet.set(true);
+            }
+
+            @SuppressWarnings("UnusedDeclaration")
+            public void setPrimitiveAttribute(int[] a) {
+                wasAttributeSet.set(true);
+            }
+
+            @SuppressWarnings("UnusedDeclaration")
+            public void setPrimitiveAttribute(long[] a) {
+                wasAttributeSet.set(true);
+            }
+
+            @SuppressWarnings("UnusedDeclaration")
+            public void setPrimitiveAttribute(double[] a) {
+                wasAttributeSet.set(true);
+            }
+
+            @SuppressWarnings("UnusedDeclaration")
+            public void setPrimitiveAttribute(float[] a) {
+                wasAttributeSet.set(true);
+            }
+        };
+
+        // primitive array
+        fixture.callAssertionSetter(assertion, ImmutableMap.of("PrimitiveAttribute", new boolean[] {true, false, true}));
+        assertTrue(wasAttributeSet.get());
+        wasAttributeSet.set(false);
+
+        // autobox primitive wrapper array to primitive array
+        fixture.callAssertionSetter(assertion, ImmutableMap.of("PrimitiveAttribute", new Boolean[] {true, false, true}));
+        assertTrue(wasAttributeSet.get());
+        wasAttributeSet.set(false);
+
+        fixture.callAssertionSetter(assertion, ImmutableMap.of("PrimitiveAttribute", new Byte[] {1, 2, 3}));
+        assertTrue(wasAttributeSet.get());
+        wasAttributeSet.set(false);
+
+        fixture.callAssertionSetter(assertion, ImmutableMap.of("PrimitiveAttribute", new Character[] {'a', 'b', 'c'}));
+        assertTrue(wasAttributeSet.get());
+        wasAttributeSet.set(false);
+
+        fixture.callAssertionSetter(assertion, ImmutableMap.of("PrimitiveAttribute", new Short[] {1, 2, 3}));
+        assertTrue(wasAttributeSet.get());
+        wasAttributeSet.set(false);
+
+        fixture.callAssertionSetter(assertion, ImmutableMap.of("PrimitiveAttribute", new Integer[] {1, 2, 3}));
+        assertTrue(wasAttributeSet.get());
+        wasAttributeSet.set(false);
+
+        fixture.callAssertionSetter(assertion, ImmutableMap.of("PrimitiveAttribute", new Long[] {1L, 2L, 3L}));
+        assertTrue(wasAttributeSet.get());
+        wasAttributeSet.set(false);
+
+        fixture.callAssertionSetter(assertion, ImmutableMap.of("PrimitiveAttribute", new Double[] {1.0, 2.0, 3.0}));
+        assertTrue(wasAttributeSet.get());
+        wasAttributeSet.set(false);
+
+        fixture.callAssertionSetter(assertion, ImmutableMap.of("PrimitiveAttribute", new Float[] {1.0F, 2.0F, 3.0F}));
+        assertTrue(wasAttributeSet.get());
+        wasAttributeSet.set(false);
+    }
+
+    @Test
+    public void callAssertionSetterWithPrimitiveWrapperArray() throws Exception {
+        final AtomicBoolean wasAttributeSet = new AtomicBoolean(false);
+        final Assertion assertion = new Assertion() {
+            @SuppressWarnings("UnusedDeclaration")
+            public void setPrimitiveWrapperAttribute(Boolean[] a) {
+                wasAttributeSet.set(true);
+            }
+
+            @SuppressWarnings("UnusedDeclaration")
+            public void setPrimitiveWrapperAttribute(Byte[] a) {
+                wasAttributeSet.set(true);
+            }
+
+            @SuppressWarnings("UnusedDeclaration")
+            public void setPrimitiveWrapperAttribute(Character[] a) {
+                wasAttributeSet.set(true);
+            }
+
+            @SuppressWarnings("UnusedDeclaration")
+            public void setPrimitiveWrapperAttribute(Short[] a) {
+                wasAttributeSet.set(true);
+            }
+
+            @SuppressWarnings("UnusedDeclaration")
+            public void setPrimitiveWrapperAttribute(Integer[] a) {
+                wasAttributeSet.set(true);
+            }
+
+            @SuppressWarnings("UnusedDeclaration")
+            public void setPrimitiveWrapperAttribute(Long[] a) {
+                wasAttributeSet.set(true);
+            }
+
+            @SuppressWarnings("UnusedDeclaration")
+            public void setPrimitiveWrapperAttribute(Double[] a) {
+                wasAttributeSet.set(true);
+            }
+
+            @SuppressWarnings("UnusedDeclaration")
+            public void setPrimitiveWrapperAttribute(Float[] a) {
+                wasAttributeSet.set(true);
+            }
+        };
+
+        // primitive wrapper array
+        fixture.callAssertionSetter(assertion, ImmutableMap.of("PrimitiveWrapperAttribute", new Long[] {1L, 2L, 3L}));
+        assertTrue(wasAttributeSet.get());
+        wasAttributeSet.set(false);
+
+        // autobox primitive array to primitive wrapper array
+        fixture.callAssertionSetter(assertion, ImmutableMap.of("PrimitiveWrapperAttribute", new boolean[] {true, true, false}));
+        assertTrue(wasAttributeSet.get());
+        wasAttributeSet.set(false);
+        fixture.callAssertionSetter(assertion, ImmutableMap.of("PrimitiveWrapperAttribute", new byte[] {1, 2, 3}));
+        assertTrue(wasAttributeSet.get());
+        wasAttributeSet.set(false);
+        fixture.callAssertionSetter(assertion, ImmutableMap.of("PrimitiveWrapperAttribute", new char[] {'a', 'b', 'c'}));
+        assertTrue(wasAttributeSet.get());
+        wasAttributeSet.set(false);
+        fixture.callAssertionSetter(assertion, ImmutableMap.of("PrimitiveWrapperAttribute", new short[] {1, 2, 3}));
+        assertTrue(wasAttributeSet.get());
+        wasAttributeSet.set(false);
+        fixture.callAssertionSetter(assertion, ImmutableMap.of("PrimitiveWrapperAttribute", new int[] {1, 2, 3}));
+        assertTrue(wasAttributeSet.get());
+        wasAttributeSet.set(false);
+        fixture.callAssertionSetter(assertion, ImmutableMap.of("PrimitiveWrapperAttribute", new long[] {1L, 2L, 3L}));
+        assertTrue(wasAttributeSet.get());
+        wasAttributeSet.set(false);
+        fixture.callAssertionSetter(assertion, ImmutableMap.of("PrimitiveWrapperAttribute", new double[] {1.0, 2.0, 3.0}));
+        assertTrue(wasAttributeSet.get());
+        wasAttributeSet.set(false);
+        fixture.callAssertionSetter(assertion, ImmutableMap.of("PrimitiveWrapperAttribute", new float[] {1.0F, 2.0F, 3.0F}));
+        assertTrue(wasAttributeSet.get());
+        wasAttributeSet.set(false);
+    }
+
+    @Test
+    public void callAssertionSetterValueOf() throws Exception {
+        final AtomicBoolean wasAttributeSet = new AtomicBoolean(false);
+        final Assertion assertion = new Assertion() {
+            @SuppressWarnings("UnusedDeclaration")
+            public void setValueOfAttribute(HttpMethod h) {
+                wasAttributeSet.set(true);
+            }
+
+            @SuppressWarnings("UnusedDeclaration")
+            public void setValueOfAttribute(HttpMethod[] h) {
+                wasAttributeSet.set(true);
+            }
+        };
+
+        // value of
+        fixture.callAssertionSetter(assertion, ImmutableMap.of("ValueOfAttribute", HttpMethod.GET));
+        assertTrue(wasAttributeSet.get());
+        wasAttributeSet.set(false);
+
+        // value of array
+        fixture.callAssertionSetter(assertion, ImmutableMap.of("ValueOfAttribute", new HttpMethod[] {HttpMethod.POST, HttpMethod.PUT, HttpMethod.DELETE}));
+        assertTrue(wasAttributeSet.get());
+        wasAttributeSet.set(false);
     }
 
     @Test
@@ -145,8 +414,6 @@ public class QuickStartMapperTest {
         fixture.getAssertions(service);
     }
 
-    // TODO add unit tests
-
     private static Service mockService(final Map<String, Map<String, ?>>... policies) {
         return new Service("SomeName", "/SomePath", Collections.emptyList(), Lists.newArrayList(policies));
     }
@@ -171,5 +438,4 @@ public class QuickStartMapperTest {
         when(descriptor.dataType()).thenReturn(type);
         return descriptor;
     }
-
 }
