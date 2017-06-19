@@ -39,6 +39,7 @@ public class PolicyFolderPropertiesDialog extends JDialog {
     private JButton cancelButton;
     private JPanel contentPanel;
     private SecurityZoneWidget zoneControl;
+    private JTextField folderIDTextField;
 
     private boolean confirmed = false;
     private final JDialog dialog;
@@ -111,6 +112,8 @@ public class PolicyFolderPropertiesDialog extends JDialog {
                 }
             }
         });
+
+       folderIDTextField.setText(header.getGoid().toString());
 
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
