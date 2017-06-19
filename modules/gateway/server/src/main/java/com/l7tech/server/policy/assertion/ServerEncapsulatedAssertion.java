@@ -298,7 +298,7 @@ public class ServerEncapsulatedAssertion extends AbstractServerAssertion<Encapsu
                  * So assigning default values to the primitive types
                  */
                 if (parameterValueString == null) {
-                    parameterValueString = assignDefaultValuesToInputVariables(arg.getArgumentType());
+                    parameterValueString = getDefaultValueForArgumentType(arg.getArgumentType());
                 }
                 if (EncapsulatedAssertionArgumentDescriptor.valueIsParentContextVariableNameForDataType(arg.getArgumentType())) {
                     // Add a reference under the requested name to the underlying value object from the parent pec (Message or Element)
@@ -324,22 +324,20 @@ public class ServerEncapsulatedAssertion extends AbstractServerAssertion<Encapsu
         }
     }
 
-    private String assignDefaultValuesToInputVariables (String dataType) {
-        String parameterValueString = null;
-        switch (dataType) {
+    @Nullable
+    private String getDefaultValueForArgumentType(@NotNull final String argumentType) {
+        switch (argumentType) {
             case "string" :
-                parameterValueString = "";
-                break;
+                return  "";
             case "int" :
             case "decimal" :
             case "float" :
-                parameterValueString = "0";
-                break;
+                return "0";
             case "boolean" :
-                parameterValueString = "False";
-                break;
+                return "False";
+            default:
+                return null;
         }
-        return parameterValueString;
     }
 
     @Nullable
