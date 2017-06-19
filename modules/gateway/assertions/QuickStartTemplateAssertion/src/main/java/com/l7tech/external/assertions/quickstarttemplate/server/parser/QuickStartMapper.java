@@ -11,6 +11,7 @@ import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CodeInjectionProtectionType;
 import com.l7tech.policy.assertion.EncapsulatedAssertion;
+import com.l7tech.server.cluster.ClusterPropertyManager;
 import org.apache.commons.lang.ArrayUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -26,6 +27,8 @@ import static org.apache.commons.lang.ClassUtils.wrapperToPrimitive;
 
 public class QuickStartMapper {
     private static final Logger logger = Logger.getLogger(QuickStartMapper.class.getName());
+
+    private static final String ENABLE_ALL_ASSERTIONS_FLAG_KEY = "quickStart.allassertions.enabled";
 
     // TODO move class util support into com.l7tech.util.ClassUtils
     private static final Map<Class, Class> primitiveArrayWrapperArrayMap = new HashMap<>();
@@ -87,8 +90,12 @@ public class QuickStartMapper {
     @NotNull
     private final QuickStartEncapsulatedAssertionLocator assertionLocator;
 
-    public QuickStartMapper(@NotNull final QuickStartEncapsulatedAssertionLocator assertionLocator) {
+    @NotNull
+    private final ClusterPropertyManager clusterPropertyManager;
+
+    public QuickStartMapper(@NotNull final QuickStartEncapsulatedAssertionLocator assertionLocator, @NotNull final ClusterPropertyManager clusterPropertyManager) {
         this.assertionLocator = assertionLocator;
+        this.clusterPropertyManager = clusterPropertyManager;
     }
 
     // TODO is there a better time in the assertion lifecycle to set assertion registry?
@@ -110,7 +117,8 @@ public class QuickStartMapper {
 
             // check if assertion name is allowed
             Assertion assertion = null;
-            if (supportedAssertionNames.contains(name)) {  // TODO cluster property override to allow ALL assertion names
+            if (supportedAssertionNames.contains(name) ||
+                    (clusterPropertyManager.getProperty(ENABLE_ALL_ASSERTIONS_FLAG_KEY) != null && clusterPropertyManager.getProperty(ENABLE_ALL_ASSERTIONS_FLAG_KEY).equalsIgnoreCase("true"))) {
                 assertion = assertionLocator.findAssertion(name);
             }
 

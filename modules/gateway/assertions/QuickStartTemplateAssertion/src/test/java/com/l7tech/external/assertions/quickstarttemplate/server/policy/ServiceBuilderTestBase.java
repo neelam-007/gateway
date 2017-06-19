@@ -11,6 +11,7 @@ import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.EncapsulatedAssertion;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.wsp.WspConstants;
+import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.folder.FolderManager;
 import com.l7tech.server.service.ServiceCache;
 import com.l7tech.util.Charsets;
@@ -27,6 +28,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
+
+import static org.mockito.Mockito.when;
 
 /**
  */
@@ -48,6 +51,9 @@ public abstract class ServiceBuilderTestBase {
 
     @Mock
     protected QuickStartEncapsulatedAssertionLocator assertionLocator;
+
+    @Mock
+    protected ClusterPropertyManager clusterPropertyManager;
 
     protected QuickStartParser parser = new QuickStartParser();
 
@@ -127,7 +133,9 @@ public abstract class ServiceBuilderTestBase {
 
         Mockito.doNothing().when(serviceCache).checkResolution(Mockito.any(PublishedService.class));
 
-        serviceBuilder = Mockito.spy(new QuickStartServiceBuilder(serviceCache, folderManager, serviceLocator, assertionLocator));
+        when(clusterPropertyManager.getProperty("quickStart.allassertions.enabled")).thenReturn("true");
+
+        serviceBuilder = Mockito.spy(new QuickStartServiceBuilder(serviceCache, folderManager, serviceLocator, assertionLocator, clusterPropertyManager));
     }
 
 

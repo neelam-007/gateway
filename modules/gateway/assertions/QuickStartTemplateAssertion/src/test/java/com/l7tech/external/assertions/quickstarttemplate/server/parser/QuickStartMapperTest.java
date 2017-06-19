@@ -12,6 +12,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CodeInjectionProtectionType;
 import com.l7tech.policy.assertion.EncapsulatedAssertion;
 import com.l7tech.policy.variable.DataType;
+import com.l7tech.server.cluster.ClusterPropertyManager;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -34,6 +35,9 @@ public class QuickStartMapperTest {
 
     @Mock
     private QuickStartEncapsulatedAssertionLocator locator;
+
+    @Mock
+    protected ClusterPropertyManager clusterPropertyManager;
 
     @InjectMocks
     private QuickStartMapper fixture;

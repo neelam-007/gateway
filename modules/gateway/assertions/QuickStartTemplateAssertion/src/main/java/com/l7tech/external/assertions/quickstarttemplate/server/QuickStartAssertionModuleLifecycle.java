@@ -7,6 +7,7 @@ import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStar
 import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStartServiceBuilder;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.GatewayState;
+import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.folder.FolderManager;
 import com.l7tech.server.policy.EncapsulatedAssertionConfigManager;
@@ -30,6 +31,7 @@ public class QuickStartAssertionModuleLifecycle {
     private static QuickStartPublishedServiceLocator serviceLocator = null;
     private static QuickStartServiceBuilder serviceBuilder = null;
     private static OneTimeJsonServiceInstaller jsonServiceInstaller = null;
+    private static ClusterPropertyManager clusterPropertyManager = null;
 
     @SuppressWarnings("unused")
     public static synchronized void onModuleLoaded(final ApplicationContext context) {
@@ -39,6 +41,10 @@ public class QuickStartAssertionModuleLifecycle {
             assertionLocator = new QuickStartEncapsulatedAssertionLocator(eacm, folderManager, new Goid(PROVIDED_FRAGMENT_FOLDER_GOID));
         }
 
+        if (clusterPropertyManager == null) {
+            clusterPropertyManager = context.getBean("clusterPropertyManager", ClusterPropertyManager.class);
+        }
+
         if (serviceLocator == null) {
             final ServiceManager serviceManager = context.getBean("serviceManager", ServiceManager.class);
             serviceLocator = new QuickStartPublishedServiceLocator(serviceManager);
@@ -46,7 +52,7 @@ public class QuickStartAssertionModuleLifecycle {
 
         if (serviceBuilder == null) {
             final ServiceCache ServiceCache = context.getBean("serviceCache", ServiceCache.class);
-            serviceBuilder = new QuickStartServiceBuilder(ServiceCache, folderManager, serviceLocator, assertionLocator);
+            serviceBuilder = new QuickStartServiceBuilder(ServiceCache, folderManager, serviceLocator, assertionLocator, clusterPropertyManager);
         }
 
         if (jsonServiceInstaller == null) {
