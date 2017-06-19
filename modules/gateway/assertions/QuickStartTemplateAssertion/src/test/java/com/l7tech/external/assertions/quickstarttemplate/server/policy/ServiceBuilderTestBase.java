@@ -11,10 +11,10 @@ import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.EncapsulatedAssertion;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.wsp.WspConstants;
-import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.folder.FolderManager;
 import com.l7tech.server.service.ServiceCache;
 import com.l7tech.util.Charsets;
+import com.l7tech.util.Config;
 import com.l7tech.util.Pair;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
@@ -53,7 +53,7 @@ public abstract class ServiceBuilderTestBase {
     protected QuickStartEncapsulatedAssertionLocator assertionLocator;
 
     @Mock
-    protected ClusterPropertyManager clusterPropertyManager;
+    protected Config cachedConfig;
 
     protected QuickStartParser parser = new QuickStartParser();
 
@@ -133,9 +133,9 @@ public abstract class ServiceBuilderTestBase {
 
         Mockito.doNothing().when(serviceCache).checkResolution(Mockito.any(PublishedService.class));
 
-        when(clusterPropertyManager.getProperty("quickStart.allassertions.enabled")).thenReturn("true");
+        when(cachedConfig.getBooleanProperty("quickStart.allassertions.enabled", false)).thenReturn(true);
 
-        serviceBuilder = Mockito.spy(new QuickStartServiceBuilder(serviceCache, folderManager, serviceLocator, assertionLocator, clusterPropertyManager));
+        serviceBuilder = Mockito.spy(new QuickStartServiceBuilder(serviceCache, folderManager, serviceLocator, assertionLocator, cachedConfig));
     }
 
 

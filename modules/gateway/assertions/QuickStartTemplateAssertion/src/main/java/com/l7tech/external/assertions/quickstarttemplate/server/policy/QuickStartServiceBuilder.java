@@ -15,11 +15,11 @@ import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspWriter;
-import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.folder.FolderManager;
 import com.l7tech.server.service.ServiceCache;
 import com.l7tech.server.service.resolution.NonUniqueServiceResolutionException;
 import com.l7tech.server.service.resolution.ServiceResolutionException;
+import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Triple;
 import org.jetbrains.annotations.NotNull;
@@ -39,20 +39,20 @@ public class QuickStartServiceBuilder {
     @NotNull private final FolderManager folderManager;
     @NotNull private final QuickStartPublishedServiceLocator serviceLocator;
     @NotNull private final QuickStartMapper mapper;
-    @NotNull private final ClusterPropertyManager clusterPropertyManager;
+    @NotNull private final Config cachedConfig;
 
     public QuickStartServiceBuilder(
             @NotNull final ServiceCache serviceCache,
             @NotNull final FolderManager folderManager,
             @NotNull final QuickStartPublishedServiceLocator serviceLocator,
             @NotNull final QuickStartEncapsulatedAssertionLocator assertionLocator,
-            @NotNull final ClusterPropertyManager clusterPropertyManager
+            @NotNull final Config config
     ) {
         this.serviceCache = serviceCache;
         this.folderManager = folderManager;
         this.serviceLocator = serviceLocator;
-        this.clusterPropertyManager = clusterPropertyManager;
-        this.mapper = new QuickStartMapper(assertionLocator, clusterPropertyManager);
+        this.cachedConfig = config;
+        this.mapper = new QuickStartMapper(assertionLocator, config);
     }
 
     // TODO is there a better time in the assertion lifecycle to set assertion registry?
