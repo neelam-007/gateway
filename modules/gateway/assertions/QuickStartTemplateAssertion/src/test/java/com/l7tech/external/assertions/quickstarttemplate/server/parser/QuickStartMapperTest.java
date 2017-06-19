@@ -7,12 +7,11 @@ import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStar
 import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStartPolicyBuilderException;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
-import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CodeInjectionProtectionType;
 import com.l7tech.policy.assertion.EncapsulatedAssertion;
+import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.variable.DataType;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -25,8 +24,7 @@ import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -38,34 +36,22 @@ public class QuickStartMapperTest {
     @InjectMocks
     private QuickStartMapper fixture;
 
-    private static AssertionRegistry assertionRegistry = new AssertionRegistry();
-
-    @BeforeClass
-    public static void init() throws Exception {
-//        assertionRegistry.registerAssertion(QuickStartMapperTestAssertion.class);
-    }
-
     @Test
     public void callAssertionSetter() throws Exception {
         final AtomicBoolean wasAttributeSet = new AtomicBoolean(false);
         final Assertion assertion = new Assertion() {
             @SuppressWarnings("UnusedDeclaration")
-            public void setTypeAttribute(String s) {
+            public void setTypeAttribute(String t) {
                 wasAttributeSet.set(true);
             }
 
             @SuppressWarnings("UnusedDeclaration")
-            public void setProtections(CodeInjectionProtectionType[] s) {
+            public void setTypeAttribute(Date[] t) {
                 wasAttributeSet.set(true);
             }
 
             @SuppressWarnings("UnusedDeclaration")
-            public void setTypeAttribute(Date[] s) {
-                wasAttributeSet.set(true);
-            }
-
-            @SuppressWarnings("UnusedDeclaration")
-            public void setTypeAttribute(List<Date> s) {
+            public void setTypeAttribute(List<Date> t) {
                 wasAttributeSet.set(true);
             }
         };
@@ -75,19 +61,49 @@ public class QuickStartMapperTest {
         assertTrue(wasAttributeSet.get());
         wasAttributeSet.set(false);
 
-        // TODO
-//        fixture.callAssertionSetter(assertion, ImmutableMap.of("Protection", CodeInjectionProtectionType.fromWspName("htmlJavaScriptInjection")));
-//        List<String> codeInjectionProtectionTypes = Arrays.asList("htmlJavaScriptInjection", "phpEvalInjection");
-//        fixture.callAssertionSetter(assertion, ImmutableMap.of("Protection", codeInjectionProtectionTypes));
-//        assertTrue(wasAttributeSet.get());
-//        wasAttributeSet.set(false);
-
         // exact type array match
         fixture.callAssertionSetter(assertion, ImmutableMap.of("TypeAttribute", new Date[] {new Date(), new Date(), new Date()}));
         assertTrue(wasAttributeSet.get());
         wasAttributeSet.set(false);
 
-        // TODO can't convert, throw exception
+        // can't convert, throw exception
+        try {
+            fixture.callAssertionSetter(assertion, ImmutableMap.of("NotThere", Currency.getInstance(Locale.CANADA)));
+            fail("Expected callAssertionSetter(...) to fail, but has pass instead.");
+        } catch (final QuickStartPolicyBuilderException e) {
+            // expected
+        }
+    }
+
+    @Test
+    public void callAssertionSetterCodeInjectionProtectionAssertion() throws Exception {
+        final AtomicBoolean wasAttributeSet = new AtomicBoolean(false);
+        final Assertion assertion = new Assertion() {
+            @SuppressWarnings("UnusedDeclaration")
+            public void setProtections(CodeInjectionProtectionType[] c) {
+                wasAttributeSet.set(true);
+            }
+        };
+
+        List<String> codeInjectionProtectionTypes = Arrays.asList("htmlJavaScriptInjection", "phpEvalInjection");
+        fixture.callAssertionSetter(assertion, ImmutableMap.of("Protections", codeInjectionProtectionTypes));
+        assertTrue(wasAttributeSet.get());
+        wasAttributeSet.set(false);
+    }
+
+    @Test
+    public void callAssertionSetterSslAssertionOption() throws Exception {
+        final AtomicBoolean wasAttributeSet = new AtomicBoolean(false);
+        final Assertion assertion = new Assertion() {
+            @SuppressWarnings("UnusedDeclaration")
+            public void setOption(SslAssertion.Option c) {
+                wasAttributeSet.set(true);
+            }
+        };
+
+        fixture.callAssertionSetter(assertion, ImmutableMap.of("Option", "Optional"));
+        assertTrue(wasAttributeSet.get());
+        wasAttributeSet.set(false);
     }
 
     @Test

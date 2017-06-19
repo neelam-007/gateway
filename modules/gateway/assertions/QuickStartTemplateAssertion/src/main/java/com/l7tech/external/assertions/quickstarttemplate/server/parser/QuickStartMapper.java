@@ -11,6 +11,7 @@ import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CodeInjectionProtectionType;
 import com.l7tech.policy.assertion.EncapsulatedAssertion;
+import com.l7tech.policy.assertion.SslAssertion;
 import org.apache.commons.lang.ArrayUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -52,7 +53,7 @@ public class QuickStartMapper {
 //    @VisibleForTesting
     private static final Set<String> supportedAssertionNames = new HashSet<>();
     static {
-        supportedAssertionNames.add("CodeInjectionProtection");   // TODO handle setProtections(array) e.g. "Protections" : ["htmlJavaScriptInjection", "phpEvalInjection"]
+        supportedAssertionNames.add("CodeInjectionProtection");
         supportedAssertionNames.add("CORS");
         supportedAssertionNames.add("HardcodedResponse");   // TODO implement as encass to handle base64 encode/decode
         supportedAssertionNames.add("HttpBasic");
@@ -63,7 +64,7 @@ public class QuickStartMapper {
         supportedAssertionNames.add("ThroughputQuota");
     }
 
-    static final Map<String, AssertionSupport> supportedAssertions = new HashMap<>();
+    private static final Map<String, AssertionSupport> supportedAssertions = new HashMap<>();
     static {
         Map<String, String> nameMap = new HashMap<>();
         supportedAssertions.put("CodeInjectionProtection", new AssertionSupport("com.l7tech.policy.assertion.CodeInjectionProtectionAssertion", nameMap));   // TODO handle setProtections(array) e.g. "Protections" : ["htmlJavaScriptInjection", "phpEvalInjection"]
@@ -162,7 +163,7 @@ public class QuickStartMapper {
     }
 
     @VisibleForTesting
-    void callAssertionSetter(@NotNull final Assertion assertion, @NotNull final Map<String, ?> properties) throws QuickStartPolicyBuilderException { // throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    void callAssertionSetter(@NotNull final Assertion assertion, @NotNull final Map<String, ?> properties) throws QuickStartPolicyBuilderException {
         try {
             Method method;
             String setMethodName;
@@ -173,7 +174,7 @@ public class QuickStartMapper {
                     method = assertion.getClass().getMethod(setMethodName, propertyValue.getClass());
                     method.invoke(assertion, propertyValue);
                 } catch (NoSuchMethodException nsme) {
-                    logger.log(Level.FINE, "Reflection failed to get/invoke method: " + setMethodName + " with argument type: " + propertyValue.getClass() + ".  Trying again to cast from input type to other expected types.");
+                    logger.log(Level.FINE, "Reflection failed to invoke method: " + setMethodName + " with argument type: " + propertyValue.getClass() + ".  Trying again to cast from input type to other expected types.");
 
                     // these util methods were tried without success:
                     //      org.apache.commons.lang.reflect.MethodUtils.invokeMethod, org.apache.commons.beanutils.MethodUtils.invokeMethod, org.springframework.util.ReflectionUtils.findMethod, java.beans.Statement.execute
@@ -184,26 +185,7 @@ public class QuickStartMapper {
                             try {
                                 Class wrapperArrayClass = primitiveArrayToWrapperArray(propertyValue.getClass());
                                 method = assertion.getClass().getMethod(setMethodName, wrapperArrayClass);
-
-                                // this ugly if-else-if workaround is to deal with not being able to dynamically cast e.g. method.invoke(assertion, ArrayUtils.toObject((wrapperArrayClass) propertyValue));
-                                if (wrapperArrayClass.equals(Boolean[].class)) {
-                                    method.invoke(assertion, (Object) ArrayUtils.toObject((boolean[]) propertyValue));
-                                } else if (wrapperArrayClass.equals(Byte[].class)) {
-                                    method.invoke(assertion, (Object) ArrayUtils.toObject((byte[]) propertyValue));
-                                } else if (wrapperArrayClass.equals(Character[].class)) {
-                                    method.invoke(assertion, (Object) ArrayUtils.toObject((char[]) propertyValue));
-                                } else if (wrapperArrayClass.equals(Short[].class)) {
-                                    method.invoke(assertion, (Object) ArrayUtils.toObject((short[]) propertyValue));
-                                } else if (wrapperArrayClass.equals(Integer[].class)) {
-                                    method.invoke(assertion, (Object) ArrayUtils.toObject((int[]) propertyValue));
-                                } else if (wrapperArrayClass.equals(Long[].class)) {
-                                    method.invoke(assertion, (Object) ArrayUtils.toObject((long[]) propertyValue));
-                                } else if (wrapperArrayClass.equals(Double[].class)) {
-                                    method.invoke(assertion, (Object) ArrayUtils.toObject((double[]) propertyValue));
-                                } else if (wrapperArrayClass.equals(Float[].class)) {
-                                    method.invoke(assertion, (Object) ArrayUtils.toObject((float[]) propertyValue));
-                                }
-
+                                invokePrimitiveArrayMethod(method, wrapperArrayClass, assertion, propertyValue);
                                 continue;
                             } catch (NoSuchMethodException e2) {
                                 // do nothing, try next
@@ -213,33 +195,14 @@ public class QuickStartMapper {
                             try {
                                 Class primitiveArrayClass = wrapperArrayToPrimitiveArray(propertyValue.getClass());
                                 method = assertion.getClass().getMethod(setMethodName, primitiveArrayClass);
-
-                                // this ugly if-else-if workaround is to deal with not being able to dynamically cast e.g. method.invoke(assertion, ArrayUtils.toPrimitive((primitiveArrayClass) propertyValue));
-                                if (primitiveArrayClass.equals(boolean[].class)) {
-                                    method.invoke(assertion, (Object) ArrayUtils.toPrimitive((Boolean[]) propertyValue));
-                                } else if (primitiveArrayClass.equals(byte[].class)) {
-                                    method.invoke(assertion, (Object) ArrayUtils.toPrimitive((Byte[]) propertyValue));
-                                } else if (primitiveArrayClass.equals(char[].class)) {
-                                    method.invoke(assertion, (Object) ArrayUtils.toPrimitive((Character[]) propertyValue));
-                                } else if (primitiveArrayClass.equals(short[].class)) {
-                                    method.invoke(assertion, (Object) ArrayUtils.toPrimitive((Short[]) propertyValue));
-                                } else if (primitiveArrayClass.equals(int[].class)) {
-                                    method.invoke(assertion, (Object) ArrayUtils.toPrimitive((Integer[]) propertyValue));
-                                } else if (primitiveArrayClass.equals(long[].class)) {
-                                    method.invoke(assertion, (Object) ArrayUtils.toPrimitive((Long[]) propertyValue));
-                                } else if (primitiveArrayClass.equals(double[].class)) {
-                                    method.invoke(assertion, (Object) ArrayUtils.toPrimitive((Double[]) propertyValue));
-                                } else if (primitiveArrayClass.equals(float[].class)) {
-                                    method.invoke(assertion, (Object) ArrayUtils.toPrimitive((Float[]) propertyValue));
-                                }
-
+                                invokeWrapperArrayMethod(method, primitiveArrayClass, assertion, propertyValue);
                                 continue;
                             } catch (NoSuchMethodException e2) {
                                 // do nothing, try next
                                 // TODO log fine
                             }
                         }
-                    } else {
+                    } else {   // not an array
                         if (propertyValue.getClass().isPrimitive()) {
                             try {
                                 method = assertion.getClass().getMethod(setMethodName, primitiveToWrapper(propertyValue.getClass()));
@@ -261,7 +224,24 @@ public class QuickStartMapper {
                         }
                     }
 
-                    // TODO array and collection conversion of primitives and it's wrappers
+                    // hard-coded dependencies to core Gateway as near last resort - hopefully this list remains small
+                    if ("setProtections".equals(setMethodName)) {
+                        try {
+                            handleSetProtections(setMethodName, assertion, propertyValue);
+                            continue;
+                        } catch (NoSuchMethodException e2) {
+                            // do nothing, try next
+                            // TODO log fine
+                        }
+                    } else if ("setOption".equals(setMethodName)) {
+                        try {
+                            handleSetOption(setMethodName, assertion, propertyValue);
+                            continue;
+                        } catch (NoSuchMethodException e2) {
+                            // do nothing, try next
+                            // TODO log fine
+                        }
+                    }
 
                     // looping through all methods as last resort - performance hit
                     for (Method declaredMethod : assertion.getClass().getDeclaredMethods()) {
@@ -270,47 +250,47 @@ public class QuickStartMapper {
                             Class<?> declaredMethodParameterType = declaredMethodParameterTypes[0];
 
                             try {
-                                if (declaredMethodParameterType.getName().equals("[Lcom.l7tech.policy.assertion.CodeInjectionProtectionType")) {
-                                    Method fromWspNameMethod = declaredMethodParameterType.getMethod("fromWspName", String.class);
-
-                                    List<String> strings = (List<String>) propertyValue;
-
-                                    // this is ugly - added compile dependecy to com.l7tech.policy.assertion.CodeInjectionProtectionType
-                                    CodeInjectionProtectionType[] codeInjectionProtectionTypes = new CodeInjectionProtectionType[strings.size()];
-//                                    for (int i = 0; i < codeInjectionProtectionTypes.length; i++) {
-//                                        CodeInjectionProtectionType codeInjectionProtectionType = codeInjectionProtectionTypes[i];
-//
-//                                    }
-
-                                    int i = 0;
-                                    for (String s : strings) {
-                                        codeInjectionProtectionTypes[i++] = (CodeInjectionProtectionType) fromWspNameMethod.invoke(null, propertyValue);
-                                    }
-
-                                    declaredMethod.invoke(assertion, codeInjectionProtectionTypes);
-                                    return;
-                                } else {
-                                    // try to convert string to method type using valueOf
-                                    Method valueOfMethod = declaredMethodParameterType.getMethod("valueOf", String.class);
-                                    declaredMethod.invoke(assertion, valueOfMethod.invoke(null, propertyValue));
-                                    return;
-                                }
+                                // try to convert string to method type using enum valueOf (e.g. com.l7tech.common.http.HttpMethod)
+                                Method valueOfMethod = declaredMethodParameterType.getMethod("valueOf", String.class);
+                                declaredMethod.invoke(assertion, valueOfMethod.invoke(null, propertyValue));
+                                return;
                             } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e2) {
                                 // do nothing, try next
                                 // TODO log fine
                             }
-
-                            // TODO array and collection conversion - e.g. java.util.ArrayList to/from com.l7tech.policy.assertion.CodeInjectionProtectionAssertion.setProtections(CodeInjectionProtectionType[])
                         }
                     }
 
-                    // TODO can't convert, throw exception
+                    // can't convert, fail and throw exception
+                    logger.log(Level.WARNING, "The invoke method: " + setMethodName + "(...) with argument type: " + propertyValue.getClass() + " failed.");
+                    throw new QuickStartPolicyBuilderException("Unable to set " + assertion.getClass().getSimpleName()+ " - " + entry.getKey() + " = " + entry.getValue());
+
                     // TODO set HTTP error code here?
                 }
             }
         } catch (IllegalAccessException | InvocationTargetException e) {
             throw new QuickStartPolicyBuilderException("Encountered an unexpected error", e);
         }
+    }
+
+    private void handleSetProtections(@NotNull final String setMethodName, @NotNull final Assertion assertion, @NotNull final Object propertyValue) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+        final Method method = assertion.getClass().getMethod(setMethodName, CodeInjectionProtectionType[].class);
+
+        // convert string representation to array of CodeInjectionProtectionType
+        List codeInjectionProtectionTypeStrings = (List) propertyValue;
+        CodeInjectionProtectionType[] codeInjectionProtectionTypes = new CodeInjectionProtectionType[codeInjectionProtectionTypeStrings.size()];
+        int index = 0;
+        for (Object codeInjectionProtectionTypeString : codeInjectionProtectionTypeStrings) {
+            codeInjectionProtectionTypes[index++] = CodeInjectionProtectionType.fromWspName((String) codeInjectionProtectionTypeString);
+        }
+
+        method.invoke(assertion, (Object) codeInjectionProtectionTypes);
+    }
+
+    private void handleSetOption(@NotNull final String setMethodName, @NotNull final Assertion assertion, @NotNull final Object propertyValue) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+        final Method method = assertion.getClass().getMethod(setMethodName, SslAssertion.Option.class);
+        SslAssertion.Option option = SslAssertion.Option.forKeyName((String) propertyValue);
+        method.invoke(assertion, (Object) option);
     }
 
     // TODO move class util methods to com.l7tech.util.ClassUtils
@@ -326,6 +306,50 @@ public class QuickStartMapper {
 
     private static Class primitiveArrayToWrapperArray(Class cls) {
         return primitiveArrayWrapperArrayMap.get(cls);
+    }
+
+    private static void invokePrimitiveArrayMethod(@NotNull final Method method, @NotNull final Class wrapperArrayClass,
+                                                   @NotNull final Assertion assertion, @NotNull final Object propertyValue) throws IllegalAccessException, InvocationTargetException {
+        // this ugly if-else-if workaround is to deal with not being able to dynamically cast e.g. method.invoke(assertion, ArrayUtils.toObject((wrapperArrayClass) propertyValue));
+        if (wrapperArrayClass.equals(Boolean[].class)) {
+            method.invoke(assertion, (Object) ArrayUtils.toObject((boolean[]) propertyValue));
+        } else if (wrapperArrayClass.equals(Byte[].class)) {
+            method.invoke(assertion, (Object) ArrayUtils.toObject((byte[]) propertyValue));
+        } else if (wrapperArrayClass.equals(Character[].class)) {
+            method.invoke(assertion, (Object) ArrayUtils.toObject((char[]) propertyValue));
+        } else if (wrapperArrayClass.equals(Short[].class)) {
+            method.invoke(assertion, (Object) ArrayUtils.toObject((short[]) propertyValue));
+        } else if (wrapperArrayClass.equals(Integer[].class)) {
+            method.invoke(assertion, (Object) ArrayUtils.toObject((int[]) propertyValue));
+        } else if (wrapperArrayClass.equals(Long[].class)) {
+            method.invoke(assertion, (Object) ArrayUtils.toObject((long[]) propertyValue));
+        } else if (wrapperArrayClass.equals(Double[].class)) {
+            method.invoke(assertion, (Object) ArrayUtils.toObject((double[]) propertyValue));
+        } else if (wrapperArrayClass.equals(Float[].class)) {
+            method.invoke(assertion, (Object) ArrayUtils.toObject((float[]) propertyValue));
+        }
+    }
+
+    private static void invokeWrapperArrayMethod(@NotNull final Method method, @NotNull final Class primitiveArrayClass,
+                                                 @NotNull final Assertion assertion, @NotNull final Object propertyValue) throws IllegalAccessException, InvocationTargetException {
+        // this ugly if-else-if workaround is to deal with not being able to dynamically cast e.g. method.invoke(assertion, ArrayUtils.toPrimitive((primitiveArrayClass) propertyValue));
+        if (primitiveArrayClass.equals(boolean[].class)) {
+            method.invoke(assertion, (Object) ArrayUtils.toPrimitive((Boolean[]) propertyValue));
+        } else if (primitiveArrayClass.equals(byte[].class)) {
+            method.invoke(assertion, (Object) ArrayUtils.toPrimitive((Byte[]) propertyValue));
+        } else if (primitiveArrayClass.equals(char[].class)) {
+            method.invoke(assertion, (Object) ArrayUtils.toPrimitive((Character[]) propertyValue));
+        } else if (primitiveArrayClass.equals(short[].class)) {
+            method.invoke(assertion, (Object) ArrayUtils.toPrimitive((Short[]) propertyValue));
+        } else if (primitiveArrayClass.equals(int[].class)) {
+            method.invoke(assertion, (Object) ArrayUtils.toPrimitive((Integer[]) propertyValue));
+        } else if (primitiveArrayClass.equals(long[].class)) {
+            method.invoke(assertion, (Object) ArrayUtils.toPrimitive((Long[]) propertyValue));
+        } else if (primitiveArrayClass.equals(double[].class)) {
+            method.invoke(assertion, (Object) ArrayUtils.toPrimitive((Double[]) propertyValue));
+        } else if (primitiveArrayClass.equals(float[].class)) {
+            method.invoke(assertion, (Object) ArrayUtils.toPrimitive((Float[]) propertyValue));
+        }
     }
 
     @Nullable
