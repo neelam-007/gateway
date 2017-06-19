@@ -43,10 +43,22 @@ function beginCompression
 
 function endCompression
 {
+    echo "*"
+    echo "* COMPLETE: FINAL COMPRESSED OUTPUT AVAILABLE AT $*"
     echo "**********"
+}
+
+function beginTestCompression
+{
+    echo "**********"
+    echo "* BEGIN TEST COMPRESSION OF ALL COLLECTED DATA"
     echo "*"
-    echo "* COMPLETE: Final compressed output available at $*"
+}
+
+function endTestCompression
+{
     echo "*"
+    echo "* COMPLETE: TEST OF $* OK"
     echo "**********"
 }
 

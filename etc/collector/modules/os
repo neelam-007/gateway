@@ -2,7 +2,7 @@
 
 MODULE="$1"
 # Pull in collector support functions
-. "${COLLECTOR_HOME}"/collectorlib
+. ./collectorlib
 #Define and create output folders
 OS_DIR="${BASE_OUTPUT_DIR}/${MODULE}"
 

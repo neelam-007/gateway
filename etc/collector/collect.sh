@@ -18,10 +18,8 @@ MODE=
 HEAP_DUMP=
 INCL_SENSITIVE_DATA=
 
-export COLLECTOR_HOME=/opt/SecureSpan/Collector
-
 # Pull in collector support functions
-. ${COLLECTOR_HOME}/collectorlib
+. ./collectorlib
 
 
 function calculatePaths
@@ -47,7 +45,7 @@ function usage
     echo -e "\nOptions:"
     echo -e "\n[-m <collection-module>]"
     echo "Collect data from a single module."
-    echo "Valid values:";ls -p /opt/SecureSpan/Collector/modules | grep -v /
+    echo "Valid values:";ls -p ./modules | grep -v /
     echo -e "\n[-a] all"
     echo "Collect data from all modules"
     echo -e "\n[-D]"
@@ -98,7 +96,7 @@ function checkForSpace
 function doModule
 {
     checkForSpace
-    script=("${COLLECTOR_HOME}"/modules/$1)
+    script=(./modules/$1)
     if [ -x "$script" ] && [ -f "$script" ]
     then
         $script "$MODULE" 2>&1
@@ -112,7 +110,7 @@ function doModule
 # Parameters $1 = include sensitive data
 function doAll
 {
-    doAllInDirectory "$COLLECTOR_HOME"/modules
+    doAllInDirectory ./modules
 }
 
 # Process all sensitive modules
@@ -120,7 +118,7 @@ function doSensitive
 {
     if [ "$INCL_SENSITIVE_DATA" ]
     then
-        doAllInDirectory "$COLLECTOR_HOME"/modules/sensitive
+        doAllInDirectory ./modules/sensitive
     else
         echo "Skipping sensitive data. Specify -s to include sensitive data."
     fi
@@ -306,7 +304,7 @@ then
     getHeapDump
 fi
 
-#Compress all the output into one folder
+#Compress all the output into one folder and test the compression
 if [ -e "${BASE_OUTPUT_DIR}" ]
 then
     FINAL_ZIP_NAME="${BASE_OUTPUT_DIR}/${DATED_OUTPUT_NAME}".zip
@@ -315,6 +313,10 @@ then
     zip -r "${FINAL_ZIP_NAME}" "${DATED_OUTPUT_NAME}"
     popd
     endCompression "${FINAL_ZIP_NAME}"
+
+    beginTestCompression
+    unzip -t "${FINAL_ZIP_NAME}"
+    endTestCompression "${FINAL_ZIP_NAME}"
 else
     echo
     echo "ERROR: There is no collected output at ${BASE_OUTPUT_DIR}.  Check console output for errors."
