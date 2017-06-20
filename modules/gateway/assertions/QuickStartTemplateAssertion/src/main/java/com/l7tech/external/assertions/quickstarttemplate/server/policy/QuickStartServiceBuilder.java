@@ -19,6 +19,7 @@ import com.l7tech.server.folder.FolderManager;
 import com.l7tech.server.service.ServiceCache;
 import com.l7tech.server.service.resolution.NonUniqueServiceResolutionException;
 import com.l7tech.server.service.resolution.ServiceResolutionException;
+import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Triple;
 import org.jetbrains.annotations.NotNull;
@@ -38,17 +39,20 @@ public class QuickStartServiceBuilder {
     @NotNull private final FolderManager folderManager;
     @NotNull private final QuickStartPublishedServiceLocator serviceLocator;
     @NotNull private final QuickStartMapper mapper;
+    private final @NotNull Config cachedConfig;
 
     public QuickStartServiceBuilder(
             @NotNull final ServiceCache serviceCache,
             @NotNull final FolderManager folderManager,
             @NotNull final QuickStartPublishedServiceLocator serviceLocator,
-            @NotNull final QuickStartEncapsulatedAssertionLocator assertionLocator
+            @NotNull final QuickStartEncapsulatedAssertionLocator assertionLocator,
+            @NotNull final Config config
     ) {
         this.serviceCache = serviceCache;
         this.folderManager = folderManager;
         this.serviceLocator = serviceLocator;
-        this.mapper = new QuickStartMapper(assertionLocator);
+        this.cachedConfig = config;
+        this.mapper = new QuickStartMapper(assertionLocator, config);
     }
 
     // TODO is there a better time in the assertion lifecycle to set assertion registry?

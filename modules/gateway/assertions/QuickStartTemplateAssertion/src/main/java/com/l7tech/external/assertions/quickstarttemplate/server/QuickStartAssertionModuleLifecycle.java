@@ -14,6 +14,7 @@ import com.l7tech.server.policy.PolicyVersionManager;
 import com.l7tech.server.service.ServiceCache;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.util.ApplicationEventProxy;
+import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationListener;
@@ -30,6 +31,7 @@ public class QuickStartAssertionModuleLifecycle {
     private static QuickStartPublishedServiceLocator serviceLocator = null;
     private static QuickStartServiceBuilder serviceBuilder = null;
     private static OneTimeJsonServiceInstaller jsonServiceInstaller = null;
+    private static Config cachedConfig = null;
 
     @SuppressWarnings("unused")
     public static synchronized void onModuleLoaded(final ApplicationContext context) {
@@ -39,6 +41,10 @@ public class QuickStartAssertionModuleLifecycle {
             assertionLocator = new QuickStartEncapsulatedAssertionLocator(eacm, folderManager, new Goid(PROVIDED_FRAGMENT_FOLDER_GOID));
         }
 
+        if (cachedConfig == null) {
+            cachedConfig = context.getBean("serverConfig", Config.class);
+        }
+
         if (serviceLocator == null) {
             final ServiceManager serviceManager = context.getBean("serviceManager", ServiceManager.class);
             serviceLocator = new QuickStartPublishedServiceLocator(serviceManager);
@@ -46,7 +52,7 @@ public class QuickStartAssertionModuleLifecycle {
 
         if (serviceBuilder == null) {
             final ServiceCache ServiceCache = context.getBean("serviceCache", ServiceCache.class);
-            serviceBuilder = new QuickStartServiceBuilder(ServiceCache, folderManager, serviceLocator, assertionLocator);
+            serviceBuilder = new QuickStartServiceBuilder(ServiceCache, folderManager, serviceLocator, assertionLocator, cachedConfig);
         }
 
         if (jsonServiceInstaller == null) {
