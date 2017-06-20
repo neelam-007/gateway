@@ -11,7 +11,11 @@ import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CodeInjectionProtectionType;
 import com.l7tech.policy.assertion.EncapsulatedAssertion;
+<<<<<<< HEAD
 import com.l7tech.policy.assertion.SslAssertion;
+=======
+import com.l7tech.util.Config;
+>>>>>>> 1b1cd6a49a7d785d5ba62b669707a76bf9b8dcee
 import org.apache.commons.lang.ArrayUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -27,6 +31,8 @@ import static org.apache.commons.lang.ClassUtils.wrapperToPrimitive;
 
 public class QuickStartMapper {
     private static final Logger logger = Logger.getLogger(QuickStartMapper.class.getName());
+
+    private static final String ENABLE_ALL_ASSERTIONS_FLAG_KEY = "quickStart.allassertions.enabled";
 
     // TODO move class util support into com.l7tech.util.ClassUtils
     private static final Map<Class, Class> primitiveArrayWrapperArrayMap = new HashMap<>();
@@ -88,8 +94,12 @@ public class QuickStartMapper {
     @NotNull
     private final QuickStartEncapsulatedAssertionLocator assertionLocator;
 
-    public QuickStartMapper(@NotNull final QuickStartEncapsulatedAssertionLocator assertionLocator) {
+    @NotNull
+    private final Config cachedConfig;
+
+    public QuickStartMapper(@NotNull final QuickStartEncapsulatedAssertionLocator assertionLocator, @NotNull final Config config) {
         this.assertionLocator = assertionLocator;
+        this.cachedConfig = config;
     }
 
     // TODO is there a better time in the assertion lifecycle to set assertion registry?
@@ -111,7 +121,8 @@ public class QuickStartMapper {
 
             // check if assertion name is allowed
             Assertion assertion = null;
-            if (supportedAssertionNames.contains(name)) {  // TODO cluster property override to allow ALL assertion names
+            if (supportedAssertionNames.contains(name) ||
+                    cachedConfig.getBooleanProperty(ENABLE_ALL_ASSERTIONS_FLAG_KEY, false)) {
                 assertion = assertionLocator.findAssertion(name);
             }
 
