@@ -113,7 +113,8 @@ public class PolicyFolderPropertiesDialog extends JDialog {
             }
         });
 
-       folderIDTextField.setText(header.getGoid().toString());
+        if(nameField.getText() != null && nameField.getText().trim().length() > 0)
+            folderIDTextField.setText(header.getGoid().toString());
 
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
