@@ -58,9 +58,11 @@ public class EmailUtils {
             props.put("mail." + protoVal + ".socketFactory.class", StartTlsSocketFactory.class.getName());
             props.put("mail." + protoVal + ".socketFactory.fallback", "false");
             props.put("mail." + protoVal + ".starttls.enable", "true");
+            props.put("mail." + protoVal + ".ssl.protocols", "TLSv1 TLSv1.1 TLSv1.2" );
         } else if ( emailConfig.getProtocol() == EmailAlertAssertion.Protocol.SSL ) {
             props.put("mail." + protoVal + ".socketFactory.class", SOCKET_FACTORY_CLASSNAME);
             props.put("mail." + protoVal + ".socketFactory.fallback", "false");
+            props.put("mail." + protoVal + ".ssl.protocols", "TLSv1 TLSv1.1 TLSv1.2" );
         }
 
         if( emailConfig.isAuthenticate() ) {
