@@ -11,11 +11,8 @@ import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CodeInjectionProtectionType;
 import com.l7tech.policy.assertion.EncapsulatedAssertion;
-<<<<<<< HEAD
 import com.l7tech.policy.assertion.SslAssertion;
-=======
 import com.l7tech.util.Config;
->>>>>>> 1b1cd6a49a7d785d5ba62b669707a76bf9b8dcee
 import org.apache.commons.lang.ArrayUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
