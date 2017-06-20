@@ -306,7 +306,7 @@ public class WebSocketConnectionDialog extends JDialog {
                 connection.setInboundMaxConnections(WebSocketUtils.isInt(maxInboundConnections.getText(), "Maximum Connections"));
                 connection.setOutboundMaxIdleTime(WebSocketUtils.isInt(outBoundMaxIdleTime.getText(), "Outbound Maximum Idle Time"));
                 connection.setInboundMaxIdleTime(WebSocketUtils.isInt(inBoundMaxIdleTime.getText(), "Inbound Maximum Idle Time"));
-                connection.setOutboundUrl(WebSocketUtils.normalizeUrl(outboundUrl.getText(), useOutboundSSLCheckBox.isSelected()));
+                connection.setOutboundUrl(outboundUrl.getText());
 
                 connection.setInboundSsl(useInboundSSLCheckBox.isSelected());
                 if (useInboundSSLCheckBox.isSelected()){

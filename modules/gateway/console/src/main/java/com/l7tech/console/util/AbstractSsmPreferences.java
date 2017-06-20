@@ -187,6 +187,15 @@ public abstract class AbstractSsmPreferences extends ApplicationObjectSupport im
           valueOf(props.getProperty(SAVE_LAST_LOGIN_ID)).booleanValue();
     }
 
+    @Override
+    public boolean showComments() {
+        return  Boolean.valueOf(props.getProperty(ENABLE_SHOW_COMMENTS)).booleanValue();
+    }
+
+    @Override
+    public boolean showAssertionNumbers() {
+        return  Boolean.valueOf(props.getProperty(ENABLE_SHOW_ASSERTION_NUMBERS)).booleanValue();
+    }
     /**
      * Returns the shortcut bar  visible propery value.
      *

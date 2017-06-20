@@ -292,7 +292,14 @@ public class ServerEncapsulatedAssertion extends AbstractServerAssertion<Encapsu
         // Configure input values
         for (EncapsulatedAssertionArgumentDescriptor arg : config.getArgumentDescriptors()) {
             if (arg.isGuiPrompt()) {
-                final String parameterValueString = assertion.getParameter(arg.getArgumentName());
+                String parameterValueString = assertion.getParameter(arg.getArgumentName());
+                /**
+                 * DE287710 : adding inputs to existing encapsulated assertion values becoming null in existing instances of EA in policies.
+                 * So assigning default values to the primitive types
+                 */
+                if (parameterValueString == null) {
+                    parameterValueString = getDefaultValueForArgumentType(arg.getArgumentType());
+                }
                 if (EncapsulatedAssertionArgumentDescriptor.valueIsParentContextVariableNameForDataType(arg.getArgumentType())) {
                     // Add a reference under the requested name to the underlying value object from the parent pec (Message or Element)
                     if (parameterValueString != null) {
@@ -314,6 +321,22 @@ public class ServerEncapsulatedAssertion extends AbstractServerAssertion<Encapsu
                 // TODO make prefix matching configurable?
                 spv.putParentVariable(arg.getArgumentName(), true);
             }
+        }
+    }
+
+    @Nullable
+    private String getDefaultValueForArgumentType(@NotNull final String argumentType) {
+        switch (argumentType) {
+            case "string" :
+                return  "";
+            case "int" :
+            case "decimal" :
+            case "float" :
+                return "0";
+            case "boolean" :
+                return "False";
+            default:
+                return null;
         }
     }
 
