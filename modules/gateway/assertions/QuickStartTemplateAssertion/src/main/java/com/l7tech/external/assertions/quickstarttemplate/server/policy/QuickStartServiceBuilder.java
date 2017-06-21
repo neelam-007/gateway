@@ -39,7 +39,7 @@ public class QuickStartServiceBuilder {
     @NotNull private final FolderManager folderManager;
     @NotNull private final QuickStartPublishedServiceLocator serviceLocator;
     @NotNull private final QuickStartMapper mapper;
-    @NotNull private final Config cachedConfig;
+    private final @NotNull Config cachedConfig;
 
     public QuickStartServiceBuilder(
             @NotNull final ServiceCache serviceCache,
