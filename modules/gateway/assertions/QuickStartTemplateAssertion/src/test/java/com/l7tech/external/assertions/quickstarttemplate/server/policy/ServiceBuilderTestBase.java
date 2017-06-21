@@ -29,8 +29,6 @@ import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
-import static org.mockito.Mockito.when;
-
 /**
  */
 @SuppressWarnings("WeakerAccess")
@@ -132,8 +130,6 @@ public abstract class ServiceBuilderTestBase {
         Mockito.doReturn(testEncassTemplates.get("RateLimit").left.clone()).when(assertionLocator).findEncapsulatedAssertion("RateLimit");
 
         Mockito.doNothing().when(serviceCache).checkResolution(Mockito.any(PublishedService.class));
-
-        when(cachedConfig.getBooleanProperty("quickStart.allassertions.enabled", false)).thenReturn(true);
 
         serviceBuilder = Mockito.spy(new QuickStartServiceBuilder(serviceCache, folderManager, serviceLocator, assertionLocator, cachedConfig));
     }

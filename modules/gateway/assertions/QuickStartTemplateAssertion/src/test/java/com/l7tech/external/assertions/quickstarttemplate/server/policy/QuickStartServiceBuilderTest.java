@@ -34,6 +34,9 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.function.Function;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 /**
  */
 @RunWith(MockitoJUnitRunner.class)
@@ -131,6 +134,93 @@ public class QuickStartServiceBuilderTest extends ServiceBuilderTestBase {
                 "}");
             serviceBuilder.createService(testServiceContainer);
     }
+
+    @Test
+    public void createServiceWithExperimentalEncass() throws Exception {
+
+        String experimentalAssertionName = "RequestSizeLimit";
+
+        Assertion experimentalAssertion = mock(Assertion.class);
+
+        final EncassMocker experimentalAssertionTemplate = EncassMocker.mock(experimentalAssertionName, ImmutableMap.of("protect", DataType.STRING));
+        Mockito.doReturn(experimentalAssertionTemplate.clone()).when(assertionLocator).findAssertion(experimentalAssertionName);
+
+        when(cachedConfig.getBooleanProperty("quickStart.allAssertions.enabled", false)).thenReturn(true);
+
+        final ServiceContainer testServiceContainer = parseJson("{\n" +
+                "  \"Service\": {\n" +
+                "    \"name\": \"MyService1\",\n" +
+                "    \"gatewayUri\": \"/MyService1\",\n" +
+                "    \"httpMethods\": [ \"get\", \"put\" ],\n" +
+                "    \"policy\": [\n" +
+                "      {\n" +
+                "        \"RequireSSL\" : {\n" +
+                "          \"clientCert\": \"optional\"\n" +
+                "        }\n" +
+                "      },\n" +
+                "      {\n" +
+                "        \"Cors\" : {}\n" +
+                "      },\n" +
+                "      {\n" +
+                "        \"" + experimentalAssertionName + "\" : {}\n" +
+                "      },\n" +
+                "      {\n" +
+                "        \"RateLimit\" : {\n" +
+                "          \"maxRequestsPerSecond\": 250,\n" +
+                "          \"hardLimit\": true,\n" +
+                "          \"counterName\": \"RateLimit-${request.clientId}-b0938b7ad6ff\"\n" +
+                "        }\n" +
+                "      }\n" +
+                "    ]\n" +
+                "  }\n" +
+                "}");
+
+        serviceBuilder.createService(testServiceContainer);
+    }
+
+    @Test
+    public void createServiceWithExperimentalEncassFailed() throws Exception {
+
+        String experimentalAssertionName = "RequestSizeLimit";
+
+        expectedException.expect(QuickStartPolicyBuilderException.class);
+        expectedException.expectMessage(Matchers.equalToIgnoringCase("Unable to find assertion for policy template item named : " + experimentalAssertionName));
+
+        Assertion experimentalAssertion = mock(Assertion.class);
+
+        when(cachedConfig.getBooleanProperty("quickStart.allAssertions.enabled", false)).thenReturn(false);
+
+        final ServiceContainer testServiceContainer = parseJson("{\n" +
+                "  \"Service\": {\n" +
+                "    \"name\": \"MyService1\",\n" +
+                "    \"gatewayUri\": \"/MyService1\",\n" +
+                "    \"httpMethods\": [ \"get\", \"put\" ],\n" +
+                "    \"policy\": [\n" +
+                "      {\n" +
+                "        \"RequireSSL\" : {\n" +
+                "          \"clientCert\": \"optional\"\n" +
+                "        }\n" +
+                "      },\n" +
+                "      {\n" +
+                "        \"Cors\" : {}\n" +
+                "      },\n" +
+                "      {\n" +
+                "        \"" + experimentalAssertionName + "\" : {}\n" +
+                "      },\n" +
+                "      {\n" +
+                "        \"RateLimit\" : {\n" +
+                "          \"maxRequestsPerSecond\": 250,\n" +
+                "          \"hardLimit\": true,\n" +
+                "          \"counterName\": \"RateLimit-${request.clientId}-b0938b7ad6ff\"\n" +
+                "        }\n" +
+                "      }\n" +
+                "    ]\n" +
+                "  }\n" +
+                "}");
+
+        serviceBuilder.createService(testServiceContainer);
+    }
+
 
     @Test
     public void createServiceWithConflictResolution() throws Exception {

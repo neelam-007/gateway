@@ -28,7 +28,7 @@ import static org.apache.commons.lang.ClassUtils.wrapperToPrimitive;
 public class QuickStartMapper {
     private static final Logger logger = Logger.getLogger(QuickStartMapper.class.getName());
 
-    private static final String ENABLE_ALL_ASSERTIONS_FLAG_KEY = "quickStart.allassertions.enabled";
+    private static final String ENABLE_ALL_ASSERTIONS_FLAG_KEY = "quickStart.allAssertions.enabled";
 
     // TODO move class util support into com.l7tech.util.ClassUtils
     private static final Map<Class, Class> primitiveArrayWrapperArrayMap = new HashMap<>();
