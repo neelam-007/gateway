@@ -11,8 +11,8 @@ import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CodeInjectionProtectionType;
 import com.l7tech.policy.assertion.EncapsulatedAssertion;
-import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.util.Config;
+import com.l7tech.util.EnumTranslator;
 import org.apache.commons.lang.ArrayUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -70,7 +70,7 @@ public class QuickStartMapper {
     private static final Map<String, AssertionSupport> supportedAssertions = new HashMap<>();
     static {
         Map<String, String> nameMap = new HashMap<>();
-        supportedAssertions.put("CodeInjectionProtection", new AssertionSupport("com.l7tech.policy.assertion.CodeInjectionProtectionAssertion", nameMap));   // TODO handle setProtections(array) e.g. "Protections" : ["htmlJavaScriptInjection", "phpEvalInjection"]
+        supportedAssertions.put("CodeInjectionProtection", new AssertionSupport("com.l7tech.policy.assertion.CodeInjectionProtectionAssertion", nameMap));
         nameMap.put("IncludeBody", "includeBody");
         nameMap.put("IncludeUrlPath", "includeUrlPath");
         nameMap.put("IncludeUrlQueryString", "includeUrlQueryString");
@@ -173,7 +173,7 @@ public class QuickStartMapper {
     @VisibleForTesting
     void callAssertionSetter(@NotNull final Assertion assertion, @NotNull final Map<String, ?> properties) throws QuickStartPolicyBuilderException {
         try {
-            Method method;
+            Method method = null;
             String setMethodName;
             for (final Map.Entry<String, ?> entry : properties.entrySet()) {
                 final Object propertyValue = entry.getValue();
@@ -196,8 +196,7 @@ public class QuickStartMapper {
                                 invokePrimitiveArrayMethod(method, wrapperArrayClass, assertion, propertyValue);
                                 continue;
                             } catch (NoSuchMethodException e2) {
-                                // do nothing, try next
-                                // TODO log fine
+                                logger.log(Level.FINE, "Reflection failed to invoke : " + (method == null ? setMethodName : method.toString()));
                             }
                         } else if (isPrimitiveWrapper(propertyValue.getClass().getComponentType())) {
                             try {
@@ -206,8 +205,7 @@ public class QuickStartMapper {
                                 invokeWrapperArrayMethod(method, primitiveArrayClass, assertion, propertyValue);
                                 continue;
                             } catch (NoSuchMethodException e2) {
-                                // do nothing, try next
-                                // TODO log fine
+                                logger.log(Level.FINE, "Reflection failed to invoke : " + (method == null ? setMethodName : method.toString()));
                             }
                         }
                     } else {   // not an array
@@ -217,8 +215,7 @@ public class QuickStartMapper {
                                 method.invoke(assertion, propertyValue);
                                 continue;
                             } catch (NoSuchMethodException e2) {
-                                // do nothing, try next
-                                // TODO log fine
+                                logger.log(Level.FINE, "Reflection failed to invoke : " + (method == null ? setMethodName : method.toString()));
                             }
                         } else if (isPrimitiveWrapper(propertyValue.getClass())) {
                             try {
@@ -226,8 +223,7 @@ public class QuickStartMapper {
                                 method.invoke(assertion, propertyValue);
                                 continue;
                             } catch (NoSuchMethodException e2) {
-                                // do nothing, try next
-                                // TODO log fine
+                                logger.log(Level.FINE, "Reflection failed to invoke : " + (method == null ? setMethodName : method.toString()));
                             }
                         }
                     }
@@ -238,39 +234,40 @@ public class QuickStartMapper {
                             handleSetProtections(setMethodName, assertion, propertyValue);
                             continue;
                         } catch (NoSuchMethodException e2) {
-                            // do nothing, try next
-                            // TODO log fine
-                        }
-                    } else if ("setOption".equals(setMethodName)) {
-                        try {
-                            handleSetOption(setMethodName, assertion, propertyValue);
-                            continue;
-                        } catch (NoSuchMethodException e2) {
-                            // do nothing, try next
-                            // TODO log fine
+                            logger.log(Level.FINE, "Reflection failed to invoke : " + setMethodName);
                         }
                     }
 
                     // looping through all methods as last resort - performance hit
                     for (Method declaredMethod : assertion.getClass().getDeclaredMethods()) {
+                        // find matching method name with one argument signature
                         if (setMethodName.equals(declaredMethod.getName()) && declaredMethod.getParameterCount() == 1) {
                             Class<?>[] declaredMethodParameterTypes = declaredMethod.getParameterTypes();
                             Class<?> declaredMethodParameterType = declaredMethodParameterTypes[0];
 
+                            // try to convert string to method type using enum valueOf (e.g. com.l7tech.common.http.HttpMethod)
                             try {
-                                // try to convert string to method type using enum valueOf (e.g. com.l7tech.common.http.HttpMethod)
                                 Method valueOfMethod = declaredMethodParameterType.getMethod("valueOf", String.class);
                                 declaredMethod.invoke(assertion, valueOfMethod.invoke(null, propertyValue));
                                 return;
                             } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e2) {
-                                // do nothing, try next
-                                // TODO log fine
+                                logger.log(Level.FINE, "Reflection failed to invoke : " + declaredMethod.toString());
+                            }
+
+                            // try to convert string to method type using EnumTranslator (e.g. com.l7tech.policy.assertion.SslAssertion.Option)
+                            try {
+                                Method getEnumTranslatorMethod = declaredMethodParameterType.getMethod("getEnumTranslator");
+                                EnumTranslator enumTranslator = (EnumTranslator) getEnumTranslatorMethod.invoke(null);
+                                declaredMethod.invoke(assertion, enumTranslator.stringToObject(propertyValue.toString()));
+                                return;
+                            } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e2) {
+                                logger.log(Level.FINE, "Reflection failed to invoke : " + declaredMethod.toString());
                             }
                         }
                     }
 
                     // can't convert, fail and throw exception
-                    logger.log(Level.WARNING, "The invoke method: " + setMethodName + "(...) with argument type: " + propertyValue.getClass() + " failed.");
+                    logger.log(Level.WARNING, "Failed to invoke method: " + setMethodName + "(...) with argument type: " + propertyValue.getClass());
                     throw new QuickStartPolicyBuilderException("Unable to set " + assertion.getClass().getSimpleName()+ " - " + entry.getKey() + " = " + entry.getValue());
 
                     // TODO set HTTP error code here?
@@ -293,12 +290,6 @@ public class QuickStartMapper {
         }
 
         method.invoke(assertion, (Object) codeInjectionProtectionTypes);
-    }
-
-    private void handleSetOption(@NotNull final String setMethodName, @NotNull final Assertion assertion, @NotNull final Object propertyValue) throws IllegalAccessException, InvocationTargetException, NoSuchMethodException {
-        final Method method = assertion.getClass().getMethod(setMethodName, SslAssertion.Option.class);
-        SslAssertion.Option option = SslAssertion.Option.forKeyName((String) propertyValue);
-        method.invoke(assertion, (Object) option);
     }
 
     // TODO move class util methods to com.l7tech.util.ClassUtils
