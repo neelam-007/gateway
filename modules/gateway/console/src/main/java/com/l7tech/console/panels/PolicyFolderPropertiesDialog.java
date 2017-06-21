@@ -176,8 +176,4 @@ public class PolicyFolderPropertiesDialog extends JDialog {
             dispose();
         }
     }
-
-    private void createUIComponents() {
-        // TODO: place custom component creation code here
-    }
 }
