@@ -145,7 +145,7 @@ public class QuickStartServiceBuilderTest extends ServiceBuilderTestBase {
         final EncassMocker experimentalAssertionTemplate = EncassMocker.mock(experimentalAssertionName, ImmutableMap.of("protect", DataType.STRING));
         Mockito.doReturn(experimentalAssertionTemplate.clone()).when(assertionLocator).findAssertion(experimentalAssertionName);
 
-        when(cachedConfig.getBooleanProperty("quickStart.allAssertions.enabled", false)).thenReturn(true);
+        when(clusterPropertyManager.getProperty("quickStart.allAssertions.enabled")).thenReturn("true");
 
         final ServiceContainer testServiceContainer = parseJson("{\n" +
                 "  \"Service\": {\n" +
@@ -188,7 +188,7 @@ public class QuickStartServiceBuilderTest extends ServiceBuilderTestBase {
 
         Assertion experimentalAssertion = mock(Assertion.class);
 
-        when(cachedConfig.getBooleanProperty("quickStart.allAssertions.enabled", false)).thenReturn(false);
+        when(clusterPropertyManager.getProperty("quickStart.allAssertions.enabled")).thenReturn("false");
 
         final ServiceContainer testServiceContainer = parseJson("{\n" +
                 "  \"Service\": {\n" +

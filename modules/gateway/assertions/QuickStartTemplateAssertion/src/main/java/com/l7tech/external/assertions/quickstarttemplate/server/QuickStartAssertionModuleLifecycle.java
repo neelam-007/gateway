@@ -7,6 +7,7 @@ import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStar
 import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStartServiceBuilder;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.GatewayState;
+import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.folder.FolderManager;
 import com.l7tech.server.policy.EncapsulatedAssertionConfigManager;
@@ -14,7 +15,6 @@ import com.l7tech.server.policy.PolicyVersionManager;
 import com.l7tech.server.service.ServiceCache;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.util.ApplicationEventProxy;
-import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationListener;
@@ -31,7 +31,7 @@ public class QuickStartAssertionModuleLifecycle {
     private static QuickStartPublishedServiceLocator serviceLocator = null;
     private static QuickStartServiceBuilder serviceBuilder = null;
     private static OneTimeJsonServiceInstaller jsonServiceInstaller = null;
-    private static Config cachedConfig = null;
+    private static ClusterPropertyManager clusterPropertyManager = null;
 
     @SuppressWarnings("unused")
     public static synchronized void onModuleLoaded(final ApplicationContext context) {
@@ -41,8 +41,8 @@ public class QuickStartAssertionModuleLifecycle {
             assertionLocator = new QuickStartEncapsulatedAssertionLocator(eacm, folderManager, new Goid(PROVIDED_FRAGMENT_FOLDER_GOID));
         }
 
-        if (cachedConfig == null) {
-            cachedConfig = context.getBean("serverConfig", Config.class);
+        if (clusterPropertyManager == null) {
+            clusterPropertyManager = context.getBean("clusterPropertyManager", ClusterPropertyManager.class);
         }
 
         if (serviceLocator == null) {
@@ -52,7 +52,7 @@ public class QuickStartAssertionModuleLifecycle {
 
         if (serviceBuilder == null) {
             final ServiceCache ServiceCache = context.getBean("serviceCache", ServiceCache.class);
-            serviceBuilder = new QuickStartServiceBuilder(ServiceCache, folderManager, serviceLocator, assertionLocator, cachedConfig);
+            serviceBuilder = new QuickStartServiceBuilder(ServiceCache, folderManager, serviceLocator, assertionLocator, clusterPropertyManager);
         }
 
         if (jsonServiceInstaller == null) {

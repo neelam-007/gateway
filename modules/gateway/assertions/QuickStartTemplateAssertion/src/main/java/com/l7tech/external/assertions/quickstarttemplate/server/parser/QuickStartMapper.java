@@ -11,7 +11,7 @@ import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CodeInjectionProtectionType;
 import com.l7tech.policy.assertion.EncapsulatedAssertion;
-import com.l7tech.util.Config;
+import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.util.EnumTranslator;
 import org.apache.commons.lang.ArrayUtils;
 import org.jetbrains.annotations.NotNull;
@@ -92,11 +92,11 @@ public class QuickStartMapper {
     private final QuickStartEncapsulatedAssertionLocator assertionLocator;
 
     @NotNull
-    private final Config cachedConfig;
+    private final ClusterPropertyManager clusterPropertyManager;
 
-    public QuickStartMapper(@NotNull final QuickStartEncapsulatedAssertionLocator assertionLocator, @NotNull final Config config) {
+    public QuickStartMapper(@NotNull final QuickStartEncapsulatedAssertionLocator assertionLocator, @NotNull final ClusterPropertyManager clusterPropertyManager) {
         this.assertionLocator = assertionLocator;
-        this.cachedConfig = config;
+        this.clusterPropertyManager = clusterPropertyManager;
     }
 
     // TODO is there a better time in the assertion lifecycle to set assertion registry?
@@ -119,7 +119,7 @@ public class QuickStartMapper {
             // check if assertion name is allowed
             Assertion assertion = null;
             if (supportedAssertionNames.contains(name) ||
-                    cachedConfig.getBooleanProperty(ENABLE_ALL_ASSERTIONS_FLAG_KEY, false)) {
+                    (clusterPropertyManager.getProperty(ENABLE_ALL_ASSERTIONS_FLAG_KEY) != null && clusterPropertyManager.getProperty(ENABLE_ALL_ASSERTIONS_FLAG_KEY).equalsIgnoreCase("true"))) {
                 assertion = assertionLocator.findAssertion(name);
             }
 
