@@ -100,7 +100,7 @@ public class QuickStartServiceBuilderTest extends ServiceBuilderTestBase {
     @Test
     public void createServiceWithUnknownEncass() throws Exception {
         expectedException.expect(QuickStartPolicyBuilderException.class);
-        expectedException.expectMessage(Matchers.equalToIgnoringCase("Unable to find encapsulated assertion template named : UnknownEncass"));
+        expectedException.expectMessage(Mockito.matches("(?s)Unable to find.*named : UnknownEncass"));
 
         final ServiceContainer testServiceContainer = parseJson("{\n" +
                 "  \"Service\": {\n" +
