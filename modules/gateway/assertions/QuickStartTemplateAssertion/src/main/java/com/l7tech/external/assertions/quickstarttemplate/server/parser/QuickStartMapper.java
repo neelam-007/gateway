@@ -181,97 +181,99 @@ public class QuickStartMapper {
                 try {
                     method = assertion.getClass().getMethod(setMethodName, propertyValue.getClass());
                     method.invoke(assertion, propertyValue);
-                } catch (NoSuchMethodException nsme) {
-                    logger.log(Level.FINE, "Reflection failed to invoke method: " + setMethodName + " with argument type: " + propertyValue.getClass() + ".  Trying again to cast from input type to other expected types.");
-
-                    // these util methods were tried without success:
-                    //      org.apache.commons.lang.reflect.MethodUtils.invokeMethod, org.apache.commons.beanutils.MethodUtils.invokeMethod, org.springframework.util.ReflectionUtils.findMethod, java.beans.Statement.execute
-
-                    // try primitive and primitive wrapper types for the method argument
-                    if (propertyValue.getClass().isArray()) {
-                        if (propertyValue.getClass().getComponentType().isPrimitive()) {
-                            try {
-                                Class wrapperArrayClass = primitiveArrayToWrapperArray(propertyValue.getClass());
-                                method = assertion.getClass().getMethod(setMethodName, wrapperArrayClass);
-                                invokePrimitiveArrayMethod(method, wrapperArrayClass, assertion, propertyValue);
-                                continue;
-                            } catch (NoSuchMethodException e2) {
-                                logger.log(Level.FINE, "Reflection failed to invoke : " + (method == null ? setMethodName : method.toString()));
-                            }
-                        } else if (isPrimitiveWrapper(propertyValue.getClass().getComponentType())) {
-                            try {
-                                Class primitiveArrayClass = wrapperArrayToPrimitiveArray(propertyValue.getClass());
-                                method = assertion.getClass().getMethod(setMethodName, primitiveArrayClass);
-                                invokeWrapperArrayMethod(method, primitiveArrayClass, assertion, propertyValue);
-                                continue;
-                            } catch (NoSuchMethodException e2) {
-                                logger.log(Level.FINE, "Reflection failed to invoke : " + (method == null ? setMethodName : method.toString()));
-                            }
-                        }
-                    } else {   // not an array
-                        if (propertyValue.getClass().isPrimitive()) {
-                            try {
-                                method = assertion.getClass().getMethod(setMethodName, primitiveToWrapper(propertyValue.getClass()));
-                                method.invoke(assertion, propertyValue);
-                                continue;
-                            } catch (NoSuchMethodException e2) {
-                                logger.log(Level.FINE, "Reflection failed to invoke : " + (method == null ? setMethodName : method.toString()));
-                            }
-                        } else if (isPrimitiveWrapper(propertyValue.getClass())) {
-                            try {
-                                method = assertion.getClass().getMethod(setMethodName, wrapperToPrimitive(propertyValue.getClass()));
-                                method.invoke(assertion, propertyValue);
-                                continue;
-                            } catch (NoSuchMethodException e2) {
-                                logger.log(Level.FINE, "Reflection failed to invoke : " + (method == null ? setMethodName : method.toString()));
-                            }
-                        }
-                    }
-
-                    // hard-coded dependencies to core Gateway as near last resort - hopefully this list remains small
-                    if ("setProtections".equals(setMethodName)) {
-                        try {
-                            handleSetProtections(setMethodName, assertion, propertyValue);
-                            continue;
-                        } catch (NoSuchMethodException e2) {
-                            logger.log(Level.FINE, "Reflection failed to invoke : " + setMethodName);
-                        }
-                    }
-
-                    // looping through all methods as last resort - performance hit
-                    for (Method declaredMethod : assertion.getClass().getDeclaredMethods()) {
-                        // find matching method name with one argument signature
-                        if (setMethodName.equals(declaredMethod.getName()) && declaredMethod.getParameterCount() == 1) {
-                            Class<?>[] declaredMethodParameterTypes = declaredMethod.getParameterTypes();
-                            Class<?> declaredMethodParameterType = declaredMethodParameterTypes[0];
-
-                            // try to convert string to method type using enum valueOf (e.g. com.l7tech.common.http.HttpMethod)
-                            try {
-                                Method valueOfMethod = declaredMethodParameterType.getMethod("valueOf", String.class);
-                                declaredMethod.invoke(assertion, valueOfMethod.invoke(null, propertyValue));
-                                return;
-                            } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e2) {
-                                logger.log(Level.FINE, "Reflection failed to invoke : " + declaredMethod.toString());
-                            }
-
-                            // try to convert string to method type using EnumTranslator (e.g. com.l7tech.policy.assertion.SslAssertion.Option)
-                            try {
-                                Method getEnumTranslatorMethod = declaredMethodParameterType.getMethod("getEnumTranslator");
-                                EnumTranslator enumTranslator = (EnumTranslator) getEnumTranslatorMethod.invoke(null);
-                                declaredMethod.invoke(assertion, enumTranslator.stringToObject(propertyValue.toString()));
-                                return;
-                            } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e2) {
-                                logger.log(Level.FINE, "Reflection failed to invoke : " + declaredMethod.toString());
-                            }
-                        }
-                    }
-
-                    // can't convert, fail and throw exception
-                    logger.log(Level.WARNING, "Failed to invoke method: " + setMethodName + "(...) with argument type: " + propertyValue.getClass());
-                    throw new QuickStartPolicyBuilderException("Unable to set " + assertion.getClass().getSimpleName()+ " - " + entry.getKey() + " = " + entry.getValue());
-
-                    // TODO set HTTP error code here?
+                    continue;
+                } catch (NoSuchMethodException e) {
+                    logger.log(Level.FINE, "Reflection failed to invoke : " + (method == null ? setMethodName : method.toString()));
+                    // continue trying to cast input type to other expected types
                 }
+
+                // these util methods were tried without success:
+                //      org.apache.commons.lang.reflect.MethodUtils.invokeMethod, org.apache.commons.beanutils.MethodUtils.invokeMethod, org.springframework.util.ReflectionUtils.findMethod, java.beans.Statement.execute
+
+                // try primitive and primitive wrapper types for the method argument
+                if (propertyValue.getClass().isArray()) {
+                    if (propertyValue.getClass().getComponentType().isPrimitive()) {
+                        try {
+                            Class wrapperArrayClass = primitiveArrayToWrapperArray(propertyValue.getClass());
+                            method = assertion.getClass().getMethod(setMethodName, wrapperArrayClass);
+                            invokePrimitiveArrayMethod(method, wrapperArrayClass, assertion, propertyValue);
+                            continue;
+                        } catch (NoSuchMethodException e) {
+                            logger.log(Level.FINE, "Reflection failed to invoke : " + (method == null ? setMethodName : method.toString()));
+                        }
+                    } else if (isPrimitiveWrapper(propertyValue.getClass().getComponentType())) {
+                        try {
+                            Class primitiveArrayClass = wrapperArrayToPrimitiveArray(propertyValue.getClass());
+                            method = assertion.getClass().getMethod(setMethodName, primitiveArrayClass);
+                            invokeWrapperArrayMethod(method, primitiveArrayClass, assertion, propertyValue);
+                            continue;
+                        } catch (NoSuchMethodException e) {
+                            logger.log(Level.FINE, "Reflection failed to invoke : " + (method == null ? setMethodName : method.toString()));
+                        }
+                    }
+                } else {   // not an array
+                    if (propertyValue.getClass().isPrimitive()) {
+                        try {
+                            method = assertion.getClass().getMethod(setMethodName, primitiveToWrapper(propertyValue.getClass()));
+                            method.invoke(assertion, propertyValue);
+                            continue;
+                        } catch (NoSuchMethodException e) {
+                            logger.log(Level.FINE, "Reflection failed to invoke : " + (method == null ? setMethodName : method.toString()));
+                        }
+                    } else if (isPrimitiveWrapper(propertyValue.getClass())) {
+                        try {
+                            method = assertion.getClass().getMethod(setMethodName, wrapperToPrimitive(propertyValue.getClass()));
+                            method.invoke(assertion, propertyValue);
+                            continue;
+                        } catch (NoSuchMethodException e) {
+                            logger.log(Level.FINE, "Reflection failed to invoke : " + (method == null ? setMethodName : method.toString()));
+                        }
+                    }
+                }
+
+                // hard-coded dependencies to core Gateway as near last resort - hopefully this list remains small
+                if ("setProtections".equals(setMethodName)) {
+                    try {
+                        handleSetProtections(setMethodName, assertion, propertyValue);
+                        continue;
+                    } catch (NoSuchMethodException e2) {
+                        logger.log(Level.FINE, "Reflection failed to invoke : " + setMethodName);
+                    }
+                }
+
+                // looping through all methods as last resort - performance hit
+                for (Method declaredMethod : assertion.getClass().getDeclaredMethods()) {
+                    // find matching method name with one argument signature
+                    if (setMethodName.equals(declaredMethod.getName()) && declaredMethod.getParameterCount() == 1) {
+                        Class<?>[] declaredMethodParameterTypes = declaredMethod.getParameterTypes();
+                        Class<?> declaredMethodParameterType = declaredMethodParameterTypes[0];
+
+                        // try to convert string to method type using enum valueOf (e.g. com.l7tech.common.http.HttpMethod)
+                        try {
+                            Method valueOfMethod = declaredMethodParameterType.getMethod("valueOf", String.class);
+                            declaredMethod.invoke(assertion, valueOfMethod.invoke(null, propertyValue));
+                            return;
+                        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+                            logger.log(Level.FINE, "Reflection failed to invoke : " + declaredMethod.toString());
+                        }
+
+                        // try to convert string to method type using EnumTranslator (e.g. com.l7tech.policy.assertion.SslAssertion.Option)
+                        try {
+                            Method getEnumTranslatorMethod = declaredMethodParameterType.getMethod("getEnumTranslator");
+                            EnumTranslator enumTranslator = (EnumTranslator) getEnumTranslatorMethod.invoke(null);
+                            declaredMethod.invoke(assertion, enumTranslator.stringToObject(propertyValue.toString()));
+                            return;
+                        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+                            logger.log(Level.FINE, "Reflection failed to invoke : " + declaredMethod.toString());
+                        }
+                    }
+                }
+
+                // can't convert, fail and throw exception
+                logger.log(Level.WARNING, "Failed to invoke method: " + setMethodName + "(...) with argument type: " + propertyValue.getClass());
+                throw new QuickStartPolicyBuilderException("Unable to set " + assertion.getClass().getSimpleName()+ " - " + entry.getKey() + " = " + entry.getValue());
+
+                // TODO set HTTP error code here?
             }
         } catch (IllegalAccessException | InvocationTargetException e) {
             throw new QuickStartPolicyBuilderException("Encountered an unexpected error", e);

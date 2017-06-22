@@ -71,6 +71,4 @@ public class ServerQuickStartDocumentationAssertionTest extends QuickStartTestBa
         when(assertionLocator.findEncapsulatedAssertions()).thenThrow(new FindException());
         fixture.checkRequest(context);
     }
-
-    // TODO add unit tests
 }

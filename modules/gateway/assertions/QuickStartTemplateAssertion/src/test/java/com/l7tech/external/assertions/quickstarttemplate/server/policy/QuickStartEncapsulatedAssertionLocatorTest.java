@@ -5,7 +5,9 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.objectmodel.folder.Folder;
+import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.Policy;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.EncapsulatedAssertion;
 import com.l7tech.server.folder.FolderManager;
 import com.l7tech.server.policy.EncapsulatedAssertionConfigManager;
@@ -19,9 +21,8 @@ import org.mockito.runners.MockitoJUnitRunner;
 import java.util.Set;
 
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -36,9 +37,34 @@ public class QuickStartEncapsulatedAssertionLocatorTest {
     private FolderManager folderManager;
     private Goid quickStartProvidedAssertionFolder = new Goid("ABABABABABABABABABABABABABABABAB");
 
+    @Mock
+    private AssertionRegistry assertionRegistry;
+
     @Before
     public void setUp() {
         fixture = new QuickStartEncapsulatedAssertionLocator(encassConfigManager, folderManager, quickStartProvidedAssertionFolder);
+    }
+
+    @Test
+    public void findAssertion() throws Exception {
+        final String validAssertionName = "ValidAssertionName";
+        final Assertion validAssertion = new Assertion() {};
+        fixture.setAssertionRegistry(assertionRegistry);
+        when(assertionRegistry.findByExternalName(validAssertionName)).thenReturn(validAssertion);
+
+        // assertion found
+        assertNotNull(fixture.findAssertion(validAssertionName));
+
+        // assertion not found
+        assertNull(fixture.findAssertion("invalidAssertionName"));
+
+        // don't mess with assertion registry's copy
+        final Assertion validAssertionCopy = fixture.findAssertion(validAssertionName);
+        assert validAssertionCopy != null;
+        validAssertionCopy.setEnabled(false);
+        validAssertionCopy.setAssertionComment(new Assertion.Comment());
+        assertNotEquals(validAssertion.isEnabled(), validAssertionCopy.isEnabled());
+        assertNotEquals(validAssertion.getAssertionComment(), validAssertionCopy.getAssertionComment());
     }
 
     @Test
