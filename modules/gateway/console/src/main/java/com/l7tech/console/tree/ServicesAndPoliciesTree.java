@@ -2,6 +2,7 @@ package com.l7tech.console.tree;
 
 import com.l7tech.console.action.*;
 import com.l7tech.console.policy.ConsoleAssertionRegistry;
+import com.l7tech.console.policy.PolicyTransferable;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.tree.servicesAndPolicies.*;
 import com.l7tech.console.util.Refreshable;
@@ -18,6 +19,7 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyHeader;
+import com.l7tech.policy.assertion.Include;
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions.Binary;
@@ -29,10 +31,11 @@ import javax.swing.*;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.*;
 import java.awt.*;
-import java.awt.datatransfer.Clipboard;
-import java.awt.datatransfer.DataFlavor;
-import java.awt.datatransfer.FlavorEvent;
-import java.awt.datatransfer.FlavorListener;
+import java.awt.dnd.DragSource;
+import java.awt.dnd.DnDConstants;
+import java.awt.dnd.DragGestureListener;
+import java.awt.dnd.DragGestureEvent;
+import java.awt.datatransfer.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
@@ -51,7 +54,7 @@ import static com.l7tech.util.Option.optional;
  *
  * @author Emil Marceta
  */
-public class ServicesAndPoliciesTree extends JTree implements Refreshable{
+public class ServicesAndPoliciesTree extends JTree implements Refreshable , DragGestureListener {
     static Logger log = Logger.getLogger(ServicesAndPoliciesTree.class.getName());
     private boolean ignoreCurrentClipboard = false;
     private SortComponents sortComponents;
@@ -72,6 +75,37 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable{
         getSelectionModel().setSelectionMode(TreeSelectionModel.DISCONTIGUOUS_TREE_SELECTION);
         getSelectionModel().addTreeSelectionListener(ClipboardActions.getTreeUpdateListener());
     }
+
+    public void dragGestureRecognized(DragGestureEvent dge) {
+        TreePath[] paths = getSelectionPaths();
+        if(paths.length > 1){
+            return;
+        }
+
+        Point ptDragOrigin = dge.getDragOrigin();
+        TreePath path = getPathForLocation(ptDragOrigin.x, ptDragOrigin.y);
+        if (path == null)
+            return;
+        Transferable ta = createTransferable(path);
+        if (ta == null) {
+            return;
+        }
+        setSelectionPath(path);	// Select this path in the tree
+        dge.startDrag(null, ta);
+    }
+
+    private Transferable createTransferable(TreePath path) {
+        if (path != null) {
+            AbstractTreeNode nodeSelected = (AbstractTreeNode)path.getLastPathComponent();
+            if (nodeSelected instanceof PolicyEntityNode){
+                    Include iass = new Include();
+                    DefaultAssertionPaletteNode nodeIncludePolicy = new DefaultAssertionPaletteNode<>(iass);
+                    return new PolicyTransferable(new AbstractTreeNode[] {nodeIncludePolicy});
+            }
+        }
+        return null;
+    }
+
 
     /**
      * Removes all TreeSelectionListener instances that appear to belong to classes loaded from modular assertions.
@@ -148,7 +182,10 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable{
             });
         }
 
-        setDragEnabled(true);
+        // Make this JTree a drag source
+        DragSource dragSource = DragSource.getDefaultDragSource();
+        dragSource.createDefaultDragGestureRecognizer(this, DnDConstants.ACTION_COPY, this);
+
         setTransferHandler(new ServicesAndPoliciesTreeTransferHandler());
 
         // disable Edit menu actions
@@ -964,4 +1001,17 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable{
             super(message);
         }
     }
+
+    public PolicyHeader getSelectedPolicyHeader(){
+        PolicyHeader header = null;
+        List<AbstractTreeNode> abstractTreeNodes = getSmartSelectedNodes();
+        if (abstractTreeNodes != null && abstractTreeNodes.size() == 1){
+            if (abstractTreeNodes.get(0) instanceof PolicyEntityNode){
+                header = (PolicyHeader)abstractTreeNodes.get(0).getUserObject();
+            }
+        }
+
+        return header;
+    }
+
 }
