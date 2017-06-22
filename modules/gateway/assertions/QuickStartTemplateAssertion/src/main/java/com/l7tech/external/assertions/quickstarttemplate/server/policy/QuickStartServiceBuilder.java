@@ -25,10 +25,7 @@ import com.l7tech.util.Triple;
 import org.jetbrains.annotations.NotNull;
 
 import java.net.MalformedURLException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * Dedicated class for building {@link PublishedService}.
@@ -39,20 +36,19 @@ public class QuickStartServiceBuilder {
     @NotNull private final FolderManager folderManager;
     @NotNull private final QuickStartPublishedServiceLocator serviceLocator;
     @NotNull private final QuickStartMapper mapper;
-    private final @NotNull ClusterPropertyManager clusterPropertyManager;
 
     public QuickStartServiceBuilder(
             @NotNull final ServiceCache serviceCache,
             @NotNull final FolderManager folderManager,
             @NotNull final QuickStartPublishedServiceLocator serviceLocator,
             @NotNull final QuickStartEncapsulatedAssertionLocator assertionLocator,
-            @NotNull final ClusterPropertyManager clusterPropertyManager
-    ) {
+            @NotNull final ClusterPropertyManager clusterPropertyManager,
+            @NotNull final Properties mapperProperties
+            ) {
         this.serviceCache = serviceCache;
         this.folderManager = folderManager;
         this.serviceLocator = serviceLocator;
-        this.clusterPropertyManager = clusterPropertyManager;
-        this.mapper = new QuickStartMapper(assertionLocator, clusterPropertyManager);
+        this.mapper = new QuickStartMapper(assertionLocator, clusterPropertyManager, mapperProperties);
     }
 
     // TODO is there a better time in the assertion lifecycle to set assertion registry?

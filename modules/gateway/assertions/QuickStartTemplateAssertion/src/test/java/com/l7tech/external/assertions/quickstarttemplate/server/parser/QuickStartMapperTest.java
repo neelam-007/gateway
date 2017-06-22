@@ -37,6 +37,9 @@ public class QuickStartMapperTest {
     @Mock
     protected ClusterPropertyManager clusterPropertyManager;
 
+    @Mock
+    protected Properties props = new Properties();
+
     @InjectMocks
     private QuickStartMapper fixture;
 

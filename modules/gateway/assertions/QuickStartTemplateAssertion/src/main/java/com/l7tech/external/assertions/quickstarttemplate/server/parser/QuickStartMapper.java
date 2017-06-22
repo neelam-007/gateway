@@ -31,6 +31,8 @@ public class QuickStartMapper {
 
     private static final String ENABLE_ALL_ASSERTIONS_FLAG_KEY = "quickStart.allAssertions.enabled";
 
+
+
     // TODO move class util support into com.l7tech.util.ClassUtils
     private static final Map<Class, Class> primitiveArrayWrapperArrayMap = new HashMap<>();
     private static final Map<Class, Class> wrapperArrayPrimitiveArrayMap = new HashMap<>();
@@ -94,9 +96,13 @@ public class QuickStartMapper {
     @NotNull
     private final ClusterPropertyManager clusterPropertyManager;
 
-    public QuickStartMapper(@NotNull final QuickStartEncapsulatedAssertionLocator assertionLocator, @NotNull final ClusterPropertyManager clusterPropertyManager) {
+    @NotNull
+    private final Properties mapperProperties;
+
+    public QuickStartMapper(@NotNull final QuickStartEncapsulatedAssertionLocator assertionLocator, @NotNull final ClusterPropertyManager clusterPropertyManager, @NotNull Properties props) {
         this.assertionLocator = assertionLocator;
         this.clusterPropertyManager = clusterPropertyManager;
+        this.mapperProperties = props;
     }
 
     // TODO is there a better time in the assertion lifecycle to set assertion registry?

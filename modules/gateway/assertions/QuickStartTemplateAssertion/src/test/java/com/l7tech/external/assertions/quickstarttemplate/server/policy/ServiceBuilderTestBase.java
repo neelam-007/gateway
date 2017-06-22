@@ -25,6 +25,7 @@ import org.mockito.Mockito;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.Map;
+import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
@@ -131,7 +132,7 @@ public abstract class ServiceBuilderTestBase {
 
         Mockito.doNothing().when(serviceCache).checkResolution(Mockito.any(PublishedService.class));
 
-        serviceBuilder = Mockito.spy(new QuickStartServiceBuilder(serviceCache, folderManager, serviceLocator, assertionLocator, clusterPropertyManager));
+        serviceBuilder = Mockito.spy(new QuickStartServiceBuilder(serviceCache, folderManager, serviceLocator, assertionLocator, clusterPropertyManager, new Properties()));
     }
 
 
