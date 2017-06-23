@@ -7,6 +7,7 @@
 **/*.iml
 ./**/*.ipr
 idea-classes/
+.shelf/
 
 # Build directories/files
 build
