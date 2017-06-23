@@ -19,6 +19,7 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyHeader;
+import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.assertion.Include;
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.ExceptionUtils;
@@ -99,9 +100,15 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable , Drag
         if (path != null) {
             AbstractTreeNode nodeSelected = (AbstractTreeNode)path.getLastPathComponent();
             if (nodeSelected instanceof PolicyEntityNode){
-                    Include iass = new Include();
-                    DefaultAssertionPaletteNode nodeIncludePolicy = new DefaultAssertionPaletteNode<>(iass);
-                    return new PolicyTransferable(new AbstractTreeNode[] {nodeIncludePolicy});
+                try {
+                    if (((PolicyEntityNode) nodeSelected).getPolicy().getType()== PolicyType.INCLUDE_FRAGMENT ) {
+                        Include iass = new Include();
+                        DefaultAssertionPaletteNode nodeIncludePolicy = new DefaultAssertionPaletteNode<>(iass);
+                        return new PolicyTransferable(new AbstractTreeNode[] {nodeIncludePolicy});
+                    }
+                } catch (FindException e) {
+                    log.log(Level.WARNING, e.getMessage(), e);
+                }
             }
         }
         return null;
