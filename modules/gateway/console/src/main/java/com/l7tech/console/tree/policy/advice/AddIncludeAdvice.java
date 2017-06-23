@@ -42,40 +42,39 @@ public class AddIncludeAdvice implements Advice {
 
         final PolicyHeader headerServices = header;
 
-
         // don't show selection dialog if the include is already associated with a policy fragment
         if (subject.getPolicyGuid() == null) {
             if (headerServices != null) {
-                Thread thread = new Thread() {
-                    @Override
-                    public void run() {
-                        addAndValidateSelectedPolicy(pc, headerServices, subject);
+                    SwingUtilities.invokeLater( new Runnable() {
+                        @Override
+                        public void run() {
+                            addAndValidateSelectedPolicy(pc, headerServices, subject);
+                        }
+                    } );
+                } else {
+                    //Request arrived from Assertions tree.
+                    final Frame mw = TopComponents.getInstance().getTopParent();
+                    final IncludeSelectionDialog includeSelectionDialog = new IncludeSelectionDialog(mw);
+                    if ( includeSelectionDialog.includeFragmentsAvailable() ) {
+                        DialogDisplayer.display(includeSelectionDialog, new Runnable() {
+                                @Override
+                                public void run() {
+                                    PolicyHeader header = includeSelectionDialog.getSelectedPolicyFragment();
+                                    addAndValidateSelectedPolicy(pc, header, subject);
+                                }
+                            });
+                        } else {
+                            DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
+                                    "No Policy Include Fragments are currently available.",
+                                    "Policy Include Fragments Not Available",
+                                    JOptionPane.INFORMATION_MESSAGE,
+                                    null);
                     }
-                };
-                thread.start();
-            } else {//Request arrived from Assertions tree.
-                final Frame mw = TopComponents.getInstance().getTopParent();
-                final IncludeSelectionDialog includeSelectionDialog = new IncludeSelectionDialog(mw);
-                if ( includeSelectionDialog.includeFragmentsAvailable() ) {
-                    DialogDisplayer.display(includeSelectionDialog, new Runnable() {
-                            @Override
-                            public void run() {
-                                PolicyHeader header = includeSelectionDialog.getSelectedPolicyFragment();
-                                addAndValidateSelectedPolicy(pc, header, subject);
-                            }
-                        });
-                    } else {
-                DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
-                        "No Policy Include Fragments are currently available.",
-                        "Policy Include Fragments Not Available",
-                        JOptionPane.INFORMATION_MESSAGE,
-                        null);
-            }
+                 }
+        } else {
+            pc.proceed();
         }
-    } else {
-        pc.proceed();
     }
-}
 
 
     private void addAndValidateSelectedPolicy(PolicyChange pc, PolicyHeader header, Include subject){

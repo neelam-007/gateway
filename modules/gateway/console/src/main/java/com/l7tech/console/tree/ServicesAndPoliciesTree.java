@@ -76,9 +76,10 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable , Drag
         getSelectionModel().addTreeSelectionListener(ClipboardActions.getTreeUpdateListener());
     }
 
+    @Override
     public void dragGestureRecognized(DragGestureEvent dge) {
         TreePath[] paths = getSelectionPaths();
-        if(paths.length > 1){
+        if (paths.length > 1) {
             return;
         }
 
