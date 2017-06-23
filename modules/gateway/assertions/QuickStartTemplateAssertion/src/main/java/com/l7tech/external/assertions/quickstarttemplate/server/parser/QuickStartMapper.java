@@ -14,6 +14,7 @@ import com.l7tech.policy.assertion.EncapsulatedAssertion;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.util.EnumTranslator;
 import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -120,7 +121,9 @@ public class QuickStartMapper {
         final List<Assertion> assertions = new ArrayList<>();
         for (final Map<String, Map<String, ?>> policyMap : service.policy) {
             // We know there is only one thing in this map, we've previously validated this.
-            final String name = policyMap.keySet().iterator().next();   // TODO map display to internal name
+            final String displayName = policyMap.keySet().iterator().next();
+            // get the real name
+            final String name = getInternalAssertionName(displayName);
 
             // check if assertion name is allowed
             Assertion assertion = null;
@@ -136,11 +139,11 @@ public class QuickStartMapper {
                     throw new QuickStartPolicyBuilderException("Unable to find assertion for policy template item named : " + name);
                 }
                 // process as encass
-                setEncassArguments(encapsulatedAssertion, policyMap.get(name));
+                setEncassArguments(encapsulatedAssertion, policyMap.get(displayName));
                 assertions.add(encapsulatedAssertion);
             } else {
                 // process as assertion
-                callAssertionSetter(assertion, policyMap.get(name));
+                callAssertionSetter(displayName, assertion, policyMap.get(displayName));
                 assertions.add(assertion);
             }
         }
@@ -177,13 +180,15 @@ public class QuickStartMapper {
     }
 
     @VisibleForTesting
-    void callAssertionSetter(@NotNull final Assertion assertion, @NotNull final Map<String, ?> properties) throws QuickStartPolicyBuilderException {
+    void callAssertionSetter(@NotNull String assertionDisplayName, @NotNull final Assertion assertion, @NotNull final Map<String, ?> properties) throws QuickStartPolicyBuilderException {
         try {
             Method method = null;
             String setMethodName;
             for (final Map.Entry<String, ?> entry : properties.entrySet()) {
                 final Object propertyValue = entry.getValue();
-                setMethodName = "set" + entry.getKey();   // TODO map display to internal name
+                // map display to internal name
+                String fieldName = getInternalFieldName(assertionDisplayName, entry.getKey());
+                setMethodName = "set" + fieldName;
                 try {
                     method = assertion.getClass().getMethod(setMethodName, propertyValue.getClass());
                     method.invoke(assertion, propertyValue);
@@ -277,7 +282,7 @@ public class QuickStartMapper {
 
                 // can't convert, fail and throw exception
                 logger.log(Level.WARNING, "Failed to invoke method: " + setMethodName + "(...) with argument type: " + propertyValue.getClass());
-                throw new QuickStartPolicyBuilderException("Unable to set " + assertion.getClass().getSimpleName()+ " - " + entry.getKey() + " = " + entry.getValue());
+                throw new QuickStartPolicyBuilderException("Unable to set " + assertion.getClass().getSimpleName()+ " - " + fieldName + " = " + entry.getValue());
 
                 // TODO set HTTP error code here?
             }
@@ -367,5 +372,26 @@ public class QuickStartMapper {
                 .filter(ad -> name.equals(ad.getArgumentName()))
                 .findFirst()
                 .orElse(null);
+    }
+
+    /***
+     * Looks up internal name by display name (map is in qs_mapper.properties)
+     * @param displayName
+     * @return
+     */
+    private String getInternalAssertionName(String displayName) {
+
+        String internalName = mapperProperties.getProperty(displayName);
+
+        return StringUtils.isNotEmpty(internalName) ? internalName : displayName;
+    }
+
+    private String getInternalFieldName(String assertionDisplayName, String fieldDisplayName) {
+
+        String key = String.format("%s.%s", assertionDisplayName, fieldDisplayName);
+
+        String internalName = mapperProperties.getProperty(key);
+
+        return StringUtils.isNotEmpty(internalName) ? internalName : fieldDisplayName;
     }
 }
