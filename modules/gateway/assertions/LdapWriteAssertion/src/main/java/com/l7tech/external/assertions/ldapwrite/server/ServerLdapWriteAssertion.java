@@ -131,7 +131,7 @@ public class ServerLdapWriteAssertion extends AbstractServerAssertion<LdapWriteA
             throw new LdapException("The LDAP server is not permitted to MODIFY the DN specified:" + resolvedDn);
         }
 
-        switch (assertion.getOperation()) {
+        switch (assertion.getChangetype()) {
 
             case ADD:
                 addAttributes(varMap, dirContext, resolvedDn, assertion.getAttributeList());
@@ -151,7 +151,7 @@ public class ServerLdapWriteAssertion extends AbstractServerAssertion<LdapWriteA
     }
 
     // This function verifies if the DN specified is within the LDAP Identity Provider's writeBase.
-    // This is to ensure future operations are permitted for the DN.
+    // This is to ensure LDAP updates are permitted for the DN.
     private boolean isDnPermitted(final String dn, final String writeBase) throws InvalidNameException {
 
         if (StringUtils.isEmpty(dn)) {
