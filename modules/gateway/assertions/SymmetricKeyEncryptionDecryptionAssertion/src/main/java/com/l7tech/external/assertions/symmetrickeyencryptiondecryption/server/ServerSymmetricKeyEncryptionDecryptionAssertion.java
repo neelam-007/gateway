@@ -34,6 +34,15 @@ import java.util.logging.Logger;
 public class ServerSymmetricKeyEncryptionDecryptionAssertion extends AbstractServerAssertion<SymmetricKeyEncryptionDecryptionAssertion> {
     private static final Logger logger = Logger.getLogger(ServerSymmetricKeyEncryptionDecryptionAssertion.class.getName());
 
+    // IV block size for AES cipher.
+    private static final int IV_BLOCK_SIZE_BYTES_AES = 16;
+
+    // IV block size for AES cipher and GCM block mode.
+    private static final int IV_BLOCK_SIZE_BYTES_AES_GCM = 12;
+
+    // IV block size for DES or 3DES ciphers.
+    private static final int IV_BLOCK_SIZE_BYTES_DES_TRIPLE_DES = 8;
+
     private final SymmetricKeyEncryptionDecryptionAssertion assertion;
     private final Auditor auditor;
     private final String[] variablesUsed;
@@ -253,6 +262,9 @@ public class ServerSymmetricKeyEncryptionDecryptionAssertion extends AbstractSer
         } catch (ShortBufferException e) {
             logger.log(Level.WARNING, "There is a problem with the Encryption/Decryption process.  The internal buffer has run out of space.", ExceptionUtils.getDebugException(e));
             return AssertionStatus.FAILED;
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "There is a problem with the Encryption/Decryption process. Unexpected error: ", ExceptionUtils.getDebugException(e));
+            return AssertionStatus.FAILED;
         }
     }
 
@@ -272,15 +284,13 @@ public class ServerSymmetricKeyEncryptionDecryptionAssertion extends AbstractSer
 
         if (algorithmName.equalsIgnoreCase(SymmetricKeyEncryptionDecryptionAssertion.ALGORITHM_AES)) {
             if(SymmetricKeyEncryptionDecryptionAssertion.BLOCK_MODE_GCM.equalsIgnoreCase(blockMode)) {
-                // if its AES and block mode is GCM, then the IV has to be 12 blocks
-                toReturn = 12;
+                toReturn = IV_BLOCK_SIZE_BYTES_AES_GCM;
             } else {
-                // if its AES, then the IV has to be 16 blocks
-                toReturn = 16;
+                toReturn = IV_BLOCK_SIZE_BYTES_AES;
             }
         } else if (algorithmName.equalsIgnoreCase(SymmetricKeyEncryptionDecryptionAssertion.ALGORITHM_DES)
                 || algorithmName.equalsIgnoreCase(SymmetricKeyEncryptionDecryptionAssertion.ALGORITHM_TRIPLE_DES)) {
-            toReturn = 8;
+            toReturn = IV_BLOCK_SIZE_BYTES_DES_TRIPLE_DES;
         }
         // else stick with zero which means it will probably fail.  Not sure if this scenario will ever be reached as AES,
         // DES, tripleDES is what this assertions is designed for
@@ -292,6 +302,7 @@ public class ServerSymmetricKeyEncryptionDecryptionAssertion extends AbstractSer
     /*
     * The only supported Block Mode right now are CBC and GCM.  If this method returns a byte array with size 0, its because it ran into a block mode problem.
     * Namely an incorrect block mode (ie: not CBC) is being used.
+    * TODO: If we start supporting for more algorithms, consider refactoring this method to avoid adding more complexity (if/else blocks). (eg. getEncryptor(String blockmode).encrypt())
     */
     private byte[] encrypt(Cipher cipher, SecretKeySpec skeySpec, byte[] inputbytes, String algorithmName, String blockMode) throws InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, ShortBufferException, BadPaddingException {
         byte[] toReturn = new byte[0];
@@ -318,10 +329,9 @@ public class ServerSymmetricKeyEncryptionDecryptionAssertion extends AbstractSer
             AlgorithmParameterSpec algorithmParamSpec;
             if (SymmetricKeyEncryptionDecryptionAssertion.BLOCK_MODE_CBC.equals(blockMode)) {
                 algorithmParamSpec = new IvParameterSpec(ivBytes);
-            } else if (SymmetricKeyEncryptionDecryptionAssertion.BLOCK_MODE_GCM.equals(blockMode)) {
-                algorithmParamSpec = new GCMParameterSpec(SymmetricKeyEncryptionDecryptionAssertion.GCM_AUTHENTICATION_TAG_LENGTH_BITS, ivBytes);
             } else {
-                throw new UnsupportedOperationException("Unexpected block mode '"+ blockMode + "'.");
+                // GCM block mode
+                algorithmParamSpec = new GCMParameterSpec(SymmetricKeyEncryptionDecryptionAssertion.GCM_AUTHENTICATION_TAG_LENGTH_BITS, ivBytes);
             }
 
             cipher.init(Cipher.ENCRYPT_MODE, skeySpec, algorithmParamSpec);
@@ -345,6 +355,7 @@ public class ServerSymmetricKeyEncryptionDecryptionAssertion extends AbstractSer
     * If using anything else, it will return a byte array of size 0.
     *
     * If anything goes wrong, a byte array of size 0 will be returned
+    * TODO: If we start supporting for more algorithms, consider refactoring this method to avoid adding more complexity (if/else blocks). (eg. getDecryptor(String blockmode).decrypt())
     */
     private byte[] decrypt(Cipher cipher, SecretKeySpec skeySpec, byte[] inputbytes, String algorithmName, String blockMode, byte[] passedIvBytes) throws InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, ShortBufferException, BadPaddingException {
         byte[] toReturn = new byte[0];
@@ -386,7 +397,8 @@ public class ServerSymmetricKeyEncryptionDecryptionAssertion extends AbstractSer
                 } else {
                     algorithmParamSpec = new IvParameterSpec(passedIvBytes);
                 }
-            } else if (SymmetricKeyEncryptionDecryptionAssertion.BLOCK_MODE_GCM.equals(blockMode)) {
+            } else {
+                // GCM block mode
                 if (fetchIvFromBytes) {
                     ivBytes = new byte[ivBytesSize];
                     System.arraycopy(inputbytes, 0, ivBytes, 0, ivBytesSize);
@@ -394,8 +406,6 @@ public class ServerSymmetricKeyEncryptionDecryptionAssertion extends AbstractSer
                 } else {
                     algorithmParamSpec = new GCMParameterSpec(SymmetricKeyEncryptionDecryptionAssertion.GCM_AUTHENTICATION_TAG_LENGTH_BITS, passedIvBytes);
                 }
-            } else {
-                throw new UnsupportedOperationException("Unexpected block mode '"+ blockMode + "'.");
             }
 
             // remove the IV if not already specified...

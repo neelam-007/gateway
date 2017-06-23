@@ -16,7 +16,6 @@ public class SymmetricKeyEncryptionDecryptionAssertion extends Assertion impleme
     protected static final Logger logger = Logger.getLogger(SymmetricKeyEncryptionDecryptionAssertion.class.getName());
 
     private static final boolean IS_ENCRYPT_VALUE = true;
-    private static final boolean IS_B64_VALUE = false;
 
     public static final String DEFAULT_VARIABLE_NAME = "symmetricEncrypDecrypOutput";
     public static final String DEFAULT_TRANS_SEPERATOR = "/";
