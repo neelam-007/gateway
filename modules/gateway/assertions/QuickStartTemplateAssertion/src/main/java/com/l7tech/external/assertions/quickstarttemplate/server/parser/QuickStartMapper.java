@@ -7,9 +7,11 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionStringEncoding;
 import com.l7tech.policy.assertion.EncapsulatedAssertion;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -61,6 +63,13 @@ public class QuickStartMapper {
                 // If it's an iterable, we cannot pass arrays to encapsulated assertions, so we merge them together
                 // like this into a semicolon delimited string.
                 resultingValue = Joiner.on(";").join((Iterable) propertyValue);
+            } else if (propertyValue instanceof Map) {
+                // If it's a map, assume it's json, retain double quotes when parsing
+                try {
+                    resultingValue = new ObjectMapper().writeValueAsString(propertyValue);
+                } catch (IOException e) {
+                    throw new QuickStartPolicyBuilderException("Unable to convert Map to JSON string: ", e);
+                }
             } else {
                 // Convert the value using the encapsulated assertion encoding type.
                 resultingValue = EncapsulatedAssertionStringEncoding.encodeToString(descriptor.dataType(), propertyValue);
