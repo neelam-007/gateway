@@ -55,17 +55,6 @@ public class QuickStartMapper {
         }
     }
 
-    // TODO: consider moving this as a field rather then a static singleton.
-    // TODO: for couple of reasons; 1) it makes more sense to be a field and
-    // TODO: 2) the assertion supports dynamic loading, so to avoid classloader hell with static objects (you never know when the previous classloader instance will be destroyed)
-    @NotNull
-    private static final Map<String, AssertionSupport> supportedAssertions = AssertionMapper.getSupportedAssertions();
-
-    @NotNull
-    public static Map<String, AssertionSupport> getSupportedAssertions() {
-        return supportedAssertions;
-    }
-
     @NotNull
     private final QuickStartEncapsulatedAssertionLocator assertionLocator;
 
@@ -96,37 +85,33 @@ public class QuickStartMapper {
         final List<Assertion> assertions = new ArrayList<>();
         for (final Map<String, Map<String, ?>> policyMap : service.policy) {
             // We know there is only one thing in this map, we've previously validated this.
-            final String templateName = policyMap.keySet().iterator().next();
-            // get the assertion support
-            final AssertionSupport assertionSupport = supportedAssertions.get(templateName);
+            final String displayName = policyMap.keySet().iterator().next();
+            // get the real name
+            final String name = getInternalAssertionName(displayName);
 
             // check if assertion name is allowed
             Assertion assertion = null;
-            if (assertionSupport != null || "true".equalsIgnoreCase(clusterPropertyManager.getProperty(ENABLE_ALL_ASSERTIONS_FLAG_KEY))) {
-                assertion = assertionLocator.findAssertion(assertionSupport != null ? assertionSupport.getExternalName(): templateName);
+            if (mapperProperties.containsKey(name) ||
+                    (clusterPropertyManager.getProperty(ENABLE_ALL_ASSERTIONS_FLAG_KEY) != null && clusterPropertyManager.getProperty(ENABLE_ALL_ASSERTIONS_FLAG_KEY).equalsIgnoreCase("true"))) {
+                assertion = assertionLocator.findAssertion(name);
             }
 
             if (assertion == null) {
-                assertions.add(getEncapsulatedAssertion(templateName, policyMap.get(templateName)));
+                // allow all encasses, no check needed
+                final EncapsulatedAssertion encapsulatedAssertion = assertionLocator.findEncapsulatedAssertion(name);
+                if (encapsulatedAssertion == null) {
+                    throw new QuickStartPolicyBuilderException("Unable to find assertion for policy template item named : " + name);
+                }
+                // process as encass
+                setEncassArguments(encapsulatedAssertion, policyMap.get(displayName));
+                assertions.add(encapsulatedAssertion);
             } else {
                 // process as assertion
-                callAssertionSetter(templateName, assertion, policyMap.get(templateName));
+                callAssertionSetter(displayName, assertion, policyMap.get(displayName));
                 assertions.add(assertion);
             }
         }
         return assertions;
-    }
-
-    @NotNull
-    private EncapsulatedAssertion getEncapsulatedAssertion(final String name, @NotNull final Map<String, ?> properties) throws QuickStartPolicyBuilderException, FindException {
-        // allow all encasses, no check needed
-        final EncapsulatedAssertion encapsulatedAssertion = assertionLocator.findEncapsulatedAssertion(name);
-        if (encapsulatedAssertion == null) {
-            throw new QuickStartPolicyBuilderException("Unable to find assertion for policy template item named : " + name);
-        }
-        // process as encass
-        setEncassArguments(encapsulatedAssertion, properties);
-        return encapsulatedAssertion;
     }
 
     private void setEncassArguments(@NotNull final EncapsulatedAssertion encapsulatedAssertion, @NotNull final Map<String, ?> properties) throws QuickStartPolicyBuilderException {
@@ -351,6 +336,18 @@ public class QuickStartMapper {
                 .filter(ad -> name.equals(ad.getArgumentName()))
                 .findFirst()
                 .orElse(null);
+    }
+
+    /***
+     * Looks up internal name by display name (map is in qs_mapper.properties)
+     * @param displayName
+     * @return
+     */
+    private String getInternalAssertionName(String displayName) {
+
+        String internalName = mapperProperties.getProperty(displayName);
+
+        return StringUtils.isNotEmpty(internalName) ? internalName : displayName;
     }
 
     private String getInternalFieldName(String assertionDisplayName, String fieldDisplayName) {
