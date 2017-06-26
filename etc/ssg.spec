@@ -8,10 +8,9 @@ URL: http://www.layer7tech.com
 Vendor: Layer 7 Technologies
 Packager: Layer 7 Technologies, <support@layer7tech.com>
 Source0: ssg-core.tar.gz
-Source1: ssg-collector.tar.gz
-Source2: ssg-processcontroller.tar.gz
-Source3: ssg-extensions.tar.gz
-Source4: ssg-webadmin.tar.gz
+Source1: ssg-processcontroller.tar.gz
+Source2: ssg-extensions.tar.gz
+Source3: ssg-webadmin.tar.gz
 
 BuildRoot: %{_builddir}/%{name}-%{version}
 Prefix: /opt/SecureSpan/Gateway
@@ -28,7 +27,7 @@ rm -fr %{buildroot}
 %prep
 rm -fr %{buildroot}
 
-%setup -T -b 0 -b 1 -b 2 -b 3 -b 4 -qcn %{buildroot}
+%setup -T -b 0 -b 1 -b 2 -b 3 -qcn %{buildroot}
 
 %build
 
@@ -37,7 +36,6 @@ rm -fr %{buildroot}
 %defattr(0644,root,root,0755)
 %dir /opt/SecureSpan/Gateway
 %dir /opt/SecureSpan/Controller
-%dir /opt/SecureSpan/Collector
 
 # Group writable config files
 %defattr(0640,layer7,gateway,0750)
@@ -120,24 +118,34 @@ rm -fr %{buildroot}
 %attr(0770,layer7,gateway) /opt/SecureSpan/Controller/var/logs
 %attr(0770,layer7,gateway) /opt/SecureSpan/Controller/var/patches
 
-# Gateway data collection utility
-%defattr(0444,layer7,layer7,0755)
-/opt/SecureSpan/Collector
-%attr(0555,root,root) /opt/SecureSpan/Collector/collect.sh
-%defattr(0555,layer7,layer7,0755)
-%dir /opt/SecureSpan/Collector/modules
-/opt/SecureSpan/Collector/modules/devices
-/opt/SecureSpan/Collector/modules/filesystems
-/opt/SecureSpan/Collector/modules/gateway
-/opt/SecureSpan/Collector/modules/java
-/opt/SecureSpan/Collector/modules/kernel
-/opt/SecureSpan/Collector/modules/monitor
-/opt/SecureSpan/Collector/modules/mysql
-/opt/SecureSpan/Collector/modules/network
-/opt/SecureSpan/Collector/modules/os
-/opt/SecureSpan/Collector/modules/vmware
-%dir /opt/SecureSpan/Collector/modules/sensitive
-/opt/SecureSpan/Collector/modules/sensitive/userdata
+# Remove old version of gateway data collect utility tool (DCT) in /opt/SecureSpan/Collector
+# Do not touch any non-DCT files/directories in /opt/SecureSpan/Collector.
+# If there are no any non-DCT files/directories in /opt/SecureSpan/Collector, then delete /opt/SecureSpan/Collector
+rm -f /opt/SecureSpan/Collector/collect.sh
+rm -f /opt/SecureSpan/Collector/collectorlib
+rm -f /opt/SecureSpan/Collector/modules/devices
+rm -f /opt/SecureSpan/Collector/modules/filesystems
+rm -f /opt/SecureSpan/Collector/modules/gateway
+rm -f /opt/SecureSpan/Collector/modules/java
+rm -f /opt/SecureSpan/Collector/modules/kernel
+rm -f /opt/SecureSpan/Collector/modules/monitor
+rm -f /opt/SecureSpan/Collector/modules/mysql
+rm -f /opt/SecureSpan/Collector/modules/network
+rm -f /opt/SecureSpan/Collector/modules/os
+rm -f /opt/SecureSpan/Collector/modules/vmware
+rm -f /opt/SecureSpan/Collector/modules/sensitive/userdata
+
+if [ ! "$(ls -A /opt/SecureSpan/Collector/modules/sensitive)" ]; then
+    rm -rf /opt/SecureSpan/Collector/modules/sensitive/
+
+    if [ ! "$(ls -A /opt/SecureSpan/Collector/modules)" ]; then
+        rm -rf /opt/SecureSpan/Collector/modules
+
+        if [ ! "$(ls -A /opt/SecureSpan/Collector)" ]; then
+            rm -rf /opt/SecureSpan/Collector
+        fi
+    fi
+fi
 
 %pre
 grep -q ^gateway: /etc/group || groupadd gateway
