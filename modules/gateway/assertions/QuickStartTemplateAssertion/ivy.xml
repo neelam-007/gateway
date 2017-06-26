@@ -19,5 +19,10 @@
                     conf="compile->compile;runtime->runtime;test->test"/>
 		<dependency org="json" name="json-java" rev="1.0-l7p1" force="true" conf="core"/>
 		<dependency org="com.samskivert" name="jmustache" rev="1.13" force="true" conf="core"/>
+		<dependency name="jackson-annotations" org="com.fasterxml.jackson.core" rev="2.8.6" conf="core"/>
+		<dependency name="jackson-core" org="com.fasterxml.jackson.core" rev="2.8.6" conf="core"/>
+		<dependency name="jackson-databind" org="com.fasterxml.jackson.core" rev="2.8.6" conf="core"/>
+		<dependency name="jackson-dataformat-yaml" org="com.fasterxml.jackson.dataformat" rev="2.8.6" conf="core"/>
+		<dependency name="snakeyaml" org="org.yaml" rev="1.17" conf="core"/>
 	</dependencies>
 </ivy-module>

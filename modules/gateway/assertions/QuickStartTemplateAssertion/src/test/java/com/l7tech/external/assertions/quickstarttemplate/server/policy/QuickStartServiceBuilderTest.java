@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableSet;
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.external.assertions.quickstarttemplate.server.parser.Service;
 import com.l7tech.external.assertions.quickstarttemplate.server.parser.ServiceContainer;
+import com.l7tech.external.assertions.quickstarttemplate.server.utils.L7Matchers;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
@@ -103,7 +104,7 @@ public class QuickStartServiceBuilderTest extends ServiceBuilderTestBase {
     @Test
     public void createServiceWithUnknownEncass() throws Exception {
         expectedException.expect(QuickStartPolicyBuilderException.class);
-        expectedException.expectMessage(Matchers.equalToIgnoringCase("Unable to find assertion for policy template item named : UnknownEncass"));
+        expectedException.expectMessage(L7Matchers.matchesRegex("(?s)Unable to find.*named : UnknownEncass"));
 
         final ServiceContainer testServiceContainer = parseJson("{\n" +
                 "  \"Service\": {\n" +

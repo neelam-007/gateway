@@ -1,5 +1,8 @@
 package com.l7tech.external.assertions.quickstarttemplate.server.policy;
 
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import com.l7tech.external.assertions.quickstarttemplate.QuickStartTemplateAssertion;
 import com.l7tech.external.assertions.quickstarttemplate.server.parser.QuickStartParser;
 import com.l7tech.gateway.common.service.PublishedService;
@@ -8,9 +11,6 @@ import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.server.policy.PolicyVersionManager;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.util.Functions;
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.map.JsonMappingException;
-import org.codehaus.jackson.map.exc.UnrecognizedPropertyException;
 import org.hamcrest.Matchers;
 import org.junit.After;
 import org.junit.Assert;

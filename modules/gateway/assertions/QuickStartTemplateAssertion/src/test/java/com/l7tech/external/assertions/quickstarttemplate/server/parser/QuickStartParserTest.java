@@ -2,7 +2,7 @@ package com.l7tech.external.assertions.quickstarttemplate.server.parser;
 
 import com.google.common.collect.ImmutableMap;
 import com.l7tech.common.http.HttpMethod;
-import org.codehaus.jackson.map.JsonMappingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import org.junit.Before;
 import org.junit.Test;
 

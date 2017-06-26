@@ -13,8 +13,9 @@ import com.l7tech.server.policy.PolicyVersionManager;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
-import org.codehaus.jackson.map.JsonMappingException;
-import org.codehaus.jackson.map.exc.UnrecognizedPropertyException;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -179,11 +180,15 @@ public class QuickStartJsonServiceInstaller {
         try {
             return parser.parseJson(fileStream);
         } catch (UnrecognizedPropertyException e) {
-            throw new ParseJsonPayload("Unrecognized property \"" + e.getUnrecognizedPropertyName() + "\" for object \"" + e.getReferringClass().getSimpleName() + "\"", e);
+            throw new ParseJsonPayload("Unrecognized property \"" + e.getPropertyName() + "\" for object \"" + e.getReferringClass().getSimpleName() + "\"", e);
         } catch (JsonMappingException e) {
             final IllegalArgumentException arg = ExceptionUtils.getCauseIfCausedBy(e, IllegalArgumentException.class);
             if (arg != null) {
                 throw new ParseJsonPayload(ExceptionUtils.getMessage(arg), e);
+            }
+            final JsonParseException parseException = ExceptionUtils.getCauseIfCausedBy(e, JsonParseException.class);
+            if (parseException != null) {
+                throw new ParseJsonPayload("Unable to parse JSON service payload: " + ExceptionUtils.getMessage(parseException), parseException);
             }
             throw new ParseJsonPayload(ExceptionUtils.getMessage(e), e);
         } catch (IOException e) {

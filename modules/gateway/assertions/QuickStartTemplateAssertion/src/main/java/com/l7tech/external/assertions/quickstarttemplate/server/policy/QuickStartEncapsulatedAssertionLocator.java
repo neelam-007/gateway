@@ -1,5 +1,7 @@
 package com.l7tech.external.assertions.quickstarttemplate.server.policy;
 
+import com.l7tech.external.assertions.quickstarttemplate.server.parser.AssertionSupport;
+import com.l7tech.external.assertions.quickstarttemplate.server.parser.QuickStartMapper;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
@@ -14,7 +16,10 @@ import com.l7tech.util.Option;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiFunction;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -53,6 +58,43 @@ public class QuickStartEncapsulatedAssertionLocator {  //TODO rename to QuickSta
     public Assertion findAssertion(@NotNull final String name) {
         final Assertion assertion = assertionRegistry.findByExternalName(name);
         return assertion == null ? null : assertion.getCopy();   // don't mess with registry's copy
+    }
+
+    private static class UncheckedFindException extends RuntimeException {
+        private UncheckedFindException(@NotNull final String message) {
+            super(message);
+        }
+    }
+
+    private <T> Set<T> unwrapFindException(@NotNull final Supplier<Set<T>> supplier) throws FindException {
+        try {
+            return supplier.get();
+        } catch (final UncheckedFindException ex) {
+            throw new FindException(ex.getMessage(), ex);
+        }
+    }
+
+    @NotNull
+    public Set<Assertion> findSupportedAssertions() throws FindException {
+        return unwrapFindException(() ->
+                QuickStartMapper.getSupportedAssertions().keySet().stream()
+                        .map(name -> Optional.ofNullable(assertionRegistry.findByExternalName(name))
+                                .map(Assertion::getCopy)
+                                .orElseThrow(() -> new UncheckedFindException("Assertion with name \"" + name + "\" cannot be found!")))
+                        .collect(Collectors.toSet())
+        );
+    }
+
+    @NotNull
+    public <T> Set<T> findSupportedAssertions(final @NotNull BiFunction<AssertionSupport, Assertion, T> mapper) throws FindException {
+        return unwrapFindException(() ->
+                QuickStartMapper.getSupportedAssertions().entrySet().stream()
+                        .map(entry -> Optional.ofNullable(assertionRegistry.findByExternalName(entry.getKey()))
+                                .map(Assertion::getCopy)
+                                .map(ass -> mapper.apply(entry.getValue(), ass))
+                                .orElseThrow(() -> new UncheckedFindException("Assertion with name \"" + entry.getKey() + "\" cannot be found!"))
+                        ).collect(Collectors.toSet())
+        );
     }
 
     @NotNull

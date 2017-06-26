@@ -55,40 +55,15 @@ public class QuickStartMapper {
         }
     }
 
-    // allowed assertions (does not include encasses, all encasses allowed)
-//    @VisibleForTesting
-    private static final Set<String> supportedAssertionNames = new HashSet<>();
-    static {
-        supportedAssertionNames.add("CodeInjectionProtection");
-        supportedAssertionNames.add("CORS");
-        supportedAssertionNames.add("HardcodedResponse");   // TODO implement as encass to handle base64 encode/decode
-        supportedAssertionNames.add("HttpBasic");
-        supportedAssertionNames.add("HttpRouting");
-        supportedAssertionNames.add("RateLimit");
-        supportedAssertionNames.add("SetVariable");   // TODO implement as encass to handle base64 encode/decode
-        supportedAssertionNames.add("Ssl");
-        supportedAssertionNames.add("ThroughputQuota");
-    }
+    // TODO: consider moving this as a field rather then a static singleton.
+    // TODO: for couple of reasons; 1) it makes more sense to be a field and
+    // TODO: 2) the assertion supports dynamic loading, so to avoid classloader hell with static objects (you never know when the previous classloader instance will be destroyed)
+    @NotNull
+    private static final Map<String, AssertionSupport> supportedAssertions = AssertionMapper.getSupportedAssertions();
 
-    private static final Map<String, AssertionSupport> supportedAssertions = new HashMap<>();
-    static {
-        Map<String, String> nameMap = new HashMap<>();
-        supportedAssertions.put("CodeInjectionProtection", new AssertionSupport("com.l7tech.policy.assertion.CodeInjectionProtectionAssertion", nameMap));
-        nameMap.put("IncludeBody", "includeBody");
-        nameMap.put("IncludeUrlPath", "includeUrlPath");
-        nameMap.put("IncludeUrlQueryString", "includeUrlQueryString");
-        nameMap.put("Protections", "protect");
-
-        // TODO more display to internal name mapping
-        nameMap = new HashMap<>();
-        supportedAssertions.put("CORS", new AssertionSupport("com.l7tech.policy.assertion.HttpRoutingAssertion", nameMap));
-        supportedAssertions.put("HardcodedResponse", new AssertionSupport("com.l7tech.policy.assertion.HardcodedResponseAssertion", nameMap));   // TODO implement as encass to handle base64 encode/decode
-        supportedAssertions.put("HttpBasic", new AssertionSupport("com.l7tech.policy.assertion.credential.http.HttpBasic", nameMap));
-        supportedAssertions.put("HttpRouting", new AssertionSupport("com.l7tech.policy.assertion.HttpRoutingAssertion", nameMap));
-        supportedAssertions.put("RateLimit", new AssertionSupport("com.l7tech.external.assertions.ratelimit.RateLimitAssertion", nameMap));
-        supportedAssertions.put("SetVariable", new AssertionSupport("com.l7tech.policy.assertion.SetVariableAssertion", nameMap));   // TODO implement as encass to handle base64 encode/decode
-        supportedAssertions.put("Ssl", new AssertionSupport("com.l7tech.policy.assertion.SslAssertion", nameMap));
-        supportedAssertions.put("ThroughputQuota", new AssertionSupport("com.l7tech.policy.assertion.sla.ThroughputQuota", nameMap));
+    @NotNull
+    public static Map<String, AssertionSupport> getSupportedAssertions() {
+        return supportedAssertions;
     }
 
     @NotNull
@@ -121,33 +96,37 @@ public class QuickStartMapper {
         final List<Assertion> assertions = new ArrayList<>();
         for (final Map<String, Map<String, ?>> policyMap : service.policy) {
             // We know there is only one thing in this map, we've previously validated this.
-            final String displayName = policyMap.keySet().iterator().next();
-            // get the real name
-            final String name = getInternalAssertionName(displayName);
+            final String templateName = policyMap.keySet().iterator().next();
+            // get the assertion support
+            final AssertionSupport assertionSupport = supportedAssertions.get(templateName);
 
             // check if assertion name is allowed
             Assertion assertion = null;
-            if (supportedAssertionNames.contains(name) ||
-                    (clusterPropertyManager.getProperty(ENABLE_ALL_ASSERTIONS_FLAG_KEY) != null && clusterPropertyManager.getProperty(ENABLE_ALL_ASSERTIONS_FLAG_KEY).equalsIgnoreCase("true"))) {
-                assertion = assertionLocator.findAssertion(name);
+            if (assertionSupport != null || "true".equalsIgnoreCase(clusterPropertyManager.getProperty(ENABLE_ALL_ASSERTIONS_FLAG_KEY))) {
+                assertion = assertionLocator.findAssertion(assertionSupport != null ? assertionSupport.getExternalName(): templateName);
             }
 
             if (assertion == null) {
-                // allow all encasses, no check needed
-                final EncapsulatedAssertion encapsulatedAssertion = assertionLocator.findEncapsulatedAssertion(name);
-                if (encapsulatedAssertion == null) {
-                    throw new QuickStartPolicyBuilderException("Unable to find assertion for policy template item named : " + name);
-                }
-                // process as encass
-                setEncassArguments(encapsulatedAssertion, policyMap.get(displayName));
-                assertions.add(encapsulatedAssertion);
+                assertions.add(getEncapsulatedAssertion(templateName, policyMap.get(templateName)));
             } else {
                 // process as assertion
-                callAssertionSetter(displayName, assertion, policyMap.get(displayName));
+                callAssertionSetter(templateName, assertion, policyMap.get(templateName));
                 assertions.add(assertion);
             }
         }
         return assertions;
+    }
+
+    @NotNull
+    private EncapsulatedAssertion getEncapsulatedAssertion(final String name, @NotNull final Map<String, ?> properties) throws QuickStartPolicyBuilderException, FindException {
+        // allow all encasses, no check needed
+        final EncapsulatedAssertion encapsulatedAssertion = assertionLocator.findEncapsulatedAssertion(name);
+        if (encapsulatedAssertion == null) {
+            throw new QuickStartPolicyBuilderException("Unable to find assertion for policy template item named : " + name);
+        }
+        // process as encass
+        setEncassArguments(encapsulatedAssertion, properties);
+        return encapsulatedAssertion;
     }
 
     private void setEncassArguments(@NotNull final EncapsulatedAssertion encapsulatedAssertion, @NotNull final Map<String, ?> properties) throws QuickStartPolicyBuilderException {
@@ -372,18 +351,6 @@ public class QuickStartMapper {
                 .filter(ad -> name.equals(ad.getArgumentName()))
                 .findFirst()
                 .orElse(null);
-    }
-
-    /***
-     * Looks up internal name by display name (map is in qs_mapper.properties)
-     * @param displayName
-     * @return
-     */
-    private String getInternalAssertionName(String displayName) {
-
-        String internalName = mapperProperties.getProperty(displayName);
-
-        return StringUtils.isNotEmpty(internalName) ? internalName : displayName;
     }
 
     private String getInternalFieldName(String assertionDisplayName, String fieldDisplayName) {

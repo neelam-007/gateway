@@ -3,8 +3,8 @@ package com.l7tech.external.assertions.quickstarttemplate.server.parser;
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.util.ValidationUtils;
 import org.apache.commons.lang.StringUtils;
-import org.codehaus.jackson.annotate.JsonCreator;
-import org.codehaus.jackson.annotate.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;

@@ -6,13 +6,14 @@ import com.l7tech.policy.assertion.EncapsulatedAssertion;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.collection.IsIterableContainingInOrder.contains;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertThat;
 
 public class QuickStartDocumentationBuilderTest extends QuickStartTestBase {
 
@@ -25,11 +26,14 @@ public class QuickStartDocumentationBuilderTest extends QuickStartTestBase {
 
     @Test
     public void generateWithMultipleCompleteAssertions() throws Exception {
-        final String result = fixture.generate(ImmutableSet.of(
-                mockEncapsulatedAssertion("MyAssertionA", "MyDescriptionA", "MySchemaA", "MySampleA"),
-                mockEncapsulatedAssertion("MyAssertionB", "MyDescriptionB", "MySchemaB", "MySampleB"),
-                mockEncapsulatedAssertion("MyAssertionC", "MyDescriptionC", "MySchemaC", "MySampleC")
-        ));
+        final String result = fixture.generate(
+                ImmutableSet.of(
+                    mockEncapsulatedAssertion("MyAssertionA", "MyDescriptionA", "MySchemaA", "MySampleA"),
+                    mockEncapsulatedAssertion("MyAssertionB", "MyDescriptionB", "MySchemaB", "MySampleB"),
+                    mockEncapsulatedAssertion("MyAssertionC", "MyDescriptionC", "MySchemaC", "MySampleC")
+                ),
+                Collections.emptySet()
+        );
         // Difficult to validate HTML formatting (and subject to change), so just validate that all of the above
         // elements are in the resulting content.
         assertThat(result, containsString("MyAssertionA"));
@@ -48,9 +52,10 @@ public class QuickStartDocumentationBuilderTest extends QuickStartTestBase {
 
     @Test
     public void generateWithAssertionMissingDescription() throws Exception {
-        final String result = fixture.generate(ImmutableSet.of(
-                mockEncapsulatedAssertion("MyAssertionA", null, "MySchemaA", "MySampleA")
-        ));
+        final String result = fixture.generate(
+                ImmutableSet.of(mockEncapsulatedAssertion("MyAssertionA", null, "MySchemaA", "MySampleA")),
+                Collections.emptySet()
+        );
         assertThat(result, containsString("MyAssertionA"));
         assertThat(result, not(containsString("<p></p>"))); // No description section. Not a great test.
         assertThat(result, containsString("MySchemaA"));
@@ -59,9 +64,10 @@ public class QuickStartDocumentationBuilderTest extends QuickStartTestBase {
 
     @Test
     public void generateWithAssertionMissingSchema() throws Exception {
-        final String result = fixture.generate(ImmutableSet.of(
-                mockEncapsulatedAssertion("MyAssertionA", "MyDescriptionA", null, "MySampleA")
-        ));
+        final String result = fixture.generate(
+                ImmutableSet.of(mockEncapsulatedAssertion("MyAssertionA", "MyDescriptionA", null, "MySampleA")),
+                Collections.emptySet()
+        );
         assertThat(result, containsString("MyAssertionA"));
         assertThat(result, containsString("MyDescriptionA"));
         assertThat(result, not(containsString("<summary>Schema</summary>"))); // No schema section.
@@ -70,9 +76,10 @@ public class QuickStartDocumentationBuilderTest extends QuickStartTestBase {
 
     @Test
     public void generateWithAssertionMissingSample() throws Exception {
-        final String result = fixture.generate(ImmutableSet.of(
-                mockEncapsulatedAssertion("MyAssertionA", "MyDescriptionA", "MySchemaA", null)
-        ));
+        final String result = fixture.generate(
+                ImmutableSet.of(mockEncapsulatedAssertion("MyAssertionA", "MyDescriptionA", "MySchemaA", null)),
+                Collections.emptySet()
+        );
         assertThat(result, containsString("MyAssertionA"));
         assertThat(result, containsString("MyDescriptionA"));
         assertThat(result, containsString("MySchemaA"));
@@ -84,7 +91,7 @@ public class QuickStartDocumentationBuilderTest extends QuickStartTestBase {
         final EncapsulatedAssertion ea1 = mockEncapsulatedAssertion("MyAssertionA", "MyDescription", "MySchema", "MySample");
         final EncapsulatedAssertion ea2 = mockEncapsulatedAssertion("MyAssertionB", "MyDescription", "MySchema", "MySample");
         final EncapsulatedAssertion ea3 = mockEncapsulatedAssertion("MyAssertionC", "MyDescription", "MySchema", "MySample");
-        final List<EncapsulatedAssertion> result = fixture.orderByName(ImmutableSet.of(
+        final List<EncapsulatedAssertion> result = fixture.orderEncassesByName(ImmutableSet.of(
                 ea2,
                 ea3,
                 ea1
@@ -93,6 +100,35 @@ public class QuickStartDocumentationBuilderTest extends QuickStartTestBase {
                 .map(e -> e.config().getName())
                 .collect(Collectors.toList()), contains("MyAssertionA", "MyAssertionB", "MyAssertionC"));
     }
+
+    // TODO: assertions testing pending
+//    @Test
+//    public void findAssertionsOrderedByNameShouldReturnListOrderedByName() {
+//        final Assertion a1 = mockAssertion("MyAssertionA", "MyAssertionA", "MyAssertionA Description");
+//        final Assertion a2 = mockAssertion("MyAssertionB", "MyAssertionB", "MyAssertionB Description");
+//        final Assertion a3 = mockAssertion("MyAssertionC", "MyAssertionC", "MyAssertionC Description");
+//        List<AssertionSupport.Info> result = fixture.orderAssertionsByName(
+//                ImmutableSet.of(
+//                        a2,
+//                        a3,
+//                        a1
+//                ));
+//        Assert.assertThat(result.stream().map(a -> a.assertion).collect(Collectors.toList()), Matchers.contains(a1, a2, a3));
+//    }
+//
+//    @Test
+//    public void generateWithAssertions() throws Exception {
+//        final String result = fixture.generate(
+//                Collections.emptySet(),
+//                ImmutableSet.of(
+//                        mockAssertion("MyAssertionA", "MyAssertionA", "MyAssertionA Description"),
+//                        mockAssertion("MyAssertionB", "MyAssertionB", "MyAssertionB Description"),
+//                        mockAssertion("MyAssertionC", "MyAssertionC", "MyAssertionC Description"))
+//        );
+//        Assert.assertThat(result, Matchers.containsString("MyAssertionA"));
+//        Assert.assertThat(result, Matchers.containsString("MyAssertionB"));
+//        Assert.assertThat(result, Matchers.containsString("MyAssertionC"));
+//    }
 
 
 }

@@ -3,15 +3,14 @@ package com.l7tech.external.assertions.quickstarttemplate.server.policy;
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.quickstarttemplate.QuickStartTemplateAssertion;
+import com.l7tech.external.assertions.quickstarttemplate.server.utils.L7Matchers;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.Resource;
 import com.l7tech.gateway.api.ServiceDetail;
 import com.l7tech.gateway.api.ServiceMO;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.message.Message;
-import org.hamcrest.Description;
 import org.hamcrest.Matchers;
-import org.hamcrest.TypeSafeMatcher;
 import org.junit.*;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
@@ -20,8 +19,6 @@ import org.w3c.dom.Document;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
-import java.util.SortedMap;
-import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 /**
@@ -102,7 +99,13 @@ public class RestmanServiceBundleBuilderTest extends ServiceBuilderTestBase {
         Assert.assertNotNull(serviceMO);
         Assert.assertNotNull(serviceMO.getServiceDetail());
 
-        Assert.assertThat(serviceMO.getServiceDetail().getProperties(), MapMatcher.mapMatcher(testPublishedService.getProperties()));
+        Assert.assertThat(
+                serviceMO.getServiceDetail().getProperties(),
+                L7Matchers.mapMatcher(
+                        testPublishedService.getProperties().entrySet().stream()
+                                .collect(Collectors.toMap(e -> String.valueOf(RestmanServiceBundleBuilder.PROPERTY_PREFIX + e.getKey()), Map.Entry::getValue))
+                )
+        );
         Assert.assertThat(
                 serviceMO.getServiceDetail().getProperties(),
                 Matchers.hasEntry(
@@ -133,44 +136,5 @@ public class RestmanServiceBundleBuilderTest extends ServiceBuilderTestBase {
                 .collect(Collectors.toList());
         Assert.assertThat(policyResources, Matchers.allOf(Matchers.notNullValue(), Matchers.hasSize(1)));
         Assert.assertThat(policyResources.get(0).getContent(), Matchers.allOf(Matchers.not(Matchers.isEmptyOrNullString()), Matchers.equalTo(testPublishedService.getPolicy().getXml())));
-    }
-
-    /**
-     * Custom Matcher to match different impl of maps
-     */
-    private static final class MapMatcher extends TypeSafeMatcher<Map<?, ?>> {
-        private final Map<?, ?> expected;
-
-        private MapMatcher(final Map<?, ?> expected) {
-            Assert.assertNotNull(expected);
-            this.expected = expected.entrySet().stream().collect(Collectors.toMap(e -> String.valueOf(RestmanServiceBundleBuilder.PROPERTY_PREFIX + e.getKey()), Map.Entry::getValue));
-        }
-
-        @Override
-        protected void describeMismatchSafely(final Map<?, ?> item, final Description description) {
-            description.appendText("was ").appendValue(toSortedMap(item));
-        }
-
-        @Override
-        public void describeTo(final Description description) {
-            description.appendValue(toSortedMap(expected));
-        }
-
-        @Override
-        protected boolean matchesSafely(final Map<?, ?> item) {
-            return item == expected || (item != null && expected != null && item.equals(expected));
-        }
-
-        private static <K, V> Map<K, V> toSortedMap(final Map<K, V> map) {
-            if (map == null)
-                return null;
-            else if (map instanceof SortedMap)
-                return map;
-            return new TreeMap<>(map);
-        }
-
-        private static MapMatcher mapMatcher(final Map<?, ?> expected) {
-            return new MapMatcher(expected);
-        }
     }
 }

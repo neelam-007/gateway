@@ -1,0 +1,363 @@
+# assertion mappings example
+# TODO: this is just an example and it needs some additional work
+---
+CodeInjectionProtection:
+  externalName: CodeInjectionProtection
+  className: com.l7tech.policy.assertion.CodeInjectionProtectionAssertion
+  # possible way to mapp properties 
+  properties:
+    # there is no reason these args not to be a method names themself
+    includeBody:
+      mapTo: IncludeBody
+      type: java.lang.Boolean
+    includeUrlPath:
+      mapTo: IncludeUrlPath
+      type: java.lang.Boolean
+    includeUrlQueryString:
+      mapTo: IncludeUrlQueryString
+      type: java.lang.Boolean
+    protections:
+      mapTo: Protections
+      type: "[Lcom.l7tech.policy.assertion.CodeInjectionProtectionType;"
+      # this represents value mappings
+      # you could even declare a static method that'll convert from one to another
+      # however that should not be necessary in most cases as values are either enums or public ststic fields
+      values:
+        htmlJavaScriptInjection: HTML_JAVASCRIPT # htmlJavaScriptInjection json property mappes to HTML_JAVASCRIPT
+        phpEvalInjection: PHP_EVAL_INJECTION
+        shellInjection: SHELL_INJECTION
+        ldapDnInjection: LDAP_DN_INJECTION
+        ldapSearchInjection: LDAP_SEARCH_INJECTION
+        xpathInjection: XPATH_INJECTION
+  samplePayload: |
+    "CodeInjectionProtection": {
+      "includeBody": true,
+      "includeUrlPath": false,
+      "includeUrlQueryString": false,
+      "protections": [ "htmlJavaScriptInjection", "shellInjection" ]
+    }
+  jsonSchema: |
+    {
+      "$schema": "http://json-schema.org/draft-04/schema#",
+      "type": "object",
+      "properties": {
+        "CodeInjectionProtection": {
+          "type": "object",
+          "properties": {
+            "IncludeBody": {
+              "type" : "boolean"
+            },
+            "IncludeUrlPath": {
+              "type": "boolean"
+            },
+            "IncludeUrlQueryString": {
+              "type": "boolean"
+            },
+            "Protections": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [ "htmlJavaScriptInjection", "phpEvalInjection", "shellInjection", "ldapDnInjection", "ldapSearchInjection", "xpathInjection"  ]
+              }
+            }
+          },
+          "required": [ "Protections" ]
+        }
+      },
+      "required": [ "CodeInjectionProtection" ]
+    }
+
+CORS:
+  externalName: CORS
+  className: com.l7tech.external.assertions.cors.CORSAssertion
+  samplePayload: |
+    "CORS": {
+    }
+  jsonSchema: |
+    {
+      "$schema": "http://json-schema.org/draft-04/schema#",
+      "type": "object",
+      "properties": {
+        "CORS": {
+          "type": "object",
+          "properties": {
+          }
+        }
+      },
+      "required": [ "CORS" ]
+    }
+
+HardcodedResponse:
+  externalName: HardcodedResponse
+  className: com.l7tech.policy.assertion.HardcodedResponseAssertion
+  properties:
+    ResponseStatus:
+      mapTo: ResponseStatus
+      type: java.lang.String
+    EarlyResponse:
+      mapTo: EarlyResponse
+      type: java.lang.Boolean
+    ResponseContentType:
+      mapTo: ResponseContentType
+      type: java.lang.String
+    Base64ResponseBody:
+      mapTo: Base64ResponseBody
+      type: java.lang.String
+    # or as an example how to map arbitrary method rather then property setter
+    #responseBody:
+    #  method: responseBodyString
+    #  parameters:
+    #    - java.lang.String
+  samplePayload: |
+    "HardcodedResponse": {
+      "ResponseContentType": "Content-Type: text/html; charset=utf-8"
+      "Base64ResponseBody": "some base 64 response"
+    }
+  jsonSchema: |
+    {
+      "$schema": "http://json-schema.org/draft-04/schema#",
+      "type": "object",
+      "properties": {
+        "HardcodedResponse": {
+          "type": "object",
+          "properties": {
+            "ResponseStatus": {
+              "type" : "string"
+            },
+            "EarlyResponse": {
+              "type": "boolean"
+            },
+            "ResponseContentType": {
+              "type": "string"
+            },
+            "Base64ResponseBody": {
+              "type": "string"
+            }
+          },
+          "required": [ "Base64ResponseBody" ]
+        }
+      },
+      "required": [ "HardcodedResponse" ]
+    }
+
+HttpBasic:
+  externalName: HttpBasic
+  className: com.l7tech.policy.assertion.credential.http.HttpBasic
+  samplePayload: |
+    "HttpBasic": {
+    }
+  jsonSchema: |
+    {
+      "$schema": "http://json-schema.org/draft-04/schema#",
+      "type": "object",
+      "properties": {
+        "HttpBasic": {
+          "type": "object",
+          "properties": {
+          }
+        }
+      },
+      "required": [ "HttpBasic" ]
+    }
+
+HttpRouting:
+  externalName: HttpRouting
+  className: com.l7tech.policy.assertion.HttpRoutingAssertion
+  properties:
+    ProtectedServiceUrl:
+      mapTo: ProtectedServiceUrl
+      type: java.lang.String
+    HttpMethod:
+      mapTo: HttpMethodAsString
+      type: com.l7tech.common.http.HttpMethod
+      values:
+        get: GET
+        post: POST
+        put: PUT
+        patch: PATCH
+        delete: DELETE
+        head: HEAD
+        options: OPTIONS
+        other: OTHER
+  samplePayload: |
+    "HttpMethod": {
+      "ProtectedServiceUrl": https://myservice.com,
+      "HttpMethod": DELETE
+    }
+  jsonSchema: |
+    {
+      "$schema": "http://json-schema.org/draft-04/schema#",
+      "type": "object",
+      "properties": {
+        "HttpRouting": {
+          "type": "object",
+          "properties": {
+            "ProtectedServiceUrl": {
+              "type": "string"
+            },
+            "HttpMethod": {
+              "type": "string",
+              "enum": [ "get", "post", "put", "patch", "delete", "head", "options", "other" ]
+              "type": "boolean"
+            }
+          },
+          "required": [ "ProtectedServiceUrl", "HttpMethod" ]
+        }
+      },
+      "required": [ "HttpRouting" ]
+    }
+
+RateLimit:
+  externalName: RateLimit
+  className: com.l7tech.external.assertions.ratelimit.RateLimitAssertion
+  properties:
+    maxRequestsPerSecond:
+      mapTo: MaxRequestsPerSecond
+      type: java.lang.Number
+    hardLimit:
+      mapTo: HardLimit
+      type: java.lang.Boolean
+    counterName:
+      mapTo: CounterName
+      type: java.lang.String
+  samplePayload: |
+    "RateLimit": {
+      "maxRequestsPerSecond": 25,
+      "hardLimit": true,
+      "counterName": "counter"
+    }
+  jsonSchema: |
+    {
+      "$schema": "http://json-schema.org/draft-04/schema#",
+      "type": "object",
+      "properties": {
+        "RateLimit": {
+          "type": "object",
+          "properties": {
+            "MaxRequestsPerSecond": {
+              "type": "integer"
+            },
+            "HardLimit": {
+              "type": "boolean"
+            },
+            "CounterName": {
+              "type": "string"
+            }
+          },
+          "required": [ "MaxRequestsPerSecond", "HardLimit", "CounterName" ]
+        }
+      },
+      "required": [ "RateLimit" ]
+    }
+
+SetVariable:
+  externalName: SetVariable
+  className: com.l7tech.policy.assertion.SetVariableAssertion
+  properties:
+    VariableToSet:
+      mapTo: VariableToSet
+      type: java.lang.String
+    Base64Expression:
+      mapTo: Base64Expression
+      type: java.lang.String
+    # or alternatively
+    Expression:
+      mapTo: Expression
+      type: java.lang.String
+  samplePayload: |
+    "SetVariable": {
+      "VariableToSet": "myVariable",
+      "Base64Expression": "some base64 encoded data"
+    }
+  jsonSchema: |
+    {
+      "$schema": "http://json-schema.org/draft-04/schema#",
+      "type": "object",
+      "properties": {
+        "SetVariable": {
+          "type": "object",
+          "properties": {
+            "VariableToSet": {
+              "type": "string"
+            },
+            "Base64Expression": {
+              "type": "string"
+            }
+          },
+          "required": [ "VariableToSet", "Base64Expression" ]
+        }
+      },
+      "required": [ "SetVariable" ]
+    }
+
+Ssl:
+  externalName: Ssl
+  className: com.l7tech.policy.assertion.SslAssertion
+  properties:
+    Option:
+      mapTo: Option
+      type: com.l7tech.policy.assertion.SslAssertion$Option
+      values:
+        Optional: OPTIONAL
+        Required: REQUIRED
+        Forbidden: FORBIDDEN
+    RequireClientAuthentication:
+      mapTo: RequireClientAuthentication
+      type: java.lang.Boolean
+  samplePayload: |
+    "Ssl": {
+      "Option": "optional"
+    }
+  jsonSchema: |
+    {
+      "$schema": "http://json-schema.org/draft-04/schema#",
+      "type": "object",
+      "properties": {
+        "Ssl": {
+          "type": "object",
+          "properties": {
+            "Option": {
+              "type": "string",
+              "enum": [ "Required", "Optional", "Forbidden" ]
+            },
+            "RequireClientAuthentication" {
+              "type": "boolean"
+            }
+          },
+          "required": [ "Option" ]
+        }
+      },
+      "required": [ "Ssl" ]
+    }
+
+ThroughputQuota:
+  externalName: ThroughputQuota
+  className: com.l7tech.policy.assertion.sla.ThroughputQuota
+  properties:
+    CounterName:
+      mapTo: CounterName
+      type: java.lang.String
+  samplePayload: |
+    "ThroughputQuota": {
+      "CounterName": "some counter name"
+    }
+  jsonSchema: |
+    {
+      "$schema": "http://json-schema.org/draft-04/schema#",
+      "type": "object",
+      "properties": {
+        "ThroughputQuota": {
+          "type": "object",
+          "properties": {
+            "CounterName": {
+              "type": "string"
+            }
+          },
+          "required": [ "Option" ]
+        }
+      },
+      "required": [ "ThroughputQuota" ]
+    }
+
+# TODO: add more mappings here
+...

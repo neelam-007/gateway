@@ -2,8 +2,11 @@ package com.l7tech.external.assertions.quickstarttemplate.server;
 
 import com.l7tech.external.assertions.quickstarttemplate.QuickStartDocumentationAssertion;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.EncapsulatedAssertion;
 import org.junit.Ignore;
+import org.mockito.Mockito;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -35,6 +38,16 @@ public abstract class QuickStartTestBase {
         when(eac.getProperty(QuickStartDocumentationAssertion.QS_SCHEMA_PROPERTY)).thenReturn(schema);
         when(eac.getProperty(QuickStartDocumentationAssertion.QS_SAMPLE_PROPERTY)).thenReturn(sample);
         return ea;
+    }
+
+    protected static Assertion mockAssertion(final String name, final String externalName, final String description) {
+        final Assertion assertion = Mockito.mock(Assertion.class);
+        final AssertionMetadata metadata = Mockito.mock(AssertionMetadata.class);
+        Mockito.doReturn(metadata).when(assertion).meta();
+        Mockito.doReturn(name).when(metadata).get(AssertionMetadata.SHORT_NAME);
+        Mockito.doReturn(externalName).when(metadata).get(AssertionMetadata.WSP_EXTERNAL_NAME);
+        Mockito.doReturn(description).when(metadata).get(AssertionMetadata.DESCRIPTION);
+        return assertion;
     }
 
 }

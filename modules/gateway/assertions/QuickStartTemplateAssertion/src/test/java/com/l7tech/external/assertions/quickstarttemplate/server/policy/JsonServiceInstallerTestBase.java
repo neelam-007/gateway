@@ -3,6 +3,7 @@ package com.l7tech.external.assertions.quickstarttemplate.server.policy;
 import com.l7tech.external.assertions.quickstarttemplate.QuickStartTemplateAssertion;
 import com.l7tech.external.assertions.quickstarttemplate.server.parser.QuickStartParser;
 import com.l7tech.external.assertions.quickstarttemplate.server.parser.ServiceContainer;
+import com.l7tech.external.assertions.quickstarttemplate.server.utils.L7Matchers;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.Policy;
@@ -88,31 +89,6 @@ public abstract class JsonServiceInstallerTestBase {
         static <E extends Throwable> ExceptionArgMatcher<E> matchesException(final Class<E> exClass) {
             Assert.assertThat(exClass, Matchers.notNullValue());
             return new ExceptionArgMatcher<>(exClass);
-        }
-    }
-
-    protected static class RegexMatcher extends TypeSafeMatcher<String> {
-        private final String regex;
-
-        RegexMatcher(final String regex) {
-            this.regex = regex;
-        }
-
-        @Override
-        public void describeTo(final Description description) {
-            description.appendText("matches regular expression=\"" + regex + "\"");
-        }
-
-        @Override
-        public boolean matchesSafely(final String string) {
-            Assert.assertThat(string, Matchers.notNullValue());
-            return string.matches(regex);
-        }
-
-        // matcher method you can call on this matcher class
-        static RegexMatcher matchesRegex(final String regex) {
-            Assert.assertThat(regex, Matchers.not(Matchers.isEmptyOrNullString()));
-            return new RegexMatcher(regex);
         }
     }
 
@@ -275,7 +251,7 @@ public abstract class JsonServiceInstallerTestBase {
             if (StringUtils.isBlank(expectedErrorMessageRegex)) {
                 Assert.assertThat(message, Matchers.isEmptyOrNullString());
             } else {
-                Assert.assertThat(message, RegexMatcher.matchesRegex(expectedErrorMessageRegex));
+                Assert.assertThat(message, L7Matchers.matchesRegex(expectedErrorMessageRegex));
             }
 
             final Object param3 = invocation.getArguments()[2];
