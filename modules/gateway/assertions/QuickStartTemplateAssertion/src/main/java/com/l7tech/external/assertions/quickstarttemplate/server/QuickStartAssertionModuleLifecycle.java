@@ -18,19 +18,13 @@ import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.util.ExceptionUtils;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationListener;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.support.PropertiesLoaderUtils;
-import org.springframework.core.io.Resource;
 
-import java.io.IOException;
-import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 @SuppressWarnings("WeakerAccess")
 public class QuickStartAssertionModuleLifecycle {
     private static final Logger logger = Logger.getLogger(QuickStartAssertionModuleLifecycle.class.getName());
-    private static final ClassLoader classLoader = QuickStartAssertionModuleLifecycle.class.getClassLoader(); // used to load resources
     private static final String PROVIDED_FRAGMENT_FOLDER_GOID = "2a97ddf9a6e77162832b9c27bc8f57e0";
 
     private static QuickStartEncapsulatedAssertionLocator assertionLocator = null;   // TODO rename these locators to something like GatewayManagerHolder?
@@ -38,22 +32,10 @@ public class QuickStartAssertionModuleLifecycle {
     private static QuickStartServiceBuilder serviceBuilder = null;
     private static OneTimeJsonServiceInstaller jsonServiceInstaller = null;
     private static ClusterPropertyManager clusterPropertyManager = null;
-    private static Properties mapperProperties = null;
 
     @SuppressWarnings("unused")
     public static synchronized void onModuleLoaded(final ApplicationContext context) {
         final FolderManager folderManager = context.getBean("folderManager", FolderManager.class);
-
-        if (mapperProperties == null) {
-            try {
-                Resource resource = new ClassPathResource("com/l7tech/external/assertions/quickstarttemplate/server/parser/qs_mapper.properties", classLoader);
-                mapperProperties = PropertiesLoaderUtils.loadProperties(resource);
-            }
-
-            catch(IOException e) {
-                // do nothing for now
-            }
-        }
 
         if (assertionLocator == null) {
             final EncapsulatedAssertionConfigManager eacm = context.getBean("encapsulatedAssertionConfigManager", EncapsulatedAssertionConfigManager.class);
@@ -71,7 +53,7 @@ public class QuickStartAssertionModuleLifecycle {
 
         if (serviceBuilder == null) {
             final ServiceCache ServiceCache = context.getBean("serviceCache", ServiceCache.class);
-            serviceBuilder = new QuickStartServiceBuilder(ServiceCache, folderManager, serviceLocator, assertionLocator, clusterPropertyManager, mapperProperties);
+            serviceBuilder = new QuickStartServiceBuilder(ServiceCache, folderManager, serviceLocator, assertionLocator, clusterPropertyManager);
         }
 
         if (jsonServiceInstaller == null) {

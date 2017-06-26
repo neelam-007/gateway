@@ -37,9 +37,6 @@ public class QuickStartMapperTest {
     @Mock
     protected ClusterPropertyManager clusterPropertyManager;
 
-    @Mock
-    protected Properties props = new Properties();
-
     @InjectMocks
     private QuickStartMapper fixture;
 
@@ -64,18 +61,18 @@ public class QuickStartMapperTest {
         };
 
         // exact type match
-        fixture.callAssertionSetter("test", assertion, ImmutableMap.of("TypeAttribute", "aString"));
+        fixture.callAssertionSetter(null, assertion, ImmutableMap.of("TypeAttribute", "aString"));
         assertTrue(wasAttributeSet.get());
         wasAttributeSet.set(false);
 
         // exact type array match
-        fixture.callAssertionSetter("test", assertion, ImmutableMap.of("TypeAttribute", new Date[] {new Date(), new Date(), new Date()}));
+        fixture.callAssertionSetter(null, assertion, ImmutableMap.of("TypeAttribute", new Date[] {new Date(), new Date(), new Date()}));
         assertTrue(wasAttributeSet.get());
         wasAttributeSet.set(false);
 
         // can't convert, throw exception
         try {
-            fixture.callAssertionSetter("test", assertion, ImmutableMap.of("NotThere", Currency.getInstance(Locale.CANADA)));
+            fixture.callAssertionSetter(null, assertion, ImmutableMap.of("NotThere", Currency.getInstance(Locale.CANADA)));
             fail("Expected callAssertionSetter(...) to fail, but has pass instead.");
         } catch (final QuickStartPolicyBuilderException e) {
             // expected
@@ -93,7 +90,7 @@ public class QuickStartMapperTest {
         };
 
         List<String> codeInjectionProtectionTypes = Arrays.asList("htmlJavaScriptInjection", "phpEvalInjection");
-        fixture.callAssertionSetter("test", assertion, ImmutableMap.of("Protections", codeInjectionProtectionTypes));
+        fixture.callAssertionSetter(null, assertion, ImmutableMap.of("Protections", codeInjectionProtectionTypes));
         assertTrue(wasAttributeSet.get());
         wasAttributeSet.set(false);
     }
@@ -108,7 +105,7 @@ public class QuickStartMapperTest {
             }
         };
 
-        fixture.callAssertionSetter("test", assertion, ImmutableMap.of("Option", "Optional"));
+        fixture.callAssertionSetter(null, assertion, ImmutableMap.of("Option", "Optional"));
         assertTrue(wasAttributeSet.get());
         wasAttributeSet.set(false);
     }
@@ -129,22 +126,22 @@ public class QuickStartMapperTest {
         };
 
         // primitive
-        fixture.callAssertionSetter("test", assertion, ImmutableMap.of("PrimitiveAttribute", 1));
+        fixture.callAssertionSetter(null, assertion, ImmutableMap.of("PrimitiveAttribute", 1));
         assertTrue(wasAttributeSet.get());
         wasAttributeSet.set(false);
 
         // autobox primitive wrapper to primitive
-        fixture.callAssertionSetter("test", assertion, ImmutableMap.of("PrimitiveAttribute", Integer.valueOf("1")));
+        fixture.callAssertionSetter(null, assertion, ImmutableMap.of("PrimitiveAttribute", Integer.valueOf("1")));
         assertTrue(wasAttributeSet.get());
         wasAttributeSet.set(false);
 
         // primitive wrapper
-        fixture.callAssertionSetter("test", assertion, ImmutableMap.of("PrimitiveWrapperAttribute", Double.valueOf("1.0")));
+        fixture.callAssertionSetter(null, assertion, ImmutableMap.of("PrimitiveWrapperAttribute", Double.valueOf("1.0")));
         assertTrue(wasAttributeSet.get());
         wasAttributeSet.set(false);
 
         // autobox primitive to primitive wrapper - in case map autobox changes
-        fixture.callAssertionSetter("test", assertion, ImmutableMap.of("PrimitiveWrapperAttribute", 1.0));
+        fixture.callAssertionSetter(null, assertion, ImmutableMap.of("PrimitiveWrapperAttribute", 1.0));
         assertTrue(wasAttributeSet.get());
         wasAttributeSet.set(false);
     }
@@ -195,40 +192,40 @@ public class QuickStartMapperTest {
         };
 
         // primitive array
-        fixture.callAssertionSetter("test", assertion, ImmutableMap.of("PrimitiveAttribute", new boolean[] {true, false, true}));
+        fixture.callAssertionSetter(null, assertion, ImmutableMap.of("PrimitiveAttribute", new boolean[] {true, false, true}));
         assertTrue(wasAttributeSet.get());
         wasAttributeSet.set(false);
 
         // autobox primitive wrapper array to primitive array
-        fixture.callAssertionSetter("test", assertion, ImmutableMap.of("PrimitiveAttribute", new Boolean[] {true, false, true}));
+        fixture.callAssertionSetter(null, assertion, ImmutableMap.of("PrimitiveAttribute", new Boolean[] {true, false, true}));
         assertTrue(wasAttributeSet.get());
         wasAttributeSet.set(false);
 
-        fixture.callAssertionSetter("test", assertion, ImmutableMap.of("PrimitiveAttribute", new Byte[] {1, 2, 3}));
+        fixture.callAssertionSetter(null, assertion, ImmutableMap.of("PrimitiveAttribute", new Byte[] {1, 2, 3}));
         assertTrue(wasAttributeSet.get());
         wasAttributeSet.set(false);
 
-        fixture.callAssertionSetter("test", assertion, ImmutableMap.of("PrimitiveAttribute", new Character[] {'a', 'b', 'c'}));
+        fixture.callAssertionSetter(null, assertion, ImmutableMap.of("PrimitiveAttribute", new Character[] {'a', 'b', 'c'}));
         assertTrue(wasAttributeSet.get());
         wasAttributeSet.set(false);
 
-        fixture.callAssertionSetter("test", assertion, ImmutableMap.of("PrimitiveAttribute", new Short[] {1, 2, 3}));
+        fixture.callAssertionSetter(null, assertion, ImmutableMap.of("PrimitiveAttribute", new Short[] {1, 2, 3}));
         assertTrue(wasAttributeSet.get());
         wasAttributeSet.set(false);
 
-        fixture.callAssertionSetter("test", assertion, ImmutableMap.of("PrimitiveAttribute", new Integer[] {1, 2, 3}));
+        fixture.callAssertionSetter(null, assertion, ImmutableMap.of("PrimitiveAttribute", new Integer[] {1, 2, 3}));
         assertTrue(wasAttributeSet.get());
         wasAttributeSet.set(false);
 
-        fixture.callAssertionSetter("test", assertion, ImmutableMap.of("PrimitiveAttribute", new Long[] {1L, 2L, 3L}));
+        fixture.callAssertionSetter(null, assertion, ImmutableMap.of("PrimitiveAttribute", new Long[] {1L, 2L, 3L}));
         assertTrue(wasAttributeSet.get());
         wasAttributeSet.set(false);
 
-        fixture.callAssertionSetter("test", assertion, ImmutableMap.of("PrimitiveAttribute", new Double[] {1.0, 2.0, 3.0}));
+        fixture.callAssertionSetter(null, assertion, ImmutableMap.of("PrimitiveAttribute", new Double[] {1.0, 2.0, 3.0}));
         assertTrue(wasAttributeSet.get());
         wasAttributeSet.set(false);
 
-        fixture.callAssertionSetter("test", assertion, ImmutableMap.of("PrimitiveAttribute", new Float[] {1.0F, 2.0F, 3.0F}));
+        fixture.callAssertionSetter(null, assertion, ImmutableMap.of("PrimitiveAttribute", new Float[] {1.0F, 2.0F, 3.0F}));
         assertTrue(wasAttributeSet.get());
         wasAttributeSet.set(false);
     }
@@ -279,33 +276,33 @@ public class QuickStartMapperTest {
         };
 
         // primitive wrapper array
-        fixture.callAssertionSetter("test", assertion, ImmutableMap.of("PrimitiveWrapperAttribute", new Long[] {1L, 2L, 3L}));
+        fixture.callAssertionSetter(null, assertion, ImmutableMap.of("PrimitiveWrapperAttribute", new Long[] {1L, 2L, 3L}));
         assertTrue(wasAttributeSet.get());
         wasAttributeSet.set(false);
 
         // autobox primitive array to primitive wrapper array
-        fixture.callAssertionSetter("test", assertion, ImmutableMap.of("PrimitiveWrapperAttribute", new boolean[] {true, true, false}));
+        fixture.callAssertionSetter(null, assertion, ImmutableMap.of("PrimitiveWrapperAttribute", new boolean[] {true, true, false}));
         assertTrue(wasAttributeSet.get());
         wasAttributeSet.set(false);
-        fixture.callAssertionSetter("test", assertion, ImmutableMap.of("PrimitiveWrapperAttribute", new byte[] {1, 2, 3}));
+        fixture.callAssertionSetter(null, assertion, ImmutableMap.of("PrimitiveWrapperAttribute", new byte[] {1, 2, 3}));
         assertTrue(wasAttributeSet.get());
         wasAttributeSet.set(false);
-        fixture.callAssertionSetter("test", assertion, ImmutableMap.of("PrimitiveWrapperAttribute", new char[] {'a', 'b', 'c'}));
+        fixture.callAssertionSetter(null, assertion, ImmutableMap.of("PrimitiveWrapperAttribute", new char[] {'a', 'b', 'c'}));
         assertTrue(wasAttributeSet.get());
         wasAttributeSet.set(false);
-        fixture.callAssertionSetter("test", assertion, ImmutableMap.of("PrimitiveWrapperAttribute", new short[] {1, 2, 3}));
+        fixture.callAssertionSetter(null, assertion, ImmutableMap.of("PrimitiveWrapperAttribute", new short[] {1, 2, 3}));
         assertTrue(wasAttributeSet.get());
         wasAttributeSet.set(false);
-        fixture.callAssertionSetter("test", assertion, ImmutableMap.of("PrimitiveWrapperAttribute", new int[] {1, 2, 3}));
+        fixture.callAssertionSetter(null, assertion, ImmutableMap.of("PrimitiveWrapperAttribute", new int[] {1, 2, 3}));
         assertTrue(wasAttributeSet.get());
         wasAttributeSet.set(false);
-        fixture.callAssertionSetter("test", assertion, ImmutableMap.of("PrimitiveWrapperAttribute", new long[] {1L, 2L, 3L}));
+        fixture.callAssertionSetter(null, assertion, ImmutableMap.of("PrimitiveWrapperAttribute", new long[] {1L, 2L, 3L}));
         assertTrue(wasAttributeSet.get());
         wasAttributeSet.set(false);
-        fixture.callAssertionSetter("test", assertion, ImmutableMap.of("PrimitiveWrapperAttribute", new double[] {1.0, 2.0, 3.0}));
+        fixture.callAssertionSetter(null, assertion, ImmutableMap.of("PrimitiveWrapperAttribute", new double[] {1.0, 2.0, 3.0}));
         assertTrue(wasAttributeSet.get());
         wasAttributeSet.set(false);
-        fixture.callAssertionSetter("test", assertion, ImmutableMap.of("PrimitiveWrapperAttribute", new float[] {1.0F, 2.0F, 3.0F}));
+        fixture.callAssertionSetter(null, assertion, ImmutableMap.of("PrimitiveWrapperAttribute", new float[] {1.0F, 2.0F, 3.0F}));
         assertTrue(wasAttributeSet.get());
         wasAttributeSet.set(false);
     }
@@ -326,12 +323,12 @@ public class QuickStartMapperTest {
         };
 
         // value of
-        fixture.callAssertionSetter("test", assertion, ImmutableMap.of("ValueOfAttribute", HttpMethod.GET));
+        fixture.callAssertionSetter(null, assertion, ImmutableMap.of("ValueOfAttribute", HttpMethod.GET));
         assertTrue(wasAttributeSet.get());
         wasAttributeSet.set(false);
 
         // value of array
-        fixture.callAssertionSetter("test", assertion, ImmutableMap.of("ValueOfAttribute", new HttpMethod[] {HttpMethod.POST, HttpMethod.PUT, HttpMethod.DELETE}));
+        fixture.callAssertionSetter(null, assertion, ImmutableMap.of("ValueOfAttribute", new HttpMethod[] {HttpMethod.POST, HttpMethod.PUT, HttpMethod.DELETE}));
         assertTrue(wasAttributeSet.get());
         wasAttributeSet.set(false);
     }

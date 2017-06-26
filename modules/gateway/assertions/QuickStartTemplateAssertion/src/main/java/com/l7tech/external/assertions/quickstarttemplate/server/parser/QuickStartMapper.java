@@ -14,7 +14,6 @@ import com.l7tech.policy.assertion.EncapsulatedAssertion;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.util.EnumTranslator;
 import org.apache.commons.lang.ArrayUtils;
-import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -55,19 +54,26 @@ public class QuickStartMapper {
         }
     }
 
+    // TODO: consider moving this as a field rather then a static singleton.
+    // TODO: for couple of reasons; 1) it makes more sense to be a field and
+    // TODO: 2) the assertion supports dynamic loading, so to avoid classloader hell with static objects (you never know when the previous classloader instance will be destroyed)
+    @NotNull
+    private static final Map<String, AssertionSupport> supportedAssertions = AssertionMapper.getSupportedAssertions();
+
+    @NotNull
+    public static Map<String, AssertionSupport> getSupportedAssertions() {
+        return supportedAssertions;
+    }
+
     @NotNull
     private final QuickStartEncapsulatedAssertionLocator assertionLocator;
 
     @NotNull
     private final ClusterPropertyManager clusterPropertyManager;
 
-    @NotNull
-    private final Properties mapperProperties;
-
-    public QuickStartMapper(@NotNull final QuickStartEncapsulatedAssertionLocator assertionLocator, @NotNull final ClusterPropertyManager clusterPropertyManager, @NotNull Properties props) {
+    public QuickStartMapper(@NotNull final QuickStartEncapsulatedAssertionLocator assertionLocator, @NotNull final ClusterPropertyManager clusterPropertyManager) {
         this.assertionLocator = assertionLocator;
         this.clusterPropertyManager = clusterPropertyManager;
-        this.mapperProperties = props;
     }
 
     // TODO is there a better time in the assertion lifecycle to set assertion registry?
@@ -85,29 +91,35 @@ public class QuickStartMapper {
         final List<Assertion> assertions = new ArrayList<>();
         for (final Map<String, Map<String, ?>> policyMap : service.policy) {
             // We know there is only one thing in this map, we've previously validated this.
-            final String displayName = policyMap.keySet().iterator().next();
-            // get the real name
-            final String name = getInternalAssertionName(displayName);
+            final String templateName = policyMap.keySet().iterator().next();
 
-            // check if assertion name is allowed
+            // get the assertion support
+            final AssertionSupport assertionSupport = supportedAssertions.get(templateName);
+
             Assertion assertion = null;
-            if (mapperProperties.containsKey(name) ||
-                    (clusterPropertyManager.getProperty(ENABLE_ALL_ASSERTIONS_FLAG_KEY) != null && clusterPropertyManager.getProperty(ENABLE_ALL_ASSERTIONS_FLAG_KEY).equalsIgnoreCase("true"))) {
-                assertion = assertionLocator.findAssertion(name);
+            if (assertionSupport != null) {
+                assertion = assertionLocator.findAssertion(assertionSupport.getExternalName());
+                if (assertion == null) {
+                    // the template name matches a supported assertion but the assertion is not found on the gateway registry
+                    // this is a misconfiguration on our part!
+                    throw new QuickStartPolicyBuilderException("Assertion " + assertionSupport.getExternalName() + " for policy template item named " + templateName + " is not registered on the Gateway.");
+                }
+            } else if ("true".equalsIgnoreCase(clusterPropertyManager.getProperty(ENABLE_ALL_ASSERTIONS_FLAG_KEY))) {
+                assertion = assertionLocator.findAssertion(templateName);
             }
 
             if (assertion == null) {
                 // allow all encasses, no check needed
-                final EncapsulatedAssertion encapsulatedAssertion = assertionLocator.findEncapsulatedAssertion(name);
+                final EncapsulatedAssertion encapsulatedAssertion = assertionLocator.findEncapsulatedAssertion(templateName);
                 if (encapsulatedAssertion == null) {
-                    throw new QuickStartPolicyBuilderException("Unable to find assertion for policy template item named : " + name);
+                    throw new QuickStartPolicyBuilderException("Unable to find assertion for policy template item named : " + templateName);
                 }
                 // process as encass
-                setEncassArguments(encapsulatedAssertion, policyMap.get(displayName));
+                setEncassArguments(encapsulatedAssertion, policyMap.get(templateName));
                 assertions.add(encapsulatedAssertion);
             } else {
                 // process as assertion
-                callAssertionSetter(displayName, assertion, policyMap.get(displayName));
+                callAssertionSetter(assertionSupport, assertion, policyMap.get(templateName));
                 assertions.add(assertion);
             }
         }
@@ -144,14 +156,19 @@ public class QuickStartMapper {
     }
 
     @VisibleForTesting
-    void callAssertionSetter(@NotNull String assertionDisplayName, @NotNull final Assertion assertion, @NotNull final Map<String, ?> properties) throws QuickStartPolicyBuilderException {
+    void callAssertionSetter(@Nullable final AssertionSupport assertionSupport, @NotNull final Assertion assertion, @NotNull final Map<String, ?> properties) throws QuickStartPolicyBuilderException {
         try {
             Method method = null;
             String setMethodName;
             for (final Map.Entry<String, ?> entry : properties.entrySet()) {
+                final String propertyName = entry.getKey();
                 final Object propertyValue = entry.getValue();
-                // map display to internal name
-                String fieldName = getInternalFieldName(assertionDisplayName, entry.getKey());
+
+                // map template property with internal setter
+                final String fieldName = Optional.ofNullable(assertionSupport)
+                        .map(AssertionSupport::getProperties)
+                        .map(pn -> pn.get(propertyName))
+                        .orElse(propertyName);
                 setMethodName = "set" + fieldName;
                 try {
                     method = assertion.getClass().getMethod(setMethodName, propertyValue.getClass());
@@ -336,26 +353,5 @@ public class QuickStartMapper {
                 .filter(ad -> name.equals(ad.getArgumentName()))
                 .findFirst()
                 .orElse(null);
-    }
-
-    /***
-     * Looks up internal name by display name (map is in qs_mapper.properties)
-     * @param displayName
-     * @return
-     */
-    private String getInternalAssertionName(String displayName) {
-
-        String internalName = mapperProperties.getProperty(displayName);
-
-        return StringUtils.isNotEmpty(internalName) ? internalName : displayName;
-    }
-
-    private String getInternalFieldName(String assertionDisplayName, String fieldDisplayName) {
-
-        String key = String.format("%s.%s", assertionDisplayName, fieldDisplayName);
-
-        String internalName = mapperProperties.getProperty(key);
-
-        return StringUtils.isNotEmpty(internalName) ? internalName : fieldDisplayName;
     }
 }

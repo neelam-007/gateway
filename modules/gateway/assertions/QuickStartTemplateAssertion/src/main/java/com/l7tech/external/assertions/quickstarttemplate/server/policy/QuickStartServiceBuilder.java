@@ -42,13 +42,12 @@ public class QuickStartServiceBuilder {
             @NotNull final FolderManager folderManager,
             @NotNull final QuickStartPublishedServiceLocator serviceLocator,
             @NotNull final QuickStartEncapsulatedAssertionLocator assertionLocator,
-            @NotNull final ClusterPropertyManager clusterPropertyManager,
-            @NotNull final Properties mapperProperties
-            ) {
+            @NotNull final ClusterPropertyManager clusterPropertyManager
+    ) {
         this.serviceCache = serviceCache;
         this.folderManager = folderManager;
         this.serviceLocator = serviceLocator;
-        this.mapper = new QuickStartMapper(assertionLocator, clusterPropertyManager, mapperProperties);
+        this.mapper = new QuickStartMapper(assertionLocator, clusterPropertyManager);
     }
 
     // TODO is there a better time in the assertion lifecycle to set assertion registry?

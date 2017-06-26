@@ -17,108 +17,39 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * Holds assertion support information
+ * Immutable object holding assertion support information.
  */
 @SuppressWarnings({"WeakerAccess", "unused"})
 public class AssertionSupport {
     /**
-     * Assertion external name used to search through {@link com.l7tech.policy.AssertionRegistry assertion registry}
+     * Mandatory assertion external name used to search through {@link com.l7tech.policy.AssertionRegistry assertion registry}
      */
     private final String externalName;
     /**
-     * The fully qualified name of the desired class
+     * Optional fully qualified name of the desired class
      */
     private final String className;
     /**
-     * Argument mappings
+     * Optional property mappings
      */
     @Nullable
-    private final Map<String, PropertyAttribute> properties;
+    private final Map<String, String> properties;
     /**
-     * Sample payload
+     * Optional Sample payload
      */
     @Nullable
     private final String samplePayload;
     /**
-     * JSON schema
+     * Optional JSON schema
      */
     @Nullable
     private final String jsonSchema;
-
-    public static final class PropertyAttribute {
-        @NotNull
-        private final String mapTo;
-        @NotNull
-        private final Class<?> type;
-        @Nullable
-        private final Map<String, String> values;
-
-        @SuppressWarnings("NullableProblems")
-        @JsonCreator
-        public PropertyAttribute(
-                @JsonProperty("mapTo") final String mapTo,
-                @JsonProperty("type") final Class<?> type,
-                @JsonProperty("values") @Nullable final Map<String, String> values
-        ) {
-            if (StringUtils.isBlank(mapTo)){
-                throw new IllegalArgumentException("Assertion mapping must provide mapTo.");
-            }
-            this.mapTo = mapTo;
-
-            if (type == null){
-                throw new IllegalArgumentException("Assertion mapping must provide type.");
-            }
-            this.type = type;
-
-            this.values = values != null ? Collections.unmodifiableMap(values) : Collections.emptyMap();
-        }
-
-        @NotNull
-        public String getMapTo() {
-            return mapTo;
-        }
-
-        @NotNull
-        public Class<?> getType() {
-            return type;
-        }
-
-        @Nullable
-        public Map<String, String> getValues() {
-            return values;
-        }
-    }
-
-    public static final class MethodAttribute {
-        private final String method;
-        private final List<Class<?>> parameters;
-
-        @JsonCreator
-        public MethodAttribute(
-                @JsonProperty("method") final String method,
-                @JsonProperty("parameters") @Nullable final List<Class<?>> parameters
-        ) {
-            if (StringUtils.isBlank(method)){
-                throw new IllegalArgumentException("Assertion mapping must provide method.");
-            }
-            this.method = method;
-            this.parameters = parameters != null ? Collections.unmodifiableList(parameters) : Collections.emptyList();
-        }
-
-        public String getMethod() {
-            return method;
-        }
-
-        public List<Class<?>> getParameters() {
-            return parameters;
-        }
-    }
 
     @JsonCreator
     public AssertionSupport(
             @JsonProperty("externalName") final String externalName,
             @JsonProperty("className") final String className,
-            @JsonProperty("properties") @Nullable final Map<String, PropertyAttribute> properties,
+            @JsonProperty("properties") @Nullable final Map<String, String> properties,
             @JsonProperty("samplePayload") @Nullable final String samplePayload,
             @JsonProperty("jsonSchema") @Nullable final String jsonSchema
     ) {
@@ -126,7 +57,6 @@ public class AssertionSupport {
             throw new IllegalArgumentException("Assertion mapping must provide externalName.");
         }
         this.externalName = externalName;
-        // todo: perhaps made className mandatory
         this.className = className;
         this.properties = properties != null ? Collections.unmodifiableMap(properties) : Collections.emptyMap();
         this.samplePayload = samplePayload;
@@ -143,7 +73,7 @@ public class AssertionSupport {
     }
 
     @Nullable
-    public Map<String, PropertyAttribute> getProperties() {
+    public Map<String, String> getProperties() {
         return properties;
     }
 
@@ -161,6 +91,9 @@ public class AssertionSupport {
         return new Info(assertion);
     }
 
+    /**
+     * Immutable assertion info
+     */
     public final class Info {
         @NotNull
         private final Assertion assertion;
@@ -185,7 +118,7 @@ public class AssertionSupport {
         }
 
         @Nullable
-        public Map<String, PropertyAttribute> getProperties() {
+        public Map<String, String> getProperties() {
             return AssertionSupport.this.getProperties();
         }
 
