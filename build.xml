@@ -3142,8 +3142,6 @@
 
         <install-ssg-processcontroller/>
 
-        <install-ssg-datacollection/>
-
         <install-ssg-software/>
     </target>
 
