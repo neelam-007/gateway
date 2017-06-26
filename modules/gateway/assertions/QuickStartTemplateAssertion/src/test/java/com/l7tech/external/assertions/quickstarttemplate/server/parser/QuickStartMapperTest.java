@@ -17,10 +17,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.contains;
@@ -90,6 +87,20 @@ public class QuickStartMapperTest {
         final List<EncapsulatedAssertion> assertions = fixture.getEncapsulatedAssertions(service);
         assertThat(assertions, contains(ea1));
         verify(ea1).putParameter("someKey", "hi;13;true");
+    }
+
+    @Test
+    public void getEncapsulatedAssertionsShouldSetMapParameter() throws Exception {
+        final Service service = mockService(
+                mockPolicy("SomeAssertion", ImmutableMap.of(
+                        "someKey", ImmutableMap.of(
+                                "someJsonValue", ImmutableMap.of("someNestedKey", "someNestedValue")))));
+
+        final EncapsulatedAssertion ea1 = mockAssertion(ImmutableMap.of("someKey", DataType.STRING));
+        when(locator.findEncapsulatedAssertion("SomeAssertion")).thenReturn(ea1);
+        final List<EncapsulatedAssertion> assertions = fixture.getEncapsulatedAssertions(service);
+        assertThat(assertions, contains(ea1));
+        verify(ea1).putParameter("someKey", "{\"someJsonValue\":{\"someNestedKey\":\"someNestedValue\"}}");   // verify double quotes not lost
     }
 
     @Test
