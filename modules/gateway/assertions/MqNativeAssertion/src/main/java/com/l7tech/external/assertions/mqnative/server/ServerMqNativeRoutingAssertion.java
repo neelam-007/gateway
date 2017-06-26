@@ -686,7 +686,16 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
 
         private int configureGetMessageOptions() {
             // return default Get Message Options for GET direction.
-            return MQGMO_WAIT | MQGMO_NO_SYNCPOINT;
+            int options = MQGMO_WAIT | MQGMO_NO_SYNCPOINT;
+
+            if (isMessageDataConversionEnabled()) {
+                options |= MQGMO_CONVERT;
+            }
+
+            if (isForcePropertiesInMQRFH2HeaderEnabled()) {
+                options |= MQGMO_PROPERTIES_FORCE_MQRFH2;
+            }
+            return options;
         }
 
         private <T extends Number> T getPropertyWithDefault( String stringValue,

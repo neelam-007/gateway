@@ -16,6 +16,8 @@ import java.util.logging.Level;
 import static com.ibm.mq.constants.MQConstants.MQGMO_SYNCPOINT;
 import static com.ibm.mq.constants.MQConstants.MQGMO_WAIT;
 import static com.ibm.mq.constants.MQConstants.MQGMO_FAIL_IF_QUIESCING;
+import static com.ibm.mq.constants.MQConstants.MQGMO_PROPERTIES_FORCE_MQRFH2;
+import static com.ibm.mq.constants.MQConstants.MQGMO_CONVERT;
 import static java.text.MessageFormat.format;
 import static com.l7tech.external.assertions.mqnative.MqNativeConstants.MQ_LISTENER_INBOUND_GET_MESSAGE_OPTIONS_PROPERTY;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_INBOUND_IS_GET_MESSAGE_OPTIONS_USED;
@@ -73,6 +75,14 @@ class MqNativeListenerThread extends Thread {
                             }
                             if (mqNativeListener.isLoggable(Level.FINER)) {
                                 mqNativeListener.log(Level.FINER, "MQ Native listener Get Message Options {0}", getOptions.options);
+                            }
+
+                            if (MqNativeUtils.isMessageDataConversionEnabled()) {
+                                getOptions.options |= MQGMO_CONVERT;
+                            }
+
+                            if (MqNativeUtils.isForcePropertiesInMQRFH2HeaderEnabled()) {
+                                getOptions.options |= MQGMO_PROPERTIES_FORCE_MQRFH2;
                             }
 
                             getOptions.waitInterval = pollInterval.get();

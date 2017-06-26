@@ -1051,7 +1051,7 @@ public class ServerMqNativeRoutingAssertionTest {
         assertEquals(AssertionStatus.NONE, status);
         ArgumentCaptor<MQGetMessageOptions> gmoCaptor = ArgumentCaptor.forClass(MQGetMessageOptions.class);
         verify(requestQueue, times(1)).get(any(MQMessage.class), gmoCaptor.capture());
-        assertEquals(MQGMO_WAIT | MQGMO_NO_SYNCPOINT, gmoCaptor.getValue().options);
+        assertEquals(MQGMO_WAIT | MQGMO_NO_SYNCPOINT | MQGMO_CONVERT, gmoCaptor.getValue().options);
     }
 
     @Test
@@ -1100,7 +1100,7 @@ public class ServerMqNativeRoutingAssertionTest {
         assertEquals(AssertionStatus.NONE, status);
         ArgumentCaptor<MQGetMessageOptions> gmoCaptor = ArgumentCaptor.forClass(MQGetMessageOptions.class);
         verify(replyQueue, times(1)).get(any(MQMessage.class), gmoCaptor.capture());
-        assertEquals(MQGMO_WAIT | MQGMO_NO_SYNCPOINT, gmoCaptor.getValue().options);
+        assertEquals(MQGMO_WAIT | MQGMO_NO_SYNCPOINT | MQGMO_CONVERT, gmoCaptor.getValue().options);
     }
 
     @Test
