@@ -3538,13 +3538,6 @@
             <tarfileset dir="${install.src.pc}" username="gateway" group="gateway" filemode="555" dirmode="755" prefix="${install.target.pc}">
                 <include name="bin/*.sh"/>
             </tarfileset>
-            <tarfileset dir="${install.src.col}" username="gateway" group="gateway" mode="644" prefix="${install.target.col}">
-                <include name="**/*"/>
-                <exclude name="*.sh"/>
-            </tarfileset>
-            <tarfileset dir="${install.src.col}" username="gateway" group="gateway" filemode="555" dirmode="755" prefix="${install.target.col}">
-                <include name="*.sh"/>
-            </tarfileset>
             <tarfileset dir="${install.src.ssg}" username="gateway" group="gateway" filemode="555" dirmode="755" prefix="${install.target.ssg}">
                 <include  name="${install.src.ssg.samples}/*.sh"/>
             </tarfileset>
