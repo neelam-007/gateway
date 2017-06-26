@@ -135,17 +135,9 @@ rm -f /opt/SecureSpan/Collector/modules/os
 rm -f /opt/SecureSpan/Collector/modules/vmware
 rm -f /opt/SecureSpan/Collector/modules/sensitive/userdata
 
-if [ ! "$(ls -A /opt/SecureSpan/Collector/modules/sensitive)" ]; then
-    rm -rf /opt/SecureSpan/Collector/modules/sensitive/
-
-    if [ ! "$(ls -A /opt/SecureSpan/Collector/modules)" ]; then
-        rm -rf /opt/SecureSpan/Collector/modules
-
-        if [ ! "$(ls -A /opt/SecureSpan/Collector)" ]; then
-            rm -rf /opt/SecureSpan/Collector
-        fi
-    fi
-fi
+rmdir --ignore-fail-on-non-empty /opt/SecureSpan/Collector/modules/sensitive
+rmdir --ignore-fail-on-non-empty /opt/SecureSpan/Collector/modules
+rmdir --ignore-fail-on-non-empty /opt/SecureSpan/Collector
 
 %pre
 grep -q ^gateway: /etc/group || groupadd gateway
