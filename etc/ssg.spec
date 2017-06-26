@@ -118,27 +118,6 @@ rm -fr %{buildroot}
 %attr(0770,layer7,gateway) /opt/SecureSpan/Controller/var/logs
 %attr(0770,layer7,gateway) /opt/SecureSpan/Controller/var/patches
 
-# Remove old version of gateway data collect utility tool (DCT) in /opt/SecureSpan/Collector
-# Do not touch any non-DCT files/directories in /opt/SecureSpan/Collector.
-# If there are no any non-DCT files/directories in /opt/SecureSpan/Collector, then delete /opt/SecureSpan/Collector
-rm -f /opt/SecureSpan/Collector/collect.sh
-rm -f /opt/SecureSpan/Collector/collectorlib
-rm -f /opt/SecureSpan/Collector/modules/devices
-rm -f /opt/SecureSpan/Collector/modules/filesystems
-rm -f /opt/SecureSpan/Collector/modules/gateway
-rm -f /opt/SecureSpan/Collector/modules/java
-rm -f /opt/SecureSpan/Collector/modules/kernel
-rm -f /opt/SecureSpan/Collector/modules/monitor
-rm -f /opt/SecureSpan/Collector/modules/mysql
-rm -f /opt/SecureSpan/Collector/modules/network
-rm -f /opt/SecureSpan/Collector/modules/os
-rm -f /opt/SecureSpan/Collector/modules/vmware
-rm -f /opt/SecureSpan/Collector/modules/sensitive/userdata
-
-rmdir --ignore-fail-on-non-empty /opt/SecureSpan/Collector/modules/sensitive
-rmdir --ignore-fail-on-non-empty /opt/SecureSpan/Collector/modules
-rmdir --ignore-fail-on-non-empty /opt/SecureSpan/Collector
-
 %pre
 grep -q ^gateway: /etc/group || groupadd gateway
 grep -q ^layer7: /etc/group || groupadd layer7
@@ -197,6 +176,27 @@ if [ -f /opt/SecureSpan/Gateway/config/config.log ]; then
 fi
 
 find /opt/SecureSpan/Controller/var/logs/ -name "patch_cli_*" -not -user layer7 -exec chown layer7:layer7 '{}' \;
+
+# Remove old version of gateway data collect utility tool (DCT) in /opt/SecureSpan/Collector
+# Do not touch any non-DCT files/directories in /opt/SecureSpan/Collector.
+# If there are no any non-DCT files/directories in /opt/SecureSpan/Collector, then delete /opt/SecureSpan/Collector
+rm -f /opt/SecureSpan/Collector/collect.sh
+rm -f /opt/SecureSpan/Collector/collectorlib
+rm -f /opt/SecureSpan/Collector/modules/devices
+rm -f /opt/SecureSpan/Collector/modules/filesystems
+rm -f /opt/SecureSpan/Collector/modules/gateway
+rm -f /opt/SecureSpan/Collector/modules/java
+rm -f /opt/SecureSpan/Collector/modules/kernel
+rm -f /opt/SecureSpan/Collector/modules/monitor
+rm -f /opt/SecureSpan/Collector/modules/mysql
+rm -f /opt/SecureSpan/Collector/modules/network
+rm -f /opt/SecureSpan/Collector/modules/os
+rm -f /opt/SecureSpan/Collector/modules/vmware
+rm -f /opt/SecureSpan/Collector/modules/sensitive/userdata
+
+rmdir --ignore-fail-on-non-empty /opt/SecureSpan/Collector/modules/sensitive
+rmdir --ignore-fail-on-non-empty /opt/SecureSpan/Collector/modules
+rmdir --ignore-fail-on-non-empty /opt/SecureSpan/Collector
 
 %preun
 # Modifications to handle upgrades properly
