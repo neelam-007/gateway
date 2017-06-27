@@ -8,10 +8,9 @@ URL: http://www.layer7tech.com
 Vendor: Layer 7 Technologies
 Packager: Layer 7 Technologies, <support@layer7tech.com>
 Source0: ssg-core.tar.gz
-Source1: ssg-collector.tar.gz
-Source2: ssg-processcontroller.tar.gz
-Source3: ssg-extensions.tar.gz
-Source4: ssg-webadmin.tar.gz
+Source1: ssg-processcontroller.tar.gz
+Source2: ssg-extensions.tar.gz
+Source3: ssg-webadmin.tar.gz
 
 BuildRoot: %{_builddir}/%{name}-%{version}
 Prefix: /opt/SecureSpan/Gateway
@@ -28,7 +27,7 @@ rm -fr %{buildroot}
 %prep
 rm -fr %{buildroot}
 
-%setup -T -b 0 -b 1 -b 2 -b 3 -b 4 -qcn %{buildroot}
+%setup -T -b 0 -b 1 -b 2 -b 3 -qcn %{buildroot}
 
 %build
 
@@ -37,7 +36,6 @@ rm -fr %{buildroot}
 %defattr(0644,root,root,0755)
 %dir /opt/SecureSpan/Gateway
 %dir /opt/SecureSpan/Controller
-%dir /opt/SecureSpan/Collector
 
 # Group writable config files
 %defattr(0640,layer7,gateway,0750)
@@ -119,25 +117,6 @@ rm -fr %{buildroot}
 %attr(0770,layer7,gateway) /opt/SecureSpan/Controller/var/run
 %attr(0770,layer7,gateway) /opt/SecureSpan/Controller/var/logs
 %attr(0770,layer7,gateway) /opt/SecureSpan/Controller/var/patches
-
-# Gateway data collection utility
-%defattr(0444,layer7,layer7,0755)
-/opt/SecureSpan/Collector
-%attr(0555,root,root) /opt/SecureSpan/Collector/collect.sh
-%defattr(0555,layer7,layer7,0755)
-%dir /opt/SecureSpan/Collector/modules
-/opt/SecureSpan/Collector/modules/devices
-/opt/SecureSpan/Collector/modules/filesystems
-/opt/SecureSpan/Collector/modules/gateway
-/opt/SecureSpan/Collector/modules/java
-/opt/SecureSpan/Collector/modules/kernel
-/opt/SecureSpan/Collector/modules/monitor
-/opt/SecureSpan/Collector/modules/mysql
-/opt/SecureSpan/Collector/modules/network
-/opt/SecureSpan/Collector/modules/os
-/opt/SecureSpan/Collector/modules/vmware
-%dir /opt/SecureSpan/Collector/modules/sensitive
-/opt/SecureSpan/Collector/modules/sensitive/userdata
 
 %pre
 grep -q ^gateway: /etc/group || groupadd gateway
