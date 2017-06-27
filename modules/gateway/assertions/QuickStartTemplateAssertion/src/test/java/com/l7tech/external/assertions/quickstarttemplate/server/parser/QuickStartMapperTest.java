@@ -5,6 +5,7 @@ import com.google.common.collect.Lists;
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStartEncapsulatedAssertionLocator;
 import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStartPolicyBuilderException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.policy.assertion.Assertion;
@@ -106,6 +107,21 @@ public class QuickStartMapperTest {
         };
 
         fixture.callAssertionSetter(null, assertion, ImmutableMap.of("Option", "Optional"));
+        assertTrue(wasAttributeSet.get());
+        wasAttributeSet.set(false);
+    }
+
+    @Test
+    public void callAssertionSetterAuthenticationAssertion() throws Exception {
+        final AtomicBoolean wasAttributeSet = new AtomicBoolean(false);
+        final Assertion assertion = new Assertion() {
+            @SuppressWarnings("UnusedDeclaration")
+            public void setIdentityProviderOid(Goid g) {
+                wasAttributeSet.set(true);
+            }
+        };
+
+        fixture.callAssertionSetter(null, assertion, ImmutableMap.of("IdentityProviderOid", "0000000000000000fffffffffffffffe"));
         assertTrue(wasAttributeSet.get());
         wasAttributeSet.set(false);
     }

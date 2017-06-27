@@ -1,6 +1,36 @@
 # assertion mappings example
 # TODO: this is just an example and it needs some additional work
 ---
+
+Authentication:
+  externalName: Authentication
+  className: com.l7tech.policy.assertion.identity.AuthenticationAssertion
+  properties:
+    IdentityProviderOid: IdentityProviderOid
+  samplePayload: |
+      {
+        "Authentication" : {
+          "IdentityProviderOid" : "0000000000000000fffffffffffffffe"
+        }
+      },
+  jsonSchema: |
+    {
+      "$schema": "http://json-schema.org/draft-04/schema#",
+      "type": "object",
+      "properties": {
+        "Authentication": {
+          "type": "object",
+          "properties": {
+            "IdentityProviderOid": {
+              "type" : "string"
+            }
+          }
+          "required": [ "IdentityProviderOid" ]
+        }
+      },
+      "required": [ "Authentication" ]
+    }
+
 CodeInjectionProtection:
   externalName: CodeInjectionProtection
   className: com.l7tech.policy.assertion.CodeInjectionProtectionAssertion
@@ -286,7 +316,7 @@ ThroughputQuota:
               "type": "string"
             }
           },
-          "required": [ "Option" ]
+          "required": [ "CounterName" ]
         }
       },
       "required": [ "ThroughputQuota" ]

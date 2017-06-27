@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
@@ -247,20 +248,31 @@ public class QuickStartMapper {
                         Class<?>[] declaredMethodParameterTypes = declaredMethod.getParameterTypes();
                         Class<?> declaredMethodParameterType = declaredMethodParameterTypes[0];
 
-                        // try to convert string to method type using enum valueOf (e.g. com.l7tech.common.http.HttpMethod)
-                        try {
-                            Method valueOfMethod = declaredMethodParameterType.getMethod("valueOf", String.class);
-                            declaredMethod.invoke(assertion, valueOfMethod.invoke(null, propertyValue));
-                            return;
-                        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-                            logger.log(Level.FINE, "Reflection failed to invoke : " + declaredMethod.toString());
-                        }
-
                         // try to convert string to method type using EnumTranslator (e.g. com.l7tech.policy.assertion.SslAssertion.Option)
                         try {
                             Method getEnumTranslatorMethod = declaredMethodParameterType.getMethod("getEnumTranslator");
                             EnumTranslator enumTranslator = (EnumTranslator) getEnumTranslatorMethod.invoke(null);
                             declaredMethod.invoke(assertion, enumTranslator.stringToObject(propertyValue.toString()));
+                            return;
+                        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+                            logger.log(Level.FINE, "Reflection failed to invoke : " + declaredMethod.toString());
+                        }
+
+                        // try to find and instantiate parameter constructor that takes a single String (e.g. com.l7tech.objectmodel.Goid)
+                        try {
+                            Constructor declaredMethodParameterConstructor = declaredMethodParameterType.getDeclaredConstructor(String.class);
+                            if (declaredMethodParameterConstructor != null) {
+                                declaredMethod.invoke(assertion, declaredMethodParameterConstructor.newInstance(propertyValue));
+                            }
+                            return;
+                        } catch (NoSuchMethodException | InstantiationException e) {
+                            logger.log(Level.FINE, "Reflection failed to invoke : " + declaredMethod.toString());
+                        }
+
+                        // try to convert string to method type using enum valueOf (e.g. com.l7tech.common.http.HttpMethod)
+                        try {
+                            Method valueOfMethod = declaredMethodParameterType.getMethod("valueOf", String.class);
+                            declaredMethod.invoke(assertion, valueOfMethod.invoke(null, propertyValue));
                             return;
                         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
                             logger.log(Level.FINE, "Reflection failed to invoke : " + declaredMethod.toString());
