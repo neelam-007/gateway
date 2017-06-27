@@ -46,10 +46,7 @@ public class LdapWriteAssertion extends Assertion implements UsesEntities, UsesV
             return meta;
         }
 
-        // Temporary for tactical release.  Remove this section of code when moved to trunk.
         final Map<String, String[]> props = new HashMap<>();
-        props.put(LdapWriteConfig.LDAP_IDENTITY_PROVIDER_LIST_WITH_WRITE_ACCESS, new String[]{"List of LDAP Identity Providers which have write access. " +
-                "Format: [{\"idprovider\":\"<id>\",\"writebase\":\"<writebase>\"},...]"});
 
         meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
         meta.put(SHORT_NAME, "Write LDAP");
@@ -105,7 +102,7 @@ public class LdapWriteAssertion extends Assertion implements UsesEntities, UsesV
     @Override
     public VariableMetadata[] getVariablesSet() {
         final List<VariableMetadata> variableMetadatas = new ArrayList<>();
-        variableMetadatas.add(new VariableMetadata(getVariablePrefix() + LdapWriteConfig.VARIABLE_OUTPUT_SUFFIX_ERROR_MSG, true, false, null, false));
+        variableMetadatas.add(new VariableMetadata(getVariablePrefix() + LdapWriteConstants.VARIABLE_OUTPUT_SUFFIX_ERROR_MSG, true, false, null, false));
         return variableMetadatas.toArray(new VariableMetadata[variableMetadatas.size()]);
     }
 

@@ -85,7 +85,7 @@ public class ServerLdapWriteAssertion extends AbstractServerAssertion<LdapWriteA
 
         } catch (FindException | NamingException | LdapException e) {
 
-            policyEnforcementContext.setVariable(assertion.getVariablePrefix() + LdapWriteConfig.VARIABLE_OUTPUT_SUFFIX_ERROR_MSG,
+            policyEnforcementContext.setVariable(assertion.getVariablePrefix() + LdapWriteConstants.VARIABLE_OUTPUT_SUFFIX_ERROR_MSG,
                     e.toString());
             getAudit().logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
                     "Failed to perform LDAP operation:" + ExceptionUtils.getMessage(e));
@@ -97,7 +97,7 @@ public class ServerLdapWriteAssertion extends AbstractServerAssertion<LdapWriteA
             ResourceUtils.closeQuietly(dirContext);
         }
 
-        policyEnforcementContext.setVariable(assertion.getVariablePrefix() + LdapWriteConfig.VARIABLE_OUTPUT_SUFFIX_ERROR_MSG, "Success");
+        policyEnforcementContext.setVariable(assertion.getVariablePrefix() + LdapWriteConstants.VARIABLE_OUTPUT_SUFFIX_ERROR_MSG, "Success");
 
         return AssertionStatus.NONE;
     }
