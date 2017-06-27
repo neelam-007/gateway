@@ -1,6 +1,8 @@
 package com.l7tech.external.assertions.quickstarttemplate.server.policy;
 
 import com.google.common.collect.ImmutableSet;
+import com.l7tech.external.assertions.quickstarttemplate.server.parser.AssertionMapper;
+import com.l7tech.external.assertions.quickstarttemplate.server.parser.AssertionSupport;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
@@ -23,6 +25,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import java.util.*;
@@ -51,9 +54,13 @@ public class QuickStartEncapsulatedAssertionLocatorTest {
     private AssertionRegistry assertionRegistry;
     private final Map<String, Assertion> assertionRegistryMap = new HashMap<>();
 
+    @Mock
+    private AssertionMapper assertionMapper;
+
     @Before
     public void setUp() {
-        fixture = new QuickStartEncapsulatedAssertionLocator(encassConfigManager, folderManager, quickStartProvidedAssertionFolder);
+        Mockito.doReturn(Collections.<String, AssertionSupport>emptyMap()).when(assertionMapper).getSupportedAssertions();
+        fixture = new QuickStartEncapsulatedAssertionLocator(encassConfigManager, assertionMapper, folderManager, quickStartProvidedAssertionFolder);
     }
 
     @Test

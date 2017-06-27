@@ -1,7 +1,7 @@
 package com.l7tech.external.assertions.quickstarttemplate.server.policy;
 
+import com.l7tech.external.assertions.quickstarttemplate.server.parser.AssertionMapper;
 import com.l7tech.external.assertions.quickstarttemplate.server.parser.AssertionSupport;
-import com.l7tech.external.assertions.quickstarttemplate.server.parser.QuickStartMapper;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
@@ -27,14 +27,18 @@ import java.util.stream.Collectors;
  */
 public class QuickStartEncapsulatedAssertionLocator {  //TODO rename to QuickStartAssertionLocator (no longer just encass)
     private final EncapsulatedAssertionConfigManager encassConfigManager;
+    private final AssertionMapper assertionMapper;
     private final FolderManager folderManager;
     private final Goid quickStartProvidedAssertionFolder;
     private AssertionRegistry assertionRegistry;
 
     public QuickStartEncapsulatedAssertionLocator(@NotNull final EncapsulatedAssertionConfigManager encassConfigManager,
+                                                  @NotNull final AssertionMapper assertionMapper,
                                                   @NotNull final FolderManager folderManager,
-                                                  @NotNull final Goid quickStartProvidedAssertionFolder) {
+                                                  @NotNull final Goid quickStartProvidedAssertionFolder
+    ) {
         this.encassConfigManager = encassConfigManager;
+        this.assertionMapper = assertionMapper;
         this.folderManager = folderManager;
         this.quickStartProvidedAssertionFolder = quickStartProvidedAssertionFolder;
     }
@@ -77,7 +81,7 @@ public class QuickStartEncapsulatedAssertionLocator {  //TODO rename to QuickSta
     @NotNull
     public Set<Assertion> findSupportedAssertions() throws FindException {
         return unwrapFindException(() ->
-                QuickStartMapper.getSupportedAssertions().keySet().stream()
+                assertionMapper.getSupportedAssertions().keySet().stream()
                         .map(name -> Optional.ofNullable(assertionRegistry.findByExternalName(name))
                                 .map(Assertion::getCopy)
                                 .orElseThrow(() -> new UncheckedFindException("Assertion with name \"" + name + "\" cannot be found!")))
@@ -88,7 +92,7 @@ public class QuickStartEncapsulatedAssertionLocator {  //TODO rename to QuickSta
     @NotNull
     public <T> Set<T> findSupportedAssertions(final @NotNull BiFunction<AssertionSupport, Assertion, T> mapper) throws FindException {
         return unwrapFindException(() ->
-                QuickStartMapper.getSupportedAssertions().entrySet().stream()
+                assertionMapper.getSupportedAssertions().entrySet().stream()
                         .map(entry -> Optional.ofNullable(assertionRegistry.findByExternalName(entry.getKey()))
                                 .map(Assertion::getCopy)
                                 .map(ass -> mapper.apply(entry.getValue(), ass))

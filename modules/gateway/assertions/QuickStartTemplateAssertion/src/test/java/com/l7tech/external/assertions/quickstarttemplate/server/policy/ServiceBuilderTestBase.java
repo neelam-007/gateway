@@ -1,6 +1,8 @@
 package com.l7tech.external.assertions.quickstarttemplate.server.policy;
 
 import com.google.common.collect.ImmutableMap;
+import com.l7tech.external.assertions.quickstarttemplate.server.parser.AssertionMapper;
+import com.l7tech.external.assertions.quickstarttemplate.server.parser.AssertionSupport;
 import com.l7tech.external.assertions.quickstarttemplate.server.parser.QuickStartParser;
 import com.l7tech.external.assertions.quickstarttemplate.server.parser.ServiceContainer;
 import com.l7tech.gateway.common.service.PublishedService;
@@ -24,6 +26,7 @@ import org.mockito.Mockito;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Callable;
@@ -52,6 +55,9 @@ public abstract class ServiceBuilderTestBase {
 
     @Mock
     protected ClusterPropertyManager clusterPropertyManager;
+
+    @Mock
+    protected AssertionMapper assertionMapper;
 
     protected QuickStartParser parser = new QuickStartParser();
 
@@ -128,10 +134,11 @@ public abstract class ServiceBuilderTestBase {
         Mockito.doReturn(testEncassTemplates.get("RequireSSL").left.clone()).when(assertionLocator).findEncapsulatedAssertion("RequireSSL");
         Mockito.doReturn(testEncassTemplates.get("Cors").left.clone()).when(assertionLocator).findEncapsulatedAssertion("Cors");
         Mockito.doReturn(testEncassTemplates.get("RateLimit").left.clone()).when(assertionLocator).findEncapsulatedAssertion("RateLimit");
+        Mockito.doReturn(Collections.<String, AssertionSupport>emptyMap()).when(assertionMapper).getSupportedAssertions();
 
         Mockito.doNothing().when(serviceCache).checkResolution(Mockito.any(PublishedService.class));
 
-        serviceBuilder = Mockito.spy(new QuickStartServiceBuilder(serviceCache, folderManager, serviceLocator, assertionLocator, clusterPropertyManager));
+        serviceBuilder = Mockito.spy(new QuickStartServiceBuilder(serviceCache, folderManager, serviceLocator, assertionLocator, clusterPropertyManager, assertionMapper));
     }
 
 

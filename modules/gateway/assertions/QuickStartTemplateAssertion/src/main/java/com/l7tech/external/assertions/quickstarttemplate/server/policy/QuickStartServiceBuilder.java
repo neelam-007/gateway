@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.quickstarttemplate.server.policy;
 
 import com.google.common.collect.Sets;
+import com.l7tech.external.assertions.quickstarttemplate.server.parser.AssertionMapper;
 import com.l7tech.external.assertions.quickstarttemplate.server.parser.QuickStartMapper;
 import com.l7tech.external.assertions.quickstarttemplate.server.parser.Service;
 import com.l7tech.external.assertions.quickstarttemplate.server.parser.ServiceContainer;
@@ -42,12 +43,13 @@ public class QuickStartServiceBuilder {
             @NotNull final FolderManager folderManager,
             @NotNull final QuickStartPublishedServiceLocator serviceLocator,
             @NotNull final QuickStartEncapsulatedAssertionLocator assertionLocator,
-            @NotNull final ClusterPropertyManager clusterPropertyManager
+            @NotNull final ClusterPropertyManager clusterPropertyManager,
+            @NotNull final AssertionMapper assertionMapper
     ) {
         this.serviceCache = serviceCache;
         this.folderManager = folderManager;
         this.serviceLocator = serviceLocator;
-        this.mapper = new QuickStartMapper(assertionLocator, clusterPropertyManager);
+        this.mapper = new QuickStartMapper(assertionLocator, assertionMapper, clusterPropertyManager);
     }
 
     // TODO is there a better time in the assertion lifecycle to set assertion registry?

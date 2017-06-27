@@ -107,7 +107,7 @@ public class AssertionMapper {
      * Read-only list of supported assertions.
      */
     @NotNull
-    public static Map<String, AssertionSupport> getSupportedAssertions() {
-        return new AssertionMapper().supportedAssertions;
+    public Map<String, AssertionSupport> getSupportedAssertions() {
+        return supportedAssertions;
     }
 }
