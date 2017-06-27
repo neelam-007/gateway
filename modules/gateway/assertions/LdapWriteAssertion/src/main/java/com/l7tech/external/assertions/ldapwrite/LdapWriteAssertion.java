@@ -25,6 +25,7 @@ public class LdapWriteAssertion extends Assertion implements UsesEntities, UsesV
 
     private static final String BASE_NAME = "Write LDAP:";
     private static final String DEFAULT_VARIABLE_PREFIX = "ldapWrite";
+    public static final String VARIABLE_OUTPUT_SUFFIX_ERROR_MSG = ".error.msg";
 
     private Goid ldapProviderId = Goid.DEFAULT_GOID;
     private String dn;
@@ -102,7 +103,7 @@ public class LdapWriteAssertion extends Assertion implements UsesEntities, UsesV
     @Override
     public VariableMetadata[] getVariablesSet() {
         final List<VariableMetadata> variableMetadatas = new ArrayList<>();
-        variableMetadatas.add(new VariableMetadata(getVariablePrefix() + LdapWriteConstants.VARIABLE_OUTPUT_SUFFIX_ERROR_MSG, true, false, null, false));
+        variableMetadatas.add(new VariableMetadata(getVariablePrefix() + VARIABLE_OUTPUT_SUFFIX_ERROR_MSG, true, false, null, false));
         return variableMetadatas.toArray(new VariableMetadata[variableMetadatas.size()]);
     }
 
