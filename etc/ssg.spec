@@ -27,27 +27,6 @@ rm -fr %{buildroot}
 %prep
 rm -fr %{buildroot}
 
-# Remove old version of gateway data collect utility tool (DCT) in /opt/SecureSpan/Collector
-# Do not touch any non-DCT files/directories in /opt/SecureSpan/Collector.
-# If there are no any non-DCT files/directories in /opt/SecureSpan/Collector, then delete /opt/SecureSpan/Collector
-rm -f /opt/SecureSpan/Collector/collect.sh
-rm -f /opt/SecureSpan/Collector/collectorlib
-rm -f /opt/SecureSpan/Collector/modules/devices
-rm -f /opt/SecureSpan/Collector/modules/filesystems
-rm -f /opt/SecureSpan/Collector/modules/gateway
-rm -f /opt/SecureSpan/Collector/modules/java
-rm -f /opt/SecureSpan/Collector/modules/kernel
-rm -f /opt/SecureSpan/Collector/modules/monitor
-rm -f /opt/SecureSpan/Collector/modules/mysql
-rm -f /opt/SecureSpan/Collector/modules/network
-rm -f /opt/SecureSpan/Collector/modules/os
-rm -f /opt/SecureSpan/Collector/modules/vmware
-rm -f /opt/SecureSpan/Collector/modules/sensitive/userdata
-
-rmdir --ignore-fail-on-non-empty /opt/SecureSpan/Collector/modules/sensitive
-rmdir --ignore-fail-on-non-empty /opt/SecureSpan/Collector/modules
-rmdir --ignore-fail-on-non-empty /opt/SecureSpan/Collector
-
 %setup -T -b 0 -b 1 -b 2 -b 3 -qcn %{buildroot}
 
 %build
