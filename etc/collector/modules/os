@@ -4,7 +4,7 @@ MODULE="$1"
 # Pull in collector support functions
 . "${COLLECTOR_HOME}"/collectorlib
 #Define and create output folders
-OS_DIR="${ALL_MODULES_BASE_OUTPUT_DIR}/${MODULE}"
+OS_DIR="${BASE_OUTPUT_DIR}/${MODULE}"
 
 preModule "$MODULE"
 mkdir -p "${OS_DIR}"

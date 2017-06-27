@@ -389,6 +389,20 @@ public class QuickStartMapperTest {
     }
 
     @Test
+    public void getEncapsulatedAssertionsShouldSetMapParameter() throws Exception {
+        final Service service = mockService(
+                mockPolicy("SomeAssertion", ImmutableMap.of(
+                        "someKey", ImmutableMap.of(
+                                "someJsonValue", ImmutableMap.of("someNestedKey", "someNestedValue")))));
+
+        final EncapsulatedAssertion ea1 = mockEncapsulatedAssertion(ImmutableMap.of("someKey", DataType.STRING));
+        when(locator.findEncapsulatedAssertion("SomeAssertion")).thenReturn(ea1);
+        final List<Assertion> assertions = fixture.getAssertions(service);
+        assertThat(assertions, contains(ea1));
+        verify(ea1).putParameter("someKey", "{\"someJsonValue\":{\"someNestedKey\":\"someNestedValue\"}}");   // verify double quotes not lost
+    }
+
+    @Test
     public void getEncapsulatedAssertionsShouldSetNoParameter() throws Exception {
         final Service service = mockService(
                 mockPolicy("SomeAssertion", ImmutableMap.of())

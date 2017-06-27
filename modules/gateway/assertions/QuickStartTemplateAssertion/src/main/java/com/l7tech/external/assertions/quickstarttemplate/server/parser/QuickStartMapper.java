@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.quickstarttemplate.server.parser;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStartEncapsulatedAssertionLocator;
@@ -14,17 +15,16 @@ import com.l7tech.policy.assertion.EncapsulatedAssertion;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.util.EnumTranslator;
 import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang.ClassUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import static org.apache.commons.lang.ClassUtils.primitiveToWrapper;
-import static org.apache.commons.lang.ClassUtils.wrapperToPrimitive;
 
 public class QuickStartMapper {
     private static final Logger logger = Logger.getLogger(QuickStartMapper.class.getName());
@@ -143,6 +143,13 @@ public class QuickStartMapper {
                 // If it's an iterable, we cannot pass arrays to encapsulated assertions, so we merge them together
                 // like this into a semicolon delimited string.
                 resultingValue = Joiner.on(";").join((Iterable) propertyValue);
+            } else if (propertyValue instanceof Map) {
+                // If it's a map, assume it's json, retain double quotes when parsing
+                try {
+                    resultingValue = new ObjectMapper().writeValueAsString(propertyValue);
+                } catch (IOException e) {
+                    throw new QuickStartPolicyBuilderException("Unable to convert Map to JSON string: ", e);
+                }
             } else {
                 // Convert the value using the encapsulated assertion encoding type.
                 resultingValue = EncapsulatedAssertionStringEncoding.encodeToString(descriptor.dataType(), propertyValue);
@@ -206,7 +213,7 @@ public class QuickStartMapper {
                 } else {   // not an array
                     if (propertyValue.getClass().isPrimitive()) {
                         try {
-                            method = assertion.getClass().getMethod(setMethodName, primitiveToWrapper(propertyValue.getClass()));
+                            method = assertion.getClass().getMethod(setMethodName, ClassUtils.primitiveToWrapper(propertyValue.getClass()));
                             method.invoke(assertion, propertyValue);
                             continue;
                         } catch (NoSuchMethodException e) {
@@ -214,7 +221,7 @@ public class QuickStartMapper {
                         }
                     } else if (isPrimitiveWrapper(propertyValue.getClass())) {
                         try {
-                            method = assertion.getClass().getMethod(setMethodName, wrapperToPrimitive(propertyValue.getClass()));
+                            method = assertion.getClass().getMethod(setMethodName, ClassUtils.wrapperToPrimitive(propertyValue.getClass()));
                             method.invoke(assertion, propertyValue);
                             continue;
                         } catch (NoSuchMethodException e) {
@@ -289,7 +296,7 @@ public class QuickStartMapper {
     // TODO move class util methods to com.l7tech.util.ClassUtils
 
     private static boolean isPrimitiveWrapper(@NotNull final Class<?> c) {
-        Class result = wrapperToPrimitive(c);
+        Class result = ClassUtils.wrapperToPrimitive(c);
         return result != null && result.isPrimitive();
     }
 

@@ -9,7 +9,7 @@ VMWARE_CMDDIR=/usr/sbin
 preModule "$MODULE"
 
 #Define and create output folders
-VMWARE_OUTPUT_DIR="${ALL_MODULES_BASE_OUTPUT_DIR}/${MODULE}"
+VMWARE_OUTPUT_DIR="${BASE_OUTPUT_DIR}/${MODULE}"
 mkdir -p "${VMWARE_OUTPUT_DIR}"
 
 #Begin data collection

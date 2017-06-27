@@ -2,19 +2,18 @@
 *~
 *.sw[a-z]
 .DS_Store
-tmp
 *.tmp
 *.out
 **/*.iml
 ./**/*.ipr
 idea-classes/
+.shelf/
 
 # Build directories/files
 build
 .idea
 **/.grunt/**
 **/target/**
-**/node/**
 **/node_modules/**
 **/_SpecRunner.html
 

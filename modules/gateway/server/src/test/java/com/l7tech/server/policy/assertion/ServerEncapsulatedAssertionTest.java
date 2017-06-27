@@ -137,6 +137,42 @@ public class ServerEncapsulatedAssertionTest {
     }
 
     @Test
+    @BugId("DE287710")
+    public void checkRequestAssignDefaultStrValueToInputParam() throws Exception {
+        final String in = "in";
+        final String inVal = "";
+
+        mockHandle(Collections.singletonMap(in, (Object) inVal), Collections.<String, String>emptyMap(), AssertionStatus.NONE, null);
+        inParams.add(inputParam(in, DataType.STRING, true));
+        AssertionStatus status = serverAssertion.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, status);
+    }
+
+    @Test
+    @BugId("DE287710")
+    public void checkRequestAssignDefaultIntValueToInputParam() throws Exception {
+        final String in = "in";
+        final String inVal = "0";
+
+        mockHandle(Collections.singletonMap(in, (Object) inVal), Collections.<String, String>emptyMap(), AssertionStatus.NONE, null);
+        inParams.add(inputParam(in, DataType.INTEGER, true));
+        AssertionStatus status = serverAssertion.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, status);
+    }
+
+    @Test
+    @BugId("DE287710")
+    public void checkRequestAssignDefaultBoolValueToInputParam() throws Exception {
+        final String in = "in";
+        final boolean inVal = false;
+
+        mockHandle(Collections.singletonMap(in, (Object) inVal), Collections.<String, String>emptyMap(), AssertionStatus.NONE, null);
+        inParams.add(inputParam(in, DataType.BOOLEAN, true));
+        AssertionStatus status = serverAssertion.checkRequest(context);
+        assertEquals(AssertionStatus.NONE, status);
+    }
+
+    @Test
     public void entityInvalidationEventReloadsConfig() throws Exception {
         final EncapsulatedAssertionConfig beforeUpdate = serverAssertion.getConfigOrErrorRef().get().right();
         assertEquals(ENCAPSULATED_ASSERTION_NAME, beforeUpdate.getName());

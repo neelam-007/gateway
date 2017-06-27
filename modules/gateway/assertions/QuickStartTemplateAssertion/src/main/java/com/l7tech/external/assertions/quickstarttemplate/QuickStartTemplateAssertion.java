@@ -36,7 +36,7 @@ public class QuickStartTemplateAssertion extends MessageTargetableAssertion impl
          */
         BOOTSTRAP("bootstrap"),
         /**
-         * The service has been cerated by the scalar.
+         * The service has been created by the scalar.
          */
         SCALAR("scalar");
 
