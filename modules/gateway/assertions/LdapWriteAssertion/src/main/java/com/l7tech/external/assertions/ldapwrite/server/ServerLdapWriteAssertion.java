@@ -37,7 +37,8 @@ import static javax.naming.directory.DirContext.*;
  */
 public class ServerLdapWriteAssertion extends AbstractServerAssertion<LdapWriteAssertion> {
 
-    private static final String BINARY_OPTION = ";binary";
+    private static final String CONVERT_TO_BINARY_OPTION = ";converttobinary"; // set to lower case for comparision
+                                                                                // in the UI it is: convertToBinary
 
     private enum AttributeModifyType {
         NONE, ADD, DELETE, REPLACE
@@ -84,7 +85,7 @@ public class ServerLdapWriteAssertion extends AbstractServerAssertion<LdapWriteA
 
         } catch (FindException | NamingException | LdapException e) {
 
-            policyEnforcementContext.setVariable(assertion.getVariablePrefix() + LdapWriteConfig.VARIABLE_OUTPUT_SUFFIX_ERROR_MSG,
+            policyEnforcementContext.setVariable(assertion.getVariablePrefix() + LdapWriteAssertion.VARIABLE_OUTPUT_SUFFIX_ERROR_MSG,
                     e.toString());
             getAudit().logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
                     "Failed to perform LDAP operation:" + ExceptionUtils.getMessage(e));
@@ -96,7 +97,7 @@ public class ServerLdapWriteAssertion extends AbstractServerAssertion<LdapWriteA
             ResourceUtils.closeQuietly(dirContext);
         }
 
-        policyEnforcementContext.setVariable(assertion.getVariablePrefix() + LdapWriteConfig.VARIABLE_OUTPUT_SUFFIX_ERROR_MSG, "Success");
+        policyEnforcementContext.setVariable(assertion.getVariablePrefix() + LdapWriteAssertion.VARIABLE_OUTPUT_SUFFIX_ERROR_MSG, "Success");
 
         return AssertionStatus.NONE;
     }
@@ -130,7 +131,7 @@ public class ServerLdapWriteAssertion extends AbstractServerAssertion<LdapWriteA
             throw new LdapException("The LDAP server is not permitted to MODIFY the DN specified:" + resolvedDn);
         }
 
-        switch (assertion.getOperation()) {
+        switch (assertion.getChangetype()) {
 
             case ADD:
                 addAttributes(varMap, dirContext, resolvedDn, assertion.getAttributeList());
@@ -150,7 +151,7 @@ public class ServerLdapWriteAssertion extends AbstractServerAssertion<LdapWriteA
     }
 
     // This function verifies if the DN specified is within the LDAP Identity Provider's writeBase.
-    // This is to ensure future operations are permitted for the DN.
+    // This is to ensure LDAP updates are permitted for the DN.
     private boolean isDnPermitted(final String dn, final String writeBase) throws InvalidNameException {
 
         if (StringUtils.isEmpty(dn)) {
@@ -214,10 +215,10 @@ public class ServerLdapWriteAssertion extends AbstractServerAssertion<LdapWriteA
 
             } else {
 
-                // check if value is binary.
-                if (attrKey.toLowerCase(Locale.ENGLISH).endsWith(BINARY_OPTION)) {
+                // check if value needs to be converted to binary.
+                if (attrKey.toLowerCase(Locale.ENGLISH).endsWith(CONVERT_TO_BINARY_OPTION)) {
 
-                    attrKey = attrKey.substring(0, attrKey.toLowerCase(Locale.ENGLISH).lastIndexOf(BINARY_OPTION));
+                    attrKey = attrKey.substring(0, attrKey.toLowerCase(Locale.ENGLISH).lastIndexOf(CONVERT_TO_BINARY_OPTION));
                     final byte[] buf = HexUtils.decodeBase64(resolvedVal);
                     attributes.put(new BasicAttribute(attrKey, buf));
 
@@ -282,30 +283,30 @@ public class ServerLdapWriteAssertion extends AbstractServerAssertion<LdapWriteA
         final List<LdifModificationItem> modificationList = new ArrayList<>();
 
         AttributeModifyType attributeType = AttributeModifyType.NONE;
-        String key;
-        String value;
+        String attrKey;
+        String attrValue;
         String attributeName = "";
         boolean bExpectingValue = false;
 
         for (int i = 0; i < attributeList.size(); i++) {
 
-            key = attributeList.get(i).getKey();
-            value = attributeList.get(i).getValue();
+            attrKey = attributeList.get(i).getKey();
+            attrValue = attributeList.get(i).getValue();
 
             // Determine if the key is a attribute_type: add,replace, or delete.
-            if ("add".equalsIgnoreCase(key)) {
+            if ("add".equalsIgnoreCase(attrKey)) {
                 attributeType = AttributeModifyType.ADD;
-                attributeName = value;
+                attributeName = attrValue;
                 bExpectingValue = true;
 
-            } else if ("replace".equalsIgnoreCase(key)) {
+            } else if ("replace".equalsIgnoreCase(attrKey)) {
                 attributeType = AttributeModifyType.REPLACE;
-                attributeName = value;
+                attributeName = attrValue;
                 bExpectingValue = true;
 
-            } else if ("delete".equalsIgnoreCase(key)) {
+            } else if ("delete".equalsIgnoreCase(attrKey)) {
                 attributeType = AttributeModifyType.DELETE;
-                attributeName = value;
+                attributeName = attrValue;
                 bExpectingValue = true;
 
                 // look ahead to see if there is a value to delete
@@ -317,29 +318,29 @@ public class ServerLdapWriteAssertion extends AbstractServerAssertion<LdapWriteA
                     modificationList.add(new LdifModificationItem(REMOVE_ATTRIBUTE, new LdifAttribute(attributeName, ""), false));
                     bExpectingValue = false;
                 }
-            } else if ("-".equals(key)) {
+            } else if ("-".equals(attrKey)) {
 
                 if (bExpectingValue) {
                     throw new LdapException("Invalid LDIF syntax");
                 }
             } else {
 
-                boolean binaryOption = false;
-                // check if key ends with ;binary option.
-                if (key.toLowerCase(Locale.ENGLISH).endsWith(BINARY_OPTION)) {
-                    key = key.substring(0, key.toLowerCase(Locale.ENGLISH).lastIndexOf(BINARY_OPTION));
-                    binaryOption = true;
+                boolean binaryConversion = false;
+                // check if value needs to be converted to binary.
+                if (attrKey.toLowerCase(Locale.ENGLISH).endsWith(CONVERT_TO_BINARY_OPTION)) {
+                    attrKey = attrKey.substring(0, attrKey.toLowerCase(Locale.ENGLISH).lastIndexOf(CONVERT_TO_BINARY_OPTION));
+                    binaryConversion = true;
                 }
-                if (attributeName.equalsIgnoreCase(key)) {
+                if (attributeName.equalsIgnoreCase(attrKey)) {
 
                     if (attributeType == AttributeModifyType.ADD) {
-                        modificationList.add(new LdifModificationItem(ADD_ATTRIBUTE, new LdifAttribute(attributeName, value), binaryOption));
+                        modificationList.add(new LdifModificationItem(ADD_ATTRIBUTE, new LdifAttribute(attributeName, attrValue), binaryConversion));
                         bExpectingValue = false;
                     } else if (attributeType == AttributeModifyType.REPLACE) {
-                        modificationList.add(new LdifModificationItem(REPLACE_ATTRIBUTE, new LdifAttribute(attributeName, value), binaryOption));
+                        modificationList.add(new LdifModificationItem(REPLACE_ATTRIBUTE, new LdifAttribute(attributeName, attrValue), binaryConversion));
                         bExpectingValue = false;
                     } else if (attributeType == AttributeModifyType.DELETE) {
-                        modificationList.add(new LdifModificationItem(REMOVE_ATTRIBUTE, new LdifAttribute(attributeName, value), false));
+                        modificationList.add(new LdifModificationItem(REMOVE_ATTRIBUTE, new LdifAttribute(attributeName, attrValue), false));
                         bExpectingValue = false;
                     }
                 } else {

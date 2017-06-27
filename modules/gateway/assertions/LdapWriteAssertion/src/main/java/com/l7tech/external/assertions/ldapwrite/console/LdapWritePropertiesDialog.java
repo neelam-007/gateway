@@ -4,8 +4,7 @@ import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.external.assertions.ldapwrite.LdapOperationsEnum;
-import com.l7tech.external.assertions.ldapwrite.LdapWriteConfig;
+import com.l7tech.external.assertions.ldapwrite.LdapChangetypeEnum;
 import com.l7tech.external.assertions.ldapwrite.LdifAttribute;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.external.assertions.ldapwrite.LdapWriteAssertion;
@@ -36,26 +35,18 @@ import static com.l7tech.gui.util.TableUtil.column;
 
 public class LdapWritePropertiesDialog extends AssertionPropertiesOkCancelSupport<LdapWriteAssertion> {
 
-    private static String PROP_FILE = "com/l7tech/external/assertions/ldapwrite/console/LdapWritePropertiesDialog.properties";
     private static String COLUMN_NAME_ATTRIBUTE_PROP = "attribute.column.name";
-    private static String COLUMN_NAME_ATTRIBUTE_DEFAULT = "Attribute";
     private static String COLUMN_NAME_VALUE_PROP = "value.column.name";
-    private static String COLUMN_NAME_VALUE_DEFAULT = "Value";
-
     private static String ERROR_MSG_LDAP_CONNECTOR_EMPTY_PROP = "error.msg.ldap.connector.empty";
-    private static String ERROR_MSG_LDAP_CONNECTOR_EMPTY_DEFAULT = "The LDAP connector must be selected";
     private static String ERROR_MSG_DN_EMPTY_PROP = "error.msg.dn.empty";
-    private static String ERROR_MSG_DN_EMPTY_DEFAULT = "The DN cannot be empty";
-    private static String ERROR_MSG_OPERATION_EMPTY_PROP = "error.msg.operation.empty";
-    private static String ERROR_MSG_OPERATION_EMPTY_DEFAULT = "The Operation cannot be empty";
-
+    private static String ERROR_MSG_CHANGETYPE_EMPTY_PROP = "error.msg.changetype.empty";
 
     private static final Logger logger = Logger.getLogger(LdapWritePropertiesDialog.class.getName());
 
     private JPanel contentPane;
     private JComboBox<IdentityProviderCbItem> ldapConnectorCb;
     private JTextField dnTextBox;
-    private JComboBox<LdapOperationsEnum> operationCb;
+    private JComboBox<LdapChangetypeEnum> changetypeCb;
     private JTable attributeTable;
     private JButton addButton;
     private JButton removeButton;
@@ -67,7 +58,7 @@ public class LdapWritePropertiesDialog extends AssertionPropertiesOkCancelSuppor
 
     private SimpleTableModel<LdifAttribute> attributeSimpleTableModel = new SimpleTableModel<>();
     private ArrayList<IdentityProviderCbItem> identityProviderCBItems = new ArrayList<>();
-    private Properties prop;
+    private ResourceBundle resourceBundle;
 
     public LdapWritePropertiesDialog(final Window owner,
                                      final LdapWriteAssertion assertion) {
@@ -75,7 +66,6 @@ public class LdapWritePropertiesDialog extends AssertionPropertiesOkCancelSuppor
         super(LdapWriteAssertion.class, owner, assertion, true);
         this.add(contentPane);
 
-        prop = LdapWriteConfig.loadPropertyFile(PROP_FILE);
         initComponents();
         setData(assertion);
     }
@@ -103,7 +93,7 @@ public class LdapWritePropertiesDialog extends AssertionPropertiesOkCancelSuppor
             dnTextBox.setText(dn.trim());
         }
 
-        operationCb.setSelectedItem(assertion.getOperation());
+        changetypeCb.setSelectedItem(assertion.getChangetype());
 
         attributeSimpleTableModel.setRows(assertion.getAttributeList());
 
@@ -115,7 +105,7 @@ public class LdapWritePropertiesDialog extends AssertionPropertiesOkCancelSuppor
 
         Object selected = ldapConnectorCb.getSelectedItem();
         if (selected == null) {
-            String emptyLdapConnectorError = LdapWriteConfig.getProperty(prop, ERROR_MSG_LDAP_CONNECTOR_EMPTY_PROP, ERROR_MSG_LDAP_CONNECTOR_EMPTY_DEFAULT);
+            String emptyLdapConnectorError = resourceBundle.getString(ERROR_MSG_LDAP_CONNECTOR_EMPTY_PROP);
             throw new ValidationException(emptyLdapConnectorError);
         }
         final IdentityProviderCbItem ci = (IdentityProviderCbItem) selected;
@@ -123,17 +113,17 @@ public class LdapWritePropertiesDialog extends AssertionPropertiesOkCancelSuppor
 
         String dn = dnTextBox.getText().trim();
         if (dn.isEmpty()) {
-            String dnEmptyError = LdapWriteConfig.getProperty(prop, ERROR_MSG_DN_EMPTY_PROP, ERROR_MSG_DN_EMPTY_DEFAULT);
+            String dnEmptyError = resourceBundle.getString(ERROR_MSG_DN_EMPTY_PROP);
             throw new ValidationException(dnEmptyError);
         }
         assertion.setDn(dn);
 
-        selected = operationCb.getSelectedItem();
+        selected = changetypeCb.getSelectedItem();
         if (selected == null) {
-            String operationEmptyError = LdapWriteConfig.getProperty(prop, ERROR_MSG_OPERATION_EMPTY_PROP, ERROR_MSG_OPERATION_EMPTY_DEFAULT);
-            throw new ValidationException(operationEmptyError);
+            String changetypeEmptyError = resourceBundle.getString(ERROR_MSG_CHANGETYPE_EMPTY_PROP);
+            throw new ValidationException(changetypeEmptyError);
         }
-        assertion.setOperation((LdapOperationsEnum) selected);
+        assertion.setChangetype((LdapChangetypeEnum) selected);
 
         final List<LdifAttribute> attributeList = attributeSimpleTableModel.getRows();
         assertion.setAttributeList(attributeList);
@@ -157,14 +147,16 @@ public class LdapWritePropertiesDialog extends AssertionPropertiesOkCancelSuppor
 
         super.initComponents();
 
+        resourceBundle = ResourceBundle.getBundle( getClass().getName());
+
         final Object[] writableLdapProviders = getWritableLdapProviders();
         DefaultComboBoxModel defaultComboBoxModel = new DefaultComboBoxModel(writableLdapProviders);
         ldapConnectorCb.setModel(defaultComboBoxModel);
 
-        populateOperation();
+        populateChangetype();
 
-        String attributeColName = LdapWriteConfig.getProperty(prop, COLUMN_NAME_ATTRIBUTE_PROP, COLUMN_NAME_ATTRIBUTE_DEFAULT);
-        String valueColName = LdapWriteConfig.getProperty(prop, COLUMN_NAME_VALUE_PROP, COLUMN_NAME_VALUE_DEFAULT);
+        String attributeColName = resourceBundle.getString(COLUMN_NAME_ATTRIBUTE_PROP);
+        String valueColName = resourceBundle.getString(COLUMN_NAME_VALUE_PROP);
 
         attributeSimpleTableModel = TableUtil.configureTable(attributeTable,
                 column(attributeColName, 200, 200, 99999, Functions.propertyTransform(LdifAttribute.class, "key")),
@@ -273,11 +265,9 @@ public class LdapWritePropertiesDialog extends AssertionPropertiesOkCancelSuppor
     }
 
 
-    private void populateOperation() {
+    private void populateChangetype() {
 
-        for (LdapOperationsEnum operation : LdapOperationsEnum.values()) {
-            operationCb.addItem(operation);
-        }
+        changetypeCb.setModel( new DefaultComboBoxModel(LdapChangetypeEnum.values()));
     }
 
 

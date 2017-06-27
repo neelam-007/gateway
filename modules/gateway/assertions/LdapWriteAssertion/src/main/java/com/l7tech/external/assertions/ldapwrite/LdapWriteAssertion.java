@@ -23,12 +23,13 @@ import static com.l7tech.policy.assertion.AssertionMetadata.*;
  */
 public class LdapWriteAssertion extends Assertion implements UsesEntities, UsesVariables, SetsVariables, Serializable {
 
-    private static final String BASE_NAME = "Perform LDAP:";
+    private static final String BASE_NAME = "Write LDAP:";
     private static final String DEFAULT_VARIABLE_PREFIX = "ldapWrite";
+    public static final String VARIABLE_OUTPUT_SUFFIX_ERROR_MSG = ".error.msg";
 
     private Goid ldapProviderId = Goid.DEFAULT_GOID;
     private String dn;
-    private LdapOperationsEnum operation;
+    private LdapChangetypeEnum changetype;
     private String variablePrefix = DEFAULT_VARIABLE_PREFIX;
     private List<LdifAttribute> attributeList = new ArrayList<>();
 
@@ -46,10 +47,7 @@ public class LdapWriteAssertion extends Assertion implements UsesEntities, UsesV
             return meta;
         }
 
-        // Temporary for tactical release.  Remove this section of code when moved to trunk.
         final Map<String, String[]> props = new HashMap<>();
-        props.put(LdapWriteConfig.LDAP_IDENTITY_PROVIDER_LIST_WITH_WRITE_ACCESS, new String[]{"List of LDAP Identity Providers which have write access. " +
-                "Format: [{\"idprovider\":\"<id>\",\"writebase\":\"<writebase>\"},...]"});
 
         meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
         meta.put(SHORT_NAME, "Write LDAP");
@@ -64,7 +62,7 @@ public class LdapWriteAssertion extends Assertion implements UsesEntities, UsesV
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
 
         final Collection<TypeMapping> othermappings = new ArrayList<>();
-        othermappings.add(new Java5EnumTypeMapping(LdapOperationsEnum.class, "ldapOperation"));
+        othermappings.add(new Java5EnumTypeMapping(LdapChangetypeEnum.class, "changetype"));
         othermappings.add(new BeanTypeMapping(LdifAttribute.class, "attributeType"));
         othermappings.add(new CollectionTypeMapping(List.class, LdifAttribute.class, ArrayList.class, "attributeList"));
         meta.put(AssertionMetadata.WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(othermappings));
@@ -105,7 +103,7 @@ public class LdapWriteAssertion extends Assertion implements UsesEntities, UsesV
     @Override
     public VariableMetadata[] getVariablesSet() {
         final List<VariableMetadata> variableMetadatas = new ArrayList<>();
-        variableMetadatas.add(new VariableMetadata(getVariablePrefix() + LdapWriteConfig.VARIABLE_OUTPUT_SUFFIX_ERROR_MSG, true, false, null, false));
+        variableMetadatas.add(new VariableMetadata(getVariablePrefix() + VARIABLE_OUTPUT_SUFFIX_ERROR_MSG, true, false, null, false));
         return variableMetadatas.toArray(new VariableMetadata[variableMetadatas.size()]);
     }
 
@@ -116,7 +114,7 @@ public class LdapWriteAssertion extends Assertion implements UsesEntities, UsesV
 
         clone.setLdapProviderId(this.getLdapProviderId().clone());
         clone.setDn(this.getDn());
-        clone.setOperation(this.getOperation());
+        clone.setChangetype(this.getChangetype());
         final List<LdifAttribute> newLdifAttributeList = new ArrayList<>();
         for (LdifAttribute ldifAttribute : this.getAttributeList()) {
             newLdifAttributeList.add(ldifAttribute);
@@ -143,12 +141,12 @@ public class LdapWriteAssertion extends Assertion implements UsesEntities, UsesV
         this.dn = dn;
     }
 
-    public LdapOperationsEnum getOperation() {
-        return operation;
+    public LdapChangetypeEnum getChangetype() {
+        return changetype;
     }
 
-    public void setOperation(LdapOperationsEnum operation) {
-        this.operation = operation;
+    public void setChangetype(LdapChangetypeEnum changetype) {
+        this.changetype = changetype;
     }
 
     public List<LdifAttribute> getAttributeList() {
@@ -170,10 +168,10 @@ public class LdapWriteAssertion extends Assertion implements UsesEntities, UsesV
 
             final StringBuilder builder = new StringBuilder(BASE_NAME);
 
-            if (assertion.getOperation() == null) {
+            if (assertion.getChangetype() == null) {
                 builder.append(" Unknown");
             } else {
-                builder.append(" ").append(assertion.getOperation());
+                builder.append(" ").append(assertion.getChangetype());
             }
 
             return builder.toString();

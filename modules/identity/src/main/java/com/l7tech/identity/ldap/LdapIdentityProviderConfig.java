@@ -56,18 +56,21 @@ public class LdapIdentityProviderConfig extends LdapUrlBasedIdentityProviderConf
         return config;
     }
 
+    /**
+     * @return true if the LDAP provider can be written to. False otherwise.
+     */
     @Override
     @Transient
     public boolean isWritable() {
-        if (getProperty(WRITEABLE)==null){
-            return false;
-        } else {
-            return (boolean)getProperty(WRITEABLE);
-        }
+        return getBooleanProperty(WRITABLE,false);
     }
 
+
+    /**
+     * @param writable - whether the LDAP provider can be written to.
+     */
     public void setWritable(boolean writable) {
-        setProperty(WRITEABLE, writable);
+        setProperty(WRITABLE, writable);
     }
 
     /**
@@ -86,7 +89,7 @@ public class LdapIdentityProviderConfig extends LdapUrlBasedIdentityProviderConf
     }
 
     /**
-     * the write base for users and groups
+     * @return the write base for users and groups
      */
     @Transient
     public String getWriteBase() {
@@ -94,7 +97,7 @@ public class LdapIdentityProviderConfig extends LdapUrlBasedIdentityProviderConf
     }
 
     /**
-     * the write base for users and groups
+     * @param writeBase - the write base for users and groups
      */
     public void setWriteBase(String writeBase) {
         setProperty(WRITE_BASE, writeBase);
@@ -523,7 +526,7 @@ public class LdapIdentityProviderConfig extends LdapUrlBasedIdentityProviderConf
 
     public static final String SEARCH_BASE = "ldapsearchbase";
     public static final String WRITE_BASE = "ldapwritebase";
-    public static final String WRITEABLE = "writable";
+    public static final String WRITABLE = "writable";
     private static final String GROUP_MAPPINGS = "grpmappings";
     private static final String USER_MAPPINGS = "usrmappings";
     private static final String BIND_DN = "ldapBindDN";

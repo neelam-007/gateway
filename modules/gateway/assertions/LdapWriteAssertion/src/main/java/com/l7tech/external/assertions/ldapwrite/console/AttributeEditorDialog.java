@@ -1,6 +1,5 @@
 package com.l7tech.external.assertions.ldapwrite.console;
 
-import com.l7tech.external.assertions.ldapwrite.LdapWriteConfig;
 import com.l7tech.external.assertions.ldapwrite.LdifAttribute;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.PauseListenerAdapter;
@@ -11,19 +10,14 @@ import javax.swing.*;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.*;
-import java.util.Properties;
+import java.util.ResourceBundle;
 
 public class AttributeEditorDialog extends JDialog {
 
-    private static String PROP_FILE = "com/l7tech/external/assertions/ldapwrite/console/AttributeEditorDialog.properties";
-    private static String DIALOG_TITLE_DEFAULT = "Edit Attribute/Value";
     private static String DIALOG_TITLE_PROP = "dialog.title";
     private static String DIALOG_ERROR_UNABLE_TO_SAVE_TITLE_PROP = "dialog.save.error.title";
-    private static String DIALOG_ERROR_TITLE_UNABLE_TO_SAVE_DEFAULT = "Unable to Save";
     private static String DIALOG_ERROR_MSG_UNABLE_TO_SAVE_KEY_PROP = "dialog.save.key.error";
-    private static String DIALOG_ERROR_MSG_UNABLE_TO_SAVE_KEY_DEFAULT = "The attribute field cannot be empty.";
     private static String DIALOG_ERROR_MSG_UNABLE_TO_SAVE_VALUE_PROP = "dialog.save.value.error";
-    private static String DIALOG_ERROR_UNABLE_TO_SAVE_VALUE_DEFAULT = "The value field cannot be empty.";
 
     private JPanel contentPane;
     private JButton buttonOK;
@@ -32,7 +26,7 @@ public class AttributeEditorDialog extends JDialog {
     private JTextField valueTextField;
     private LdifAttribute ldifAttribute;
     private boolean wasOKed;
-    private Properties prop;
+    private ResourceBundle resourceBundle;
 
     public AttributeEditorDialog(final Frame owner, final LdifAttribute ldifAttribute) {
 
@@ -43,14 +37,12 @@ public class AttributeEditorDialog extends JDialog {
 
     private void initialize() {
 
-        prop = LdapWriteConfig.loadPropertyFile(PROP_FILE);
-
         setContentPane(contentPane);
         setModal(true);
         getRootPane().setDefaultButton(buttonOK);
 
-        String dialogTitle = LdapWriteConfig.getProperty(prop, DIALOG_TITLE_PROP, DIALOG_TITLE_DEFAULT);
-        setTitle(dialogTitle);
+        resourceBundle = ResourceBundle.getBundle( getClass().getName());
+        setTitle(resourceBundle.getString( DIALOG_TITLE_PROP));
 
         keyTextField.setText(this.ldifAttribute.getKey());
 
@@ -108,22 +100,16 @@ public class AttributeEditorDialog extends JDialog {
 
     private boolean validateInput() {
 
-        String dialogUnableToSaveTitle = LdapWriteConfig.getProperty(prop,
-                DIALOG_ERROR_UNABLE_TO_SAVE_TITLE_PROP,
-                DIALOG_ERROR_TITLE_UNABLE_TO_SAVE_DEFAULT);
+        String dialogUnableToSaveTitle = resourceBundle.getString(DIALOG_ERROR_UNABLE_TO_SAVE_TITLE_PROP);
 
-        String dialogUnableToSaveKeyMsg = LdapWriteConfig.getProperty(prop,
-                DIALOG_ERROR_MSG_UNABLE_TO_SAVE_KEY_PROP,
-                DIALOG_ERROR_MSG_UNABLE_TO_SAVE_KEY_DEFAULT);
+        String dialogUnableToSaveKeyMsg = resourceBundle.getString(DIALOG_ERROR_MSG_UNABLE_TO_SAVE_KEY_PROP);
 
         if (keyTextField.getText().trim().isEmpty()) {
             DialogDisplayer.showMessageDialog(this, dialogUnableToSaveKeyMsg, dialogUnableToSaveTitle, JOptionPane.ERROR_MESSAGE, null);
             return false;
         }
 
-        String dialogUnableToSaveValueMsg = LdapWriteConfig.getProperty(prop,
-                DIALOG_ERROR_MSG_UNABLE_TO_SAVE_VALUE_PROP,
-                DIALOG_ERROR_UNABLE_TO_SAVE_VALUE_DEFAULT);
+        String dialogUnableToSaveValueMsg = resourceBundle.getString(DIALOG_ERROR_MSG_UNABLE_TO_SAVE_VALUE_PROP);
 
         if ((!keyTextField.getText().trim().equalsIgnoreCase("-")) && valueTextField.getText().trim().isEmpty()) {
             DialogDisplayer.showMessageDialog(this, dialogUnableToSaveValueMsg, dialogUnableToSaveTitle, JOptionPane.ERROR_MESSAGE, null);

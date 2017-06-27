@@ -495,7 +495,7 @@ public class IdentityProviderMO extends SecurityZoneableObject {
      *   <li><code>TivoliLDAP</code></li>
      * </ul>
      */
-    @XmlType(name="LdapIdentityProviderDetailType", propOrder={"sourceTypeValue", "serverUrlValues", "useSslClientAuthenticationValue", "sslKeyReferenceValue", "searchBaseValue", "bindDnValue", "bindPasswordValue", "userMappingValues", "groupMappingValues", "specifiedAttributeValues","ntlmProperties"})
+    @XmlType(name="LdapIdentityProviderDetailType", propOrder={"sourceTypeValue", "serverUrlValues", "useSslClientAuthenticationValue", "sslKeyReferenceValue", "searchBaseValue", "bindDnValue", "bindPasswordValue", "writableValue", "writeBaseValue", "userMappingValues", "groupMappingValues", "specifiedAttributeValues","ntlmProperties"})
     public static class LdapIdentityProviderDetail extends IdentityProviderDetail {
         private AttributeExtensibleString sourceType;
 
@@ -505,6 +505,8 @@ public class IdentityProviderMO extends SecurityZoneableObject {
         private AttributeExtensibleString searchBase;
         private AttributeExtensibleString bindDn;
         private AttributeExtensibleString bindPassword;
+        private AttributeExtensibleBoolean writable;
+        private AttributeExtensibleString writeBase;
         private AttributeExtensibleLong reconnectTimeout;
 
         private AttributeExtensibleLdapIdentityProviderMappingList userMappings;
@@ -648,6 +650,46 @@ public class IdentityProviderMO extends SecurityZoneableObject {
          */
         public void setBindPassword( String bindPassword ) {
             this.bindPassword = set(this.bindPassword,bindPassword);
+        }
+
+        /**
+         * Get whether the LDAP provider can be written to.
+         *
+         * @return true if the LDAP provider can be written to. False otherwise.
+         */
+        public boolean isWritable() {
+            if (get(writable)==null){
+                return false;
+            } else {
+                return get(writable);
+            }
+        }
+
+        /**
+         * Set whether the LDAP provider can be written to.
+         *
+         * @param writable true if the LDAP provider can be written to. False otherwise.
+         */
+        public void setWritable(boolean writable) {
+            this.writable = set(this.writable,writable);
+        }
+
+        /**
+         * Get the write base for the LDAP provider.
+         *
+         * @return The write base
+         */
+        public String getWriteBase() {
+            return get (writeBase);
+        }
+
+        /**
+         * Set the write base for the LDAP provider.
+         *
+         * @param writeBase
+         */
+        public void setWriteBase( String writeBase) {
+            this.writeBase = set(this.writeBase, writeBase);
         }
 
         public Long getReconnectTimeout() {
@@ -814,6 +856,24 @@ public class IdentityProviderMO extends SecurityZoneableObject {
 
         protected void setBindPasswordValue( final AttributeExtensibleString bindPassword ) {
             this.bindPassword = bindPassword;
+        }
+
+        @XmlElement(name="Writable")
+        protected AttributeExtensibleBoolean getWritableValue() {
+            return writable;
+        }
+
+        protected void setWritableValue( final AttributeExtensibleBoolean writable ) {
+            this.writable = writable;
+        }
+
+        @XmlElement(name="WriteBase")
+        protected AttributeExtensibleString getWriteBaseValue() {
+            return writeBase;
+        }
+
+        protected void setWriteBaseValue( final AttributeExtensibleString writeBase ) {
+            this.writeBase = writeBase;
         }
 
         @XmlElement(name="UserMappings")

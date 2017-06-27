@@ -3,7 +3,7 @@ package com.l7tech.external.assertions.ldapwrite.server;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 
-import com.l7tech.external.assertions.ldapwrite.LdapOperationsEnum;
+import com.l7tech.external.assertions.ldapwrite.LdapChangetypeEnum;
 import com.l7tech.external.assertions.ldapwrite.LdapWriteAssertion;
 import com.l7tech.external.assertions.ldapwrite.LdifAttribute;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
@@ -112,7 +112,7 @@ public class ServerLdapWriteAssertionTest {
         assertion = new LdapWriteAssertion();
         assertion.setLdapProviderId(new Goid(VALID_GOID));
         assertion.setDn("uid=jsmith, ou=employee, dc=company,dc=com");
-        assertion.setOperation(LdapOperationsEnum.ADD);
+        assertion.setChangetype(LdapChangetypeEnum.ADD);
         assertion.setAttributeList(getValidAddAttributeList());
 
         serverLdapWriteAssertion = new ServerLdapWriteAssertion(assertion, applicationContext);
@@ -131,7 +131,7 @@ public class ServerLdapWriteAssertionTest {
         assertion = new LdapWriteAssertion();
         assertion.setLdapProviderId(new Goid("a5a3d5aba3ab0236f52677478cdcafac")); //Goid not in config
         assertion.setDn("uid=jsmith, ou=employee, dc=company,dc=com");
-        assertion.setOperation(LdapOperationsEnum.ADD);
+        assertion.setChangetype(LdapChangetypeEnum.ADD);
         assertion.setAttributeList(getValidAddAttributeList());
 
         serverLdapWriteAssertion = new ServerLdapWriteAssertion(assertion, applicationContext);
@@ -150,7 +150,7 @@ public class ServerLdapWriteAssertionTest {
         assertion = new LdapWriteAssertion();
         assertion.setLdapProviderId(new Goid(VALID_GOID));
         //assertion.setDn("uid=jsmith, ou=employee, dc=test,dc=com"); DN is missing
-        assertion.setOperation(LdapOperationsEnum.ADD);
+        assertion.setChangetype(LdapChangetypeEnum.ADD);
         assertion.setAttributeList(getValidAddAttributeList());
 
         serverLdapWriteAssertion = new ServerLdapWriteAssertion(assertion, applicationContext);
@@ -168,7 +168,7 @@ public class ServerLdapWriteAssertionTest {
         assertion = new LdapWriteAssertion();
         assertion.setLdapProviderId(new Goid(VALID_GOID));
         assertion.setDn("uid=jsmith,"+INVALID_WRITE_BASE);
-        assertion.setOperation(LdapOperationsEnum.ADD);
+        assertion.setChangetype(LdapChangetypeEnum.ADD);
         assertion.setAttributeList(getValidAddAttributeList());
 
         serverLdapWriteAssertion = new ServerLdapWriteAssertion(assertion, applicationContext);
@@ -188,7 +188,7 @@ public class ServerLdapWriteAssertionTest {
 
         assertion.setLdapProviderId(new Goid(VALID_GOID));
         assertion.setDn("uid=jsmith," + VALID_WRITE_BASE);
-        assertion.setOperation(LdapOperationsEnum.ADD);
+        assertion.setChangetype(LdapChangetypeEnum.ADD);
         assertion.setAttributeList(getValidAddAttributeList());
 
         serverLdapWriteAssertion = new ServerLdapWriteAssertion(assertion, applicationContext);
@@ -208,7 +208,7 @@ public class ServerLdapWriteAssertionTest {
         assertion = new LdapWriteAssertion();
         assertion.setLdapProviderId(new Goid(VALID_GOID));
         assertion.setDn("uid=jsmith," + INVALID_WRITE_BASE);
-        assertion.setOperation(LdapOperationsEnum.ADD);
+        assertion.setChangetype(LdapChangetypeEnum.ADD);
         assertion.setAttributeList(getValidAddAttributeList());
 
         serverLdapWriteAssertion = new ServerLdapWriteAssertion(assertion, applicationContext);
@@ -231,7 +231,7 @@ public class ServerLdapWriteAssertionTest {
         assertion = new LdapWriteAssertion();
         assertion.setLdapProviderId(new Goid(VALID_GOID));
         assertion.setDn("uid=jsmith," + VALID_WRITE_BASE);
-        assertion.setOperation(LdapOperationsEnum.ADD);
+        assertion.setChangetype(LdapChangetypeEnum.ADD);
         assertion.setAttributeList(getValidAddAttributeList());
 
         serverLdapWriteAssertion = new ServerLdapWriteAssertion(assertion, applicationContext);
@@ -251,7 +251,7 @@ public class ServerLdapWriteAssertionTest {
         assertion = new LdapWriteAssertion();
         assertion.setLdapProviderId(new Goid(VALID_GOID));
         assertion.setDn("uid=jsmith," + VALID_WRITE_BASE);
-        assertion.setOperation(LdapOperationsEnum.MODIFY);
+        assertion.setChangetype(LdapChangetypeEnum.MODIFY);
 
         final List<LdifAttribute> ldifAttributeList = new ArrayList<>();
         ldifAttributeList.add(new LdifAttribute("add", "telephonenumber"));
@@ -284,7 +284,7 @@ public class ServerLdapWriteAssertionTest {
         assertion = new LdapWriteAssertion();
         assertion.setLdapProviderId(new Goid(VALID_GOID));
         assertion.setDn("uid=jsmith," + VALID_WRITE_BASE);
-        assertion.setOperation(LdapOperationsEnum.MODIFY);
+        assertion.setChangetype(LdapChangetypeEnum.MODIFY);
 
         final List<LdifAttribute> ldifAttributeList = new ArrayList<>();
         ldifAttributeList.add(new LdifAttribute("add", "telephonenumber"));
@@ -308,7 +308,7 @@ public class ServerLdapWriteAssertionTest {
         assertion = new LdapWriteAssertion();
         assertion.setLdapProviderId(new Goid(VALID_GOID));
         assertion.setDn("uid=jsmith," + VALID_WRITE_BASE);
-        assertion.setOperation(LdapOperationsEnum.MODIFY);
+        assertion.setChangetype(LdapChangetypeEnum.MODIFY);
 
         final List<LdifAttribute> ldifAttributeList = new ArrayList<>();
         ldifAttributeList.add(new LdifAttribute("add", "telephonenumber")); // add telephone# and its value
@@ -340,7 +340,7 @@ public class ServerLdapWriteAssertionTest {
         assertion = new LdapWriteAssertion();
         assertion.setLdapProviderId(new Goid(VALID_GOID));
         assertion.setDn("uid=jsmith," + VALID_WRITE_BASE);
-        assertion.setOperation(LdapOperationsEnum.MODRDN);
+        assertion.setChangetype(LdapChangetypeEnum.MODRDN);
 
         final List<LdifAttribute> ldifAttributeList = new ArrayList<>();
         assertion.setAttributeList(ldifAttributeList); // the attribute modification is empty
@@ -360,7 +360,7 @@ public class ServerLdapWriteAssertionTest {
         assertion = new LdapWriteAssertion();
         assertion.setLdapProviderId(new Goid(VALID_GOID));
         assertion.setDn("uid=jsmith," + VALID_WRITE_BASE);
-        assertion.setOperation(LdapOperationsEnum.MODRDN);
+        assertion.setChangetype(LdapChangetypeEnum.MODRDN);
 
         final List<LdifAttribute> ldifAttributeList = new ArrayList<>();
         ldifAttributeList.add(new LdifAttribute("newrdnWrong", "uid=wsmith"));
@@ -381,7 +381,7 @@ public class ServerLdapWriteAssertionTest {
         assertion = new LdapWriteAssertion();
         assertion.setLdapProviderId(new Goid(VALID_GOID));
         assertion.setDn("uid=jsmith," + VALID_WRITE_BASE);
-        assertion.setOperation(LdapOperationsEnum.MODRDN);
+        assertion.setChangetype(LdapChangetypeEnum.MODRDN);
 
         final List<LdifAttribute> ldifAttributeList = new ArrayList<>();
         ldifAttributeList.add(new LdifAttribute("newrdn", "uid=wsmith," + INVALID_WRITE_BASE));
@@ -402,7 +402,7 @@ public class ServerLdapWriteAssertionTest {
         assertion = new LdapWriteAssertion();
         assertion.setLdapProviderId(new Goid(VALID_GOID));
         assertion.setDn("uid=jsmith," + VALID_WRITE_BASE);
-        assertion.setOperation(LdapOperationsEnum.MODRDN);
+        assertion.setChangetype(LdapChangetypeEnum.MODRDN);
 
         final List<LdifAttribute> ldifAttributeList = new ArrayList<>();
         ldifAttributeList.add(new LdifAttribute("newrdn", "uid=wsmith"));
@@ -423,7 +423,7 @@ public class ServerLdapWriteAssertionTest {
         assertion = new LdapWriteAssertion();
         assertion.setLdapProviderId(new Goid(VALID_GOID));
         assertion.setDn("uid=jsmith," + VALID_WRITE_BASE);
-        assertion.setOperation(LdapOperationsEnum.MODRDN);
+        assertion.setChangetype(LdapChangetypeEnum.MODRDN);
 
         final List<LdifAttribute> ldifAttributeList = new ArrayList<>();
         ldifAttributeList.add(new LdifAttribute("newrdn", "uid=wsmith," + VALID_WRITE_BASE));
@@ -444,7 +444,7 @@ public class ServerLdapWriteAssertionTest {
         assertion = new LdapWriteAssertion();
         assertion.setLdapProviderId(new Goid(VALID_GOID));
         assertion.setDn("uid=jsmith,ou=retired,dc=company,dc=com");
-        assertion.setOperation(LdapOperationsEnum.DELETE);
+        assertion.setChangetype(LdapChangetypeEnum.DELETE);
 
         serverLdapWriteAssertion = new ServerLdapWriteAssertion(assertion, applicationContext);
         AssertionStatus status = serverLdapWriteAssertion.checkRequest(peCtx);
@@ -462,7 +462,7 @@ public class ServerLdapWriteAssertionTest {
         assertion = new LdapWriteAssertion();
         assertion.setLdapProviderId(new Goid(VALID_GOID));
         assertion.setDn("uid=jsmith," + VALID_WRITE_BASE);
-        assertion.setOperation(LdapOperationsEnum.DELETE);
+        assertion.setChangetype(LdapChangetypeEnum.DELETE);
 
         serverLdapWriteAssertion = new ServerLdapWriteAssertion(assertion, applicationContext);
         AssertionStatus status = serverLdapWriteAssertion.checkRequest(peCtx);
