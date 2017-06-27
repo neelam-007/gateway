@@ -9,9 +9,6 @@ import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.ItemListener;
 import java.util.EventListener;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
 
 public class SymmetricKeyEncryptionDecryptionAssertionDialog extends AssertionPropertiesOkCancelSupport<SymmetricKeyEncryptionDecryptionAssertion> {
 
@@ -21,7 +18,7 @@ public class SymmetricKeyEncryptionDecryptionAssertionDialog extends AssertionPr
     private JTextField textField;
     private JTextField keyTextField;
     private JTextField variableNametextField;
-    private JComboBox algorithmComboBox;
+    private JComboBox<String> algorithmComboBox;
     private JTextField pgpPassPhrase;
     private JTextField ivTextField;
 
@@ -105,7 +102,7 @@ public class SymmetricKeyEncryptionDecryptionAssertionDialog extends AssertionPr
      */
     private void enableOrDisableProperTextBoxesForPGP()
     {
-        if (algorithmComboBox.getSelectedItem() != null && algorithmComboBox.getSelectedItem().toString().equals(SymmetricKeyEncryptionDecryptionAssertion.TRANS_PGP))
+        if (SymmetricKeyEncryptionDecryptionAssertion.TRANS_PGP.equals(algorithmComboBox.getSelectedItem()))
         {
             this.pgpPassPhrase.setEnabled(true);
             this.ivTextField.setEnabled(false);
@@ -122,9 +119,10 @@ public class SymmetricKeyEncryptionDecryptionAssertionDialog extends AssertionPr
         {
             this.pgpPassPhrase.setEnabled(false);
             this.keyTextField.setEnabled(true);
+            boolean cbcSelected = SymmetricKeyEncryptionDecryptionAssertion.TRANS_AES_CBC_PKCS5Padding.equals(algorithmComboBox.getSelectedItem());
+            boolean gcmSelected = SymmetricKeyEncryptionDecryptionAssertion.TRANS_AES_GCM_NoPadding.equals(algorithmComboBox.getSelectedItem());
             // IV Is only Used for Decrypt, not Encrypt.
-            boolean cbcSelected =( (algorithmComboBox.getSelectedItem() != null) && (algorithmComboBox.getSelectedItem().toString().equals(SymmetricKeyEncryptionDecryptionAssertion.TRANS_AES_CBC_PKCS5Padding)) );
-            this.ivTextField.setEnabled(decryptRadioButton.isSelected() && cbcSelected);
+            this.ivTextField.setEnabled(decryptRadioButton.isSelected() && (cbcSelected || gcmSelected));
         }
 
     }
@@ -136,7 +134,7 @@ public class SymmetricKeyEncryptionDecryptionAssertionDialog extends AssertionPr
                         isNonEmptyRequiredTextField(variableNametextField.getText()) &&
                         (algorithmComboBox.getSelectedItem() != null && !algorithmComboBox.getSelectedItem().toString().trim().isEmpty());
 
-        if (algorithmComboBox.getSelectedItem() != null && algorithmComboBox.getSelectedItem().toString().equals(SymmetricKeyEncryptionDecryptionAssertion.TRANS_PGP))
+        if (SymmetricKeyEncryptionDecryptionAssertion.TRANS_PGP.equals(algorithmComboBox.getSelectedItem()))
         {
               enabled = enabled && isNonEmptyRequiredTextField(pgpPassPhrase.getText());
         }
@@ -151,6 +149,7 @@ public class SymmetricKeyEncryptionDecryptionAssertionDialog extends AssertionPr
     private void loadAlgorithmComboBox(String selectedAlgorithmDisplay) {
 
         this.algorithmComboBox.addItem(SymmetricKeyEncryptionDecryptionAssertion.TRANS_AES_CBC_PKCS5Padding);
+        this.algorithmComboBox.addItem(SymmetricKeyEncryptionDecryptionAssertion.TRANS_AES_GCM_NoPadding);
         this.algorithmComboBox.addItem(SymmetricKeyEncryptionDecryptionAssertion.TRANS_DES_CBC_PKCS5Padding);
         this.algorithmComboBox.addItem(SymmetricKeyEncryptionDecryptionAssertion.TRANS_DESede_CBC_PKCS5Padding);
         this.algorithmComboBox.addItem(SymmetricKeyEncryptionDecryptionAssertion.TRANS_PGP);
