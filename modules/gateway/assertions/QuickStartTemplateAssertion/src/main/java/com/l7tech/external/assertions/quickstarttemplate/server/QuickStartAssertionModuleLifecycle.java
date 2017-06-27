@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.quickstarttemplate.server;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.l7tech.external.assertions.quickstarttemplate.server.parser.AssertionMapper;
 import com.l7tech.external.assertions.quickstarttemplate.server.parser.QuickStartParser;
 import com.l7tech.external.assertions.quickstarttemplate.server.policy.*;
 import com.l7tech.objectmodel.FindException;
@@ -70,9 +71,10 @@ public class QuickStartAssertionModuleLifecycle {
             final PolicyVersionManager policyVersionManager = context.getBean("policyVersionManager", PolicyVersionManager.class);
             final ClusterPropertyManager clusterPropertyManager = context.getBean("clusterPropertyManager", ClusterPropertyManager.class);
 
-            final QuickStartEncapsulatedAssertionLocator assertionLocator = new QuickStartEncapsulatedAssertionLocator(encassManager, folderManager, new Goid(PROVIDED_FRAGMENT_FOLDER_GOID));
+            final AssertionMapper assertionMapper = new AssertionMapper();
+            final QuickStartEncapsulatedAssertionLocator assertionLocator = new QuickStartEncapsulatedAssertionLocator(encassManager, assertionMapper, folderManager, new Goid(PROVIDED_FRAGMENT_FOLDER_GOID));
             final QuickStartPublishedServiceLocator serviceLocator = new QuickStartPublishedServiceLocator(serviceManager);
-            final QuickStartServiceBuilder serviceBuilder = new QuickStartServiceBuilder(ServiceCache, folderManager, serviceLocator, assertionLocator, clusterPropertyManager);
+            final QuickStartServiceBuilder serviceBuilder = new QuickStartServiceBuilder(ServiceCache, folderManager, serviceLocator, assertionLocator, clusterPropertyManager, assertionMapper);
             final QuickStartJsonServiceInstaller jsonServiceInstaller = new OneTimeJsonServiceInstaller(serviceBuilder, serviceManager, policyVersionManager, new QuickStartParser());
 
             InstanceHolder.INSTANCE = new QuickStartAssertionModuleLifecycle(context, assertionLocator, serviceBuilder, jsonServiceInstaller);

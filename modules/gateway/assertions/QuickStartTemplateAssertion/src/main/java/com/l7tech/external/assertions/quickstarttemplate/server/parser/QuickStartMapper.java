@@ -7,6 +7,7 @@ import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStar
 import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStartPolicyBuilderException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor;
+import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionStringEncoding;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.Assertion;
@@ -54,25 +55,22 @@ public class QuickStartMapper {
         }
     }
 
-    // TODO: consider moving this as a field rather then a static singleton.
-    // TODO: for couple of reasons; 1) it makes more sense to be a field and
-    // TODO: 2) the assertion supports dynamic loading, so to avoid classloader hell with static objects (you never know when the previous classloader instance will be destroyed)
-    @NotNull
-    private static final Map<String, AssertionSupport> supportedAssertions = AssertionMapper.getSupportedAssertions();
-
-    @NotNull
-    public static Map<String, AssertionSupport> getSupportedAssertions() {
-        return supportedAssertions;
-    }
-
     @NotNull
     private final QuickStartEncapsulatedAssertionLocator assertionLocator;
 
     @NotNull
+    private final AssertionMapper assertionMapper;
+
+    @NotNull
     private final ClusterPropertyManager clusterPropertyManager;
 
-    public QuickStartMapper(@NotNull final QuickStartEncapsulatedAssertionLocator assertionLocator, @NotNull final ClusterPropertyManager clusterPropertyManager) {
+    public QuickStartMapper(
+            @NotNull final QuickStartEncapsulatedAssertionLocator assertionLocator,
+            @NotNull final AssertionMapper assertionMapper,
+            @NotNull final ClusterPropertyManager clusterPropertyManager
+    ) {
         this.assertionLocator = assertionLocator;
+        this.assertionMapper = assertionMapper;
         this.clusterPropertyManager = clusterPropertyManager;
     }
 
@@ -94,7 +92,7 @@ public class QuickStartMapper {
             final String templateName = policyMap.keySet().iterator().next();
 
             // get the assertion support
-            final AssertionSupport assertionSupport = supportedAssertions.get(templateName);
+            final AssertionSupport assertionSupport = assertionMapper.getSupportedAssertions().get(templateName);
 
             Assertion assertion = null;
             if (assertionSupport != null) {
@@ -134,7 +132,7 @@ public class QuickStartMapper {
         for (final Map.Entry<String, ?> entry : properties.entrySet()) {
             final EncapsulatedAssertionArgumentDescriptor descriptor = findArgumentDescriptor(entry.getKey(), encapsulatedAssertion);
             if (descriptor == null) {
-                throw new QuickStartPolicyBuilderException("Incorrect encapsulated assertion property: " + entry.getKey() + ", for encapsulated assertion: " + encapsulatedAssertion.config().getName());
+                throw new QuickStartPolicyBuilderException("Incorrect encapsulated assertion property: " + entry.getKey() + ", for encapsulated assertion: " + Optional.ofNullable(encapsulatedAssertion.config()).map(EncapsulatedAssertionConfig::getName).orElse("<null>"));
             }
             // Don't know the type... Can't, so we have to check a number of different types.
             final Object propertyValue = entry.getValue();

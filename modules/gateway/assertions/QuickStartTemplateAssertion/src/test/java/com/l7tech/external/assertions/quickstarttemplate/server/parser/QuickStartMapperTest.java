@@ -13,10 +13,12 @@ import com.l7tech.policy.assertion.EncapsulatedAssertion;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.server.cluster.ClusterPropertyManager;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import java.util.*;
@@ -35,10 +37,18 @@ public class QuickStartMapperTest {
     private QuickStartEncapsulatedAssertionLocator locator;
 
     @Mock
+    protected AssertionMapper assertionMapper;
+
+    @Mock
     protected ClusterPropertyManager clusterPropertyManager;
 
     @InjectMocks
     private QuickStartMapper fixture;
+
+    @Before
+    public void setUp() {
+        Mockito.doReturn(Collections.<String, AssertionSupport>emptyMap()).when(assertionMapper).getSupportedAssertions();
+    }
 
     @Test
     public void callAssertionSetter() throws Exception {
