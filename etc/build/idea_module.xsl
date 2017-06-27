@@ -47,13 +47,13 @@
                   <sourceFolder url="file://$MODULE_DIR$/src/main/java" isTestSource="false" />
                 </xsl:if>
                 <xsl:if test="'true' = $source.resources">
-                  <sourceFolder url="file://$MODULE_DIR$/src/main/resources" isTestSource="false" />
+                  <sourceFolder url="file://$MODULE_DIR$/src/main/resources" type="java-resource" />
                 </xsl:if>
                 <xsl:if test="'true' = $tests">
                   <sourceFolder url="file://$MODULE_DIR$/src/test/java" isTestSource="true" />
                 </xsl:if>
                 <xsl:if test="'true' = $test.resources">
-                    <sourceFolder url="file://$MODULE_DIR$/src/test/resources" isTestSource="true" />
+                    <sourceFolder url="file://$MODULE_DIR$/src/test/resources" type="java-test-resource" />
                 </xsl:if>
                 <xsl:if test="'true' = $source or 'true' = $tests or 'true' = $source.resources or 'true' = $test.resources or 'true' = $build.output">
                     <excludeFolder url="file://$MODULE_DIR$/build" />
