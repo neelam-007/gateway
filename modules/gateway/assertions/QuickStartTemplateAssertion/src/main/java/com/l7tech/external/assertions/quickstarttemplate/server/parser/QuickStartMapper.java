@@ -281,8 +281,6 @@ public class QuickStartMapper {
                 // can't convert, fail and throw exception
                 logger.log(Level.WARNING, "Failed to invoke method: " + setMethodName + "(...) with argument type: " + propertyValue.getClass());
                 throw new QuickStartPolicyBuilderException("Unable to set " + assertion.getClass().getSimpleName()+ " - " + fieldName + " = " + entry.getValue());
-
-                // TODO set HTTP error code here?
             }
         } catch (IllegalAccessException | InvocationTargetException e) {
             throw new QuickStartPolicyBuilderException("Encountered an unexpected error", e);
