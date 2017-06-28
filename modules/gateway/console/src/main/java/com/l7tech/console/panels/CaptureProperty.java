@@ -4,7 +4,6 @@ import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.cluster.ClusterPropertyDescriptor;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.gui.util.DocumentSizeFilter;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.console.util.Registry;
@@ -12,14 +11,9 @@ import com.l7tech.util.Functions.Unary;
 import com.l7tech.util.TextUtils;
 
 import javax.swing.*;
-import javax.swing.text.AbstractDocument;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
-import java.awt.event.ItemListener;
-import java.awt.event.ItemEvent;
-import java.util.Collection;
+import java.awt.event.*;
+import java.util.*;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -33,7 +27,7 @@ public class CaptureProperty extends JDialog {
 
     private JPanel mainPanel;
     private JTextArea valueField;
-    private JComboBox keyComboBox;
+    private SimpleEditableSearchComboBox keyComboBox;
     private JTextArea descField;
     private JButton cancelButton;
     private JButton okButton;
@@ -44,95 +38,55 @@ public class CaptureProperty extends JDialog {
     private String title;
     private boolean oked = false;
     private Collection<ClusterPropertyDescriptor> descriptors;
+    private Collection<ClusterProperty> properties;
     private boolean isEditable;
 
     public CaptureProperty(JDialog parent, String title, String description, ClusterProperty property, Collection<ClusterPropertyDescriptor> descriptors, boolean isEditable) {
         super(parent, true);
+
         this.title = title;
         this.description = description;
         this.property = property;
         this.descriptors = descriptors;
         this.isEditable = isEditable;
+
         initialize();
     }
 
     private void initialize() {
         setContentPane(mainPanel);
         setTitle(title);
-        descField.setText(description);
-        descField.setCaretPosition(0);
-        if(property.getName() != null) {
-            keyComboBox.setModel(new DefaultComboBoxModel(new String[]{property.getName()}));
-            keyComboBox.setSelectedIndex(0);
-            keyComboBox.setEnabled(false);
-            keyComboBox.setEditable(false);
-            valueField.setText(property.getValue());
-            valueField.setCaretPosition(0);
-            final ClusterPropertyDescriptor propertyDescriptor =
-                    getClusterPropertyDescriptorByName(descriptors, (String) keyComboBox.getSelectedItem());
-            //if there is a property descriptor this means that it is a property in the server config so disable the description field
-            enableDescriptionField(propertyDescriptor == null ? true : false);
-            validator = propertyDescriptor == null ? null : new Unary<Boolean, String>() {
-                @Override
-                public Boolean call( final String s ) {
-                    return propertyDescriptor.isValid( s );
-                }
-            };
-        } else {
-            valueField.setText("");
-            if (descriptors == null || descriptors.isEmpty()) {
-                keyComboBox.setModel(new DefaultComboBoxModel());
-                keyComboBox.setEnabled(true);
-                keyComboBox.setEditable(true);
-                enableDescriptionField(true);
-            } else {
-                keyComboBox.setModel(new DefaultComboBoxModel(getNames(descriptors)));
-                keyComboBox.setEnabled(true);
-                keyComboBox.setEditable(true);
-                ItemListener itemListener = new ItemListener() {
-                    public void itemStateChanged(ItemEvent e) {
-                        final ClusterPropertyDescriptor propertyDescriptor =
-                                getClusterPropertyDescriptorByName(descriptors, (String) keyComboBox.getSelectedItem());
-                        // Get and set description
-                        String description = propertyDescriptor == null? "" : propertyDescriptor.getDescription();
-                        descField.setText(description);
-                        descField.setCaretPosition(0);
-                        //if there is a property descriptor this means that it is a property in the server config so disable the description field
-                        enableDescriptionField(propertyDescriptor == null ? true : false);
 
-                        // Get and set value
-                        String initialValue = propertyDescriptor == null? "" : propertyDescriptor.getDefaultValue();
-                        String currentValue = getCurrentPropValue((String) keyComboBox.getSelectedItem());
-                        valueField.setText(currentValue == null? initialValue : currentValue);
-                        validator = propertyDescriptor == null ? null : new Unary<Boolean, String>() {
-                            @Override
-                            public Boolean call( final String s ) {
-                                return propertyDescriptor.isValid( s );
-                            }
-                        };
-                    }
-                };
-                keyComboBox.addItemListener(itemListener);
-                keyComboBox.setSelectedIndex(0);
-                itemListener.itemStateChanged(null); // init desc
-            }
-        }
-        ((AbstractDocument)((JTextField)keyComboBox.getEditor().getEditorComponent()).getDocument())
-                .setDocumentFilter(new DocumentSizeFilter(128));
-        cancelButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                dispose();
-            }
-        });
-        okButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                if (validateUserInput(newKey(), newValue())) {
-                    property.setName(newKey());
-                    property.setValue(newValue());
-                    property.setProperty(ClusterProperty.DESCRIPTION_PROPERTY_KEY, newDescription());
-                    oked = true;
-                    dispose();
+        keyComboBox.setEditableDocumentSize(128);
+        keyComboBox.addItemSelectedListener((e) -> {
+            String selectedItem = (String) e.getItem();
+            ClusterPropertyDescriptor selectedDescriptor = getClusterPropertyDescriptorByName(descriptors, selectedItem);
+
+            if (keyComboBox.hasResults()) {
+                String firstMatch = keyComboBox.getFirstSearchResult();
+                if (firstMatch.toLowerCase().equals(selectedItem.toLowerCase())) {
+                    selectedDescriptor = getClusterPropertyDescriptorByName(descriptors, firstMatch);
                 }
+            }
+
+            populateSelectedProperty(selectedDescriptor);
+        });
+
+        if (property.getName() != null) {
+            initializeForExistingProperty();
+        } else {
+            initializeForNewProperty();
+        }
+
+        cancelButton.addActionListener(e -> dispose());
+
+        okButton.addActionListener(e -> {
+            if (validateUserInput(newKey(), newValue())) {
+                property.setName(newKey());
+                property.setValue(newValue());
+                property.setProperty(ClusterProperty.DESCRIPTION_PROPERTY_KEY, newDescription());
+                oked = true;
+                dispose();
             }
         });
 
@@ -140,69 +94,135 @@ public class CaptureProperty extends JDialog {
         Utilities.setEscKeyStrokeDisposes(this);
     }
 
-    /**
-     * Enable or disable the description field.
-     * @param enable
-     */
-    private void enableDescriptionField(boolean enable) {
-        descField.setEnabled(enable);
-        descField.setEditable(enable);
-        descField.setOpaque(enable);
+    private void initializeForNewProperty() {
+        keyComboBox.updateSearchableItems(getClusterPropertyNames(descriptors));
+        populateSelectedPropertyFields(description, "", true);
+        descField.requestFocus();
+    }
+
+    private void initializeForExistingProperty() {
+        final ClusterPropertyDescriptor selectedDescriptor = getClusterPropertyDescriptorByName(descriptors, property.getName());
+        final boolean userDefined = (selectedDescriptor == null);
+
+        if (userDefined) {
+            keyComboBox.updateSearchableItems(Collections.singletonList(property.getName()));
+            descField.requestFocus();
+        } else {
+            validator = (s) -> selectedDescriptor.isValid(s);
+            keyComboBox.updateSearchableItems(Collections.singletonList(selectedDescriptor.getName()));
+            valueField.requestFocus();
+        }
+
+        keyComboBox.setEditableText(property.getName());
+        keyComboBox.setEnabled(false);
+
+        populateSelectedPropertyFields(description, property.getValue(), userDefined);
+    }
+
+    private void populateSelectedProperty(final ClusterPropertyDescriptor selectedDescriptor) {
+        boolean userDefined = (selectedDescriptor == null);
+
+        if (userDefined) {
+            populateSelectedPropertyFields("", "", userDefined);
+            validator = null;
+        } else {
+            populateSelectedPropertyFields(selectedDescriptor.getDescription(),
+                    getClusterPropertyValue(getExistingClusterProperties(), selectedDescriptor), userDefined);
+            validator = (s) -> selectedDescriptor.isValid(s);
+        }
+    }
+
+    private void populateSelectedPropertyFields(String description, String value, boolean userDefined) {
+        descField.setText(description);
+        descField.setCaretPosition(0);
+        descField.setEnabled(userDefined);
+        descField.setEditable(userDefined);
+        descField.setOpaque(userDefined);
+
+        valueField.setText(value);
+        valueField.setCaretPosition(0);
     }
 
     /**
      * Retrieve all cluster properties existing in the Global Cluster Properties table.
      * @return a list of existing cluster properties
      */
-    private Collection<ClusterProperty> populateExistingClusterProps() {
-        Collection<ClusterProperty> existingProperties = new ArrayList<ClusterProperty>();
-        try {
-            Collection<ClusterProperty> allProperties = Registry.getDefault().getClusterStatusAdmin().getAllProperties();
-            for (ClusterProperty property : allProperties) {
-                if (!property.isHiddenProperty())
-                    existingProperties.add(property);
+    private Collection<ClusterProperty> getExistingClusterProperties() {
+        if (properties == null) {
+            try {
+                properties = Registry.getDefault().getClusterStatusAdmin().getAllProperties();
+            } catch (FindException e) {
+                logger.log(Level.SEVERE, "exception getting properties", e);
             }
-
-        } catch (FindException e) {
-            logger.log(Level.SEVERE, "exception getting properties", e);
         }
-        return existingProperties;
+
+        return properties;
     }
 
     /**
-     * Get the value of the clsuter property whose name is propName.
-     * @param propName: the name of the cluster propery
+     * Get the value of the cluster property.
+     * @param properties: cluster properties
+     * @param name: the name of the cluster property
      * @return the value of the cluster property
      */
-    private String getCurrentPropValue(String propName) {
+    private String getClusterPropertyValue(final Collection<ClusterProperty> properties, String name) {
         String value = null;
-        for (ClusterProperty prop: populateExistingClusterProps()) {
-            if (prop.getName().equals(propName)) {
-                value = prop.getValue();
-                break;
+
+        if (properties != null) {
+            for (ClusterProperty prop : properties) {
+                if (prop.getName().equals(name)) {
+                    value = prop.getValue();
+                    break;
+                }
             }
         }
+
         return value;
     }
 
-    private String[] getNames( final Collection<ClusterPropertyDescriptor> properties ) {
-        List<String> names = new ArrayList<String>();
-
-        for ( ClusterPropertyDescriptor descriptor : properties ) {
-            if ( descriptor.isVisible() )
-                names.add( descriptor.getName() );
-        }
-
-        return names.toArray(new String[names.size()]);
+    /**
+     * Get the value of the cluster property.
+     * @param properties: cluster properties
+     * @param descriptor: the cluster property descriptor
+     * @return the value of the cluster property
+     */
+    private String getClusterPropertyValue(final Collection<ClusterProperty> properties, ClusterPropertyDescriptor descriptor) {
+        String value = getClusterPropertyValue(properties, descriptor.getName());
+        return value == null ? descriptor.getDefaultValue() : value;
     }
 
+    /**
+     * Get the list of visible cluster property names
+     * @param descriptors collection of descriptors
+     * @return list of visible cluster property names
+     */
+    private List<String> getClusterPropertyNames(final Collection<ClusterPropertyDescriptor> descriptors) {
+        List<String> names = new ArrayList<String>();
+
+        if (descriptors != null) {
+            for (ClusterPropertyDescriptor descriptor : descriptors) {
+                if (descriptor.isVisible()) {
+                    names.add(descriptor.getName());
+                }
+            }
+        }
+
+        return names;
+    }
+
+    /**
+     * Get the cluster property descriptor by name
+     * @param descriptors collection of descriptors
+     * @param name name of the cluster property
+     * @return cluster property descriptor
+     */
     private ClusterPropertyDescriptor getClusterPropertyDescriptorByName(
-            final Collection<ClusterPropertyDescriptor> properties,
+            final Collection<ClusterPropertyDescriptor> descriptors,
             final String name ) {
         ClusterPropertyDescriptor property = null;
 
-        if ( properties != null ) {
-            for ( ClusterPropertyDescriptor descriptor : properties ) {
+        if ( descriptors != null && name != null ) {
+            for ( ClusterPropertyDescriptor descriptor : descriptors ) {
                 if ( name.equals(descriptor.getName()) ) {
                     property = descriptor;
                     break;
@@ -278,7 +298,7 @@ public class CaptureProperty extends JDialog {
     }
 
     public String newKey() {
-        return (String) keyComboBox.getSelectedItem();
+        return keyComboBox.getEditableText();
     }
 
     public String newValue() {

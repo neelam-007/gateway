@@ -10,11 +10,9 @@ import javax.swing.event.PopupMenuListener;
 import java.awt.event.*;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Collections;
+import java.util.*;
 import java.awt.*;
+import java.util.List;
 
 /**
  * Editable search combo box. As the user types a dynamic pop up shows all matching items.
@@ -111,7 +109,7 @@ public abstract class EditableSearchComboBox<T> extends JComboBox {
                     final long difference = eventTime - lastEvent;
                     if (!actionFromFocusEvent &&
                             (difference > 1000 || ignoreWhen) &&
-                            !"".equals(filter.getFilterText()) &&
+                            (!"".equals(filter.getFilterText()) || filter.isShowAllOnEmptyFilterText()) &&
                             !popUpCancelled &&
                             ( !editor.isEditorShowingNoResults() || editor.getAndClearIsEnterLastKeyPressed() )) {
                         // The action events may cause the scrollpane to scroll, which can caues the pop up menu to
@@ -178,7 +176,7 @@ public abstract class EditableSearchComboBox<T> extends JComboBox {
      * @param searchableItems   The default list of searchable items
      * @param filter Filter contains the filtering logic
      */
-    public EditableSearchComboBox(final List<T> searchableItems, final Filter filter) {
+    public EditableSearchComboBox(final Collection<T> searchableItems, final Filter filter) {
         this(filter);
         updateSearchableItems(searchableItems);
     }
@@ -216,6 +214,15 @@ public abstract class EditableSearchComboBox<T> extends JComboBox {
      */
     private boolean okToLoopForward = false;
     private boolean okToLoopBack = false;
+
+    /**
+     * Get the first search result.
+     * @return T the first search result. Null when no more results
+     */
+    public T getFirstSearchResult() {
+        resetSearchResultIndex();
+        return getNextSearchResult();
+    }
 
     /**
      * Get the next search result.
@@ -275,7 +282,7 @@ public abstract class EditableSearchComboBox<T> extends JComboBox {
      * Updates the list of searchable items with this one. 
      * @param searchableItems   The list of searchable items to be used as part of the look up list.
      */
-    public void updateSearchableItems(List<T> searchableItems) {
+    public void updateSearchableItems(Collection<T> searchableItems) {
         model.updateSearchableItems(searchableItems);
     }
 
@@ -290,6 +297,15 @@ public abstract class EditableSearchComboBox<T> extends JComboBox {
      */
     public void setComparator(Comparator<T> comparator) {
         model.setComparator(comparator);
+    }
+
+    /**
+     * Sets the comparator that will be used to sort the searchable items prior to be filtered.
+     * Use this comparator for better performance if the model items are never changed outside of it.
+     * @param comparator    The comparator used for sorting
+     */
+    public void setPreFilterComparator(Comparator<T> comparator) {
+        model.setPreFilterComparator(comparator);
     }
 
     /**
@@ -316,6 +332,7 @@ public abstract class EditableSearchComboBox<T> extends JComboBox {
         private Object selectedItem;
         private final Filter filter;
         private Comparator<T> comparator;
+        private Comparator<T> preFilterComparator;
 
         public FilterableComboBoxModel(final Filter filter) {
             items = new ArrayList<T>();
@@ -386,15 +403,29 @@ public abstract class EditableSearchComboBox<T> extends JComboBox {
          * Update the list of searchable items
          * @param searchableItems   The new updated searchable item list
          */
-        public void updateSearchableItems(List<T> searchableItems) {
+        public void updateSearchableItems(Collection<T> searchableItems) {
             items.clear();
             items.addAll(searchableItems);
+
+            if (preFilterComparator != null) {
+                Collections.sort(items, preFilterComparator);
+            }
+
             updateFilteredItems();
         }
 
         public void setSearchText(final String text){
             filter.setFilterText(text);
             updateFilteredItems();
+        }
+
+        public void setSearchType(final FilterBy filterBy) {
+            filter.setFilterBy(filterBy);
+            updateFilteredItems();
+        }
+
+        public void setSearchShowAllOnEmptyFilterText(boolean flag) {
+            filter.setShowAllOnEmptyFilterText(flag);
         }
 
         public void refresh(){
@@ -416,6 +447,11 @@ public abstract class EditableSearchComboBox<T> extends JComboBox {
                         filteredItems.add(obj);
                     }
                 }
+            } else if (filter.isShowAllOnEmptyFilterText()) {
+                filteredItems.addAll(items);
+            }
+
+            if (!filteredItems.isEmpty()) {
                 //sort based on the comparator
                 if (comparator != null) {
                     Collections.sort(filteredItems, comparator);
@@ -428,6 +464,11 @@ public abstract class EditableSearchComboBox<T> extends JComboBox {
         public void setComparator(Comparator<T> comparator) {
             this.comparator = comparator;
         }
+
+        public void setPreFilterComparator(Comparator<T> comparator) {
+            this.preFilterComparator = comparator;
+        }
+
     }
 
     /**
@@ -618,9 +659,21 @@ public abstract class EditableSearchComboBox<T> extends JComboBox {
     }
 
     /**
+     * Filter-By methods.
+     */
+    public enum FilterBy {
+        STARTS_WITH,
+        CONTAINS,
+        CUSTOMIZED
+    }
+
+    /**
      * Abstract filtering class to filter out the searchable items.
      */
     public static abstract class Filter {
+
+        private boolean showAllOnEmptyFilterText;
+        private FilterBy filterBy;
         private String filterText;
 
         public Filter() {
@@ -647,7 +700,22 @@ public abstract class EditableSearchComboBox<T> extends JComboBox {
             } else{
                 this.filterText = filterText;    
             }
+        }
 
+        public boolean isShowAllOnEmptyFilterText() {
+            return showAllOnEmptyFilterText;
+        }
+
+        public void setShowAllOnEmptyFilterText(boolean showAllOnEmptyFilterText) {
+            this.showAllOnEmptyFilterText = showAllOnEmptyFilterText;
+        }
+
+        public FilterBy getFilterBy() {
+            return filterBy;
+        }
+
+        public void setFilterBy(FilterBy filterBy) {
+            this.filterBy = filterBy;
         }
     }
 
