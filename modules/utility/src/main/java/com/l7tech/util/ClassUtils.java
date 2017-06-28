@@ -6,9 +6,7 @@ import org.jetbrains.annotations.NotNull;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.net.URL;
-import java.util.Collection;
-import java.util.List;
-import java.util.ArrayList;
+import java.util.*;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.IOException;
@@ -303,8 +301,56 @@ public class ClassUtils {
         };
     }
 
+    /**
+     * Is the given type a primitive wrapper.
+     * @param clazz The class for the type
+     * @return True if the class is a primitive wrapper
+     */
+    public static boolean isPrimitiveWrapper(@NotNull final Class<?> clazz) {
+        Class result = org.apache.commons.lang.ClassUtils.wrapperToPrimitive(clazz);
+        return result != null && result.isPrimitive();
+    }
+
+    /**
+     * Convert a primitive wrapper array type to primitive array type.
+     * @param cls Primitive wrapper array type
+     * @return Primitive array type
+     */
+    public static Class wrapperArrayToPrimitiveArray(Class cls) {
+        return wrapperArrayPrimitiveArrayMap.get(cls);
+    }
+
+    /**
+     * Convert a primitive array type to primitive wrapper array type.
+     * @param cls Primitive array type
+     * @return Primitive wrapper array type
+     */
+    public static Class primitiveArrayToWrapperArray(Class cls) {
+        return primitiveArrayWrapperArrayMap.get(cls);
+    }
+
     //- PRIVATE
 
     private static final String ARRAY_PREFIX = "[";
     private static final String ARRAY_SUFFIX = ";";
+
+    private static final Map<Class, Class> primitiveArrayWrapperArrayMap = new HashMap<>();
+    private static final Map<Class, Class> wrapperArrayPrimitiveArrayMap = new HashMap<>();
+    static {
+        primitiveArrayWrapperArrayMap.put(boolean[].class, Boolean[].class);
+        primitiveArrayWrapperArrayMap.put(byte[].class, Byte[].class);
+        primitiveArrayWrapperArrayMap.put(char[].class, Character[].class);
+        primitiveArrayWrapperArrayMap.put(short[].class, Short[].class);
+        primitiveArrayWrapperArrayMap.put(int[].class, Integer[].class);
+        primitiveArrayWrapperArrayMap.put(long[].class, Long[].class);
+        primitiveArrayWrapperArrayMap.put(double[].class, Double[].class);
+        primitiveArrayWrapperArrayMap.put(float[].class, Float[].class);
+
+        for (Class primitiveArrayClass : primitiveArrayWrapperArrayMap.keySet()) {
+            Class wrapperArrayClass = primitiveArrayWrapperArrayMap.get(primitiveArrayClass);
+            if (!primitiveArrayClass.equals(wrapperArrayClass)) {
+                wrapperArrayPrimitiveArrayMap.put(wrapperArrayClass, primitiveArrayClass);
+            }
+        }
+    }
 }

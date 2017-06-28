@@ -36,7 +36,7 @@ public class QuickStartAssertionModuleLifecycle {
     @VisibleForTesting
     static final boolean QUICKSTART_SCALER_ENABLED_DEFAULT_VALUE_WHEN_ERROR_OCCURS_WHILE_READING_CLUSTER_PROPERTY = true;
 
-    private final QuickStartEncapsulatedAssertionLocator assertionLocator;   // TODO rename these locators to something like GatewayManagerHolder?
+    private final QuickStartAssertionLocator assertionLocator;
     private final QuickStartServiceBuilder serviceBuilder;
     private final QuickStartJsonServiceInstaller jsonServiceInstaller;
 
@@ -50,7 +50,7 @@ public class QuickStartAssertionModuleLifecycle {
     @VisibleForTesting
     QuickStartAssertionModuleLifecycle(
             @NotNull final ApplicationContext context,
-            @NotNull final QuickStartEncapsulatedAssertionLocator assertionLocator,
+            @NotNull final QuickStartAssertionLocator assertionLocator,
             @NotNull final QuickStartServiceBuilder serviceBuilder,
             @NotNull final QuickStartJsonServiceInstaller jsonServiceInstaller
     ) {
@@ -72,7 +72,7 @@ public class QuickStartAssertionModuleLifecycle {
             final ClusterPropertyManager clusterPropertyManager = context.getBean("clusterPropertyManager", ClusterPropertyManager.class);
 
             final AssertionMapper assertionMapper = new AssertionMapper();
-            final QuickStartEncapsulatedAssertionLocator assertionLocator = new QuickStartEncapsulatedAssertionLocator(encassManager, assertionMapper, folderManager, new Goid(PROVIDED_FRAGMENT_FOLDER_GOID));
+            final QuickStartAssertionLocator assertionLocator = new QuickStartAssertionLocator(encassManager, assertionMapper, folderManager, new Goid(PROVIDED_FRAGMENT_FOLDER_GOID));
             final QuickStartPublishedServiceLocator serviceLocator = new QuickStartPublishedServiceLocator(serviceManager);
             final QuickStartServiceBuilder serviceBuilder = new QuickStartServiceBuilder(ServiceCache, folderManager, serviceLocator, assertionLocator, clusterPropertyManager, assertionMapper);
             final QuickStartJsonServiceInstaller jsonServiceInstaller = new OneTimeJsonServiceInstaller(serviceBuilder, serviceManager, policyVersionManager, new QuickStartParser());
@@ -154,7 +154,7 @@ public class QuickStartAssertionModuleLifecycle {
 
     @Nullable
     @Contract(pure = true)
-    static QuickStartEncapsulatedAssertionLocator getEncapsulatedAssertionLocator() {
+    static QuickStartAssertionLocator getEncapsulatedAssertionLocator() {
         return InstanceHolder.INSTANCE != null ? InstanceHolder.INSTANCE.assertionLocator : null;
     }
 

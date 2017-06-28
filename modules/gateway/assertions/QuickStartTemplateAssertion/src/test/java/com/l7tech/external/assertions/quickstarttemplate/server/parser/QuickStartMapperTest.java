@@ -3,7 +3,7 @@ package com.l7tech.external.assertions.quickstarttemplate.server.parser;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.l7tech.common.http.HttpMethod;
-import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStartEncapsulatedAssertionLocator;
+import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStartAssertionLocator;
 import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStartPolicyBuilderException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor;
@@ -35,7 +35,7 @@ import static org.mockito.Mockito.*;
 public class QuickStartMapperTest {
 
     @Mock
-    private QuickStartEncapsulatedAssertionLocator locator;
+    private QuickStartAssertionLocator locator;
 
     @Mock
     protected AssertionMapper assertionMapper;

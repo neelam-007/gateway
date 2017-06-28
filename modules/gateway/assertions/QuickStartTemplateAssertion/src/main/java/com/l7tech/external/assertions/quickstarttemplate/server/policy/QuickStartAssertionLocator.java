@@ -25,17 +25,17 @@ import java.util.stream.Collectors;
 /**
  * A class to find and return encapsulated assertions for use in Quick Start.
  */
-public class QuickStartEncapsulatedAssertionLocator {  //TODO rename to QuickStartAssertionLocator (no longer just encass)
+public class QuickStartAssertionLocator {
     private final EncapsulatedAssertionConfigManager encassConfigManager;
     private final AssertionMapper assertionMapper;
     private final FolderManager folderManager;
     private final Goid quickStartProvidedAssertionFolder;
     private AssertionRegistry assertionRegistry;
 
-    public QuickStartEncapsulatedAssertionLocator(@NotNull final EncapsulatedAssertionConfigManager encassConfigManager,
-                                                  @NotNull final AssertionMapper assertionMapper,
-                                                  @NotNull final FolderManager folderManager,
-                                                  @NotNull final Goid quickStartProvidedAssertionFolder
+    public QuickStartAssertionLocator(@NotNull final EncapsulatedAssertionConfigManager encassConfigManager,
+                                      @NotNull final AssertionMapper assertionMapper,
+                                      @NotNull final FolderManager folderManager,
+                                      @NotNull final Goid quickStartProvidedAssertionFolder
     ) {
         this.encassConfigManager = encassConfigManager;
         this.assertionMapper = assertionMapper;
@@ -43,7 +43,6 @@ public class QuickStartEncapsulatedAssertionLocator {  //TODO rename to QuickSta
         this.quickStartProvidedAssertionFolder = quickStartProvidedAssertionFolder;
     }
 
-    // TODO is there a better time in the assertion lifecycle to set assertion registry?
     public void setAssertionRegistry(AssertionRegistry assertionRegistry) {
         this.assertionRegistry = assertionRegistry;
     }

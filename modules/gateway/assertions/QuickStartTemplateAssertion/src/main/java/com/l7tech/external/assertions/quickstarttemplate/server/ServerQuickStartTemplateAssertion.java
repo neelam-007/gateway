@@ -47,11 +47,9 @@ public class ServerQuickStartTemplateAssertion extends AbstractMessageTargetable
         super(assertion);
         this.serviceBuilder = QuickStartAssertionModuleLifecycle.getServiceBuilder();
 
-        // TODO verify this - QuickStartAssertionModuleLifecycle.onModuleLoaded# is too early - "Error creating bean with name 'assertionRegistry': Requested bean is currently in creation: Is there an unresolvable circular reference?"
+        // QuickStartAssertionModuleLifecycle.onModuleLoaded# is too early
+        //      - "Error creating bean with name 'assertionRegistry': Requested bean is currently in creation: Is there an unresolvable circular reference?"
         serviceBuilder.setAssertionRegistry(applicationContext.getBean("assertionRegistry", AssertionRegistry.class));
-
-        // TODO allow new (or override) of display to internal names (properties file or assertion UI)
-        // TODO allow new (or override) of supported assertion set (properties file or assertion UI)
     }
 
     public AssertionStatus doCheckRequest(final PolicyEnforcementContext context,

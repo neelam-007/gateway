@@ -37,12 +37,12 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
-public class QuickStartEncapsulatedAssertionLocatorTest {
+public class QuickStartAssertionLocatorTest {
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
-    private QuickStartEncapsulatedAssertionLocator fixture;
+    private QuickStartAssertionLocator fixture;
 
     @Mock
     private EncapsulatedAssertionConfigManager encassConfigManager;
@@ -60,7 +60,7 @@ public class QuickStartEncapsulatedAssertionLocatorTest {
     @Before
     public void setUp() {
         Mockito.doReturn(Collections.<String, AssertionSupport>emptyMap()).when(assertionMapper).getSupportedAssertions();
-        fixture = new QuickStartEncapsulatedAssertionLocator(encassConfigManager, assertionMapper, folderManager, quickStartProvidedAssertionFolder);
+        fixture = new QuickStartAssertionLocator(encassConfigManager, assertionMapper, folderManager, quickStartProvidedAssertionFolder);
     }
 
     @Test

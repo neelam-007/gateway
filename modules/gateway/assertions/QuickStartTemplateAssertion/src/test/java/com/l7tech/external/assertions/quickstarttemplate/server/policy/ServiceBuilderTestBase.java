@@ -51,7 +51,7 @@ public abstract class ServiceBuilderTestBase {
     protected QuickStartPublishedServiceLocator serviceLocator;
 
     @Mock
-    protected QuickStartEncapsulatedAssertionLocator assertionLocator;
+    protected QuickStartAssertionLocator assertionLocator;
 
     @Mock
     protected ClusterPropertyManager clusterPropertyManager;
@@ -160,7 +160,7 @@ public abstract class ServiceBuilderTestBase {
         }
 
         /**
-         * Used when mocking {@link QuickStartEncapsulatedAssertionLocator#findEncapsulatedAssertion(String)} so that a different
+         * Used when mocking {@link QuickStartAssertionLocator#findEncapsulatedAssertion(String)} so that a different
          * instance of {@link EncapsulatedAssertion} then the one stored in test repo {@code testEncassTemplates} is returned
          * when building {@link PublishedService#getPolicy() service policy}.
          */

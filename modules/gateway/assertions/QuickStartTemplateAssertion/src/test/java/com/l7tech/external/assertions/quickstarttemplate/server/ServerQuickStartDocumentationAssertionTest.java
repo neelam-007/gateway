@@ -2,12 +2,8 @@ package com.l7tech.external.assertions.quickstarttemplate.server;
 
 import com.google.common.collect.Sets;
 import com.l7tech.external.assertions.quickstarttemplate.QuickStartDocumentationAssertion;
-import com.l7tech.external.assertions.quickstarttemplate.server.QuickStartTestBase;
-import com.l7tech.external.assertions.quickstarttemplate.server.ServerQuickStartDocumentationAssertion;
-import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStartEncapsulatedAssertionLocator;
+import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStartAssertionLocator;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
-import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.EncapsulatedAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -20,7 +16,6 @@ import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
-import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
@@ -34,7 +29,7 @@ import static org.mockito.Mockito.when;
 public class ServerQuickStartDocumentationAssertionTest extends QuickStartTestBase {
 
     @Mock
-    private QuickStartEncapsulatedAssertionLocator assertionLocator;
+    private QuickStartAssertionLocator assertionLocator;
     @Mock
     private PolicyEnforcementContext context;
 

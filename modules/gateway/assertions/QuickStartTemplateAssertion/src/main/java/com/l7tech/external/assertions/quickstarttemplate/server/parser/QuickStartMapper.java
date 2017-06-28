@@ -3,7 +3,7 @@ package com.l7tech.external.assertions.quickstarttemplate.server.parser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
-import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStartEncapsulatedAssertionLocator;
+import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStartAssertionLocator;
 import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStartPolicyBuilderException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor;
@@ -33,31 +33,8 @@ public class QuickStartMapper {
 
     private static final String ENABLE_ALL_ASSERTIONS_FLAG_KEY = "quickStart.allAssertions.enabled";
 
-
-
-    // TODO move class util support into com.l7tech.util.ClassUtils
-    private static final Map<Class, Class> primitiveArrayWrapperArrayMap = new HashMap<>();
-    private static final Map<Class, Class> wrapperArrayPrimitiveArrayMap = new HashMap<>();
-    static {
-        primitiveArrayWrapperArrayMap.put(boolean[].class, Boolean[].class);
-        primitiveArrayWrapperArrayMap.put(byte[].class, Byte[].class);
-        primitiveArrayWrapperArrayMap.put(char[].class, Character[].class);
-        primitiveArrayWrapperArrayMap.put(short[].class, Short[].class);
-        primitiveArrayWrapperArrayMap.put(int[].class, Integer[].class);
-        primitiveArrayWrapperArrayMap.put(long[].class, Long[].class);
-        primitiveArrayWrapperArrayMap.put(double[].class, Double[].class);
-        primitiveArrayWrapperArrayMap.put(float[].class, Float[].class);
-
-        for (Class primitiveArrayClass : primitiveArrayWrapperArrayMap.keySet()) {
-            Class wrapperArrayClass = primitiveArrayWrapperArrayMap.get(primitiveArrayClass);
-            if (!primitiveArrayClass.equals(wrapperArrayClass)) {
-                wrapperArrayPrimitiveArrayMap.put(wrapperArrayClass, primitiveArrayClass);
-            }
-        }
-    }
-
     @NotNull
-    private final QuickStartEncapsulatedAssertionLocator assertionLocator;
+    private final QuickStartAssertionLocator assertionLocator;
 
     @NotNull
     private final AssertionMapper assertionMapper;
@@ -66,7 +43,7 @@ public class QuickStartMapper {
     private final ClusterPropertyManager clusterPropertyManager;
 
     public QuickStartMapper(
-            @NotNull final QuickStartEncapsulatedAssertionLocator assertionLocator,
+            @NotNull final QuickStartAssertionLocator assertionLocator,
             @NotNull final AssertionMapper assertionMapper,
             @NotNull final ClusterPropertyManager clusterPropertyManager
     ) {
@@ -75,7 +52,6 @@ public class QuickStartMapper {
         this.clusterPropertyManager = clusterPropertyManager;
     }
 
-    // TODO is there a better time in the assertion lifecycle to set assertion registry?
     public void setAssertionRegistry(AssertionRegistry assertionRegistry) {
         assertionLocator.setAssertionRegistry(assertionRegistry);
     }
@@ -192,16 +168,16 @@ public class QuickStartMapper {
                 if (propertyValue.getClass().isArray()) {
                     if (propertyValue.getClass().getComponentType().isPrimitive()) {
                         try {
-                            Class wrapperArrayClass = primitiveArrayToWrapperArray(propertyValue.getClass());
+                            Class wrapperArrayClass = com.l7tech.util.ClassUtils.primitiveArrayToWrapperArray(propertyValue.getClass());
                             method = assertion.getClass().getMethod(setMethodName, wrapperArrayClass);
                             invokePrimitiveArrayMethod(method, wrapperArrayClass, assertion, propertyValue);
                             continue;
                         } catch (NoSuchMethodException e) {
                             logger.log(Level.FINE, "Reflection failed to invoke : " + (method == null ? setMethodName : method.toString()));
                         }
-                    } else if (isPrimitiveWrapper(propertyValue.getClass().getComponentType())) {
+                    } else if (com.l7tech.util.ClassUtils.isPrimitiveWrapper(propertyValue.getClass().getComponentType())) {
                         try {
-                            Class primitiveArrayClass = wrapperArrayToPrimitiveArray(propertyValue.getClass());
+                            Class primitiveArrayClass = com.l7tech.util.ClassUtils.wrapperArrayToPrimitiveArray(propertyValue.getClass());
                             method = assertion.getClass().getMethod(setMethodName, primitiveArrayClass);
                             invokeWrapperArrayMethod(method, primitiveArrayClass, assertion, propertyValue);
                             continue;
@@ -218,7 +194,7 @@ public class QuickStartMapper {
                         } catch (NoSuchMethodException e) {
                             logger.log(Level.FINE, "Reflection failed to invoke : " + (method == null ? setMethodName : method.toString()));
                         }
-                    } else if (isPrimitiveWrapper(propertyValue.getClass())) {
+                    } else if (com.l7tech.util.ClassUtils.isPrimitiveWrapper(propertyValue.getClass())) {
                         try {
                             method = assertion.getClass().getMethod(setMethodName, ClassUtils.wrapperToPrimitive(propertyValue.getClass()));
                             method.invoke(assertion, propertyValue);
@@ -299,21 +275,6 @@ public class QuickStartMapper {
         }
 
         method.invoke(assertion, (Object) codeInjectionProtectionTypes);
-    }
-
-    // TODO move class util methods to com.l7tech.util.ClassUtils
-
-    private static boolean isPrimitiveWrapper(@NotNull final Class<?> c) {
-        Class result = ClassUtils.wrapperToPrimitive(c);
-        return result != null && result.isPrimitive();
-    }
-
-    private static Class wrapperArrayToPrimitiveArray(Class cls) {
-        return wrapperArrayPrimitiveArrayMap.get(cls);
-    }
-
-    private static Class primitiveArrayToWrapperArray(Class cls) {
-        return primitiveArrayWrapperArrayMap.get(cls);
     }
 
     private static void invokePrimitiveArrayMethod(@NotNull final Method method, @NotNull final Class wrapperArrayClass,
