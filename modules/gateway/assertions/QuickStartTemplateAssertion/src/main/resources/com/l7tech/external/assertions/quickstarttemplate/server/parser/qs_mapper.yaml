@@ -71,8 +71,7 @@ CodeInjectionProtection:
                 "enum": [ "htmlJavaScriptInjection", "phpEvalInjection", "shellInjection", "ldapDnInjection", "ldapSearchInjection", "xpathInjection"  ]
               }
             }
-          },
-          "required": [ "Protections" ]
+          }
         }
       },
       "required": [ "CodeInjectionProtection" ]
@@ -222,8 +221,7 @@ RateLimit:
             "CounterName": {
               "type": "string"
             }
-          },
-          "required": [ "MaxRequestsPerSecond", "HardLimit", "CounterName" ]
+          }
         }
       },
       "required": [ "RateLimit" ]
@@ -271,7 +269,7 @@ Ssl:
     RequireClientAuthentication: RequireClientAuthentication
   samplePayload: |
     "Ssl": {
-      "Option": "optional"
+      "Option": "Optional"
     }
   jsonSchema: |
     {
