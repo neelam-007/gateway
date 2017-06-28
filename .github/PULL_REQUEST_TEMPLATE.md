@@ -14,4 +14,5 @@ Func Spec   | [Func Spec](https://cawiki.ca.com/display/AG/Functional+Specificat
 - [ ] TPSR has been submitted (if applicable) 
 - [ ] Integration/Functional test cases have been written and automated
 - [ ] Func Spec has been updated as needed
+- [ ] Rally Issue(s) are ready to be closed
 
