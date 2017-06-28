@@ -57,6 +57,7 @@ import javax.swing.*;
 import javax.swing.Timer;
 import javax.swing.border.Border;
 import javax.swing.event.*;
+import javax.swing.text.JTextComponent;
 import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.html.HTMLEditorKit;
@@ -2191,6 +2192,14 @@ public class MainWindow extends JFrame implements SheetHolder {
                 descriptionText.setContentType(contentType);
             }
         });
+
+        tree.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, KeyEvent.CTRL_DOWN_MASK), "Ctrl-Right");
+        tree.getActionMap().put("Ctrl-Right", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                insertPaletteSelection();
+            }
+        });
         TopComponents.getInstance().registerComponent(AssertionsTree.NAME, tree);
         return tree;
     }
@@ -2415,6 +2424,7 @@ public class MainWindow extends JFrame implements SheetHolder {
 
         populateMenusWithAdditionalActions();
     }
+
 
     private void populateMenusWithAdditionalActions() {
         List<Action> servicesMenuActions = new ArrayList<>();
@@ -3457,8 +3467,26 @@ public class MainWindow extends JFrame implements SheetHolder {
                         getAssertionPaletteTree().requestFocus();
                 }
             });
-        }
 
+            //insert the selected assertion from the assertion search box into the active policy window editor using the keyboard shortcut(Ctrl + -->).
+            ((JTextComponent)assertionSearchComboBox.getEditor().getEditorComponent()).getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_RIGHT, KeyEvent.CTRL_DOWN_MASK), "Ctrl-Right");
+            ((JTextComponent)assertionSearchComboBox.getEditor().getEditorComponent()).getActionMap().put("Ctrl-Right", new AbstractAction() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    AbstractLeafPaletteNode currentSelectedNode = assertionSearchComboBox.getSelectedObject();
+                    if (currentSelectedNode != null) {
+                        JTree tree = getAssertionPaletteTree();
+                        final AbstractTreeNode node = (AbstractTreeNode) assertionSearchComboBox.getSelectedItem();
+                        if (node == null) return;
+                        final TreePath treePath = new TreePath(node.getPath());
+                        tree.setSelectionPath(treePath);
+                        tree.makeVisible(treePath);
+                        tree.scrollPathToVisible(treePath);
+                        insertPaletteSelection();
+                    }
+                }
+            });
+        }
         return assertionSearchComboBox;
     }
 
@@ -3491,7 +3519,8 @@ public class MainWindow extends JFrame implements SheetHolder {
     }
 
     /**
-     * Expands the tree accordingly based on the assertion selection.
+     * Expands the tree accordingly based on the assertion selection
+     * and set the selected assertion to the assertion palette tree.
      */
     private void invokePaletteSelection() {
         JTree tree = getAssertionPaletteTree();
@@ -3502,6 +3531,39 @@ public class MainWindow extends JFrame implements SheetHolder {
         tree.makeVisible(treePath);
         tree.scrollPathToVisible(treePath);
         getAssertionPaletteTree().requestFocus();
+    }
+
+    /**
+     * Inserts the selected assertion into the active policy editor.
+     * 'Home' policy window is not a active window. So insertion is not
+     * allowed in 'Home' policy window
+     */
+    private void insertPaletteSelection() {
+        JTree assertionPaletteTree = getAssertionPaletteTree();
+        if(hasAnyPolicyWindowActive())
+            policyToolBar.getAddAssertionAction().invoke();
+    }
+
+    /**
+     * Check if any of the policy window editor is active or not.
+     * @return True if any policy window editor is active or false if it's not.
+     */
+    private Boolean hasAnyPolicyWindowActive() {
+        WorkSpacePanel cw = TopComponents.getInstance().getCurrentWorkspace();
+        WorkSpacePanel.TabbedPane tabbedPane = cw.getTabbedPane();
+
+        int numTabs = tabbedPane.getTabCount();
+        for (int i = 0; i < numTabs; i++) {
+            Component c = tabbedPane.getComponentAt(i);
+
+            if (c instanceof PolicyEditorPanel) {
+                PolicyEditorPanel pe = (PolicyEditorPanel) c;
+                if(pe.isVisible()) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**

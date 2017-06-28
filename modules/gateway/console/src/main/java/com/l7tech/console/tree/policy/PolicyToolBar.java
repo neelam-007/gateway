@@ -219,7 +219,7 @@ public class PolicyToolBar extends JToolBar implements LogonListener {
         return assertionMoveDownAction;
     }
 
-    private AddAssertionAction getAddAssertionAction() {
+    public AddAssertionAction getAddAssertionAction() {
         if (addAssertionAction != null)
             return addAssertionAction;
         addAssertionAction = new AddAssertionAction() {
