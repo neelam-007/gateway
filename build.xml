@@ -646,6 +646,7 @@
 				<propertyref name="publish.status"/>
 				<propertyref name="module.skarsigner.sign.archive"/>
 				<propertyref name="module.skarsigner.generate.restman.xml"/>
+				<propertyref name="suffix.snapshot"/>
             </propertyset>
         </subant>
     </presetdef>
@@ -4171,6 +4172,7 @@
 		<property name="publish.rpm.target" value="${artifactory.yum.snapshot}"/>
 		<property name="publish.generic.target" value="${artifactory.generic.snapshot}"/>
 		<property name="publish.status" value="integration"/>
+		<property name="suffix.snapshot" value="-SNAPSHOT"/>
     </target>
 	
 	<!--
@@ -4181,6 +4183,7 @@
 		<property name="publish.rpm.target" value="${artifactory.yum.release}"/>
 		<property name="publish.generic.target" value="${artifactory.generic.release}"/>
 		<property name="publish.status" value="release"/>
+		<property name="suffix.snapshot" value=""/>
     </target>
 	
 	<!--

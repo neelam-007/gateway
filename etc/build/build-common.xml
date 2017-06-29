@@ -774,6 +774,7 @@
 		<property name="publish.rpm.target" value="${artifactory.yum.snapshot}"/>
 		<property name="publish.generic.target" value="${artifactory.generic.snapshot}"/>
 		<property name="publish.status" value="integration"/>
+		<property name="suffix.snapshot" value="-SNAPSHOT"/>
     </target>
 	
 	<!--
@@ -784,6 +785,7 @@
 		<property name="publish.rpm.target" value="${artifactory.yum.release}"/>
 		<property name="publish.generic.target" value="${artifactory.generic.release}"/>
 		<property name="publish.status" value="release"/>
+		<property name="suffix.snapshot" value=""/>
     </target>
 	
     <!--
@@ -811,7 +813,7 @@
                      module="${ant.project.name}"
                      conf="default, master, master-unsigned, compile, runtime, optional, core, client, skarsigner"
                      resolver="shared"
-                     pubrevision="${version}"
+                     pubrevision="${version}${suffix.snapshot}"
                      overwrite="true"
 					 haltonmissing="false"/>
         <echo message="project ${ant.project.name} local published with version ${version}"/>
@@ -824,7 +826,7 @@
     <target name="publish-artifactory-init" if="publish.jar.target" description="Resolve ivy dependencies and create pom file to prepare for publishing to Artifactory">
         <property name="publish.status" value="integration"/> <!-- if publish.status is not set from "enable-snapshot or enable-release", use default value of integration -->
         <ivy:resolve file="ivy.xml" conf="default, master, compile, runtime, optional, core, pom, skarsigner"/>
-        <ivy:deliver deliverpattern="${build.dir}/ivy.xml" pubrevision="${version}" status="${publish.status}"/>
+        <ivy:deliver deliverpattern="${build.dir}/ivy.xml" pubrevision="${version}${suffix.snapshot}" status="${publish.status}"/>
         <ivy:makepom ivyfile="${build.dir}/ivy.xml" pomfile="${build.dir}/${ant.project.name}.pom" />
     </target>
 
