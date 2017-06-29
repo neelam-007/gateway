@@ -1,6 +1,6 @@
 package com.l7tech.server.policy.assertion.identity;
 
-import com.l7tech.identity.BadCredentialsException;
+import com.l7tech.identity.AuthenticationException;
 import com.l7tech.message.Message;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
@@ -70,7 +70,7 @@ public class ServerAuthenticationAssertion extends ServerIdentityAssertion<Authe
 
         final AssertionStatus status = super.authFailed(pc, e);
 
-        if (e instanceof BadCredentialsException){
+        if (e instanceof AuthenticationException){
             userIdList.add(pc.getLogin());
             userErrorList.add(ExceptionUtils.getMessage(e));
         }
