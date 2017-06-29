@@ -3,6 +3,7 @@ package com.l7tech.external.assertions.quickstarttemplate.server.parser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
+import com.l7tech.external.assertions.quickstarttemplate.QuickStartTemplateAssertion;
 import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStartAssertionLocator;
 import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStartPolicyBuilderException;
 import com.l7tech.objectmodel.FindException;
@@ -30,8 +31,6 @@ import java.util.logging.Logger;
 
 public class QuickStartMapper {
     private static final Logger logger = Logger.getLogger(QuickStartMapper.class.getName());
-
-    private static final String ENABLE_ALL_ASSERTIONS_FLAG_KEY = "quickStart.allAssertions.enabled";
 
     @NotNull
     private final QuickStartAssertionLocator assertionLocator;
@@ -79,7 +78,7 @@ public class QuickStartMapper {
                     // this is a misconfiguration on our part!
                     throw new QuickStartPolicyBuilderException("Assertion " + assertionSupport.getExternalName() + " for policy template item named " + templateName + " is not registered on the Gateway.");
                 }
-            } else if ("true".equalsIgnoreCase(clusterPropertyManager.getProperty(ENABLE_ALL_ASSERTIONS_FLAG_KEY))) {
+            } else if ("true".equalsIgnoreCase(clusterPropertyManager.getProperty(QuickStartTemplateAssertion.ENABLE_ALL_ASSERTIONS_FLAG_KEY))) {
                 assertion = assertionLocator.findAssertion(templateName);
             }
 
