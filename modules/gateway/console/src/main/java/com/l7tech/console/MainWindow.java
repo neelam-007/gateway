@@ -4754,7 +4754,7 @@ public class MainWindow extends JFrame implements SheetHolder {
         getSaveOnlyMenuItem().setAction(policyPanel.getSaveOnlyAction());
         getExportMenuItem().setAction(policyPanel.getExportAction());
         getImportMenuItem().setAction(policyPanel.getImportAction());
-        getShowAssertionCommentsMenuItem().setAction(policyPanel.getHideShowCommentAction(getShowAssertionCommentsMenuItem()));
+        getShowAssertionCommentsMenuItem().setAction(policyPanel.getShowCommentsAction(getShowAssertionCommentsMenuItem()));
         getShowAssertionLineNumbersMenuItem().setAction(policyPanel.getShowAssertionLineNumbersAction(getShowAssertionLineNumbersMenuItem()));
         getMigrateNamespacesMenuItem().setAction(policyPanel.getMigrateNamespacesAction());
     }

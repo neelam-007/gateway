@@ -144,7 +144,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     private SearchForm searchForm;
     private JSplitPane topSplitPane;
     private InputAndOutputVariablesPanel inputsAndOutputsPanel = null;
-    private SecureAction hideShowCommentsAction;
+    private SecureAction showCommentsAction;
     private MigrateNamespacesAction migrateNamespacesAction;
     private Long latestPolicyVersionNumber = null;
 
@@ -685,15 +685,20 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
     private JComponent getPolicyTreePane() {
         if (policyTreePane != null) return policyTreePane;
+
         policyTree.setPolicyEditor(this);
         policyTree.setRootVisible(false);
         policyTree.setShowsRootHandles(true);
         policyTree.setAlignmentX(Component.LEFT_ALIGNMENT);
         policyTree.setAlignmentY(Component.TOP_ALIGNMENT);
         policyTree.getSelectionModel().addTreeSelectionListener(ClipboardActions.getTreeUpdateListener());
+
+        // Create policy tree pane
         policyTreePane = new NumberedPolicyTreePane(policyTree);
-        policyTreePane.setNumbersVisible(Boolean.parseBoolean(getTabSettingFromPolicyTabProperty(POLICY_TAB_PROPERTY_ASSERTION_SHOW_NUMBERS,
-            SHOW_ASSERTION_NUMBERS, Boolean.toString(preferences.showAssertionNumbers()), getPolicyGoid(), getVersionNumber())));
+
+        // Set the assertion numbers visible to global settings for every new policy tree pane.
+        policyTreePane.setNumbersVisible(preferences.showAssertionNumbers());
+
         return policyTreePane;
     }
 
@@ -1022,14 +1027,14 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 this.add(buttonUDDIImport);
             }
 
-            JButton showComments = new JButton();
-            showComments.setAction(getHideShowCommentAction(showComments));
-            this.add(showComments);
+            JButton showCommentsButton = new JButton();
+            showCommentsButton.setAction(getShowCommentsAction(showCommentsButton));
+            this.add(showCommentsButton);
 
-            JButton displayAssertionNumsBtn = new JButton();
-            displayAssertionNumsBtn.setAction(getShowAssertionLineNumbersAction(displayAssertionNumsBtn));
-            displayAssertionNumsBtn.setDisplayedMnemonicIndex(15);
-            add(displayAssertionNumsBtn);
+            JButton showAssertionNumbersButton = new JButton();
+            showAssertionNumbersButton.setAction(getShowAssertionLineNumbersAction(showAssertionNumbersButton));
+            showAssertionNumbersButton.setDisplayedMnemonicIndex(15);
+            add(showAssertionNumbersButton);
 
             toggleInputsOutputsButton = createToggleInputsAndOutputsButton();
             if ( TopComponents.getInstance().isApplet() ) {
@@ -2377,18 +2382,19 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         }
     }
 
-    public Action getHideShowCommentAction(final AbstractButton button){
+    public Action getShowCommentsAction(final AbstractButton button){
         if (button != null && !showCmtsButtons.contains(button)) {
             showCmtsButtons.add(button);
         }
 
-        if (hideShowCommentsAction == null) {
-            hideShowCommentsAction = new SecureAction(null) {
+        if (showCommentsAction == null) {
+            // update the policy-level show comments using global settings for new tabs.
+            updatePolicyTabProperty(POLICY_TAB_PROPERTY_ASSERTION_SHOW_COMMENTS, String.valueOf(preferences.showComments()));
+
+            showCommentsAction = new SecureAction(null) {
                 @Override
                 protected void performAction() {
-                    //shown = true means the button should say 'Hide'
-
-                    updatePolicyTabProperty(POLICY_TAB_PROPERTY_ASSERTION_SHOW_COMMENTS, String.valueOf(!isShowing()));
+                    toggle();
 
                     for (AbstractButton butn: showCmtsButtons) {
                         butn.setText(getName());
@@ -2400,30 +2406,32 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
                 @Override
                 public String getName() {
-                    if (isShowing()) {
-                        return "Hide Comments";
-                    } else {
-                        return "Show Comments";
-                    }
+                    return getToggleState() ? "Hide Comments" : "Show Comments";
                 }
 
                 @Override
                 protected String iconResource() {
-                    return (isShowing()) ? "com/l7tech/console/resources/About16Crossed.gif" : "com/l7tech/console/resources/About16.gif";
+                    return getToggleState() ? "com/l7tech/console/resources/About16Crossed.gif" : "com/l7tech/console/resources/About16.gif";
                 }
 
-                private boolean isShowing(){
-                    final String showState = getTabSettingFromPolicyTabProperty(POLICY_TAB_PROPERTY_ASSERTION_SHOW_COMMENTS,
-                        SHOW_COMMENTS, Boolean.toString(preferences.showComments()), getPolicyGoid(), getVersionNumber());
-                    return Boolean.parseBoolean(showState);
+                /**
+                 * True means Show Comments is active and button text is set to Hide Comments.
+                 */
+                private boolean getToggleState() {
+                    return Boolean.parseBoolean(getTabSettingFromPolicyTabProperty(POLICY_TAB_PROPERTY_ASSERTION_SHOW_COMMENTS,
+                            SHOW_COMMENTS, Boolean.toString(preferences.showComments()), getPolicyGoid(), getVersionNumber()));
+                }
+
+                private void toggle() {
+                    updatePolicyTabProperty(POLICY_TAB_PROPERTY_ASSERTION_SHOW_COMMENTS, String.valueOf(!getToggleState()));
                 }
             };
 
             // Set the mnemonic and accelerator key
-            hideShowCommentsAction.putValue(Action.MNEMONIC_KEY, KeyEvent.VK_C);
+            showCommentsAction.putValue(Action.MNEMONIC_KEY, KeyEvent.VK_C);
         }
 
-        return hideShowCommentsAction;
+        return showCommentsAction;
     }
 
     public Action getUDDIImportAction() {
@@ -2543,13 +2551,14 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         }
 
         if (showAssertionLineNumbersAction == null) {
+            // update policy-level show assertion numbers with global settings for new tabs
+            updatePolicyTabProperty(POLICY_TAB_PROPERTY_ASSERTION_SHOW_NUMBERS, String.valueOf(preferences.showAssertionNumbers()));
+
             showAssertionLineNumbersAction = new SecureAction(null) {
                 @Override
                 protected void performAction() {
-                    // Update the status of assertion line numbers shown/hidden in the policy editor panel.
-                    boolean toShowNumbers = !policyTreePane.isNumbersVisible();
-                    policyTreePane.setNumbersVisible(toShowNumbers);
-                    updatePolicyTabProperty(POLICY_TAB_PROPERTY_ASSERTION_SHOW_NUMBERS, String.valueOf(toShowNumbers));
+                    toggle();
+                    policyTreePane.setNumbersVisible(getToggleState());
 
                     // Update the buttons such as policy edit button or menuItem.
                     for (AbstractButton button: showLnNumsButtons) {
@@ -2562,14 +2571,26 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
                 @Override
                 public String getName() {
-                    return policyTreePane.isNumbersVisible() ? "Hide Assertion Numbers" : "Show Assertion Numbers";
+                    return getToggleState() ? "Hide Assertion Numbers" : "Show Assertion Numbers";
                 }
 
                 @Override
                 protected String iconResource() {
-                    return policyTreePane.isNumbersVisible() ?
+                    return getToggleState() ?
                         "com/l7tech/console/resources/HideLineNumbers16.png" :
                         "com/l7tech/console/resources/ShowLineNumbers16.png";
+                }
+
+                /**
+                 * True means Show Assertion Numbers is active and button text is set to Hide Assertion Numbers.
+                 */
+                private boolean getToggleState() {
+                    return Boolean.parseBoolean(getTabSettingFromPolicyTabProperty(POLICY_TAB_PROPERTY_ASSERTION_SHOW_NUMBERS,
+                            SHOW_ASSERTION_NUMBERS, Boolean.toString(preferences.showAssertionNumbers()), getPolicyGoid(), getVersionNumber()));
+                }
+
+                private void toggle() {
+                    updatePolicyTabProperty(POLICY_TAB_PROPERTY_ASSERTION_SHOW_NUMBERS, String.valueOf(!getToggleState()));
                 }
             };
 
