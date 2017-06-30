@@ -849,6 +849,9 @@ public class WorkSpacePanel extends JPanel {
             }
         });
 
+        // Register default close key event  (CTRL + W) listener
+        tabbedPane.registerDefaultCloseKeyListener();
+
         tabbedPane.addContainerListener(new ContainerAdapter() {
             @Override
             public void componentRemoved(ContainerEvent e) {
@@ -1113,6 +1116,29 @@ public class WorkSpacePanel extends JPanel {
             // removing CredentialsLocation added by the UI.
             while (tabCount-- > 0) {
                 removeTabAt(tabCount);
+            }
+        }
+
+        /**
+         * Registers the default close key (CTRL+W) listener
+         */
+        private void registerDefaultCloseKeyListener() {
+            getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(KeyEvent.VK_W, KeyEvent.CTRL_DOWN_MASK), "Ctrl-W");
+            getActionMap().put("Ctrl-W", new AbstractAction() {
+                public void actionPerformed(ActionEvent e) {
+                    removeActiveTab();
+                }
+            });
+        }
+
+        /**
+         * Removes currently active tab from the workspace panel
+         */
+        public void removeActiveTab() {
+            int index = getSelectedIndex();
+
+            if (index != -1) {
+                removeTabAt(index);
             }
         }
     }
