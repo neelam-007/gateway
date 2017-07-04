@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableSet;
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.external.assertions.quickstarttemplate.server.parser.Service;
 import com.l7tech.external.assertions.quickstarttemplate.server.parser.ServiceContainer;
+import com.l7tech.external.assertions.quickstarttemplate.server.utils.L7Matchers;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
@@ -33,6 +34,9 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.function.Function;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  */
@@ -100,7 +104,7 @@ public class QuickStartServiceBuilderTest extends ServiceBuilderTestBase {
     @Test
     public void createServiceWithUnknownEncass() throws Exception {
         expectedException.expect(QuickStartPolicyBuilderException.class);
-        expectedException.expectMessage(Mockito.matches("(?s)Unable to find.*named : UnknownEncass"));
+        expectedException.expectMessage(L7Matchers.matchesRegex("(?s)Template item named UnknownEncass is not registered on the Gateway."));
 
         final ServiceContainer testServiceContainer = parseJson("{\n" +
                 "  \"Service\": {\n" +
@@ -131,6 +135,93 @@ public class QuickStartServiceBuilderTest extends ServiceBuilderTestBase {
                 "}");
             serviceBuilder.createService(testServiceContainer);
     }
+
+    @Test
+    public void createServiceWithExperimentalEncass() throws Exception {
+
+        String experimentalAssertionName = "RequestSizeLimit";
+
+        Assertion experimentalAssertion = mock(Assertion.class);
+
+        final EncassMocker experimentalAssertionTemplate = EncassMocker.mock(experimentalAssertionName, ImmutableMap.of("protect", DataType.STRING));
+        Mockito.doReturn(experimentalAssertionTemplate.clone()).when(assertionLocator).findAssertion(experimentalAssertionName);
+
+        when(clusterPropertyManager.getProperty("quickStart.allAssertions.enabled")).thenReturn("true");
+
+        final ServiceContainer testServiceContainer = parseJson("{\n" +
+                "  \"Service\": {\n" +
+                "    \"name\": \"MyService1\",\n" +
+                "    \"gatewayUri\": \"/MyService1\",\n" +
+                "    \"httpMethods\": [ \"get\", \"put\" ],\n" +
+                "    \"policy\": [\n" +
+                "      {\n" +
+                "        \"RequireSSL\" : {\n" +
+                "          \"clientCert\": \"optional\"\n" +
+                "        }\n" +
+                "      },\n" +
+                "      {\n" +
+                "        \"Cors\" : {}\n" +
+                "      },\n" +
+                "      {\n" +
+                "        \"" + experimentalAssertionName + "\" : {}\n" +
+                "      },\n" +
+                "      {\n" +
+                "        \"RateLimit\" : {\n" +
+                "          \"maxRequestsPerSecond\": 250,\n" +
+                "          \"hardLimit\": true,\n" +
+                "          \"counterName\": \"RateLimit-${request.clientId}-b0938b7ad6ff\"\n" +
+                "        }\n" +
+                "      }\n" +
+                "    ]\n" +
+                "  }\n" +
+                "}");
+
+        serviceBuilder.createService(testServiceContainer);
+    }
+
+    @Test
+    public void createServiceWithExperimentalEncassFailed() throws Exception {
+
+        String experimentalAssertionName = "RequestSizeLimit";
+
+        expectedException.expect(QuickStartPolicyBuilderException.class);
+        expectedException.expectMessage(Matchers.equalToIgnoringCase("Template item named " + experimentalAssertionName + " is not registered on the Gateway."));
+
+        Assertion experimentalAssertion = mock(Assertion.class);
+
+        when(clusterPropertyManager.getProperty("quickStart.allAssertions.enabled")).thenReturn("false");
+
+        final ServiceContainer testServiceContainer = parseJson("{\n" +
+                "  \"Service\": {\n" +
+                "    \"name\": \"MyService1\",\n" +
+                "    \"gatewayUri\": \"/MyService1\",\n" +
+                "    \"httpMethods\": [ \"get\", \"put\" ],\n" +
+                "    \"policy\": [\n" +
+                "      {\n" +
+                "        \"RequireSSL\" : {\n" +
+                "          \"clientCert\": \"optional\"\n" +
+                "        }\n" +
+                "      },\n" +
+                "      {\n" +
+                "        \"Cors\" : {}\n" +
+                "      },\n" +
+                "      {\n" +
+                "        \"" + experimentalAssertionName + "\" : {}\n" +
+                "      },\n" +
+                "      {\n" +
+                "        \"RateLimit\" : {\n" +
+                "          \"maxRequestsPerSecond\": 250,\n" +
+                "          \"hardLimit\": true,\n" +
+                "          \"counterName\": \"RateLimit-${request.clientId}-b0938b7ad6ff\"\n" +
+                "        }\n" +
+                "      }\n" +
+                "    ]\n" +
+                "  }\n" +
+                "}");
+
+        serviceBuilder.createService(testServiceContainer);
+    }
+
 
     @Test
     public void createServiceWithConflictResolution() throws Exception {

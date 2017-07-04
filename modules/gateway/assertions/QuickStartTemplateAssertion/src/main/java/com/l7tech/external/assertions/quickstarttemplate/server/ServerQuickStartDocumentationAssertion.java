@@ -3,7 +3,8 @@ package com.l7tech.external.assertions.quickstarttemplate.server;
 import com.google.common.annotations.VisibleForTesting;
 import com.l7tech.external.assertions.quickstarttemplate.QuickStartDocumentationAssertion;
 import com.l7tech.external.assertions.quickstarttemplate.server.documentation.QuickStartDocumentationBuilder;
-import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStartEncapsulatedAssertionLocator;
+import com.l7tech.external.assertions.quickstarttemplate.server.parser.AssertionSupport;
+import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStartAssertionLocator;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.EncapsulatedAssertion;
@@ -17,7 +18,7 @@ import java.util.Set;
 
 public class ServerQuickStartDocumentationAssertion extends AbstractServerAssertion<QuickStartDocumentationAssertion> {
     private QuickStartDocumentationBuilder documentationBuilder = new QuickStartDocumentationBuilder();
-    private QuickStartEncapsulatedAssertionLocator assertionLocator;
+    private QuickStartAssertionLocator assertionLocator;
 
     // invoked using reflection
     @SuppressWarnings("unused")
@@ -29,7 +30,8 @@ public class ServerQuickStartDocumentationAssertion extends AbstractServerAssert
     public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         try {
             final Set<EncapsulatedAssertion> encapsulatedAssertions = assertionLocator.findEncapsulatedAssertions();
-            final String documentation = documentationBuilder.generate(encapsulatedAssertions);
+            final Set<AssertionSupport.Info> assertionsInfo = assertionLocator.findSupportedAssertions(AssertionSupport::withAssertion);
+            final String documentation = documentationBuilder.generate(encapsulatedAssertions, assertionsInfo);
             context.setVariable(QuickStartDocumentationAssertion.QS_DOC, documentation);
         } catch (final FindException e) {
             throw new PolicyAssertionException(getAssertion(), e);
@@ -39,7 +41,7 @@ public class ServerQuickStartDocumentationAssertion extends AbstractServerAssert
 
     // This is used to inject a mock instance of the assertion locator for testing purposes.
     @VisibleForTesting
-    void setAssertionLocator(final QuickStartEncapsulatedAssertionLocator assertionLocator) {
+    void setAssertionLocator(final QuickStartAssertionLocator assertionLocator) {
         this.assertionLocator = assertionLocator;
     }
 

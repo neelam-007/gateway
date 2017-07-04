@@ -1,4 +1,10 @@
 <project name="QuickStartTemplateAssertion" default="compile">
+    <property name="privateLibraries" value="AAR-INF/lib/jackson-annotations-2.8.6.jar
+                                             AAR-INF/lib/jackson-core-2.8.6.jar
+                                             AAR-INF/lib/jackson-databind-2.8.6.jar
+                                             AAR-INF/lib/jackson-dataformat-yaml-2.8.6.jar
+                                             snakeyaml-1.17.jar
+                                             jmustache-1.13.jar"/>
     <property name="module.skarsigner.sign.archive" value="true"/>
     <property name="module.skarsigner.generate.restman.xml" value="true"/>
     <property name="module.skarsigner.keystore" value="etc/signer/gatewayKeyStore.p12"/>

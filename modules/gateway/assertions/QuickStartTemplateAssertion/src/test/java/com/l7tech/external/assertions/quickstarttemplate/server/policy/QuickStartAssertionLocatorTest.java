@@ -1,34 +1,48 @@
 package com.l7tech.external.assertions.quickstarttemplate.server.policy;
 
 import com.google.common.collect.ImmutableSet;
+import com.l7tech.external.assertions.quickstarttemplate.server.parser.AssertionMapper;
+import com.l7tech.external.assertions.quickstarttemplate.server.parser.AssertionSupport;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.objectmodel.folder.Folder;
+import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.Policy;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.EncapsulatedAssertion;
 import com.l7tech.server.folder.FolderManager;
 import com.l7tech.server.policy.EncapsulatedAssertionConfigManager;
 import com.l7tech.util.Pair;
+import org.hamcrest.BaseMatcher;
+import org.hamcrest.Description;
+import org.hamcrest.Matchers;
+import org.jetbrains.annotations.NotNull;
+import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import java.util.Set;
+import java.util.*;
 
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
-public class QuickStartEncapsulatedAssertionLocatorTest {
+public class QuickStartAssertionLocatorTest {
 
-    private QuickStartEncapsulatedAssertionLocator fixture;
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
+
+    private QuickStartAssertionLocator fixture;
 
     @Mock
     private EncapsulatedAssertionConfigManager encassConfigManager;
@@ -36,9 +50,41 @@ public class QuickStartEncapsulatedAssertionLocatorTest {
     private FolderManager folderManager;
     private Goid quickStartProvidedAssertionFolder = new Goid("ABABABABABABABABABABABABABABABAB");
 
+    @Mock
+    private AssertionRegistry assertionRegistry;
+    private final Map<String, Assertion> assertionRegistryMap = new HashMap<>();
+
+    @Mock
+    private AssertionMapper assertionMapper;
+
     @Before
     public void setUp() {
-        fixture = new QuickStartEncapsulatedAssertionLocator(encassConfigManager, folderManager, quickStartProvidedAssertionFolder);
+        Mockito.doReturn(Collections.<String, AssertionSupport>emptyMap()).when(assertionMapper).getSupportedAssertions();
+        fixture = new QuickStartAssertionLocator(encassConfigManager, assertionMapper, folderManager, quickStartProvidedAssertionFolder);
+    }
+
+    @Test
+    public void findAssertion() throws Exception {
+        final String validAssertionName = "ValidAssertionName";
+        final Assertion validAssertion = new Assertion() {};
+        fixture.setAssertionRegistry(assertionRegistry);
+        when(assertionRegistry.findByExternalName(validAssertionName)).thenReturn(validAssertion);
+
+        // assertion found
+        assertNotNull(fixture.findAssertion(validAssertionName));
+
+        // assertion not found
+        assertNull(fixture.findAssertion("invalidAssertionName"));
+
+        // don't mess with assertion registry's copy
+        final Assertion validAssertionCopy = fixture.findAssertion(validAssertionName);
+        assert validAssertionCopy != null;
+        validAssertionCopy.setEnabled(false);
+        validAssertionCopy.setAssertionComment(new Assertion.Comment());
+        assertNotEquals(validAssertion.isEnabled(), validAssertionCopy.isEnabled());
+        assertNotEquals(validAssertion.getAssertionComment(), validAssertionCopy.getAssertionComment());
+
+        assertionRegistryMap.clear();
     }
 
     @Test
@@ -106,6 +152,41 @@ public class QuickStartEncapsulatedAssertionLocatorTest {
         fixture.findEncapsulatedAssertions();
     }
 
+    // TODO: unit testing will follow
+//    @Test
+//    public void findSupportedAssertion() throws Exception {
+//        // extremely abusing chaining pattern, well it is unit test :-)
+//        QuickStartMapper.getSupportedAssertionNames().forEach(
+//                name -> Mockito.doReturn(
+//                            Optional.of(name)
+//                                .map(s -> Optional.of(Mockito.mock(Assertion.class))
+//                                        .map(a -> {
+//                                            Mockito.doReturn(a).when(a).getCopy();
+//                                            // todo add additional mocks for the assertion here is needed
+//                                            return a;
+//                                        })
+//                                        .orElseThrow(() -> new RuntimeException("Cannot happen, but happened!!!!")))
+//                                .map(ass -> {
+//                                    assertionRegistryMap.put(name, ass);
+//                                    return ass;
+//                                })
+//                                .orElseThrow(() -> new RuntimeException("Cannot happen, but happened!!!!"))
+//                ).when(assertionRegistry).findByExternalName(name));
+//        Assert.assertThat(assertionRegistryMap, MapKeysMatcher.mapKeysMatcher(QuickStartMapper.getSupportedAssertionNames()));
+//
+//        final Set<Assertion> assertions = fixture.findSupportedAssertions();
+//        Assert.assertThat(assertions, Matchers.containsInAnyOrder(assertionRegistryMap.values().stream().toArray(Assertion[]::new)));
+//    }
+//
+//    @Test
+//    public void findSupportedAssertionShouldThrowOnUnknownAssertion() throws Exception {
+//        expectedException.expect(FindException.class);
+//        expectedException.expectMessage(L7Matchers.matchesRegex("(?s)Assertion with name.*cannot be found.*"));
+//
+//        Mockito.doReturn(null).when(assertionRegistry).findByExternalName(Mockito.anyString());
+//        fixture.findSupportedAssertions();
+//    }
+
     private Pair<Folder, Folder> mockFolderHierarchy(final int nestingLevel) {
         final Folder parentFolder = mock(Folder.class);
         final Folder possibleChildFolder = mockPossibleChildFolder(parentFolder, nestingLevel);
@@ -133,4 +214,65 @@ public class QuickStartEncapsulatedAssertionLocatorTest {
         return config;
     }
 
+    /**
+     * Custom Matcher to match set of keys
+     */
+    private static final class MapKeysMatcher<K> extends BaseMatcher<Map<K, ?>> {
+        @NotNull
+        private final Set<K> expectedKeys;
+
+        private MapKeysMatcher(final Set<K> expectedKeys) {
+            Assert.assertNotNull(expectedKeys);
+            this.expectedKeys = Collections.unmodifiableSet(expectedKeys);
+        }
+
+        @Override
+        public void describeTo(final Description description) {
+            description.appendValue(toSortedSet(expectedKeys));
+        }
+
+        @Override
+        public void describeMismatch(final Object item, final Description description) {
+            description.appendText("was ");
+            if (item instanceof Map) {
+                //noinspection unchecked
+                description.appendValue(toSortedMap((Map<K, ?>)item));
+            } else {
+                description.appendValue(item);
+            }
+        }
+
+        @Override
+        public boolean matches(final Object obj) {
+            Assert.assertNotNull(obj);
+            Assert.assertThat(obj, Matchers.instanceOf(Map.class));
+            //noinspection unchecked
+            final Map<K, ?> mapToVerify = (Map<K, ?>) obj;
+            return matches(mapToVerify.keySet(), expectedKeys);
+        }
+
+        private boolean matches(final Set<K> toVerify, final Set<K> expected) {
+            return toVerify == expected || (toVerify != null && expected != null && toVerify.equals(expected));
+        }
+
+        private static <K> Set<K> toSortedSet(final Set<K> set) {
+            if (set == null)
+                return null;
+            else if (set instanceof SortedSet)
+                return set;
+            return new TreeSet<>(set);
+        }
+
+        private static <K> Map<K, ?> toSortedMap(final Map<K, ?> map) {
+            if (map == null)
+                return null;
+            else if (map instanceof SortedMap)
+                return map;
+            return new TreeMap<>(map);
+        }
+
+        private static <K> MapKeysMatcher<K> mapKeysMatcher(final Set<K> expectedKeys) {
+            return new MapKeysMatcher<>(expectedKeys);
+        }
+    }
 }

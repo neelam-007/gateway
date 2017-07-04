@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.quickstarttemplate.server;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.l7tech.external.assertions.quickstarttemplate.server.parser.AssertionMapper;
 import com.l7tech.external.assertions.quickstarttemplate.server.parser.QuickStartParser;
 import com.l7tech.external.assertions.quickstarttemplate.server.policy.*;
 import com.l7tech.objectmodel.FindException;
@@ -35,7 +36,7 @@ public class QuickStartAssertionModuleLifecycle {
     @VisibleForTesting
     static final boolean QUICKSTART_SCALER_ENABLED_DEFAULT_VALUE_WHEN_ERROR_OCCURS_WHILE_READING_CLUSTER_PROPERTY = true;
 
-    private final QuickStartEncapsulatedAssertionLocator assertionLocator;
+    private final QuickStartAssertionLocator assertionLocator;
     private final QuickStartServiceBuilder serviceBuilder;
     private final QuickStartJsonServiceInstaller jsonServiceInstaller;
 
@@ -49,7 +50,7 @@ public class QuickStartAssertionModuleLifecycle {
     @VisibleForTesting
     QuickStartAssertionModuleLifecycle(
             @NotNull final ApplicationContext context,
-            @NotNull final QuickStartEncapsulatedAssertionLocator assertionLocator,
+            @NotNull final QuickStartAssertionLocator assertionLocator,
             @NotNull final QuickStartServiceBuilder serviceBuilder,
             @NotNull final QuickStartJsonServiceInstaller jsonServiceInstaller
     ) {
@@ -58,6 +59,26 @@ public class QuickStartAssertionModuleLifecycle {
         this.jsonServiceInstaller = jsonServiceInstaller;
 
         initializeJsonInstaller(context);
+    }
+
+    @SuppressWarnings("unused")
+    public static synchronized void onModuleLoaded(final ApplicationContext context) {
+        if (InstanceHolder.INSTANCE == null) {
+            final FolderManager folderManager = context.getBean("folderManager", FolderManager.class);
+            final EncapsulatedAssertionConfigManager encassManager = context.getBean("encapsulatedAssertionConfigManager", EncapsulatedAssertionConfigManager.class);
+            final ServiceManager serviceManager = context.getBean("serviceManager", ServiceManager.class);
+            final ServiceCache ServiceCache = context.getBean("serviceCache", ServiceCache.class);
+            final PolicyVersionManager policyVersionManager = context.getBean("policyVersionManager", PolicyVersionManager.class);
+            final ClusterPropertyManager clusterPropertyManager = context.getBean("clusterPropertyManager", ClusterPropertyManager.class);
+
+            final AssertionMapper assertionMapper = new AssertionMapper();
+            final QuickStartAssertionLocator assertionLocator = new QuickStartAssertionLocator(encassManager, assertionMapper, folderManager, new Goid(PROVIDED_FRAGMENT_FOLDER_GOID));
+            final QuickStartPublishedServiceLocator serviceLocator = new QuickStartPublishedServiceLocator(serviceManager);
+            final QuickStartServiceBuilder serviceBuilder = new QuickStartServiceBuilder(ServiceCache, folderManager, serviceLocator, assertionLocator, clusterPropertyManager, assertionMapper);
+            final QuickStartJsonServiceInstaller jsonServiceInstaller = new OneTimeJsonServiceInstaller(serviceBuilder, serviceManager, policyVersionManager, new QuickStartParser());
+
+            InstanceHolder.INSTANCE = new QuickStartAssertionModuleLifecycle(context, assertionLocator, serviceBuilder, jsonServiceInstaller);
+        }
     }
 
     /**
@@ -127,31 +148,13 @@ public class QuickStartAssertionModuleLifecycle {
     }
 
     @SuppressWarnings("unused")
-    public static synchronized void onModuleLoaded(final ApplicationContext context) {
-        if (InstanceHolder.INSTANCE == null) {
-            final FolderManager folderManager = context.getBean("folderManager", FolderManager.class);
-            final EncapsulatedAssertionConfigManager encassManager = context.getBean("encapsulatedAssertionConfigManager", EncapsulatedAssertionConfigManager.class);
-            final ServiceManager serviceManager = context.getBean("serviceManager", ServiceManager.class);
-            final ServiceCache ServiceCache = context.getBean("serviceCache", ServiceCache.class);
-            final PolicyVersionManager policyVersionManager = context.getBean("policyVersionManager", PolicyVersionManager.class);
-
-            final QuickStartEncapsulatedAssertionLocator assertionLocator = new QuickStartEncapsulatedAssertionLocator(encassManager, folderManager, new Goid(PROVIDED_FRAGMENT_FOLDER_GOID));
-            final QuickStartPublishedServiceLocator serviceLocator = new QuickStartPublishedServiceLocator(serviceManager);
-            final QuickStartServiceBuilder serviceBuilder = new QuickStartServiceBuilder(ServiceCache, folderManager, serviceLocator, assertionLocator);
-            final QuickStartJsonServiceInstaller jsonServiceInstaller = new OneTimeJsonServiceInstaller(serviceBuilder, serviceManager, policyVersionManager, new QuickStartParser());
-
-            InstanceHolder.INSTANCE = new QuickStartAssertionModuleLifecycle(context, assertionLocator, serviceBuilder, jsonServiceInstaller);
-        }
-    }
-
-    @SuppressWarnings("unused")
     public static synchronized void onModuleUnloaded() {
         // Do nothing; these shared resources are used by both the template and the documentation assertion.
     }
 
     @Nullable
     @Contract(pure = true)
-    static QuickStartEncapsulatedAssertionLocator getEncapsulatedAssertionLocator() {
+    static QuickStartAssertionLocator getEncapsulatedAssertionLocator() {
         return InstanceHolder.INSTANCE != null ? InstanceHolder.INSTANCE.assertionLocator : null;
     }
 

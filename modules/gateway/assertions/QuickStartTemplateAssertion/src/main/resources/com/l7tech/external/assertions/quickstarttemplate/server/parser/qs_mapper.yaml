@@ -1,0 +1,324 @@
+# assertion mappings example
+# TODO: this is just an example and it needs some additional work
+---
+
+Authentication:
+  externalName: Authentication
+  className: com.l7tech.policy.assertion.identity.AuthenticationAssertion
+  properties:
+    IdentityProviderOid: IdentityProviderOid
+  samplePayload: |
+      {
+        "Authentication" : {
+          "IdentityProviderOid" : "0000000000000000fffffffffffffffe"
+        }
+      },
+  jsonSchema: |
+    {
+      "$schema": "http://json-schema.org/draft-04/schema#",
+      "type": "object",
+      "properties": {
+        "Authentication": {
+          "type": "object",
+          "properties": {
+            "IdentityProviderOid": {
+              "type" : "string"
+            }
+          }
+          "required": [ "IdentityProviderOid" ]
+        }
+      },
+      "required": [ "Authentication" ]
+    }
+
+CodeInjectionProtection:
+  externalName: CodeInjectionProtection
+  className: com.l7tech.policy.assertion.CodeInjectionProtectionAssertion
+  # possible way to mapp properties
+  properties:
+    includeBody: IncludeBody
+    includeUrlPath: IncludeUrlPath
+    includeUrlQueryString: IncludeUrlQueryString
+    protections: Protections
+  samplePayload: |
+    "CodeInjectionProtection": {
+      "includeBody": true,
+      "includeUrlPath": false,
+      "includeUrlQueryString": false,
+      "protections": [ "htmlJavaScriptInjection", "shellInjection" ]
+    }
+  jsonSchema: |
+    {
+      "$schema": "http://json-schema.org/draft-04/schema#",
+      "type": "object",
+      "properties": {
+        "CodeInjectionProtection": {
+          "type": "object",
+          "properties": {
+            "IncludeBody": {
+              "type" : "boolean"
+            },
+            "IncludeUrlPath": {
+              "type": "boolean"
+            },
+            "IncludeUrlQueryString": {
+              "type": "boolean"
+            },
+            "Protections": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [ "htmlJavaScriptInjection", "phpEvalInjection", "shellInjection", "ldapDnInjection", "ldapSearchInjection", "xpathInjection"  ]
+              }
+            }
+          }
+        }
+      },
+      "required": [ "CodeInjectionProtection" ]
+    }
+
+CORS:
+  externalName: CORS
+  className: com.l7tech.external.assertions.cors.CORSAssertion
+  samplePayload: |
+    "CORS": {
+    }
+  jsonSchema: |
+    {
+      "$schema": "http://json-schema.org/draft-04/schema#",
+      "type": "object",
+      "properties": {
+        "CORS": {
+          "type": "object",
+          "properties": {
+          }
+        }
+      },
+      "required": [ "CORS" ]
+    }
+
+HardcodedResponse:
+  externalName: HardcodedResponse
+  className: com.l7tech.policy.assertion.HardcodedResponseAssertion
+  properties:
+    ResponseStatus: ResponseStatus
+    EarlyResponse: EarlyResponse
+    ResponseContentType: ResponseContentType
+    Base64ResponseBody: Base64ResponseBody
+  samplePayload: |
+    "HardcodedResponse": {
+      "ResponseContentType": "Content-Type: text/html; charset=utf-8"
+      "Base64ResponseBody": "some base 64 response"
+    }
+  jsonSchema: |
+    {
+      "$schema": "http://json-schema.org/draft-04/schema#",
+      "type": "object",
+      "properties": {
+        "HardcodedResponse": {
+          "type": "object",
+          "properties": {
+            "ResponseStatus": {
+              "type" : "string"
+            },
+            "EarlyResponse": {
+              "type": "boolean"
+            },
+            "ResponseContentType": {
+              "type": "string"
+            },
+            "Base64ResponseBody": {
+              "type": "string"
+            }
+          },
+          "required": [ "Base64ResponseBody" ]
+        }
+      },
+      "required": [ "HardcodedResponse" ]
+    }
+
+HttpBasic:
+  externalName: HttpBasic
+  className: com.l7tech.policy.assertion.credential.http.HttpBasic
+  samplePayload: |
+    "HttpBasic": {
+    }
+  jsonSchema: |
+    {
+      "$schema": "http://json-schema.org/draft-04/schema#",
+      "type": "object",
+      "properties": {
+        "HttpBasic": {
+          "type": "object",
+          "properties": {
+          }
+        }
+      },
+      "required": [ "HttpBasic" ]
+    }
+
+HttpRouting:
+  externalName: HttpRouting
+  className: com.l7tech.policy.assertion.HttpRoutingAssertion
+  properties:
+    ProtectedServiceUrl: ProtectedServiceUrl
+    HttpMethod: HttpMethodAsString
+  samplePayload: |
+    "HttpMethod": {
+      "ProtectedServiceUrl": https://myservice.com,
+      "HttpMethod": DELETE
+    }
+  jsonSchema: |
+    {
+      "$schema": "http://json-schema.org/draft-04/schema#",
+      "type": "object",
+      "properties": {
+        "HttpRouting": {
+          "type": "object",
+          "properties": {
+            "ProtectedServiceUrl": {
+              "type": "string"
+            },
+            "HttpMethod": {
+              "type": "string",
+              "enum": [ "get", "post", "put", "patch", "delete", "head", "options", "other" ]
+              "type": "boolean"
+            }
+          },
+          "required": [ "ProtectedServiceUrl", "HttpMethod" ]
+        }
+      },
+      "required": [ "HttpRouting" ]
+    }
+
+RateLimit:
+  externalName: RateLimit
+  className: com.l7tech.external.assertions.ratelimit.RateLimitAssertion
+  properties:
+    maxRequestsPerSecond: MaxRequestsPerSecond
+    hardLimit: HardLimit
+    counterName: CounterName
+  samplePayload: |
+    "RateLimit": {
+      "maxRequestsPerSecond": 25,
+      "hardLimit": true,
+      "counterName": "counter"
+    }
+  jsonSchema: |
+    {
+      "$schema": "http://json-schema.org/draft-04/schema#",
+      "type": "object",
+      "properties": {
+        "RateLimit": {
+          "type": "object",
+          "properties": {
+            "MaxRequestsPerSecond": {
+              "type": "integer"
+            },
+            "HardLimit": {
+              "type": "boolean"
+            },
+            "CounterName": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "required": [ "RateLimit" ]
+    }
+
+SetVariable:
+  externalName: SetVariable
+  className: com.l7tech.policy.assertion.SetVariableAssertion
+  properties:
+    VariableToSet: VariableToSet
+    Base64Expression: Base64Expression
+    # or alternatively
+    Expression: Expression
+  samplePayload: |
+    "SetVariable": {
+      "VariableToSet": "myVariable",
+      "Base64Expression": "some base64 encoded data"
+    }
+  jsonSchema: |
+    {
+      "$schema": "http://json-schema.org/draft-04/schema#",
+      "type": "object",
+      "properties": {
+        "SetVariable": {
+          "type": "object",
+          "properties": {
+            "VariableToSet": {
+              "type": "string"
+            },
+            "Base64Expression": {
+              "type": "string"
+            }
+          },
+          "required": [ "VariableToSet", "Base64Expression" ]
+        }
+      },
+      "required": [ "SetVariable" ]
+    }
+
+Ssl:
+  externalName: Ssl
+  className: com.l7tech.policy.assertion.SslAssertion
+  properties:
+    Option: Option
+    RequireClientAuthentication: RequireClientAuthentication
+  samplePayload: |
+    "Ssl": {
+      "Option": "Optional"
+    }
+  jsonSchema: |
+    {
+      "$schema": "http://json-schema.org/draft-04/schema#",
+      "type": "object",
+      "properties": {
+        "Ssl": {
+          "type": "object",
+          "properties": {
+            "Option": {
+              "type": "string",
+              "enum": [ "Required", "Optional", "Forbidden" ]
+            },
+            "RequireClientAuthentication" {
+              "type": "boolean"
+            }
+          },
+          "required": [ "Option" ]
+        }
+      },
+      "required": [ "Ssl" ]
+    }
+
+ThroughputQuota:
+  externalName: ThroughputQuota
+  className: com.l7tech.policy.assertion.sla.ThroughputQuota
+  properties:
+    CounterName: CounterName
+  samplePayload: |
+    "ThroughputQuota": {
+      "CounterName": "some counter name"
+    }
+  jsonSchema: |
+    {
+      "$schema": "http://json-schema.org/draft-04/schema#",
+      "type": "object",
+      "properties": {
+        "ThroughputQuota": {
+          "type": "object",
+          "properties": {
+            "CounterName": {
+              "type": "string"
+            }
+          },
+          "required": [ "CounterName" ]
+        }
+      },
+      "required": [ "ThroughputQuota" ]
+    }
+
+# TODO: add more mappings here
+...

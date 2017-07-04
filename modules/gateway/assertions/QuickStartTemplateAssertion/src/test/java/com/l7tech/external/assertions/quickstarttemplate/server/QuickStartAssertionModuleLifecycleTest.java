@@ -1,6 +1,6 @@
 package com.l7tech.external.assertions.quickstarttemplate.server;
 
-import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStartEncapsulatedAssertionLocator;
+import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStartAssertionLocator;
 import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStartJsonServiceInstaller;
 import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStartServiceBuilder;
 import com.l7tech.objectmodel.FindException;
@@ -28,7 +28,7 @@ public class QuickStartAssertionModuleLifecycleTest {
     private ApplicationContext appContext;
 
     @Mock
-    private QuickStartEncapsulatedAssertionLocator assertionLocator;
+    private QuickStartAssertionLocator assertionLocator;
 
     @Mock
     private QuickStartServiceBuilder serviceBuilder;

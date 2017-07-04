@@ -1,7 +1,7 @@
 package com.l7tech.external.assertions.quickstarttemplate.server.parser;
 
-import org.codehaus.jackson.annotate.JsonCreator;
-import org.codehaus.jackson.annotate.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jetbrains.annotations.NotNull;
 
 public class ServiceContainer {

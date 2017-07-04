@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.quickstarttemplate.server.policy;
 
 import com.google.common.collect.Sets;
+import com.l7tech.external.assertions.quickstarttemplate.server.parser.AssertionMapper;
 import com.l7tech.external.assertions.quickstarttemplate.server.parser.QuickStartMapper;
 import com.l7tech.external.assertions.quickstarttemplate.server.parser.Service;
 import com.l7tech.external.assertions.quickstarttemplate.server.parser.ServiceContainer;
@@ -10,10 +11,12 @@ import com.l7tech.gateway.common.service.ServiceDocumentWsdlStrategy;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.folder.Folder;
+import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.Policy;
-import com.l7tech.policy.assertion.EncapsulatedAssertion;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.folder.FolderManager;
 import com.l7tech.server.service.ServiceCache;
 import com.l7tech.server.service.resolution.NonUniqueServiceResolutionException;
@@ -23,10 +26,7 @@ import com.l7tech.util.Triple;
 import org.jetbrains.annotations.NotNull;
 
 import java.net.MalformedURLException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * Dedicated class for building {@link PublishedService}.
@@ -42,12 +42,18 @@ public class QuickStartServiceBuilder {
             @NotNull final ServiceCache serviceCache,
             @NotNull final FolderManager folderManager,
             @NotNull final QuickStartPublishedServiceLocator serviceLocator,
-            @NotNull final QuickStartEncapsulatedAssertionLocator assertionLocator
+            @NotNull final QuickStartAssertionLocator assertionLocator,
+            @NotNull final ClusterPropertyManager clusterPropertyManager,
+            @NotNull final AssertionMapper assertionMapper
     ) {
         this.serviceCache = serviceCache;
         this.folderManager = folderManager;
         this.serviceLocator = serviceLocator;
-        this.mapper = new QuickStartMapper(assertionLocator);
+        this.mapper = new QuickStartMapper(assertionLocator, assertionMapper, clusterPropertyManager);
+    }
+
+    public void setAssertionRegistry(AssertionRegistry assertionRegistry) {
+        mapper.setAssertionRegistry(assertionRegistry);
     }
 
     /**
@@ -62,7 +68,7 @@ public class QuickStartServiceBuilder {
     @NotNull
     public PublishedService createService(@NotNull final ServiceContainer serviceContainer) throws FindException, QuickStartPolicyBuilderException {
         final Service service = serviceContainer.service;
-        final List<EncapsulatedAssertion> encapsulatedAssertions = mapper.getEncapsulatedAssertions(service);
+        final List<Assertion> assertions = mapper.getAssertions(service);
 
         final PublishedService publishedService = new PublishedService();
         publishedService.setName(service.name);
@@ -79,7 +85,7 @@ public class QuickStartServiceBuilder {
         }
 
         publishedService.setHttpMethods(Sets.newHashSet(service.httpMethods));
-        generatePolicy(publishedService, encapsulatedAssertions);
+        generatePolicy(publishedService, assertions);
         publishedService.setTracingEnabled(false);
         publishedService.parseWsdlStrategy(new ServiceDocumentWsdlStrategy(null));
         try {
@@ -123,11 +129,11 @@ public class QuickStartServiceBuilder {
             publishedService.setGoid(goid);
         } else {
             final Service service = serviceContainer.service;
-            final List<EncapsulatedAssertion> encapsulatedAssertions = mapper.getEncapsulatedAssertions(service);
+            final List<Assertion> assertions = mapper.getAssertions(service);
             publishedService.setName(service.name);
             publishedService.setRoutingUri(service.gatewayUri);
             publishedService.setHttpMethods(Sets.newHashSet(service.httpMethods));
-            generatePolicy(publishedService, encapsulatedAssertions);
+            generatePolicy(publishedService, assertions);
         }
 
         return publishedService;
@@ -194,17 +200,17 @@ public class QuickStartServiceBuilder {
     /**
      * Utility method to generate the policy (from the ordered {@code encapsulatedAssertions}) for the specified {@code service}.
      *
-     * @param service                   the {@link PublishedService} for which we are going to generate the policy
-     * @param encapsulatedAssertions    ordered list of {@link EncapsulatedAssertion}'s to use as a source when generating the policy
+     * @param service       the {@link PublishedService} for which we are going to generate the policy
+     * @param assertions    ordered list of {@link Assertion}'s to use as a source when generating the policy
      */
-    private static void generatePolicy(@NotNull final PublishedService service, @NotNull final List<EncapsulatedAssertion> encapsulatedAssertions) {
+    private static void generatePolicy(@NotNull final PublishedService service, @NotNull final List<Assertion> assertions) {
         final Policy policy = service.getPolicy();
         assert policy != null;
         if (policy.getGuid() == null) {
             policy.setGuid(UUID.randomUUID().toString());
         }
         final AllAssertion allAss = new AllAssertion();
-        encapsulatedAssertions.forEach(allAss::addChild);
+        assertions.forEach(allAss::addChild);
         policy.setXml(WspWriter.getPolicyXml(allAss));
     }
 }

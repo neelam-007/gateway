@@ -5,6 +5,8 @@ import org.junit.Test;
 import java.lang.reflect.Array;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  *
@@ -53,6 +55,44 @@ public class ClassUtilsTest {
         assertEquals("com.l7tech.util.ClassUtilsTest$1$1", ClassUtils.getJavaTypeName(inner1.getClass()));
         assertEquals("com.l7tech.util.ClassUtilsTest$1$1$Blarg", ClassUtils.getJavaTypeName(inner2.getClass()));
         assertEquals("com.l7tech.util.ClassUtilsTest$1$1$Blarg[][]", ClassUtils.getJavaTypeName(Array.newInstance(inner2.getClass(), 4, 4).getClass()));
+    }
+
+    @Test
+    public void isPrimitiveWrapper() throws Exception {
+        assertTrue(ClassUtils.isPrimitiveWrapper(Boolean.class));
+        assertTrue(ClassUtils.isPrimitiveWrapper(Byte.class));
+        assertTrue(ClassUtils.isPrimitiveWrapper(Character.class));
+        assertTrue(ClassUtils.isPrimitiveWrapper(Short.class));
+        assertTrue(ClassUtils.isPrimitiveWrapper(Integer.class));
+        assertTrue(ClassUtils.isPrimitiveWrapper(Long.class));
+        assertTrue(ClassUtils.isPrimitiveWrapper(Double.class));
+        assertTrue(ClassUtils.isPrimitiveWrapper(Float.class));
+
+        assertFalse(ClassUtils.isPrimitiveWrapper(String.class));
+    }
+
+    @Test
+    public void wrapperArrayToPrimitiveArray() throws Exception {
+        assertEquals(boolean[].class, ClassUtils.wrapperArrayToPrimitiveArray(Boolean[].class));
+        assertEquals(byte[].class, ClassUtils.wrapperArrayToPrimitiveArray(Byte[].class));
+        assertEquals(char[].class, ClassUtils.wrapperArrayToPrimitiveArray(Character[].class));
+        assertEquals(short[].class, ClassUtils.wrapperArrayToPrimitiveArray(Short[].class));
+        assertEquals(int[].class, ClassUtils.wrapperArrayToPrimitiveArray(Integer[].class));
+        assertEquals(long[].class, ClassUtils.wrapperArrayToPrimitiveArray(Long[].class));
+        assertEquals(double[].class, ClassUtils.wrapperArrayToPrimitiveArray(Double[].class));
+        assertEquals(float[].class, ClassUtils.wrapperArrayToPrimitiveArray(Float[].class));
+    }
+
+    @Test
+    public void primitiveArrayToWrapperArray() throws Exception {
+        assertEquals(Boolean[].class, ClassUtils.primitiveArrayToWrapperArray(boolean[].class));
+        assertEquals(Byte[].class, ClassUtils.primitiveArrayToWrapperArray(byte[].class));
+        assertEquals(Character[].class, ClassUtils.primitiveArrayToWrapperArray(char[].class));
+        assertEquals(Short[].class, ClassUtils.primitiveArrayToWrapperArray(short[].class));
+        assertEquals(Integer[].class, ClassUtils.primitiveArrayToWrapperArray(int[].class));
+        assertEquals(Long[].class, ClassUtils.primitiveArrayToWrapperArray(long[].class));
+        assertEquals(Double[].class, ClassUtils.primitiveArrayToWrapperArray(double[].class));
+        assertEquals(Float[].class, ClassUtils.primitiveArrayToWrapperArray(float[].class));
     }
 
     public static class TestInner {

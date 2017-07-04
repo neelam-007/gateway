@@ -1,6 +1,8 @@
 package com.l7tech.external.assertions.quickstarttemplate.server.policy;
 
 import com.google.common.collect.ImmutableMap;
+import com.l7tech.external.assertions.quickstarttemplate.server.parser.AssertionMapper;
+import com.l7tech.external.assertions.quickstarttemplate.server.parser.AssertionSupport;
 import com.l7tech.external.assertions.quickstarttemplate.server.parser.QuickStartParser;
 import com.l7tech.external.assertions.quickstarttemplate.server.parser.ServiceContainer;
 import com.l7tech.gateway.common.service.PublishedService;
@@ -11,6 +13,7 @@ import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.EncapsulatedAssertion;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.wsp.WspConstants;
+import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.folder.FolderManager;
 import com.l7tech.server.service.ServiceCache;
 import com.l7tech.util.Charsets;
@@ -23,6 +26,7 @@ import org.mockito.Mockito;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.Callable;
@@ -47,7 +51,13 @@ public abstract class ServiceBuilderTestBase {
     protected QuickStartPublishedServiceLocator serviceLocator;
 
     @Mock
-    protected QuickStartEncapsulatedAssertionLocator assertionLocator;
+    protected QuickStartAssertionLocator assertionLocator;
+
+    @Mock
+    protected ClusterPropertyManager clusterPropertyManager;
+
+    @Mock
+    protected AssertionMapper assertionMapper;
 
     protected QuickStartParser parser = new QuickStartParser();
 
@@ -124,10 +134,11 @@ public abstract class ServiceBuilderTestBase {
         Mockito.doReturn(testEncassTemplates.get("RequireSSL").left.clone()).when(assertionLocator).findEncapsulatedAssertion("RequireSSL");
         Mockito.doReturn(testEncassTemplates.get("Cors").left.clone()).when(assertionLocator).findEncapsulatedAssertion("Cors");
         Mockito.doReturn(testEncassTemplates.get("RateLimit").left.clone()).when(assertionLocator).findEncapsulatedAssertion("RateLimit");
+        Mockito.doReturn(Collections.<String, AssertionSupport>emptyMap()).when(assertionMapper).getSupportedAssertions();
 
         Mockito.doNothing().when(serviceCache).checkResolution(Mockito.any(PublishedService.class));
 
-        serviceBuilder = Mockito.spy(new QuickStartServiceBuilder(serviceCache, folderManager, serviceLocator, assertionLocator));
+        serviceBuilder = Mockito.spy(new QuickStartServiceBuilder(serviceCache, folderManager, serviceLocator, assertionLocator, clusterPropertyManager, assertionMapper));
     }
 
 
@@ -149,7 +160,7 @@ public abstract class ServiceBuilderTestBase {
         }
 
         /**
-         * Used when mocking {@link QuickStartEncapsulatedAssertionLocator#findEncapsulatedAssertion(String)} so that a different
+         * Used when mocking {@link QuickStartAssertionLocator#findEncapsulatedAssertion(String)} so that a different
          * instance of {@link EncapsulatedAssertion} then the one stored in test repo {@code testEncassTemplates} is returned
          * when building {@link PublishedService#getPolicy() service policy}.
          */

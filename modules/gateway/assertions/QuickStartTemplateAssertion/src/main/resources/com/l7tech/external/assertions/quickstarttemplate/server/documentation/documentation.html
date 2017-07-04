@@ -104,12 +104,13 @@
 <ol>
     <li><a href="#getingstarted">Getting Started</a></li>
     <li><a href="#encass">Available Encapsulated Assertions</a></li>
+    <li><a href="#assertions">Available Assertions</a></li>
 <!--    <li><a href="#custom">Creating Custom Encapsulated Assertions</a></li> -->
 </ol>
 
 <br/>
 
-<a name="gettingstarted"><h2><u>Getting Started</u></h2></a>
+<a name="getingstarted"><h2><u>Getting Started</u></h2></a>
 <br/>
 <p>Publish your service on the Gateway by sending a JSON formatted request to the Quick Start URL</p>
 
@@ -197,18 +198,18 @@
 <a name="encass"><h2><u>Available Encapsulated Assertions:</u></h2></a>
 
 <ol>
-    {{#assertions}}
-    <li><a href="#{{config.name}}">Encapsulated Assertion: {{config.name}}</a></li>
-    {{/assertions}}
+    {{#encasses}}
+    <li><a href="#encass_{{config.name}}">Encapsulated Assertion: {{config.name}}</a></li>
+    {{/encasses}}
 </ol>
 
 
 
 <br/>
 
-{{#assertions}}
+{{#encasses}}
 <br/>
-<a name="{{config.name}}"><h3><u>Encapsulated Assertion: {{config.name}}</u></h3></a>
+<a name="encass_{{config.name}}"><h3><u>Encapsulated Assertion: {{config.name}}</u></h3></a>
 
 <!-- new container -->
 
@@ -254,7 +255,84 @@
 
 <br/>
 <hr>
+{{/encasses}}
+
+
+
+<!-- Supported Assertions -->
+
+<a name="assertions"><h2><u>Available Assertions:</u></h2></a>
+
+<ol>
+    {{#assertions}}
+    <li><a href="#assertion_{{externalName}}">Assertion: {{externalName}}</a></li>
+    {{/assertions}}
+</ol>
+
+
+
+<br/>
+
+{{#assertions}}
+<br/>
+<a name="assertion_{{externalName}}"><h3><u>Assertion: {{externalName}}</u></h3></a>
+
+<!-- new container -->
+
+<div class="sub-content">
+    {{#longName}}
+    <p><b>Name:</b> {{this}}</p>
+    {{/longName}}
+
+    {{#description}}
+    <p><b>Description:</b> {{this}}</p>
+    {{/description}}
+
+    <h5>Variables Used:</h5>
+    {{#variablesUsed}}
+    <ul>
+        <li><em>{{this}}</em></li>
+    </ul>
+    {{/variablesUsed}}
+
+    <h5>Sets Variables:</h5>
+    {{#variablesSet}}
+    <ul>
+        <li>Name: <em>{{left}}</em></li>
+        <li>Type: <em>{{middle}}</em></li>
+        {{#right}}
+        <li>Supports Multivalued <em>YES</em></li>
+        {{/right}}
+        {{^right}}
+        <li>Supports Multivalued <em>NO</em></li>
+        {{/right}}
+    </ul>
+    {{/variablesSet}}
+
+    <br/>
+
+    {{#schema}}
+    <details>
+        <summary>JSON Schema</summary>
+        <pre class="prettyprint">{{this}}</pre>
+    </details>
+    {{/schema}}
+
+    {{#samplePayload}}
+    <details>
+        <summary>Sample JSON Payload</summary>
+        <pre class="prettyprint">{{this}}</pre>
+    </details>
+    {{/samplePayload}}
+</div>
+
+<!-- end new container -->
+
+<br/>
+<hr>
 {{/assertions}}
+
+
 
 <br/>
 <br/>

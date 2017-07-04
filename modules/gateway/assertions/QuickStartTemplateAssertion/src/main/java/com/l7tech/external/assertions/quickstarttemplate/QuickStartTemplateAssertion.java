@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.quickstarttemplate;
 
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.variable.BuiltinVariables;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
 import org.jetbrains.annotations.NotNull;
@@ -15,7 +16,7 @@ import static com.l7tech.policy.assertion.AssertionMetadata.MODULE_LOAD_LISTENER
  * We explore how to use encapsulated assertions to help make policy format more compact and with less learning curve.
  * Explore how we can transfer the complexity burden to more experienced Gateway users ahead of time using encapsulated assertion templating.
  */
-public class QuickStartTemplateAssertion extends MessageTargetableAssertion implements SetsVariables {
+public class QuickStartTemplateAssertion extends MessageTargetableAssertion implements SetsVariables, UsesVariables {
     public static final String QS_WARNINGS = "qs.warnings";
     public static final String QS_BUNDLE = "qs.bundle";
     /**
@@ -26,6 +27,9 @@ public class QuickStartTemplateAssertion extends MessageTargetableAssertion impl
      * Indicates the service creation method, see {@link QsServiceCreateMethod} vor possible values.
      */
     public static final String PROPERTY_QS_CREATE_METHOD = "qs.create.method";
+
+
+    public static final String ENABLE_ALL_ASSERTIONS_FLAG_KEY = "quickStart.allAssertions.enabled";
 
     /**
      * Possible values for {@link #PROPERTY_QS_CREATE_METHOD}
@@ -74,6 +78,11 @@ public class QuickStartTemplateAssertion extends MessageTargetableAssertion impl
         );
     }
 
+    @Override
+    protected VariablesUsed doGetVariablesUsed() {
+        return super.doGetVariablesUsed().withVariables(BuiltinVariables.PREFIX_CLUSTER_PROPERTY + "." + ENABLE_ALL_ASSERTIONS_FLAG_KEY);
+    }
+
     //
     // Metadata
     //
@@ -99,7 +108,7 @@ public class QuickStartTemplateAssertion extends MessageTargetableAssertion impl
         // Add to palette folder(s) 
         //   accessControl, transportLayerSecurity, xmlSecurity, xml, routing, 
         //   misc, audit, policyLogic, threatProtection 
-        meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "misc" });
+        meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "internalAssertions" });
         meta.put(AssertionMetadata.PALETTE_NODE_ICON, "com/l7tech/console/resources/Map16.gif");
 
         // Enable automatic policy advice (default is no advice unless a matching Advice subclass exists)
