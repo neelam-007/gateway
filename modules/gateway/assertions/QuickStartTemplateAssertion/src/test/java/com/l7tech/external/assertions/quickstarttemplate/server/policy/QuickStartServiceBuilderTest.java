@@ -104,7 +104,7 @@ public class QuickStartServiceBuilderTest extends ServiceBuilderTestBase {
     @Test
     public void createServiceWithUnknownEncass() throws Exception {
         expectedException.expect(QuickStartPolicyBuilderException.class);
-        expectedException.expectMessage(L7Matchers.matchesRegex("(?s)Unable to find.*named : UnknownEncass"));
+        expectedException.expectMessage(L7Matchers.matchesRegex("(?s)Template item named UnknownEncass is not registered on the Gateway."));
 
         final ServiceContainer testServiceContainer = parseJson("{\n" +
                 "  \"Service\": {\n" +
@@ -185,7 +185,7 @@ public class QuickStartServiceBuilderTest extends ServiceBuilderTestBase {
         String experimentalAssertionName = "RequestSizeLimit";
 
         expectedException.expect(QuickStartPolicyBuilderException.class);
-        expectedException.expectMessage(Matchers.equalToIgnoringCase("Unable to find assertion for policy template item named : " + experimentalAssertionName));
+        expectedException.expectMessage(Matchers.equalToIgnoringCase("Template item named " + experimentalAssertionName + " is not registered on the Gateway."));
 
         Assertion experimentalAssertion = mock(Assertion.class);
 

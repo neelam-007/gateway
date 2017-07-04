@@ -57,43 +57,39 @@ public class QuickStartMapper {
 
     /**
      * For each name
-     *    - look up assertion by name to get guid
-     *    - if applicable set argument(s)
+     *    - look up encapsulated assertion by name to get guid
+     *      - if exists and if applicable, set argument(s)
+     *    - else try as assertion, if applicable, use mapped name
+     *      - throw exception if assertion is unsupported and the allow-all-assertion flag is false
+     *
      */
     @NotNull
-    public List<Assertion> getAssertions(@NotNull final Service service) throws QuickStartPolicyBuilderException, FindException { // throws QuickStartPolicyBuilderException, , NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    public List<Assertion> getAssertions(@NotNull final Service service) throws QuickStartPolicyBuilderException, FindException {
         final List<Assertion> assertions = new ArrayList<>();
         for (final Map<String, Map<String, ?>> policyMap : service.policy) {
             // We know there is only one thing in this map, we've previously validated this.
             final String templateName = policyMap.keySet().iterator().next();
 
-            // get the assertion support
-            final AssertionSupport assertionSupport = assertionMapper.getSupportedAssertions().get(templateName);
-
-            Assertion assertion = null;
-            if (assertionSupport != null) {
-                assertion = assertionLocator.findAssertion(assertionSupport.getExternalName());
-                if (assertion == null) {
-                    // the template name matches a supported assertion but the assertion is not found on the gateway registry
-                    // this is a misconfiguration on our part!
-                    throw new QuickStartPolicyBuilderException("Assertion " + assertionSupport.getExternalName() + " for policy template item named " + templateName + " is not registered on the Gateway.");
-                }
-            } else if ("true".equalsIgnoreCase(clusterPropertyManager.getProperty(QuickStartTemplateAssertion.ENABLE_ALL_ASSERTIONS_FLAG_KEY))) {
-                assertion = assertionLocator.findAssertion(templateName);
-            }
-
-            if (assertion == null) {
-                // allow all encasses, no check needed
-                final EncapsulatedAssertion encapsulatedAssertion = assertionLocator.findEncapsulatedAssertion(templateName);
-                if (encapsulatedAssertion == null) {
-                    throw new QuickStartPolicyBuilderException("Unable to find assertion for policy template item named : " + templateName);
-                }
-                // process as encass
+            final EncapsulatedAssertion encapsulatedAssertion = assertionLocator.findEncapsulatedAssertion(templateName);
+            if (encapsulatedAssertion != null) {
+                // Process as encass
                 setEncassArguments(encapsulatedAssertion, policyMap.get(templateName));
                 assertions.add(encapsulatedAssertion);
             } else {
-                // process as assertion
-                callAssertionSetter(assertionSupport, assertion, policyMap.get(templateName));
+                // Process as assertion
+                final AssertionSupport assertionSupport = assertionMapper.getSupportedAssertions().get(templateName);
+                if (assertionSupport == null && !Boolean.valueOf(clusterPropertyManager.getProperty(QuickStartTemplateAssertion.ENABLE_ALL_ASSERTIONS_FLAG_KEY))) {
+                    // this assertion is unsupported and the allow-all-assertion flag is false
+                    throw new QuickStartPolicyBuilderException("Template item named " + templateName + " is not registered on the Gateway.");
+                }
+
+                String assertionName = assertionSupport == null ? templateName : assertionSupport.getExternalName();
+                final Assertion assertion = assertionLocator.findAssertion(assertionName);
+                if (assertion == null) {
+                    // the template name matches a supported assertion but the assertion is not found on the gateway registry this is a misconfiguration on our part!
+                    throw new QuickStartPolicyBuilderException("Assertion " + assertionName + " for policy template item named " + templateName + " is not registered on the Gateway.");
+                }
+                callAssertionSetter(assertionSupport, assertion, policyMap.get(assertionName));
                 assertions.add(assertion);
             }
         }
