@@ -30,7 +30,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Extension of HttpClient that sets up SSL for the Manager (or other client)
  */
-public class SecureHttpComponentsClient extends DefaultHttpClient {
+public class SecureHttpComponentsClient extends DefaultHttpClientWithHttpContext {
 
     //- PUBLIC
 

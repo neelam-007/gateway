@@ -12,7 +12,6 @@ import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.auth.params.AuthPNames;
 import org.apache.http.client.CredentialsProvider;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.params.AuthPolicy;
 import org.apache.http.conn.params.ConnRoutePNames;
@@ -20,6 +19,7 @@ import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.params.HttpParams;
+import org.apache.http.protocol.HttpContext;
 import org.springframework.context.i18n.LocaleContext;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.remoting.httpinvoker.AbstractHttpInvokerRequestExecutor;
@@ -50,7 +50,7 @@ import java.util.zip.GZIPInputStream;
  */
 public class SecureHttpComponentsHttpInvokerRequestExecutor extends AbstractHttpInvokerRequestExecutor implements ConfigurableHttpInvokerRequestExecutor {
 
-    private DefaultHttpClient httpClient;
+    private DefaultHttpClientWithHttpContext httpClient;
 
     //- PUBLIC
 
@@ -61,11 +61,11 @@ public class SecureHttpComponentsHttpInvokerRequestExecutor extends AbstractHttp
         this.sessionInfoHolder = new SessionSupport();
     }
 
-    public SecureHttpComponentsHttpInvokerRequestExecutor(DefaultHttpClient httpClient) {
+    public SecureHttpComponentsHttpInvokerRequestExecutor(DefaultHttpClientWithHttpContext httpClient) {
         this(httpClient, null);
     }
 
-    public SecureHttpComponentsHttpInvokerRequestExecutor(DefaultHttpClient httpClient, String userAgent) {
+    public SecureHttpComponentsHttpInvokerRequestExecutor(DefaultHttpClientWithHttpContext httpClient, String userAgent) {
         this.httpClient = httpClient;
         this.userAgent = userAgent;
         this.hostSubstitutionPattern = Pattern.compile(HOST_REGEX);
@@ -77,6 +77,7 @@ public class SecureHttpComponentsHttpInvokerRequestExecutor extends AbstractHttp
         HttpPost postMethod = createPostMethod(config);
         setRequestBody(postMethod, baos);
         HttpResponse response = executePostMethod(postMethod);
+
         validateResponse(response);
         InputStream responseBody = getResponseBody(response);
         return readRemoteInvocationResult(responseBody, config.getCodebaseUrl());
@@ -219,7 +220,15 @@ public class SecureHttpComponentsHttpInvokerRequestExecutor extends AbstractHttp
         postMethod.addHeader("X-Layer7-SessionId", info.sessionId);
         configureProxy( httpClient );
         try {
-            return httpClient.execute(hostConfiguration, postMethod);
+
+            HttpContext httpContext = httpClient.createHttpContext();
+            // Associate the sessionId with the HttpContext so that subsequent requests can
+            // reuse this connection when Client Certificate is being used
+            // This stops HttpClient from stamping the connecting with the Principal obtained from the
+            // SSLContext
+            httpContext.setAttribute("http.user-token", info.sessionId);
+
+            return httpClient.execute(hostConfiguration, postMethod, httpContext);
         } catch (SocketTimeoutException ex) {
             throw new TimeoutRuntimeException(ExceptionUtils.getMessage(ex));
         }
