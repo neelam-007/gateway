@@ -224,8 +224,11 @@ public class SecureHttpComponentsHttpInvokerRequestExecutor extends AbstractHttp
             HttpContext httpContext = httpClient.createHttpContext();
             // Associate the sessionId with the HttpContext so that subsequent requests can
             // reuse this connection when Client Certificate is being used
-            // This stops HttpClient from stamping the connecting with the Principal obtained from the
-            // SSLContext
+            // Without this the HttpClient when it finds a Principal from the SSLContext it associates it with
+            // the pooled connection. If we don't request using a value for this attribute then no connections
+            // from the HTTP connection pool are used until the pool reaches it's maximum number of connections.
+            // So we need to set this to a value we control so that later requests will be able to use existing
+            // HTTP connections to the Gateway
             httpContext.setAttribute("http.user-token", info.sessionId);
 
             return httpClient.execute(hostConfiguration, postMethod, httpContext);
