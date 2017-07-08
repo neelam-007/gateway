@@ -25,6 +25,7 @@ import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
 import org.apache.commons.lang.ArrayUtils;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationContext;
 
 import javax.swing.*;
@@ -42,6 +43,7 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.*;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -572,25 +574,64 @@ public class PolicyTree extends JTree implements DragSourceListener,
          */
         @Override
         public void keyPressed(KeyEvent e) {
-            JTree tree = (JTree)e.getSource();
-            TreePath path = tree.getSelectionPath();
+            final int keyCode = e.getKeyCode();
+            final JTree tree = (JTree)e.getSource();
+            final TreePath path = tree.getSelectionPath();
+            final TreePath[] paths = tree.getSelectionPaths();
+
             if (path == null) return;
-            AssertionTreeNode node =
-              (AssertionTreeNode)path.getLastPathComponent();
+
+            final AssertionTreeNode node = (AssertionTreeNode)path.getLastPathComponent();
+            final AssertionTreeNode[] nodes = toAssertionTreeNodeArray(paths);
+
             if (node == null) return;
-            int keyCode = e.getKeyCode();
-            if (keyCode == KeyEvent.VK_DELETE) {
-                AssertionTreeNode[] nodes = toAssertionTreeNodeArray(tree.getSelectionPaths());
-                if (nodes.length < 2) nodes = null;
-                if (canDelete(node, nodes)){
-                    new DeleteAssertionAction(node, nodes).actionPerformed(null);
-                }
-            } else if (keyCode == KeyEvent.VK_ENTER) {
-                final TreePath[] paths = PolicyTree.this.getSelectionPaths();
-                if ( paths != null && paths.length == 1 && paths[0] != null && paths[0].getLastPathComponent() instanceof AbstractTreeNode) {
-                    final Action action = ((AbstractTreeNode) paths[0].getLastPathComponent()).getPreferredAction();
-                    if ( action != null ) action.actionPerformed( new ActionEvent(tree, ActionEvent.ACTION_PERFORMED, "enter-key") );
-                }
+
+            switch (keyCode) {
+                // React to single node selection only
+                // Do preferred action (i.e., opening assertion properties dialog)
+                case KeyEvent.VK_ENTER:
+                    if ( nodes.length == 1) {
+                        final Action action = node.getPreferredAction();
+                        if ( action != null ) {
+                            action.actionPerformed( new ActionEvent(tree, ActionEvent.ACTION_PERFORMED, "enter-key") );
+                        }
+                    }
+                    break;
+
+                case KeyEvent.VK_DELETE:
+                    performMultipleNodesAction(node, nodes, AssertionTreeNode::canDelete,
+                            new DeleteAssertionAction(node, nodes));
+                    break;
+
+                // Perform assertion(s) move-up for CTRL + K key combination
+                case KeyEvent.VK_K:
+                    if (e.isControlDown()) {
+                        performMultipleNodesAction(node, nodes, AssertionTreeNode::canMoveUp,
+                                new AssertionMoveUpAction(node, nodes) {
+                                    protected void performAction() {
+                                        super.performAction();
+                                        SwingUtilities.invokeLater(() -> tree.setSelectionPaths(paths));
+                                    }
+                                });
+                    }
+                    break;
+
+                // Perform assertion(s) move-down for CTRL + J key combination
+                case KeyEvent.VK_J:
+                    if (e.isControlDown()) {
+                        performMultipleNodesAction(node, nodes, AssertionTreeNode::canMoveDown,
+                                new AssertionMoveDownAction(node, nodes) {
+                                    protected void performAction() {
+                                        super.performAction();
+                                        SwingUtilities.invokeLater(() -> tree.setSelectionPaths(paths));
+                                    }
+                                });
+                    }
+                    break;
+
+                // Do nothing
+                default:
+                    break;
             }
         }
 
@@ -606,29 +647,31 @@ public class PolicyTree extends JTree implements DragSourceListener,
             return assertionTreeNodes.toArray(new AssertionTreeNode[assertionTreeNodes.size()]);
         }
 
-        private boolean canDelete(AssertionTreeNode node, AssertionTreeNode[] nodes) {
-            if (!Registry.getDefault().isAdminContextPresent()) return false;
+        /**
+         * Performs specified action over the multiple nodes.
+         * It does few checks prior to taking the action like: user with admin context, node(s) can be editable, and finally the caller's predicate.
+         * @param node selected node to which action to be carried
+         * @param nodes selected nodes to which action to be carried
+         * @param actionPredicate predicate decides whether action can be performed or not
+         * @param action action to be performed
+         */
+        private void performMultipleNodesAction(@NotNull AssertionTreeNode node, @NotNull AssertionTreeNode[] nodes,
+                                                @NotNull Predicate<AssertionTreeNode> actionPredicate, @NotNull BaseAction action) {
+            if (!Registry.getDefault().isAdminContextPresent()) {
+                return;
+            }
 
             if (!node.hasEditPermission()) {
-                return false;
+                return;
             }
 
-            boolean delete = false;
-
-            if (nodes == null) {
-                delete = node.canDelete();
-            } else if (nodes.length > 0){
-                boolean allDelete = true;
-                for (AssertionTreeNode current : nodes) {
-                    if (current == null || !current.canDelete()) {
-                        allDelete = false;
-                        break;
-                    }
+            for (AssertionTreeNode current : nodes) {
+                if (!actionPredicate.test(current)) {
+                    return;
                 }
-                delete = allDelete;
             }
 
-            return delete;
+            action.invoke();
         }
     }
 

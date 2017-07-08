@@ -25,6 +25,12 @@ public class AssertionMoveDownAction extends SecureAction {
         this.node = node;
     }
 
+    public AssertionMoveDownAction(AssertionTreeNode node, AssertionTreeNode[] nodes) {
+        super(null);
+        this.node = node;
+        this.nodes = nodes;
+    }
+
     /**
      * @return the action name
      */
