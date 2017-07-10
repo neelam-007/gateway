@@ -129,6 +129,7 @@ public class SsgConnectorPropertiesDialog extends JDialog {
     private SecurityZoneWidget zoneControl;
     private JRadioButton extendedSupportRadioButton;
     private JRadioButton uploadOnlySupportRadioButton;
+    private JTextField cipherSuiteFilterField;
     private boolean readOnly;
 
     private SsgConnector connector;
@@ -264,7 +265,8 @@ public class SsgConnectorPropertiesDialog extends JDialog {
 
         initializeInterfaceComboBox();
 
-        this.cipherSuiteListModel = CipherSuiteGuiUtil.createCipherSuiteListModel(this.cipherSuiteList, false, defaultCipherListButton, uncheckAllButton, null, moveUpButton, moveDownButton);
+        this.cipherSuiteListModel = CipherSuiteGuiUtil.createCipherSuiteListModel(this.cipherSuiteList, false,
+                cipherSuiteFilterField, defaultCipherListButton, uncheckAllButton, null, moveUpButton, moveDownButton);
 
         propertyList.setModel(propertyListModel);
         propertyList.setCellRenderer(new DefaultListCellRenderer() {

@@ -145,6 +145,31 @@ public class FilterListModel<E> extends AbstractListModel {
     }
 
     /**
+     * Gets the specified element index
+     * @param element
+     * @return
+     */
+    public int getElementIndex(E element) {
+        if (filter == null) {
+            return getElementIndex(model, element);
+        } else {
+            return getElementIndex(this, element);
+        }
+    }
+
+    private int getElementIndex(ListModel<E> model, E element) {
+        if (element != null) {
+            for (int index = 0; index < model.getSize(); index++) {
+                if (model.getElementAt(index).equals(element)) {
+                    return index;
+                }
+            }
+        }
+
+        return -1;
+    }
+
+    /**
      * Returns the number of elements in the list.
      * The method uses the filter if specified (not null)
      *
@@ -184,6 +209,20 @@ public class FilterListModel<E> extends AbstractListModel {
             return index;
         } else {
             return filteredIndices.indexOf(index);
+        }
+    }
+
+    /**
+     * Returns the original index of the specified index.
+     *
+     * @param index  the filtered item index
+     * @return the original index of the specified filtered item index
+     */
+    public int getOriginalIndex(int index){
+        if (filter == null) {
+            return index;
+        } else {
+            return filteredIndices.get(index);
         }
     }
 

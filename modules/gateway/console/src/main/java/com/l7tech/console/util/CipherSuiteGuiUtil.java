@@ -1,14 +1,15 @@
 package com.l7tech.console.util;
 
 import com.l7tech.console.panels.CipherSuiteListModel;
+import com.l7tech.gui.util.PauseListenerAdapter;
+import com.l7tech.gui.util.TextComponentPauseListenerManager;
+import com.l7tech.gui.widgets.JCheckBoxListModel;
 import com.l7tech.util.ConfigFactory;
-import com.l7tech.util.Functions;
-import com.l7tech.util.JceUtil;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
+import javax.swing.text.JTextComponent;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.*;
@@ -39,6 +40,7 @@ public final class CipherSuiteGuiUtil {
      *
      * @param cipherSuiteList  a JList to configure.  Required.
      * @param outbound true if the cipher suites will be used for outbound TLS.  If so, additional SCSV values might be included.
+     * @param filterTextField  a text field used to filter the model, or null to disable this functionality
      * @param defaultCipherListButton  a button to use for the "Use Default Ciphers" button, or null to disable this functionality.
      * @param selectNoneButton a button to use for the "Un-check all cipher suites" button, or null to disable this functionality.
      * @param selectAllButton a button to use for the "Check all cipher suites" button, or null to disable this functionality.
@@ -47,25 +49,56 @@ public final class CipherSuiteGuiUtil {
      * @return the new CipherSuiteListModel.  Never null.
      */
     public static CipherSuiteListModel createCipherSuiteListModel(final JList cipherSuiteList, boolean outbound,
-            final @Nullable JButton defaultCipherListButton, final @Nullable JButton selectNoneButton, final @Nullable JButton selectAllButton, final @Nullable JButton moveUpButton, final @Nullable JButton moveDownButton) {
-        String[] allCiphers = getCipherSuiteNames( outbound );
-        Set<String> defaultCiphers = new LinkedHashSet<String>(Arrays.asList(
+                                                                  final @Nullable JTextField filterTextField,
+                                                                  final @Nullable JButton defaultCipherListButton,
+                                                                  final @Nullable JButton selectNoneButton, final @Nullable JButton selectAllButton,
+                                                                  final @Nullable JButton moveUpButton, final @Nullable JButton moveDownButton) {
+        final String[] allCiphers = getCipherSuiteNames( outbound );
+        final Set<String> defaultCiphers = new LinkedHashSet<String>(Arrays.asList(
                 Registry.getDefault().getTransportAdmin().getDefaultCipherSuiteNames()));
-        for (String cipher : new ArrayList<String>(defaultCiphers)) {
+
+        for (String cipher : new ArrayList<>(defaultCiphers)) {
             if (!CipherSuiteGuiUtil.cipherSuiteShouldBeCheckedByDefault(cipher))
                 defaultCiphers.remove(cipher);
         }
+
         final CipherSuiteListModel cipherSuiteListModel = new CipherSuiteListModel(allCiphers, defaultCiphers);
-        cipherSuiteListModel.attachToJList(cipherSuiteList);
-        cipherSuiteList.addListSelectionListener(new ListSelectionListener() {
-            @Override
-            public void valueChanged(ListSelectionEvent e) {
-                enableOrDisableCipherSuiteButtons(cipherSuiteList, cipherSuiteListModel, moveUpButton, moveDownButton);
-            }
-        });
+
+        // Define document listener for Filter Text Field. And, ensure
+        // 1. updating the list model with matching items
+        // 2. restoring the previous selection if possible
+        if (filterTextField != null) {
+            final FilterListModel<JCheckBox> filterListModel = new FilterListModel<>(cipherSuiteListModel);
+            cipherSuiteListModel.attachToJListViaFilterView(cipherSuiteList, filterListModel);
+
+            TextComponentPauseListenerManager.registerPauseListener(filterTextField, new PauseListenerAdapter() {
+                public void textEntryPaused(JTextComponent component, long msecs) {
+                    final String filterText = filterTextField.getText();
+
+                    // Matching items will be shown if non-empty filter is specified. Otherwise, all the items will be shown.
+                    // (criteria: CONTAINS + CASE INSENSITIVE)
+                    filterListModel.setFilter(StringUtils.isEmpty(filterText) ? null :
+                            (Filter<JCheckBox>) item -> item.getText().toLowerCase().contains(filterText.toLowerCase()));
+                    cipherSuiteList.clearSelection();
+
+                    // find out the last selected entry. If it is part of current filter view, restore the selection.
+                    int selectedIndex = filterListModel.getElementIndex(cipherSuiteListModel.getLastSelectedEntry());
+                    if (selectedIndex != -1) {
+                        cipherSuiteList.setSelectedIndex(selectedIndex);
+                    }
+
+                    // update the move-up/down buttons due to filter.
+                    enableOrDisableCipherSuiteButtons(cipherSuiteList, cipherSuiteListModel, moveUpButton, moveDownButton);
+                }
+            }, 100);
+        } else {
+            cipherSuiteListModel.attachToJList(cipherSuiteList);
+        }
+
+        cipherSuiteList.addListSelectionListener(e -> enableOrDisableCipherSuiteButtons(cipherSuiteList, cipherSuiteListModel, moveUpButton, moveDownButton));
 
         if (defaultCipherListButton != null)
-            defaultCipherListButton.addActionListener(createDefaultCipherListActionListener(cipherSuiteListModel));
+            defaultCipherListButton.addActionListener(createDefaultCipherListActionListener(cipherSuiteListModel, filterTextField));
 
         if (moveUpButton != null)
             moveUpButton.addActionListener(createMoveUpActionListener(cipherSuiteList, cipherSuiteListModel));
@@ -74,10 +107,13 @@ public final class CipherSuiteGuiUtil {
             moveDownButton.addActionListener(createMoveDownActionListener(cipherSuiteList, cipherSuiteListModel));
 
         if (selectAllButton != null)
-            selectAllButton.addActionListener(createSelectAllActionListener(cipherSuiteListModel));
+            selectAllButton.addActionListener(createSelectAllCipherSuitesActionListener(cipherSuiteList, cipherSuiteListModel));
 
         if (selectNoneButton != null)
-            selectNoneButton.addActionListener(createSelectNoneActionListener(cipherSuiteListModel));
+            selectNoneButton.addActionListener(createSelectNoCipherSuitesActionListener(cipherSuiteList, cipherSuiteListModel));
+
+        // Let's set the move-up/down buttons state. It is better not to enable them if none of the items selected.
+        enableOrDisableCipherSuiteButtons(cipherSuiteList, cipherSuiteListModel, moveUpButton, moveDownButton);
 
         return cipherSuiteListModel;
     }
@@ -110,43 +146,49 @@ public final class CipherSuiteGuiUtil {
         };
     }
 
-    public static ActionListener createDefaultCipherListActionListener(final CipherSuiteListModel cipherSuiteListModel) {
+    public static ActionListener createDefaultCipherListActionListener(final CipherSuiteListModel cipherSuiteListModel, final JTextField filterTextField) {
         return new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 cipherSuiteListModel.setDefaultCipherList();
+                if (filterTextField != null) filterTextField.setText("");
             }
         };
     }
 
-    public static ActionListener createSelectNoneActionListener(final CipherSuiteListModel cipherSuiteListModel) {
-        return createSetAllCheckBoxesActionListener(cipherSuiteListModel, false);
+    public static ActionListener createSelectAllCipherSuitesActionListener(final JList cipherSuiteList, final CipherSuiteListModel cipherSuiteListModel) {
+        return createSelectCipherSuitesActionListener(cipherSuiteList, cipherSuiteListModel, true);
     }
 
-    public static ActionListener createSelectAllActionListener(CipherSuiteListModel cipherSuiteListModel) {
-        return createSetAllCheckBoxesActionListener(cipherSuiteListModel, true);
+    public static ActionListener createSelectNoCipherSuitesActionListener(final JList cipherSuiteList, final CipherSuiteListModel cipherSuiteListModel) {
+        return createSelectCipherSuitesActionListener(cipherSuiteList, cipherSuiteListModel, false);
     }
 
-    private static ActionListener createSetAllCheckBoxesActionListener(final CipherSuiteListModel cipherSuiteListModel, final boolean desiredState) {
+    public static ActionListener createSelectCipherSuitesActionListener(final JList cipherSuiteList, final CipherSuiteListModel cipherSuiteListModel, final boolean allSuites) {
         return new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                cipherSuiteListModel.visitEntries(new Functions.Binary<Boolean, Integer, JCheckBox>() {
-                    @Override
-                    public Boolean call(Integer integer, JCheckBox jCheckBox) {
-                        return desiredState;
-                    }
-                });
+                cipherSuiteListModel.disarm();
+                setAllCipherSuitesTo(cipherSuiteList.getModel(), allSuites);
+                cipherSuiteList.repaint();
             }
         };
     }
 
     public static void enableOrDisableCipherSuiteButtons(final JList cipherSuiteList, final CipherSuiteListModel cipherSuiteListModel, final JButton moveUpButton, final JButton moveDownButton) {
         int index = cipherSuiteList.getSelectedIndex();
+        ListModel<JCheckBox> model = cipherSuiteList.getModel();
+        boolean isFiltered = (model instanceof FilterListModel) && (((FilterListModel<JCheckBox>)model).getFilter() != null);
+
+        // Disable move-up/down buttons if model is filtered
         if (moveUpButton != null)
-            moveUpButton.setEnabled(index > 0);
+            moveUpButton.setEnabled(index > 0 && !isFiltered);
         if (moveDownButton != null)
-            moveDownButton.setEnabled(index >= 0 && index < cipherSuiteListModel.getSize() - 1);
+            moveDownButton.setEnabled(index >= 0 && index < cipherSuiteListModel.getSize() - 1 && !isFiltered);
+    }
+
+    public static void setAllCipherSuitesTo(ListModel<JCheckBox> model, boolean checked) {
+        JCheckBoxListModel.visitEntriesForStateChange(model, (index, entry) -> { return checked; });
     }
 
     public static String[] getCipherSuiteNames( boolean outbound ) {

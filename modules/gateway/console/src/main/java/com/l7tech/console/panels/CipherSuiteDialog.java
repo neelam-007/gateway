@@ -22,6 +22,7 @@ public class CipherSuiteDialog extends JDialog {
     private JButton cancelButton;
     private JButton okButton;
     private JButton selectNoneButton;
+    private JTextField cipherSuiteFilterField;
 
     private final CipherSuiteListModel cipherSuiteListModel;
     private boolean confirmed = false;
@@ -30,7 +31,8 @@ public class CipherSuiteDialog extends JDialog {
         super(owner, title, modalityType);
         getContentPane().setLayout(new BorderLayout());
         getContentPane().add(mainPanel);
-        cipherSuiteListModel = CipherSuiteGuiUtil.createCipherSuiteListModel(cipherSuiteList, true, defaultCipherListButton, selectNoneButton, null, moveUpButton, moveDownButton);
+        cipherSuiteListModel = CipherSuiteGuiUtil.createCipherSuiteListModel(cipherSuiteList, true,
+                cipherSuiteFilterField, defaultCipherListButton, selectNoneButton, null, moveUpButton, moveDownButton);
         cipherSuiteListModel.setCipherListString(cipherSuites);
 
         okButton.addActionListener(new ActionListener() {

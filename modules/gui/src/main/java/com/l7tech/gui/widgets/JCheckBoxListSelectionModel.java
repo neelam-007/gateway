@@ -7,15 +7,15 @@ import javax.swing.*;
  * a checkbox is being toggled.
  */
 public class JCheckBoxListSelectionModel extends DefaultListSelectionModel {
-    private final JCheckBoxListModel jCheckBoxListModel;
+    private final JCheckBoxListModelAware jCheckBoxListModelAware;
 
-    public JCheckBoxListSelectionModel(JCheckBoxListModel jCheckBoxListModel) {
-        this.jCheckBoxListModel = jCheckBoxListModel;
+    public JCheckBoxListSelectionModel(JCheckBoxListModelAware jCheckBoxListModelAware) {
+        this.jCheckBoxListModelAware = jCheckBoxListModelAware;
     }
 
     @Override
     public void setSelectionInterval(int index0, int index1) {
         super.setSelectionInterval(index0, index1);
-        jCheckBoxListModel.arm(index0);
+        jCheckBoxListModelAware.arm(index0);
     }
 }

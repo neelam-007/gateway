@@ -1,6 +1,7 @@
 package com.l7tech.gui.widgets;
 
 import com.l7tech.util.Functions;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
@@ -12,7 +13,9 @@ import java.util.List;
 /**
  * A ListModel that holds a number of JCheckBox elements as its list entries.
  */
-public class  JCheckBoxListModel extends AbstractListModel<JCheckBox> {
+public class  JCheckBoxListModel
+        extends AbstractListModel<JCheckBox>
+        implements JCheckBoxListModelAware {
     public static final String CLIENT_PROPERTY_ENTRY_CODE = "JCheckBoxListModel.entryCode";
 
     /** A predicate that will match checkboxes that are currently checked. */
@@ -21,15 +24,20 @@ public class  JCheckBoxListModel extends AbstractListModel<JCheckBox> {
     /** A predicate that will match checkboxes that are currently unchecked. */
     public static final Functions.Unary<Boolean,JCheckBox> MATCH_UNCHECKED_PREDICATE = Functions.negate(MATCH_CHECKED_PREDICATE);
 
-    private final List<JCheckBox> entries;
+    private List<JCheckBox> entries;
     private int armedEntry = -1;
 
     public JCheckBoxListModel(List<JCheckBox> entries) {
-        this.entries = new ArrayList<JCheckBox>(entries);
+        this.entries = new ArrayList<>(entries);
+    }
+
+    protected void setEntries(List<JCheckBox> entries) {
+        int oldSize = getSize();
+        this.entries = new ArrayList<>(entries);
+        fireContentsChanged(this, 0, Math.max(oldSize, entries.size()));
     }
 
     protected List<JCheckBox> getEntries() {
-        //noinspection ReturnOfCollectionOrArrayField
         return entries;
     }
 
@@ -40,13 +48,10 @@ public class  JCheckBoxListModel extends AbstractListModel<JCheckBox> {
 
     @Override
     public JCheckBox getElementAt(int index) {
-        return getEntryAt(index);
-    }
-
-    public JCheckBox getEntryAt(int index) {
         return entries.get(index);
     }
 
+    @Override
     public void swapEntries(int index1, int index2) {
         JCheckBox value1 = entries.get(index1);
         JCheckBox value2 = entries.get(index2);
@@ -63,10 +68,11 @@ public class  JCheckBoxListModel extends AbstractListModel<JCheckBox> {
      *
      * @param index index of list entry to arm
      */
+    @Override
     public void arm(int index) {
         disarm();
         if (index < 0) return;
-        ButtonModel entryModel = getEntryAt(index).getModel();
+        ButtonModel entryModel = getElementAt(index).getModel();
         entryModel.setArmed(true);
         entryModel.setRollover(true);
         armedEntry = index;
@@ -76,9 +82,10 @@ public class  JCheckBoxListModel extends AbstractListModel<JCheckBox> {
     /**
      * Clear the "armed" state from any checkbox that was armed by a call to {@link #arm}.
      */
+    @Override
     public void disarm() {
         if (armedEntry >= 0) {
-            getEntryAt(armedEntry).getModel().setArmed(false);
+            getElementAt(armedEntry).getModel().setArmed(false);
             fireContentsChanged(this, armedEntry, armedEntry);
             armedEntry = -1;
         }
@@ -88,9 +95,10 @@ public class  JCheckBoxListModel extends AbstractListModel<JCheckBox> {
      * Toggle the checkbox at the specified index.
      * @param index the index to toggle.  Must be between 0 and getSize() - 1 inclusive.
      */
+    @Override
     public void toggle(int index) {
         if (armedEntry >= 0 && armedEntry != index) disarm();
-        JCheckBox entry = getEntryAt(index);
+        JCheckBox entry = getElementAt(index);
         if (entry.isEnabled()) {
             ButtonModel entryModel = entry.getModel();
             entryModel.setArmed(false);
@@ -108,26 +116,60 @@ public class  JCheckBoxListModel extends AbstractListModel<JCheckBox> {
      *        or null to leave the current state unchanged. The checker should <b>not</b> modify the JCheckBox itself.
      */
     public void visitEntries(Functions.Binary<Boolean,Integer,JCheckBox> checker) {
-        if (armedEntry >= 0) disarm();
-        int highest = Integer.MIN_VALUE;
-        int lowest = Integer.MAX_VALUE;
-        for (int index = 0; index < entries.size(); ++index) {
-            JCheckBox entry = entries.get(index);
-            final boolean wasChecked = entry.isSelected();
+        disarm();
+        int[] modifiedRange = visitEntriesForStateChange(this, checker);
+        if (modifiedRange[0] <= modifiedRange[1]) {
+            fireContentsChanged(this, modifiedRange[0], modifiedRange[1]);
+        }
+    }
+
+    /**
+     * Visits entries for state change in the JCheckBox list model.
+     * @param model
+     * @param checker a checker that will be given a JCheckBox instance to examine, along with its position in the list.
+     *        The checker should return "true" if the checkbox should be checked, "false" if it should be unchecked,
+     *        or null to leave the current state unchanged. The checker should <b>not</b> modify the JCheckBox itself.
+     * @return range of modified entries (lowest and highest).
+     */
+    public static int[] visitEntriesForStateChange(final ListModel<JCheckBox> model,
+                                    final Functions.Binary<Boolean, Integer, JCheckBox> checker) {
+        int[] modifiedRange = { Integer.MAX_VALUE, Integer.MIN_VALUE };
+
+        for (int index = 0; index < model.getSize(); index++) {
+            final JCheckBox entry = model.getElementAt(index);
             final Boolean wantChecked = checker.call(index, entry);
-            if (wantChecked != null && wasChecked != wantChecked) {
-                ButtonModel entryModel = entry.getModel();
-                entryModel.setArmed(false);
-                entryModel.setRollover(false);
-                entry.setSelected(wantChecked);
-                if (index > highest)
-                    highest = index;
-                if (index < lowest)
-                    lowest = index;
+
+            if (wantChecked != null && updateEntryState(entry, wantChecked)) {
+                if (modifiedRange[0] > index) {
+                    modifiedRange[0] = index;
+                }
+                modifiedRange[1] = index;
             }
         }
-        if (highest < Integer.MAX_VALUE)
-            fireContentsChanged(this, lowest, highest);
+
+        return modifiedRange;
+    }
+
+    /**
+     * Updates the entry state if required.
+     * @param entry JCheckBox entry
+     * @param wantChecked true to be checked.
+     * @return true if the entry state is updated. Otherwise returns false.
+     */
+    private static boolean updateEntryState(JCheckBox entry, boolean wantChecked) {
+        final boolean wasChecked = entry.isSelected();
+
+        if (wasChecked != wantChecked) {
+            ButtonModel entryModel = entry.getModel();
+
+            entryModel.setArmed(false);
+            entryModel.setRollover(false);
+            entry.setSelected(wantChecked);
+
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -184,30 +226,6 @@ public class  JCheckBoxListModel extends AbstractListModel<JCheckBox> {
     }
 
     /**
-     * Get the code name for the specified entry.
-     *
-     * @param entry  one of the checkbox list entries.  Required.
-     * @return the code name for this entry, ie "SSL_RSA_WITH_3DES_EDE_CBC_SHA".
-     */
-    protected static String getEntryCode(JCheckBox entry) {
-        Object code = entry.getClientProperty(CLIENT_PROPERTY_ENTRY_CODE);
-        return code != null ? code.toString() : entry.getText();
-    }
-
-    protected String buildEntryCodeString() {
-        StringBuilder ret = new StringBuilder(128);
-        boolean isFirst = true;
-        for (JCheckBox entry : entries) {
-            if (entry.isSelected()) {
-                if (!isFirst) ret.append(',');
-                ret.append(getEntryCode(entry));
-                isFirst = false;
-            }
-        }
-        return ret.toString();
-    }
-
-    /**
      * Configure the specified JList to use this as its list model.
      * <p/>
      * This will set the list model, the cell renderer, and the selection model.
@@ -215,40 +233,58 @@ public class  JCheckBoxListModel extends AbstractListModel<JCheckBox> {
      * @param jList the JList to configure.  Required.
      */
     public void attachToJList(final JList jList) {
-        final JCheckBoxListModel jCheckBoxListModel = this;
-        jList.setModel(this);
-        jList.setSelectionModel(new JCheckBoxListSelectionModel(this));
+        JCheckBoxListModel.attachToJList(jList, this, this);
+    }
+
+    /**
+     * Configures the JList with the provided list model and its corresponding list model aware.
+     * @param jList the JList to configure.
+     * @param listModel Any JCheckBox list model
+     * @param listModelAware Any JCheckBoxListModelAware instance
+     */
+    public static void attachToJList(@NotNull final JList jList,
+                                     @NotNull final ListModel<JCheckBox> listModel,
+                                     @NotNull final JCheckBoxListModelAware listModelAware) {
+        jList.setModel(listModel);
+        jList.setSelectionModel(new DefaultListSelectionModel() {
+            public void setSelectionInterval(int index0, int index1) {
+                super.setSelectionInterval(index0, index1);
+                listModelAware.arm(index0);
+            }
+        });
         jList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         jList.setCellRenderer(new ComponentListCellRenderer());
         jList.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseExited(MouseEvent e) {
-                jCheckBoxListModel.disarm();
+                listModelAware.disarm();
             }
 
             @Override
             public void mousePressed(MouseEvent e) {
                 int selectedIndex = jList.locationToIndex(e.getPoint());
                 if (selectedIndex < 0) return;
-                jCheckBoxListModel.disarm();
-                jCheckBoxListModel.arm(selectedIndex);
+                listModelAware.disarm();
+                listModelAware.arm(selectedIndex);
             }
 
             @Override
             public void mouseReleased(MouseEvent e) {
                 int selectedIndex = jList.locationToIndex(e.getPoint());
                 if (selectedIndex < 0) return;
-                jCheckBoxListModel.toggle(selectedIndex);
+                listModelAware.toggle(selectedIndex);
             }
         });
+
         // Change unmodified space from 'addToSelection' to 'toggleCheckBox' (ie, same as our above single-click handler)
         jList.getInputMap().put(KeyStroke.getKeyStroke(' '), "toggleCheckBox");
+
         //noinspection CloneableClassInSecureContext
         jList.getActionMap().put("toggleCheckBox", new AbstractAction("toggleCheckBox") {
             @Override
             public void actionPerformed(ActionEvent e) {
                 int selectedIndex = jList.getSelectedIndex();
-                jCheckBoxListModel.toggle(selectedIndex);
+                listModelAware.toggle(selectedIndex);
             }
         });
     }

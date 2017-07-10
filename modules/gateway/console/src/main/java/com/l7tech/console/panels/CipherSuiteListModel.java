@@ -1,7 +1,10 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.util.FilterListModel;
 import com.l7tech.gui.widgets.JCheckBoxListModel;
+import com.l7tech.gui.widgets.JCheckBoxListModelAware;
 import com.l7tech.util.ArrayUtils;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.util.*;
@@ -13,14 +16,18 @@ import java.util.regex.Pattern;
 public class CipherSuiteListModel extends JCheckBoxListModel {
     public static final Pattern WS_COMMA_WS = Pattern.compile("\\s*,\\s*");
 
-
     private final String[] allCiphers;
     private final Set<String> defaultCiphers;
 
+    /**
+     * Refers to the last selected entry in the view across filter views
+     */
+    private JCheckBox lastSelectedEntry;
+
     public CipherSuiteListModel(String[] allCiphers, Set<String> defaultCiphers) {
-        super(new ArrayList<JCheckBox>());
+        super(new ArrayList<>());
         this.allCiphers = ArrayUtils.copy(allCiphers);
-        this.defaultCiphers = new LinkedHashSet<String>(defaultCiphers);
+        this.defaultCiphers = new LinkedHashSet<>(defaultCiphers);
     }
 
     /**
@@ -35,12 +42,31 @@ public class CipherSuiteListModel extends JCheckBoxListModel {
     }
 
     /**
-     * @return cipher list string corresponding to all checked cipher names in order, comma delimited, ie.
-     *         "TLS_RSA_WITH_AES_128_CBC_SHA, SSL_RSA_WITH_3DES_EDE_CBC_SHA".  Never null, but may be empty
-     *         if no cipher suites are selected.
+     * Get the code name for the specified entry.
+     *
+     * @param entry  one of the checkbox list entries.  Required.
+     * @return the code name for this entry, ie "SSL_RSA_WITH_3DES_EDE_CBC_SHA".
      */
-    public String asCipherListStringNotNull() {
-        return buildEntryCodeString();
+    private static String getEntryCode(JCheckBox entry) {
+        Object code = entry.getClientProperty(CLIENT_PROPERTY_ENTRY_CODE);
+        return code != null ? code.toString() : entry.getText();
+    }
+
+    private String buildEntryCodeString() {
+        StringBuilder ret = new StringBuilder(128);
+        boolean isFirst = true;
+
+        for (int index = 0; index < getSize(); index++) {
+            final JCheckBox entry = getElementAt(index);
+
+            if (entry.isSelected()) {
+                if (!isFirst) ret.append(',');
+                ret.append(getEntryCode(entry));
+                isFirst = false;
+            }
+        }
+
+        return ret.toString();
     }
 
     private String buildDefaultCipherListString() {
@@ -73,28 +99,89 @@ public class CipherSuiteListModel extends JCheckBoxListModel {
 
         Set<String> enabled = new LinkedHashSet<String>(Arrays.asList(WS_COMMA_WS.split(cipherList)));
         Set<String> all = new LinkedHashSet<String>(Arrays.asList(allCiphers));
-        List<JCheckBox> entries = getEntries();
-        int oldsize = entries.size();
-        entries.clear();
+        List<JCheckBox> entries = new ArrayList<>();
+
         for (String cipher : enabled) {
             entries.add(new JCheckBox(cipher, true));
         }
+
         for (String cipher : all) {
             if (!enabled.contains(cipher))
                 entries.add(new JCheckBox(cipher, false));
         }
-        fireContentsChanged(this, 0, Math.max(oldsize, entries.size()));
+
+        setEntries(entries);
     }
 
     /**
      * Reset the cipher list to the defaults.
      */
     public void setDefaultCipherList() {
-        List<JCheckBox> entries = getEntries();
-        int oldsize = entries.size();
-        entries.clear();
-        for (String cipher : allCiphers)
+        List<JCheckBox> entries = new ArrayList<>();
+
+        for (String cipher : allCiphers) {
             entries.add(new JCheckBox(cipher, defaultCiphers.contains(cipher)));
-        fireContentsChanged(this, 0, Math.max(oldsize, entries.size()));
+        }
+
+        setEntries(entries);
+    }
+
+    /**
+     * Get last selected entry from the list across the multiple filter views.
+     * It helps to restore the previous selection due to filter.
+     * @return Last selected JCheckBox entry in the list
+     */
+    public JCheckBox getLastSelectedEntry() {
+        return lastSelectedEntry;
+    }
+
+    /**
+     * Configure the specified JList to use this as its list model via specified filter list model.
+     * <p/>
+     * This will set the list model, the cell renderer, and the selection model.
+     *
+     * @param jList the JList to configure.  Required.
+     * @param filterListModel filter list model
+     */
+    public void attachToJListViaFilterView(final JList jList, final FilterListModel<JCheckBox> filterListModel) {
+        JCheckBoxListModel.attachToJList(jList, filterListModel, createFilterListModelAware(filterListModel));
+
+        // Keep track of the last entry selection
+        jList.addListSelectionListener(e -> {
+            JCheckBox selectedEntry = (JCheckBox) jList.getSelectedValue();
+
+            if (selectedEntry != null) {
+                lastSelectedEntry = selectedEntry;
+            }
+        });
+    }
+
+    /**
+     * Creates the filter list model aware instance using the filter model
+     * @param filterListModel
+     * @return
+     */
+    private JCheckBoxListModelAware createFilterListModelAware(@NotNull final FilterListModel<JCheckBox> filterListModel) {
+        return new JCheckBoxListModelAware() {
+            @Override
+            public void swapEntries(int index1, int index2) {
+                CipherSuiteListModel.this.swapEntries(filterListModel.getOriginalIndex(index1), filterListModel.getOriginalIndex(index2));
+            }
+
+            @Override
+            public void arm(int index) {
+                CipherSuiteListModel.this.arm(filterListModel.getOriginalIndex(index));
+            }
+
+            @Override
+            public void disarm() {
+                CipherSuiteListModel.this.disarm();
+            }
+
+            @Override
+            public void toggle(int index) {
+                CipherSuiteListModel.this.toggle(filterListModel.getOriginalIndex(index));
+            }
+        };
     }
 }
