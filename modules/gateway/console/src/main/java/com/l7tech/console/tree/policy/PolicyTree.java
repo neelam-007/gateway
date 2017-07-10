@@ -43,6 +43,7 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -569,6 +570,13 @@ public class PolicyTree extends JTree implements DragSourceListener,
      * KeyAdapter for the policy trees
      */
     class TreeKeyListener extends KeyAdapter {
+
+        /**
+         * This atomic flag ensures not to serve more than one key action (esp: move-up/down) simultaneously.
+         * It's OK to ignore the consequent move-up/down key events. This way, we could avoid tree selection being lost.
+         */
+        private AtomicBoolean anyInProgressEvents = new AtomicBoolean(false);
+
         /**
          * Invoked when a key has been pressed.
          */
@@ -609,8 +617,13 @@ public class PolicyTree extends JTree implements DragSourceListener,
                         performMultipleNodesAction(node, nodes, AssertionTreeNode::canMoveUp,
                                 new AssertionMoveUpAction(node, nodes) {
                                     protected void performAction() {
-                                        super.performAction();
-                                        SwingUtilities.invokeLater(() -> tree.setSelectionPaths(paths));
+                                        if (!anyInProgressEvents.getAndSet(true)) {
+                                            super.performAction();
+                                            SwingUtilities.invokeLater(() -> {
+                                                tree.setSelectionPaths(paths);
+                                                anyInProgressEvents.set(false);
+                                            });
+                                        }
                                     }
                                 });
                     }
@@ -622,8 +635,13 @@ public class PolicyTree extends JTree implements DragSourceListener,
                         performMultipleNodesAction(node, nodes, AssertionTreeNode::canMoveDown,
                                 new AssertionMoveDownAction(node, nodes) {
                                     protected void performAction() {
-                                        super.performAction();
-                                        SwingUtilities.invokeLater(() -> tree.setSelectionPaths(paths));
+                                        if (!anyInProgressEvents.getAndSet(true)) {
+                                            super.performAction();
+                                            SwingUtilities.invokeLater(() -> {
+                                                tree.setSelectionPaths(paths);
+                                                anyInProgressEvents.set(false);
+                                            });
+                                        }
                                     }
                                 });
                     }
@@ -631,6 +649,8 @@ public class PolicyTree extends JTree implements DragSourceListener,
 
                 // Do nothing
                 default:
+                    // Hard reset the flag for other combinations
+                    anyInProgressEvents.set(false);
                     break;
             }
         }
