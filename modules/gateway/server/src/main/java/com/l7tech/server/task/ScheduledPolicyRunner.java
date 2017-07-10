@@ -18,6 +18,8 @@ import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.polback.PolicyBackedServiceRegistry;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.util.ExceptionUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.inject.Inject;
 import java.lang.reflect.Method;
@@ -35,7 +37,7 @@ public class ScheduledPolicyRunner {
 
     private static ScheduledPolicyRunner instance;
 
-
+    @NotNull
     private ScheduledTaskJobManager jobManager;
     private Auditor auditor;
 
@@ -43,10 +45,16 @@ public class ScheduledPolicyRunner {
         instance = serviceRunner;
     }
 
-    public static ScheduledPolicyRunner getInstance(ScheduledTaskJobManager jobManager) {
+    @NotNull
+    public static ScheduledPolicyRunner getInstance(@NotNull ScheduledTaskJobManager jobManager) {
         if (instance == null) {
             instance = new ScheduledPolicyRunner(jobManager);
         }
+        return instance;
+    }
+
+    @Nullable
+    public static ScheduledPolicyRunner getInstance() {
         return instance;
     }
 
