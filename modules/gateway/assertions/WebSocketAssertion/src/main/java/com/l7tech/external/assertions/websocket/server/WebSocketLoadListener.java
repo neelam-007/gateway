@@ -5,15 +5,15 @@ import com.l7tech.external.assertions.websocket.WebSocketConstants;
 import com.l7tech.external.assertions.websocket.WebSocketUtils;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.audit.AuditFactory;
-import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.GenericEntity;
-import com.l7tech.policy.GenericEntityHeader;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.GatewayFeatureSets;
+import com.l7tech.server.GatewayState;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.cluster.ClusterPropertyManager;
+import com.l7tech.server.entity.GenericEntityManager;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.system.LicenseEvent;
 import com.l7tech.server.event.system.ReadyForMessages;
@@ -53,7 +53,6 @@ public class WebSocketLoadListener {
     private static MessageProcessor messageProcessor;
     private static Map<WebSocketConnectionEntity, Server> servers;
     private static ClusterPropertyManager clusterPropertyManager;
-    private static EntityManager<WebSocketConnectionEntity, GenericEntityHeader> entityManager;
     private static SsgKeyStoreManager keyStoreManager;
     private static TrustManager trustManager;
     private static SecureRandom secureRandom;
@@ -62,6 +61,9 @@ public class WebSocketLoadListener {
     private static LicenseManager licenseManager;
     private static TransportAdminHelper transportAdminHelper;
     private static AuditFactory auditFactory;
+    private static GenericEntityManager gem;
+    private static ApplicationEventProxy applicationEventProxy;
+    private static ApplicationListener applicationListener;
 
     private static boolean isStarted = false;
 
@@ -81,20 +83,21 @@ public class WebSocketLoadListener {
         auditFactory = context.getBean("auditFactory", AuditFactory.class);
 
         init(context);
-
+        GatewayState gatewayState = context.getBean("gatewayState", GatewayState.class);
+        if( gatewayState.isReadyForMessages() ) {
+            if (hasValidWebSocketLicense() && !isStarted) { // required for the case installing the .aar file
+                                                            // on a live gateway or server module file.
+                loadPropAndStartServer();
+            }
+        }
         // Only initialize all the WebSocket inbound/outbound resource managers when the SSG is "ready for messages"
-        ApplicationEventProxy applicationEventProxy = context.getBean("applicationEventProxy", ApplicationEventProxy.class);
-        applicationEventProxy.addApplicationListener(new ApplicationListener() {
+        applicationEventProxy = context.getBean("applicationEventProxy", ApplicationEventProxy.class);
+        applicationListener = new ApplicationListener() {
             @Override
             public void onApplicationEvent(ApplicationEvent event) {
                 if (event instanceof ReadyForMessages) {
                     if (hasValidWebSocketLicense() && !isStarted) {
-                        try {
-                            loadProps();
-                            contextInitialized();
-                        } catch (FindException e) {
-                            logger.log(Level.WARNING, "Unable to initialize WebSocket servers", e);
-                        }
+                        loadPropAndStartServer();
                     }
                 } else if (event instanceof EntityInvalidationEvent) {
                     if (event.getSource() instanceof GenericEntity) {
@@ -134,18 +137,25 @@ public class WebSocketLoadListener {
                     }
                 } else if (event instanceof LicenseEvent) {
                     if (hasValidWebSocketLicense() && !isStarted) {
-                        try {
-                            loadProps();
-                            contextInitialized();
-                        } catch (FindException e) {
-                            logger.log(Level.WARNING, "Unable to initialize WebSocket servers", e);
-                        }
+                        init(context); // call init() because context can be destroyed when license removed.
+                        loadPropAndStartServer();
                     } else if (!hasValidWebSocketLicense()) {
                         contextDestroyed();
                     }
                 }
             }
-        });
+        };
+
+        applicationEventProxy.addApplicationListener(applicationListener);
+    }
+
+    private static void loadPropAndStartServer(){
+        try {
+            loadProps();
+            contextInitialized();
+        } catch (FindException e) {
+            logger.log(Level.WARNING, "Unable to initialize WebSocket servers", e);
+        }
     }
 
     private static boolean hasValidWebSocketLicense() {
@@ -184,13 +194,15 @@ public class WebSocketLoadListener {
 
     @SuppressWarnings({"UnusedDeclaration"})
     public static synchronized void onModuleUnloaded() {
+        unregisterGenericEntities();
         contextDestroyed();
+        applicationEventProxy.removeApplicationListener(applicationListener);
+        applicationListener = null;
     }
 
     private static void init(ApplicationContext context) {
         servers = new ConcurrentHashMap<>();
-
-        entityManager = EntityManagerFactory.getEntityManager(context);
+        registerGenericEntities(context);
     }
 
     /**
@@ -198,7 +210,7 @@ public class WebSocketLoadListener {
      */
     private static void contextInitialized() throws FindException {
 
-        Collection<WebSocketConnectionEntity> connections = entityManager.findAll();
+        Collection<WebSocketConnectionEntity> connections = gem.getEntityManager(WebSocketConnectionEntity.class).findAll();
         try {
             WebSocketConnectionManager.createConnectionManager(keyStoreManager,trustManager,secureRandom,defaultKey);
             for (WebSocketConnectionEntity connection : connections) {
@@ -221,8 +233,37 @@ public class WebSocketLoadListener {
             stop(connection);
         }
         isStarted = false;
-        EntityManagerFactory.removeWebSocketConnectionEntity();
     }
+
+
+    /**
+     * register generic entities for this module
+     */
+    private static void registerGenericEntities(final ApplicationContext context) {
+
+        if (gem == null) {
+            gem = context.getBean("genericEntityManager", GenericEntityManager.class);
+        }
+
+        if (gem.isRegistered(WebSocketConnectionEntity.class.getName())) {
+            gem.unRegisterClass(WebSocketConnectionEntity.class.getName());
+        }
+
+        gem.registerClass(WebSocketConnectionEntity.class);
+    }
+
+
+    /**
+     * Unregister generic entities for this module
+     */
+    private static void unregisterGenericEntities() {
+
+        if (gem != null) {
+            gem.unRegisterClass(WebSocketConnectionEntity.class.getName());
+            gem = null;
+        }
+    }
+
 
     private static void restart(WebSocketConnectionEntity connection) {
         stop(connection);
