@@ -62,8 +62,19 @@ public class SshSessionFactory implements KeyedPoolableObjectFactory<SshSessionK
      * @return The SshSession. It has not been connected yet. It must be connected before it can be used.
      */
     public SshSession makeObject(SshSessionKey sshSessionKey) throws JSchException {
+        return makeObject(sshSessionKey, new JSch());
+    }
+
+    /**
+     * Creates a new SshSession associated with the given key. This session must be connected before it can be used.
+     *
+     * @param sshSessionKey The session key to create the session for
+     * @param jsch The Java Secure Channel to use
+     * @return The SshSession. It has not been connected yet. It must be connected before it can be used.
+     */
+    SshSession makeObject(SshSessionKey sshSessionKey, JSch jsch) throws JSchException {
         logger.log(Level.FINE, "Making a new session for key {0}", sshSessionKey);
-        JSch jsch = new JSch();
+
         final DefaultUI userInfo = new DefaultUI();
 
         // check if it is connecting with password authentication of with private key authentication
@@ -208,6 +219,7 @@ public class SshSessionFactory implements KeyedPoolableObjectFactory<SshSessionK
      * This is a hostkey repository that checks that the host key fingerprint matches the given fingerprint.
      */
     private class FingerprintCheckingHostKeyRepository implements HostKeyRepository {
+        private static final int DEFAULT_SSH_PORT = 22;
 
         private HashMap<String, String> hostFingerPrints = new HashMap<>();
         private JSch jsch;
@@ -254,7 +266,7 @@ public class SshSessionFactory implements KeyedPoolableObjectFactory<SshSessionK
          * @param fingerprint The fingerprint of the host.
          */
         public void add(String host, int port, String fingerprint) {
-            if (port == 22) {
+            if (port == DEFAULT_SSH_PORT) {
                 hostFingerPrints.put(host, fingerprint);
             } else {
                 // For non default SSH ports, the host key is "[host]:port".
