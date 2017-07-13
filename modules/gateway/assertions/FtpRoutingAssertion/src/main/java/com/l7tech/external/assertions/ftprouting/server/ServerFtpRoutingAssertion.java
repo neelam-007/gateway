@@ -499,7 +499,6 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
                     causes a response code of 275 (a valid PWD command successful response code) and not that of a CWD command
                     which was issued by the client/requestor.
                      */
-                    //ftpClient.setDir(arguments);
                     ftpClient.issueCommand( ftpCommand.name() +" "+ arguments );
                     break;
                 case CDUP:
@@ -507,7 +506,6 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
                     # FIXING as the current response code is set to 257, due to the library issuing a PWD after the CDUP.
                     # Note: The reply code and text will be passed back from the backend ftp server.
                     */
-                    //ftpClient.setDirUp();
                     ftpClient.issueCommand( ftpCommand.name() );
                     break;
                 case PWD:
@@ -656,7 +654,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
                 config.getIntProperty(FtpRoutingAssertion.SC_CORE_CONC, FtpRoutingAssertion.MIN_CONC_DEFAULT);
         int globalMaxWorkQueue =
                 config.getIntProperty(FtpRoutingAssertion.SC_MAX_QUEUE, FtpRoutingAssertion.MAX_QUEUE_DEFAULT);
-        
+
         synchronized (assertionExecutorInitLock) {
             if (assertionExecutor == null) {
                 assertionExecutor = createAssertionExecutor(globalMaxConcurrency, globalCoreConcurrency, globalMaxWorkQueue);
@@ -666,7 +664,7 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
 
     private static ThreadPoolExecutor createAssertionExecutor(int globalMaxConcurrency, int globalCoreConcurrency, int globalMaxWorkQueue) {
         BlockingQueue<Runnable> assertionQueue = new ArrayBlockingQueue<>(globalMaxWorkQueue, true);
-        
+
         return new ThreadPoolExecutor(globalCoreConcurrency, globalMaxConcurrency, 5L * 60L, TimeUnit.SECONDS, assertionQueue, new ThreadPoolExecutor.CallerRunsPolicy());
     }
 
@@ -864,18 +862,8 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
             }
 
             @Override
-            public void setDir(String remoteDir) throws FtpException {
-                ftps.setDir(remoteDir);
-            }
-
-            @Override
             public void issueCommand(String command) throws FtpException {
                 ftps.issueCommand(command);
-            }
-
-            @Override
-            public void setDirUp() throws FtpException {
-                ftps.setDirUp();
             }
 
             @Override
@@ -978,18 +966,8 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
             }
 
             @Override
-            public void setDir(String remoteDir) throws FtpException {
-                ftp.setDir(remoteDir);
-            }
-
-            @Override
             public void issueCommand(String command) throws FtpException {
                 ftp.issueCommand(command);
-            }
-
-            @Override
-            public void setDirUp() throws FtpException {
-                ftp.setDirUp();
             }
 
             @Override
@@ -1026,102 +1004,94 @@ public class ServerFtpRoutingAssertion extends ServerRoutingAssertion<FtpRouting
         }
     }
 
-    private static interface FtpClientWrapper {
+    private interface FtpClientWrapper {
 
-        public void addFtpListener(FtpListener listener);
+        void addFtpListener(FtpListener listener);
 
-        public void removeFtpListener(FtpListener listener);
+        void removeFtpListener(FtpListener listener);
 
         /**
          * MKD
          */
-        public void makeDir(String remoteDir) throws FtpException;
+        void makeDir(String remoteDir) throws FtpException;
 
         /**
          * RMD
          */
-        public void deleteDir(String remoteDir, boolean b) throws FtpException;
+        void deleteDir(String remoteDir, boolean b) throws FtpException;
 
         /**
          * DELE
          */
-        public void deleteFile(String remoteFile) throws FtpException;
+        void deleteFile(String remoteFile) throws FtpException;
 
         /**
          * RETR
          */
-        public void download(OutputStream outputStream, String remoteFile) throws FtpException;
+        void download(OutputStream outputStream, String remoteFile) throws FtpException;
 
         /**
          * PWD
          */
-        public String getDir() throws FtpException;
+        String getDir() throws FtpException;
 
         /**
          * LIST
          */
-        public Enumeration getDirListing() throws FtpException;
+        Enumeration getDirListing() throws FtpException;
 
-        public Enumeration getDirListing(String filter) throws FtpException;
+        Enumeration getDirListing(String filter) throws FtpException;
 
         /**
          * MLSD
          */
-        public Enumeration getMachineDirListing(String remoteDir) throws FtpException;
+        Enumeration getMachineDirListing(String remoteDir) throws FtpException;
 
         /**
          * MLST
          */
-        public FtpFile getMachineFileListing(String remoteFile) throws FtpException;
+        FtpFile getMachineFileListing(String remoteFile) throws FtpException;
 
         /**
          * NLST
          */
-        public Enumeration getNameListing() throws FtpException;
+        Enumeration getNameListing() throws FtpException;
 
-        public Enumeration getNameListing(String filter) throws FtpException;
+        Enumeration getNameListing(String filter) throws FtpException;
 
         /**
          * SIZE
          */
-        public long getFilesize(String remoteFile) throws FtpException;
+        long getFilesize(String remoteFile) throws FtpException;
 
         /**
          * MDTM
          */
-        public Date getFileTimestamp(String remoteFile) throws FtpException;
+        Date getFileTimestamp(String remoteFile) throws FtpException;
 
         /**
          * NOOP
          */
-        public void noop() throws FtpException;
+        void noop() throws FtpException;
 
-        /**
-         * CWD
-         */
-        public void setDir(String remoteDir) throws FtpException;
 
         /**
          * Issue Raw FTP Commands
+         * NOTE: This is used for CWD and CDUP because of a bug in jscape library
          */
-        public void issueCommand(String command) throws FtpException;
-
-        /**
-         * CDUP
-         */
-        public void setDirUp() throws FtpException;
+        void issueCommand(String command) throws FtpException;
 
         /**
          * STOR
          */
-        public void upload(InputStream inputStream, String remoteFile) throws FtpException;
+        void upload(InputStream inputStream, String remoteFile) throws FtpException;
 
         /**
          * APPE
          */
-        public void upload(InputStream inputStream, String remoteFile, boolean append) throws FtpException;
+        void upload(InputStream inputStream, String remoteFile, boolean append) throws FtpException;
 
-        public void disconnect();
+        void disconnect();
     }
 
     private static class FtpReplyListener extends FtpAdapter {
