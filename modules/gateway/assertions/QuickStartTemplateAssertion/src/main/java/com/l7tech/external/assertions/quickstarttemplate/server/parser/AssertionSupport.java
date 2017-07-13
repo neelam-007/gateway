@@ -32,8 +32,13 @@ public class AssertionSupport {
     /**
      * Optional property mappings
      */
-    @Nullable
+    @NotNull
     private final Map<String, String> properties;
+    /**
+     * Optional indicator that a property is base 64 encoded on the Gateway
+     */
+    @NotNull
+    private final Map<String, Boolean> propertiesIsBase64Encoded;
     /**
      * Optional Sample payload
      */
@@ -50,6 +55,7 @@ public class AssertionSupport {
             @JsonProperty("externalName") final String externalName,
             @JsonProperty("className") final String className,
             @JsonProperty("properties") @Nullable final Map<String, String> properties,
+            @JsonProperty("propertiesIsBase64Encoded") @Nullable final Map<String, Boolean> propertiesIsBase64Encoded,
             @JsonProperty("samplePayload") @Nullable final String samplePayload,
             @JsonProperty("jsonSchema") @Nullable final String jsonSchema
     ) {
@@ -59,6 +65,7 @@ public class AssertionSupport {
         this.externalName = externalName;
         this.className = className;
         this.properties = properties != null ? Collections.unmodifiableMap(properties) : Collections.emptyMap();
+        this.propertiesIsBase64Encoded = propertiesIsBase64Encoded != null ? Collections.unmodifiableMap(propertiesIsBase64Encoded) : Collections.emptyMap();
         this.samplePayload = samplePayload;
         this.jsonSchema = jsonSchema;
     }
@@ -72,9 +79,14 @@ public class AssertionSupport {
         return className;
     }
 
-    @Nullable
+    @NotNull
     public Map<String, String> getProperties() {
         return properties;
+    }
+
+    @NotNull
+    public Map<String, Boolean> getPropertiesIsBase64Encoded() {
+        return propertiesIsBase64Encoded;
     }
 
     @Nullable
@@ -174,7 +186,5 @@ public class AssertionSupport {
                     .map(meta -> Triple.triple(meta.getName(), Optional.ofNullable(meta.getType()).map(DataType::getName).orElse(null), meta.isMultivalued()))
                     .collect(Collectors.toList());
         }
-
-        // TODO: expose more attributes here
     }
 }

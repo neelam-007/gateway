@@ -16,6 +16,7 @@ import com.l7tech.policy.assertion.CodeInjectionProtectionType;
 import com.l7tech.policy.assertion.EncapsulatedAssertion;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.util.EnumTranslator;
+import com.l7tech.util.HexUtils;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.ClassUtils;
 import org.jetbrains.annotations.NotNull;
@@ -61,7 +62,6 @@ public class QuickStartMapper {
      *      - if exists and if applicable, set argument(s)
      *    - else try as assertion, if applicable, use mapped name
      *      - throw exception if assertion is unsupported and the allow-all-assertion flag is false
-     *
      */
     @NotNull
     public List<Assertion> getAssertions(@NotNull final Service service) throws QuickStartPolicyBuilderException, FindException {
@@ -133,13 +133,15 @@ public class QuickStartMapper {
     }
 
     @VisibleForTesting
-    void callAssertionSetter(@Nullable final AssertionSupport assertionSupport, @NotNull final Assertion assertion, @NotNull final Map<String, ?> properties) throws QuickStartPolicyBuilderException {
+    void callAssertionSetter(@Nullable final AssertionSupport assertionSupport,
+                             @NotNull final Assertion assertion,
+                             @NotNull final Map<String, ?> properties) throws QuickStartPolicyBuilderException {
         try {
             Method method = null;
             String setMethodName;
             for (final Map.Entry<String, ?> entry : properties.entrySet()) {
                 final String propertyName = entry.getKey();
-                final Object propertyValue = entry.getValue();
+                Object propertyValue = entry.getValue();
 
                 // map template property with internal setter
                 final String fieldName = Optional.ofNullable(assertionSupport)
@@ -147,6 +149,16 @@ public class QuickStartMapper {
                         .map(pn -> pn.get(propertyName))
                         .orElse(propertyName);
                 setMethodName = "set" + fieldName;
+
+                // if applicable base 64 encode the string
+                final Boolean isFieldBase64Encoded = Optional.ofNullable(assertionSupport)
+                        .map(AssertionSupport::getPropertiesIsBase64Encoded)
+                        .map(pb64s -> pb64s.get(propertyName))
+                        .orElse(Boolean.FALSE);
+                if (isFieldBase64Encoded && propertyValue instanceof String) {
+                    propertyValue = HexUtils.encodeBase64((propertyValue.toString().getBytes()));
+                }
+
                 try {
                     method = assertion.getClass().getMethod(setMethodName, propertyValue.getClass());
                     method.invoke(assertion, propertyValue);

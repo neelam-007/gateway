@@ -1,6 +1,42 @@
-# assertion mappings example
-# TODO: this is just an example and it needs some additional work
----
+# Assertion Mappings
+
+AuditDetail:
+  externalName: AuditDetail
+  className: com.l7tech.policy.assertion.AuditDetailAssertion
+  properties:
+    Detail: Detail
+    LoggingOnly: LoggingOnly
+    Level: Level
+  samplePayload: |
+    "AuditDetail": {
+      "Detail": "A log message",
+      "LoggingOnly": true,
+      "Level" : "INFO"
+    }
+  jsonSchema: |
+    {
+      "$schema": "http://json-schema.org/draft-04/schema#",
+      "type": "object",
+      "properties": {
+        "AuditDetail": {
+          "type": "object",
+          "properties": {
+            "Detail": {
+              "type" : "string"
+            },
+            "LoggingOnly": {
+              "type": "boolean"
+            },
+            "Level": {
+              "type": "string",
+              "enum": [ "WARNING", "INFO", "FINE", "FINER", "FINEST" ]
+            }
+          }
+          "required": [ "Detail" ]
+        }
+      },
+      "required": [ "AuditDetail" ]
+    }
 
 Authentication:
   externalName: Authentication
@@ -34,18 +70,17 @@ Authentication:
 CodeInjectionProtection:
   externalName: CodeInjectionProtection
   className: com.l7tech.policy.assertion.CodeInjectionProtectionAssertion
-  # possible way to mapp properties
   properties:
-    includeBody: IncludeBody
-    includeUrlPath: IncludeUrlPath
-    includeUrlQueryString: IncludeUrlQueryString
-    protections: Protections
+    IncludeBody: IncludeBody
+    IncludeUrlPath: IncludeUrlPath
+    IncludeUrlQueryString: IncludeUrlQueryString
+    Protections: Protections
   samplePayload: |
     "CodeInjectionProtection": {
-      "includeBody": true,
-      "includeUrlPath": false,
-      "includeUrlQueryString": false,
-      "protections": [ "htmlJavaScriptInjection", "shellInjection" ]
+      "IncludeBody": true,
+      "IncludeUrlPath": false,
+      "IncludeUrlQueryString": false,
+      "Protections": [ "htmlJavaScriptInjection", "shellInjection" ]
     }
   jsonSchema: |
     {
@@ -104,11 +139,13 @@ HardcodedResponse:
     ResponseStatus: ResponseStatus
     EarlyResponse: EarlyResponse
     ResponseContentType: ResponseContentType
-    Base64ResponseBody: Base64ResponseBody
+    ResponseBody: Base64ResponseBody
+  propertiesIsBase64Encoded:
+    ResponseBody: true
   samplePayload: |
     "HardcodedResponse": {
       "ResponseContentType": "Content-Type: text/html; charset=utf-8"
-      "Base64ResponseBody": "some base 64 response"
+      "ResponseBody": "Hello!"
     }
   jsonSchema: |
     {
@@ -127,11 +164,11 @@ HardcodedResponse:
             "ResponseContentType": {
               "type": "string"
             },
-            "Base64ResponseBody": {
+            "ResponseBody": {
               "type": "string"
             }
           },
-          "required": [ "Base64ResponseBody" ]
+          "required": [ "ResponseBody" ]
         }
       },
       "required": [ "HardcodedResponse" ]
@@ -181,8 +218,7 @@ HttpRouting:
             },
             "HttpMethod": {
               "type": "string",
-              "enum": [ "get", "post", "put", "patch", "delete", "head", "options", "other" ]
-              "type": "boolean"
+              "enum": [ "GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS", "OTHER" ]
             }
           },
           "required": [ "ProtectedServiceUrl", "HttpMethod" ]
@@ -195,14 +231,14 @@ RateLimit:
   externalName: RateLimit
   className: com.l7tech.external.assertions.ratelimit.RateLimitAssertion
   properties:
-    maxRequestsPerSecond: MaxRequestsPerSecond
-    hardLimit: HardLimit
-    counterName: CounterName
+    MaxRequestsPerSecond: MaxRequestsPerSecond
+    HardLimit: HardLimit
+    CounterName: CounterName
   samplePayload: |
     "RateLimit": {
-      "maxRequestsPerSecond": 25,
-      "hardLimit": true,
-      "counterName": "counter"
+      "MaxRequestsPerSecond": 25,
+      "HardLimit": true,
+      "CounterName": "RateLimit-${request.clientId}-b0938b7ad6ff"
     }
   jsonSchema: |
     {
@@ -232,13 +268,13 @@ SetVariable:
   className: com.l7tech.policy.assertion.SetVariableAssertion
   properties:
     VariableToSet: VariableToSet
-    Base64Expression: Base64Expression
-    # or alternatively
-    Expression: Expression
+    Expression: Base64Expression
+  propertiesIsBase64Encoded:
+    Expression: true
   samplePayload: |
     "SetVariable": {
       "VariableToSet": "myVariable",
-      "Base64Expression": "some base64 encoded data"
+      "Expression": "myValue"
     }
   jsonSchema: |
     {
@@ -251,11 +287,11 @@ SetVariable:
             "VariableToSet": {
               "type": "string"
             },
-            "Base64Expression": {
+            "Expression": {
               "type": "string"
             }
           },
-          "required": [ "VariableToSet", "Base64Expression" ]
+          "required": [ "VariableToSet", "Expression" ]
         }
       },
       "required": [ "SetVariable" ]
@@ -300,7 +336,7 @@ ThroughputQuota:
     CounterName: CounterName
   samplePayload: |
     "ThroughputQuota": {
-      "CounterName": "some counter name"
+      "CounterName": "ThroughputQuota-${request.clientId}-b0938b7ad6fe"
     }
   jsonSchema: |
     {

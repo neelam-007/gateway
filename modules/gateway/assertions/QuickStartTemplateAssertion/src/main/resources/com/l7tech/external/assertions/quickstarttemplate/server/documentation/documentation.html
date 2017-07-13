@@ -288,27 +288,6 @@
     <p><b>Description:</b> {{this}}</p>
     {{/description}}
 
-    <h5>Variables Used:</h5>
-    {{#variablesUsed}}
-    <ul>
-        <li><em>{{this}}</em></li>
-    </ul>
-    {{/variablesUsed}}
-
-    <h5>Sets Variables:</h5>
-    {{#variablesSet}}
-    <ul>
-        <li>Name: <em>{{left}}</em></li>
-        <li>Type: <em>{{middle}}</em></li>
-        {{#right}}
-        <li>Supports Multivalued <em>YES</em></li>
-        {{/right}}
-        {{^right}}
-        <li>Supports Multivalued <em>NO</em></li>
-        {{/right}}
-    </ul>
-    {{/variablesSet}}
-
     <br/>
 
     {{#schema}}

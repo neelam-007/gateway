@@ -24,6 +24,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.contains;
@@ -357,6 +358,36 @@ public class QuickStartMapperTest {
         fixture.callAssertionSetter(null, assertion, ImmutableMap.of("ValueOfAttribute", new HttpMethod[] {HttpMethod.POST, HttpMethod.PUT, HttpMethod.DELETE}));
         assertTrue(wasAttributeSet.get());
         wasAttributeSet.set(false);
+    }
+
+    @Test
+    public void callAssertionSetterBase64Encode() throws Exception {
+        final AtomicReference<String> attribute = new AtomicReference<>("");
+        final Assertion assertion = new Assertion() {
+            @SuppressWarnings("UnusedDeclaration")
+            public void setTypeAttribute(String t) {
+                attribute.set(t);
+            }
+        };
+
+        // base 64 encode
+        AssertionSupport assertionSupport = mock(AssertionSupport.class);
+        when(assertionSupport.getPropertiesIsBase64Encoded()).thenReturn(ImmutableMap.of("TypeAttribute", Boolean.TRUE));
+        fixture.callAssertionSetter(assertionSupport, assertion, ImmutableMap.of("TypeAttribute", "Hello!"));
+        assertEquals("SGVsbG8h", attribute.get());
+        attribute.set("");
+
+        // don't base 64 encode
+        assertionSupport = mock(AssertionSupport.class);
+        when(assertionSupport.getPropertiesIsBase64Encoded()).thenReturn(ImmutableMap.of("TypeAttribute", Boolean.FALSE));
+        fixture.callAssertionSetter(null, assertion, ImmutableMap.of("TypeAttribute", "Hello!"));
+        assertEquals("Hello!", attribute.get());
+        attribute.set("");
+
+        // don't base 64 encode - null AssertionSupport
+        fixture.callAssertionSetter(null, assertion, ImmutableMap.of("TypeAttribute", "Hello!"));
+        assertEquals("Hello!", attribute.get());
+        attribute.set("");
     }
 
     @Test
