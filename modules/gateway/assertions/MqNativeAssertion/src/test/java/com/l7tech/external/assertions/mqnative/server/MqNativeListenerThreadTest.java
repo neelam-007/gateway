@@ -153,7 +153,7 @@ public class MqNativeListenerThreadTest extends AbstractJUnit4SpringContextTests
 
         ArgumentCaptor<MQGetMessageOptions> gmoCaptor = ArgumentCaptor.forClass(MQGetMessageOptions.class);
         verify(mqNativeListener, times(1)).receiveMessage(any(MQQueue.class), gmoCaptor.capture());
-        assertEquals(MQGMO_WAIT | MQGMO_SYNCPOINT | MQGMO_FAIL_IF_QUIESCING, gmoCaptor.getValue().options);
+        assertEquals(MQGMO_WAIT | MQGMO_SYNCPOINT | MQGMO_FAIL_IF_QUIESCING | MQGMO_CONVERT, gmoCaptor.getValue().options);
     }
 
     @Test
