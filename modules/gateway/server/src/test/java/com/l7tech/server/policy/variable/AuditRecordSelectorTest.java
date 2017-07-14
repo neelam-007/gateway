@@ -26,19 +26,21 @@ import static org.mockito.Mockito.verify;
 public class AuditRecordSelectorTest {
     private static final Logger logger = Logger.getLogger(AuditRecordSelectorTest.class.getName());
     private static final Audit audit = new LoggingAudit(logger);
+    private static final String MSG_INVALID_NUMERIC_INDEX_FOR_AUDIT_SELECTOR = "Invalid numeric index for audit detail lookup";
+    private static final String MSG_NUMERIC_INDEX_OUT_OF_BOUNDS_FOR_AUDIT_SELECTOR = "Index out of bounds for audit detail lookup";
 
     private AuditRecord auditRecord;
     private Map<String, Object> vars;
-    private Set<AuditDetail> details;
+    private Set<AuditDetail> details = new HashSet<>();
     private AuditDetail[] auditDetails = new AuditDetail[3];
+    private MessageSummaryAuditRecordMaker messageSummaryAuditRecordMaker = new MessageSummaryAuditRecordMaker();
 
     @Mock
     private Logger mockLogger;
 
     @Before
     public void setup() {
-        auditRecord = new MessageSummaryAuditRecord(Level.INFO, "node1", "2342345-4545", AssertionStatus.NONE, "3.2.1.1", null, 4833, null, 9483, 200, 232, new Goid(0,8859), "ACMEWarehouse", "listProducts", true, SecurityTokenType.HTTP_BASIC, new Goid(0,-2), "alice", "41123", null);
-        details = new HashSet<>();
+        auditRecord = messageSummaryAuditRecordMaker.getExampleMessageSummaryAuditRecord();
         AuditDetail ad1 = new AuditDetail(AssertionMessages.EXCEPTION_SEVERE);
         ad1.setOrdinal(0);
         AuditDetail ad2 = new AuditDetail(AssertionMessages.EXCEPTION_WARNING);
@@ -76,21 +78,36 @@ public class AuditRecordSelectorTest {
 
         assertEquals(auditDetails[0], myDetail.getSelectedValue());
         assertNotEquals(auditDetails[1], myDetail.getSelectedValue());
+    }
 
+    @Test
+    public void testAuditRecordSelectorOutOfBounds() throws Exception {
+        assertNotNull(AuditRecordSelector.selectDetails("details.0", auditDetails, mockLogger));
         assertNotNull(AuditRecordSelector.selectDetails("details.2", auditDetails, mockLogger));
-        verify(mockLogger, times(0)).fine("Index out of bounds for audit detail lookup");
+        verify(mockLogger, times(0)).fine(MSG_NUMERIC_INDEX_OUT_OF_BOUNDS_FOR_AUDIT_SELECTOR);
         assertNull(AuditRecordSelector.selectDetails("details.3", auditDetails, mockLogger));
-        verify(mockLogger, times(1)).fine("Index out of bounds for audit detail lookup");
+        verify(mockLogger, times(1)).fine(MSG_NUMERIC_INDEX_OUT_OF_BOUNDS_FOR_AUDIT_SELECTOR);
+        assertNull(AuditRecordSelector.selectDetails("details.10", auditDetails, mockLogger));
+        verify(mockLogger, times(2)).fine(MSG_NUMERIC_INDEX_OUT_OF_BOUNDS_FOR_AUDIT_SELECTOR);
     }
 
     @Test
     public void testAuditRecordSelectorDotLength() throws Exception {
-        verify(mockLogger, times(0)).warning("Invalid numeric index for audit detail lookup");
+        verify(mockLogger, times(0)).warning(MSG_INVALID_NUMERIC_INDEX_FOR_AUDIT_SELECTOR);
         assertNull(AuditRecordSelector.selectDetails("details.thisIsNotAnIndexOrLastOrLength", auditDetails, mockLogger));
         assertNull(AuditRecordSelector.selectDetails("details.shouldInvalidNumericIndex", auditDetails, mockLogger));
-        verify(mockLogger, times(2)).warning("Invalid numeric index for audit detail lookup");
-
+        verify(mockLogger, times(2)).warning(MSG_INVALID_NUMERIC_INDEX_FOR_AUDIT_SELECTOR);
         assertNull(AuditRecordSelector.selectDetails("details.length", auditDetails, mockLogger));
-        verify(mockLogger, times(2)).warning("Invalid numeric index for audit detail lookup");
+        verify(mockLogger, times(2)).warning(MSG_INVALID_NUMERIC_INDEX_FOR_AUDIT_SELECTOR);
+    }
+
+    private class MessageSummaryAuditRecordMaker {
+        MessageSummaryAuditRecord getExampleMessageSummaryAuditRecord(){
+            return new MessageSummaryAuditRecord(Level.INFO, "node1", "2342345-4545", AssertionStatus.NONE,
+                    "3.2.1.1", null, 4833, null, 9483,
+                    200, 232, new Goid(0,8859), "ACMEWarehouse",
+                    "listProducts", true, SecurityTokenType.HTTP_BASIC, new Goid(0,-2),
+                    "alice", "41123", null);
+        }
     }
 }

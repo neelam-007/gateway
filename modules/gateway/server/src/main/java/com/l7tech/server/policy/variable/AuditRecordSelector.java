@@ -22,6 +22,8 @@ import java.util.logging.Logger;
  */
 public class AuditRecordSelector implements ExpandVariables.Selector<AuditRecord>{
     private static final Logger logger = Logger.getLogger(AuditRecordSelector.class.getName());
+    private static final String MSG_INVALID_NUMERIC_INDEX_FOR_AUDIT_SELECTOR = "Invalid numeric index for audit detail lookup";
+    private static final String MSG_NUMERIC_INDEX_OUT_OF_BOUNDS_FOR_AUDIT_SELECTOR = "Index out of bounds for audit detail lookup";
 
     @Override
     public Selection select(String contextName, AuditRecord auditRecord, String name, Syntax.SyntaxErrorHandler handler, boolean strict) {
@@ -86,7 +88,9 @@ public class AuditRecordSelector implements ExpandVariables.Selector<AuditRecord
                                     final AuditDetail[] details,
                                     final Logger logger ) {
         name = name.substring("details.".length());
-        if (name.equals("length")) return null;
+        if (name.equals(new LengthSuffixSelector().getSuffix())) {
+            return null;
+        }
         int dot = name.indexOf('.');
         int index;
         String remainingName;
@@ -100,10 +104,10 @@ public class AuditRecordSelector implements ExpandVariables.Selector<AuditRecord
             }
             return new Selection(details[index], remainingName);
         } catch (NumberFormatException nfe) {
-            logger.warning("Invalid numeric index for audit detail lookup");
+            logger.warning(MSG_INVALID_NUMERIC_INDEX_FOR_AUDIT_SELECTOR);
             return null;
         } catch (ArrayIndexOutOfBoundsException e) {
-            logger.fine("Index out of bounds for audit detail lookup");
+            logger.fine(MSG_NUMERIC_INDEX_OUT_OF_BOUNDS_FOR_AUDIT_SELECTOR);
             return null;
         }
     }
