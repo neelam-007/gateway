@@ -604,10 +604,10 @@ public class XmlUtilTest {
     @Test
     public void xmlSafeReplacesControlCharactersWithQuestionMark() {
         final String expected = "foo?bar";
-        for (int i = 0x0; i <= 0x1F; i++) {
+        for (int i = 0x0; i <= 0x1F; i++) { // ASCII (C0) control characters
             assertEquals(expected, XmlUtil.xmlSafe("foo" + (char)i) + "bar");
         }
-        for (int i = 0x7F; i <= 0x9F; i++) {
+        for (int i = 0x7F; i <= 0x9F; i++) { // C1 control characters
             assertEquals(expected, XmlUtil.xmlSafe("foo" + (char)i) + "bar");
         }
     }
