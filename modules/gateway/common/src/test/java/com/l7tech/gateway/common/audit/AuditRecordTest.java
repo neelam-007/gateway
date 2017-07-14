@@ -195,16 +195,20 @@ public class AuditRecordTest {
         return auditRecord;
     }
 
-    public static AuditRecord makeMessageAuditRecord() {
+    public static AuditRecord makeMessageAuditRecord(final String detailMessage) {
         AuditRecord auditRecord = new MessageSummaryAuditRecord(Level.INFO, "node1", "2342345-4545", AssertionStatus.NONE, "3.2.1.1", null, 4833, null, 9483, 200, 232, new Goid(0, 8859), "ACMEWarehouse", "listProducts", true, SecurityTokenType.HTTP_BASIC, new Goid(0,-2), "alice", "41123", new Functions.Nullary<Goid>() {
             @Override
             public Goid call() {
                 return new Goid(0, 49585);
             }
         });
-        final AuditDetail detail1 = new AuditDetail(Messages.EXCEPTION_INFO_WITH_MORE_INFO, new String[]{"foomp"}, new IllegalArgumentException("Exception for foomp detail"));
+        final AuditDetail detail1 = new AuditDetail(Messages.EXCEPTION_INFO_WITH_MORE_INFO, new String[]{detailMessage}, new IllegalArgumentException("Exception for detail"));
         auditRecord.getDetails().add(detail1);
         return auditRecord;
+    }
+
+    public static AuditRecord makeMessageAuditRecord() {
+        return makeMessageAuditRecord("foomp");
     }
 
     public static AuditRecord makeSystemAuditRecord() {
