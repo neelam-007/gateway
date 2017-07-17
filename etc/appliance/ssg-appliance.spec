@@ -228,15 +228,15 @@ let GATEWAY_NPROCS=$KERNEL_PID_MAX-1000
 # create the file using a here document
 cat <<EndOfFile > /etc/security/limits.d/99-ssg-appliance.conf
 # Layer 7 Limits (SSG-8322)
-# gateway user value based on /proc/sys/kernel/pid_max
+# gateway user nproc value based on /proc/sys/kernel/pid_max
 *               hard    maxlogins    10
 *               hard    core    0
 *               soft    nproc   5120
 *               hard    nproc   16384
 *               soft    nofile  4096
 *               hard    nofile  63536
-gateway         soft    nproc   $GATEWAY_NPROCS
-gateway         hard    nproc   $GATEWAY_NPROCS
+gateway         -       nproc   $GATEWAY_NPROCS
+gateway         -       nofile  63536
 # End Layer 7 Limits
 EndOfFile
 
