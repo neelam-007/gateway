@@ -37,6 +37,8 @@ import com.l7tech.xml.MessageNotSoapException;
 import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.soap.SoapVersion;
+import org.codehaus.jackson.JsonFactory;
+import org.codehaus.jackson.JsonParser;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.BeansException;
@@ -62,6 +64,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.l7tech.common.mime.ContentTypeHeader.APPLICATION_JSON;
 import static com.l7tech.common.mime.ContentTypeHeader.TEXT_DEFAULT;
 import static com.l7tech.util.Option.optional;
 
@@ -381,7 +384,18 @@ public class SoapFaultManager implements ApplicationContextAware {
                 } else {
                     if (output.contains(SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE))
                         contentTypeHeader = ContentTypeHeader.SOAP_1_2_DEFAULT;
+                    else {
+                        // special case check if template is json
+                        try {
+                            JsonFactory jsonFactory = new JsonFactory();
+                            JsonParser jsonParser = jsonFactory.createJsonParser(output);
+                            if (jsonParser != null && jsonParser.nextToken() != null) {
+                                contentTypeHeader = APPLICATION_JSON;
+                            }
+                        } catch(Throwable e) {} // do nothing
                     }
+                  }
+
                 break;
             case SoapFaultLevel.GENERIC_FAULT:
                 try {
