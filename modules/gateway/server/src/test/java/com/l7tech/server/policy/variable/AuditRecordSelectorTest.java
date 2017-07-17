@@ -58,31 +58,28 @@ public class AuditRecordSelectorTest {
         auditDetails[2] = new AuditDetail(AssertionMessages.EXCEPTION_INFO);
     }
 
-    @Test
-    public void testAuditRecordSelector() throws Exception {
-        assertEquals(Integer.toString(AssertionMessages.EXCEPTION_SEVERE.getId()), ExpandVariables.process("${auditrecord.details.0.messageId}", vars, audit));
-        assertEquals(Integer.toString(AssertionMessages.EXCEPTION_WARNING.getId()), ExpandVariables.process("${auditrecord.details.1.messageId}", vars, audit));
-    }
-
     @BugNumber(13278)
     @Test
-    public void testAuditRecordSelectorLength() throws Exception {
+    public void auditRecordSelectorShouldGetCorrectLengthOfAuditRecords() throws Exception {
         assertEquals("", ExpandVariables.process("${auditrecord.length}", vars, audit));
         assertEquals(Integer.toString(details.size()), ExpandVariables.process("${auditrecord.details.length}", vars, audit));
     }
 
     @Test
-    public void testAuditRecordSelectorNormalCase() throws Exception {
+    public void auditRecordSelectorShouldCorrectlySelectIndexedAuditRecordValue() throws Exception {
         ExpandVariables.Selector.Selection myDetail = AuditRecordSelector.selectDetails("details.0.params.length", auditDetails, mockLogger);
         assertNotNull(myDetail);
         assertEquals("params.length", myDetail.getRemainingName());
 
         assertEquals(auditDetails[0], myDetail.getSelectedValue());
         assertNotEquals(auditDetails[1], myDetail.getSelectedValue());
+
+        assertEquals(Integer.toString(AssertionMessages.EXCEPTION_SEVERE.getId()), ExpandVariables.process("${auditrecord.details.0.messageId}", vars, audit));
+        assertEquals(Integer.toString(AssertionMessages.EXCEPTION_WARNING.getId()), ExpandVariables.process("${auditrecord.details.1.messageId}", vars, audit));
     }
 
     @Test
-    public void testAuditRecordSelectorOutOfBounds() throws Exception {
+    public void auditRecordSelectorShouldLogWithLevelFineWhenSelectingAnOutOfBoundsIndex() throws Exception {
         assertNotNull(AuditRecordSelector.selectDetails("details.0", auditDetails, mockLogger));
         assertNotNull(AuditRecordSelector.selectDetails("details.2", auditDetails, mockLogger));
         verify(mockLogger, times(0)).fine(MSG_NUMERIC_INDEX_OUT_OF_BOUNDS_FOR_AUDIT_SELECTOR);
@@ -93,7 +90,7 @@ public class AuditRecordSelectorTest {
     }
 
     @Test
-    public void testAuditRecordSelectorDotLength() throws Exception {
+    public void auditRecordSelectorShouldNotLogWhenUsingDetailsDotLengthSuffix() throws Exception {
         verify(mockLogger, times(0)).warning(MSG_INVALID_NUMERIC_INDEX_FOR_AUDIT_SELECTOR);
         assertNull(AuditRecordSelector.selectDetails("details.thisIsNotAnIndexOrLastOrLength", auditDetails, mockLogger));
         assertNull(AuditRecordSelector.selectDetails("details.shouldInvalidNumericIndex", auditDetails, mockLogger));
