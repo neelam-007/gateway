@@ -88,7 +88,7 @@ public class AuditRecordSelector implements ExpandVariables.Selector<AuditRecord
                                     final AuditDetail[] details,
                                     final Logger logger ) {
         name = name.substring("details.".length());
-        if (name.equals(new LengthSuffixSelector().getSuffix())) {
+        if (name.equals(LengthSuffixSelector.LENGTH_SUFFIX)) {
             return null;
         }
         int dot = name.indexOf('.');
