@@ -7,6 +7,7 @@ import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.types.CertificateValidationResult;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.HexUtils;
+import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.TimeUnit;
 import org.bouncycastle.asn1.*;
 import org.bouncycastle.asn1.ocsp.CertID;
@@ -332,7 +333,8 @@ public class OCSPClient {
                                    final boolean signed,
                                    final byte[] nonceBytes) throws OCSPClientException {
         final OCSPStatus status;
-        RerunnableHttpRequest httpRequest;
+        RerunnableHttpRequest httpRequest = null;
+        GenericHttpResponse httpResponse = null;
 
         try {
             // Encode request
@@ -352,30 +354,29 @@ public class OCSPClient {
                     return new ByteArrayInputStream(array);
                 }
             });
-        } catch (MalformedURLException murle) {
-            throw new OCSPClientException("Invalid URL for OCSP responder '"+ocspResponderUrl+"'.", murle);
-        } catch (IOException ioe) {
-            throw new OCSPClientException("Error creating OCSP request", ioe);
-        }
 
-        try {
             // get response
-            GenericHttpResponse httpResponse = httpRequest.getResponse();
+            httpResponse = httpRequest.getResponse();
             int httpStatus = httpResponse.getStatus();
             if (logger.isLoggable(Level.FINER)) {
                 logger.log(Level.FINER, "Response HTTP status {0} for OCSP responder {1}",
                         new Object[]{httpStatus, ocspResponderUrl});
             }
             if (httpStatus != HttpConstants.STATUS_OK) {
-                throw new OCSPClientException("Failing due to HTTP status code '" + httpStatus 
+                throw new OCSPClientException("Failing due to HTTP status code '" + httpStatus
                         + "' from responder '" + ocspResponderUrl + "'.");
             }
 
             OCSPResp ocspResponse = new OCSPResp(httpResponse.getInputStream());
             status = handleResponse(ocspResponse, certId, signed, nonceBytes);
-            
+
+        } catch (MalformedURLException murle) {
+            throw new OCSPClientException("Invalid URL for OCSP responder '"+ocspResponderUrl+"'.", murle);
         } catch (IOException ioe) {
-            throw new OCSPClientException("HTTP error during OCSP request.", ioe);
+            throw new OCSPClientException("Error creating OCSP request", ioe);
+        } finally {
+            ResourceUtils.closeQuietly(httpRequest);
+            ResourceUtils.closeQuietly(httpResponse);
         }
 
         return status;
