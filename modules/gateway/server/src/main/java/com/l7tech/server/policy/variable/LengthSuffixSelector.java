@@ -6,7 +6,7 @@ import java.text.MessageFormat;
 import java.util.Collection;
 
 public class LengthSuffixSelector implements ExpandVariables.SuffixSelector {
-    public static String LENGTH_SUFFIX = "length";
+    static String LENGTH_SUFFIX = "length";
 
     @Override
     public ExpandVariables.Selector.Selection select(Object value, Syntax.SyntaxErrorHandler handler, boolean strict) {

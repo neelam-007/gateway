@@ -29,7 +29,6 @@ public class AuditRecordSelectorTest {
     private static final String MSG_INVALID_NUMERIC_INDEX_FOR_AUDIT_SELECTOR = "Invalid numeric index for audit detail lookup";
     private static final String MSG_NUMERIC_INDEX_OUT_OF_BOUNDS_FOR_AUDIT_SELECTOR = "Index out of bounds for audit detail lookup";
 
-    private AuditRecord auditRecord;
     private Map<String, Object> vars;
     private Set<AuditDetail> details;
     private AuditDetail[] auditDetails;
@@ -39,7 +38,7 @@ public class AuditRecordSelectorTest {
 
     @Before
     public void setup() {
-        auditRecord = AuditRecordSelectorTest.getExampleMessageSummaryAuditRecord();
+        AuditRecord auditRecord = AuditRecordSelectorTest.getExampleMessageSummaryAuditRecord();
         details = new HashSet<>();
         AuditDetail ad1 = new AuditDetail(AssertionMessages.EXCEPTION_SEVERE);
         ad1.setOrdinal(0);
@@ -48,9 +47,8 @@ public class AuditRecordSelectorTest {
         details.add(ad1);
         details.add(ad2);
         auditRecord.setDetails(details);
-        vars = new HashMap<String, Object>() {{
-            put("auditrecord", auditRecord);
-        }};
+        vars = new HashMap<>();
+        vars.put("auditrecord", auditRecord);
 
         auditDetails = new AuditDetail[3];
         auditDetails[0] = ad1;
