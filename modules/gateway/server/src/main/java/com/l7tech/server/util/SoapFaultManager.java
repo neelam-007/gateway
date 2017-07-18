@@ -384,9 +384,8 @@ public class SoapFaultManager implements ApplicationContextAware {
                 } else {
                     if (output.contains(SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE))
                         contentTypeHeader = ContentTypeHeader.SOAP_1_2_DEFAULT;
-                    else {
-                        // special case check if template is json
-                        contentTypeHeader = validateJson(output) ? APPLICATION_JSON : contentTypeHeader;
+                    else if (validateJson(output)){ // special case check if template is json
+                        contentTypeHeader =  APPLICATION_JSON;
                     }
                   }
 
