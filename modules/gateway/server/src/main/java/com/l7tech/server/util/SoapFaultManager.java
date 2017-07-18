@@ -386,13 +386,7 @@ public class SoapFaultManager implements ApplicationContextAware {
                         contentTypeHeader = ContentTypeHeader.SOAP_1_2_DEFAULT;
                     else {
                         // special case check if template is json
-                        try {
-                            JsonFactory jsonFactory = new JsonFactory();
-                            JsonParser jsonParser = jsonFactory.createJsonParser(output);
-                            if (jsonParser != null && jsonParser.nextToken() != null) {
-                                contentTypeHeader = APPLICATION_JSON;
-                            }
-                        } catch(Throwable e) {} // do nothing
+                        contentTypeHeader = validateJson(output) ? APPLICATION_JSON : contentTypeHeader;
                     }
                   }
 
@@ -903,5 +897,23 @@ public class SoapFaultManager implements ApplicationContextAware {
             reqUrl = "ssg";
         }
         return reqUrl;
+    }
+
+    /***
+     * Validates json doc
+     * @param doc
+     * @return
+     */
+    private Boolean validateJson(String doc) {
+
+        boolean ret = false;
+
+        try {
+            JsonFactory jsonFactory = new JsonFactory();
+            JsonParser jsonParser = jsonFactory.createJsonParser(doc);
+            ret = jsonParser != null && jsonParser.nextToken() != null;
+        } catch(Throwable e) {} // do nothing
+
+        return ret;
     }
 }
