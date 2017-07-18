@@ -1,10 +1,7 @@
 package com.l7tech.server.security.cert;
 
 import com.l7tech.common.TestDocuments;
-import com.l7tech.common.http.GenericHttpHeader;
-import com.l7tech.common.http.GenericHttpHeaders;
-import com.l7tech.common.http.GenericHttpResponse;
-import com.l7tech.common.http.HttpHeader;
+import com.l7tech.common.http.*;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.security.MockGenericHttpClient;
 import com.l7tech.security.cert.TestCertificateGenerator;
@@ -144,6 +141,32 @@ public class OCSPClientTest {
 
         OCSPClient.OCSPStatus status = client.getRevocationStatus(subjectCert, false, false);
         assertEquals("Not revoked", CertificateValidationResult.OK, status.getResult());
+        Mockito.verify(spyRequest, Mockito.times(1)).close();
+        Mockito.verify(spyResponse, Mockito.times(1)).close();
+    }
+
+    @BugId("DE303090")
+    @Test
+    public void testOcspCloseConnectionWhenIOException() throws Exception {
+        final X509Certificate subjectCert = TestDocuments.getWssInteropAliceCert();
+
+        final OCSPClient client = buildClientWithMockResponse(subjectCert, null, null, false);
+
+        MockGenericHttpClient.MockGenericHttpRequest spyRequest = Mockito.spy(mockClient.new MockGenericHttpRequest());
+        MockGenericHttpClient.CreateRequestListener createRequestListener = (method, params, request) -> spyRequest;
+        mockClient.setCreateRequestListener(createRequestListener);
+
+        GenericHttpResponse spyResponse = Mockito.spy(mockClient.new MockGenericHttpResponse());
+        Mockito.doThrow(new GenericHttpException()).when(spyResponse).getInputStream();
+        Mockito.doAnswer(invocationOnMock -> spyResponse).when(spyRequest).getResponse();
+
+        OCSPClient.OCSPClientException ocspClientException = null;
+        try {
+            client.getRevocationStatus(subjectCert, false, false);
+        } catch (OCSPClient.OCSPClientException e) {
+            ocspClientException = e;
+        }
+        assertNotNull("Expected an OCSPClientException to be thrown", ocspClientException);
         Mockito.verify(spyRequest, Mockito.times(1)).close();
         Mockito.verify(spyResponse, Mockito.times(1)).close();
     }
