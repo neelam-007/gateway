@@ -42,6 +42,7 @@ public class DBActions {
     private static final String ADMIN_DB_NAME = "mysql";
 
     private static final String SQL_CREATE_DB = "create database ";
+    private static final String SQL_CREATE_DB_SUFFIX_MYSQL = " DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci";
     private static final String SQL_USE_DB = "use ";
     private static final String SQL_GRANT_ALL = "grant all on ";
     private static final String SQL_REVOKE_ALL = "revoke all privileges on ";
@@ -567,7 +568,10 @@ public class DBActions {
         Statement stmt = null;
         try {
             stmt = dbConnection.createStatement();
-            stmt.executeUpdate(SQL_CREATE_DB + dbname);
+            String sql = SQL_CREATE_DB + dbname;
+            if (dbConnection.getMetaData().getDatabaseProductName().equalsIgnoreCase("MySQL"))
+                sql += SQL_CREATE_DB_SUFFIX_MYSQL;
+            stmt.executeUpdate(sql);
             if (username != null) {
                 stmt.executeUpdate(SQL_GRANT_ALL + dbname + ".* to " + username + "@'localhost'");
             }
