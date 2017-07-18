@@ -164,6 +164,7 @@ public class XmlUtil extends DomUtils {
             return new ExclusiveC11r();
         }
     };
+    private static final String INVISIBLE_CONTROL_CHARACTERS_REGEX= "\\p{C}";
     private static Schema SCHEMA_SCHEMA;
     private static boolean serializeWithXss4j = DEFAULT_SERIALIZE_WITH_XSS4J;
 
@@ -1210,6 +1211,20 @@ public class XmlUtil extends DomUtils {
         } catch (IOException e) {
             return xml;
         }
+    }
+
+    /**
+     * Strip or escape any characters in s that cannot be included in XML, even using an escape sequence.
+     * <p/>
+     * For example, if s contains code point zero (unicode nil) a DOM text node based on s will result
+     * in a DOM tree that cannot be serialized to XML because the nil character cannot be represented (e.g. there is no
+     * ampersand escape for nil and hashmark escapes aren't allowed to encode character zero)
+     *
+     * @param s the string to make safe
+     * @return the string with any illegal characters replaced by a ? character
+     */
+    public static String xmlSafe( @NotNull String s ) {
+        return s.replaceAll(INVISIBLE_CONTROL_CHARACTERS_REGEX, "?");
     }
 
     public static class BadSchemaException extends Exception {

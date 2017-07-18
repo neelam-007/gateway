@@ -9,12 +9,14 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.test.BenchmarkRunner;
 import com.l7tech.test.BugId;
+import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.w3c.dom.*;
 
 import javax.xml.bind.MarshalException;
 
+import java.util.List;
 import java.util.logging.Level;
 
 import static junit.framework.Assert.assertEquals;
@@ -64,6 +66,18 @@ public class AuditRecordDomMarshallerTest {
         auditRecord.getDetails().iterator().next().setException(null);
         Element got = m.marshal(d, auditRecord);
         XmlUtil.nodeToFormattedOutputStream(got, System.out);
+    }
+
+    @BugId("US297203")
+    @Test
+    public void testMarshalMessageNullChar() throws Exception {
+        Document d = XmlUtil.stringAsDocument("<a/>");
+        AuditRecordDomMarshaller m = new AuditRecordDomMarshaller();
+        AuditRecord auditRecord = AuditRecordTest.makeMessageAuditRecord("foo\u0000bar");
+        Element got = m.marshal(d, auditRecord);
+        final String xml = XmlUtil.nodeToFormattedString(got);
+        Assert.assertTrue(xml.contains("<param>foo?bar</param>"));
+        Assert.assertFalse(xml.contains("<param>foo\u0000bar</param>"));
     }
 
     @Test

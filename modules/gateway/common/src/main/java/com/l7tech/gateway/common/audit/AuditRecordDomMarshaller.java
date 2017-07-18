@@ -4,6 +4,7 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.mapping.MessageContextMappingValues;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.security.token.SecurityTokenType;
+import org.jetbrains.annotations.NotNull;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Text;
@@ -127,7 +128,9 @@ public class AuditRecordDomMarshaller {
         if (params != null && params.length > 0) {
             Element paramsEl = parent.getOwnerDocument().createElementNS(NS, "params");
             for (String param : params) {
-                elm(paramsEl, "param", param);
+                if (param != null) {
+                    elm(paramsEl, "param", XmlUtil.xmlSafe(param));
+                }
             }
             d.appendChild(paramsEl);
         }

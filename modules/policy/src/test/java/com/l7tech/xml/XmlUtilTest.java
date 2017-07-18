@@ -5,6 +5,7 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.message.Message;
+import com.l7tech.test.BugId;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.*;
 import com.l7tech.xml.soap.SoapUtil;
@@ -597,6 +598,23 @@ public class XmlUtilTest {
         assertTrue( "XML declaration, external id doctype", XmlUtil.hasDoctype( source(testWithExternalDoctypeDeclaration) ) );
         final String testWithFullDoctypeDeclaration = "<?xml version=\"1.0\"?><!DOCTYPE a PUBLIC \"-//LAYER7/DTD TEST/EN\" \"http://0.0.0.0/notused.dtd\" [ ]><a/>";
         assertTrue( "XML declaration, full doctype", XmlUtil.hasDoctype( source(testWithFullDoctypeDeclaration) ) );
+    }
+
+    @BugId("US297203")
+    @Test
+    public void xmlSafeReplacesControlCharactersWithQuestionMark() {
+        final String expected = "foo?bar";
+        for (int i = 0x0; i <= 0x1F; i++) { // ASCII (C0) control characters
+            assertEquals(expected, XmlUtil.xmlSafe("foo" + (char)i) + "bar");
+        }
+        for (int i = 0x7F; i <= 0x9F; i++) { // C1 control characters
+            assertEquals(expected, XmlUtil.xmlSafe("foo" + (char)i) + "bar");
+        }
+    }
+
+    @Test
+    public void xmlSafeDoNotReplace() {
+        assertEquals("foobar", XmlUtil.xmlSafe("foobar"));
     }
 
     private Source source( final String content ) {
