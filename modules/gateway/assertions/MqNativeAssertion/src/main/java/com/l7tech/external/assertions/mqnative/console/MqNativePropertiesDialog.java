@@ -941,9 +941,9 @@ public class MqNativePropertiesDialog extends JDialog {
                 loadConnectionPoolProperty(maxIdleTextField, mqNativeActiveConnector, MQ_CONNECTION_POOL_MAX_IDLE_PROPERTY);
                 loadConnectionPoolProperty(maxWaitTextField, mqNativeActiveConnector, MQ_CONNECTION_POOL_MAX_WAIT_PROPERTY);
 
-                loadConnectionPoolPropertyDefault(maxActiveDefaultLabel, MQ_CONNECTION_POOL_MAX_ACTIVE_UI_PROPERTY,"" + MqNativeConstants.DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_ACTIVE);
-                loadConnectionPoolPropertyDefault(maxIdleDefaultLabel, MQ_CONNECTION_POOL_MAX_IDLE_UI_PROPERTY,"" + MqNativeConstants.DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_IDLE);
-                loadConnectionPoolPropertyDefault(maxWaitDefaultLabel, MQ_CONNECTION_POOL_MAX_WAIT_UI_PROPERTY,"" + MqNativeConstants.DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_WAIT);
+                displayConnectionPoolPropertyDefault(maxActiveDefaultLabel, MQ_CONNECTION_POOL_MAX_ACTIVE_UI_PROPERTY,"" + MqNativeConstants.DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_ACTIVE);
+                displayConnectionPoolPropertyDefault(maxIdleDefaultLabel, MQ_CONNECTION_POOL_MAX_IDLE_UI_PROPERTY,"" + MqNativeConstants.DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_IDLE);
+                displayConnectionPoolPropertyDefault(maxWaitDefaultLabel, MQ_CONNECTION_POOL_MAX_WAIT_UI_PROPERTY,"" + MqNativeConstants.DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_WAIT);
             }
         } else {
             enabledCheckBox.setSelected(true);
@@ -978,13 +978,13 @@ public class MqNativePropertiesDialog extends JDialog {
     }
 
     /**
-     * Load the pool default settings from cluster property or system default setting.
+     * Display the pool default settings obtained from cluster property or system default setting
      *
      * @param label: the label field will display the default value.
      * @param clusterPropName: the name of the pool cluster property.
      * @param systemDefaultValue the system default value (not cluster property value), which is defined in MqNativeConstants.
      */
-    private void loadConnectionPoolPropertyDefault(
+    private void displayConnectionPoolPropertyDefault(
             @NotNull final JLabel label,
             @NotNull final String clusterPropName,
             @NotNull final String systemDefaultValue
