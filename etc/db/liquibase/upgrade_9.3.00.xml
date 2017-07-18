@@ -12,4 +12,7 @@
             </update>
         </rollback>
     </changeSet>
+	<changeSet author="gateway" id="utf8_charset">
+        <sql>ALTER TABLE trusted_cert MODIFY COLUMN subject_dn VARCHAR(2048) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL;</sql>
+    </changeSet>
 </databaseChangeLog>
