@@ -903,7 +903,7 @@ public class SoapFaultManager implements ApplicationContextAware {
      * @param doc
      * @return
      */
-    private Boolean validateJson(String doc) {
+    private boolean validateJson(String doc) {
 
         boolean ret = false;
 
