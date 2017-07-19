@@ -364,7 +364,6 @@ public class ServerProcessSamlAuthnRequestAssertion extends AbstractMessageTarge
      * - IssueInstant
      */
     private void validateDetails( final AuthnRequestType authnRequest ) {
-        checkMissingOrEmpty( authnRequest.getAssertionConsumerServiceURL(), "AssertionConsumerServiceURL" );
         checkMissingOrEmpty( authnRequest.getID(), "ID" );
         checkMissingOrEmpty( authnRequest.getVersion(), "Version" );
         checkMissing( authnRequest.getIssueInstant(), "IssueInstant" );
