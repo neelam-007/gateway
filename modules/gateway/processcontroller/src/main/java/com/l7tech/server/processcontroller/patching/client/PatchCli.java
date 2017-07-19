@@ -69,7 +69,7 @@ public class PatchCli {
                     }
                 }
                 if (patchAction.isReportStatusErrors()) {
-                    System.out.println(isError ? "There were errors during the patch operation." : "Patch operation completed successfully.");
+                    System.out.println(isError ? "There were errors during the patch operation. See sspc logs in " + DEFAULT_PC_HOME + "/var/logs for details." : "Patch operation completed successfully.");
                 }
             } else if (patchAction == PatchAction.VERSION) {
                 System.out.println(patchAction.getPatchServiceApiVersion());
