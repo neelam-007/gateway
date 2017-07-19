@@ -9,6 +9,14 @@ import static com.l7tech.util.CollectionUtils.list;
  * MQ Native constants
  */
 public interface MqNativeConstants {
+    // MQ Native - connection pool properties
+    // This is the default maximum # of connections per connection pool.
+    public static final int DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_ACTIVE = 20;
+    // This is the default max idle time for GenericObjectPool, essentially the time to wait for an object to become available.
+    // a default value of -1 means that if no idle connections are available, wait indefinitely until one becomes available.
+    public static final long DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_WAIT = -1L;
+    // This is the default maximum number of objects that can sit idle in the pool at any time.
+    public static final int DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_IDLE = 20;
 
     // Context variables used
     String MQ_MESSAGE_MAX_BYTES_PROPERTY = "ioMqMessageMaxBytes";
