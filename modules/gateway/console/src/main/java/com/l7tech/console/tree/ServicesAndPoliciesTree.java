@@ -226,6 +226,7 @@ public class ServicesAndPoliciesTree extends JTree implements Refreshable , Drag
         }
         if (n != null) {
             final Action[] actions = n.getActions(RefreshAction.class);
+            n.reloadChildren();
             if (actions.length == 0) {
                 log.finer("No refresh action found");
             } else {
