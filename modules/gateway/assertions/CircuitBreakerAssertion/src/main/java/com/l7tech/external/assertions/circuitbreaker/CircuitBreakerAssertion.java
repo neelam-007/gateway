@@ -4,8 +4,10 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.UsesVariables;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
@@ -13,7 +15,20 @@ import static com.l7tech.policy.assertion.AssertionMetadata.*;
 /**
  * Applies the Circuit Breaker pattern to a block of policy.
  */
-public class CircuitBreakerAssertion extends Assertion implements UsesVariables {
+public class CircuitBreakerAssertion extends CompositeAssertion implements UsesVariables {
+
+    public CircuitBreakerAssertion() {
+
+    }
+
+    public CircuitBreakerAssertion(List<? extends Assertion> children ) {
+        super(children);
+    }
+
+    @Override
+    public boolean permitsEmpty() {
+        return true;
+    }
 
     public String[] getVariablesUsed() {
         return new String[0]; //Syntax.getReferencedNames(...);
@@ -31,7 +46,7 @@ public class CircuitBreakerAssertion extends Assertion implements UsesVariables 
             return meta;
 
         // Cluster properties used by this assertion
-        Map<String, String[]> props = new HashMap<String, String[]>();  // TODO: add cluster properties for defaults
+        Map<String, String[]> props = new HashMap<>();  // TODO: add cluster properties for defaults
         meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
 
         // Set name and description for GUI
