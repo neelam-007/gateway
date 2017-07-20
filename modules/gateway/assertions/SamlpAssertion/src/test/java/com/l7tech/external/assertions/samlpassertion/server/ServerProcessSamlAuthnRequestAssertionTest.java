@@ -110,14 +110,14 @@ public class ServerProcessSamlAuthnRequestAssertionTest {
             assertEquals( "none", AssertionStatus.NONE, status );
         }
 
-        // Failure, missing ACS URL
+        // Success, ACS URL is not required
         {
             final PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(
                     new Message( XmlUtil.parse( REQUEST_INVALID_SIG.replace( "AssertionConsumerServiceURL=\"https://www.google.com/a/g.feide.no/acs\"", "" )) ),
                     null );
 
             AssertionStatus status = evaluateAndClose( serverProcessSamlAuthnRequestAssertion, pec );
-            assertEquals( "failure acs url missing", AssertionStatus.FALSIFIED, status );
+            assertEquals( "failure acs url mandatory", AssertionStatus.NONE, status );
         }
 
         // Failure, missing ID
