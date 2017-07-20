@@ -451,6 +451,7 @@ public class SoapFaultManagerTest {
                 "            \"error\": \"test error\",\n" +
                 "        }\n" +
                 "        }" );
+        level.setFaultTemplateCustomContentType("application/json");
 
         final SoapFaultManager.FaultResponse fault = sfm.constructReturningFault( level, getSoap11PEC(false) );
         System.out.println(fault);

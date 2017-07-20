@@ -37,6 +37,7 @@ import com.l7tech.xml.MessageNotSoapException;
 import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.soap.SoapVersion;
+import org.apache.commons.lang.StringUtils;
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonParser;
 import org.jetbrains.annotations.NotNull;
@@ -384,8 +385,8 @@ public class SoapFaultManager implements ApplicationContextAware {
                 } else {
                     if (output.contains(SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE))
                         contentTypeHeader = ContentTypeHeader.SOAP_1_2_DEFAULT;
-                    else if (validateJson(output)){ // special case check if template is json
-                        contentTypeHeader =  APPLICATION_JSON;
+                    else { // special case check if template custom content type is given
+                        contentTypeHeader =  getContentTypeForCustomTemplate(contentTypeHeader, faultLevelInfo);
                     }
                   }
 
@@ -478,6 +479,7 @@ public class SoapFaultManager implements ApplicationContextAware {
                 fromSettings.setLevel(Integer.parseInt(tmp));
                 fromSettings.setIncludePolicyDownloadURL(config.getBooleanProperty("defaultfaultpolicyurl", true));
                 fromSettings.setFaultTemplate( config.getProperty( "defaultfaulttemplate" ) );
+                fromSettings.setFaultTemplateCustomContentType( config.getProperty( "defaultfaulttemplateContentType" ) );
             } catch (NumberFormatException e) {
                 logger.log(Level.WARNING, "user setting " + tmp + " for defaultfaultlevel is invalid", e);
                 populateUltimateDefaults(fromSettings);
@@ -899,19 +901,22 @@ public class SoapFaultManager implements ApplicationContextAware {
     }
 
     /***
-     * Validates json doc
-     * @param doc
+     * Validates if output content type is json
+     * @param
      * @return
      */
-    private boolean validateJson(String doc) {
+    private ContentTypeHeader getContentTypeForCustomTemplate(ContentTypeHeader contentType, SoapFaultLevel settings) {
 
-        boolean ret = false;
+        ContentTypeHeader ret = contentType;
 
         try {
-            JsonFactory jsonFactory = new JsonFactory();
-            JsonParser jsonParser = jsonFactory.createJsonParser(doc);
-            ret = jsonParser != null && jsonParser.nextToken() != null;
-        } catch(Throwable e) {} // do nothing
+            String contentTypeText = settings.getFaultTemplateCustomContentType();
+            if (!StringUtils.isBlank(contentTypeText)) {
+               ret = ContentTypeHeader.parseValue(contentTypeText);
+            }
+        } catch(Throwable e) {
+            ret = contentType;
+        }
 
         return ret;
     }
