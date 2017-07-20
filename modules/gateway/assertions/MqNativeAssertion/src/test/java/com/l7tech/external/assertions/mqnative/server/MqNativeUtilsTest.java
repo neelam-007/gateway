@@ -4,6 +4,7 @@ import com.ibm.mq.MQException;
 import com.ibm.mq.MQMessage;
 import com.ibm.mq.headers.MQDataException;
 import com.ibm.mq.headers.MQRFH2;
+import com.l7tech.test.BugId;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.JdkLoggerConfigurator;
 import com.l7tech.util.Pair;
@@ -141,6 +142,7 @@ public class MqNativeUtilsTest {
     }
 
     @Test
+    @BugId("DE292277")
     public void testGetDebugExceptionForExpectedReasonCode() {
         // Case 1: by default, the debug state is false, then the method will return null no matter which reason code is.
         for (Integer reasonCode: MqNativeUtils.EXPECTED_REASON_CODES) {

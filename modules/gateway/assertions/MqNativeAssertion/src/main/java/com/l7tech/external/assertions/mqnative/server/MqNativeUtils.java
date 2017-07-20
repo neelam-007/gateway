@@ -378,7 +378,7 @@ public class MqNativeUtils {
      */
     static MQException getDebugExceptionForExpectedReasonCode(MQException e) {
         final int reasonCode = e.getReason();
-        if ( EXPECTED_REASON_CODES.contains(reasonCode)) {
+        if (EXPECTED_REASON_CODES.contains(reasonCode)) {
             return ExceptionUtils.getDebugException(e);
         }
         return e;
