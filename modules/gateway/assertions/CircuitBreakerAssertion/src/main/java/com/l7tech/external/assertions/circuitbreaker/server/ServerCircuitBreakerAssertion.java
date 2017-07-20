@@ -19,11 +19,6 @@ import javax.inject.Named;
 public class ServerCircuitBreakerAssertion extends AbstractServerAssertion<CircuitBreakerAssertion> {
     private final String[] variablesUsed;
 
-// DELETEME example for dependency injection
-//    @Inject
-//    @Named("foo") -- The name is not usually required and should be left out if possible
-//    private Foo foo;
-
     public ServerCircuitBreakerAssertion( final CircuitBreakerAssertion assertion ) throws PolicyAssertionException {
         super(assertion);
 
@@ -34,14 +29,4 @@ public class ServerCircuitBreakerAssertion extends AbstractServerAssertion<Circu
         return AssertionStatus.FAILED;
     }
 
-    /*
-     * Called reflectively by module class loader when module is unloaded, to ask us to clean up any globals
-     * that would otherwise keep our instances from getting collected.
-     *
-     * DELETEME if not required.
-     */
-    public static void onModuleUnloaded() {
-        // This assertion doesn't have anything to do in response to this, but it implements this anyway
-        // since it will be used as an example by future modular assertion authors
-    }
 }
