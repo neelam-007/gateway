@@ -34,6 +34,7 @@ public class SoapFaultLevel implements PrivateKeyable, Serializable {
 
     private int level = GENERIC_FAULT;
     private String faultTemplate;
+    private String faultTemplateCustomContentType; // read from cluster property soapfault.template.contentType
     private String faultTemplateContentType;
     private String faultTemplateHttpStatus;
     private boolean includePolicyDownloadURL = true;
@@ -52,6 +53,7 @@ public class SoapFaultLevel implements PrivateKeyable, Serializable {
         if ( soapFaultLevel != null ) {
             this.level = soapFaultLevel.level;
             this.faultTemplate = soapFaultLevel.faultTemplate;
+            this.faultTemplateCustomContentType = soapFaultLevel.faultTemplateCustomContentType;
             this.includePolicyDownloadURL = soapFaultLevel.includePolicyDownloadURL;
             this.signSoapFault = soapFaultLevel.signSoapFault;
             this.variablesUsed = soapFaultLevel.variablesUsed;
@@ -92,6 +94,23 @@ public class SoapFaultLevel implements PrivateKeyable, Serializable {
      */
     public void setFaultTemplate(String faultTemplate) {
         this.faultTemplate = faultTemplate;
+        updateVariableUse();
+    }
+
+    /**
+     * Used to set content type for custom template when soapfaultt.level=1. Read from cluster property soapfault.template.contentType
+     * @return
+     */
+    public String getFaultTemplateCustomContentType() {
+        return faultTemplateCustomContentType;
+    }
+
+    /**
+     * Used to set content type for custom template when soapfaultt.level=1. Read from cluster property soapfault.template.contentType
+     * @param faultTemplateCustomContentType
+     */
+    public void setFaultTemplateCustomContentType(String faultTemplateCustomContentType) {
+        this.faultTemplateCustomContentType = faultTemplateCustomContentType;
         updateVariableUse();
     }
 
@@ -231,6 +250,7 @@ public class SoapFaultLevel implements PrivateKeyable, Serializable {
         addVariables( variables, faultTemplateHttpStatus );
         addVariables( variables, faultTemplateContentType );
         addVariables( variables, faultTemplate );
+        addVariables( variables, faultTemplateContentType );
         if (extraHeaders != null) for (NameValuePair extraHeader : extraHeaders) {
             addVariables( variables, extraHeader.getKey() );
             addVariables( variables, extraHeader.getValue() );

@@ -37,6 +37,9 @@ import com.l7tech.xml.MessageNotSoapException;
 import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.soap.SoapVersion;
+import org.apache.commons.lang.StringUtils;
+import org.codehaus.jackson.JsonFactory;
+import org.codehaus.jackson.JsonParser;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.BeansException;
@@ -62,6 +65,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.l7tech.common.mime.ContentTypeHeader.APPLICATION_JSON;
 import static com.l7tech.common.mime.ContentTypeHeader.TEXT_DEFAULT;
 import static com.l7tech.util.Option.optional;
 
@@ -381,7 +385,11 @@ public class SoapFaultManager implements ApplicationContextAware {
                 } else {
                     if (output.contains(SOAPConstants.URI_NS_SOAP_1_2_ENVELOPE))
                         contentTypeHeader = ContentTypeHeader.SOAP_1_2_DEFAULT;
+                    else { // special case check if template custom content type is given
+                        contentTypeHeader =  getContentTypeForCustomTemplate(contentTypeHeader, faultLevelInfo);
                     }
+                  }
+
                 break;
             case SoapFaultLevel.GENERIC_FAULT:
                 try {
@@ -471,6 +479,7 @@ public class SoapFaultManager implements ApplicationContextAware {
                 fromSettings.setLevel(Integer.parseInt(tmp));
                 fromSettings.setIncludePolicyDownloadURL(config.getBooleanProperty("defaultfaultpolicyurl", true));
                 fromSettings.setFaultTemplate( config.getProperty( "defaultfaulttemplate" ) );
+                fromSettings.setFaultTemplateCustomContentType( config.getProperty( "defaultfaulttemplateContentType" ) );
             } catch (NumberFormatException e) {
                 logger.log(Level.WARNING, "user setting " + tmp + " for defaultfaultlevel is invalid", e);
                 populateUltimateDefaults(fromSettings);
@@ -889,5 +898,26 @@ public class SoapFaultManager implements ApplicationContextAware {
             reqUrl = "ssg";
         }
         return reqUrl;
+    }
+
+    /***
+     * Gets custom content type if defined
+     * @param
+     * @return
+     */
+    private ContentTypeHeader getContentTypeForCustomTemplate(ContentTypeHeader contentType, SoapFaultLevel settings) {
+
+        ContentTypeHeader ret = contentType;
+
+        try {
+            String contentTypeText = settings.getFaultTemplateCustomContentType();
+            if (!StringUtils.isBlank(contentTypeText)) {
+               ret = ContentTypeHeader.parseValue(contentTypeText);
+            }
+        } catch(Throwable e) {
+            ret = contentType;
+        }
+
+        return ret;
     }
 }
