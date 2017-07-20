@@ -390,7 +390,8 @@ public class MqNativeUtils {
                 || reasonCode == MQRC_PRIORITY_ERROR
                 || reasonCode == MQRC_PROPERTY_NAME_ERROR
                 || reasonCode == MQRC_MD_ERROR
-                || reasonCode == MQRC_OFFSET_ERROR) {
+                || reasonCode == MQRC_OFFSET_ERROR
+                || reasonCode == MQRC_Q_FULL) {
             return ExceptionUtils.getDebugException(e);
         }
         return e;

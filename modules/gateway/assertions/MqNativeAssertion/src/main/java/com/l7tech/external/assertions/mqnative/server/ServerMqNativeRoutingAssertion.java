@@ -177,7 +177,7 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
                                 MQException mqException = (MQException) mqre.getCause();
                                 logger.log(Level.WARNING, format("At least 10 connections failed trying to connect to MQ.  MQ server is not available.  Falsifying assertion and returning completion code {0}.",mqException.getReason()) , getDebugExceptionForExpectedReasonCode(mqException));
                             }  else {
-                                logger.log(Level.WARNING, "At least 10 connections failed trying to connect to MQ.  MQ server is not available.  Falsifying assertion.", mqre);
+                                logger.log(Level.WARNING, "At least 10 connections failed trying to connect to MQ.  MQ server is not available.  Falsifying assertion.", ExceptionUtils.getDebugException(mqre));
                             }
                             context.setVariable(ServerMqNativeRoutingAssertion.completionCodeString, MQCC_FAILED);
                             context.setVariable(ServerMqNativeRoutingAssertion.reasonCodeString, MQRC_Q_MGR_NOT_AVAILABLE);
