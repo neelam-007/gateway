@@ -5,6 +5,7 @@ import com.ibm.mq.MQMessage;
 import com.ibm.mq.headers.MQDataException;
 import com.ibm.mq.headers.MQRFH2;
 import com.l7tech.util.HexUtils;
+import com.l7tech.util.JdkLoggerConfigurator;
 import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
@@ -14,12 +15,12 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 
 import static com.ibm.mq.constants.CMQC.MQFMT_RF_HEADER;
 import static com.ibm.mq.constants.CMQC.MQFMT_RF_HEADER_2;
 import static com.ibm.mq.constants.MQPropertyIdentifiers.*;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.*;
 
 public class MqNativeUtilsTest {
     /**
@@ -137,5 +138,26 @@ public class MqNativeUtilsTest {
 //        assertEquals(rfh2, mqKnob.getPrimaryMessageHeader());
 //        assertEquals(messageProperties, mqKnob.getMessagePropertyMap());
 //        assertEquals(mqmd, mqKnob.getMessageDescriptor());
+    }
+
+    @Test
+    public void testGetDebugExceptionForExpectedReasonCode() {
+        // Case 1: by default, the debug state is false, then the method will return null no matter which reason code is.
+        for (Integer reasonCode: MqNativeUtils.EXPECTED_REASON_CODES) {
+            final MQException mqException = new MQException(null, null, reasonCode, -1);
+            assertNull(MqNativeUtils.getDebugExceptionForExpectedReasonCode(mqException));
+        }
+
+        // Case 2: if the debug state is true, then the method should return a MqException with a reason code.
+        final Properties properties = new Properties();
+        properties.setProperty("com.l7tech.logging.debug", "true");
+        JdkLoggerConfigurator.updateState(properties);
+
+        for (Integer reasonCode: MqNativeUtils.EXPECTED_REASON_CODES) {
+            final MQException mqException = new MQException(null, null, reasonCode, -1);
+            final MQException resultException = MqNativeUtils.getDebugExceptionForExpectedReasonCode(mqException);
+            assertNotNull(resultException);
+            assertTrue(resultException.getReason() == reasonCode);
+        }
     }
 }
