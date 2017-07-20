@@ -901,7 +901,7 @@ public class SoapFaultManager implements ApplicationContextAware {
     }
 
     /***
-     * Validates if output content type is json
+     * Gets custom content type if defined
      * @param
      * @return
      */
