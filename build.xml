@@ -3622,6 +3622,7 @@
                 <include name="runtime/modules/assertions/**/CacheAssertion-*.aar"/>
                 <include name="runtime/modules/assertions/**/CassandraAssertion-*.aar"/>
                 <include name="runtime/modules/assertions/**/CertificateAttributesAssertion-*.aar"/>
+                <include name="runtime/modules/assertions/**/CircuitBreakerAssertion-*.aar"/>
                 <include name="runtime/modules/assertions/**/ComparisonAssertion-*.aar"/>
                 <include name="runtime/modules/assertions/**/ConcurrentAllAssertion-*.aar"/>
                 <include name="runtime/modules/assertions/**/CsrSignerAssertion-*.aar"/>
