@@ -63,6 +63,10 @@ public class CircuitBreakerAssertion extends CompositeAssertion implements UsesV
         meta.put(CLIENT_ASSERTION_POLICY_ICON, "com/l7tech/proxy/resources/tree/folder.gif");
         meta.put(CLIENT_ASSERTION_POLICY_ICON_OPEN, "com/l7tech/proxy/resources/tree/folderOpen.gif");
 
+        meta.put(POLICY_NODE_CLASSNAME, "com.l7tech.external.assertions.circuitbreaker.console.CircuitBreakerAssertionTreeNode");
+
+        meta.put(WSP_TYPE_MAPPING_CLASSNAME, "com.l7tech.external.assertions.circuitbreaker.CircuitBreakerAssertionTypeMapping");
+
         meta.put(META_INITIALIZED, Boolean.TRUE);
 
         return meta;
