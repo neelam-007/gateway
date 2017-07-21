@@ -428,7 +428,7 @@ public class JdkLoggerConfigurator {
         return interval;
     }
 
-    public static void updateState(final Properties properties) {
+    private static void updateState(final Properties properties) {
         readServiceNameSufficeAppenderState(properties);
         readDebugState(properties);
     }

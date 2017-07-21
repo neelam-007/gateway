@@ -143,18 +143,22 @@ public class MqNativeUtilsTest {
 
     @Test
     @BugId("DE292277")
-    public void testGetDebugExceptionForExpectedReasonCode() {
-        // Case 1: by default, the debug state is false, then the method will return null no matter which reason code is.
+    public void testSuppressExceptionWhenDebugStateOff() {
+        JdkLoggerConfigurator.configure("com.l7tech.external.assertions.mqnative", "com/l7tech/external/assertions/mqnative/resources/testSuppressExceptionWhenDebugStateOff.properties");
+
+        // When the debug state is false, then the method will return null no matter which reason code is.
         for (Integer reasonCode: MqNativeUtils.EXPECTED_REASON_CODES) {
             final MQException mqException = new MQException(null, null, reasonCode, -1);
             assertNull(MqNativeUtils.getDebugExceptionForExpectedReasonCode(mqException));
         }
+    }
 
-        // Case 2: if the debug state is true, then the method should return a MqException with a reason code.
-        final Properties properties = new Properties();
-        properties.setProperty("com.l7tech.logging.debug", "true");
-        JdkLoggerConfigurator.updateState(properties);
+    @Test
+    @BugId("DE292277")
+    public void testGetDebugExceptionForExpectedReasonCode() {
+        JdkLoggerConfigurator.configure("com.l7tech.external.assertions.mqnative", "com/l7tech/external/assertions/mqnative/resources/testGetDebugExceptionForExpectedReasonCode.properties");
 
+        // When the debug state is true, then the method should return a MqException with a reason code.
         for (Integer reasonCode: MqNativeUtils.EXPECTED_REASON_CODES) {
             final MQException mqException = new MQException(null, null, reasonCode, -1);
             final MQException resultException = MqNativeUtils.getDebugExceptionForExpectedReasonCode(mqException);
