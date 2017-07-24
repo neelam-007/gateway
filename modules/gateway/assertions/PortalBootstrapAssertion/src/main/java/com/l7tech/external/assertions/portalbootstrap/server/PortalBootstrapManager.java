@@ -244,6 +244,7 @@ public class PortalBootstrapManager {
         // Bundle installed, post back status
         try {
             connection = (HttpsURLConnection) new URL(enrollmentUrl + "&action=enroll&status=success").openConnection();
+            connection.setHostnameVerifier( pinChecker );
             connection.setRequestMethod("POST");
             connection.setSSLSocketFactory(socketFactory);
             connection.setRequestProperty("Content-Type", "application/json");
