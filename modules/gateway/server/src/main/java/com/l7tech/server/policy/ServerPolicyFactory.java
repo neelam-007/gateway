@@ -43,7 +43,7 @@ public class ServerPolicyFactory implements ApplicationContextAware {
      * Execute the provided Callable with license enforcement set (or unset), then restore it after it's done
      * @throws Exception alas.
      */
-    public static <T> T doWithEnforcement(boolean enforcement, Callable<T> callable) throws Exception {
+    static <T> T doWithEnforcement(boolean enforcement, Callable<T> callable) throws Exception {
         try {
             licenseEnforcement.get().push(enforcement);
             return callable.call();

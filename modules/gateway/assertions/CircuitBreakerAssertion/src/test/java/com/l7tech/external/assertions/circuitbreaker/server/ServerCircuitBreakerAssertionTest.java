@@ -8,10 +8,13 @@ import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.ApplicationContexts;
+import com.l7tech.server.TestLicenseManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.ServerPolicyFactory;
+import com.l7tech.server.util.MockInjector;
 import org.jetbrains.annotations.NotNull;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.springframework.context.ApplicationContext;
 
@@ -26,7 +29,15 @@ import static org.junit.Assert.assertEquals;
  */
 public class ServerCircuitBreakerAssertionTest {
 
-    private final ApplicationContext applicationContext = ApplicationContexts.getTestApplicationContext();
+    private static ServerPolicyFactory serverPolicyFactory;
+
+    @BeforeClass
+    public static void init() {
+        ApplicationContext applicationContext = ApplicationContexts.getTestApplicationContext();
+
+        serverPolicyFactory = new ServerPolicyFactory(new TestLicenseManager(), new MockInjector());
+        serverPolicyFactory.setApplicationContext(applicationContext);
+    }
     
     @Test
     public void testEmptyCircuitBreakerSucceeds() throws Exception {
@@ -75,7 +86,6 @@ public class ServerCircuitBreakerAssertionTest {
                         new Message(),
                         false);
 
-        return ServerPolicyFactory.doWithEnforcement(false,
-                () -> new ServerCircuitBreakerAssertion(assertion, applicationContext).checkRequest(context));
+        return serverPolicyFactory.compilePolicy(assertion, false).checkRequest(context);
     }
 }
