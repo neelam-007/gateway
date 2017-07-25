@@ -213,7 +213,7 @@ HttpRouting:
   samplePayload: |
     {
       "HttpRouting": {
-        "ProtectedServiceUrl": "https://myservice.com",
+        "ProtectedServiceUrl": "http://myservice.com",
         "HttpMethod": "DELETE"
       }
     }
@@ -375,4 +375,3 @@ ThroughputQuota:
       },
       "required": [ "ThroughputQuota" ]
     }
-    
