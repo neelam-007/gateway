@@ -20,6 +20,7 @@ import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
 import com.l7tech.util.ExceptionUtils;
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationContext;
@@ -65,11 +66,11 @@ public class ServerQuickStartTemplateAssertion extends AbstractMessageTargetable
                 final IllegalArgumentException arg = ExceptionUtils.getCauseIfCausedBy(e, IllegalArgumentException.class);
                 if (arg != null) {
                     logger.log(Level.WARNING, ExceptionUtils.getMessage(arg), ExceptionUtils.getDebugException(arg));
-                    context.setVariable(QuickStartTemplateAssertion.QS_WARNINGS, ExceptionUtils.getMessage(arg));
+                    context.setVariable(QuickStartTemplateAssertion.QS_WARNINGS, StringEscapeUtils.escapeJava(ExceptionUtils.getMessage(arg)));
                     return AssertionStatus.FALSIFIED;
                 } else {
                     logger.log(Level.WARNING, "Unable to parse JSON payload: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                    context.setVariable(QuickStartTemplateAssertion.QS_WARNINGS, "Unable to parse JSON payload: " + ExceptionUtils.getMessage(e));
+                    context.setVariable(QuickStartTemplateAssertion.QS_WARNINGS, "Unable to parse JSON payload: " + StringEscapeUtils.escapeJava(ExceptionUtils.getMessage(e)));
                     return AssertionStatus.FALSIFIED;
                 }
             }

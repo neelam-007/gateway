@@ -1,4 +1,4 @@
-# Assertion Mappings
+# Assertion Mappings (alphabetically ordered)
 
 AuditDetail:
   externalName: AuditDetail
@@ -8,10 +8,12 @@ AuditDetail:
     LoggingOnly: LoggingOnly
     Level: Level
   samplePayload: |
-    "AuditDetail": {
-      "Detail": "A log message",
-      "LoggingOnly": true,
-      "Level" : "INFO"
+    {
+      "AuditDetail": {
+        "Detail": "A log message",
+        "LoggingOnly": true,
+        "Level" : "INFO"
+      }
     }
   jsonSchema: |
     {
@@ -31,7 +33,7 @@ AuditDetail:
               "type": "string",
               "enum": [ "WARNING", "INFO", "FINE", "FINER", "FINEST" ]
             }
-          }
+          },
           "required": [ "Detail" ]
         }
       },
@@ -44,11 +46,11 @@ Authentication:
   properties:
     IdentityProviderOid: IdentityProviderOid
   samplePayload: |
-      {
-        "Authentication" : {
-          "IdentityProviderOid" : "0000000000000000fffffffffffffffe"
-        }
-      },
+    {
+      "Authentication" : {
+        "IdentityProviderOid" : "0000000000000000fffffffffffffffe"
+      }
+    }
   jsonSchema: |
     {
       "$schema": "http://json-schema.org/draft-04/schema#",
@@ -60,7 +62,7 @@ Authentication:
             "IdentityProviderOid": {
               "type" : "string"
             }
-          }
+          },
           "required": [ "IdentityProviderOid" ]
         }
       },
@@ -76,11 +78,13 @@ CodeInjectionProtection:
     IncludeUrlQueryString: IncludeUrlQueryString
     Protections: Protections
   samplePayload: |
-    "CodeInjectionProtection": {
-      "IncludeBody": true,
-      "IncludeUrlPath": false,
-      "IncludeUrlQueryString": false,
-      "Protections": [ "htmlJavaScriptInjection", "shellInjection" ]
+    {
+      "CodeInjectionProtection": {
+        "IncludeBody": true,
+        "IncludeUrlPath": false,
+        "IncludeUrlQueryString": false,
+        "Protections": [ "htmlJavaScriptInjection", "shellInjection" ]
+      }
     }
   jsonSchema: |
     {
@@ -116,7 +120,9 @@ CORS:
   externalName: CORS
   className: com.l7tech.external.assertions.cors.CORSAssertion
   samplePayload: |
-    "CORS": {
+    {
+      "CORS": {
+      }
     }
   jsonSchema: |
     {
@@ -143,9 +149,11 @@ HardcodedResponse:
   propertiesIsBase64Encoded:
     ResponseBody: true
   samplePayload: |
-    "HardcodedResponse": {
-      "ResponseContentType": "Content-Type: text/html; charset=utf-8"
-      "ResponseBody": "Hello!"
+    {
+      "HardcodedResponse": {
+        "ResponseContentType": "Content-Type: text/html; charset=utf-8",
+        "ResponseBody": "Hello!"
+      }
     }
   jsonSchema: |
     {
@@ -178,7 +186,9 @@ HttpBasic:
   externalName: HttpBasic
   className: com.l7tech.policy.assertion.credential.http.HttpBasic
   samplePayload: |
-    "HttpBasic": {
+    {
+      "HttpBasic": {
+      }
     }
   jsonSchema: |
     {
@@ -201,9 +211,11 @@ HttpRouting:
     ProtectedServiceUrl: ProtectedServiceUrl
     HttpMethod: HttpMethodAsString
   samplePayload: |
-    "HttpMethod": {
-      "ProtectedServiceUrl": https://myservice.com,
-      "HttpMethod": DELETE
+    {
+      "HttpRouting": {
+        "ProtectedServiceUrl": "http://myservice.com",
+        "HttpMethod": "DELETE"
+      }
     }
   jsonSchema: |
     {
@@ -235,10 +247,12 @@ RateLimit:
     HardLimit: HardLimit
     CounterName: CounterName
   samplePayload: |
-    "RateLimit": {
-      "MaxRequestsPerSecond": 25,
-      "HardLimit": true,
-      "CounterName": "RateLimit-${request.clientId}-b0938b7ad6ff"
+    {
+      "RateLimit": {
+        "MaxRequestsPerSecond": 25,
+        "HardLimit": true,
+        "CounterName": "RateLimit-${request.clientId}-b0938b7ad6ff"
+      }
     }
   jsonSchema: |
     {
@@ -272,9 +286,11 @@ SetVariable:
   propertiesIsBase64Encoded:
     Expression: true
   samplePayload: |
-    "SetVariable": {
-      "VariableToSet": "myVariable",
-      "Expression": "myValue"
+    {
+      "SetVariable": {
+        "VariableToSet": "myVariable",
+        "Expression": "myValue"
+      }
     }
   jsonSchema: |
     {
@@ -304,8 +320,10 @@ Ssl:
     Option: Option
     RequireClientAuthentication: RequireClientAuthentication
   samplePayload: |
-    "Ssl": {
-      "Option": "Optional"
+    {
+      "Ssl": {
+        "Option": "Optional"
+      }
     }
   jsonSchema: |
     {
@@ -319,7 +337,7 @@ Ssl:
               "type": "string",
               "enum": [ "Required", "Optional", "Forbidden" ]
             },
-            "RequireClientAuthentication" {
+            "RequireClientAuthentication": {
               "type": "boolean"
             }
           },
@@ -335,8 +353,10 @@ ThroughputQuota:
   properties:
     CounterName: CounterName
   samplePayload: |
-    "ThroughputQuota": {
-      "CounterName": "ThroughputQuota-${request.clientId}-b0938b7ad6fe"
+    {
+      "ThroughputQuota": {
+        "CounterName": "ThroughputQuota-${request.clientId}-b0938b7ad6fe"
+      }
     }
   jsonSchema: |
     {
@@ -355,6 +375,3 @@ ThroughputQuota:
       },
       "required": [ "ThroughputQuota" ]
     }
-
-# TODO: add more mappings here
-...
