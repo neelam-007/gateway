@@ -14,6 +14,7 @@ import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.util.MockInjector;
 import org.jetbrains.annotations.NotNull;
+import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.springframework.context.ApplicationContext;
@@ -29,6 +30,8 @@ import static org.junit.Assert.assertEquals;
  */
 public class ServerCircuitBreakerAssertionTest {
 
+    private static final Counter counter = new Counter();
+
     private static ServerPolicyFactory serverPolicyFactory;
 
     @BeforeClass
@@ -37,6 +40,12 @@ public class ServerCircuitBreakerAssertionTest {
 
         serverPolicyFactory = new ServerPolicyFactory(new TestLicenseManager(), new MockInjector());
         serverPolicyFactory.setApplicationContext(applicationContext);
+    }
+
+    @After
+    public void tearDown() {
+        // FIXME: temporary measure until we have multiple counters
+        counter.reset();
     }
     
     @Test
@@ -66,6 +75,21 @@ public class ServerCircuitBreakerAssertionTest {
         assertEquals(returnStatus, runServerAssertion(assertion));
     }
 
+    @Test
+    public void testMultipleChildReturnsBAD_REQUEST_CircuitOpens_NextExecutionShortCircuits() throws Exception {
+        final AssertionStatus returnStatus = AssertionStatus.BAD_REQUEST;
+
+        final CircuitBreakerAssertion assertion = new CircuitBreakerAssertion(getMockAssertions(returnStatus));
+
+        assertEquals(returnStatus, runServerAssertion(assertion));
+        assertEquals(returnStatus, runServerAssertion(assertion));
+        assertEquals(returnStatus, runServerAssertion(assertion));
+        assertEquals(returnStatus, runServerAssertion(assertion));
+        assertEquals(returnStatus, runServerAssertion(assertion));
+
+        assertEquals(AssertionStatus.FALSIFIED, runServerAssertion(assertion));
+    }
+
     @NotNull
     private List<Assertion> getMockAssertions(AssertionStatus... returnStatus) {
         ArrayList<Assertion> assertionList = new ArrayList<>();
@@ -86,6 +110,9 @@ public class ServerCircuitBreakerAssertionTest {
                         new Message(),
                         false);
 
-        return serverPolicyFactory.compilePolicy(assertion, false).checkRequest(context);
+        ServerCircuitBreakerAssertion serverAssertion =
+                (ServerCircuitBreakerAssertion) serverPolicyFactory.compilePolicy(assertion, false);
+        serverAssertion.setCounter(counter);
+        return serverAssertion.checkRequest(context);
     }
 }

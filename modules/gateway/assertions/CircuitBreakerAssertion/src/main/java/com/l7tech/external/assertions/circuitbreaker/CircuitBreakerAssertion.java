@@ -17,6 +17,9 @@ import static com.l7tech.policy.assertion.AssertionMetadata.*;
  */
 public class CircuitBreakerAssertion extends CompositeAssertion implements UsesVariables {
 
+    public static final long FAILURE_THRESHOLD = 5;
+    public static final long BLACKOUT_PERIOD = 5000;
+
     public CircuitBreakerAssertion() {
 
     }
