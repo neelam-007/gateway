@@ -670,7 +670,8 @@ public class WorkSpacePanel extends JPanel {
                     // After refresh policy, the policy tree is refreshed too, so add it into the refresh list
                     alreadyRefreshed.add(((PolicyEditorPanel) component).getPolicyTree());
                 } catch (FindException e) {
-                    // Report error, but still continue other tabs refresh
+                    // Report error, close tab causing error, but still continue other tabs refresh
+                    tabbedPane.remove(component);
                     DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent(),
                         "Cannot retrieve the policy, '" + component.getName() + "'.",
                         "Refresh Error", JOptionPane.WARNING_MESSAGE, null);

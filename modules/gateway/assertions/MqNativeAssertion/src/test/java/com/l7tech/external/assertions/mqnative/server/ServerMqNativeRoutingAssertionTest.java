@@ -7,10 +7,7 @@ import com.ibm.mq.headers.MQHeaderList;
 import com.ibm.mq.headers.MQRFH;
 import com.ibm.mq.headers.MQRFH2;
 import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.external.assertions.mqnative.MqNativeMessageHeaderType;
-import com.l7tech.external.assertions.mqnative.MqNativeMessagePropertyRuleSet;
-import com.l7tech.external.assertions.mqnative.MqNativeReplyType;
-import com.l7tech.external.assertions.mqnative.MqNativeRoutingAssertion;
+import com.l7tech.external.assertions.mqnative.*;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
@@ -810,7 +807,7 @@ public class ServerMqNativeRoutingAssertionTest {
     public void testConnectionPoolingWithMaxConnectionsAndSimpleMessages() throws Exception {
         // setup a stubbed version of task callback
         final AtomicReference<MqNativeEndpointConfig.MqNativeEndpointKey> key = new AtomicReference<>();
-        final CountDownLatch latch = new CountDownLatch(MqNativeEndpointConfig.DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_ACTIVE);
+        final CountDownLatch latch = new CountDownLatch(MqNativeConstants.DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_ACTIVE);
         final MqNativeResourceManager.MqTaskCallback mqrc = new MqNativeResourceManager.MqTaskCallback() {
             @Override
             public void doWork(MQQueueManager queueManager) throws MQException {
@@ -874,8 +871,8 @@ public class ServerMqNativeRoutingAssertionTest {
 
         Collection<Future> futures = new ArrayList<>();
 
-        final ExecutorService pool = Executors.newFixedThreadPool(MqNativeEndpointConfig.DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_ACTIVE);
-        for (int i = 0; i < MqNativeEndpointConfig.DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_ACTIVE; i++) {
+        final ExecutorService pool = Executors.newFixedThreadPool(MqNativeConstants.DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_ACTIVE);
+        for (int i = 0; i < MqNativeConstants.DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_ACTIVE; i++) {
             futures.add(pool.submit(() -> {
                 try {
                     MQMessage mqMessage = createSimpleMessage();

@@ -146,6 +146,9 @@
         <dependency org="org.springframework" name="spring-test" rev="3.0.7.RELEASE" force="true" conf="test"/>
         <dependency name="layer7-kerberos" rev="latest.integration" conf="test"/>
 
+        <dependency org="org.mockito" name="mockito-core" rev="1.10.19" force="true" conf="test"/>
+        <dependency org="org.powermock" name="powermock-mockito-1.6.3-full" rev="1.6.3" force="true" conf="test"/>
+
         <!-- Exclusions -->
         <exclude org="asm" module="asm-attrs" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
         <exclude org="com.sun.xml.fastinfoset" module="FastInfoset" artifact="*" type="*" ext="*" conf="" matcher="exact"/>

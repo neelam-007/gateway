@@ -5,11 +5,9 @@ import com.l7tech.console.panels.*;
 import com.l7tech.console.security.FormAuthorizationPreparer;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.*;
-import com.l7tech.external.assertions.mqnative.MqNativeAcknowledgementType;
-import com.l7tech.external.assertions.mqnative.MqNativeAdmin;
+import com.l7tech.external.assertions.mqnative.*;
 import com.l7tech.external.assertions.mqnative.MqNativeAdmin.MqNativeTestException;
-import com.l7tech.external.assertions.mqnative.MqNativeMessageFormatType;
-import com.l7tech.external.assertions.mqnative.MqNativeReplyType;
+import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.security.rbac.AttemptedCreateSpecific;
 import com.l7tech.gateway.common.security.rbac.AttemptedOperation;
 import com.l7tech.gateway.common.security.rbac.AttemptedUpdate;
@@ -24,6 +22,7 @@ import com.l7tech.gui.util.RunOnChangeListener;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.util.ExceptionUtils;
@@ -151,6 +150,9 @@ public class MqNativePropertiesDialog extends JDialog {
     private JTextField inboundFailureQueuePutMessageOptionsTextField;
     private JCheckBox useOutboundReplyQueueGetMessageOptionsCheckBox;
     private JTextField outboundReplyQueueGetMessageOptionsTextField;
+    private JLabel maxActiveDefaultLabel;
+    private JLabel maxIdleDefaultLabel;
+    private JLabel maxWaitDefaultLabel;
 
     private ByteLimitPanel byteLimitPanel;
 
@@ -938,6 +940,10 @@ public class MqNativePropertiesDialog extends JDialog {
                 loadConnectionPoolProperty(maxActiveTextField, mqNativeActiveConnector, MQ_CONNECTION_POOL_MAX_ACTIVE_PROPERTY);
                 loadConnectionPoolProperty(maxIdleTextField, mqNativeActiveConnector, MQ_CONNECTION_POOL_MAX_IDLE_PROPERTY);
                 loadConnectionPoolProperty(maxWaitTextField, mqNativeActiveConnector, MQ_CONNECTION_POOL_MAX_WAIT_PROPERTY);
+
+                displayConnectionPoolPropertyDefault(maxActiveDefaultLabel, MQ_CONNECTION_POOL_MAX_ACTIVE_UI_PROPERTY, "" + MqNativeConstants.DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_ACTIVE);
+                displayConnectionPoolPropertyDefault(maxIdleDefaultLabel, MQ_CONNECTION_POOL_MAX_IDLE_UI_PROPERTY, "" + MqNativeConstants.DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_IDLE);
+                displayConnectionPoolPropertyDefault(maxWaitDefaultLabel, MQ_CONNECTION_POOL_MAX_WAIT_UI_PROPERTY, "" + MqNativeConstants.DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_WAIT);
             }
         } else {
             enabledCheckBox.setSelected(true);
@@ -969,6 +975,37 @@ public class MqNativePropertiesDialog extends JDialog {
         if (! StringUtils.isBlank(propValue)) {
             texField.setText(propValue);
         }
+    }
+
+    /**
+     * Display the pool default settings obtained from cluster property or system default setting
+     *
+     * @param label: the label field will display the default value.
+     * @param clusterPropName: the name of the pool cluster property.
+     * @param systemDefaultValue the system default value (not cluster property value), which is defined in MqNativeConstants.
+     */
+    private void displayConnectionPoolPropertyDefault(
+            @NotNull final JLabel label,
+            @NotNull final String clusterPropName,
+            @NotNull final String systemDefaultValue
+    ) {
+        String defaultValue = null;
+        try {
+            final ClusterProperty clusterProperty = Registry.getDefault().getClusterStatusAdmin().findPropertyByName(clusterPropName);
+            if (clusterProperty != null) {
+                 defaultValue = clusterProperty.getValue();
+            }
+        } catch (final FindException e) {
+            if (logger.isLoggable(Level.INFO)) {
+                logger.log(Level.INFO, "Error finding cluster property '" + clusterPropName + "': " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            }
+        }
+
+        if (StringUtils.isBlank(defaultValue)) {
+            defaultValue = systemDefaultValue;
+        }
+
+        label.setText("(Default: " + defaultValue + ")");
     }
 
     /**

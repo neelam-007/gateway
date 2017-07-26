@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.mqnative.server;
 
+import com.l7tech.external.assertions.mqnative.MqNativeConstants;
 import com.l7tech.external.assertions.mqnative.MqNativeDynamicProperties;
 import com.l7tech.external.assertions.mqnative.MqNativeReplyType;
 
@@ -23,15 +24,6 @@ import java.util.Hashtable;
  * Immutable endpoint configuration for runtime use.
  */
 class MqNativeEndpointConfig {
-    // MQ Native - connection pool properties
-    // This is the default maximum # of connections per connection pool.
-    public static final int DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_ACTIVE = 20;
-    // This is the default max idle time for GenericObjectPool, essentially the time to wait for an object to become available.
-    // a default value of -1 means that if no idle connections are available, wait indefinitely until one becomes available.
-    public static final long DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_WAIT = -1L;
-    // This is the default maximum number of objects that can sit idle in the pool at any time.
-    public static final int DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_IDLE = 20;
-
     private final String name;
     private final boolean dynamic;
     private final String queueName;
@@ -134,9 +126,9 @@ class MqNativeEndpointConfig {
         private final Goid id;
         private final int version;
 
-        private int maxActive = DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_ACTIVE;
-        private int maxIdle = DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_IDLE;
-        private long maxWait = DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_WAIT;
+        private int maxActive = MqNativeConstants.DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_ACTIVE;
+        private int maxIdle = MqNativeConstants.DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_IDLE;
+        private long maxWait = MqNativeConstants.DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_WAIT;
 
         MqNativeEndpointKey( final Goid id,
                              final int version,

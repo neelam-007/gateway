@@ -827,6 +827,10 @@ public class GatewayFeatureSets {
                 "The necessary assertions to validate messages against Swagger document",
                 mass("assertion:Swagger"));
 
+        GatewayFeatureSet circuitBreakerAssertion = fsr("set:CircuitBreaker:Assertions",
+                "The necessary assertions to enable Circuit Breaker pattern functionality",
+                mass("assertion:CircuitBreaker"));
+
         GatewayFeatureSet apiPortalIntegration = fsr("set:ApiPortalIntegration:Assertions",
                 "The necessary assertions to enable API Portal integration features",
                 mass("assertion:UpgradePortal"),
@@ -1043,6 +1047,7 @@ public class GatewayFeatureSets {
             fs(cassandraAssertions),
             fs(oDataValidationAssertion),
             fs(swaggerAssertion),
+            fs(circuitBreakerAssertion),
             fs(concurrentAllAssertion),
             fs(caWsdmAssertions),
             fs(adaptiveLoadBalancingAssertions),
@@ -1118,6 +1123,7 @@ public class GatewayFeatureSets {
             fs(cassandraAssertions),
             fs(oDataValidationAssertion),
             fs(swaggerAssertion),
+            fs(circuitBreakerAssertion),
             fs(concurrentAllAssertion),
             fs(caWsdmAssertions),
             fs(adaptiveLoadBalancingAssertions),
@@ -1202,6 +1208,7 @@ public class GatewayFeatureSets {
             fs(cassandraAssertions),
             fs(oDataValidationAssertion),
             fs(swaggerAssertion),
+            fs(circuitBreakerAssertion),
             fs(concurrentAllAssertion),
             fs(caWsdmAssertions),
             fs(adaptiveLoadBalancingAssertions),
@@ -1259,6 +1266,7 @@ public class GatewayFeatureSets {
                 fs(cassandraAssertions),
                 fs(oDataValidationAssertion),
                 fs(swaggerAssertion),
+                fs(circuitBreakerAssertion),
                 fs(concurrentAllAssertion),
                 fs(caWsdmAssertions),
                 fs(adaptiveLoadBalancingAssertions),
