@@ -76,7 +76,7 @@ public class ServerCircuitBreakerAssertionTest {
     }
 
     @Test
-    public void testMultipleChildReturnsBAD_REQUEST_CircuitOpens_NextExecutionShortCircuits() throws Exception {
+    public void testChildReturnsBAD_REQUESTRepeatedly_CircuitOpens_NextExecutionShortCircuits() throws Exception {
         final AssertionStatus returnStatus = AssertionStatus.BAD_REQUEST;
 
         final CircuitBreakerAssertion assertion = new CircuitBreakerAssertion(getMockAssertions(returnStatus));
