@@ -231,12 +231,12 @@ public class EntityBundleImporterImplTest {
     }
 
     @Test
-    public void importBundleForSoapServcieUsingMapByRoutingUri() throws FindException {
+    public void importBundleForSoapServiceUsingMapByRoutingUri() throws FindException {
         importBundleUsingMapByRoutingUri(true);
     }
 
     @Test
-    public void importBundleForNonSoapServcieUsingMapByRoutingUri() throws FindException {
+    public void importBundleForNonSoapServiceUsingMapByRoutingUri() throws FindException {
         importBundleUsingMapByRoutingUri(false);
     }
 
@@ -293,7 +293,7 @@ public class EntityBundleImporterImplTest {
         final EntityMappingResult folderMappingResult = results.get(0);
         final EntityMappingResult serviceMappingResult = results.get(1);
 
-        assertNull("irst mapping has no exception", folderMappingResult.getException());
+        assertNull("The first mapping has no exception", folderMappingResult.getException());
         assertNull("The second mapping has no exception", serviceMappingResult.getException());
 
         // Check whether each mapping is correct.
