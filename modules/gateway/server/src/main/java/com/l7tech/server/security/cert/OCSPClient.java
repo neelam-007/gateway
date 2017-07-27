@@ -21,7 +21,6 @@ import org.bouncycastle.ocsp.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -331,54 +330,47 @@ public class OCSPClient {
                                    final CertificateID certId,
                                    final boolean signed,
                                    final byte[] nonceBytes) throws OCSPClientException {
-        final OCSPStatus status;
-        RerunnableHttpRequest httpRequest;
-
+        final URL requestUrl;
         try {
-            // Encode request
-            final byte[] array = request.getEncoded();
-
-            // build request
-            URL requestUrl = new URL(ocspResponderUrl);
-            GenericHttpRequestParams params = new GenericHttpRequestParams(requestUrl);
-            params.setContentType(ContentTypeHeader.parseValue(CONTENT_TYPE_OCSP_REQUEST));
-            params.addExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_ACCEPT, CONTENT_TYPE_OCSP_RESPONSE));
-            params.setFollowRedirects(false);
-            params.setContentLength((long) array.length);
-            httpRequest = (RerunnableHttpRequest) httpClient.createRequest(HttpMethod.POST, params);
-            httpRequest.setInputStreamFactory(new RerunnableHttpRequest.InputStreamFactory(){
-                @Override
-                public InputStream getInputStream() {
-                    return new ByteArrayInputStream(array);
-                }
-            });
+            requestUrl = new URL(ocspResponderUrl);
         } catch (MalformedURLException murle) {
-            throw new OCSPClientException("Invalid URL for OCSP responder '"+ocspResponderUrl+"'.", murle);
-        } catch (IOException ioe) {
-            throw new OCSPClientException("Error creating OCSP request", ioe);
+            throw new OCSPClientException("Invalid URL for OCSP responder '" + ocspResponderUrl + "'.", murle);
         }
 
+        final GenericHttpRequestParams requestParams;
+        final byte[] requestEncodedBytes;
         try {
-            // get response
-            GenericHttpResponse httpResponse = httpRequest.getResponse();
-            int httpStatus = httpResponse.getStatus();
-            if (logger.isLoggable(Level.FINER)) {
-                logger.log(Level.FINER, "Response HTTP status {0} for OCSP responder {1}",
-                        new Object[]{httpStatus, ocspResponderUrl});
-            }
-            if (httpStatus != HttpConstants.STATUS_OK) {
-                throw new OCSPClientException("Failing due to HTTP status code '" + httpStatus 
-                        + "' from responder '" + ocspResponderUrl + "'.");
-            }
+            // Encode request
+            requestEncodedBytes = request.getEncoded();
+            // build request params
+            requestParams = new GenericHttpRequestParams(requestUrl);
+            requestParams.setContentType(ContentTypeHeader.parseValue(CONTENT_TYPE_OCSP_REQUEST));
+            requestParams.addExtraHeader(new GenericHttpHeader(HttpConstants.HEADER_ACCEPT, CONTENT_TYPE_OCSP_RESPONSE));
+            requestParams.setFollowRedirects(false);
+            requestParams.setContentLength((long) requestEncodedBytes.length);
+        } catch (IOException ioe) {
+            throw new OCSPClientException("Error creating OCSP request parameters", ioe);
+        }
 
-            OCSPResp ocspResponse = new OCSPResp(httpResponse.getInputStream());
-            status = handleResponse(ocspResponse, certId, signed, nonceBytes);
-            
+        try (final RerunnableHttpRequest httpRequest = (RerunnableHttpRequest) httpClient.createRequest(HttpMethod.POST, requestParams)) {
+            httpRequest.setInputStreamFactory(() -> new ByteArrayInputStream(requestEncodedBytes));
+
+            // get response
+            try (final GenericHttpResponse httpResponse = httpRequest.getResponse()) {
+                final int httpStatus = httpResponse.getStatus();
+                logger.log(Level.FINER, "Response HTTP status {0} for OCSP responder {1}", new Object[]{httpStatus, ocspResponderUrl});
+
+                if (httpStatus != HttpConstants.STATUS_OK) {
+                    throw new OCSPClientException("Failing due to HTTP status code '" + httpStatus
+                            + "' from responder '" + ocspResponderUrl + "'.");
+                }
+
+                final OCSPResp ocspResponse = new OCSPResp(httpResponse.getInputStream());
+                return handleResponse(ocspResponse, certId, signed, nonceBytes);
+            }
         } catch (IOException ioe) {
             throw new OCSPClientException("HTTP error during OCSP request.", ioe);
         }
-
-        return status;
     }
 
     /**

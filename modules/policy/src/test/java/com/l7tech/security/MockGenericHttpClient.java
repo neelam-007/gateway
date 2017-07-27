@@ -234,7 +234,7 @@ public class MockGenericHttpClient implements GenericHttpClient {
         }
     }
 
-    private class MockGenericHttpResponse extends GenericHttpResponse
+    public class MockGenericHttpResponse extends GenericHttpResponse
     {
         private long responseLength;
         private byte[] responseData;
