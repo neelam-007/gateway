@@ -6,6 +6,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.composite.ServerCompositeAssertion;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
@@ -49,36 +50,36 @@ public class ServerCircuitBreakerAssertion extends ServerCompositeAssertion<Circ
         this.variablesUsed = assertion.getVariablesUsed();
     }
 
-    void setCounter(Counter counter) {
+    void setCounter(@NotNull final Counter counter) {
         ServerCircuitBreakerAssertion.counter = counter;
     }
 
-    public AssertionStatus checkRequest( final PolicyEnforcementContext context ) throws IOException, PolicyAssertionException {
+    public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+        // use execution time to record failures to account for long operations or timeouts
+        long executionTimestamp = System.currentTimeMillis();
+
         // check if the circuit is open and if so, has the blackout period been exceeded yet
         if (circuitOpen.get()) {
-            if (circuitCloseTime.get() > System.currentTimeMillis()) {
+            if (circuitCloseTime.get() > executionTimestamp) {
                 final Calendar cal = Calendar.getInstance();
                 cal.setTimeInMillis(circuitCloseTime.get());
                 final String timeString = new SimpleDateFormat("HH:mm:ss:SSS").format(cal.getTime());
-                logger.log(Level.WARNING, "Circuit closed until " + timeString);
+                logger.log(Level.WARNING, "Circuit open until " + timeString);
                 return AssertionStatus.FALSIFIED;
             } else {
                 circuitOpen.set(false);
             }
         }
 
-        // use execution time to record failures to account for long operations or timeouts
-        long executionTimestamp = System.currentTimeMillis();
-
         // run child policy
-        AssertionStatus status = iterateChildren(context, assertionResultListener);
+        final AssertionStatus status = iterateChildren(context, assertionResultListener);
 
         handleChildExecutionResult(executionTimestamp, status);
 
         return status;
     }
 
-    private void handleChildExecutionResult(long executionTimestamp, AssertionStatus status) {
+    private synchronized void handleChildExecutionResult(final long executionTimestamp, final AssertionStatus status) {
         // check if failure needs to be recorded
         if (AssertionStatus.NONE != status) {
             counter.recordFailure(executionTimestamp);

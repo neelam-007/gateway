@@ -15,11 +15,11 @@ public class Counter {
         failureTimestamps = new ConcurrentLinkedDeque<>();
     }
 
-    void recordFailure(Long timestamp) {
+    void recordFailure(final long timestamp) {
         failureTimestamps.add(timestamp);
     }
 
-    long getCountSinceTimestamp(Long timestamp) {
+    long getCountSinceTimestamp(final long timestamp) {
         return failureTimestamps.stream().filter(failureTimestamp -> failureTimestamp >= timestamp).count();
     }
 
