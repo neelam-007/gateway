@@ -6,12 +6,11 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.composite.ServerCompositeAssertion;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
+import java.util.Date;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
@@ -29,9 +28,9 @@ public class ServerCircuitBreakerAssertion extends ServerCompositeAssertion<Circ
 
     private static final Logger logger = Logger.getLogger(ServerCircuitBreakerAssertion.class.getName());
 
-    private static Counter counter = new Counter();
-    private static final AtomicBoolean circuitOpen = new AtomicBoolean(false);
-    private static final AtomicLong circuitCloseTime = new AtomicLong(0);
+    private Counter counter = new Counter();
+    private final AtomicBoolean circuitOpen = new AtomicBoolean(false);
+    private final AtomicLong circuitCloseTime = new AtomicLong(0);
 
     private final String[] variablesUsed;
 
@@ -50,10 +49,6 @@ public class ServerCircuitBreakerAssertion extends ServerCompositeAssertion<Circ
         this.variablesUsed = assertion.getVariablesUsed();
     }
 
-    void setCounter(@NotNull final Counter counter) {
-        ServerCircuitBreakerAssertion.counter = counter;
-    }
-
     public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         // use execution time to record failures to account for long operations or timeouts
         long executionTimestamp = System.currentTimeMillis();
@@ -61,9 +56,8 @@ public class ServerCircuitBreakerAssertion extends ServerCompositeAssertion<Circ
         // check if the circuit is open and if so, has the blackout period been exceeded yet
         if (circuitOpen.get()) {
             if (circuitCloseTime.get() > executionTimestamp) {
-                final Calendar cal = Calendar.getInstance();
-                cal.setTimeInMillis(circuitCloseTime.get());
-                final String timeString = new SimpleDateFormat("HH:mm:ss:SSS").format(cal.getTime());
+                Date circuitCloseDate = new Date(circuitCloseTime.get());
+                final String timeString = new SimpleDateFormat("HH:mm:ss:SSS").format(circuitCloseDate);
                 logger.log(Level.WARNING, "Circuit open until " + timeString);
                 return AssertionStatus.FALSIFIED;
             } else {

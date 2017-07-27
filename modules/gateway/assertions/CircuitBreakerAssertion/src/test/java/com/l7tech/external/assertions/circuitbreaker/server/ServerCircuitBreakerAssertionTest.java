@@ -14,7 +14,6 @@ import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.util.MockInjector;
 import org.jetbrains.annotations.NotNull;
-import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.springframework.context.ApplicationContext;
@@ -30,8 +29,6 @@ import static org.junit.Assert.assertEquals;
  */
 public class ServerCircuitBreakerAssertionTest {
 
-    private static final Counter counter = new Counter();
-
     private static ServerPolicyFactory serverPolicyFactory;
 
     @BeforeClass
@@ -42,19 +39,18 @@ public class ServerCircuitBreakerAssertionTest {
         serverPolicyFactory.setApplicationContext(applicationContext);
     }
 
-    @After
-    public void tearDown() {
-        // FIXME: temporary measure until we have multiple counters
-        counter.reset();
-    }
-    
     @Test
     public void testEmptyCircuitBreakerSucceeds() throws Exception {
         final AssertionStatus returnStatus = AssertionStatus.NONE;
 
         final CircuitBreakerAssertion assertion = new CircuitBreakerAssertion(Collections.emptyList());
 
-        assertEquals(returnStatus, runServerAssertion(assertion));
+        PolicyEnforcementContext context = createPolicyEnforcementContext();
+
+        ServerCircuitBreakerAssertion serverAssertion =
+                (ServerCircuitBreakerAssertion) serverPolicyFactory.compilePolicy(assertion, false);
+
+        assertEquals(returnStatus, serverAssertion.checkRequest(context));
     }
 
     @Test
@@ -63,7 +59,12 @@ public class ServerCircuitBreakerAssertionTest {
 
         final CircuitBreakerAssertion assertion = new CircuitBreakerAssertion(getMockAssertions(returnStatus));
 
-        assertEquals(returnStatus, runServerAssertion(assertion));
+        PolicyEnforcementContext context = createPolicyEnforcementContext();
+
+        ServerCircuitBreakerAssertion serverAssertion =
+                (ServerCircuitBreakerAssertion) serverPolicyFactory.compilePolicy(assertion, false);
+
+        assertEquals(returnStatus, serverAssertion.checkRequest(context));
     }
 
     @Test
@@ -72,7 +73,12 @@ public class ServerCircuitBreakerAssertionTest {
 
         final CircuitBreakerAssertion assertion = new CircuitBreakerAssertion(getMockAssertions(returnStatus));
 
-        assertEquals(returnStatus, runServerAssertion(assertion));
+        PolicyEnforcementContext context = createPolicyEnforcementContext();
+
+        ServerCircuitBreakerAssertion serverAssertion =
+                (ServerCircuitBreakerAssertion) serverPolicyFactory.compilePolicy(assertion, false);
+
+        assertEquals(returnStatus, serverAssertion.checkRequest(context));
     }
 
     @Test
@@ -81,13 +87,18 @@ public class ServerCircuitBreakerAssertionTest {
 
         final CircuitBreakerAssertion assertion = new CircuitBreakerAssertion(getMockAssertions(returnStatus));
 
-        assertEquals(returnStatus, runServerAssertion(assertion));
-        assertEquals(returnStatus, runServerAssertion(assertion));
-        assertEquals(returnStatus, runServerAssertion(assertion));
-        assertEquals(returnStatus, runServerAssertion(assertion));
-        assertEquals(returnStatus, runServerAssertion(assertion));
+        PolicyEnforcementContext context = createPolicyEnforcementContext();
 
-        assertEquals(AssertionStatus.FALSIFIED, runServerAssertion(assertion));
+        ServerCircuitBreakerAssertion serverAssertion = 
+                (ServerCircuitBreakerAssertion) serverPolicyFactory.compilePolicy(assertion, false);
+        
+        assertEquals(returnStatus, serverAssertion.checkRequest(context));
+        assertEquals(returnStatus, serverAssertion.checkRequest(context));
+        assertEquals(returnStatus, serverAssertion.checkRequest(context));
+        assertEquals(returnStatus, serverAssertion.checkRequest(context));
+        assertEquals(returnStatus, serverAssertion.checkRequest(context));
+
+        assertEquals(AssertionStatus.FALSIFIED, serverAssertion.checkRequest(context));
     }
 
     @NotNull
@@ -103,16 +114,10 @@ public class ServerCircuitBreakerAssertionTest {
         return assertionList;
     }
 
-    private AssertionStatus runServerAssertion(CircuitBreakerAssertion assertion) throws Exception {
-        final PolicyEnforcementContext context =
-                PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(new ByteArrayStashManager(),
+    private PolicyEnforcementContext createPolicyEnforcementContext() throws Exception {
+        return PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(new ByteArrayStashManager(),
                                 ContentTypeHeader.XML_DEFAULT, new EmptyInputStream()),
                         new Message(),
                         false);
-
-        ServerCircuitBreakerAssertion serverAssertion =
-                (ServerCircuitBreakerAssertion) serverPolicyFactory.compilePolicy(assertion, false);
-        serverAssertion.setCounter(counter);
-        return serverAssertion.checkRequest(context);
     }
 }
