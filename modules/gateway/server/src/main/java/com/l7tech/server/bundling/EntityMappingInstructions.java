@@ -186,8 +186,9 @@ public class EntityMappingInstructions {
         @NotNull
         private final Type type;
 
+        // Note: ROUTING_URI is only applied to published services.
         public enum Type {
-            ID, NAME, GUID, MAP_BY_ROLE_ENTITY, MODULE_SHA265, URI
+            ID, NAME, GUID, MAP_BY_ROLE_ENTITY, MODULE_SHA265, ROUTING_URI
         }
 
         /**

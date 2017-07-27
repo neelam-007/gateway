@@ -3,14 +3,20 @@ package com.l7tech.server.bundling;
 import com.l7tech.common.password.PasswordHasher;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.security.rbac.RoleEntityHeader;
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.InternalUserBean;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserManager;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.internal.InternalUser;
-import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.IdentityHeader;
+import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.folder.Folder;
+import com.l7tech.objectmodel.folder.FolderHeader;
+import com.l7tech.policy.Policy;
+import com.l7tech.policy.PolicyType;
+import com.l7tech.policy.PolicyVersion;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.EntityCrud;
 import com.l7tech.server.audit.AuditContextFactory;
@@ -31,7 +37,7 @@ import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.service.ServiceAliasManager;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.util.CollectionUtils;
-import org.junit.Assert;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -44,12 +50,11 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.DefaultTransactionStatus;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import static com.l7tech.objectmodel.EntityType.USER;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.*;
 
@@ -225,6 +230,16 @@ public class EntityBundleImporterImplTest {
         Mockito.verify(passwordEnforcerManager, Mockito.times(1)).setUserPasswordPolicyAttributes(iu, true);
     }
 
+    @Test
+    public void importBundleForSoapServcieUsingMapByRoutingUri() throws FindException {
+        importBundleUsingMapByRoutingUri(true);
+    }
+
+    @Test
+    public void importBundleForNonSoapServcieUsingMapByRoutingUri() throws FindException {
+        importBundleUsingMapByRoutingUri(false);
+    }
+
     private IdentityHeader createIndentityHeader(User user){
         return new IdentityHeader(user.getProviderId(), user.getId(), USER, user.getLogin(), null, user.getName(), null);
     }
@@ -239,5 +254,122 @@ public class EntityBundleImporterImplTest {
         role.setName("Test Role");
         role.setUserCreated(userCreated);
         return role;
+    }
+
+    private void importBundleUsingMapByRoutingUri(final boolean isSoap) throws FindException {
+        final Folder rootFolder = createRootFolder();
+        final EntityMappingInstructions rootFolderMappingInstructions = new EntityMappingInstructions(
+            createFolderEntityHeader(rootFolder), null, EntityMappingInstructions.MappingAction.NewOrExisting, true, false
+        );
+
+        final Policy policy = createTestingPolicy();
+        final PublishedService publishedService = createTestingPublishedService(policy, rootFolder, isSoap);
+        final EntityMappingInstructions.TargetMapping serviceTargetMapping = new EntityMappingInstructions.TargetMapping(EntityMappingInstructions.TargetMapping.Type.ROUTING_URI, publishedService.getRoutingUri());
+        final EntityMappingInstructions serviceMappingInstructions = new EntityMappingInstructions(
+            createServiceEntityHeader(publishedService), serviceTargetMapping, EntityMappingInstructions.MappingAction.NewOrUpdate, false, false
+        );
+
+        final List<EntityMappingInstructions> mappingInstructions = new ArrayList<>();
+        mappingInstructions.add(rootFolderMappingInstructions);
+        mappingInstructions.add(serviceMappingInstructions);
+
+        final List<EntityContainer> entities = new ArrayList<>();
+        entities.add(new EntityContainer(publishedService));
+
+        when(entityCrud.find(Folder.class, Folder.ROOT_FOLDER_ID.toString())).thenReturn(rootFolder);
+        when(entityCrud.find(serviceMappingInstructions.getSourceEntityHeader())).thenReturn(publishedService);
+
+        final PolicyVersion policyVersion = new PolicyVersion();
+        policyVersion.setXml(policy.getXml());
+        when(policyVersionManager.findLatestRevisionForPolicy(policy.getGoid())).thenReturn(policyVersion);
+
+        // Get mapping results:
+        final List<EntityMappingResult> results = importer.importBundle(new EntityBundle(entities, mappingInstructions, Collections.<DependencySearchResults>emptyList()), false, true, null);
+
+        // Check whether there are two mappings returned.
+        assertTrue("Should return two mapping results", results.size() == 2);
+
+        // Check whether no exceptions are thrown.
+        final EntityMappingResult folderMappingResult = results.get(0);
+        final EntityMappingResult serviceMappingResult = results.get(1);
+
+        assertNull("irst mapping has no exception", folderMappingResult.getException());
+        assertNull("The second mapping has no exception", serviceMappingResult.getException());
+
+        // Check whether each mapping is correct.
+        // 1. Folder Mapping:
+        assertTrue("folder Goids are matched", folderMappingResult.getSourceEntityHeader().getGoid().equals(rootFolder.getGoid()));
+        assertTrue("folder mapping result action is correct", folderMappingResult.getMappingAction() == EntityMappingResult.MappingAction.UsedExisting);
+
+        // 2. Service Mapping
+        assertTrue("service Goids are matched", serviceMappingInstructions.getSourceEntityHeader().getGoid().equals(publishedService.getGoid()));
+        assertTrue("service mapping result action is correct", serviceMappingResult.getMappingAction() == EntityMappingResult.MappingAction.CreatedNew);
+    }
+
+    private Folder createRootFolder() {
+        final Folder rootFolder = new Folder("Root", new Folder());
+        rootFolder.setGoid(Folder.ROOT_FOLDER_ID);
+
+        return rootFolder;
+    }
+
+    private Policy createTestingPolicy() {
+        final Policy policy = new Policy(
+            PolicyType.PRIVATE_SERVICE,
+            "random_testing_policy",
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
+            false
+        );
+        policy.setGuid(UUID.randomUUID().toString());
+
+        return policy;
+    }
+
+    private PublishedService createTestingPublishedService(@NotNull final Policy policy, @NotNull final Folder parentFolder, final boolean isSoap) {
+        final PublishedService publishedService = new PublishedService();
+
+        if (isSoap) publishedService.setWsdlXml("");
+        publishedService.setSoap(isSoap);
+        publishedService.setPolicy(policy);
+        publishedService.setName("random_service_name");
+        publishedService.setRoutingUri("/random_routing_uri");
+        publishedService.setFolder(parentFolder);
+
+        final byte[] bytes = new byte[16];
+        new Random().nextBytes(bytes);
+        final Goid random_goid = new Goid(bytes);
+        publishedService.setGoid(random_goid);
+
+        return publishedService;
+    }
+
+    private ServiceHeader createServiceEntityHeader(@NotNull final PublishedService publishedService) {
+        return new ServiceHeader(
+            publishedService.isSoap(),
+            publishedService.isDisabled(),
+            publishedService.displayName(),
+            publishedService.getGoid(),
+            publishedService.getName(), publishedService.getName(),
+            publishedService.getFolder().getGoid(),
+            null,
+            0,
+            1,
+            publishedService.getRoutingUri(),
+            false,
+            false,
+            null,
+            publishedService.getPolicy().getGoid()
+        );
+    }
+
+    private FolderHeader createFolderEntityHeader(@NotNull final Folder folder) {
+        return new FolderHeader(
+            folder.getGoid(),
+            folder.getName(),
+            folder.getFolder().getGoid(),
+            folder.getVersion(),
+            folder.getPath(),
+            folder.getSecurityZone() != null? folder.getSecurityZone().getGoid() : null
+        );
     }
 }

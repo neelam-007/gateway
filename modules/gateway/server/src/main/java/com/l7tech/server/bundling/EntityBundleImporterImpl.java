@@ -837,7 +837,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                         throw new IncorrectMappingInstructionsException(mapping, "Attempting to map an entity by guid that cannot be mapped by guid.");
                     }
                     break;
-                case URI:
+                case ROUTING_URI:
                     if (entityContainer.getEntity() instanceof PublishedService) {
                         ((PublishedService) entityContainer.getEntity()).setRoutingUri(mapping.getTargetMapping().getTargetID());
                     } else {
@@ -1586,15 +1586,15 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                     }
                                     break;
                                 }
-                                case URI: {
+                                case ROUTING_URI: {
                                     //Find the entity by its routing uri
-                                    final List<? extends Entity> list = entityCrud.findAll(mapping.getSourceEntityHeader().getType().getEntityClass(), CollectionUtils.MapBuilder.<String, List<Object>>builder().put("routingUri", Arrays.<Object>asList(mappingTarget)).map(), 0, -1, null, null);
+                                    final Collection<PublishedService> list = serviceManager.findByRoutingUri(mappingTarget);
                                     if (list.isEmpty()) {
                                         resource = null;
                                     } else if (list.size() > 1) {
                                         return Either.<BundleImportException, Option<Entity>>left(new IncorrectMappingInstructionsException(mapping, "Found multiple possible target entities found with routing URI: " + mappingTarget));
                                     } else {
-                                        resource = list.get(0);
+                                        resource = list.iterator().next();
                                     }
                                     break;
                                 }
@@ -1666,7 +1666,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
     }
 
     /**
-     * Gets the mapping target is from the mapping instructions. This is either an id, name or guid
+     * Gets the mapping target is from the mapping instructions. This could be id, name, guid, routing uri, role entity, or module sha265.
      *
      * @param mapping The mapping instructions to find the target mapping id from.
      * @return The target mapping id
@@ -1692,7 +1692,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
             } else if (EntityMappingInstructions.TargetMapping.Type.GUID.equals(type) && mapping.getSourceEntityHeader() instanceof GuidEntityHeader && ((GuidEntityHeader) mapping.getSourceEntityHeader()).getGuid() != null) {
                 // mapping by guid so get the target guid from the source.
                 targetMapTo = ((GuidEntityHeader) mapping.getSourceEntityHeader()).getGuid();
-            } else if (EntityMappingInstructions.TargetMapping.Type.URI.equals(type) && mapping.getSourceEntityHeader() instanceof ServiceHeader && ((ServiceHeader) mapping.getSourceEntityHeader()).getRoutingUri() != null) {
+            } else if (EntityMappingInstructions.TargetMapping.Type.ROUTING_URI.equals(type) && mapping.getSourceEntityHeader() instanceof ServiceHeader && ((ServiceHeader) mapping.getSourceEntityHeader()).getRoutingUri() != null) {
                 // mapping by routing uri so get the target routing uri from the source.
                 targetMapTo = ((ServiceHeader) mapping.getSourceEntityHeader()).getRoutingUri();
             } else if (EntityMappingInstructions.TargetMapping.Type.MAP_BY_ROLE_ENTITY.equals(type)) {
