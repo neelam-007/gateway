@@ -73,17 +73,21 @@ public class ServerCircuitBreakerAssertion extends ServerCompositeAssertion<Circ
         return status;
     }
 
-    private synchronized void handleChildExecutionResult(final long executionTimestamp, final AssertionStatus status) {
+    private void handleChildExecutionResult(final long executionTimestamp, final AssertionStatus status) {
         // check if failure needs to be recorded
         if (AssertionStatus.NONE != status) {
-            counter.recordFailure(executionTimestamp);
+            updateCounter(executionTimestamp);
+        }
+    }
 
-            // open circuit if failure threshold has been exceeded
-            if (counter.getCountSinceTimestamp(0L) >= FAILURE_THRESHOLD) {
-                circuitOpen.set(true);
-                circuitCloseTime.set(System.currentTimeMillis() + BLACKOUT_PERIOD);
-                counter.reset();
-            }
+    private synchronized void updateCounter(long executionTimestamp) {
+        counter.recordFailure(executionTimestamp);
+
+        // open circuit if failure threshold has been exceeded
+        if (counter.getCountSinceTimestamp(0L) >= FAILURE_THRESHOLD) {
+            circuitOpen.set(true);
+            circuitCloseTime.set(System.currentTimeMillis() + BLACKOUT_PERIOD);
+            counter.reset();
         }
     }
 }
