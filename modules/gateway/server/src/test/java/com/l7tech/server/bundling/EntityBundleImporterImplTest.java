@@ -231,13 +231,36 @@ public class EntityBundleImporterImplTest {
     }
 
     @Test
-    public void importBundleForSoapServiceUsingMapByRoutingUri() throws FindException {
-        importBundleUsingMapByRoutingUri(true);
-    }
+    public void testMapByRoutingUri() throws FindException, SaveException, UpdateException {
+        final Folder rootFolder = createRootFolder();
+        final Policy policy = createTestingPolicy();
+        final PublishedService service = createTestingPublishedService(policy, rootFolder);
+        final EntityBundle entityBundle = createTestingEntityBundle(rootFolder, service);
+        final EntityMappingInstructions serviceMappingInstructions= entityBundle.getMappingInstructions().get(1); // The second instruction is for published service.
 
-    @Test
-    public void importBundleForNonSoapServiceUsingMapByRoutingUri() throws FindException {
-        importBundleUsingMapByRoutingUri(false);
+        when(entityCrud.find(Folder.class, Folder.ROOT_FOLDER_ID.toString())).thenReturn(rootFolder);
+        when(entityCrud.find(serviceMappingInstructions.getSourceEntityHeader())).thenReturn(service);
+        when(policyVersionManager.findLatestRevisionForPolicy(policy.getGoid())).thenReturn(getPolicyVersion(policy));
+
+        // Get mapping results:
+        final List<EntityMappingResult> results = importer.importBundle(entityBundle, false, true, null);
+
+        // Check whether a lookup for a published service by its routing uri is performed.  In this case, the routing uri is "/random_routing_uri".
+        final String routingUriUsed = service.getRoutingUri();
+        Mockito.verify(serviceManager, Mockito.times(1)).findByRoutingUri(routingUriUsed);
+
+        // Check whether the action of service manager creating or updating service is performed.
+        Mockito.verify(serviceManager, Mockito.times(1)).save(service.getGoid(), service); // Creating a new service is performed.
+        Mockito.verify(serviceManager, Mockito.times(0)).update(service);                  // No updating service is performed.
+
+        // Check whether the service mapping result is correct, in terms of:
+        // (1) There are two mapping results returned.
+        // (2) No exceptions is included in the service mapping result.
+        // (3) The service mapping action taken is CreateNew, not other types UpdatedExisting, etc.
+        assertTrue("Two mapping results are returned.", results.size() == 2);
+        final EntityMappingResult serviceMappingResult = results.get(1);  // The second mapping result is for service.
+        assertNull("The service mapping result has no exception.", results.get(1).getException());
+        assertTrue("Tne service mapping result action is CreatedNew.", serviceMappingResult.getMappingAction() == EntityMappingResult.MappingAction.CreatedNew);
     }
 
     private IdentityHeader createIndentityHeader(User user){
@@ -256,14 +279,21 @@ public class EntityBundleImporterImplTest {
         return role;
     }
 
-    private void importBundleUsingMapByRoutingUri(final boolean isSoap) throws FindException {
-        final Folder rootFolder = createRootFolder();
+    private EntityBundle createTestingEntityBundle(@NotNull final Folder rootFolder, @NotNull final PublishedService publishedService) throws FindException {
+        final List<EntityContainer> entities = new ArrayList<>();
+        entities.add(new EntityContainer(publishedService));
+
+        // Two mapping instructions for root folder and published service, respectively.
+        final List<EntityMappingInstructions> mappingInstructions = createTestingMappingInstructions(rootFolder, publishedService);
+
+        return new EntityBundle(entities, mappingInstructions, Collections.<DependencySearchResults>emptyList());
+    }
+
+    private List<EntityMappingInstructions> createTestingMappingInstructions(@NotNull final Folder rootFolder, @NotNull final PublishedService publishedService) throws FindException {
         final EntityMappingInstructions rootFolderMappingInstructions = new EntityMappingInstructions(
             createFolderEntityHeader(rootFolder), null, EntityMappingInstructions.MappingAction.NewOrExisting, true, false
         );
 
-        final Policy policy = createTestingPolicy();
-        final PublishedService publishedService = createTestingPublishedService(policy, rootFolder, isSoap);
         final EntityMappingInstructions.TargetMapping serviceTargetMapping = new EntityMappingInstructions.TargetMapping(EntityMappingInstructions.TargetMapping.Type.ROUTING_URI, publishedService.getRoutingUri());
         final EntityMappingInstructions serviceMappingInstructions = new EntityMappingInstructions(
             createServiceEntityHeader(publishedService), serviceTargetMapping, EntityMappingInstructions.MappingAction.NewOrUpdate, false, false
@@ -273,37 +303,14 @@ public class EntityBundleImporterImplTest {
         mappingInstructions.add(rootFolderMappingInstructions);
         mappingInstructions.add(serviceMappingInstructions);
 
-        final List<EntityContainer> entities = new ArrayList<>();
-        entities.add(new EntityContainer(publishedService));
+        return mappingInstructions;
+    }
 
-        when(entityCrud.find(Folder.class, Folder.ROOT_FOLDER_ID.toString())).thenReturn(rootFolder);
-        when(entityCrud.find(serviceMappingInstructions.getSourceEntityHeader())).thenReturn(publishedService);
-
+    private PolicyVersion getPolicyVersion(@NotNull final Policy policy) {
         final PolicyVersion policyVersion = new PolicyVersion();
         policyVersion.setXml(policy.getXml());
-        when(policyVersionManager.findLatestRevisionForPolicy(policy.getGoid())).thenReturn(policyVersion);
 
-        // Get mapping results:
-        final List<EntityMappingResult> results = importer.importBundle(new EntityBundle(entities, mappingInstructions, Collections.<DependencySearchResults>emptyList()), false, true, null);
-
-        // Check whether there are two mappings returned.
-        assertTrue("Should return two mapping results", results.size() == 2);
-
-        // Check whether no exceptions are thrown.
-        final EntityMappingResult folderMappingResult = results.get(0);
-        final EntityMappingResult serviceMappingResult = results.get(1);
-
-        assertNull("The first mapping has no exception", folderMappingResult.getException());
-        assertNull("The second mapping has no exception", serviceMappingResult.getException());
-
-        // Check whether each mapping is correct.
-        // 1. Folder Mapping:
-        assertTrue("folder Goids are matched", folderMappingResult.getSourceEntityHeader().getGoid().equals(rootFolder.getGoid()));
-        assertTrue("folder mapping result action is correct", folderMappingResult.getMappingAction() == EntityMappingResult.MappingAction.UsedExisting);
-
-        // 2. Service Mapping
-        assertTrue("service Goids are matched", serviceMappingInstructions.getSourceEntityHeader().getGoid().equals(publishedService.getGoid()));
-        assertTrue("service mapping result action is correct", serviceMappingResult.getMappingAction() == EntityMappingResult.MappingAction.CreatedNew);
+        return policyVersion;
     }
 
     private Folder createRootFolder() {
@@ -325,11 +332,11 @@ public class EntityBundleImporterImplTest {
         return policy;
     }
 
-    private PublishedService createTestingPublishedService(@NotNull final Policy policy, @NotNull final Folder parentFolder, final boolean isSoap) {
+    private PublishedService createTestingPublishedService(@NotNull final Policy policy, @NotNull final Folder parentFolder) {
         final PublishedService publishedService = new PublishedService();
 
-        if (isSoap) publishedService.setWsdlXml("");
-        publishedService.setSoap(isSoap);
+        publishedService.setSoap(true);
+        publishedService.setWsdlXml("");
         publishedService.setPolicy(policy);
         publishedService.setName("random_service_name");
         publishedService.setRoutingUri("/random_routing_uri");
