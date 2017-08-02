@@ -527,7 +527,7 @@
       -->
     <target name="dev"
             description="Developer build (does not package)"
-            depends="init-dev, compile-tests"/>
+            depends="init-dev, skiptests, publish-all-modules"/>
 
     <target name="build-module-list" unless="build-path.text" depends="init-core">
         <ivy:buildlist reference="module-build-path" onMissingDescriptor="skip">
@@ -647,6 +647,7 @@
 				<propertyref name="module.skarsigner.sign.archive"/>
 				<propertyref name="module.skarsigner.generate.restman.xml"/>
 				<propertyref name="suffix.snapshot"/>
+				<propertyref name="module.skip.tests"/>
             </propertyset>
         </subant>
     </presetdef>
@@ -664,11 +665,7 @@
 	</target>
 	
     <target name="publish-all-modules" depends="prepare.base, build-module-list-all" unless="package.jars.notrequired">
-        <modules target="publish-all" buildpathref="module-build-all-path"/>
-    </target>
-
-    <target name="publish-all-modules-quick" depends="prepare.base, build-module-list-all">
-        <modules target="publish-all-quick" buildpathref="module-build-all-path"/>
+        <modules target="publish" buildpathref="module-build-all-path"/>
     </target>
 	
     <target name="clean-modules" depends="build-module-list-all">
@@ -1962,7 +1959,7 @@
 
     <!--
       Package Signer multiple signature utility (Always invoked by hand)
-      May need to run "compile-tests" first.
+      May need to run "publish-all-modules" first.
       The resulting JAR requires the "lib" directory from the SSM minus any
       layer7-* jars.
     -->
@@ -3013,11 +3010,6 @@
     </target>
 
     <!--
-      Test compilation target
-    -->
-    <target name="compile-tests" depends="publish-all-modules-quick"/>
-
-    <!--
       Official build
     -->
     <target name="ssg-install-full"
@@ -3036,8 +3028,8 @@
       Unofficial build
     -->
     <target name="dist"
-            description="Build distributable software packages [optionally use with obfuscate]"
-            depends="init-dist, makensis, makerpm, pack200, clean, package, package.extras, distribute">
+            description="Build distributable software packages without unit tests [optionally use with obfuscate]"
+            depends="init-dist, makensis, makerpm, pack200, skiptests, clean, package, package.extras, distribute">
     </target>
 
     <target name="distribute" depends="prepare">
@@ -4185,6 +4177,12 @@
 		<property name="publish.generic.target" value="${artifactory.generic.release}"/>
 		<property name="publish.status" value="release"/>
 		<property name="suffix.snapshot" value=""/>
+    </target>
+
+	<!-- 
+	-->
+    <target name="skiptests" description="Include this target to skip unit tests">
+        <property name="module.skip.tests" value="true"/>
     </target>
 	
 	<!--

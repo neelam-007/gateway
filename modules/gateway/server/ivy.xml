@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ivy-module version="1.0" xmlns:e="http://ant.apache.org/ivy/extra">
+<ivy-module version="2.0" xmlns:e="http://ant.apache.org/ivy/extra" xmlns:m="http://ant.apache.org/ivy/maven">
     <info organisation="com.l7tech"
           module="layer7-gateway-server"
           status="integration"
-          e:title="Gateway"
-            >
+          e:title="Gateway">
     </info>
     <configurations
             defaultconfmapping="compile->default; core->default; runtime->default; test->[org=com.l7tech]test,default; optional->default; alternative->default">
@@ -25,9 +24,9 @@
               description="Contains the SkarSigner-signed archive files (saar, sjar) and the corresponding RESTMAN XML files (saar.xml, sjar.xml)"/>
     </configurations>
     <publications>
-        <artifact name="layer7-gateway-server" type="jar" ext="jar" conf="master"/>
-		<artifact name="layer7-gateway-server" type="pom" ext="pom" conf="pom"/>
-        <artifact name="layer7-gateway-server-test" type="jar" ext="jar" conf="test"/>
+        <artifact type="jar" ext="jar" conf="master"/>
+        <artifact type="pom" ext="pom" conf="pom"/>
+        <artifact type="test" ext="jar" conf="test" m:classifier="test"/>
     </publications>
     <dependencies>
         <!-- Module dependencies -->

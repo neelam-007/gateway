@@ -16,7 +16,7 @@
         <dependency name="layer7-modular-assertions" rev="latest.integration" revConstraint="latest.integration" force="true" conf="compile->compile;runtime->runtime;test->test">
 		<exclude org="org.mockito" name="mockito-core"/>
         </dependency>
-	<dependency name="layer7-classloader-utilities" rev="latest.integration" conf="compile->compile;runtime->runtime;test->test"/>
+	<dependency name="layer7-classloader-utilities" rev="latest.integration" conf="compile->compile;runtime->runtime"/>
 	<dependency org="net.spy.memcached" name="spymemcached" rev="2.7.3" force="true" conf="core"/>
         <dependency org="redis.clients.jedis" name="jedis" rev="2.7.2" force="true" conf="core"/>
         <dependency org="commons-pool2" name="commons-pool2" rev="2.4.1" force="true" conf="core"/>
