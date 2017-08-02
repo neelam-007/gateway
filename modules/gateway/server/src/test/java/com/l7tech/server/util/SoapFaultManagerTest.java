@@ -427,6 +427,21 @@ public class SoapFaultManagerTest {
     }
 
     @Test
+    public void testTemplateFaultWithSoapDetailvar() throws Exception {
+        SoapFaultManager sfm = buildSoapFaultManager();
+        SoapFaultLevel level = new SoapFaultLevel();
+        level.setLevel(SoapFaultLevel.TEMPLATE_FAULT);
+        level.setFaultTemplate( "${"+SoapFaultManager.SOAPFAULT_DETAIL_VAR+"}" );
+        level.setFaultTemplateHttpStatus( "555" );
+        level.setFaultTemplateContentType( "text/plain" );
+        final SoapFaultManager.FaultResponse fault = sfm.constructExceptionFault( new Throwable("Error Message"), level, getSoap11PEC(false ));
+        System.out.println(fault);
+        assertEquals( "Http Status", 555, fault.getHttpStatus() );
+        assertTrue( "Text/Plain Content Type", ContentTypeHeader.create( "text/plain" ).matches(fault.getContentType()) );
+        assertEquals( "Fault contents", "Error Message", fault.getContent() );
+    }
+
+    @Test
     public void testNonSoapTemplateFault() throws Exception {
         SoapFaultManager sfm = buildSoapFaultManager();
         SoapFaultLevel level = new SoapFaultLevel();
