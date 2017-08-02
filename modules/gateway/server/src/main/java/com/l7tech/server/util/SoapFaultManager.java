@@ -366,7 +366,7 @@ public class SoapFaultManager implements ApplicationContextAware {
                 break;
             case SoapFaultLevel.TEMPLATE_FAULT:
                 variables = pec.getVariableMap(faultLevelInfo.getVariablesUsed(), auditor);
-                variables.put(SOAPFAULT_DETAIL_VAR,statusTextOverride == null || statusTextOverride.isEmpty() ? globalStatus.getMessage(): statusTextOverride );
+                variables.put(SOAPFAULT_DETAIL_VAR,statusTextOverride == null || StringUtils.isEmpty(statusTextOverride) ? globalStatus.getMessage() : statusTextOverride);
                 if ( faultLevelInfo.getFaultTemplateHttpStatus() != null ) {
                     String httpStatusText = ExpandVariables.process( faultLevelInfo.getFaultTemplateHttpStatus(), variables, auditor );
                     try {
