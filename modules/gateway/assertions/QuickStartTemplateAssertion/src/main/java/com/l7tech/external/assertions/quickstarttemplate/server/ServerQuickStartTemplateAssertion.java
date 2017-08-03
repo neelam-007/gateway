@@ -70,7 +70,7 @@ public class ServerQuickStartTemplateAssertion extends AbstractMessageTargetable
                     return AssertionStatus.FALSIFIED;
                 } else {
                     logger.log(Level.WARNING, "Unable to parse JSON payload: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                    context.setVariable(QuickStartTemplateAssertion.QS_WARNINGS, "Unable to parse JSON payload: " + StringEscapeUtils.escapeJava(ExceptionUtils.getMessage(e)));
+                    context.setVariable(QuickStartTemplateAssertion.QS_WARNINGS, "Unable to parse JSON payload");
                     return AssertionStatus.FALSIFIED;
                 }
             }
