@@ -1021,7 +1021,7 @@
                     <include name="test/japex-1.1.jar"/>
                 </fileset>
                 <fileset dir="modules/gateway/server/build">
-                    <include name="layer7-gateway-server*.jar"/>
+                    <include name="jar/layer7-gateway-server*.jar"/>
                     <include name="dependency/layer7-*.jar"/>
                 </fileset>
             </classpath>
@@ -1055,7 +1055,7 @@
                     <include name="test/japex-1.1.jar"/>
                 </fileset>
                 <fileset dir="modules/gateway/server/build">
-                    <include name="layer7-gateway-server*.jar"/>
+                    <include name="jar/layer7-gateway-server*.jar"/>
                     <include name="dependency/layer7-*.jar"/>
                 </fileset>
             </classpath>
@@ -1658,7 +1658,7 @@
     <!--
       Deploy SSG for development
     -->
-    <target name="deploy" description="Deploy a development SSG (run with ./run.sh gateway)" depends="package.gateway.ifrequired, deployconfig">
+    <target name="deploy" description="Deploy a development SSG (run with ./run.sh gateway)" depends="skiptests, package.gateway.ifrequired, deployconfig">
         <!-- Remove any pack200 files if present, otherwise these can be out of date and cause problems running the SSM applet -->
         <delete>
             <fileset dir="${build.dir}/managerapplet/" includes="**/*.pack.gz"/>
@@ -1837,7 +1837,7 @@
                 <include name="*.jar"/>
             </fileset>
         </copy>
-        <copy file="modules/gateway/processcontroller/build/layer7-gateway-processcontroller.jar" tofile="${build.dir}/processcontroller/Controller.jar"/>
+        <copy file="modules/gateway/processcontroller/build/jar/layer7-gateway-processcontroller.jar" tofile="${build.dir}/processcontroller/Controller.jar"/>
 
         <!-- packaging gateway libs -->
         <mkdir dir="${build.dir}/gateway/lib"/>
@@ -1850,7 +1850,7 @@
                 <include name="**/*.jar"/>
             </fileset>
         </copy>
-        <copy file="modules/gateway/server/build/layer7-gateway-server.jar" tofile="${build.dir}/gateway/Gateway.jar"/>
+        <copy file="modules/gateway/server/build/jar/layer7-gateway-server.jar" tofile="${build.dir}/gateway/Gateway.jar"/>
     </target>
 
     <target name="package.modules" depends="package.jars, package.modules.work"/>
@@ -1880,7 +1880,7 @@
                 <include name="*.jar"/>
             </fileset>
         </copy>
-        <copy file="modules/xmlvpnclient/build/layer7-xmlvpnclient.jar" tofile="${build.dir}/client/Client.jar"/>
+        <copy file="modules/xmlvpnclient/build/jar/layer7-xmlvpnclient.jar" tofile="${build.dir}/client/Client.jar"/>
     </target>
 
     <!--
@@ -1909,8 +1909,8 @@
                 <include name="*.jar"/>
             </fileset>
         </copy>
-        <copy file="modules/gateway/console/build/layer7-gateway-console.jar" tofile="${build.dir}/manager/Manager.jar"/>
-        <copy file="modules/gateway/console-applet/build/layer7-gateway-console-applet.jar" todir="${build.dir}/managerapplet"/>
+        <copy file="modules/gateway/console/build/jar/layer7-gateway-console.jar" tofile="${build.dir}/manager/Manager.jar"/>
+        <copy file="modules/gateway/console-applet/build/jar/layer7-gateway-console-applet.jar" todir="${build.dir}/managerapplet"/>
     </target>
 
     <target name="package.manager" depends="package.manager.jar" unless="manager.notrequired">
@@ -1919,7 +1919,7 @@
     <target name="package.patchverifier" depends="package.modules">
         <mkdir dir="${build.dir}/patchverifier"/>
         <copy todir="${build.dir}/patchverifier">
-            <fileset dir="modules/gateway/patchverifier/build">
+            <fileset dir="modules/gateway/patchverifier/build/jar">
                 <include name="*.jar"/>
             </fileset>
         </copy>
@@ -2464,7 +2464,7 @@
         </jar>
 
         <copy todir="${build.dir}/backup/lib">
-            <fileset dir="modules/utility/build">
+            <fileset dir="modules/utility/build/jar">
                 <include name="layer7-utility-*.jar"/>
             </fileset>
         </copy>
@@ -2592,7 +2592,7 @@
         <mkdir dir="${build.dir}/sysconfigwizard/configfiles"/>
 
         <copy todir="${build.dir}/sysconfigwizard/lib">
-            <fileset dir="modules/utility/build">
+            <fileset dir="modules/utility/build/jar">
                 <include name="layer7-utility*.jar"/>
             </fileset>
         </copy>
@@ -2634,7 +2634,7 @@
                 <include name="*.jar"/>
             </fileset>
         </copy>
-        <copy file="modules/gateway/sca-config/build/layer7-gateway-sca-config.jar" tofile="${build.dir}/scaconfig/ConfigScaHsm.jar"/>
+        <copy file="modules/gateway/sca-config/build/jar/layer7-gateway-sca-config.jar" tofile="${build.dir}/scaconfig/ConfigScaHsm.jar"/>
 
         <copy todir="${build.dir}/scaconfig">
             <fileset dir="${src.root}/etc/appliance/crypto">
@@ -2656,7 +2656,7 @@
         <!--
             Sign Layer7 API jar
         -->
-        <copy file="modules/gateway/api/build/layer7-api.jar" tofile="${build.dir}/layer7-api-${build.api.version}.jar"/>
+        <copy file="modules/gateway/api/build/jar/layer7-api.jar" tofile="${build.dir}/layer7-api-${build.api.version}.jar"/>
 
         <mkdir dir="${build.dir}/docs"/>
 
@@ -2701,7 +2701,7 @@
                 <include name="*.jar"/>
             </fileset>
         </copy>
-        <copy file="modules/gateway/gateway-api/build/layer7-gateway-api.jar" todir="${build.dir}/layer7-gateway-api"/>
+        <copy file="modules/gateway/gateway-api/build/jar/layer7-gateway-api.jar" todir="${build.dir}/layer7-gateway-api"/>
 
 
         <!--
@@ -2922,7 +2922,7 @@
         <copy file="etc/jdk_utils.sh"
               tofile="${build.dir}/GatewayManagementClient-${build.version}/jdk_utils.sh"/>
 
-        <copy file="modules/gateway/gateway-management-client/build/layer7-gateway-management-client.jar"
+        <copy file="modules/gateway/gateway-management-client/build/jar/layer7-gateway-management-client.jar"
               tofile="${build.dir}/GatewayManagementClient-${build.version}/GatewayManagementClient.jar"/>
 
         <copy todir="${build.dir}/GatewayManagementClient-${build.version}/lib">
@@ -3828,7 +3828,7 @@
       Generate the JAX-WS classes for UDDI v3.0.2.
     -->
     <target name="generate-uddi-jar">
-        <property name="build.guddi.jar" value="build/layer7-uddi-lib-1.1.0.jar"/>
+        <property name="build.guddi.jar" value="build/jar/layer7-uddi-lib-1.1.0.jar"/>
         <mkdir dir="build/uddiclasses"/>
         <mkdir dir="build/uddisources"/>
 
