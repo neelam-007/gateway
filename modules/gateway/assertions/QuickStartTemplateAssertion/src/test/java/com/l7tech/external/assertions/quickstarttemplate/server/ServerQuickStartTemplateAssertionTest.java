@@ -11,6 +11,7 @@ import com.l7tech.message.*;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.EncapsulatedAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.GatewayState;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.folder.FolderManager;
@@ -98,7 +99,7 @@ public class ServerQuickStartTemplateAssertionTest extends QuickStartTestBase {
 
 
     @Test
-    public void checkRequestFindExceptionResultsInPolicyAssertionException() throws FindException, IOException, PolicyAssertionException, SAXException {
+    public void checkRequestNoVersion() throws FindException, IOException, PolicyAssertionException, SAXException {
 
         String json= "{\n" +
                 "    \"Service\": {\n" +
@@ -118,6 +119,31 @@ public class ServerQuickStartTemplateAssertionTest extends QuickStartTestBase {
         Message msg = makeMessage(ContentTypeHeader.APPLICATION_JSON, json);
         fixture.doCheckRequest(context, msg, "", null);
         assertTrue(!publishedService.getProperty(QuickStartTemplateAssertion.PROPERTY_QS_REGISTRAR_TMS).isEmpty());
+    }
+
+    @Test
+    public void checkRequestVersion() throws FindException, IOException, PolicyAssertionException, SAXException, NoSuchVariableException {
+
+        String json= "{\n" +
+                "    \"Service\": {\n" +
+                "    \"name\": \"Google Search\",\n" +
+                "    \"gatewayUri\": \"/google25\",\n" +
+                "    \"httpMethods\": [ \"get\" ],\n" +
+                "    \"policy\": [\n" +
+                "      {\n" +
+                "        \"RouteHttp\" : {\n" +
+                "          \"targetUrl\": \"http://www.google.com/search${request.url.query}\"\n" +
+                "        }\n" +
+                "      }\n" +
+                "    ]\n" +
+                "  }\n" +
+                "}";
+
+        String serviceVersion = "22222";
+        Message msg = makeMessage(ContentTypeHeader.APPLICATION_JSON, json);
+        when(context.getVariable(QuickStartTemplateAssertion.QS_VERSION)).thenReturn(serviceVersion);
+        fixture.doCheckRequest(context, msg, "", null);
+        assertTrue(publishedService.getProperty(QuickStartTemplateAssertion.PROPERTY_QS_REGISTRAR_TMS).equals(serviceVersion));
     }
 
     static Message makeMessage(ContentTypeHeader contentType, String body) throws IOException {
