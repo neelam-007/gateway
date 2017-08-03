@@ -226,7 +226,7 @@
 			<attribute name="access.password" default="szN3UvJzG-E.vddYvZ1L9WThnMe4D2ijVw"/>
 			<attribute name="load.password" default="szN3UvJzG-E.vddYvZ1L9WThnMe4D2ijVw"/>
 			<attribute name="skarSigner" default="${src.root}/modules/internal/build/SkarSigner.jar"/>
-			<attribute name="input" default="${build.dir}/${ant.project.name}.${file.extension}"/>
+			<attribute name="input" default="${build.dir}/aar/${ant.project.name}.${file.extension}"/>
 			<attribute name="output" default="${build.dir}/${ant.project.name}.s${file.extension}"/>
 			<sequential>
 				<echo level="info">Signing @{input} as @{output} using key @{keystore}</echo>
