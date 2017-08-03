@@ -9,7 +9,6 @@ import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStar
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.message.*;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.policy.assertion.EncapsulatedAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.GatewayState;
@@ -31,10 +30,8 @@ import org.xml.sax.SAXException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -118,7 +115,7 @@ public class ServerQuickStartTemplateAssertionTest extends QuickStartTestBase {
 
         Message msg = makeMessage(ContentTypeHeader.APPLICATION_JSON, json);
         fixture.doCheckRequest(context, msg, "", null);
-        assertTrue(!publishedService.getProperty(QuickStartTemplateAssertion.PROPERTY_QS_REGISTRAR_TMS).isEmpty());
+        assertThat(publishedService.getProperty(QuickStartTemplateAssertion.PROPERTY_QS_REGISTRAR_TMS), is(greaterThan("")));
     }
 
     @Test
@@ -143,7 +140,7 @@ public class ServerQuickStartTemplateAssertionTest extends QuickStartTestBase {
         Message msg = makeMessage(ContentTypeHeader.APPLICATION_JSON, json);
         when(context.getVariable(QuickStartTemplateAssertion.QS_VERSION)).thenReturn(serviceVersion);
         fixture.doCheckRequest(context, msg, "", null);
-        assertTrue(publishedService.getProperty(QuickStartTemplateAssertion.PROPERTY_QS_REGISTRAR_TMS).equals(serviceVersion));
+        assertThat(publishedService.getProperty(QuickStartTemplateAssertion.PROPERTY_QS_REGISTRAR_TMS), is(equalTo(serviceVersion)));
     }
 
     static Message makeMessage(ContentTypeHeader contentType, String body) throws IOException {
