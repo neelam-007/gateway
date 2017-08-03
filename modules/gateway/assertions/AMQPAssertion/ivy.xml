@@ -2,14 +2,14 @@
 <ivy-module version="1.0">
     <info organisation="com.l7tech"
           module="AMQPAssertion"
-          status="integration"
-            >
+          status="integration">
     </info>
     <configurations>
         <include file="../assertion-ivyconfiguration.xml"/>
     </configurations>
     <publications>
-        <artifact name="AMQPAssertion" type="aar" ext="aar" conf="master"/>
+        <artifact type="aar" ext="aar" conf="master"/>
+        <artifact type="pom" ext="pom" conf="pom"/>
     </publications>
     <dependencies>
         <dependency org="org.mockito" name="mockito-core" rev="1.10.19" force="true" conf="test"/>
