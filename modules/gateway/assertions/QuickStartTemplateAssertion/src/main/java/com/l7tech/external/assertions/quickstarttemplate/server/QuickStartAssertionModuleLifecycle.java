@@ -100,6 +100,10 @@ public class QuickStartAssertionModuleLifecycle {
         }
     }
 
+    public static void reset() {
+        InstanceHolder.INSTANCE = null;
+    }
+
     /**
      * Utility method to initialize {@link #jsonServiceInstaller}.
      *

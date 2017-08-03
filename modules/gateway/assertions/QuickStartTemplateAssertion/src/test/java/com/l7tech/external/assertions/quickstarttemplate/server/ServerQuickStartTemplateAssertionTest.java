@@ -38,44 +38,50 @@ import static org.mockito.Mockito.*;
 public class ServerQuickStartTemplateAssertionTest extends QuickStartTestBase {
 
     @Mock
-    private QuickStartAssertionLocator assertionLocator;
-
-    @Mock
     private QuickStartServiceBuilder builder;
 
     @Mock
     private PolicyEnforcementContext context;
 
     @Mock
-    ApplicationContext applicationContext;
+    private ApplicationContext applicationContext;
 
     @Mock
-    FolderManager folderManager;
+    private FolderManager folderManager;
 
     @Mock
-    EncapsulatedAssertionConfigManager encapsulatedAssertionConfigManager;
+    private EncapsulatedAssertionConfigManager encapsulatedAssertionConfigManager;
 
     @Mock
-    ServiceManager serviceManager;
+    private ServiceManager serviceManager;
 
     @Mock
-    ServiceCache serviceCache;
+    private ServiceCache serviceCache;
 
     @Mock
-    PolicyVersionManager policyVersionManager;
+    private PolicyVersionManager policyVersionManager;
 
     @Mock
-    ClusterPropertyManager clusterPropertyManager;
+    private ClusterPropertyManager clusterPropertyManager;
 
     @Mock
-    GatewayState gatewayState;
-
-    PublishedService publishedService;
+    private GatewayState gatewayState;
 
     private ServerQuickStartTemplateAssertion fixture;
 
     @Before
     public void setUp() throws PolicyAssertionException, FindException, QuickStartPolicyBuilderException {
+
+        reset(builder);
+        reset(context);
+        reset(applicationContext);
+        reset(folderManager);
+        reset(encapsulatedAssertionConfigManager);
+        reset(serviceManager);
+        reset(serviceCache);
+        reset(policyVersionManager);
+        reset(clusterPropertyManager);
+        reset(gatewayState);
 
         when(applicationContext.getBean("folderManager", FolderManager.class)).thenReturn(folderManager);
         when(applicationContext.getBean("encapsulatedAssertionConfigManager", EncapsulatedAssertionConfigManager.class)).thenReturn(encapsulatedAssertionConfigManager);
@@ -86,17 +92,15 @@ public class ServerQuickStartTemplateAssertionTest extends QuickStartTestBase {
         when(applicationContext.getBean("gatewayState", GatewayState.class)).thenReturn(gatewayState);
         when(gatewayState.isReadyForMessages()).thenReturn(true);
 
-        publishedService = new PublishedService();
-
+        QuickStartAssertionModuleLifecycle.reset();
         QuickStartAssertionModuleLifecycle.onModuleLoaded(applicationContext, builder);
-        when(builder.createService(any())).thenReturn(publishedService);
         fixture = new ServerQuickStartTemplateAssertion(new QuickStartTemplateAssertion(), applicationContext);
 
     }
 
 
     @Test
-    public void checkRequestNoVersion() throws FindException, IOException, PolicyAssertionException, SAXException {
+    public void checkRequestNoVersion() throws FindException, IOException, PolicyAssertionException, SAXException, QuickStartPolicyBuilderException {
 
         String json= "{\n" +
                 "    \"Service\": {\n" +
@@ -113,13 +117,17 @@ public class ServerQuickStartTemplateAssertionTest extends QuickStartTestBase {
                 "  }\n" +
                 "}";
 
+        PublishedService publishedService = new PublishedService();
+        when(builder.createService(any())).thenReturn(publishedService);
+
         Message msg = makeMessage(ContentTypeHeader.APPLICATION_JSON, json);
         fixture.doCheckRequest(context, msg, "", null);
+        verify(builder).createService(any());
         assertThat(publishedService.getProperty(QuickStartTemplateAssertion.PROPERTY_QS_REGISTRAR_TMS), is(greaterThan("")));
     }
 
     @Test
-    public void checkRequestVersion() throws FindException, IOException, PolicyAssertionException, SAXException, NoSuchVariableException {
+    public void checkRequestVersion() throws FindException, IOException, PolicyAssertionException, SAXException, NoSuchVariableException, QuickStartPolicyBuilderException {
 
         String json= "{\n" +
                 "    \"Service\": {\n" +
@@ -135,11 +143,16 @@ public class ServerQuickStartTemplateAssertionTest extends QuickStartTestBase {
                 "    ]\n" +
                 "  }\n" +
                 "}";
+
+        PublishedService publishedService = new PublishedService();
+        when(builder.createService(any())).thenReturn(publishedService);
 
         String serviceVersion = "22222";
         Message msg = makeMessage(ContentTypeHeader.APPLICATION_JSON, json);
         when(context.getVariable(QuickStartTemplateAssertion.QS_VERSION)).thenReturn(serviceVersion);
         fixture.doCheckRequest(context, msg, "", null);
+        verify(builder).createService(any());
+
         assertThat(publishedService.getProperty(QuickStartTemplateAssertion.PROPERTY_QS_REGISTRAR_TMS), is(equalTo(serviceVersion)));
     }
 
