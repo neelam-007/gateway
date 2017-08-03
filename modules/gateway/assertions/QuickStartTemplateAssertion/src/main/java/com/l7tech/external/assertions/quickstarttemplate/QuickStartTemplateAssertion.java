@@ -31,6 +31,9 @@ public class QuickStartTemplateAssertion extends MessageTargetableAssertion impl
 
     public static final String ENABLE_ALL_ASSERTIONS_FLAG_KEY = "quickStart.allAssertions.enabled";
 
+
+    public static final String QS_VERSION = "qs.version";
+
     /**
      * Possible values for {@link #PROPERTY_QS_CREATE_METHOD}
      */
@@ -74,7 +77,9 @@ public class QuickStartTemplateAssertion extends MessageTargetableAssertion impl
     protected VariablesSet doGetVariablesSet() {
         return super.doGetVariablesSet().withVariables(
                 new VariableMetadata(QS_WARNINGS, true, true, null, false, DataType.STRING),
-                new VariableMetadata(QS_BUNDLE, true, true, null, false, DataType.MESSAGE)
+                new VariableMetadata(QS_BUNDLE, true, true, null, false, DataType.MESSAGE),
+                new VariableMetadata(QS_VERSION, true, false, null, true, DataType.STRING)
+
         );
     }
 
