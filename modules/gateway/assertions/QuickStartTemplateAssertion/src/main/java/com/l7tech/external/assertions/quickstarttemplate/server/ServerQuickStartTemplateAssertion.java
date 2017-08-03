@@ -178,12 +178,14 @@ public class ServerQuickStartTemplateAssertion extends AbstractMessageTargetable
         return publishedService;
     }
 
+    @VisibleForTesting
     private String getLatestServiceVersion() {
 
         return StringUtils.isBlank(versionFromContext) ? String.valueOf(System.currentTimeMillis()) : versionFromContext;
 
     }
 
+    @VisibleForTesting
     private void setCurrentVersion(PolicyEnforcementContext context) {
         try {
             versionFromContext = (String)context.getVariable(QuickStartTemplateAssertion.QS_VERSION);

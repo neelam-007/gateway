@@ -1,12 +1,12 @@
 package com.l7tech.external.assertions.quickstarttemplate.server;
 
-import com.google.common.collect.Sets;
 import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.external.assertions.quickstarttemplate.QuickStartDocumentationAssertion;
 import com.l7tech.external.assertions.quickstarttemplate.QuickStartTemplateAssertion;
 import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStartAssertionLocator;
+import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStartPolicyBuilderException;
 import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStartServiceBuilder;
+import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.message.*;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.EncapsulatedAssertion;
@@ -22,7 +22,6 @@ import com.l7tech.server.service.ServiceManager;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.context.ApplicationContext;
@@ -34,6 +33,7 @@ import java.io.IOException;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -72,10 +72,12 @@ public class ServerQuickStartTemplateAssertionTest extends QuickStartTestBase {
     @Mock
     GatewayState gatewayState;
 
+    PublishedService publishedService;
+
     private ServerQuickStartTemplateAssertion fixture;
 
     @Before
-    public void setUp() throws PolicyAssertionException {
+    public void setUp() throws PolicyAssertionException, FindException, QuickStartPolicyBuilderException {
 
         when(applicationContext.getBean("folderManager", FolderManager.class)).thenReturn(folderManager);
         when(applicationContext.getBean("encapsulatedAssertionConfigManager", EncapsulatedAssertionConfigManager.class)).thenReturn(encapsulatedAssertionConfigManager);
@@ -86,9 +88,12 @@ public class ServerQuickStartTemplateAssertionTest extends QuickStartTestBase {
         when(applicationContext.getBean("gatewayState", GatewayState.class)).thenReturn(gatewayState);
         when(gatewayState.isReadyForMessages()).thenReturn(true);
 
-        QuickStartAssertionModuleLifecycle.onModuleLoaded(applicationContext);
-        //when(QuickStartAssertionModuleLifecycle.getServiceBuilder()).thenReturn(builder);
+        publishedService = new PublishedService();
+
+        QuickStartAssertionModuleLifecycle.onModuleLoaded(applicationContext, builder);
+        when(builder.createService(any())).thenReturn(publishedService);
         fixture = new ServerQuickStartTemplateAssertion(new QuickStartTemplateAssertion(), applicationContext);
+
     }
 
 
@@ -111,7 +116,8 @@ public class ServerQuickStartTemplateAssertionTest extends QuickStartTestBase {
                 "}";
 
         Message msg = makeMessage(ContentTypeHeader.APPLICATION_JSON, json);
-        //fixture.doCheckRequest(context, msg, "", null);
+        fixture.doCheckRequest(context, msg, "", null);
+        assertTrue(!publishedService.getProperty(QuickStartTemplateAssertion.PROPERTY_QS_REGISTRAR_TMS).isEmpty());
     }
 
     static Message makeMessage(ContentTypeHeader contentType, String body) throws IOException {

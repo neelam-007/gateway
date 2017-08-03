@@ -81,6 +81,25 @@ public class QuickStartAssertionModuleLifecycle {
         }
     }
 
+    public static void onModuleLoaded(final ApplicationContext context, QuickStartServiceBuilder serviceBuilder) {
+        if (InstanceHolder.INSTANCE == null) {
+            final FolderManager folderManager = context.getBean("folderManager", FolderManager.class);
+            final EncapsulatedAssertionConfigManager encassManager = context.getBean("encapsulatedAssertionConfigManager", EncapsulatedAssertionConfigManager.class);
+            final ServiceManager serviceManager = context.getBean("serviceManager", ServiceManager.class);
+            final ServiceCache ServiceCache = context.getBean("serviceCache", ServiceCache.class);
+            final PolicyVersionManager policyVersionManager = context.getBean("policyVersionManager", PolicyVersionManager.class);
+            final ClusterPropertyManager clusterPropertyManager = context.getBean("clusterPropertyManager", ClusterPropertyManager.class);
+
+            final AssertionMapper assertionMapper = new AssertionMapper();
+            final QuickStartAssertionLocator assertionLocator = new QuickStartAssertionLocator(encassManager, assertionMapper, folderManager, new Goid(PROVIDED_FRAGMENT_FOLDER_GOID));
+            final QuickStartPublishedServiceLocator serviceLocator = new QuickStartPublishedServiceLocator(serviceManager);
+            //final QuickStartServiceBuilder serviceBuilder = new QuickStartServiceBuilder(ServiceCache, folderManager, serviceLocator, assertionLocator, clusterPropertyManager, assertionMapper);
+            final QuickStartJsonServiceInstaller jsonServiceInstaller = new OneTimeJsonServiceInstaller(serviceBuilder, serviceManager, policyVersionManager, new QuickStartParser());
+
+            InstanceHolder.INSTANCE = new QuickStartAssertionModuleLifecycle(context, assertionLocator, serviceBuilder, jsonServiceInstaller);
+        }
+    }
+
     /**
      * Utility method to initialize {@link #jsonServiceInstaller}.
      *
