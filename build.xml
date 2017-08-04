@@ -1542,7 +1542,7 @@
     <!--
       Compile and package a single module and any modules that directly depend on it
     -->
-    <target name="module" description="Build and package a single module (use with -Dmodule=...)" depends="module_internal,do_module_sign">
+    <target name="module" description="Build and package a single module (use with -Dmodule=...)" depends="skiptests,module_internal,do_module_sign">
         <fail unless="module">module is a required property (the module to package)</fail>
     </target>
 
