@@ -246,8 +246,7 @@ public class EntityBundleImporterImplTest {
         final List<EntityMappingResult> results = importer.importBundle(entityBundle, false, true, null);
 
         // Check whether a lookup for a published service by its routing uri is performed.  In this case, the routing uri is "/random_routing_uri".
-        final String routingUriUsed = service.getRoutingUri();
-        Mockito.verify(serviceManager, Mockito.times(1)).findByRoutingUri(routingUriUsed);
+        Mockito.verify(serviceManager, Mockito.times(1)).findByRoutingUri("/random_routing_uri");
 
         // Check whether the action of service manager creating or updating service is performed.
         Mockito.verify(serviceManager, Mockito.times(1)).save(service.getGoid(), service); // Creating a new service is performed.
