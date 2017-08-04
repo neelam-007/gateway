@@ -37,6 +37,12 @@ public class ProcessSamlAuthnRequestPropertiesDialog extends AssertionProperties
         assertion.setVerifySignature( verifySignatureCheckBox.isEnabled() && verifySignatureCheckBox.isSelected() );
         assertion.setVariablePrefix( variablePrefixTextField.getVariable() );
 
+        assertion.setRequiredAssertionConsumerServiceIndex(assertionConsumerServiceIndexCheckBox.isEnabled() && assertionConsumerServiceIndexCheckBox.isSelected());
+        assertion.setRequiredAssertionConsumerServiceURL(assertionConsumerServiceURLCheckBox.isEnabled() && assertionConsumerServiceURLCheckBox.isSelected());
+        assertion.setRequiredAttributeConsumingServiceIndex(attributeConsumingServiceIndexCheckBox.isEnabled() && attributeConsumingServiceIndexCheckBox.isSelected());
+        assertion.setRequiredProtocolBinding(protocolBindingCheckBox.isEnabled() && protocolBindingCheckBox.isSelected());
+        assertion.setRequiredProviderName(providerNameCheckBox.isEnabled() && providerNameCheckBox.isSelected());
+
         return assertion;
     }
 
@@ -58,6 +64,12 @@ public class ProcessSamlAuthnRequestPropertiesDialog extends AssertionProperties
         String[] suffixes = ProcessSamlAuthnRequestAssertion.VARIABLE_SUFFIXES.toArray( new String[ProcessSamlAuthnRequestAssertion.VARIABLE_SUFFIXES.size()] );
         variablePrefixTextField.setSuffixes(suffixes);
 
+        assertionConsumerServiceIndexCheckBox.setSelected(assertion.isRequiredAssertionConsumerServiceIndex());
+        assertionConsumerServiceURLCheckBox.setSelected(assertion.isRequiredAssertionConsumerServiceURL());
+        attributeConsumingServiceIndexCheckBox.setSelected(assertion.isRequiredAttributeConsumingServiceIndex());
+        protocolBindingCheckBox.setSelected(assertion.isRequiredProtocolBinding());
+        providerNameCheckBox.setSelected(assertion.isRequiredProviderName());
+
         enableDisableComponents();
     }
 
@@ -73,16 +85,13 @@ public class ProcessSamlAuthnRequestPropertiesDialog extends AssertionProperties
         super.initComponents();
 
         bindingComboBox.setModel( new DefaultComboBoxModel( ProcessSamlAuthnRequestAssertion.SamlProtocolBinding.values() ) );
-        bindingComboBox.setRenderer( new TextListCellRenderer<ProcessSamlAuthnRequestAssertion.SamlProtocolBinding>( new Functions.Unary<String,ProcessSamlAuthnRequestAssertion.SamlProtocolBinding>(){
-            @Override
-            public String call( final ProcessSamlAuthnRequestAssertion.SamlProtocolBinding binding ) {
-                try {
-                    return resourceBundle.getString( "bindings." + binding.name() + ".label" );
-                } catch ( MissingResourceException mre ) {
-                    return binding.toString();
-                }
+        bindingComboBox.setRenderer(new TextListCellRenderer<>((Functions.Unary<String, ProcessSamlAuthnRequestAssertion.SamlProtocolBinding>) binding -> {
+            try {
+                return resourceBundle.getString("bindings." + binding.name() + ".label");
+            } catch (MissingResourceException mre) {
+                return binding.toString();
             }
-        } ) );
+        }) );
 
         variablePrefixTextField = new TargetVariablePanel();
         variablePrefixTextFieldPanel.setLayout(new BorderLayout());
@@ -115,6 +124,11 @@ public class ProcessSamlAuthnRequestPropertiesDialog extends AssertionProperties
     private JPanel variablePrefixTextFieldPanel;
     private TargetVariablePanel variablePrefixTextField;
     private JCheckBox verifySignatureCheckBox;
+    private JCheckBox assertionConsumerServiceURLCheckBox;
+    private JCheckBox assertionConsumerServiceIndexCheckBox;
+    private JCheckBox attributeConsumingServiceIndexCheckBox;
+    private JCheckBox providerNameCheckBox;
+    private JCheckBox protocolBindingCheckBox;
     private ProcessSamlAuthnRequestAssertion assertion;
 
     private void setText( final JTextComponent textComponent, final String text ) {
@@ -133,7 +147,12 @@ public class ProcessSamlAuthnRequestPropertiesDialog extends AssertionProperties
         boolean enableSignature = !bindingComboBox.isEnabled() || ProcessSamlAuthnRequestAssertion.SamlProtocolBinding.HttpRedirect != bindingComboBox.getSelectedItem();
         verifySignatureCheckBox.setEnabled( enableSignature );
 
+        assertionConsumerServiceURLCheckBox.setEnabled(enableAny);
+        assertionConsumerServiceIndexCheckBox.setEnabled(enableAny);
+        attributeConsumingServiceIndexCheckBox.setEnabled(enableAny);
+        providerNameCheckBox.setEnabled(enableAny);
+        protocolBindingCheckBox.setEnabled(enableAny);
+
         getOkButton().setEnabled( enableAny && variablePrefixTextField.isEntryValid());
     }
-
 }

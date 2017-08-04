@@ -23,6 +23,12 @@ public class ProtocolRequestUtilities {
     public static final String SUFFIX_X509CERT_BASE64 = "x509CertBase64";
     public static final String SUFFIX_X509CERT = "x509Cert";
     public static final String SUFFIX_ACS_URL = "acsUrl";
+    public static final String SUFFIX_ACS_INDEX = "acsIndex";
+    public static final String SUFFIX_PROTOCOL_BINDING = "protocolBinding";
+    public static final String SUFFIX_ATTR_CON_SRV_IDX = "attrcsIndex";
+    public static final String SUFFIX_PROVIDER_NAME = "providerName";
+    public static final String SUFFIX_FORCE_AUTHN = "forceAuthn";
+    public static final String SUFFIX_IS_PASSIVE = "isPassive";
     public static final String SUFFIX_ID = "id";
     public static final String SUFFIX_VERSION = "version";
     public static final String SUFFIX_ISSUE_INSTANT = "issueInstant";
