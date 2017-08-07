@@ -167,6 +167,16 @@ public class TextMessageStub implements TextMessage {
     }
 
     @Override
+    public long getJMSDeliveryTime() throws JMSException {
+        return 0;
+    }
+
+    @Override
+    public void setJMSDeliveryTime(long l) throws JMSException {
+
+    }
+
+    @Override
     public int getJMSPriority() throws JMSException {
         checkThrow();
         return priority;
@@ -279,5 +289,15 @@ public class TextMessageStub implements TextMessage {
 
     @Override
     public void clearBody() throws JMSException {
+    }
+
+    @Override
+    public <T> T getBody(Class<T> aClass) throws JMSException {
+        return null;
+    }
+
+    @Override
+    public boolean isBodyAssignableTo(Class aClass) throws JMSException {
+        return false;
     }
 }
