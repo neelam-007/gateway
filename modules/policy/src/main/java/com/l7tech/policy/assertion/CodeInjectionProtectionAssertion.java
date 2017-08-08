@@ -35,7 +35,7 @@ public class CodeInjectionProtectionAssertion extends InjectionThreatProtectionA
     private CodeInjectionProtectionType[] protections = new CodeInjectionProtectionType[0];
 
     public CodeInjectionProtectionAssertion() {
-        super(TargetMessageType.REQUEST, false);
+        super(null, false);
     }
 
     @Override

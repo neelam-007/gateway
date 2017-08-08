@@ -80,9 +80,9 @@ CodeInjectionProtection:
   samplePayload: |
     {
       "CodeInjectionProtection": {
-        "IncludeBody": true,
-        "IncludeUrlPath": false,
-        "IncludeUrlQueryString": false,
+      "IncludeRequestBody" : true,
+      "IncludeRequestUrl" : false,
+      "IncludeUrlPath" : false,
         "Protections": [ "htmlJavaScriptInjection", "shellInjection" ]
       }
     }
@@ -94,13 +94,13 @@ CodeInjectionProtection:
         "CodeInjectionProtection": {
           "type": "object",
           "properties": {
-            "IncludeBody": {
+            "IncludeRequestBody": {
               "type" : "boolean"
             },
-            "IncludeUrlPath": {
+            "IncludeRequestUrl": {
               "type": "boolean"
             },
-            "IncludeUrlQueryString": {
+            "IncludeUrlPath": {
               "type": "boolean"
             },
             "Protections": {
