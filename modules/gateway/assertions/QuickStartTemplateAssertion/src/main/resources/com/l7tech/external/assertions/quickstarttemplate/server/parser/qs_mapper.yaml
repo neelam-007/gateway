@@ -73,17 +73,19 @@ CodeInjectionProtection:
   externalName: CodeInjectionProtection
   className: com.l7tech.policy.assertion.CodeInjectionProtectionAssertion
   properties:
-    IncludeRequestBody: IncludeRequestBody
+    IncludeBody: IncludeBody
     IncludeUrlPath: IncludeUrlPath
-    IncludeRequestUrl: IncludeRequestUrl
+    IncludeUrlQueryString: IncludeUrlQueryString
     Protections: Protections
+    Target: Target
   samplePayload: |
     {
       "CodeInjectionProtection": {
-        "IncludeRequestBody": true,
+        "IncludeBody": true,
         "IncludeUrlPath": false,
-        "IncludeRequestUrl": false,
-        "Protections": [ "htmlJavaScriptInjection", "shellInjection" ]
+        "IncludeUrlQueryString": false,
+        "Protections": [ "htmlJavaScriptInjection", "shellInjection" ],
+        "Target": "REQUEST",
       }
     }
   jsonSchema: |
@@ -94,13 +96,13 @@ CodeInjectionProtection:
         "CodeInjectionProtection": {
           "type": "object",
           "properties": {
-            "IncludeRequestBody": {
+            "IncludeBody": {
               "type" : "boolean"
             },
             "IncludeUrlPath": {
               "type": "boolean"
             },
-            "IncludeRequestUrl": {
+            "IncludeUrlQueryString": {
               "type": "boolean"
             },
             "Protections": {
@@ -109,7 +111,11 @@ CodeInjectionProtection:
                 "type": "string",
                 "enum": [ "htmlJavaScriptInjection", "phpEvalInjection", "shellInjection", "ldapDnInjection", "ldapSearchInjection", "xpathInjection"  ]
               }
-            }
+            },
+            "Target": {
+              "type": "string",
+              "enum": [ "REQUEST","RESPONSE"  ]
+           }
           }
         }
       },
