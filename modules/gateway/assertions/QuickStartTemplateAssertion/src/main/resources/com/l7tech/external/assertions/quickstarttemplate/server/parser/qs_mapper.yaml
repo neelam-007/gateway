@@ -80,9 +80,9 @@ CodeInjectionProtection:
   samplePayload: |
     {
       "CodeInjectionProtection": {
-      "IncludeRequestBody" : true,
-      "IncludeUrlPath" : false,
-      "IncludeRequestUrl" : false,
+        "IncludeRequestBody": true,
+        "IncludeUrlPath": false,
+        "IncludeRequestUrl": false,
         "Protections": [ "htmlJavaScriptInjection", "shellInjection" ]
       }
     }
