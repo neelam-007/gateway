@@ -73,16 +73,16 @@ CodeInjectionProtection:
   externalName: CodeInjectionProtection
   className: com.l7tech.policy.assertion.CodeInjectionProtectionAssertion
   properties:
-    IncludeBody: IncludeBody
+    IncludeRequestBody: IncludeRequestBody
     IncludeUrlPath: IncludeUrlPath
-    IncludeUrlQueryString: IncludeUrlQueryString
+    IncludeRequestUrl: IncludeRequestUrl
     Protections: Protections
   samplePayload: |
     {
       "CodeInjectionProtection": {
       "IncludeRequestBody" : true,
-      "IncludeRequestUrl" : false,
       "IncludeUrlPath" : false,
+      "IncludeRequestUrl" : false,
         "Protections": [ "htmlJavaScriptInjection", "shellInjection" ]
       }
     }
@@ -97,10 +97,10 @@ CodeInjectionProtection:
             "IncludeRequestBody": {
               "type" : "boolean"
             },
-            "IncludeRequestUrl": {
+            "IncludeUrlPath": {
               "type": "boolean"
             },
-            "IncludeUrlPath": {
+            "IncludeRequestUrl": {
               "type": "boolean"
             },
             "Protections": {
