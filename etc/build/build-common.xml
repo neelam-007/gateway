@@ -230,7 +230,8 @@
 			<attribute name="output" default="${build.dir}/s${file.extension}/${ant.project.name}.s${file.extension}"/>
 			<sequential>
 				<echo level="info">Signing @{input} as @{output} using key @{keystore}</echo>
-				<java jar="@{skarSigner}" fork="true" failonerror="true">
+                <mkdir dir="${build.dir}/s${file.extension}" />
+                <java jar="@{skarSigner}" fork="true" failonerror="true">
 					<arg line="sign"/>
 					<arg line="-f &quot;@{keystore}&quot;"/>
 					<arg line="-p &quot;@{access.password}&quot;"/>
@@ -252,6 +253,7 @@
 			<attribute name="output" default="${build.dir}/s${file.extension}.xml/${ant.project.name}.s${file.extension}.xml"/>
 			<sequential>
 				<echo level="info">Generate RESTman XML for @{input} as @{output}</echo>
+                <mkdir dir="${build.dir}/s${file.extension}.xml" />
 				<java jar="@{skarSigner}" fork="true" failonerror="true">
 					<arg line="genSmfXml"/>
 					<arg line="-n &quot;@{assertion}&quot;"/>
