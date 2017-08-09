@@ -11,7 +11,9 @@ import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CodeInjectionProtectionType;
 import com.l7tech.policy.assertion.EncapsulatedAssertion;
+import com.l7tech.policy.assertion.MessageTargetableAssertion;
 import com.l7tech.policy.assertion.SslAssertion;
+import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import org.junit.Before;
@@ -89,6 +91,26 @@ public class QuickStartMapperTest {
         } catch (final QuickStartPolicyBuilderException e) {
             // expected
         }
+    }
+
+
+    @Test
+    public void callAssertionSetterParentClass() throws Exception {
+        final AtomicBoolean wasAttributeSet = new AtomicBoolean(false);
+        final MessageTargetableAssertion assertion = new MessageTargetableAssertion() {
+            @SuppressWarnings("UnusedDeclaration")
+            public void setTypeAttribute(String t) {
+                wasAttributeSet.set(true);
+            }
+        };
+
+        // set parent class
+        // also test attributes after are also (TypeAttribute)
+        fixture.callAssertionSetter(null, assertion, ImmutableMap.of("Target", "REQUEST","TypeAttribute", "aString"));
+        assertEquals(assertion.getTarget(), TargetMessageType.REQUEST);
+        assertTrue(wasAttributeSet.get());
+        wasAttributeSet.set(false);
+
     }
 
     @Test

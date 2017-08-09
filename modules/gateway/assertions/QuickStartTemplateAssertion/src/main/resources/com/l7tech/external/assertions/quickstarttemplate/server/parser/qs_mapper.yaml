@@ -77,13 +77,15 @@ CodeInjectionProtection:
     IncludeUrlPath: IncludeUrlPath
     IncludeUrlQueryString: IncludeUrlQueryString
     Protections: Protections
+    Target: Target
   samplePayload: |
     {
       "CodeInjectionProtection": {
         "IncludeBody": true,
         "IncludeUrlPath": false,
         "IncludeUrlQueryString": false,
-        "Protections": [ "htmlJavaScriptInjection", "shellInjection" ]
+        "Protections": [ "htmlJavaScriptInjection", "shellInjection" ],
+        "Target": "REQUEST",
       }
     }
   jsonSchema: |
@@ -109,7 +111,11 @@ CodeInjectionProtection:
                 "type": "string",
                 "enum": [ "htmlJavaScriptInjection", "phpEvalInjection", "shellInjection", "ldapDnInjection", "ldapSearchInjection", "xpathInjection"  ]
               }
-            }
+            },
+            "Target": {
+              "type": "string",
+              "enum": [ "REQUEST","RESPONSE"  ]
+           }
           }
         }
       },

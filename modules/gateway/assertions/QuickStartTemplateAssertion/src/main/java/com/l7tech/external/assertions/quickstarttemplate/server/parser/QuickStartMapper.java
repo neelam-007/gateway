@@ -139,6 +139,7 @@ public class QuickStartMapper {
         try {
             Method method = null;
             String setMethodName;
+            propertiesLoop:
             for (final Map.Entry<String, ?> entry : properties.entrySet()) {
                 final String propertyName = entry.getKey();
                 Object propertyValue = entry.getValue();
@@ -222,8 +223,9 @@ public class QuickStartMapper {
                     }
                 }
 
+
                 // looping through all methods as last resort - performance hit
-                for (Method declaredMethod : assertion.getClass().getDeclaredMethods()) {
+                for (Method declaredMethod : assertion.getClass().getMethods()) {
                     // find matching method name with one argument signature
                     if (setMethodName.equals(declaredMethod.getName()) && declaredMethod.getParameterCount() == 1) {
                         Class<?>[] declaredMethodParameterTypes = declaredMethod.getParameterTypes();
@@ -234,7 +236,7 @@ public class QuickStartMapper {
                             Method getEnumTranslatorMethod = declaredMethodParameterType.getMethod("getEnumTranslator");
                             EnumTranslator enumTranslator = (EnumTranslator) getEnumTranslatorMethod.invoke(null);
                             declaredMethod.invoke(assertion, enumTranslator.stringToObject(propertyValue.toString()));
-                            return;
+                            continue propertiesLoop;
                         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
                             logger.log(Level.FINE, "Reflection failed to invoke : " + declaredMethod.toString());
                         }
@@ -245,7 +247,7 @@ public class QuickStartMapper {
                             if (declaredMethodParameterConstructor != null) {
                                 declaredMethod.invoke(assertion, declaredMethodParameterConstructor.newInstance(propertyValue));
                             }
-                            return;
+                            continue propertiesLoop;
                         } catch (NoSuchMethodException | InstantiationException e) {
                             logger.log(Level.FINE, "Reflection failed to invoke : " + declaredMethod.toString());
                         }
@@ -254,11 +256,12 @@ public class QuickStartMapper {
                         try {
                             Method valueOfMethod = declaredMethodParameterType.getMethod("valueOf", String.class);
                             declaredMethod.invoke(assertion, valueOfMethod.invoke(null, propertyValue));
-                            return;
+                            continue propertiesLoop;
                         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
                             logger.log(Level.FINE, "Reflection failed to invoke : " + declaredMethod.toString());
                         }
                     }
+
                 }
 
                 // can't convert, fail and throw exception
