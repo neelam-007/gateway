@@ -4,9 +4,7 @@ import com.google.common.collect.Lists;
 import com.l7tech.external.assertions.jwt.DecodeJsonWebTokenAssertion;
 import com.l7tech.external.assertions.jwt.JsonWebTokenConstants;
 import com.l7tech.gateway.common.audit.TestAudit;
-import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.message.Message;
-import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.ApplicationContexts;
@@ -20,7 +18,6 @@ import com.l7tech.util.HexUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.Collections;
 import java.util.HashMap;
 
 import static org.junit.Assert.assertEquals;
@@ -548,5 +545,47 @@ public class ServerDecodeJsonWebTokenAssertionTest {
         assertEquals(AssertionStatus.FAILED, status);
 
         assertTrue(testAudit.isAuditPresentContaining("Error decoding: Could not validate JWS: Invalid key for dir with A128CBC-HS256, expected a 256 bit key but a 16 bit key was provided."));
+    }
+
+    @Test
+    public void testInvalidJWT() throws Exception {
+        PolicyEnforcementContext context = getContext();
+        DecodeJsonWebTokenAssertion assertion = new DecodeJsonWebTokenAssertion();
+        assertion.setSourcePayload("abc");
+        assertion.setValidationType(JsonWebTokenConstants.VALIDATION_NONE);
+        assertion.setTargetVariablePrefix("result");
+        ServerDecodeJsonWebTokenAssertion sass = new ServerDecodeJsonWebTokenAssertion(assertion);
+        AssertionStatus status = sass.checkRequest(context);
+        Assert.assertEquals(AssertionStatus.FAILED, status);
+    }
+
+    /**
+     * When an incorrect base64 encoded JWT header is provided, assertion should fail
+     */
+    @Test
+    public void testInvalidBase64EncodedJWTHeaderDE295988() throws Exception {
+        PolicyEnforcementContext context = getContext();
+        DecodeJsonWebTokenAssertion assertion = new DecodeJsonWebTokenAssertion();
+        assertion.setSourcePayload("eyJ0eX@@@@AiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0c24iLCJuYW1lIjoiSm9obiBEb2UgU3VwZXIiLCJhZG1pbiI6dHJ1ZSwiYWJjIjoiZGVmIiwianRpIjoiOTJlYTFmNmMtYjJjMi00ZWY5LTk4ZjctYmY5ZTg0MmZlMTBiIiwiaWF0IjoxNTAwMzEwNDE5LCJleHAiOjE1MDAzMTQwMTl9.AAHZQqXU3mvMoOrQPMjJjVK9IVhDolBibO5VAmVUkK8");
+        assertion.setValidationType(JsonWebTokenConstants.VALIDATION_NONE);
+        assertion.setTargetVariablePrefix("result");
+        ServerDecodeJsonWebTokenAssertion sass = new ServerDecodeJsonWebTokenAssertion(assertion);
+        AssertionStatus status = sass.checkRequest(context);
+        Assert.assertEquals(AssertionStatus.FAILED, status);
+    }
+
+    /**
+     * When an incorrectly base64 encoded JWT payload is provided, assertion should fail
+     */
+    @Test
+    public void testInvalidBase64EncodedJWTPayloadDE295988() throws Exception {
+        PolicyEnforcementContext context = getContext();
+        DecodeJsonWebTokenAssertion assertion = new DecodeJsonWebTokenAssertion();
+        assertion.setSourcePayload("eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzd@@@WIiOiJ0c24iLCJuYW1lIjoiSm9obiBEb2UgU3VwZXIiLCJhZG1pbiI6dHJ1ZSwiYWJjIjoiZGVmIiwianRpIjoiOTJlYTFmNmMtYjJjMi00ZWY5LTk4ZjctYmY5ZTg0MmZlMTBiIiwiaWF0IjoxNTAwMzEwNDE5LCJleHAiOjE1MDAzMTQwMTl9.AAHZQqXU3mvMoOrQPMjJjVK9IVhDolBibO5VAmVUkK8");
+        assertion.setValidationType(JsonWebTokenConstants.VALIDATION_NONE);
+        assertion.setTargetVariablePrefix("result");
+        ServerDecodeJsonWebTokenAssertion sass = new ServerDecodeJsonWebTokenAssertion(assertion);
+        AssertionStatus status = sass.checkRequest(context);
+        Assert.assertEquals(AssertionStatus.FAILED, status);
     }
 }
