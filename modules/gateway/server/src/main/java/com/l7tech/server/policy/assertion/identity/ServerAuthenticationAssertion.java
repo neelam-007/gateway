@@ -1,18 +1,13 @@
 package com.l7tech.server.policy.assertion.identity;
 
-import com.l7tech.identity.AuthenticationException;
-import com.l7tech.message.Message;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.AuthenticationAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.identity.User;
 import com.l7tech.gateway.common.audit.AssertionMessages;
-import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.util.ExceptionUtils;
 import org.springframework.context.ApplicationContext;
 
 import java.util.ArrayList;
@@ -25,8 +20,6 @@ import java.util.ArrayList;
  */
 public class ServerAuthenticationAssertion extends ServerIdentityAssertion<AuthenticationAssertion> {
 
-    private ArrayList<String> userIdList = new ArrayList<>();
-    private ArrayList<String> userErrorList = new ArrayList<>();
 
     public ServerAuthenticationAssertion(AuthenticationAssertion data, ApplicationContext spring) {
         super(data, spring);
@@ -48,33 +41,15 @@ public class ServerAuthenticationAssertion extends ServerIdentityAssertion<Authe
         return AssertionStatus.NONE;
     }
 
+    /**
+     * Return as context variables the list of logins that failed authentication and their authentication error message.
+     */
     @Override
-    protected AssertionStatus doCheckRequest( final PolicyEnforcementContext context,
-                                              final Message message,
-                                              final String messageDescription,
-                                              final AuthenticationContext authContext ) {
-
-        userIdList.clear();
-        userErrorList.clear();
-
-        AssertionStatus status = super.doCheckRequest(context,message,messageDescription,authContext);
+    protected void processAuthFailure(final PolicyEnforcementContext context,
+                                      final ArrayList<String> userIdList,
+                                      final ArrayList<String> userErrorList){
 
         context.setVariable(AuthenticationAssertion.LDAP_PROVIDER_ERROR_LOGIN, userIdList.toArray());
         context.setVariable(AuthenticationAssertion.LDAP_PROVIDER_ERROR_MESSAGE, userErrorList.toArray());
-
-        return status;
-    }
-
-    @Override
-    protected AssertionStatus authFailed(LoginCredentials pc, Exception e) {
-
-        final AssertionStatus status = super.authFailed(pc, e);
-
-        if (e instanceof AuthenticationException){
-            userIdList.add(pc.getLogin());
-            userErrorList.add(ExceptionUtils.getMessage(e));
-        }
-
-        return status;
     }
 }

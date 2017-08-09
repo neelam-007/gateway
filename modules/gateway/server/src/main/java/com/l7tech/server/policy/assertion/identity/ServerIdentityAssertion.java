@@ -23,6 +23,7 @@ import com.l7tech.util.ExceptionUtils;
 import org.springframework.context.ApplicationContext;
 
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 
@@ -53,7 +54,11 @@ public abstract class ServerIdentityAssertion<AT extends IdentityAssertion> exte
     protected AssertionStatus doCheckRequest( final PolicyEnforcementContext context,
                                               final Message message,
                                               final String messageDescription,
-                                              final AuthenticationContext authContext ) {
+                                              final AuthenticationContext authContext) {
+
+        ArrayList<String> userIdList = new ArrayList<>();
+        ArrayList<String> userErrorList = new ArrayList<>();
+
         final List<LoginCredentials> pCredentials = authContext.getCredentials();
 
         if (pCredentials.size() < 1 && authContext.getLastAuthenticatedUser() == null) {
@@ -154,9 +159,13 @@ public abstract class ServerIdentityAssertion<AT extends IdentityAssertion> exte
             } catch (AuthenticationException ae) {
                 logAndAudit(AssertionMessages.IDENTITY_CREDENTIAL_FAILED, pc.getLogin(), ExceptionUtils.getMessage(ae));
                 lastStatus = authFailed(pc, ae);
+                userIdList.add(pc.getLogin());
+                userErrorList.add(ExceptionUtils.getMessage(ae));
             }
         }
         logAndAudit(AssertionMessages.IDENTITY_AUTHENTICATION_FAILED, assertion.loggingIdentity());
+        processAuthFailure(context,userIdList,userErrorList);
+
         return lastStatus;
     }
 
@@ -256,5 +265,19 @@ public abstract class ServerIdentityAssertion<AT extends IdentityAssertion> exte
      * Implement to decide whether the authenticated user is acceptable.
      */
     protected abstract AssertionStatus checkUser(AuthenticationResult authResult);
+
+    /**
+     Implementor to decide if they want the authentication errors associated with
+     the list of users that were being authenticated to be returned to the assertion via the PEC.
+     @param context - PEC
+     @param userIdList - array of loginId's used for authentication
+     @param userErrorList - array of error
+     @return void
+     */
+    protected void processAuthFailure(final PolicyEnforcementContext context,
+                                      final ArrayList<String> userIdList,
+                                      final ArrayList<String> userErrorList){
+
+    }
 
 }

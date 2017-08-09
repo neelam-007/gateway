@@ -17,7 +17,7 @@ public class AuthenticationResultFailure {
      * @param currTimeMilliseconds The CacheFailureTime (required)
      * @param failureReason The reason why the authentication failed.
      */
-    public AuthenticationResultFailure(@NotNull Long currTimeMilliseconds, @Nullable String failureReason){
+    public AuthenticationResultFailure(@NotNull final Long currTimeMilliseconds, @Nullable final String failureReason){
 
         this.cacheFailureTime = currTimeMilliseconds;
         this.failureReason = failureReason;

@@ -164,13 +164,7 @@ public final class AuthCache {
         final Goid providerOid = idp.getConfig().getGoid();
         final CacheKey ckey = new CacheKey(providerOid, creds);
         Object cached = getCacheEntry(ckey, credString, idp, maxSuccessAge, maxFailAge);
-        if (cached instanceof AuthenticationResult) {
-            return new AuthenticationResult((AuthenticationResult) cached, creds.getSecurityTokens());
-        } else if (cached instanceof AuthenticationResultFailure) {
-            throw new BadCredentialsException(((AuthenticationResultFailure) cached).getFailureReason());
-        } else if (cached != null) {
-            return null;
-        }
+        processCached(cached,creds);
 
         // There was a successCache miss before, so someone has to authenticate it.
 
@@ -188,16 +182,7 @@ public final class AuthCache {
             synchronized (credsMutex) {
                 // Recheck successCache now that we have the username lock
                 cached = getCacheEntry(ckey, credString, idp, maxSuccessAge, maxFailAge);
-                if (cached instanceof AuthenticationResult) {
-                    // Someone else got there first with a success
-                    return new AuthenticationResult((AuthenticationResult) cached, creds.getSecurityTokens());
-                } else if (cached instanceof AuthenticationResultFailure) {
-                        // authentication failed.
-                        throw new BadCredentialsException(((AuthenticationResultFailure) cached).getFailureReason());
-                } else if (cached != null) {
-                    // Someone else got there first with a failure
-                    return null;
-                }
+                processCached(cached,creds);
                 return getAndCacheNewResult(creds, credString, ckey, idp);
             }
         }
@@ -205,6 +190,19 @@ public final class AuthCache {
         // Either AUTH_ONE_AT_A_TIME specifically or all caching in general is disabled.  Skip locking and Just Do It.
         return getAndCacheNewResult(creds, credString, ckey, idp);
     }
+
+    AuthenticationResult processCached(Object cached, LoginCredentials creds) throws BadCredentialsException {
+
+        if (cached instanceof AuthenticationResult) {
+            return new AuthenticationResult((AuthenticationResult) cached, creds.getSecurityTokens());
+        } else if (cached instanceof AuthenticationResultFailure) {
+            throw new BadCredentialsException(((AuthenticationResultFailure) cached).getFailureReason());
+        } else if (cached != null) {
+            return null;
+        }
+        return null;
+    }
+
 
     // If caller wants only one thread at a time to authenticate any given username,
     // caller is responsible for ensuring that only one thread at a time calls this per username,
