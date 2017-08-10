@@ -9,9 +9,7 @@ import com.l7tech.identity.User;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import org.springframework.context.ApplicationContext;
-
 import java.util.List;
-
 /**
  * SSG implementation of {@link IdentityAssertion}.  Authenticates the request's credentials against
  * a particular identity provider, but does not authorize that the authenticated user matches any particular
@@ -19,7 +17,6 @@ import java.util.List;
  * @author alex
  */
 public class ServerAuthenticationAssertion extends ServerIdentityAssertion<AuthenticationAssertion> {
-
 
     public ServerAuthenticationAssertion(AuthenticationAssertion data, ApplicationContext spring) {
         super(data, spring);
@@ -40,7 +37,6 @@ public class ServerAuthenticationAssertion extends ServerIdentityAssertion<Authe
         // Doesn't care about the precise identity of the user
         return AssertionStatus.NONE;
     }
-
     /**
      * Return as context variables the list of logins that failed authentication and their authentication error message.
      */
