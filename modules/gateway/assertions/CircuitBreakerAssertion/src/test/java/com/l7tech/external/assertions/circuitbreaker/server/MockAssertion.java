@@ -4,6 +4,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
+import com.l7tech.util.TestTimeSource;
 
 /**
  * @author Jamie Williams - jamie.williams2@ca.com
@@ -11,6 +12,8 @@ import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 public class MockAssertion extends Assertion {
 
     private AssertionStatus returnStatus;
+    private long executionTime;
+    private TestTimeSource timeSource;
 
     public MockAssertion() {
 
@@ -29,5 +32,21 @@ public class MockAssertion extends Assertion {
 
     public void setReturnStatus(AssertionStatus returnStatus) {
         this.returnStatus = returnStatus;
+    }
+
+    public long getExecutionTime() {
+        return executionTime;
+    }
+
+    public void setExecutionTime(long executionTime) {
+        this.executionTime = executionTime;
+    }
+
+    public TestTimeSource getTimeSource() {
+        return timeSource;
+    }
+
+    public void setTimeSource(TestTimeSource timeSource) {
+        this.timeSource = timeSource;
     }
 }

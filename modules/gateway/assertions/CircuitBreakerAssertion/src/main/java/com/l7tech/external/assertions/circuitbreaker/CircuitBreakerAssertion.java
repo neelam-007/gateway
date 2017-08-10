@@ -1,9 +1,9 @@
 package com.l7tech.external.assertions.circuitbreaker;
 
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.UsesVariables;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
+import com.l7tech.policy.assertion.UsesVariables;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 
 import java.util.HashMap;
@@ -17,8 +17,14 @@ import static com.l7tech.policy.assertion.AssertionMetadata.*;
  */
 public class CircuitBreakerAssertion extends CompositeAssertion implements UsesVariables {
 
+    //Failure threshold hard coded values, time is in milli seconds
     public static final long FAILURE_THRESHOLD = 5;
-    public static final long BLACKOUT_PERIOD = 5000;
+    public static final long RECOVERY_PERIOD = 5L * 1000;
+
+    //Latency threshold hard coded values
+    public static final long LATENCY_THRESHOLD = 3;
+    public static final long LATENCY_TIME_THRESHOLD = 500L;
+    public static final long LATENCY_RECOVERY_PERIOD = 4L * 1000;
 
     public CircuitBreakerAssertion() {
 
