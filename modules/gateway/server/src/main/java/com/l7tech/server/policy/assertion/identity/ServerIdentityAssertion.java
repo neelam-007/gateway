@@ -56,8 +56,8 @@ public abstract class ServerIdentityAssertion<AT extends IdentityAssertion> exte
                                               final String messageDescription,
                                               final AuthenticationContext authContext) {
 
-        ArrayList<String> userIdList = new ArrayList<>();
-        ArrayList<String> userErrorList = new ArrayList<>();
+        List<String> userIdList = new ArrayList<>();
+        List<String> userErrorList = new ArrayList<>();
 
         final List<LoginCredentials> pCredentials = authContext.getCredentials();
 
@@ -222,7 +222,7 @@ public abstract class ServerIdentityAssertion<AT extends IdentityAssertion> exte
         return AssertionStatus.NONE.equals( status );
     }
 
-    protected AssertionStatus authFailed(LoginCredentials pc, Exception e) {
+    private AssertionStatus authFailed(LoginCredentials pc, Exception e) {
         // we were losing the details of this authentication failure. important for debugging saml stuff
         logger.log(Level.FINE, "ServerIdentityAssertion failed", e);
         String name = pc.getLogin();
@@ -267,16 +267,15 @@ public abstract class ServerIdentityAssertion<AT extends IdentityAssertion> exte
     protected abstract AssertionStatus checkUser(AuthenticationResult authResult);
 
     /**
-     Implementor to decide if they want the authentication errors associated with
-     the list of users that were being authenticated to be returned to the assertion via the PEC.
-     @param context - PEC
-     @param userIdList - array of loginId's used for authentication
-     @param userErrorList - array of error
-     @return void
+     * Implementor to decide if they want the authentication errors associated with
+     * the list of users that were being authenticated to be returned to the assertion via the PEC.
+     * @param context - PEC
+     * @param userIdList - array of loginId's used for authentication
+     * @param userErrorList - array of error
      */
     protected void processAuthFailure(final PolicyEnforcementContext context,
-                                      final ArrayList<String> userIdList,
-                                      final ArrayList<String> userErrorList){
+                                      final List<String> userIdList,
+                                      final List<String> userErrorList){
 
     }
 

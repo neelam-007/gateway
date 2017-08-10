@@ -164,7 +164,13 @@ public final class AuthCache {
         final Goid providerOid = idp.getConfig().getGoid();
         final CacheKey ckey = new CacheKey(providerOid, creds);
         Object cached = getCacheEntry(ckey, credString, idp, maxSuccessAge, maxFailAge);
-        processCached(cached,creds);
+        if (cached instanceof AuthenticationResult) {
+            return new AuthenticationResult((AuthenticationResult) cached, creds.getSecurityTokens());
+        } else if (cached instanceof AuthenticationResultFailure) {
+            throw new BadCredentialsException(((AuthenticationResultFailure) cached).getFailureReason());
+        } else if (cached != null) {
+            return null;
+        }
 
         // There was a successCache miss before, so someone has to authenticate it.
 
@@ -182,25 +188,19 @@ public final class AuthCache {
             synchronized (credsMutex) {
                 // Recheck successCache now that we have the username lock
                 cached = getCacheEntry(ckey, credString, idp, maxSuccessAge, maxFailAge);
-                processCached(cached,creds);
+                if (cached instanceof AuthenticationResult) {
+                    return new AuthenticationResult((AuthenticationResult) cached, creds.getSecurityTokens());
+                } else if (cached instanceof AuthenticationResultFailure) {
+                    throw new BadCredentialsException(((AuthenticationResultFailure) cached).getFailureReason());
+                } else if (cached != null) {
+                    return null;
+                }
                 return getAndCacheNewResult(creds, credString, ckey, idp);
             }
         }
 
         // Either AUTH_ONE_AT_A_TIME specifically or all caching in general is disabled.  Skip locking and Just Do It.
         return getAndCacheNewResult(creds, credString, ckey, idp);
-    }
-
-    AuthenticationResult processCached(Object cached, LoginCredentials creds) throws BadCredentialsException {
-
-        if (cached instanceof AuthenticationResult) {
-            return new AuthenticationResult((AuthenticationResult) cached, creds.getSecurityTokens());
-        } else if (cached instanceof AuthenticationResultFailure) {
-            throw new BadCredentialsException(((AuthenticationResultFailure) cached).getFailureReason());
-        } else if (cached != null) {
-            return null;
-        }
-        return null;
     }
 
 

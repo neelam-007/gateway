@@ -10,7 +10,7 @@ import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import org.springframework.context.ApplicationContext;
 
-import java.util.ArrayList;
+import java.util.List;
 
 /**
  * SSG implementation of {@link IdentityAssertion}.  Authenticates the request's credentials against
@@ -46,8 +46,8 @@ public class ServerAuthenticationAssertion extends ServerIdentityAssertion<Authe
      */
     @Override
     protected void processAuthFailure(final PolicyEnforcementContext context,
-                                      final ArrayList<String> userIdList,
-                                      final ArrayList<String> userErrorList){
+                                      final List<String> userIdList,
+                                      final List<String> userErrorList){
 
         context.setVariable(AuthenticationAssertion.LDAP_PROVIDER_ERROR_LOGIN, userIdList.toArray());
         context.setVariable(AuthenticationAssertion.LDAP_PROVIDER_ERROR_MESSAGE, userErrorList.toArray());
