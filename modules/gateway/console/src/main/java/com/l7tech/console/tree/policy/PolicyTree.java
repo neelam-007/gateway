@@ -3,7 +3,6 @@ package com.l7tech.console.tree.policy;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.action.*;
 import com.l7tech.console.logging.ErrorManager;
-import com.l7tech.console.panels.ForEachLoopAssertionPolicyNode;
 import com.l7tech.console.panels.InformationDialog;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.policy.PolicyTransferable;
@@ -22,6 +21,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.Include;
 import com.l7tech.policy.assertion.composite.*;
 import com.l7tech.policy.wsp.WspReader;
+import com.l7tech.util.BeanUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
 import org.apache.commons.lang.ArrayUtils;
@@ -40,7 +40,10 @@ import java.awt.event.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
+import java.beans.PropertyDescriptor;
 import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -339,21 +342,41 @@ public class PolicyTree extends JTree implements DragSourceListener,
                         AbstractTreeNode ancestor = (AbstractTreeNode)path.getPathComponent(i);
 
                         CompositeAssertionTreeNode newAncestor;
-                        if(ancestor instanceof AllAssertionTreeNode) {
-                            newAncestor = new AllAssertionTreeNode(new AllAssertion());
-                        } else if(ancestor instanceof HandleErrorsAssertionTreeNode) {
-                            HandleErrorsAssertion hae = new HandleErrorsAssertion();
-                            HandleErrorsAssertionTreeNode haen = (HandleErrorsAssertionTreeNode) ancestor;
-                            hae.setVariablePrefix(haen.assertion.getVariablePrefix());
-                            newAncestor = new HandleErrorsAssertionTreeNode(hae);
-                        } else if(ancestor instanceof OneOrMoreAssertionTreeNode) {
-                            newAncestor = new OneOrMoreAssertionTreeNode(new OneOrMoreAssertion());
-                        } else if (ancestor instanceof ForEachLoopAssertionPolicyNode) {
-                            final ForEachLoopAssertionPolicyNode forEachNode = (ForEachLoopAssertionPolicyNode) ancestor;
-                            final ForEachLoopAssertion forEach = new ForEachLoopAssertion();
-                            forEach.setLoopVariableName(forEachNode.assertion.getLoopVariableName());
-                            forEach.setVariablePrefix(forEachNode.assertion.getVariablePrefix());
-                            newAncestor = new ForEachLoopAssertionPolicyNode(forEach);
+
+                        if (ancestor instanceof CompositeAssertionTreeNode) {
+                            // get ancestor tree node's assertion instance and class
+                            CompositeAssertion ancestorAssertion = (CompositeAssertion) ancestor.asAssertion();
+                            Class<?> ancestorAssertionClass = ancestorAssertion.getClass();
+
+                            try {
+                                // create new instance of assertion
+                                CompositeAssertion newAncestorAssertion =
+                                        (CompositeAssertion) ancestorAssertionClass.getConstructor().newInstance();
+
+                                // find all the assertion properties (includes inherited)
+                                Set<PropertyDescriptor> cassProperties = BeanUtils.getProperties(CompositeAssertion.class);
+                                // find all the properties of the CompositeAssertion class (includes inherited)
+                                Set<PropertyDescriptor> assProperties = BeanUtils.getProperties(ancestorAssertionClass);
+
+                                /*
+                                 * Remove all inherited properties (from CompositeAssertion and superclasses) from
+                                 * assertion properties, leaving only those which are assertion-specific. This ensures
+                                 * composite assertion children aren't copied twice and maintains the behaviour of the
+                                 * previous implementation of this method.
+                                 */
+                                assProperties.removeAll(cassProperties);
+
+                                // copy only assertion-specific properties from the ancestor to the new assertion
+                                BeanUtils.copyProperties(ancestorAssertion, newAncestorAssertion, assProperties);
+
+                                // create a new instance of the tree node for the new assertion
+                                Constructor<?> ancestorNodeConstructor =
+                                        ancestor.getClass().getConstructor(ancestorAssertionClass);
+                                newAncestor = (CompositeAssertionTreeNode) ancestorNodeConstructor.newInstance(newAncestorAssertion);
+                            } catch (IllegalAccessException | InvocationTargetException |
+                                    NoSuchMethodException | InstantiationException e) {
+                                throw new RuntimeException("Failed to copy composite assertion tree node", e);
+                            }
                         } else {
                             break;
                         }
