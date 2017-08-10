@@ -83,12 +83,12 @@ public class JmsUtil {
      * @throws JmsConfigException if no connection factory URL could be found for this connection
      */
     public static JmsBag connect(final JmsConnection connection,
-                                 final PasswordAuthentication auth,
-                                 final JmsPropertyMapper mapper,
-                                 final boolean createSession,
-                                 final boolean preferQueue,
-                                 final boolean transactional,
-                                 final int acknowledgeMode)
+                                  final PasswordAuthentication auth,
+                                  final JmsPropertyMapper mapper,
+                                  final boolean createSession,
+                                  final boolean preferQueue,
+                                  final boolean transactional,
+                                  final int acknowledgeMode)
             throws JmsConfigException, JMSException, NamingException
     {
         logger.fine( "Connecting to " + connection.toString() );
@@ -152,8 +152,8 @@ public class JmsUtil {
             Object o = jndiContext.lookup( cfUrl );
             if ( o instanceof Reference ) {
                 String msg = "The ConnectionFactory lookup returned a reference to the class\n"
-                             + ((Reference)o).getClassName() + ",  which cannot be loaded on the Gateway.\n"
-                             + "Most likely the Gateway has not yet been configured for this JMS provider.";
+                        + ((Reference)o).getClassName() + ",  which cannot be loaded on the Gateway.\n"
+                        + "Most likely the Gateway has not yet been configured for this JMS provider.";
                 logger.warning( msg );
                 throw new JmsConfigException(msg);
             }
@@ -162,7 +162,7 @@ public class JmsUtil {
                 connFactory = cast( o, ConnectionFactory.class );
             } catch ( JMSException e ) {
                 String msg = "The ConnectionFactory lookup returned an unsupported object type '"
-                             + o.getClass().getName() + "'.";
+                        + o.getClass().getName() + "'.";
                 logger.warning( msg );
                 throw new JmsConfigException(msg);
             }

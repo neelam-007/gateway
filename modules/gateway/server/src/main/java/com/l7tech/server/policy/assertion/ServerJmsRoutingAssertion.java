@@ -29,6 +29,7 @@ import com.l7tech.server.transport.jms2.JmsEndpointConfig;
 import com.l7tech.server.transport.jms2.JmsResourceManager;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.util.*;
+import com.mchange.v1.util.DebugUtils;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
@@ -44,6 +45,8 @@ import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -432,7 +435,9 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                 if ( logger.isLoggable( Level.FINE ))
                     logger.fine("Sending JMS outbound message");
 
-                jmsProducer.send( jmsOutboundRequest, deliveryMode, priority, timeToLive );
+                CountDownLatch latch = new CountDownLatch(1);
+                JmsCompletionListener completionListener = new JmsCompletionListener(latch);
+                jmsProducer.send(jmsOutboundRequest, deliveryMode, priority, timeToLive, completionListener);
 
                 messageSent = true; // no retries once sent
 
@@ -440,11 +445,13 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                     logger.fine("JMS outbound message sent");
 
                 if ( !processReply ) {
+                    latch.countDown();
                     context.routingFinished();
                     routingFinished = true;
                     logAndAudit(AssertionMessages.JMS_ROUTING_NO_RESPONSE_EXPECTED);
                     context.setRoutingStatus( RoutingStatus.ROUTED );
                 } else {
+
                     final String selector = getSelector( jmsOutboundRequest, cfg.getEndpoint() );
                     int emergencyTimeoutDefault = 10000;
                     String timeoutStr = assertion.getResponseTimeout();
@@ -465,6 +472,13 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                             timeout = emergencyTimeoutDefault;
                             logger.warning("Using default value (" + emergencyTimeoutDefault + ") for undefined cluster property: " + serverConfig.getClusterPropertyName( ServerConfigParams.PARAM_JMS_RESPONSE_TIMEOUT));
                         }
+                    }
+
+                    try {
+                        latch.await(timeout, TimeUnit.MILLISECONDS);
+                        //DO something on completion
+                    } catch (InterruptedException e) {
+                        logger.log(Level.FINE, "Latch timeout exception: " + e.getMessage(), ExceptionUtils.getDebugException(e));
                     }
 
                     MessageConsumer jmsConsumer = null;
@@ -1074,6 +1088,31 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                     }
                 }
             }
+        }
+    }
+
+    public static class JmsCompletionListener implements CompletionListener {
+
+        CountDownLatch latch;
+        Exception exception;
+
+        public JmsCompletionListener(CountDownLatch latch) {
+            this.latch=latch;
+        }
+
+        @Override
+        public void onCompletion(Message message) {
+            latch.countDown();
+        }
+
+        @Override
+        public void onException(Message message, Exception exception) {
+            latch.countDown();
+            this.exception=exception;
+        }
+
+        public Exception getException(){
+            return exception;
         }
     }
     
