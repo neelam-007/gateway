@@ -36,6 +36,7 @@ public class ProcessSamlAuthnRequestAssertionAdvice implements Advice {
         DialogDisplayer.display(dlg, () -> {
             // check that user confirmed the new properties
             if (dlg.isConfirmed()) {
+                dlg.getData(subject);
                 pc.proceed();
             }
         });
