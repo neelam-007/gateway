@@ -821,7 +821,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                 }
                 return outboundRequestMsg;
             default:
-                throw new java.lang.IllegalStateException("Unknown JmsReplyType " + replyType);
+                throw new java.lang.IllegalStateException("Un known JmsReplyType " + replyType);
         }
     }
 
@@ -1091,24 +1091,28 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
         }
     }
 
-    public static class JmsCompletionListener implements CompletionListener {
+    private static class JmsCompletionListener implements CompletionListener {
 
-        CountDownLatch latch;
-        Exception exception;
+        private final CountDownLatch latch;
+        private Exception exception;
+        private final long startTime;
 
         public JmsCompletionListener(CountDownLatch latch) {
             this.latch=latch;
+            startTime = System.currentTimeMillis();
         }
 
         @Override
         public void onCompletion(Message message) {
             latch.countDown();
+            logger.log(Level.FINE, "JMS send method was successful. Send time " + String.valueOf(System.currentTimeMillis() - startTime) + " milliseconds");
         }
 
         @Override
         public void onException(Message message, Exception exception) {
             latch.countDown();
             this.exception=exception;
+            logger.log(Level.SEVERE, "JMS send method failed: " + exception.getMessage(), ExceptionUtils.getDebugException(exception) + ". Send time " + String.valueOf(System.currentTimeMillis() - startTime) + " milliseconds");
         }
 
         public Exception getException(){
