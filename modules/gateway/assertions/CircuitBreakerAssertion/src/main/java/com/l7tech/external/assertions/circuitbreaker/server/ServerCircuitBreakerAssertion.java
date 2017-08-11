@@ -5,22 +5,21 @@ import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.composite.ServerCompositeAssertion;
 import com.l7tech.util.TimeSource;
 import org.springframework.context.ApplicationContext;
 
+import javax.inject.Inject;
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import static com.l7tech.external.assertions.circuitbreaker.CircuitBreakerAssertion.*;
 
 /**
  * Server side implementation of the CircuitBreakerAssertion.
@@ -29,20 +28,19 @@ import static com.l7tech.external.assertions.circuitbreaker.CircuitBreakerAssert
  */
 public class ServerCircuitBreakerAssertion extends ServerCompositeAssertion<CircuitBreakerAssertion> {
 
-    private static TimeSource timeSource = new TimeSource();
-
     private static final Logger logger = Logger.getLogger(ServerCircuitBreakerAssertion.class.getName());
-    public static final String POLICY_FAILURE_CONDITION_NAME = "Policy Failure";
-    public static final String LATENCY_FAILURE_CONDITION_NAME = "Latency Failure";
-
-    private Counter counter = new Counter();
-    private Counter latencyCounter = new Counter();
-    private final AtomicBoolean circuitOpen = new AtomicBoolean(false);
-    private final AtomicLong circuitCloseTime = new AtomicLong(0);
-    private final AtomicBoolean latencyCircuitOpen = new AtomicBoolean(false);
-    private final AtomicLong latencyCircuitCloseTime = new AtomicLong(0);
+    private final String policyFailureTrackerId;
+    private final String latencyFailureTrackerId;
 
     private final String[] variablesUsed;
+
+    private CircuitStateManager circuitStateManager = CircuitStateManagerHolder.getCircuitStateManager();
+    private EventTrackerManager eventTrackerManager = EventTrackerManagerHolder.getEventTrackerManager();
+
+    @Inject
+    private TimeSource timeSource;
+
+    private static SecureRandom secureRandom = JceProvider.getInstance().getSecureRandom();
 
     private final AssertionResultListener assertionResultListener = (context, result) -> {
         if (result != AssertionStatus.NONE) {
@@ -53,92 +51,121 @@ public class ServerCircuitBreakerAssertion extends ServerCompositeAssertion<Circ
         return true;
     };
 
-    public ServerCircuitBreakerAssertion(final CircuitBreakerAssertion assertion, ApplicationContext applicationContext) throws PolicyAssertionException, LicenseException {
+    public ServerCircuitBreakerAssertion(final CircuitBreakerAssertion assertion, ApplicationContext applicationContext) throws PolicyAssertionException, LicenseException, NoSuchAlgorithmException {
         super(assertion, applicationContext);
-
         this.variablesUsed = assertion.getVariablesUsed();
+        if(null != assertion.getPolicyFailureTrackerId()) {
+            policyFailureTrackerId = assertion.getPolicyFailureTrackerId();
+        } else {
+            policyFailureTrackerId = "policy_" + String.valueOf(Math.abs(secureRandom.nextLong()));
+        }
+
+        if(null != assertion.getLatencyFailureTrackerId()) {
+            latencyFailureTrackerId = assertion.getLatencyFailureTrackerId();
+        } else {
+            latencyFailureTrackerId = "latency_" + String.valueOf(Math.abs(secureRandom.nextLong()));
+        }
     }
 
     public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        long circuitEntryTimestamp = timeSource.nanoTime();
+        // check if the circuit is open and if so, has the recovery period been exceeded yet
+        CircuitConfig policyFailureCircuit = getFailureCircuitConfig();
+        CircuitConfig latencyFailureCircuit = getLatencyCircuitConfig();
 
-        // check if the either policy failure or latency failure circuit is open and if so, has the recovery period been exceeded yet
-        if (!isCircuitClosed(circuitOpen, circuitCloseTime, circuitEntryTimestamp, POLICY_FAILURE_CONDITION_NAME) ||
-                !isCircuitClosed(latencyCircuitOpen, latencyCircuitCloseTime, circuitEntryTimestamp, LATENCY_FAILURE_CONDITION_NAME)) {
+        if (!isCircuitClosed(policyFailureCircuit) ||  !isCircuitClosed(latencyFailureCircuit)) {
             return AssertionStatus.FALSIFIED;
         }
 
         long executionStartTimestamp = timeSource.nanoTime();
         // run child policy
         final AssertionStatus status = iterateChildren(context, assertionResultListener);
-
         long executionEndTimestamp = timeSource.nanoTime();
+        long currentExecutionLatency = executionEndTimestamp - executionStartTimestamp;
 
-        handlePolicyExecutionResult(executionEndTimestamp, status);
-        handlePolicyExecutionLatency(executionStartTimestamp, executionEndTimestamp);
+        //handle policy failures and latency failures
+        if (null != policyFailureCircuit  && AssertionStatus.NONE != status) {
+            updateEventTracker(policyFailureCircuit, executionEndTimestamp);
+        }
+        if (null != latencyFailureCircuit && currentExecutionLatency > TimeUnit.MILLISECONDS.toNanos(((LatencyFailure)latencyFailureCircuit.getFailureCondition()).getLimit())) {
+            updateEventTracker(latencyFailureCircuit, executionEndTimestamp);
+        }
 
-        return status;
+       return status;
     }
 
-    private boolean isCircuitClosed(AtomicBoolean circuitOpen, AtomicLong circuitCloseTime, long executionTimestamp, String name) {
-        if (circuitOpen.get()) {
-            if (circuitCloseTime.get() > executionTimestamp) {
-                Date circuitCloseDate = new Date(TimeUnit.NANOSECONDS.toMillis(circuitCloseTime.get()));
-                final String timeString = new SimpleDateFormat("HH:mm:ss:SSS zzz").format(circuitCloseDate);
-                logger.log(Level.INFO, name + " Circuit open until " + timeString);
-                return false;
-            } else {
-                circuitOpen.set(false);
+   private void updateEventTracker(final CircuitConfig circuitConfig, final long timeStamp) {
+        EventTracker eventTracker = getEventTracker(circuitConfig.getTrackerId());
+        eventTracker.recordEvent(timeStamp);
 
-                logAndAudit(AssertionMessages.CB_CIRCUIT_CLOSED, name);
-            }
+        long sinceTimeStamp = timeStamp - TimeUnit.MILLISECONDS.toNanos(
+                circuitConfig.getFailureCondition().getSamplingWindow());
+        long count = eventTracker.getCountSinceTimestamp(sinceTimeStamp);
+        logger.log(Level.FINE, String.format("Event count is %s. Max count is #%s ", count,
+                circuitConfig.getFailureCondition().getMaxFailureCount()));
+
+        // open circuit if failure count is more than threshold
+        if (count >= circuitConfig.getFailureCondition().getMaxFailureCount()) {
+            openCircuit(circuitConfig);
+        }
+    }
+
+    private void openCircuit(final CircuitConfig circuitConfig) {
+        long circuitOpenUntil = timeSource.currentTimeMillis() + circuitConfig.getRecoveryPeriod();
+        circuitStateManager.addState(circuitConfig, circuitOpenUntil);
+        auditCircuitTripped(circuitConfig);
+    }
+
+    private CircuitConfig getFailureCircuitConfig() {
+        if (assertion.isPolicyFailureEnabled()) {
+            return new CircuitConfig(policyFailureTrackerId,
+                    assertion.getPolicyFailureRecoveryPeriod(),
+                    new PolicyFailure(assertion.getPolicyFailureSamplingWindow(), assertion.getPolicyFailureMaxCount()));
+
+        }
+        return null;
+    }
+
+    private CircuitConfig getLatencyCircuitConfig() {
+        if (assertion.isLatencyFailureEnabled()){
+            return new CircuitConfig(latencyFailureTrackerId,
+                    assertion.getLatencyRecoveryPeriod(),
+                    new LatencyFailure(assertion.getLatencyFailureSamplingWindow(),
+                            assertion.getLatencyFailureMaxCount(), assertion.getLatencyFailureLimit()));
+        }
+        return null;
+    }
+
+    private boolean isCircuitClosed(final CircuitConfig circuitConfig) {
+        if (null == circuitConfig) {
+            return true;
+        }
+
+        long now = timeSource.currentTimeMillis();
+        Long circuitCloseTimestamp = circuitStateManager.getState(circuitConfig);
+        if (circuitCloseTimestamp != null && circuitCloseTimestamp > now) {
+            logCircuitOpenStatus(circuitConfig, circuitCloseTimestamp);
+            return false;
         }
         return true;
     }
 
-    private void handlePolicyExecutionResult(final long executionTimestamp, final AssertionStatus status) {
-        // check if failure needs to be recorded
-        if (AssertionStatus.NONE != status) {
-            updateCounter(POLICY_FAILURE_CONDITION_NAME, executionTimestamp, FAILURE_THRESHOLD, RECOVERY_PERIOD, counter, circuitOpen, circuitCloseTime);
+    private void logCircuitOpenStatus(final CircuitConfig circuitConfig, final long circuitCloseTimestamp) {
+        Date circuitCloseDate = new Date(circuitCloseTimestamp);
+        final String timeString = new SimpleDateFormat("HH:mm:ss:SSS zzz").format(circuitCloseDate);
+        logger.log(Level.WARNING, "Circuit open until " + timeString + " for trackerID=" + circuitConfig.getTrackerId());
+    }
+
+    private EventTracker getEventTracker(final String trackerId) {
+        EventTracker eventTracker = eventTrackerManager.getEventTracker(trackerId);
+        if (null == eventTracker) {
+            eventTracker = eventTrackerManager.createEventTracker(trackerId);
         }
+        return eventTracker;
     }
 
-    private void handlePolicyExecutionLatency(final long executionStartTimestamp, long executionEndTimestamp) {
-        // check if failure / latency needs to be recorded
-        long currentExecutionLatency = executionEndTimestamp - executionStartTimestamp;
-
-        if(currentExecutionLatency > TimeUnit.MILLISECONDS.toNanos(LATENCY_TIME_THRESHOLD)) {
-            updateCounter(LATENCY_FAILURE_CONDITION_NAME, executionEndTimestamp, LATENCY_THRESHOLD, LATENCY_RECOVERY_PERIOD, latencyCounter, latencyCircuitOpen, latencyCircuitCloseTime);
-        }
-    }
-
-    private synchronized void updateCounter(final String policyType, final long executionEndTimestamp, final long threshold, final long recoveryPeriod, final Counter counter, final AtomicBoolean circuitOpen, final AtomicLong circuitCloseTime) {
-        counter.recordFailure(executionEndTimestamp);
-
-        // open circuit if policy / latency failure threshold has been exceeded
-        if (counter.getCountSinceTimestamp(0L) >= threshold) {
-            circuitOpen.set(true);
-            circuitCloseTime.set(timeSource.nanoTime() + TimeUnit.MILLISECONDS.toNanos(recoveryPeriod));
-            counter.reset();
-
-            auditCircuitTripped(policyType, circuitCloseTime);
-        }
-    }
-
-    private void auditCircuitTripped(String failureType, final AtomicLong circuitCloseTime) {
-        final Calendar cal = Calendar.getInstance();
-        cal.setTimeInMillis(TimeUnit.NANOSECONDS.toMillis(circuitCloseTime.get()));
-        final String timeString = new SimpleDateFormat("HH:mm:ss:SSS").format(cal.getTime());
-
-        logAndAudit(AssertionMessages.CB_CIRCUIT_TRIPPED, failureType, timeString);
-    }
-
-    /**
-     *
-     * This method is used for setting TestTimeSource during unit testing.
-     *
-     * */
-    static void setTimeSource(TimeSource timeSource) {
-        ServerCircuitBreakerAssertion.timeSource = timeSource;
+    private void auditCircuitTripped(final CircuitConfig circuitConfig) {
+        Date circuitCloseDate = new Date(circuitStateManager.getState(circuitConfig));
+        final String timeString = new SimpleDateFormat("HH:mm:ss:SSS zzz").format(circuitCloseDate);
+        logAndAudit(AssertionMessages.CB_CIRCUIT_TRIPPED, circuitConfig.getFailureCondition().getType(), timeString);
     }
 }
