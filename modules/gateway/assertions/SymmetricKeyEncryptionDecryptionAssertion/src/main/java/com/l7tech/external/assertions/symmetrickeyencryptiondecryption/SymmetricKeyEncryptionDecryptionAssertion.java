@@ -16,6 +16,7 @@ public class SymmetricKeyEncryptionDecryptionAssertion extends Assertion impleme
     protected static final Logger logger = Logger.getLogger(SymmetricKeyEncryptionDecryptionAssertion.class.getName());
 
     private static final boolean IS_ENCRYPT_VALUE = true;
+    private static final boolean DEFAULT_IS_PGP_PUB_KEY_ENCRYPT = false;
 
     public static final String DEFAULT_VARIABLE_NAME = "symmetricEncrypDecrypOutput";
     public static final String DEFAULT_TRANS_SEPERATOR = "/";
@@ -33,6 +34,7 @@ public class SymmetricKeyEncryptionDecryptionAssertion extends Assertion impleme
     private String key;
     private String iv;
     private String pgpPassPhrase;
+    private boolean isPgpKeyEncryption = DEFAULT_IS_PGP_PUB_KEY_ENCRYPT;
     private String outputVariableName = DEFAULT_VARIABLE_NAME;
 
     // AES Transformation
@@ -48,6 +50,16 @@ public class SymmetricKeyEncryptionDecryptionAssertion extends Assertion impleme
 
     // PGP Transformation
     public static final String TRANS_PGP = "PGP";
+
+    //PGP Encryption types
+    public static final String PGP_PASS_ENCRYPT = "Passphrase";
+    public static final String PGP_PUBLIC_KEY_ENCRYPT = "Public Key";
+
+    public boolean getIsPgpKeyEncryption() {return isPgpKeyEncryption ; }
+
+    public void setIsPgpKeyEncryption(final boolean isPgpKeyEncryption){
+        this.isPgpKeyEncryption = isPgpKeyEncryption;
+     }
 
     public Boolean getIsEncrypt() {
         return isEncrypt;
