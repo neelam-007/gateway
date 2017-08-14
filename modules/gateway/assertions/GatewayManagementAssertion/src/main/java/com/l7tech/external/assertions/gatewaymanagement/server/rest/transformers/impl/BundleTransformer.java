@@ -47,8 +47,8 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
     //Theses are the different properties that can be in a Mapping
     private static final String FailOnNew = "FailOnNew";
     private static final String FailOnExisting = "FailOnExisting";
-    private static final String MapBy = "MapBy";
     private static final String MapTo = "MapTo";
+    static final String MapBy = "MapBy";
     @Inject
     private APIUtilityLocator apiUtilityLocator;
     @Inject
@@ -384,6 +384,8 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
             targetMapping = new EntityMappingInstructions.TargetMapping(EntityMappingInstructions.TargetMapping.Type.NAME, (String) mapping.getProperties().get(MapTo));
         } else if (mapping.getProperties() != null && "guid".equals(mapping.getProperties().get(MapBy))) {
             targetMapping = new EntityMappingInstructions.TargetMapping(EntityMappingInstructions.TargetMapping.Type.GUID, (String) mapping.getProperties().get(MapTo));
+        } else if (mapping.getProperties() != null && "routingUri".equals(mapping.getProperties().get(MapBy))) {
+            targetMapping = new EntityMappingInstructions.TargetMapping(EntityMappingInstructions.TargetMapping.Type.ROUTING_URI, (String) mapping.getProperties().get(MapTo));
         } else if (mapping.getProperties() != null && "mapByRoleEntity".equals(mapping.getProperties().get(MapBy))) {
             targetMapping = new EntityMappingInstructions.TargetMapping(EntityMappingInstructions.TargetMapping.Type.MAP_BY_ROLE_ENTITY, mapping.getTargetId());
         } else if (mapping.getProperties() != null && "moduleSha256".equals(mapping.getProperties().get(MapBy))) {

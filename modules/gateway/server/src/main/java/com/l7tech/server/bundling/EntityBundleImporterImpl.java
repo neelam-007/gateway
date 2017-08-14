@@ -15,6 +15,7 @@ import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.PublishedServiceAlias;
 import com.l7tech.gateway.common.service.ServiceDocument;
+import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gateway.common.task.ScheduledTask;
 import com.l7tech.gateway.common.transport.InterfaceTag;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
@@ -836,6 +837,13 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                         throw new IncorrectMappingInstructionsException(mapping, "Attempting to map an entity by guid that cannot be mapped by guid.");
                     }
                     break;
+                case ROUTING_URI:
+                    if (entityContainer.getEntity() instanceof PublishedService) {
+                        ((PublishedService) entityContainer.getEntity()).setRoutingUri(mapping.getTargetMapping().getTargetID());
+                    } else {
+                        throw new IncorrectMappingInstructionsException(mapping, "Attempting to map an entity by routing uri that cannot be mapped by routing uri.");
+                    }
+                    break;
             }
         }
 
@@ -1578,6 +1586,18 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                     }
                                     break;
                                 }
+                                case ROUTING_URI: {
+                                    //Find the entity by its routing uri
+                                    final Collection<PublishedService> list = serviceManager.findByRoutingUri(mappingTarget);
+                                    if (list.isEmpty()) {
+                                        resource = null;
+                                    } else if (list.size() > 1) {
+                                        return Either.<BundleImportException, Option<Entity>>left(new IncorrectMappingInstructionsException(mapping, "Found multiple possible target entities found with routing URI: " + mappingTarget));
+                                    } else {
+                                        resource = list.iterator().next();
+                                    }
+                                    break;
+                                }
                                 case MAP_BY_ROLE_ENTITY: {
                                     return Either.<BundleImportException, Option<Entity>>left(new IncorrectMappingInstructionsException(mapping, "Specified mapping by role entity but the source entity is not appropriate. The source entity should be a role that is not user created and specifies both entity id and entity type" ));
                                 }
@@ -1646,7 +1666,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
     }
 
     /**
-     * Gets the mapping target is from the mapping instructions. This is either an id, name or guid
+     * Gets the mapping target is from the mapping instructions. This could be id, name, guid, routing uri, role entity, or module sha265.
      *
      * @param mapping The mapping instructions to find the target mapping id from.
      * @return The target mapping id
@@ -1672,6 +1692,9 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
             } else if (EntityMappingInstructions.TargetMapping.Type.GUID.equals(type) && mapping.getSourceEntityHeader() instanceof GuidEntityHeader && ((GuidEntityHeader) mapping.getSourceEntityHeader()).getGuid() != null) {
                 // mapping by guid so get the target guid from the source.
                 targetMapTo = ((GuidEntityHeader) mapping.getSourceEntityHeader()).getGuid();
+            } else if (EntityMappingInstructions.TargetMapping.Type.ROUTING_URI.equals(type) && mapping.getSourceEntityHeader() instanceof ServiceHeader && ((ServiceHeader) mapping.getSourceEntityHeader()).getRoutingUri() != null) {
+                // mapping by routing uri so get the target routing uri from the source.
+                targetMapTo = ((ServiceHeader) mapping.getSourceEntityHeader()).getRoutingUri();
             } else if (EntityMappingInstructions.TargetMapping.Type.MAP_BY_ROLE_ENTITY.equals(type)) {
                 // set the target mapping to the id of the role, this should be the default.
                 targetMapTo = mapping.getSourceEntityHeader().getStrId();
