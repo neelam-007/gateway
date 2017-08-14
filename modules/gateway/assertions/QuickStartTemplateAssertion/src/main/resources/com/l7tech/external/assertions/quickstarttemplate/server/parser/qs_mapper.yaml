@@ -210,41 +210,6 @@ HttpBasic:
       "required": [ "HttpBasic" ]
     }
 
-HttpRouting:
-  externalName: HttpRouting
-  className: com.l7tech.policy.assertion.HttpRoutingAssertion
-  properties:
-    ProtectedServiceUrl: ProtectedServiceUrl
-    HttpMethod: HttpMethodAsString
-  samplePayload: |
-    {
-      "HttpRouting": {
-        "ProtectedServiceUrl": "http://myservice.com",
-        "HttpMethod": "DELETE"
-      }
-    }
-  jsonSchema: |
-    {
-      "$schema": "http://json-schema.org/draft-04/schema#",
-      "type": "object",
-      "properties": {
-        "HttpRouting": {
-          "type": "object",
-          "properties": {
-            "ProtectedServiceUrl": {
-              "type": "string"
-            },
-            "HttpMethod": {
-              "type": "string",
-              "enum": [ "GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS", "OTHER" ]
-            }
-          },
-          "required": [ "ProtectedServiceUrl", "HttpMethod" ]
-        }
-      },
-      "required": [ "HttpRouting" ]
-    }
-
 RateLimit:
   externalName: RateLimit
   className: com.l7tech.external.assertions.ratelimit.RateLimitAssertion
@@ -351,33 +316,4 @@ Ssl:
         }
       },
       "required": [ "Ssl" ]
-    }
-
-ThroughputQuota:
-  externalName: ThroughputQuota
-  className: com.l7tech.policy.assertion.sla.ThroughputQuota
-  properties:
-    CounterName: CounterName
-  samplePayload: |
-    {
-      "ThroughputQuota": {
-        "CounterName": "ThroughputQuota-${request.clientId}-b0938b7ad6fe"
-      }
-    }
-  jsonSchema: |
-    {
-      "$schema": "http://json-schema.org/draft-04/schema#",
-      "type": "object",
-      "properties": {
-        "ThroughputQuota": {
-          "type": "object",
-          "properties": {
-            "CounterName": {
-              "type": "string"
-            }
-          },
-          "required": [ "CounterName" ]
-        }
-      },
-      "required": [ "ThroughputQuota" ]
     }
