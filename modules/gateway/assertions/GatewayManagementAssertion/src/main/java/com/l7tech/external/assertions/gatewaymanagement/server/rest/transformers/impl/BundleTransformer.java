@@ -386,6 +386,8 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
             targetMapping = new EntityMappingInstructions.TargetMapping(EntityMappingInstructions.TargetMapping.Type.GUID, (String) mapping.getProperties().get(MapTo));
         } else if (mapping.getProperties() != null && "routingUri".equals(mapping.getProperties().get(MapBy))) {
             targetMapping = new EntityMappingInstructions.TargetMapping(EntityMappingInstructions.TargetMapping.Type.ROUTING_URI, (String) mapping.getProperties().get(MapTo));
+        } else if (mapping.getProperties() != null && "path".equals(mapping.getProperties().get(MapBy))) {
+            targetMapping = new EntityMappingInstructions.TargetMapping(EntityMappingInstructions.TargetMapping.Type.PATH, (String) mapping.getProperties().get(MapTo));
         } else if (mapping.getProperties() != null && "mapByRoleEntity".equals(mapping.getProperties().get(MapBy))) {
             targetMapping = new EntityMappingInstructions.TargetMapping(EntityMappingInstructions.TargetMapping.Type.MAP_BY_ROLE_ENTITY, mapping.getTargetId());
         } else if (mapping.getProperties() != null && "moduleSha256".equals(mapping.getProperties().get(MapBy))) {

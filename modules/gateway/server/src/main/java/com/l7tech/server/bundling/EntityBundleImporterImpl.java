@@ -27,6 +27,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.HasFolder;
+import com.l7tech.objectmodel.folder.HasFolderId;
 import com.l7tech.objectmodel.polback.PolicyBackedService;
 import com.l7tech.objectmodel.polback.PolicyBackedServiceOperation;
 import com.l7tech.policy.GenericEntity;
@@ -40,6 +41,7 @@ import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.server.audit.AuditsCollector;
 import com.l7tech.server.bundling.exceptions.*;
 import com.l7tech.server.cluster.ClusterPropertyManager;
+import com.l7tech.server.folder.FolderManager;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.module.ServerModuleFileManager;
 import com.l7tech.server.policy.PolicyAliasManager;
@@ -106,6 +108,8 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
     private PolicyManager policyManager;
     @Inject
     private ServiceManager serviceManager;
+    @Inject
+    private FolderManager folderManager;
     @Inject
     private RoleManager roleManager;
     @Inject
@@ -840,6 +844,27 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                 case ROUTING_URI:
                     if (entityContainer.getEntity() instanceof PublishedService) {
                         ((PublishedService) entityContainer.getEntity()).setRoutingUri(mapping.getTargetMapping().getTargetID());
+                    } else {
+                        throw new IncorrectMappingInstructionsException(mapping, "Attempting to map an entity by routing uri that cannot be mapped by routing uri.");
+                    }
+                    break;
+                case PATH:
+                    final Entity entity = entityContainer.getEntity();
+                    if (entity instanceof HasFolder) {
+                        final String path = mapping.getTargetMapping().getTargetID();
+
+                        final Pair<String, String> pair = parseEntityPathIntoFolderPathAndEntityName(path);
+                        final String folderPath = pair.left;
+                        final String entityName = pair.right;
+                        final Folder folder = folderManager.findByPath(folderPath);
+
+                        // Preserve the parent folder for this entity
+                        ((HasFolder) entity).setFolder(folder);
+
+                        // Preserve the name for this entity
+                        if (entity instanceof NameableEntity) {
+                            ((NameableEntity) entity).setName(entityName);
+                        }
                     } else {
                         throw new IncorrectMappingInstructionsException(mapping, "Attempting to map an entity by routing uri that cannot be mapped by routing uri.");
                     }
@@ -1598,6 +1623,29 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                     }
                                     break;
                                 }
+                                case PATH: {
+                                    //Find the entity by its path
+                                    final Pair<String, String> pair = parseEntityPathIntoFolderPathAndEntityName(mappingTarget);
+                                    final String folderPath = pair.left;
+                                    final String entityName = pair.right;
+                                    final Folder folder = folderManager.findByPath(folderPath);
+                                    final List<? extends Entity> childrenUnderThisFolder = entityCrud.findAll(mapping.getSourceEntityHeader().getType().getEntityClass(), CollectionUtils.MapBuilder.<String, List<Object>>builder().put("folder", Arrays.<Object>asList(folder)).map(), 0, -1, null, null);
+                                    final List<Entity> list = new ArrayList<>();
+
+                                    for (Entity entity: childrenUnderThisFolder) {
+                                        if (entity instanceof NamedEntity && ((NamedEntity) entity).getName().equals(entityName)) {
+                                            list.add(entity);
+                                        }
+                                    }
+                                    if (list.isEmpty()) {
+                                        resource = null;
+                                    } else if (list.size() > 1) {
+                                        return Either.<BundleImportException, Option<Entity>>left(new IncorrectMappingInstructionsException(mapping, "Found multiple possible target entities found by path: " + mappingTarget));
+                                    } else {
+                                        resource = list.iterator().next();
+                                    }
+                                    break;
+                                }
                                 case MAP_BY_ROLE_ENTITY: {
                                     return Either.<BundleImportException, Option<Entity>>left(new IncorrectMappingInstructionsException(mapping, "Specified mapping by role entity but the source entity is not appropriate. The source entity should be a role that is not user created and specifies both entity id and entity type" ));
                                 }
@@ -1620,6 +1668,23 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                 }
             }
         })).toNull();
+    }
+
+    /**
+     * Parse a path and get a folder path and an entity name
+     *
+     * @param path: an entity path
+     * @return a pair of folder path and entity name.
+     */
+    private Pair<String, String> parseEntityPathIntoFolderPathAndEntityName(@Nullable final String path) {
+        if (path == null || StringUtils.isBlank(path)) return null;
+
+        if (! path.contains("/")) return new Pair<>(null, path);
+
+        if (path.endsWith("/")) return new Pair<>(path.replace("/", ""), null);
+
+        final int idxOfLastSlash = path.lastIndexOf('/');
+        return new Pair<>(path.substring(0, idxOfLastSlash == 0? 1 : idxOfLastSlash), path.substring(idxOfLastSlash + 1));
     }
 
     /**
@@ -1695,6 +1760,14 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
             } else if (EntityMappingInstructions.TargetMapping.Type.ROUTING_URI.equals(type) && mapping.getSourceEntityHeader() instanceof ServiceHeader && ((ServiceHeader) mapping.getSourceEntityHeader()).getRoutingUri() != null) {
                 // mapping by routing uri so get the target routing uri from the source.
                 targetMapTo = ((ServiceHeader) mapping.getSourceEntityHeader()).getRoutingUri();
+            } else if (EntityMappingInstructions.TargetMapping.Type.PATH.equals(type) && mapping.getSourceEntityHeader() instanceof HasFolderId && ((HasFolderId) mapping.getSourceEntityHeader()).getFolderId() != null) {
+                // mapping by path so get the target path from the source.
+                try {
+                    targetMapTo = folderManager.findByPrimaryKey(((HasFolderId) mapping.getSourceEntityHeader()).getFolderId()).getPath() + "/" + mapping.getSourceEntityHeader().getName();
+                } catch (FindException e) {
+                    //cannot find a folder.
+                    throw new IncorrectMappingInstructionsException(mapping, "Mapping by " + type + " but could not find a folder (id=" + ((HasFolderId) mapping.getSourceEntityHeader()).getFolderId().toString() + ") to map to");
+                }
             } else if (EntityMappingInstructions.TargetMapping.Type.MAP_BY_ROLE_ENTITY.equals(type)) {
                 // set the target mapping to the id of the role, this should be the default.
                 targetMapTo = mapping.getSourceEntityHeader().getStrId();

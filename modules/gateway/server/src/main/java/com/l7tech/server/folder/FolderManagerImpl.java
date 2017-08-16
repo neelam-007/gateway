@@ -9,8 +9,8 @@ import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.server.FolderSupportHibernateEntityManager;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.util.Config;
-import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.TextUtils;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -169,6 +169,47 @@ public class FolderManagerImpl extends FolderSupportHibernateEntityManager<Folde
             }
         }
         throw new FindException("No root folder!!");
+    }
+
+    /**
+     * Find a folder by an absolute folder path.
+     * e.g., given "/folderA/folderB", try to find the folder with name as "folderB" under the folderA.
+     * This method is top-to-bottom manner to find the last folder on the folder path, to assure the result is unique.
+     *
+     * @param absFolderPath: a string represents an absolute folder path
+     * @return a Folder object found
+     *
+     * @throws FindException: thrown if no folder can be found by the given folder path
+     */
+    @Override
+    public Folder findByPath(final String absFolderPath) throws FindException {
+        if (StringUtils.isBlank(absFolderPath) || !absFolderPath.startsWith("/")) return null;
+
+        Folder currentFolder = findRootFolder();
+        String currentPath = "/";
+
+        final String[] folderNames = absFolderPath.split("/");
+        for (String folderName: folderNames) {
+            if (folderName.equals("")) continue;
+
+            boolean found = false;
+            final Collection<Folder> subFolders = findByFolder(currentFolder.getGoid());
+            for (final Folder folder: subFolders) {
+                if (folder.getName().equals(folderName)) {
+                    found = true;
+                    currentFolder = folder; // for next loop, to find its sub-folders
+                    break;
+                }
+            }
+            // Update the currentPath, just in case any error occurring and then for reporting purpose.
+            currentPath += "/" + folderName;
+
+            if (!found) {
+                throw new FindException("There is no such folder path: " + currentPath);
+            }
+        }
+
+        return currentFolder;
     }
 
     @Override

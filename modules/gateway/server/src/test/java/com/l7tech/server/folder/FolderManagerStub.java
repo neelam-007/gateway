@@ -31,6 +31,11 @@ public class FolderManagerStub extends EntityManagerStub<Folder, FolderHeader> i
     }
 
     @Override
+    public Folder findByPath(String folderPath) {
+        return null;
+    }
+
+    @Override
     public void addManageFolderRole(Folder folder) throws SaveException {
     }
 
