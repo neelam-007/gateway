@@ -6,6 +6,7 @@ import com.l7tech.external.assertions.quickstarttemplate.server.parser.QuickStar
 import com.l7tech.external.assertions.quickstarttemplate.server.policy.*;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.server.GatewayState;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.event.system.ReadyForMessages;
@@ -116,13 +117,13 @@ public class QuickStartAssertionModuleLifecycle {
             assert gatewayState != null;
             if (gatewayState.isReadyForMessages()) {
                 // our module is dynamically loaded after the gateway startup
-                installJsonServices();
+                installJsonServices(context.getBean("assertionRegistry", AssertionRegistry.class));
             } else {
                 // wait for the gateway to become ready for messages (our module is loaded with gateway startup)
                 final ApplicationEventProxy applicationEventProxy = context.getBean("applicationEventProxy", ApplicationEventProxy.class);
                 final ApplicationListener applicationListener = event -> {
                     if (event instanceof ReadyForMessages) {
-                        installJsonServices();
+                        installJsonServices(context.getBean("assertionRegistry", AssertionRegistry.class));
                     }
                 };
                 applicationEventProxy.addApplicationListener(applicationListener);
@@ -136,8 +137,12 @@ public class QuickStartAssertionModuleLifecycle {
      * Utility method that actually invokes {@link QuickStartJsonServiceInstaller#installJsonServices()} and
      * loges any exception thrown (though there shouldn't be any at this point).
      */
-    private void installJsonServices() {
+    private void installJsonServices(@NotNull AssertionRegistry assertionRegistry) {
         try {
+            // QuickStartAssertionModuleLifecycle.onModuleLoaded# is sometimes too early.  For Docker Gateway, assertionRegistry is null.
+            //      - java.lang.NullPointerException at com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStartAssertionLocator.findAssertion
+            serviceBuilder.setAssertionRegistry(assertionRegistry);
+
             jsonServiceInstaller.installJsonServices();
         } catch (final Throwable e) {
             logger.log(Level.SEVERE, ExceptionUtils.getDebugException(e), () -> "Unhandled exception while installing JSON services: " + ExceptionUtils.getMessage(e));
