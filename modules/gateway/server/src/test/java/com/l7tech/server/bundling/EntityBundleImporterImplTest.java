@@ -21,6 +21,7 @@ import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.EntityCrud;
 import com.l7tech.server.audit.AuditContextFactory;
 import com.l7tech.server.cluster.ClusterPropertyManager;
+import com.l7tech.server.folder.FolderManager;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.identity.internal.TestPasswordHasher;
 import com.l7tech.server.module.ServerModuleFileManager;
@@ -82,6 +83,8 @@ public class EntityBundleImporterImplTest {
     @Mock
     private PolicyVersionManager policyVersionManager;
     @Mock
+    private FolderManager folderManager;
+    @Mock
     private AuditContextFactory auditContextFactory;
     @Mock
     private SsgKeyStoreManager keyStoreManager;
@@ -139,6 +142,7 @@ public class EntityBundleImporterImplTest {
                 .put("passwordEnforcerManager", passwordEnforcerManager)
                 .put("identityProvider", identityProvider)
                 .put("userManager", userManager)
+                .put("folderManager", folderManager)
                 .map(), false);
         when(transactionManager.getTransaction(any(TransactionDefinition.class))).thenReturn(new DefaultTransactionStatus(null, false, false, false, false, null));
     }
@@ -262,6 +266,76 @@ public class EntityBundleImporterImplTest {
         assertTrue("Tne service mapping result action is CreatedNew.", serviceMappingResult.getMappingAction() == EntityMappingResult.MappingAction.CreatedNew);
     }
 
+    @Test
+    public void testMapByPathWithTargetIDSuccess() throws FindException, SaveException, UpdateException {
+        final Folder rootFolder = createRootFolder();
+        final Folder folder1 = createFolder("folder1", rootFolder);
+        final Policy policy = createTestingPolicy();
+        final PublishedService service = createTestingPublishedService(policy, folder1);
+        final List<EntityContainer> entities = new ArrayList<>();
+        entities.add(new EntityContainer((service)));
+        entities.add(new EntityContainer(folder1));
+        entities.add(new EntityContainer(rootFolder));
+        // Two mapping instructions for root folder and published service, respectively.
+        final List<EntityMappingInstructions> mappingInstructions = new ArrayList<>();
+        final EntityMappingInstructions rootFolderMappingInstructions = new EntityMappingInstructions(
+                createFolderEntityHeader(rootFolder), null, EntityMappingInstructions.MappingAction.NewOrExisting, true, false
+        );
+
+        final EntityMappingInstructions folder1MappingInstructions = new EntityMappingInstructions(
+                createFolderEntityHeader(folder1), null, EntityMappingInstructions.MappingAction.NewOrUpdate, false, false
+        );
+
+        final EntityMappingInstructions.TargetMapping serviceTargetMapping = new EntityMappingInstructions.TargetMapping(EntityMappingInstructions.TargetMapping.Type.PATH, "/folder1/random_service_name");
+        final EntityMappingInstructions serviceMappingInstructions = new EntityMappingInstructions(
+                createServiceEntityHeader(service), serviceTargetMapping, EntityMappingInstructions.MappingAction.NewOrUpdate, false, false
+        );
+
+        mappingInstructions.add(rootFolderMappingInstructions);
+        mappingInstructions.add(folder1MappingInstructions);
+        mappingInstructions.add(serviceMappingInstructions);
+
+        final EntityBundle entityBundle = new EntityBundle(entities, mappingInstructions, Collections.<DependencySearchResults>emptyList());
+
+        when(entityCrud.find(Folder.class, Folder.ROOT_FOLDER_ID.toString())).thenReturn(rootFolder);
+        when(entityCrud.find(Folder.class, folder1.getGoid().toString())).thenReturn(folder1);
+        when(entityCrud.find(serviceMappingInstructions.getSourceEntityHeader())).thenReturn(service);
+        //TODO: need to unit test findByPath method
+        when(folderManager.findByPath("/folder1")).thenReturn(folder1);
+        when(policyVersionManager.findLatestRevisionForPolicy(policy.getGoid())).thenReturn(getPolicyVersion(policy));
+
+        // Get mapping results:
+        final List<EntityMappingResult> results = importer.importBundle(entityBundle, false, true, null);
+
+        // Check whether a lookup for path is performed
+        // once in locateExistingEntities
+        // twice in createOrUpdate
+        Mockito.verify(folderManager, Mockito.times(2)).findByPath("/folder1");
+
+        // Check whether the action of service manager creating or updating service is performed.
+        Mockito.verify(serviceManager, Mockito.times(1)).save(service.getGoid(), service); // Creating a new service is performed.
+        Mockito.verify(serviceManager, Mockito.times(0)).update(service);                  // No updating service is performed.
+
+        // Check whether the service mapping result is correct, in terms of:
+        // (1) There are three mapping results returned.
+        // (2) No exceptions is included in the service mapping result.
+        // (3) The service mapping action taken is CreateNew, not other types UpdatedExisting, etc.
+        assertTrue("Three mapping results are returned.", results.size() == 3);
+        final EntityMappingResult serviceMappingResult = results.get(2);  // The second mapping result is for service.
+        assertNull("The service mapping result has no exception.", results.get(2).getException());
+        assertTrue("Tne service mapping result action is CreatedNew.", serviceMappingResult.getMappingAction() == EntityMappingResult.MappingAction.CreatedNew);
+
+    }
+
+    private Folder createFolder(String folder1, Folder parent) {
+        final Folder folder = new Folder(folder1,parent);
+        final byte[] bytes = new byte[16];
+        new Random().nextBytes(bytes);
+        final Goid random_goid = new Goid(bytes);
+        folder.setGoid(random_goid);
+        return folder;
+    }
+
     private IdentityHeader createIndentityHeader(User user){
         return new IdentityHeader(user.getProviderId(), user.getId(), USER, user.getLogin(), null, user.getName(), null);
     }
@@ -288,6 +362,7 @@ public class EntityBundleImporterImplTest {
         return new EntityBundle(entities, mappingInstructions, Collections.<DependencySearchResults>emptyList());
     }
 
+    //TODO: modify to create test mappings
     private List<EntityMappingInstructions> createTestingMappingInstructions(@NotNull final Folder rootFolder, @NotNull final PublishedService publishedService) throws FindException {
         final EntityMappingInstructions rootFolderMappingInstructions = new EntityMappingInstructions(
             createFolderEntityHeader(rootFolder), null, EntityMappingInstructions.MappingAction.NewOrExisting, true, false
