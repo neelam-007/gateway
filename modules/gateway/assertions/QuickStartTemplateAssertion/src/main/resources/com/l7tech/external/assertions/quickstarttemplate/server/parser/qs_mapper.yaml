@@ -210,6 +210,45 @@ HttpBasic:
       "required": [ "HttpBasic" ]
     }
 
+RemoteIpRange:
+  externalName: RemoteIpRange
+  className: com.l7tech.policy.assertion.RemoteIpRange
+  properties:
+    AllowRange: AllowRange
+    NetworkMask: NetworkMask
+    StartIp: StartIp
+  samplePayload: |
+    {
+      "RemoteIpRange": {
+        "AllowRange" : false,
+        "NetworkMask" : "24",
+        "StartIp" : "192.168.1.0"
+     }
+    }
+  jsonSchema: |
+    {
+      "$schema": "http://json-schema.org/draft-04/schema#",
+      "type": "object",
+      "properties": {
+        "RemoteIpRange": {
+          "type": "object",
+          "properties": {
+            "AllowRange": {
+              "type": "boolean"
+            },
+            "NetworkMask": {
+              "type": "string"
+            },
+            "StartIp": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "required": [ "RemoteIpRange" ]
+    }
+
+
 RateLimit:
   externalName: RateLimit
   className: com.l7tech.external.assertions.ratelimit.RateLimitAssertion
