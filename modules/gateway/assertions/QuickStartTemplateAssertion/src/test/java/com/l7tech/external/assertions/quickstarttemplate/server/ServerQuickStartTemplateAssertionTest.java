@@ -9,6 +9,7 @@ import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStar
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.message.*;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.GatewayState;
@@ -65,6 +66,9 @@ public class ServerQuickStartTemplateAssertionTest extends QuickStartTestBase {
     private ClusterPropertyManager clusterPropertyManager;
 
     @Mock
+    private AssertionRegistry assertionRegistry;
+
+    @Mock
     private GatewayState gatewayState;
 
     private ServerQuickStartTemplateAssertion fixture;
@@ -82,6 +86,7 @@ public class ServerQuickStartTemplateAssertionTest extends QuickStartTestBase {
         reset(policyVersionManager);
         reset(clusterPropertyManager);
         reset(gatewayState);
+        reset(assertionRegistry);
 
         when(applicationContext.getBean("folderManager", FolderManager.class)).thenReturn(folderManager);
         when(applicationContext.getBean("encapsulatedAssertionConfigManager", EncapsulatedAssertionConfigManager.class)).thenReturn(encapsulatedAssertionConfigManager);
@@ -90,6 +95,7 @@ public class ServerQuickStartTemplateAssertionTest extends QuickStartTestBase {
         when(applicationContext.getBean("policyVersionManager", PolicyVersionManager.class)).thenReturn(policyVersionManager);
         when(applicationContext.getBean("clusterPropertyManager", ClusterPropertyManager.class)).thenReturn(clusterPropertyManager);
         when(applicationContext.getBean("gatewayState", GatewayState.class)).thenReturn(gatewayState);
+        when(applicationContext.getBean("assertionRegistry", AssertionRegistry.class)).thenReturn(assertionRegistry);
         when(gatewayState.isReadyForMessages()).thenReturn(true);
 
         QuickStartAssertionModuleLifecycle.reset();
