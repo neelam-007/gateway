@@ -238,7 +238,7 @@ public class EntityBundleImporterImplTest {
     public void testMapByRoutingUri() throws FindException, SaveException, UpdateException {
         final Folder rootFolder = createRootFolder();
         final Policy policy = createTestingPolicy();
-        final PublishedService service = createTestingPublishedService(policy, rootFolder);
+        final PublishedService service = createTestingPublishedService(policy, rootFolder, "random_service_name", "/random_routing_uri");
         final EntityBundle entityBundle = createTestingEntityBundle(rootFolder, service);
         final EntityMappingInstructions serviceMappingInstructions= entityBundle.getMappingInstructions().get(1); // The second instruction is for published service.
 
@@ -267,15 +267,22 @@ public class EntityBundleImporterImplTest {
     }
 
     @Test
-    public void testMapByPathWithTargetIDSuccess() throws FindException, SaveException, UpdateException {
+    public void testMapByPathSameNameSameRoutingUriWithTargetIDSuccess() throws FindException, SaveException, UpdateException {
+        //Two services with same name, routingUri, but different path
         final Folder rootFolder = createRootFolder();
         final Folder folder1 = createFolder("folder1", rootFolder);
+        final Folder folder2 = createFolder("folder2", rootFolder);
         final Policy policy = createTestingPolicy();
-        final PublishedService service = createTestingPublishedService(policy, folder1);
+        final PublishedService serviceToCreate = createTestingPublishedService(policy, folder1, "sameName", "/same_routing_uri");
+        final PublishedService serviceToIgnore = createTestingPublishedService(policy, folder2, "sameName", "/same_routing_uri");
+
         final List<EntityContainer> entities = new ArrayList<>();
-        entities.add(new EntityContainer((service)));
+        entities.add(new EntityContainer((serviceToCreate)));
+        entities.add(new EntityContainer((serviceToIgnore)));
         entities.add(new EntityContainer(folder1));
+        entities.add(new EntityContainer(folder2));
         entities.add(new EntityContainer(rootFolder));
+
         // Two mapping instructions for root folder and published service, respectively.
         final List<EntityMappingInstructions> mappingInstructions = new ArrayList<>();
         final EntityMappingInstructions rootFolderMappingInstructions = new EntityMappingInstructions(
@@ -283,24 +290,30 @@ public class EntityBundleImporterImplTest {
         );
 
         final EntityMappingInstructions folder1MappingInstructions = new EntityMappingInstructions(
-                createFolderEntityHeader(folder1), null, EntityMappingInstructions.MappingAction.NewOrUpdate, false, false
+                createFolderEntityHeader(folder1), null, EntityMappingInstructions.MappingAction.Ignore, false, false
+        );
+        final EntityMappingInstructions folder2MappingInstructions = new EntityMappingInstructions(
+                createFolderEntityHeader(folder2), null, EntityMappingInstructions.MappingAction.Ignore, false, false
+        );
+        final EntityMappingInstructions serviceToIgnoreMappingInstructions = new EntityMappingInstructions(
+                createServiceEntityHeader(serviceToIgnore), null, EntityMappingInstructions.MappingAction.Ignore, false, false
         );
 
-        final EntityMappingInstructions.TargetMapping serviceTargetMapping = new EntityMappingInstructions.TargetMapping(EntityMappingInstructions.TargetMapping.Type.PATH, "/folder1/random_service_name");
-        final EntityMappingInstructions serviceMappingInstructions = new EntityMappingInstructions(
-                createServiceEntityHeader(service), serviceTargetMapping, EntityMappingInstructions.MappingAction.NewOrUpdate, false, false
+        final EntityMappingInstructions.TargetMapping serviceTargetMapping = new EntityMappingInstructions.TargetMapping(EntityMappingInstructions.TargetMapping.Type.PATH, "/folder1/sameName");
+        final EntityMappingInstructions serviceToCreateMappingInstructions = new EntityMappingInstructions(
+                createServiceEntityHeader(serviceToCreate), serviceTargetMapping, EntityMappingInstructions.MappingAction.NewOrUpdate, false, false
         );
 
         mappingInstructions.add(rootFolderMappingInstructions);
         mappingInstructions.add(folder1MappingInstructions);
-        mappingInstructions.add(serviceMappingInstructions);
+        mappingInstructions.add(serviceToCreateMappingInstructions);
+        mappingInstructions.add(serviceToIgnoreMappingInstructions);
+        mappingInstructions.add(folder2MappingInstructions);
 
         final EntityBundle entityBundle = new EntityBundle(entities, mappingInstructions, Collections.<DependencySearchResults>emptyList());
 
         when(entityCrud.find(Folder.class, Folder.ROOT_FOLDER_ID.toString())).thenReturn(rootFolder);
-        when(entityCrud.find(Folder.class, folder1.getGoid().toString())).thenReturn(folder1);
-        when(entityCrud.find(serviceMappingInstructions.getSourceEntityHeader())).thenReturn(service);
-        //TODO: need to unit test findByPath method
+        when(entityCrud.find(serviceToCreateMappingInstructions.getSourceEntityHeader())).thenReturn(serviceToCreate);
         when(folderManager.findByPath("/folder1")).thenReturn(folder1);
         when(policyVersionManager.findLatestRevisionForPolicy(policy.getGoid())).thenReturn(getPolicyVersion(policy));
 
@@ -313,17 +326,18 @@ public class EntityBundleImporterImplTest {
         Mockito.verify(folderManager, Mockito.times(2)).findByPath("/folder1");
 
         // Check whether the action of service manager creating or updating service is performed.
-        Mockito.verify(serviceManager, Mockito.times(1)).save(service.getGoid(), service); // Creating a new service is performed.
-        Mockito.verify(serviceManager, Mockito.times(0)).update(service);                  // No updating service is performed.
+        Mockito.verify(serviceManager, Mockito.times(1)).save(serviceToCreate.getGoid(), serviceToCreate); // Creating a new service is performed.
+        Mockito.verify(serviceManager, Mockito.times(0)).update(serviceToCreate);                  // No updating service is performed.
 
         // Check whether the service mapping result is correct, in terms of:
-        // (1) There are three mapping results returned.
+        // (1) There are five mapping results returned.
         // (2) No exceptions is included in the service mapping result.
         // (3) The service mapping action taken is CreateNew, not other types UpdatedExisting, etc.
-        assertTrue("Three mapping results are returned.", results.size() == 3);
+        assertTrue("Three mapping results are returned.", results.size() == 5);
         final EntityMappingResult serviceMappingResult = results.get(2);  // The second mapping result is for service.
-        assertNull("The service mapping result has no exception.", results.get(2).getException());
+        assertNull("The service mapping result has no exception.", serviceMappingResult.getException());
         assertTrue("Tne service mapping result action is CreatedNew.", serviceMappingResult.getMappingAction() == EntityMappingResult.MappingAction.CreatedNew);
+        assertTrue("The service created is serviceToCreate and not serviceToUpdate", serviceToCreate.getId().equals(serviceMappingResult.getTargetEntityHeader().getGoid().toString()));
 
     }
 
@@ -362,7 +376,6 @@ public class EntityBundleImporterImplTest {
         return new EntityBundle(entities, mappingInstructions, Collections.<DependencySearchResults>emptyList());
     }
 
-    //TODO: modify to create test mappings
     private List<EntityMappingInstructions> createTestingMappingInstructions(@NotNull final Folder rootFolder, @NotNull final PublishedService publishedService) throws FindException {
         final EntityMappingInstructions rootFolderMappingInstructions = new EntityMappingInstructions(
             createFolderEntityHeader(rootFolder), null, EntityMappingInstructions.MappingAction.NewOrExisting, true, false
@@ -406,14 +419,17 @@ public class EntityBundleImporterImplTest {
         return policy;
     }
 
-    private PublishedService createTestingPublishedService(@NotNull final Policy policy, @NotNull final Folder parentFolder) {
+    private PublishedService createTestingPublishedService(@NotNull final Policy policy,
+                                                           @NotNull final Folder parentFolder,
+                                                           @NotNull final String serviceName,
+                                                           @NotNull final String serviceRoutingUri) {
         final PublishedService publishedService = new PublishedService();
 
         publishedService.setSoap(true);
         publishedService.setWsdlXml("");
         publishedService.setPolicy(policy);
-        publishedService.setName("random_service_name");
-        publishedService.setRoutingUri("/random_routing_uri");
+        publishedService.setName(serviceName);
+        publishedService.setRoutingUri(serviceRoutingUri);
         publishedService.setFolder(parentFolder);
 
         final byte[] bytes = new byte[16];
