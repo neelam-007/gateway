@@ -22,6 +22,7 @@ import com.l7tech.server.service.FirewallRulesManager;
 import com.l7tech.server.transport.TransportAdminHelper;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.TimeUnit;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.Server;
@@ -163,8 +164,9 @@ public class WebSocketLoadListener {
     }
     private static int getProp(String key, int defaultValue) {
         int prop;
+        String clusterProp = null;
         try {
-            String clusterProp = clusterPropertyManager.getProperty(key);
+            clusterProp = clusterPropertyManager.getProperty(key);
             if (clusterProp == null || "".equals(clusterProp)) {
                 prop = defaultValue;
             } else {
@@ -173,6 +175,9 @@ public class WebSocketLoadListener {
         } catch(FindException e){
             logger.log(Level.INFO, "Cluster property : " + key + " doesn't exist setting default");
             prop = defaultValue;
+        } catch (NumberFormatException ne) {
+            logger.log(Level.INFO, "Cluster property : " + key + " value contains shorthand abbreviation, setting to converted value");
+            prop = (int) TimeUnit.parse(clusterProp);
         }
         return prop;
     }
