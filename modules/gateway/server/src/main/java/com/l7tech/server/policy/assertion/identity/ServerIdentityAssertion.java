@@ -20,6 +20,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Pair;
 import org.springframework.context.ApplicationContext;
 
 import java.security.cert.X509Certificate;
@@ -56,9 +57,7 @@ public abstract class ServerIdentityAssertion<AT extends IdentityAssertion> exte
                                               final String messageDescription,
                                               final AuthenticationContext authContext) {
 
-        List<String> userIdList = new ArrayList<>();
-        List<String> userErrorList = new ArrayList<>();
-
+        final List<Pair<LoginCredentials,AuthenticationException>> userExceptionsList = new ArrayList<>();
         final List<LoginCredentials> pCredentials = authContext.getCredentials();
 
         if (pCredentials.size() < 1 && authContext.getLastAuthenticatedUser() == null) {
@@ -159,12 +158,11 @@ public abstract class ServerIdentityAssertion<AT extends IdentityAssertion> exte
             } catch (AuthenticationException ae) {
                 logAndAudit(AssertionMessages.IDENTITY_CREDENTIAL_FAILED, pc.getLogin(), ExceptionUtils.getMessage(ae));
                 lastStatus = authFailed(pc, ae);
-                userIdList.add(pc.getLogin());
-                userErrorList.add(ExceptionUtils.getMessage(ae));
+                userExceptionsList.add(new Pair(pc,ae));
             }
         }
         logAndAudit(AssertionMessages.IDENTITY_AUTHENTICATION_FAILED, assertion.loggingIdentity());
-        processAuthFailure(context,userIdList,userErrorList);
+        processAuthFailure(context,userExceptionsList);
 
         return lastStatus;
     }
@@ -267,15 +265,13 @@ public abstract class ServerIdentityAssertion<AT extends IdentityAssertion> exte
     protected abstract AssertionStatus checkUser(AuthenticationResult authResult);
 
     /**
-     * Implementor to decide if they want the authentication errors associated with
-     * the list of users that were being authenticated to be returned to the assertion via the PEC.
+     * Implementor to decide if they would like to return via the PEC the list of credentials used for authentication
+     * and their authentication failure.
      * @param context - PEC
-     * @param userIdList - array of loginId's used for authentication
-     * @param userErrorList - array of error
+     * @param authLoginExceptionList - list of LoginCredentials and their associated AuthenticationException
      */
     protected void processAuthFailure(final PolicyEnforcementContext context,
-                                      final List<String> userIdList,
-                                      final List<String> userErrorList){
+                                      final List<Pair<LoginCredentials,AuthenticationException>> authLoginExceptionList){
 
     }
 

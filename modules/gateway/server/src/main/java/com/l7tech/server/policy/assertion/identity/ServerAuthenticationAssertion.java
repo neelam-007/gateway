@@ -1,6 +1,8 @@
 package com.l7tech.server.policy.assertion.identity;
 
+import com.l7tech.identity.AuthenticationException;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.AuthenticationAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -8,7 +10,10 @@ import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.identity.User;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.util.Pair;
 import org.springframework.context.ApplicationContext;
+
+import java.util.ArrayList;
 import java.util.List;
 /**
  * SSG implementation of {@link IdentityAssertion}.  Authenticates the request's credentials against
@@ -38,14 +43,22 @@ public class ServerAuthenticationAssertion extends ServerIdentityAssertion<Authe
         return AssertionStatus.NONE;
     }
     /**
-     * Return as context variables the list of logins that failed authentication and their authentication error message.
+     * Return as context variables the list of credentials that failed authentication and their authentication error message.
      */
     @Override
     protected void processAuthFailure(final PolicyEnforcementContext context,
-                                      final List<String> userIdList,
-                                      final List<String> userErrorList){
+                                      final List<Pair<LoginCredentials,AuthenticationException>> authLoginExceptionList){
 
-        context.setVariable(AuthenticationAssertion.LDAP_PROVIDER_ERROR_LOGIN, userIdList.toArray());
-        context.setVariable(AuthenticationAssertion.LDAP_PROVIDER_ERROR_MESSAGE, userErrorList.toArray());
+        final List<String> loginCredentialList = new ArrayList<>();
+        final List<String> authExceptionList = new ArrayList<>();
+
+        for (Pair<LoginCredentials, AuthenticationException> authLoginException : authLoginExceptionList){
+            loginCredentialList.add(authLoginException.getKey().getName());
+            authExceptionList.add(authLoginException.getValue().getMessage());
+        }
+
+        context.setVariable(AuthenticationAssertion.LDAP_PROVIDER_ERROR_LOGIN, loginCredentialList.toArray());
+        context.setVariable(AuthenticationAssertion.LDAP_PROVIDER_ERROR_MESSAGE, authExceptionList.toArray());
+
     }
 }
