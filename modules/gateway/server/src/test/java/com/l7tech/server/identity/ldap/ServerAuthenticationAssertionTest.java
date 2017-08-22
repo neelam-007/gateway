@@ -5,25 +5,20 @@ import static org.junit.Assert.*;
 
 import com.l7tech.identity.*;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
-import com.l7tech.identity.ldap.LdapUrlBasedIdentityProviderConfig;
-import com.l7tech.identity.ldap.LdapUser;
-import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.identity.AuthenticationAssertion;
-
-import com.l7tech.security.token.SecurityToken;
 import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.token.UsernamePasswordSecurityToken;
 import com.l7tech.message.Message;
 import com.l7tech.server.identity.IdentityProviderFactory;
+import com.l7tech.server.identity.TestIdentityProvider;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.context.ApplicationContext;
 import com.l7tech.server.policy.assertion.identity.ServerAuthenticationAssertion;
 import org.junit.Before;
@@ -35,24 +30,17 @@ import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import org.powermock.modules.junit4.PowerMockRunner;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Logger;
 
 /**
  * Created by chaja24 on 8/3/2017.
  * Unit test for the ServerAuthenticationAssertion
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(LdapUtils.class)
-
+@RunWith(MockitoJUnitRunner.class)
 public class ServerAuthenticationAssertionTest {
 
-    private static String PROVIDER_GOID = "a5a3d5aba3ea0236f52677478cdcafad";
-    private static String LDAP_INVALID_CREDS_ERROR = "[LDAP: error code 49 - Invalid Credentials]";
-    private static String USER1_DN = "dc=com,dc=company,ou=group1,cn=firstname1 lastname1";
-    private static String USER2_DN = "dc=com,dc=company,ou=group1,cn=firstname2 lastname2";
+    private static String LDAP_INVALID_CREDS_ERROR = "Invalid username or password";
     private static String AUTHENTICATION_USER_CONTEXT_VAR = "idp.error.login";
     private static String AUTHENTICATION_ERROR_CONTEXT_VAR = "idp.error.message";
     private static int FOUR_MINS_IN_MS = 480000;
@@ -75,52 +63,28 @@ public class ServerAuthenticationAssertionTest {
     @Mock
     private LdapIdentityProviderConfig ldapIdentityProviderConfig;
 
-    @Mock
-    private SecurityToken securityToken;
-
-    @Mock
-    private LdapGroupManagerImpl ldapGroupManagerImpl;
-
-    @Mock
-    LdapRuntimeConfig ldapRuntimeConfig;
-
     private AuthenticationAssertion authenticationAssertion;
-    private LdapUserManagerImpl ldapUserManagerImpl;
+    private TestIdentityProvider testIdentityProvider;
 
     @Before
     public void setUp() throws Exception {
 
-        PowerMockito.mockStatic(LdapUtils.class);
+        testIdentityProvider = new TestIdentityProvider(TestIdentityProvider.TEST_IDENTITY_PROVIDER_CONFIG);
+        Mockito.when(applicationContext.getBean("identityProviderFactory", IdentityProviderFactory.class)).thenReturn(identityProviderFactory);
+        Mockito.when(identityProviderFactory.getProvider(TestIdentityProvider.TEST_IDENTITY_PROVIDER_CONFIG.getGoid())).thenReturn(testIdentityProvider);
 
         //Disable AuthCache by default
         when(authenticationContext.getAuthSuccessCacheTime()).thenReturn(0);
         when(authenticationContext.getAuthFailureCacheTime()).thenReturn(0);
 
         authenticationAssertion = new AuthenticationAssertion();
-        authenticationAssertion.setIdentityProviderOid(new Goid(PROVIDER_GOID));
+        authenticationAssertion.setIdentityProviderOid(testIdentityProvider.getConfig().getGoid());
         authenticationAssertion.setEnabled(true);
         authenticationAssertion.setTarget(TargetMessageType.REQUEST);
 
-        Message requestMessage = new Message();
+        final Message requestMessage = new Message();
         when(pec.getTargetMessage(authenticationAssertion)).thenReturn(requestMessage);
         when(pec.getAuthenticationContext(any(Message.class))).thenReturn(authenticationContext);
-
-        LdapIdentityProviderImpl ldapIdentityProviderImpl = Mockito.spy(new LdapIdentityProviderImpl());
-        ldapIdentityProviderImpl.setApplicationContext(applicationContext);
-
-        LdapIdentityProviderConfig identityProviderConfig = new LdapIdentityProviderConfig();
-        identityProviderConfig.setGoid(new Goid(PROVIDER_GOID));
-        identityProviderConfig.setLdapUrl(new String[]{"ldap://host:5555"});
-
-        ldapUserManagerImpl = Mockito.spy(new LdapUserManagerImpl());
-        ldapUserManagerImpl.setLdapRuntimeConfig(ldapRuntimeConfig);
-
-        ldapIdentityProviderImpl.setUserManager(ldapUserManagerImpl);
-        ldapIdentityProviderImpl.setGroupManager(ldapGroupManagerImpl);
-        ldapIdentityProviderImpl.setIdentityProviderConfig(identityProviderConfig);
-
-        Mockito.when(applicationContext.getBean("identityProviderFactory", IdentityProviderFactory.class)).thenReturn(identityProviderFactory);
-        when(identityProviderFactory.getProvider(Mockito.any(Goid.class))).thenReturn(ldapIdentityProviderImpl);
     }
 
     // The user has a valid password and should authenticate successfully.
@@ -128,11 +92,11 @@ public class ServerAuthenticationAssertionTest {
     @Test
     public void testValidUser() throws Exception {
 
-        List<LoginCredentials> loginCredentialsList = new ArrayList<>();
-        String login1 = "user1";
-        String validPassword1 = "validPassword";
+        final List<LoginCredentials> loginCredentialsList = new ArrayList<>();
+        final String login1 = "user1";
+        final String validPassword1 = "validPassword";
 
-        LoginCredentials loginCredsUser1 =
+        final LoginCredentials loginCredsUser1 =
                 LoginCredentials.makeLoginCredentials(new UsernamePasswordSecurityToken(
                                 SecurityTokenType.HTTP_BASIC,
                                 login1,
@@ -142,22 +106,11 @@ public class ServerAuthenticationAssertionTest {
         loginCredentialsList.add(loginCredsUser1);
         when(authenticationContext.getCredentials()).thenReturn(loginCredentialsList);
 
-        LdapUser user = new LdapUser();
-        user.setLogin(login1);
-        user.setDn(USER1_DN);
-        user.setProviderId(new Goid(PROVIDER_GOID));
-
-        Mockito.doReturn(user).when(ldapUserManagerImpl).findByLogin(login1);
-
-        when(LdapUtils.authenticateBasic(any(LdapUrlProvider.class),
-                any(LdapUrlBasedIdentityProviderConfig.class),
-                any(LdapRuntimeConfig.class),
-                any(Logger.class),
-                eq(USER1_DN),
-                eq(validPassword1))).thenReturn(true);
+        final UserBean ub = new UserBean(testIdentityProvider.getConfig().getGoid(), login1);
+        TestIdentityProvider.addUser(ub, login1, validPassword1.toCharArray()); // add user with valid password to idp
 
         serverAuthenticationAssertion = new ServerAuthenticationAssertion(authenticationAssertion, applicationContext);
-        AssertionStatus status = serverAuthenticationAssertion.checkRequest(pec);
+        final AssertionStatus status = serverAuthenticationAssertion.checkRequest(pec);
 
         // verify status is NONE.
         assertEquals(AssertionStatus.NONE, status);
@@ -169,11 +122,12 @@ public class ServerAuthenticationAssertionTest {
     @Test
     public void testUserWithInvalidPassword() throws Exception {
 
-        List<LoginCredentials> loginCredentialsList = new ArrayList<>();
-        String login1 = "user1";
-        String badPassword1 = "invalidPassword";
+        final List<LoginCredentials> loginCredentialsList = new ArrayList<>();
+        final String login1 = "user1";
+        final String validPassword1 = "password";
+        final String badPassword1 = "invalidPassword";
 
-        LoginCredentials loginCredsUser1 =
+        final LoginCredentials loginCredsUser1 =
                 LoginCredentials.makeLoginCredentials(new UsernamePasswordSecurityToken(
                                 SecurityTokenType.HTTP_BASIC,
                                 login1,
@@ -183,19 +137,8 @@ public class ServerAuthenticationAssertionTest {
         loginCredentialsList.add(loginCredsUser1);
         when(authenticationContext.getCredentials()).thenReturn(loginCredentialsList);
 
-        LdapUser user = new LdapUser();
-        user.setLogin(login1);
-        user.setDn(USER1_DN);
-        user.setProviderId(new Goid(PROVIDER_GOID));
-
-        Mockito.doReturn(user).when(ldapUserManagerImpl).findByLogin(login1);
-
-        when(LdapUtils.authenticateBasic(any(LdapUrlProvider.class),
-                any(LdapUrlBasedIdentityProviderConfig.class),
-                any(LdapRuntimeConfig.class),
-                any(Logger.class),
-                eq(USER1_DN),
-                eq(badPassword1))).thenThrow(new BadCredentialsException(LDAP_INVALID_CREDS_ERROR));
+        final UserBean ub = new UserBean(testIdentityProvider.getConfig().getGoid(), login1);
+        TestIdentityProvider.addUser(ub, login1, validPassword1.toCharArray()); // add user with valid password to idp.
 
         serverAuthenticationAssertion = new ServerAuthenticationAssertion(authenticationAssertion, applicationContext);
         AssertionStatus status = serverAuthenticationAssertion.checkRequest(pec);
@@ -213,9 +156,11 @@ public class ServerAuthenticationAssertionTest {
     @Test
     public void testUserNotInLdap() throws Exception {
 
-        List<LoginCredentials> loginCredentialsList = new ArrayList<>();
+        final List<LoginCredentials> loginCredentialsList = new ArrayList<>();
         String login1 = "userNotExist";
         String password1 = "invalidPassword";
+        String login2 = "user2";
+        String password2 = "validPassword";
 
         LoginCredentials loginCredsUser1 =
                 LoginCredentials.makeLoginCredentials(new UsernamePasswordSecurityToken(
@@ -227,35 +172,32 @@ public class ServerAuthenticationAssertionTest {
         loginCredentialsList.add(loginCredsUser1);
         when(authenticationContext.getCredentials()).thenReturn(loginCredentialsList);
 
-        LdapUser user = new LdapUser();
-        user.setLogin(login1);
-        user.setDn(USER1_DN);
-        user.setProviderId(new Goid(PROVIDER_GOID));
-
-        Mockito.doReturn(null).when(ldapUserManagerImpl).findByLogin(login1);
+        final UserBean ub = new UserBean(testIdentityProvider.getConfig().getGoid(), login1);
+        TestIdentityProvider.addUser(ub, login2, password2.toCharArray()); // add user with valid password to idp.
 
         serverAuthenticationAssertion = new ServerAuthenticationAssertion(authenticationAssertion, applicationContext);
         AssertionStatus status = serverAuthenticationAssertion.checkRequest(pec);
 
-        verifyContextOutput(pec, AUTHENTICATION_USER_CONTEXT_VAR, 0, login1); // verify user1 was returned
-        verifyContextOutput(pec, AUTHENTICATION_ERROR_CONTEXT_VAR, 0, "The user does not exist."); // verify user1 returned error message
-
         // verify status is not NONE.
         assertNotEquals(AssertionStatus.NONE, status);
     }
+
 
     // Authenticate 2 users with bad passwords.  The authentication should fail. The Context Variables should return
     // the logins that failed and the reason it failed. AuthCache disabled by default
     @Test
     public void test2UsersInvalidPasswords() throws Exception {
 
-        List<LoginCredentials> loginCredentialsList = new ArrayList<>();
-        String login1 = "user1";
-        String login2 = "user2";
-        String badPassword1 = "invalidPassword1";
-        String badPassword2 = "invalidPassword2";
+        final List<LoginCredentials> loginCredentialsList = new ArrayList<>();
+        final String login1 = "user1";
+        final String validPassword1 = "password1";
+        final String badPassword1 = "invalidPassword1";
 
-        LoginCredentials loginCredsUser1 =
+        final String login2 = "user2";
+        final String validPassword2 = "password2";
+        final String badPassword2 = "invalidPassword2";
+
+        final LoginCredentials loginCredsUser1 =
                 LoginCredentials.makeLoginCredentials(new UsernamePasswordSecurityToken(
                                 SecurityTokenType.HTTP_BASIC,
                                 login1,
@@ -264,7 +206,7 @@ public class ServerAuthenticationAssertionTest {
 
         loginCredentialsList.add(loginCredsUser1);
 
-        LoginCredentials loginCredsUser2 =
+        final LoginCredentials loginCredsUser2 =
                 LoginCredentials.makeLoginCredentials(new UsernamePasswordSecurityToken(
                                 SecurityTokenType.HTTP_BASIC,
                                 login2,
@@ -272,30 +214,16 @@ public class ServerAuthenticationAssertionTest {
                         AuthenticationAssertion.class);
 
         loginCredentialsList.add(loginCredsUser2);
-
-        LdapUser user1 = new LdapUser();
-        user1.setLogin(login1);
-        user1.setDn(USER1_DN);
-        user1.setProviderId(new Goid(PROVIDER_GOID));
-
-        LdapUser user2 = new LdapUser();
-        user2.setLogin(login2);
-        user2.setDn(USER2_DN);
-        user2.setProviderId(new Goid(PROVIDER_GOID));
         when(authenticationContext.getCredentials()).thenReturn(loginCredentialsList);
 
-        Mockito.doReturn(user1).when(ldapUserManagerImpl).findByLogin(login1);
-        Mockito.doReturn(user2).when(ldapUserManagerImpl).findByLogin(login2);
+        final UserBean ub = new UserBean(testIdentityProvider.getConfig().getGoid(), login1);
+        TestIdentityProvider.addUser(ub, login1, validPassword1.toCharArray()); // add user with valid password to idp.
 
-        when(LdapUtils.authenticateBasic(any(LdapUrlProvider.class),
-                any(LdapUrlBasedIdentityProviderConfig.class),
-                any(LdapRuntimeConfig.class),
-                any(Logger.class),
-                anyString(),
-                anyString())).thenThrow(new BadCredentialsException(LDAP_INVALID_CREDS_ERROR));
+        final UserBean ub2 = new UserBean(testIdentityProvider.getConfig().getGoid(), login2);
+        TestIdentityProvider.addUser(ub2, login2, validPassword2.toCharArray()); // add user with valid password to idp.
 
         serverAuthenticationAssertion = new ServerAuthenticationAssertion(authenticationAssertion, applicationContext);
-        AssertionStatus status = serverAuthenticationAssertion.checkRequest(pec);
+        final AssertionStatus status = serverAuthenticationAssertion.checkRequest(pec);
 
         verifyContextOutput(pec, AUTHENTICATION_USER_CONTEXT_VAR, 0, login1); // verify user1 was returned
         verifyContextOutput(pec, AUTHENTICATION_USER_CONTEXT_VAR, 1, login2); // verify user2 was returned
@@ -314,13 +242,15 @@ public class ServerAuthenticationAssertionTest {
     @Test
     public void testOneInvalidOneValidPasswords() throws Exception {
 
-        List<LoginCredentials> loginCredentialsList = new ArrayList<>();
-        String login1 = "user1";
-        String login2 = "user2";
-        String badPassword1 = "invalidPassword";
-        String password2 = "validPassword";
+        final List<LoginCredentials> loginCredentialsList = new ArrayList<>();
+        final String login1 = "user1";
+        final String badPassword1 = "invalidPassword";
+        final String validPassword1 = "password";
 
-        LoginCredentials loginCredsUser1 =
+        final String login2 = "user2";
+        final String validPassword2 = "validPassword";
+
+        final LoginCredentials loginCredsUser1 =
                 LoginCredentials.makeLoginCredentials(new UsernamePasswordSecurityToken(
                                 SecurityTokenType.HTTP_BASIC,
                                 login1,
@@ -329,45 +259,24 @@ public class ServerAuthenticationAssertionTest {
 
         loginCredentialsList.add(loginCredsUser1);
 
-        LoginCredentials loginCredsUser2 =
+        final LoginCredentials loginCredsUser2 =
                 LoginCredentials.makeLoginCredentials(new UsernamePasswordSecurityToken(
                                 SecurityTokenType.HTTP_BASIC,
                                 login2,
-                                password2.toCharArray()),
+                                validPassword2.toCharArray()),
                         AuthenticationAssertion.class);
 
         loginCredentialsList.add(loginCredsUser2);
         when(authenticationContext.getCredentials()).thenReturn(loginCredentialsList);
 
-        LdapUser user1 = new LdapUser();
-        user1.setLogin(login1);
-        user1.setDn(USER1_DN);
-        user1.setProviderId(new Goid(PROVIDER_GOID));
+        final UserBean ub = new UserBean(testIdentityProvider.getConfig().getGoid(), login1);
+        TestIdentityProvider.addUser(ub, login1, validPassword1.toCharArray()); // add user with valid password to idp.
 
-        LdapUser user2 = new LdapUser();
-        user2.setLogin(login2);
-        user2.setDn(USER2_DN);
-        user2.setProviderId(new Goid(PROVIDER_GOID));
-
-        Mockito.doReturn(user1).when(ldapUserManagerImpl).findByLogin(login1);
-        Mockito.doReturn(user2).when(ldapUserManagerImpl).findByLogin(login2);
-
-        when(LdapUtils.authenticateBasic(any(LdapUrlProvider.class),
-                any(LdapUrlBasedIdentityProviderConfig.class),
-                any(LdapRuntimeConfig.class),
-                any(Logger.class),
-                eq(USER1_DN),
-                anyString())).thenThrow(new BadCredentialsException(LDAP_INVALID_CREDS_ERROR));
-
-        when(LdapUtils.authenticateBasic(any(LdapUrlProvider.class),
-                any(LdapUrlBasedIdentityProviderConfig.class),
-                any(LdapRuntimeConfig.class),
-                any(Logger.class),
-                eq(USER2_DN),
-                eq(password2))).thenReturn(true);
+        final UserBean ub2 = new UserBean(testIdentityProvider.getConfig().getGoid(), login2);
+        TestIdentityProvider.addUser(ub2, login2, validPassword2.toCharArray()); // add user with valid password to idp.
 
         serverAuthenticationAssertion = new ServerAuthenticationAssertion(authenticationAssertion, applicationContext);
-        AssertionStatus status = serverAuthenticationAssertion.checkRequest(pec);
+        final AssertionStatus status = serverAuthenticationAssertion.checkRequest(pec);
 
         // verify status is NONE.
         assertEquals(AssertionStatus.NONE, status);
@@ -380,11 +289,14 @@ public class ServerAuthenticationAssertionTest {
     @Test
     public void testSuccessCache() throws Exception {
 
-        List<LoginCredentials> loginCredentialsList = new ArrayList<>();
-        String login1 = "user1";
-        String validPassword1 = "validPassword";
+        // Turn on the success cache.
+        when(authenticationContext.getAuthSuccessCacheTime()).thenReturn(FOUR_MINS_IN_MS);
 
-        LoginCredentials loginCredsUser1 =
+        final List<LoginCredentials> loginCredentialsList = new ArrayList<>();
+        final String login1 = "user1";
+        final String validPassword1 = "validPassword";
+
+        final LoginCredentials loginCredsUser1 =
                 LoginCredentials.makeLoginCredentials(new UsernamePasswordSecurityToken(
                                 SecurityTokenType.HTTP_BASIC,
                                 login1,
@@ -394,21 +306,8 @@ public class ServerAuthenticationAssertionTest {
         loginCredentialsList.add(loginCredsUser1);
         when(authenticationContext.getCredentials()).thenReturn(loginCredentialsList);
 
-        LdapUser user = new LdapUser();
-        user.setLogin(login1);
-        user.setDn(USER1_DN);
-        user.setProviderId(new Goid(PROVIDER_GOID));
-
-        Mockito.doReturn(user).when(ldapUserManagerImpl).findByLogin(login1);
-
-        when(authenticationContext.getAuthSuccessCacheTime()).thenReturn(FOUR_MINS_IN_MS);
-
-        when(LdapUtils.authenticateBasic(any(LdapUrlProvider.class),
-                any(LdapUrlBasedIdentityProviderConfig.class),
-                any(LdapRuntimeConfig.class),
-                any(Logger.class),
-                eq(USER1_DN),
-                eq(validPassword1))).thenReturn(true);
+        final UserBean ub = new UserBean(testIdentityProvider.getConfig().getGoid(), login1);
+        TestIdentityProvider.addUser(ub, login1, validPassword1.toCharArray()); // add user with valid password to idp.
 
         serverAuthenticationAssertion = new ServerAuthenticationAssertion(authenticationAssertion, applicationContext);
         AssertionStatus status = serverAuthenticationAssertion.checkRequest(pec);
@@ -416,14 +315,7 @@ public class ServerAuthenticationAssertionTest {
         // verify status is NONE.
         assertEquals(AssertionStatus.NONE, status);
 
-        // This part should not execute. The AuthCache should returned the cached result.
-        // If executed, this will fail authenticate user even if valid password and fail the test.
-        when(LdapUtils.authenticateBasic(any(LdapUrlProvider.class),
-                any(LdapUrlBasedIdentityProviderConfig.class),
-                any(LdapRuntimeConfig.class),
-                any(Logger.class),
-                eq(USER1_DN),
-                eq(validPassword1))).thenReturn(false);
+        TestIdentityProvider.clearAllUsers(); // remove user from identity provider.  User should still be in the cache.
 
         status = serverAuthenticationAssertion.checkRequest(pec);
         // verify status is NONE.
@@ -436,11 +328,15 @@ public class ServerAuthenticationAssertionTest {
     @Test
     public void testFailureCache() throws Exception {
 
-        List<LoginCredentials> loginCredentialsList = new ArrayList<>();
-        String login1 = "user1";
-        String badPassword1 = "invalidPassword";
+        // Turn on the failure cache.
+        when(authenticationContext.getAuthFailureCacheTime()).thenReturn(FOUR_MINS_IN_MS);
 
-        LoginCredentials loginCredsUser1 =
+        final List<LoginCredentials> loginCredentialsList = new ArrayList<>();
+        final String login1 = "user1";
+        final String validPassword1 = "password";
+        final String badPassword1 = "invalidPassword";
+
+        final LoginCredentials loginCredsUser1 =
                 LoginCredentials.makeLoginCredentials(new UsernamePasswordSecurityToken(
                                 SecurityTokenType.HTTP_BASIC,
                                 login1,
@@ -450,22 +346,8 @@ public class ServerAuthenticationAssertionTest {
         loginCredentialsList.add(loginCredsUser1);
         when(authenticationContext.getCredentials()).thenReturn(loginCredentialsList);
 
-        LdapUser user = new LdapUser();
-        user.setLogin(login1);
-        user.setDn(USER1_DN);
-        user.setProviderId(new Goid(PROVIDER_GOID));
-
-        Mockito.doReturn(user).when(ldapUserManagerImpl).findByLogin(login1);
-
-        // Turn on the failure cache.
-        when(authenticationContext.getAuthFailureCacheTime()).thenReturn(FOUR_MINS_IN_MS);
-
-        when(LdapUtils.authenticateBasic(any(LdapUrlProvider.class),
-                any(LdapUrlBasedIdentityProviderConfig.class),
-                any(LdapRuntimeConfig.class),
-                any(Logger.class),
-                eq(USER1_DN),
-                eq(badPassword1))).thenThrow(new BadCredentialsException(LDAP_INVALID_CREDS_ERROR));
+        UserBean ub = new UserBean(testIdentityProvider.getConfig().getGoid(), login1);
+        TestIdentityProvider.addUser(ub, login1, validPassword1.toCharArray()); // add user with valid password to idp.
 
         serverAuthenticationAssertion = new ServerAuthenticationAssertion(authenticationAssertion, applicationContext);
         AssertionStatus status = serverAuthenticationAssertion.checkRequest(pec);
@@ -476,14 +358,12 @@ public class ServerAuthenticationAssertionTest {
         // verify status is not NONE.
         assertNotEquals(AssertionStatus.NONE, status);
 
-        // This part should not execute. The AuthCache should returned the cached result.
-        // If executed, this will authenticate the user even if it has a bad password and fail the test.
-        when(LdapUtils.authenticateBasic(any(LdapUrlProvider.class),
-                any(LdapUrlBasedIdentityProviderConfig.class),
-                any(LdapRuntimeConfig.class),
-                any(Logger.class),
-                eq(USER1_DN),
-                eq(badPassword1))).thenReturn(true);
+        TestIdentityProvider.clearAllUsers();
+        // add the user with bad password to the identity provider so that it matches the request.  This should not affect
+        // the authentication to make it pass because the request will use the previous authentication results from the failurecache
+        // to fail the check request.
+        ub = new UserBean(testIdentityProvider.getConfig().getGoid(), login1);
+        TestIdentityProvider.addUser(ub, login1, badPassword1.toCharArray()); // add user with valid password to idp.
 
         status = serverAuthenticationAssertion.checkRequest(pec);
 
