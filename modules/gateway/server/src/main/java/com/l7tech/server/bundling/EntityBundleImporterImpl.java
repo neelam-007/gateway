@@ -856,7 +856,13 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                         final Pair<String, String> pair = parseEntityPathIntoFolderPathAndEntityName(path);
                         final String folderPath = pair.left;
                         final String entityName = pair.right;
-                        final Folder folder = folderManager.findByPath(folderPath);
+
+                        Folder folder;
+                        try {
+                            folder = folderManager.findByPath(folderPath);
+                        } catch (final FindException e) {
+                            folder = folderManager.buildByPath(folderPath);
+                        }
 
                         // Preserve the parent folder for this entity
                         ((HasFolder) entity).setFolder(folder);
@@ -1628,7 +1634,16 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                     final Pair<String, String> pair = parseEntityPathIntoFolderPathAndEntityName(mappingTarget);
                                     final String folderPath = pair.left;
                                     final String entityName = pair.right;
-                                    final Folder folder = folderManager.findByPath(folderPath);
+
+                                    final Folder folder;
+                                    try {
+                                        folder = folderManager.findByPath(folderPath);
+                                    } catch (final FindException fe) {
+                                        // If any folder on the folder path is not found, it implies the south entity cannot be found in the target gateway.
+                                        resource = null;
+                                        break;
+                                    }
+
                                     final List<? extends Entity> childrenUnderThisFolder = entityCrud.findAll(mapping.getSourceEntityHeader().getType().getEntityClass(), CollectionUtils.MapBuilder.<String, List<Object>>builder().put("folder", Arrays.<Object>asList(folder)).map(), 0, -1, null, null);
                                     final List<Entity> list = new ArrayList<>();
 

@@ -201,8 +201,12 @@ public class FolderManagerImpl extends FolderSupportHibernateEntityManager<Folde
                     break;
                 }
             }
-            // Update the currentPath, just in case any error occurring and then for reporting purpose.
-            currentPath += "/" + folderName;
+            // Update the current path, just in case any error occurring. currentPath will be used for error reporting.
+            if (currentPath.equals("/")) {
+                currentPath += folderName;
+            } else {
+                currentPath += "/" + folderName;
+            }
 
             if (!found) {
                 throw new FindException("There is no such folder path: " + currentPath);
@@ -210,6 +214,60 @@ public class FolderManagerImpl extends FolderSupportHibernateEntityManager<Folde
         }
 
         return currentFolder;
+    }
+
+    /**
+     * Build a folder path.  All existing folders on the path starting from the root folder will be ignored until the first
+     * new folder is found.  The first new folder and all folders after the first new folders will be created. The last
+     * folder on the path will be returned.
+     *
+     * For example, the absolute folder path is /a/b/c.  If a, b, and c are new, then a, b, and c will be created and c
+     * will be returned.  If a is an existing folder and b is the first new one, then b and c will be created and c will
+     * be returned.
+     *
+     * @param absFolderPath an absolute folder path
+     * @return a last folder on the folder path.
+     *
+     * @throws FindException thrown if unable to retrieve entities by folder
+     * @throws SaveException thrown if unable to save a folder
+     */
+    @Override
+    public Folder buildByPath(String absFolderPath) throws FindException, SaveException {
+        if (StringUtils.isBlank(absFolderPath) || !absFolderPath.startsWith("/")) {
+            throw new IllegalArgumentException("The folder path is not an absolute path.");
+        }
+
+        final String[] folderNames = absFolderPath.split("/");
+        Folder parentFolder = findRootFolder();
+        Folder newFolder = null;
+        boolean foundFirstNewFolder = false;  // A flag to find the first new folder
+
+        for (String folderName: folderNames) {
+            if (folderName.equals("")) continue;
+
+            if (!foundFirstNewFolder) { // If the first new folder is found, then do not run this block anymore.
+                boolean found = false;  // A flag to find a matched child folder
+                final Collection<Folder> subFolders = findByFolder(parentFolder.getGoid());
+                for (final Folder folder: subFolders) {
+                    if (folder.getName().equals(folderName)) {
+                        found = true;
+                        parentFolder = folder; // for next loop, to find its sub-folders
+                        break;
+                    }
+                }
+                if (!found) {
+                    foundFirstNewFolder = true;
+                }
+            }
+
+            if (foundFirstNewFolder) {
+                newFolder = new Folder(folderName, parentFolder);
+                save(newFolder);
+                parentFolder = newFolder;
+            }
+        }
+
+        return newFolder;
     }
 
     @Override
