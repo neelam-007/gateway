@@ -15,6 +15,11 @@ import org.mockito.runners.MockitoJUnitRunner;
 import javax.jms.JMSException;
 import javax.naming.NamingException;
 
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.concurrent.TimeUnit;
+
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.mock;
@@ -91,9 +96,22 @@ public class JmsResourceManagerTest {
         });
     }
 
+    @Test
+    public void testTimeDifference() throws Exception {
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss.SSS");
+        Date start = format.parse("2017-08-11 19:26:25.743");
+        Date end = format.parse("2017-08-11 19:28:44.129");
+        long diff = end.getTime() - start.getTime();
+        long seconds = diff / 1000 % 60;
+        long minutes = diff / (60 * 1000) % 60;
+        System.out.print("Microseconds: " + diff);
+        System.out.println(" average " + 250000000L/diff);
+        System.out.print(minutes + ":" + seconds);
+    }
+
     public class JmsResourceManagerStub extends JmsResourceManager {
 
-        private JmsResourceManager.CachedConnection conn;
+        private CachedConnection conn;
 
         /**
          * Create a new JMS Resource manager.
