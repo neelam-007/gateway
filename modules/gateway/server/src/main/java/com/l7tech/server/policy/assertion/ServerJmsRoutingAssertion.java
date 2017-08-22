@@ -437,7 +437,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
 
                 CountDownLatch latch = new CountDownLatch(1);
                 JmsCompletionListener completionListener = new JmsCompletionListener(latch);
-                jmsProducer.send(jmsOutboundRequest, deliveryMode, priority, timeToLive, completionListener);
+                jmsProducer.send(jmsOutboundRequest, deliveryMode, priority, timeToLive/*, completionListener*/);
 
                 messageSent = true; // no retries once sent
 
@@ -445,7 +445,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                     logger.fine("JMS outbound message sent");
 
                 if ( !processReply ) {
-                    latch.countDown();
+                    //latch.countDown();
                     context.routingFinished();
                     routingFinished = true;
                     logAndAudit(AssertionMessages.JMS_ROUTING_NO_RESPONSE_EXPECTED);
@@ -474,12 +474,12 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                         }
                     }
 
-                    try {
+                    /*try {
                         latch.await(timeout, TimeUnit.MILLISECONDS);
                         //DO something on completion
                     } catch (InterruptedException e) {
                         logger.log(Level.FINE, "Latch timeout exception: " + e.getMessage(), ExceptionUtils.getDebugException(e));
-                    }
+                    }*/
 
                     MessageConsumer jmsConsumer = null;
                     final Message jmsResponse;

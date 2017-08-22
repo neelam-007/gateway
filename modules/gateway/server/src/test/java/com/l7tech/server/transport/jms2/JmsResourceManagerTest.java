@@ -3,7 +3,9 @@ package com.l7tech.server.transport.jms2;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.server.transport.jms.JmsBag;
+import com.l7tech.server.transport.jms.JmsRuntimeException;
 import com.l7tech.util.Config;
+import org.apache.commons.pool.PoolableObjectFactory;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -13,12 +15,11 @@ import org.mockito.runners.MockitoJUnitRunner;
 import javax.jms.JMSException;
 import javax.naming.NamingException;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.mock;
@@ -31,12 +32,6 @@ public class JmsResourceManagerTest {
 
     @Mock
     JmsEndpointConfig mockJmsEndpointConfig;
-    @Mock
-    JmsEndpointConfig.JmsEndpointKey jmsEndpointKey;
-    @Mock
-    JmsEndpoint mockJmsEndpoint;
-    @Mock
-    JmsConnection jmsConnection;
     @Mock
     JmsBag mockJmsBag;
 
@@ -75,22 +70,23 @@ public class JmsResourceManagerTest {
             }
         });
 
+        JmsEndpointConfig.JmsEndpointKey jmsEndpointKey = mock(JmsEndpointConfig.JmsEndpointKey.class);
+        JmsEndpoint jmsEndpoint = mock(JmsEndpoint.class);
+        JmsConnection jmsConnection = mock(JmsConnection.class);
 
         when(mockJmsEndpointConfig.getJmsEndpointKey()).thenReturn(jmsEndpointKey);
-        when(mockJmsEndpointConfig.getEndpoint()).thenReturn(mockJmsEndpoint);
+        when(mockJmsEndpointConfig.getEndpoint()).thenReturn(jmsEndpoint);
         when(mockJmsEndpointConfig.getConnection()).thenReturn(jmsConnection);
         when(jmsEndpointKey.toString()).thenReturn("JmsEndpointKey");
-        when(mockJmsEndpoint.getVersion()).thenReturn(1234);
+        when(jmsEndpoint.getVersion()).thenReturn(1234);
         when(jmsConnection.getVersion()).thenReturn(5678);
-        Properties properties = new Properties();
-        properties.setProperty(JmsConnection.PROP_SESSION_POOL_SIZE, String.valueOf(-1));
-        when(jmsConnection.properties()).thenReturn(properties);
+
+        cachedConnection = ((JmsResourceManagerStub)fixture).new CachedConnectionStub(mockJmsEndpointConfig, mockJmsBag);
+        ((JmsResourceManagerStub)fixture).setCachedConnection(cachedConnection);
     }
 
     @Test (expected = NamingException.class)
     public void testDoWithJmsResources() throws Exception {
-        cachedConnection = ((JmsResourceManagerStub)fixture).new CachedConnectionStub(mockJmsEndpointConfig, mockJmsBag, new NamingException("Correct exception"));
-        ((JmsResourceManagerStub)fixture).setCachedConnection(cachedConnection);
 
         fixture.doWithJmsResources(mockJmsEndpointConfig, new JmsResourceManager.JmsResourceCallback() {
             @Override
@@ -101,53 +97,21 @@ public class JmsResourceManagerTest {
     }
 
     @Test
-    public void testDoWithJmsResource_sessionPoolSizeZero() throws Exception {
-        Properties properties = new Properties();
-        properties.setProperty(JmsConnection.PROP_SESSION_POOL_SIZE, String.valueOf(0));
-        when(jmsConnection.properties()).thenReturn(properties);
-        List<JmsBag> jmsBagList = new ArrayList<>();
-        cachedConnection = ((JmsResourceManagerStub)fixture).new CachedConnectionStub(mockJmsEndpointConfig, mockJmsBag);
-        ((JmsResourceManagerStub)fixture).setCachedConnection(cachedConnection);
-        fixture.doWithJmsResources(mockJmsEndpointConfig, new JmsResourceManager.JmsResourceCallback() {
-            @Override
-            public void doWork(JmsBag bag, JmsResourceManager.JndiContextProvider jndiContextProvider) throws JMSException {
-                jmsBagList.add(bag);
-            }
-        });
-        fixture.doWithJmsResources(mockJmsEndpointConfig, new JmsResourceManager.JmsResourceCallback() {
-            @Override
-            public void doWork(JmsBag bag, JmsResourceManager.JndiContextProvider jndiContextProvider) throws JMSException {
-                jmsBagList.add(bag);
-            }
-        });
-
-        assertNotEquals(jmsBagList.get(0), jmsBagList.get(1));
-    }
-
-    @Test
-    public void testDoWithJmsResource_sessionPoolSizeNotZero() throws Exception {
-
-        List<JmsBag> jmsBagList = new ArrayList<>();
-        cachedConnection = ((JmsResourceManagerStub)fixture).new CachedConnectionStub(mockJmsEndpointConfig, mockJmsBag);
-        ((JmsResourceManagerStub)fixture).setCachedConnection(cachedConnection);
-        fixture.doWithJmsResources(mockJmsEndpointConfig, new JmsResourceManager.JmsResourceCallback() {
-            @Override
-            public void doWork(JmsBag bag, JmsResourceManager.JndiContextProvider jndiContextProvider) throws JMSException {
-                jmsBagList.add(bag);
-            }
-        });
-        fixture.doWithJmsResources(mockJmsEndpointConfig, new JmsResourceManager.JmsResourceCallback() {
-            @Override
-            public void doWork(JmsBag bag, JmsResourceManager.JndiContextProvider jndiContextProvider) throws JMSException {
-                jmsBagList.add(bag);
-            }
-        });
-        assertEquals(jmsBagList.get(0), jmsBagList.get(1));
+    public void testTimeDifference() throws Exception {
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss.SSS");
+        Date start = format.parse("2017-08-11 19:26:25.743");
+        Date end = format.parse("2017-08-11 19:28:44.129");
+        long diff = end.getTime() - start.getTime();
+        long seconds = diff / 1000 % 60;
+        long minutes = diff / (60 * 1000) % 60;
+        System.out.print("Microseconds: " + diff);
+        System.out.println(" average " + 250000000L/diff);
+        System.out.print(minutes + ":" + seconds);
     }
 
     public class JmsResourceManagerStub extends JmsResourceManager {
 
-        private JmsResourceManager.CachedConnection conn;
+        private CachedConnection conn;
 
         /**
          * Create a new JMS Resource manager.
@@ -163,20 +127,47 @@ public class JmsResourceManagerTest {
 
         public void setCachedConnection(final CachedConnection cc) {
             this.conn = cc;
-            connectionHolder.put(jmsEndpointKey, cc);
+        }
+
+        protected CachedConnection getConnection(JmsEndpointConfig endpoint) throws NamingException, JmsRuntimeException {
+            return conn;
         }
 
         protected class CachedConnectionStub extends CachedConnection {
 
-            private final Exception exception;
+            protected CachedConnectionStub(JmsEndpointConfig cfg, JmsBag bag) {
+                super(cfg, bag);
+                this.pool.setFactory(new PoolableObjectFactory<JmsBag>()
+                {
+                    @Override
+                    public JmsBag makeObject() throws Exception {
+                        throw new NamingException("Correct exception");
+                    }
 
-            protected CachedConnectionStub(JmsEndpointConfig cfg, JmsBag owner) {
-                this(cfg, owner, null);
+                    @Override
+                    public void destroyObject(JmsBag jmsBag) throws Exception {
+
+                    }
+
+                    @Override
+                    public boolean validateObject(JmsBag jmsBag) {
+                        return false;
+                    }
+
+                    @Override
+                    public void activateObject(JmsBag jmsBag) throws Exception {
+
+                    }
+
+                    @Override
+                    public void passivateObject(JmsBag jmsBag) throws Exception {
+
+                    }
+                });
             }
 
-            protected CachedConnectionStub(JmsEndpointConfig cfg, JmsBag owner, Exception exception) {
-                super(cfg, owner);
-                this.exception = exception;
+            protected int getSessionPoolSize() {
+                return -1;
             }
 
             protected long getSessionPoolMaxWait() {
@@ -185,13 +176,6 @@ public class JmsResourceManagerTest {
 
             protected int getMaxSessionIdle() {
                 return 1;
-            }
-
-            protected JmsBag makeJmsBag() throws Exception {
-                if (exception != null)
-                    throw exception;
-
-                return mock(JmsBag.class);
             }
         }
     }
