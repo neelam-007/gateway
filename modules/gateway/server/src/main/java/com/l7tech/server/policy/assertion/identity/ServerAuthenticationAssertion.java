@@ -53,13 +53,9 @@ public class ServerAuthenticationAssertion extends ServerIdentityAssertion<Authe
         final List<String> authExceptionList = new ArrayList<>();
 
         for (Pair<LoginCredentials, AuthenticationException> authLoginException : authLoginExceptionList){
-            if (authLoginException.getKey() != null) {
-                loginCredentialList.add(authLoginException.getKey().getName());
-            }
 
-            if (authLoginException.getValue() != null ){
-                authExceptionList.add(authLoginException.getValue().getMessage());
-            }
+            loginCredentialList.add(authLoginException.getKey().getName());
+            authExceptionList.add(authLoginException.getValue().getMessage());
         }
 
         context.setVariable(AuthenticationAssertion.LDAP_PROVIDER_ERROR_LOGIN, loginCredentialList);
