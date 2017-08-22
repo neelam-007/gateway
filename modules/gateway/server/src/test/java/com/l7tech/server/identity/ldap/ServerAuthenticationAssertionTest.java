@@ -375,12 +375,12 @@ public class ServerAuthenticationAssertionTest {
     }
 
 
-    void verifyContextOutput(PolicyEnforcementContext pec, String variableName, int arrayElement, String expectedString) {
+    void verifyContextOutput(final PolicyEnforcementContext pec, final String variableName, final int arrayElement, final String expectedString) {
 
-        ArgumentCaptor<Object[]> argCaptor = ArgumentCaptor.forClass(Object[].class);
+        final ArgumentCaptor<Object[]> argCaptor = ArgumentCaptor.forClass(Object[].class);
 
         verify(pec,Mockito.atLeast(1)).setVariable(eq(variableName), argCaptor.capture());
-        String returnedMessage = (String) (argCaptor.getValue()[arrayElement]);
+        final String returnedMessage = (String) (argCaptor.getValue()[arrayElement]);
         assertEquals(expectedString, returnedMessage);
 
     }
