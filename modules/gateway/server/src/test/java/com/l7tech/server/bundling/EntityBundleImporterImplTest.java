@@ -403,7 +403,6 @@ public class EntityBundleImporterImplTest {
     private Folder createRootFolder() {
         final Folder rootFolder = new Folder("Root", new Folder());
         rootFolder.setGoid(Folder.ROOT_FOLDER_ID);
-
         return rootFolder;
     }
 

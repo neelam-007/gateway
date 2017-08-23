@@ -8,6 +8,7 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.server.bundling.EntityBundle;
 import com.l7tech.server.bundling.EntityMappingInstructions;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 
 import java.util.*;
@@ -26,10 +27,7 @@ public class BundleTransformerTest {
      */
     @Test
     public void testMapByUriToConvertEntityMappingInstructionsFromMappingAndEntity() throws ResourceFactory.InvalidResourceException {
-        final Mapping mappingForTest = ManagedObjectFactory.createMapping();
-        mappingForTest.setType("SERVICE");
-        mappingForTest.setAction(Mapping.Action.NewOrUpdate);
-        mappingForTest.setSrcId("799eca6846c453e9a8e23ec887d6a341");
+        final Mapping mappingForTest = createMappingForTest("SERVICE", Mapping.Action.NewOrUpdate, "799eca6846c453e9a8e23ec887d6a341");
 
         final Map<String, Object> propertiesForTest = new HashMap(1);
         propertiesForTest.put(BundleTransformer.MapBy, "routingUri");
@@ -59,5 +57,70 @@ public class BundleTransformerTest {
         assertNotNull(sourceEntityHeader);
         assertTrue(sourceEntityHeader.getType() == EntityType.SERVICE);
         assertTrue("799eca6846c453e9a8e23ec887d6a341".equals(sourceEntityHeader.getStrId()));
+    }
+
+    @NotNull
+    private Mapping createMappingForTest(String type, Mapping.Action action, String id) {
+        final Mapping mappingForTest = ManagedObjectFactory.createMapping();
+        mappingForTest.setType(type);
+        mappingForTest.setAction(action);
+        mappingForTest.setSrcId(id);
+        return mappingForTest;
+    }
+
+    /**
+     * This test case is to use a bundleTransformer object to call convertFromMO, which will call convertEntityMappingInstructionsFromMappingAndEntity
+     * to convert EntityMappingInstructions from mapping which defines MapBy = "path".
+     * 
+     */
+    @Test
+    public void testMapByPathToConvertEntityMappingInstructionsFromMappingAndEntity() throws ResourceFactory.InvalidResourceException {
+        final Mapping serviceMapping = createMappingForTest("SERVICE", Mapping.Action.NewOrUpdate, "799eca6846c453e9a8e23ec887d6a341");
+        final Mapping folderMapping = createMappingForTest("FOLDER", Mapping.Action.AlwaysCreateNew, "799eca6846c453e9a8e23ec887d6a000");
+
+        final Map<String, Object> propertiesForTest = new HashMap(2);
+        propertiesForTest.put(BundleTransformer.MapBy, "path");
+        serviceMapping.setProperties(propertiesForTest);
+        propertiesForTest.put("MapTo", "/folder1/folder2");
+        folderMapping.setProperties(propertiesForTest);
+
+        final Bundle bundleForTest = ManagedObjectFactory.createBundle();
+        bundleForTest.setMappings(Arrays.asList(new Mapping[]{serviceMapping, folderMapping}));
+
+        // Use bundleTransformer to call convertFromMO, which will call convertEntityMappingInstructionsFromMappingAndEntity
+        final BundleTransformer bundleTransformer = new BundleTransformer();
+        EntityBundle entityBundle = bundleTransformer.convertFromMO(bundleForTest, null);
+
+        final List<EntityMappingInstructions> mappingInstructions = entityBundle.getMappingInstructions();
+        assertTrue(mappingInstructions != null && mappingInstructions.size() == 2);
+
+        // Verify returned Mapping.Action
+        final EntityMappingInstructions serviceMappingInstructions = mappingInstructions.get(0);
+        final EntityMappingInstructions folderMappingInstructions = mappingInstructions.get(1);
+        assertTrue(serviceMappingInstructions.getMappingAction() == EntityMappingInstructions.MappingAction.NewOrUpdate);
+        assertTrue(folderMappingInstructions.getMappingAction() == EntityMappingInstructions.MappingAction.AlwaysCreateNew);
+
+
+        // Verify returned service TargetMapping.Type
+        final EntityMappingInstructions.TargetMapping serviceTargetMapping = serviceMappingInstructions.getTargetMapping();
+        assertNotNull(serviceTargetMapping);
+        assertTrue(serviceTargetMapping.getType() == EntityMappingInstructions.TargetMapping.Type.PATH);
+
+        //Verify returned folder TargetMapping.Type
+        assertNotNull(folderMappingInstructions.getTargetMapping());
+        assertTrue( folderMappingInstructions.getTargetMapping().getType() == EntityMappingInstructions.TargetMapping.Type.PATH);
+        assertTrue(folderMappingInstructions.getTargetMapping().getTargetID().equals("/folder1/folder2"));
+
+        // Verify returned service Source EntityHeader
+        final EntityHeader serviceSourceEntityHeader = serviceMappingInstructions.getSourceEntityHeader();
+        assertNotNull(serviceSourceEntityHeader);
+        assertTrue(serviceSourceEntityHeader.getType() == EntityType.SERVICE);
+        assertTrue("799eca6846c453e9a8e23ec887d6a341".equals(serviceSourceEntityHeader.getStrId()));
+
+        // Verify returned service Source EntityHeader
+        final EntityHeader folderSourceEntityHeader = folderMappingInstructions.getSourceEntityHeader();
+        assertNotNull(folderSourceEntityHeader);
+        assertTrue(folderSourceEntityHeader.getType() == EntityType.FOLDER);
+        assertTrue("799eca6846c453e9a8e23ec887d6a000".equals(folderSourceEntityHeader.getStrId()));
     }
 }

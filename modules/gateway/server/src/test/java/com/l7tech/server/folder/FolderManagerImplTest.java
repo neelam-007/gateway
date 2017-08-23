@@ -4,6 +4,8 @@ import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.Permission;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.server.RoleMatchingTestUtil;
 import com.l7tech.server.security.rbac.RoleManager;
@@ -16,8 +18,9 @@ import org.mockito.ArgumentMatcher;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import java.util.Properties;
+import java.util.*;
 
+import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
 
@@ -90,6 +93,94 @@ public class FolderManagerImplTest {
         properties.setProperty(FolderManagerImpl.AUTO_CREATE_VIEW_ROLE_PROPERTY, "false");
         manager.createRoles(folder);
         verify(roleManager, times(1)).save(any(Role.class));
+    }
+
+    @Test
+    public void testFindFolderByPath() throws Exception {
+        //Set up dummy folder structure
+        final List<Folder> folders = pathTestSetup();
+        manager = spy(new FolderManagerImpl(roleManager, new MockConfig(properties)));
+        doReturn(folders.get(0)).when(manager).findRootFolder();
+        doReturn(Arrays.asList(folders.get(1), folders.get(2))).when(manager).findByFolder(folders.get(0).getGoid());
+        doReturn(Arrays.asList(folders.get(3), folders.get(4))).when(manager).findByFolder(folders.get(1).getGoid());
+        final Folder answer = manager.findByPath("/folder1/folder1_a");
+
+        //Verify that the folder has the same Id as folder1_a
+        assertTrue("Id of answer is folder1_a", answer.getId().equals(folders.get(3).getId()));
+    }
+
+    @Test
+    public void testFindFolderByPathDoesNotExist() throws Exception {
+        //Set up dummy folder structure
+        final List<Folder> folders = pathTestSetup();
+        manager = spy(new FolderManagerImpl(roleManager, new MockConfig(properties)));
+        doReturn(folders.get(0)).when(manager).findRootFolder();
+        doReturn(Arrays.asList(folders.get(1), folders.get(2))).when(manager).findByFolder(folders.get(0).getGoid());
+        doReturn(Arrays.asList(folders.get(3), folders.get(4))).when(manager).findByFolder(folders.get(1).getGoid());
+
+        try {
+            manager.findByPath("/folder1/NoExisting");
+            fail("Find Exception should have been thrown");
+        } catch (FindException e) {
+            assertTrue("Find Exception was thrown because No existing folder exists", e.getMessage().equals("There is no such folder path: /folder1/NoExisting"));
+        }
+    }
+
+    @Test
+    public void testFindEmptyPath() throws Exception {
+        assertNull(manager.findByPath(""));
+    }
+
+    @Test
+    public void testBuildByPath() throws Exception {
+        final List<Folder> folders = pathTestSetup();
+        manager = spy(new FolderManagerImpl(roleManager, new MockConfig(properties)));
+        doReturn(folders.get(0)).when(manager).findRootFolder();
+        doReturn(Arrays.asList(folders.get(1), folders.get(2))).when(manager).findByFolder(folders.get(0).getGoid());
+        doReturn(Arrays.asList(folders.get(3), folders.get(4))).when(manager).findByFolder(folders.get(1).getGoid());
+        doReturn(null).when(manager).save(any(Folder.class));
+
+        final Folder answer = manager.buildByPath("/folder1/folder1_new");
+
+        assertTrue("folder1_new is created",answer.getName().equals("folder1_new"));
+        assertTrue("folder1_new's parent is folder1", answer.getFolder().getName().equals("folder1"));
+    }
+
+    @Test
+    public void testBuildEmptyPath() throws Exception {
+        try {
+            manager.buildByPath("bad");
+            fail("IllegalArgumentException should've been thrown.");
+        } catch (IllegalArgumentException e) {
+            assertTrue("IllegalArgumentException was thrown", e.getMessage().equals("The folder path is not an absolute path."));
+        }
+    }
+
+    private List<Folder> pathTestSetup() {
+        //Set up dummy folder structure
+        final Folder rootFolder = createRootFolder(); //0
+        final Folder folder1 = createFolder("folder1", rootFolder); //1
+        final Folder folder2 = createFolder("folder2", rootFolder); //2
+        final Folder folder1_a = createFolder("folder1_a", folder1); //3
+        final Folder folder1_b = createFolder("folder1_b", folder1); //4
+        final Folder folder2_a = createFolder("folder2_a", folder2); //5
+
+        return Arrays.asList(rootFolder, folder1, folder2, folder1_a, folder1_b, folder2_a);
+    }
+
+    private Folder createRootFolder() {
+        final Folder rootFolder = new Folder("Root", new Folder());
+        rootFolder.setGoid(Folder.ROOT_FOLDER_ID);
+        return rootFolder;
+    }
+
+    private Folder createFolder(String folder1, Folder parent) {
+        final Folder folder = new Folder(folder1,parent);
+        final byte[] bytes = new byte[16];
+        new Random().nextBytes(bytes);
+        final Goid random_goid = new Goid(bytes);
+        folder.setGoid(random_goid);
+        return folder;
     }
 
     private RoleWithReadEncapsulatedAssertionPermission canReadEncapsulatedAssertions() {
