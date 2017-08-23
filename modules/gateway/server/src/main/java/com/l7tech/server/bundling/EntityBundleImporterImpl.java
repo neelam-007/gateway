@@ -1780,29 +1780,32 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
             } else if (EntityMappingInstructions.TargetMapping.Type.ROUTING_URI.equals(type) && mapping.getSourceEntityHeader() instanceof ServiceHeader && ((ServiceHeader) mapping.getSourceEntityHeader()).getRoutingUri() != null) {
                 // mapping by routing uri so get the target routing uri from the source.
                 targetMapTo = ((ServiceHeader) mapping.getSourceEntityHeader()).getRoutingUri();
-            } else if (EntityMappingInstructions.TargetMapping.Type.PATH.equals(type) && mapping.getSourceEntityHeader() instanceof HasFolderId && ((HasFolderId) mapping.getSourceEntityHeader()).getFolderId() != null) {
-                // mapping by path so get the target path from the source.
-                final EntityContainer container = bundle.getEntity(mapping.getSourceEntityHeader().getStrId(), mapping.getSourceEntityHeader().getType());
-                if (container != null && container.getEntity() instanceof HasFolder) {
-                    final HasFolder hasFolder = (HasFolder) container.getEntity();
-                    Folder parent = hasFolder.getFolder();
-                    if (parent != null && StringUtils.isEmpty(parent.getName())) {
-                        // can't build a path if parent folder doesn't have its name so try to retrieve the full parent entity from the bundle
-                        final EntityContainer pContainer = bundle.getEntity(parent.getId(), EntityType.FOLDER);
-                        if (pContainer != null && pContainer.getEntity() instanceof Folder) {
-                            parent = (Folder) pContainer.getEntity();
-                            hasFolder.setFolder(parent);
+            } else if (EntityMappingInstructions.TargetMapping.Type.PATH.equals(type) && mapping.getSourceEntityHeader() instanceof HasFolderId) {
+                if (((HasFolderId) mapping.getSourceEntityHeader()).getFolderId() != null) {
+                    // mapping by path so get the target path from the source.
+                    final EntityContainer container = bundle.getEntity(mapping.getSourceEntityHeader().getStrId(), mapping.getSourceEntityHeader().getType());
+                    if (container != null && container.getEntity() instanceof HasFolder) {
+                        final HasFolder hasFolder = (HasFolder) container.getEntity();
+                        Folder parent = hasFolder.getFolder();
+                        if (parent != null && StringUtils.isEmpty(parent.getName())) {
+                            // can't build a path if parent folder doesn't have its name so try to retrieve the full parent entity from the bundle
+                            final EntityContainer pContainer = bundle.getEntity(parent.getId(), EntityType.FOLDER);
+                            if (pContainer != null && pContainer.getEntity() instanceof Folder) {
+                                parent = (Folder) pContainer.getEntity();
+                                hasFolder.setFolder(parent);
+                            }
+                        }
+                        if (hasFolder instanceof Folder) {
+                            targetMapTo = ((Folder) hasFolder).getPath();
+                        } else {
+                            targetMapTo = parent.getPath() + "/" + mapping.getSourceEntityHeader().getName();
                         }
                     } else {
-                        // handle if the entity is the root folder
-                    }
-                    if (hasFolder instanceof Folder) {
-                        targetMapTo = ((Folder)hasFolder).getPath();
-                    } else {
-                        targetMapTo = parent.getPath() + "/" + mapping.getSourceEntityHeader().getName();
+                        throw new IncorrectMappingInstructionsException(mapping, "Mapping by path but entity is not a folderable type");
                     }
                 } else {
-                    throw new IncorrectMappingInstructionsException(mapping, "Mapping by path but entity is not a folderable type");
+                    // map to root folder
+                    targetMapTo = "/";
                 }
             } else if (EntityMappingInstructions.TargetMapping.Type.MAP_BY_ROLE_ENTITY.equals(type)) {
                 // set the target mapping to the id of the role, this should be the default.
