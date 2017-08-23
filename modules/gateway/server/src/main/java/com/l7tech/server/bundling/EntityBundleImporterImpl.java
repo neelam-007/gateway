@@ -216,7 +216,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                     try {
                         //Find an existing entity to map it to only if we are not ignoring this mapping.
                         @Nullable
-                        final Entity existingEntity = EntityMappingInstructions.MappingAction.Ignore.equals(mapping.getMappingAction()) ? null : locateExistingEntity(mapping, entity == null ? null : entity.getEntity(), resourceMapping);
+                        final Entity existingEntity = EntityMappingInstructions.MappingAction.Ignore.equals(mapping.getMappingAction()) ? null : locateExistingEntity(mapping, entity == null ? null : entity.getEntity(), bundle, resourceMapping);
                         @NotNull
                         final EntityMappingResult mappingResult;
                         if (existingEntity != null) {
@@ -1471,6 +1471,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
      *
      * @param mapping         The entity mapping instructions
      * @param entity          The entity to import
+     * @param bundle          The entity bundle to import
      * @param resourceMapping This is used to get any already mapped entities that could be needed in locating the given
      *                        entity.
      * @return The existing entity that this entity should be mapped to or null if there is no existing entity to map
@@ -1479,7 +1480,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
      *                               an error locating an identity provider when mapping identities
      */
     @Nullable
-    private Entity locateExistingEntity(@NotNull final EntityMappingInstructions mapping, @Nullable final Entity entity, @NotNull final Map<EntityHeader, EntityHeader> resourceMapping) throws BundleImportException {
+    private Entity locateExistingEntity(@NotNull final EntityMappingInstructions mapping, @Nullable final Entity entity, @NotNull EntityBundle bundle, @NotNull final Map<EntityHeader, EntityHeader> resourceMapping) throws BundleImportException {
         //this needs to be wrapped in a transaction that ignores rollback. We don't need to rollback if a resource cannot be found.
         //Wrap the transaction manager so that we can ignore rollback.
         final TransactionTemplate tt = new TransactionTemplate(new PlatformTransactionManager() {
@@ -1499,7 +1500,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
             }
         });
         //get the mapping target identifier. This is either a name, id or guid depending on the mapping instructions.
-        final String mappingTarget = getMapTo(mapping);
+        final String mappingTarget = getMapTo(mapping, bundle);
         //we are not making any changes to the database, just searching for entities.
         tt.setReadOnly(true);
         return Eithers.extract(tt.execute(new TransactionCallback<Either<BundleImportException, Option<Entity>>>() {
@@ -1631,33 +1632,37 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                 }
                                 case PATH: {
                                     //Find the entity by its path
-                                    final Pair<String, String> pair = parseEntityPathIntoFolderPathAndEntityName(mappingTarget);
-                                    final String folderPath = pair.left;
-                                    final String entityName = pair.right;
-
-                                    final Folder folder;
-                                    try {
-                                        folder = folderManager.findByPath(folderPath);
-                                    } catch (final FindException fe) {
-                                        // If any folder on the folder path is not found, it implies the south entity cannot be found in the target gateway.
-                                        resource = null;
-                                        break;
-                                    }
-
-                                    final List<? extends Entity> childrenUnderThisFolder = entityCrud.findAll(mapping.getSourceEntityHeader().getType().getEntityClass(), CollectionUtils.MapBuilder.<String, List<Object>>builder().put("folder", Arrays.<Object>asList(folder)).map(), 0, -1, null, null);
-                                    final List<Entity> list = new ArrayList<>();
-
-                                    for (Entity entity: childrenUnderThisFolder) {
-                                        if (entity instanceof NamedEntity && ((NamedEntity) entity).getName().equals(entityName)) {
-                                            list.add(entity);
-                                        }
-                                    }
-                                    if (list.isEmpty()) {
-                                        resource = null;
-                                    } else if (list.size() > 1) {
-                                        return Either.<BundleImportException, Option<Entity>>left(new IncorrectMappingInstructionsException(mapping, "Found multiple possible target entities found by path: " + mappingTarget));
+                                    if (EntityType.FOLDER.equals(mapping.getSourceEntityHeader().getType())) {
+                                        resource = folderManager.findByPath(mappingTarget);
                                     } else {
-                                        resource = list.iterator().next();
+                                        final Pair<String, String> pair = parseEntityPathIntoFolderPathAndEntityName(mappingTarget);
+                                        final String folderPath = pair.left;
+                                        final String entityName = pair.right;
+
+                                        final Folder folder;
+                                        try {
+                                            folder = folderManager.findByPath(folderPath);
+                                        } catch (final FindException fe) {
+                                            // If any folder on the folder path is not found, it implies the south entity cannot be found in the target gateway.
+                                            resource = null;
+                                            break;
+                                        }
+
+                                        final List<? extends Entity> childrenUnderThisFolder = entityCrud.findAll(mapping.getSourceEntityHeader().getType().getEntityClass(), CollectionUtils.MapBuilder.<String, List<Object>>builder().put("folder", Arrays.<Object>asList(folder)).map(), 0, -1, null, null);
+                                        final List<Entity> list = new ArrayList<>();
+
+                                        for (Entity entity : childrenUnderThisFolder) {
+                                            if (entity instanceof NamedEntity && ((NamedEntity) entity).getName().equals(entityName)) {
+                                                list.add(entity);
+                                            }
+                                        }
+                                        if (list.isEmpty()) {
+                                            resource = null;
+                                        } else if (list.size() > 1) {
+                                            return Either.left(new IncorrectMappingInstructionsException(mapping, "Found multiple possible target entities found by path: " + mappingTarget));
+                                        } else {
+                                            resource = list.iterator().next();
+                                        }
                                     }
                                     break;
                                 }
@@ -1754,7 +1759,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
      *                                               target mapping id cannot be found
      */
     @NotNull
-    private String getMapTo(@NotNull final EntityMappingInstructions mapping) throws IncorrectMappingInstructionsException {
+    private String getMapTo(@NotNull final EntityMappingInstructions mapping, @NotNull EntityBundle bundle) throws IncorrectMappingInstructionsException {
         @NotNull
         final String targetMapTo;
         if (mapping.getTargetMapping() != null && mapping.getTargetMapping().getTargetID() != null) {
@@ -1777,11 +1782,27 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                 targetMapTo = ((ServiceHeader) mapping.getSourceEntityHeader()).getRoutingUri();
             } else if (EntityMappingInstructions.TargetMapping.Type.PATH.equals(type) && mapping.getSourceEntityHeader() instanceof HasFolderId && ((HasFolderId) mapping.getSourceEntityHeader()).getFolderId() != null) {
                 // mapping by path so get the target path from the source.
-                try {
-                    targetMapTo = folderManager.findByPrimaryKey(((HasFolderId) mapping.getSourceEntityHeader()).getFolderId()).getPath() + "/" + mapping.getSourceEntityHeader().getName();
-                } catch (FindException e) {
-                    //cannot find a folder.
-                    throw new IncorrectMappingInstructionsException(mapping, "Mapping by " + type + " but could not find a folder (id=" + ((HasFolderId) mapping.getSourceEntityHeader()).getFolderId().toString() + ") to map to");
+                final EntityContainer container = bundle.getEntity(mapping.getSourceEntityHeader().getStrId(), mapping.getSourceEntityHeader().getType());
+                if (container != null && container.getEntity() instanceof HasFolder) {
+                    final HasFolder hasFolder = (HasFolder) container.getEntity();
+                    Folder parent = hasFolder.getFolder();
+                    if (parent != null && StringUtils.isEmpty(parent.getName())) {
+                        // can't build a path if parent folder doesn't have its name so try to retrieve the full parent entity from the bundle
+                        final EntityContainer pContainer = bundle.getEntity(parent.getId(), EntityType.FOLDER);
+                        if (pContainer != null && pContainer.getEntity() instanceof Folder) {
+                            parent = (Folder) pContainer.getEntity();
+                            hasFolder.setFolder(parent);
+                        }
+                    } else {
+                        // handle if the entity is the root folder
+                    }
+                    if (hasFolder instanceof Folder) {
+                        targetMapTo = ((Folder)hasFolder).getPath();
+                    } else {
+                        targetMapTo = parent.getPath() + "/" + mapping.getSourceEntityHeader().getName();
+                    }
+                } else {
+                    throw new IncorrectMappingInstructionsException(mapping, "Mapping by path but entity is not a folderable type");
                 }
             } else if (EntityMappingInstructions.TargetMapping.Type.MAP_BY_ROLE_ENTITY.equals(type)) {
                 // set the target mapping to the id of the role, this should be the default.

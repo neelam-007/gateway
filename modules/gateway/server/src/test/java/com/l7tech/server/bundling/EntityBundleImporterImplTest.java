@@ -52,11 +52,10 @@ import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.DefaultTransactionStatus;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.l7tech.objectmodel.EntityType.USER;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 /**
@@ -341,6 +340,41 @@ public class EntityBundleImporterImplTest {
 
     }
 
+    /**
+     * MapBy=path but no MapTo value
+     */
+    @Test
+    public void updateByPathWithoutSpecifyingTargetPath() throws Exception {
+        final Folder rootFolder = createRootFolder();
+        final Folder subFolder = createFolder("subFolder", rootFolder);
+        final PublishedService service =  createTestingPublishedService(createTestingPolicy(), subFolder, "TestService", "/test");
+
+        when(folderManager.findByPath("/subFolder")).thenReturn(subFolder);
+        when(entityCrud.find(Folder.class, Folder.ROOT_FOLDER_ID.toString())).thenReturn(rootFolder);
+        final List found = Arrays.asList(service);
+        when(entityCrud.findAll(eq(PublishedService.class), anyMap(), eq(0), eq(-1), eq(null), eq(null))).thenReturn(found);
+        when(entityCrud.find(any(ServiceHeader.class))).thenReturn(service);
+        when(policyVersionManager.findLatestRevisionForPolicy(service.getPolicy().getGoid())).thenReturn(new PolicyVersion());
+
+        final EntityBundle bundle = new EntityBundleBuilder().
+                expectExistingRootFolder().
+                updateFolderByPath(subFolder).
+                updateServiceByPath(service).create();
+
+        final Map<Goid, EntityMappingResult> results = resultsToMap(importer.importBundle(bundle, false, true, null));
+        assertEquals(3, results.size());
+        assertEquals(EntityMappingResult.MappingAction.UsedExisting, results.get(rootFolder.getGoid()).getMappingAction());
+        assertEquals(EntityMappingResult.MappingAction.UpdatedExisting, results.get(subFolder.getGoid()).getMappingAction());
+        assertEquals(EntityMappingResult.MappingAction.UpdatedExisting, results.get(service.getGoid()).getMappingAction());
+        verify(folderManager, atLeastOnce()).findByPath("/subFolder");
+        verify(entityCrud).update(subFolder);
+        verify(serviceManager).update(service);
+    }
+
+    private Map<Goid, EntityMappingResult> resultsToMap(final List<EntityMappingResult> results) {
+        return results.stream().collect(Collectors.toMap(result->result.getSourceEntityHeader().getGoid(), result->result));
+    }
+
     private Folder createFolder(String folder1, Folder parent) {
         final Folder folder = new Folder(folder1,parent);
         final byte[] bytes = new byte[16];
@@ -401,7 +435,7 @@ public class EntityBundleImporterImplTest {
     }
 
     private Folder createRootFolder() {
-        final Folder rootFolder = new Folder("Root", new Folder());
+        final Folder rootFolder = new Folder("Root", null);
         rootFolder.setGoid(Folder.ROOT_FOLDER_ID);
         return rootFolder;
     }
@@ -462,7 +496,7 @@ public class EntityBundleImporterImplTest {
         return new FolderHeader(
             folder.getGoid(),
             folder.getName(),
-            folder.getFolder().getGoid(),
+            folder.getFolder() == null ? null : folder.getFolder().getGoid(),
             folder.getVersion(),
             folder.getPath(),
             folder.getSecurityZone() != null? folder.getSecurityZone().getGoid() : null
