@@ -7,10 +7,10 @@ package com.l7tech.external.assertions.circuitbreaker.server;
  */
 final public class CircuitConfig {
     private final String trackerId;
-    private final long recoveryPeriod;
+    private final int recoveryPeriod;
     private final FailureCondition failureCondition;
 
-    public CircuitConfig(final String trackerID, final long recoveryPeriod,
+    public CircuitConfig(final String trackerID, final int recoveryPeriod,
                          final FailureCondition failureCondition) {
 
         this.trackerId = trackerID;
@@ -22,7 +22,7 @@ final public class CircuitConfig {
         return trackerId;
     }
 
-    public long getRecoveryPeriod() {
+    public int getRecoveryPeriod() {
         return recoveryPeriod;
     }
 
@@ -47,7 +47,7 @@ final public class CircuitConfig {
     public int hashCode() {
         int result;
         result = (trackerId != null ? trackerId.hashCode() : 0);
-        result = 29 * result + new Long(recoveryPeriod).intValue();
+        result = 29 * result + recoveryPeriod;
         result = 29 * result + failureCondition.hashCode();
         return result;
     }

@@ -1,24 +1,31 @@
 package com.l7tech.external.assertions.circuitbreaker.server;
 
 /**
- * Represents policy execution Failure configuration.
+ * Represents Latency configuration.
  *
  * @author Ekta Khandelwal - khaek01@ca.com
  */
-final public class PolicyFailure implements FailureCondition {
+final public class Latency implements FailureCondition {
+    private static final String FAILURE_CONDITION_LATENCY = "LATENCY";
+
     private final int samplingWindow;
     private final int maxFailureCount;
-    public static final String FAILURE_CONDITION_POLICY = "POLICY_FAILURE";
+    private final int limit;
 
-    public PolicyFailure(final int samplingWindow,
-                         final int MaxFailureCount) {
-
+    public Latency(final int samplingWindow,
+                   final int maxFailureCount,
+                   final int limit) {
         this.samplingWindow = samplingWindow;
-        this.maxFailureCount = MaxFailureCount;
+        this.maxFailureCount = maxFailureCount;
+        this.limit = limit;
     }
 
     public int getSamplingWindow() {
         return samplingWindow;
+    }
+
+    public int getLimit() {
+        return limit;
     }
 
     public int getMaxFailureCount() {
@@ -26,7 +33,7 @@ final public class PolicyFailure implements FailureCondition {
     }
 
     public String getType() {
-        return this.FAILURE_CONDITION_POLICY;
+        return FAILURE_CONDITION_LATENCY;
     }
 
     @Override
@@ -34,9 +41,10 @@ final public class PolicyFailure implements FailureCondition {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        PolicyFailure that = (PolicyFailure)o;
-        if(this.samplingWindow != that.samplingWindow)     return false;
-        if(this.maxFailureCount != that.maxFailureCount)     return false;
+        Latency that = (Latency) o;
+        if (this.samplingWindow != that.samplingWindow) return false;
+        if (this.maxFailureCount != that.maxFailureCount) return false;
+        if (this.limit != that.limit) return false;
 
         return true;
     }
@@ -46,6 +54,7 @@ final public class PolicyFailure implements FailureCondition {
         int result = 0;
         result = 29 * result + samplingWindow;
         result = 29 * result + maxFailureCount;
+        result = 29 * result + limit;
         return result;
     }
 }

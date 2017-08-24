@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.l7tech.external.assertions.circuitbreaker.console.CircuitBreakerAssertionPropertiesDialog">
+  <grid id="27dc6" binding="contentPane" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+    <margin top="0" left="0" bottom="0" right="0"/>
+    <constraints>
+      <xy x="20" y="20" width="1994" height="400"/>
+    </constraints>
+    <properties/>
+    <border type="none"/>
+    <children>
+      <grid id="1d857" layout-manager="GridLayoutManager" row-count="5" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+        <margin top="0" left="0" bottom="0" right="0"/>
+        <constraints>
+          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties/>
+        <border type="none" title-resource-bundle="com/l7tech/external/assertions/circuitbreaker/console/CircuitBreakerAssertionPropertiesDialog" title-key="policyFailureCircuitPanelTitle"/>
+        <children>
+          <component id="119ae" class="javax.swing.JTextField" binding="policyFailureCircuitMaxFailuresTextField">
+            <constraints>
+              <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false">
+                <preferred-size width="150" height="-1"/>
+              </grid>
+            </constraints>
+            <properties/>
+          </component>
+          <component id="f1461" class="javax.swing.JLabel">
+            <constraints>
+              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text resource-bundle="com/l7tech/external/assertions/circuitbreaker/console/CircuitBreakerAssertionPropertiesDialog" key="policyFailureCircuitMaxFailuresLabel"/>
+              <toolTipText resource-bundle="com/l7tech/external/assertions/circuitbreaker/console/CircuitBreakerAssertionPropertiesDialog" key="policyFailureCircuitMaxFailuresTooltip"/>
+            </properties>
+          </component>
+          <component id="b5a8f" class="javax.swing.JLabel">
+            <constraints>
+              <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text resource-bundle="com/l7tech/external/assertions/circuitbreaker/console/CircuitBreakerAssertionPropertiesDialog" key="policyFailureCircuitSamplingWindowLabel"/>
+              <toolTipText resource-bundle="com/l7tech/external/assertions/circuitbreaker/console/CircuitBreakerAssertionPropertiesDialog" key="policyFailureCircuitSamplingWindowTooltip"/>
+            </properties>
+          </component>
+          <component id="1560d" class="javax.swing.JTextField" binding="policyFailureCircuitRecoveryPeriodTextField">
+            <constraints>
+              <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                <preferred-size width="150" height="-1"/>
+              </grid>
+            </constraints>
+            <properties/>
+          </component>
+          <component id="cf012" class="javax.swing.JLabel">
+            <constraints>
+              <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text resource-bundle="com/l7tech/external/assertions/circuitbreaker/console/CircuitBreakerAssertionPropertiesDialog" key="policyFailureCircuitRecoveryPeriodLabel"/>
+              <toolTipText resource-bundle="com/l7tech/external/assertions/circuitbreaker/console/CircuitBreakerAssertionPropertiesDialog" key="policyFailureCircuitRecoveryPeriodTooltip"/>
+            </properties>
+          </component>
+          <component id="ee88f" class="javax.swing.JTextField" binding="policyFailureCircuitSamplingWindowTextField">
+            <constraints>
+              <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                <preferred-size width="150" height="-1"/>
+              </grid>
+            </constraints>
+            <properties/>
+          </component>
+          <vspacer id="9c159">
+            <constraints>
+              <grid row="4" column="1" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+            </constraints>
+          </vspacer>
+          <component id="cd761" class="javax.swing.JCheckBox" binding="policyFailureCircuitEnabledCheckbox">
+            <constraints>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text resource-bundle="com/l7tech/external/assertions/circuitbreaker/console/CircuitBreakerAssertionPropertiesDialog" key="policyFailureCircuitEnabled"/>
+            </properties>
+          </component>
+        </children>
+      </grid>
+      <grid id="88f13" layout-manager="GridLayoutManager" row-count="6" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+        <margin top="0" left="0" bottom="0" right="0"/>
+        <constraints>
+          <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties/>
+        <border type="none" title-resource-bundle="com/l7tech/external/assertions/circuitbreaker/console/CircuitBreakerAssertionPropertiesDialog" title-key="latencyCircuitPanelTitle"/>
+        <children>
+          <component id="5bc78" class="javax.swing.JLabel">
+            <constraints>
+              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text resource-bundle="com/l7tech/external/assertions/circuitbreaker/console/CircuitBreakerAssertionPropertiesDialog" key="latencyCircuitMaxFailuresLabel"/>
+              <toolTipText resource-bundle="com/l7tech/external/assertions/circuitbreaker/console/CircuitBreakerAssertionPropertiesDialog" key="latencyCircuitMaxFailuresTooltip"/>
+            </properties>
+          </component>
+          <component id="fe72" class="javax.swing.JTextField" binding="latencyCircuitMaxFailuresTextField">
+            <constraints>
+              <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                <preferred-size width="150" height="-1"/>
+              </grid>
+            </constraints>
+            <properties/>
+          </component>
+          <component id="3d6d" class="javax.swing.JLabel">
+            <constraints>
+              <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text resource-bundle="com/l7tech/external/assertions/circuitbreaker/console/CircuitBreakerAssertionPropertiesDialog" key="latencyCircuitRecoveryPeriodLabel"/>
+              <toolTipText resource-bundle="com/l7tech/external/assertions/circuitbreaker/console/CircuitBreakerAssertionPropertiesDialog" key="latencyCircuitRecoveryPeriodTooltip"/>
+            </properties>
+          </component>
+          <component id="327e5" class="javax.swing.JTextField" binding="latencyCircuitSamplingWindowTextField">
+            <constraints>
+              <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                <preferred-size width="150" height="-1"/>
+              </grid>
+            </constraints>
+            <properties/>
+          </component>
+          <component id="e433a" class="javax.swing.JLabel">
+            <constraints>
+              <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text resource-bundle="com/l7tech/external/assertions/circuitbreaker/console/CircuitBreakerAssertionPropertiesDialog" key="latencyCircuitSamplingWindowLabel"/>
+              <toolTipText resource-bundle="com/l7tech/external/assertions/circuitbreaker/console/CircuitBreakerAssertionPropertiesDialog" key="latencyCircuitSamplingWindowTooltip"/>
+            </properties>
+          </component>
+          <component id="d6997" class="javax.swing.JTextField" binding="latencyCircuitRecoveryPeriodTextField">
+            <constraints>
+              <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                <preferred-size width="150" height="-1"/>
+              </grid>
+            </constraints>
+            <properties/>
+          </component>
+          <vspacer id="54043">
+            <constraints>
+              <grid row="5" column="1" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+            </constraints>
+          </vspacer>
+          <component id="45f37" class="javax.swing.JCheckBox" binding="latencyCircuitEnabledCheckbox">
+            <constraints>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text resource-bundle="com/l7tech/external/assertions/circuitbreaker/console/CircuitBreakerAssertionPropertiesDialog" key="latencyCircuitEnabled"/>
+            </properties>
+          </component>
+          <component id="9d4bc" class="javax.swing.JLabel">
+            <constraints>
+              <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text resource-bundle="com/l7tech/external/assertions/circuitbreaker/console/CircuitBreakerAssertionPropertiesDialog" key="latencyCircuitMaxLatencyLabel"/>
+              <toolTipText resource-bundle="com/l7tech/external/assertions/circuitbreaker/console/CircuitBreakerAssertionPropertiesDialog" key="latencyCircuitMaxLatencyTooltip"/>
+            </properties>
+          </component>
+          <component id="f800" class="javax.swing.JTextField" binding="latencyCircuitMaxLatencyTextField">
+            <constraints>
+              <grid row="4" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                <preferred-size width="150" height="-1"/>
+              </grid>
+            </constraints>
+            <properties/>
+          </component>
+        </children>
+      </grid>
+    </children>
+  </grid>
+</form>

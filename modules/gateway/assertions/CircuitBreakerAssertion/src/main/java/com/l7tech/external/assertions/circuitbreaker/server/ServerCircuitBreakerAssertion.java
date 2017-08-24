@@ -16,10 +16,13 @@ import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.external.assertions.circuitbreaker.CircuitBreakerConstants.*;
 
 /**
  * Server side implementation of the CircuitBreakerAssertion.
@@ -29,8 +32,8 @@ import java.util.logging.Logger;
 public class ServerCircuitBreakerAssertion extends ServerCompositeAssertion<CircuitBreakerAssertion> {
 
     private static final Logger logger = Logger.getLogger(ServerCircuitBreakerAssertion.class.getName());
-    private final String policyFailureTrackerId;
-    private final String latencyFailureTrackerId;
+    private final String policyFailureCircuitTrackerId;
+    private final String latencyCircuitTrackerId;
 
     private final String[] variablesUsed;
 
@@ -54,25 +57,25 @@ public class ServerCircuitBreakerAssertion extends ServerCompositeAssertion<Circ
     public ServerCircuitBreakerAssertion(final CircuitBreakerAssertion assertion, ApplicationContext applicationContext) throws PolicyAssertionException, LicenseException, NoSuchAlgorithmException {
         super(assertion, applicationContext);
         this.variablesUsed = assertion.getVariablesUsed();
-        if(null != assertion.getPolicyFailureTrackerId()) {
-            policyFailureTrackerId = assertion.getPolicyFailureTrackerId();
+        if(null != assertion.getPolicyFailureCircuitTrackerId()) {
+            policyFailureCircuitTrackerId = assertion.getPolicyFailureCircuitTrackerId();
         } else {
-            policyFailureTrackerId = "policy_" + String.valueOf(Math.abs(secureRandom.nextLong()));
+            policyFailureCircuitTrackerId = "policy_" + String.valueOf(Math.abs(secureRandom.nextLong()));
         }
 
-        if(null != assertion.getLatencyFailureTrackerId()) {
-            latencyFailureTrackerId = assertion.getLatencyFailureTrackerId();
+        if(null != assertion.getLatencyCircuitTrackerId()) {
+            latencyCircuitTrackerId = assertion.getLatencyCircuitTrackerId();
         } else {
-            latencyFailureTrackerId = "latency_" + String.valueOf(Math.abs(secureRandom.nextLong()));
+            latencyCircuitTrackerId = "latency_" + String.valueOf(Math.abs(secureRandom.nextLong()));
         }
     }
 
     public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         // check if the circuit is open and if so, has the recovery period been exceeded yet
         CircuitConfig policyFailureCircuit = getFailureCircuitConfig();
-        CircuitConfig latencyFailureCircuit = getLatencyCircuitConfig();
+        CircuitConfig latencyCircuit = getLatencyCircuitConfig();
 
-        if (!isCircuitClosed(policyFailureCircuit) ||  !isCircuitClosed(latencyFailureCircuit)) {
+        if (!isCircuitClosed(policyFailureCircuit) ||  !isCircuitClosed(latencyCircuit)) {
             return AssertionStatus.FALSIFIED;
         }
 
@@ -82,27 +85,30 @@ public class ServerCircuitBreakerAssertion extends ServerCompositeAssertion<Circ
         long executionEndTimestamp = timeSource.nanoTime();
         long currentExecutionLatency = executionEndTimestamp - executionStartTimestamp;
 
-        //handle policy failures and latency failures
+        //handle policy failures and latency
         if (null != policyFailureCircuit  && AssertionStatus.NONE != status) {
             updateEventTracker(policyFailureCircuit, executionEndTimestamp);
         }
-        if (null != latencyFailureCircuit && currentExecutionLatency > TimeUnit.MILLISECONDS.toNanos(((LatencyFailure)latencyFailureCircuit.getFailureCondition()).getLimit())) {
-            updateEventTracker(latencyFailureCircuit, executionEndTimestamp);
+        if (null != latencyCircuit && currentExecutionLatency > TimeUnit.MILLISECONDS.toNanos(((Latency)latencyCircuit.getFailureCondition()).getLimit())) {
+            updateEventTracker(latencyCircuit, executionEndTimestamp);
+
+            // log latency event with latency time
+            logLatencyLimitExceededEvent(latencyCircuit.getTrackerId(), currentExecutionLatency);
         }
 
        return status;
     }
 
-   private void updateEventTracker(final CircuitConfig circuitConfig, final long timeStamp) {
+    private void updateEventTracker(final CircuitConfig circuitConfig, final long timeStamp) {
         EventTracker eventTracker = getEventTracker(circuitConfig.getTrackerId());
         eventTracker.recordEvent(timeStamp);
 
         long sinceTimeStamp = timeStamp - TimeUnit.MILLISECONDS.toNanos(
                 circuitConfig.getFailureCondition().getSamplingWindow());
         long count = eventTracker.getCountSinceTimestamp(sinceTimeStamp);
-        logger.log(Level.FINE, String.format("Event count is %s. Max count is #%s ", count,
-                circuitConfig.getFailureCondition().getMaxFailureCount()));
-
+        logger.log(Level.FINE, String.format("Event count is %s. Configured max failures is %s for trackerID %s", count,
+                circuitConfig.getFailureCondition().getMaxFailureCount(), circuitConfig.getTrackerId()));
+        
         // open circuit if failure count is more than threshold
         if (count >= circuitConfig.getFailureCondition().getMaxFailureCount()) {
             openCircuit(circuitConfig);
@@ -116,21 +122,21 @@ public class ServerCircuitBreakerAssertion extends ServerCompositeAssertion<Circ
     }
 
     private CircuitConfig getFailureCircuitConfig() {
-        if (assertion.isPolicyFailureEnabled()) {
-            return new CircuitConfig(policyFailureTrackerId,
-                    assertion.getPolicyFailureRecoveryPeriod(),
-                    new PolicyFailure(assertion.getPolicyFailureSamplingWindow(), assertion.getPolicyFailureMaxCount()));
+        if (assertion.isPolicyFailureCircuitEnabled()) {
+            return new CircuitConfig(policyFailureCircuitTrackerId,
+                    getPolicyFailureCircuitRecoveryPeriod(),
+                    new PolicyFailure(getPolicyFailureCircuitSamplingWindow(), getPolicyFailureCircuitMaxFailures()));
 
         }
         return null;
     }
 
     private CircuitConfig getLatencyCircuitConfig() {
-        if (assertion.isLatencyFailureEnabled()){
-            return new CircuitConfig(latencyFailureTrackerId,
-                    assertion.getLatencyRecoveryPeriod(),
-                    new LatencyFailure(assertion.getLatencyFailureSamplingWindow(),
-                            assertion.getLatencyFailureMaxCount(), assertion.getLatencyFailureLimit()));
+        if (assertion.isLatencyCircuitEnabled()){
+            return new CircuitConfig(latencyCircuitTrackerId,
+                    getLatencyCircuitRecoveryPeriod(),
+                    new Latency(getLatencyCircuitSamplingWindow(),
+                            getLatencyCircuitMaxFailures(), getLatencyCircuitMaxLatency()));
         }
         return null;
     }
@@ -152,7 +158,7 @@ public class ServerCircuitBreakerAssertion extends ServerCompositeAssertion<Circ
     private void logCircuitOpenStatus(final CircuitConfig circuitConfig, final long circuitCloseTimestamp) {
         Date circuitCloseDate = new Date(circuitCloseTimestamp);
         final String timeString = new SimpleDateFormat("HH:mm:ss:SSS zzz").format(circuitCloseDate);
-        logger.log(Level.WARNING, "Circuit open until " + timeString + " for trackerID=" + circuitConfig.getTrackerId());
+        logger.log(Level.INFO, "Circuit open until " + timeString + " for trackerID=" + circuitConfig.getTrackerId());
     }
 
     private EventTracker getEventTracker(final String trackerId) {
@@ -167,5 +173,60 @@ public class ServerCircuitBreakerAssertion extends ServerCompositeAssertion<Circ
         Date circuitCloseDate = new Date(circuitStateManager.getState(circuitConfig));
         final String timeString = new SimpleDateFormat("HH:mm:ss:SSS zzz").format(circuitCloseDate);
         logAndAudit(AssertionMessages.CB_CIRCUIT_TRIPPED, circuitConfig.getFailureCondition().getType(), timeString);
+    }
+
+    private void logLatencyLimitExceededEvent(final String trackerId, long currentExecutionLatency) {
+        Calendar latencyOccurrenceTime = Calendar.getInstance();
+        final String timeString = new SimpleDateFormat("HH:mm:ss:SSS zzz").format(latencyOccurrenceTime.getTime());
+        logger.log(Level.INFO, "Max latency exceeded for circuit " + trackerId + " at " + timeString + ". It took " + TimeUnit.NANOSECONDS.toMillis(currentExecutionLatency) + " ms to complete execution of policy.");
+    }
+
+    private int getPolicyFailureCircuitRecoveryPeriod() {
+        if (0 <= assertion.getPolicyFailureCircuitRecoveryPeriod()) {
+            return assertion.getPolicyFailureCircuitRecoveryPeriod();
+        }
+        return CB_POLICY_FAILURE_CIRCUIT_RECOVERY_PERIOD_DEFAULT;
+    }
+
+    private int getPolicyFailureCircuitMaxFailures() {
+        if (0 <= assertion.getPolicyFailureCircuitMaxFailures()) {
+            return assertion.getPolicyFailureCircuitMaxFailures();
+        }
+        return CB_POLICY_FAILURE_CIRCUIT_MAX_FAILURES_DEFAULT;
+    }
+
+    private int getPolicyFailureCircuitSamplingWindow() {
+        if (0 <= assertion.getPolicyFailureCircuitSamplingWindow()) {
+            return assertion.getPolicyFailureCircuitSamplingWindow();
+        }
+        return CB_POLICY_FAILURE_CIRCUIT_SAMPLING_WINDOW_DEFAULT;
+    }
+
+    private int getLatencyCircuitRecoveryPeriod() {
+        if (0 <= assertion.getLatencyCircuitRecoveryPeriod()) {
+            return assertion.getLatencyCircuitRecoveryPeriod();
+        }
+        return CB_LATENCY_CIRCUIT_RECOVERY_PERIOD_DEFAULT;
+    }
+
+    private int getLatencyCircuitMaxFailures() {
+        if (0 <= assertion.getLatencyCircuitMaxFailures()) {
+            return assertion.getLatencyCircuitMaxFailures();
+        }
+        return CB_LATENCY_CIRCUIT_MAX_FAILURES_DEFAULT;
+    }
+
+    private int getLatencyCircuitSamplingWindow() {
+        if (0 <= assertion.getLatencyCircuitSamplingWindow()) {
+            return assertion.getLatencyCircuitSamplingWindow();
+        }
+        return CB_LATENCY_CIRCUIT_SAMPLING_WINDOW_DEFAULT;
+    }
+
+    private int getLatencyCircuitMaxLatency() {
+        if (0 <= assertion.getLatencyCircuitMaxLatency()) {
+            return assertion.getLatencyCircuitMaxLatency();
+        }
+        return CB_LATENCY_CIRCUIT_MAX_LATENCY_DEFAULT;
     }
 }

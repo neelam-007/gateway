@@ -13,6 +13,8 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.ApplicationContexts;
+import com.l7tech.server.ServerConfig;
+import com.l7tech.server.ServerConfigStub;
 import com.l7tech.server.TestLicenseManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
@@ -31,6 +33,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import static com.l7tech.external.assertions.circuitbreaker.CircuitBreakerConstants.*;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -40,6 +43,7 @@ public class ServerCircuitBreakerAssertionTest {
 
     private ServerPolicyFactory serverPolicyFactory;
     private static TestTimeSource timeSource;
+    private ServerConfig config;
     private static TestAudit testAudit;
 
     @Before
@@ -47,8 +51,9 @@ public class ServerCircuitBreakerAssertionTest {
         ApplicationContext applicationContext = ApplicationContexts.getTestApplicationContext();
         serverPolicyFactory = new ServerPolicyFactory(new TestLicenseManager(), new MockInjector());
         serverPolicyFactory.setApplicationContext(applicationContext);
-        long startTime = CircuitBreakerAssertion.LATENCY_FAILURE_SAMPLING_WINDOW + CircuitBreakerAssertion.POLICY_FAILURE_SAMPLING_WINDOW;
+        long startTime = CB_LATENCY_CIRCUIT_SAMPLING_WINDOW_DEFAULT + CB_POLICY_FAILURE_CIRCUIT_SAMPLING_WINDOW_DEFAULT;
         timeSource = new TestTimeSource(startTime, TimeUnit.MILLISECONDS.toNanos(startTime));
+        config = new ServerConfigStub();
         testAudit = new TestAudit();
         CircuitStateManagerHolder.setCircuitStateManager(new CircuitStateManager());
         EventTrackerManagerHolder.setEventTrackerManager(new EventTrackerManager());
@@ -78,8 +83,8 @@ public class ServerCircuitBreakerAssertionTest {
 
         PolicyEnforcementContext context = createPolicyEnforcementContext();
 
-        assertion.setPolicyFailureEnabled(false);
-        assertion.setLatencyFailureEnabled(false);
+        assertion.setPolicyFailureCircuitEnabled(false);
+        assertion.setLatencyCircuitEnabled(false);
 
         ServerCircuitBreakerAssertion serverAssertion =
                 (ServerCircuitBreakerAssertion) serverPolicyFactory.compilePolicy(assertion, false);
@@ -125,15 +130,16 @@ public class ServerCircuitBreakerAssertionTest {
     public void testChildReturnsBAD_REQUESTRepeatedly_CircuitOpens_NextExecutionShortCircuits() throws Exception {
         PolicyEnforcementContext context = createPolicyEnforcementContext();
 
-        executePolicyFailureAndGetServerCircuitBreakerAssertion(context);
+        executePolicyFailureBasedOnFlagAndGetServerCircuitBreakerAssertion(context, true);
     }
 
     @Test
     public void testChildReturnsBAD_REQUESTRepeatedly_CircuitOpens_NextExecutionShortCircuits_CircuitClosesAfterRecoveryPeriod() throws Exception {
         final AssertionStatus returnStatus = AssertionStatus.BAD_REQUEST;
         PolicyEnforcementContext context = createPolicyEnforcementContext();
-        ServerCircuitBreakerAssertion serverAssertion = executePolicyFailureAndGetServerCircuitBreakerAssertion(context);
-        timeSource.advanceByNanos(java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(CircuitBreakerAssertion.POLICY_FAILURE_RECOVERY_PERIOD) + 10L);
+
+        ServerCircuitBreakerAssertion serverAssertion = executePolicyFailureBasedOnFlagAndGetServerCircuitBreakerAssertion(context, true);
+        timeSource.advanceByNanos(java.util.concurrent.TimeUnit.MILLISECONDS.toNanos(CB_POLICY_FAILURE_CIRCUIT_RECOVERY_PERIOD_DEFAULT) + 10L);
 
         assertEquals(returnStatus, serverAssertion.checkRequest(context));
         executeTestsForAudits(1, AssertionMessages.CB_CIRCUIT_TRIPPED);
@@ -151,7 +157,7 @@ public class ServerCircuitBreakerAssertionTest {
                 (ServerCircuitBreakerAssertion) serverPolicyFactory.compilePolicy(assertion, false);
         injectDependencies(serverAssertion);
 
-        for(int executionNumber = 0; executionNumber < CircuitBreakerAssertion.LATENCY_FAILURE_MAX_COUNT + 2; executionNumber++) {
+        for(int executionNumber = 0; executionNumber < CB_LATENCY_CIRCUIT_MAX_FAILURES_DEFAULT + 2; executionNumber++) {
             assertEquals(returnStatus, serverAssertion.checkRequest(context));
         }
 
@@ -163,18 +169,41 @@ public class ServerCircuitBreakerAssertionTest {
     public void testChildFinishesAfterLatencyPeriod_Repeatedly_CircuitOpens_NextExecutionShortCircuits() throws Exception {
         PolicyEnforcementContext context = createPolicyEnforcementContext();
 
-        executeLatencyFailureAndGetServerCircuitBreakerAssertion(context);
+        executeLatencyBasedOnFlagAndGetServerCircuitBreakerAssertion(context, true);
     }
 
     @Test
     public void testChildFinishesAfterLatencyPeriod_Repeatedly_CircuitOpens_NextExecutionShortCircuits_CircuitClosesAfterRecoveryPeriod() throws Exception {
         final AssertionStatus returnStatus = AssertionStatus.NONE;
         PolicyEnforcementContext context = createPolicyEnforcementContext();
-        ServerCircuitBreakerAssertion serverAssertion = executeLatencyFailureAndGetServerCircuitBreakerAssertion(context);
-        timeSource.advanceByNanos(TimeUnit.MILLISECONDS.toNanos(CircuitBreakerAssertion.LATENCY_FAILURE_RECOVERY_PERIOD) + 10L);
+
+        ServerCircuitBreakerAssertion serverAssertion = executeLatencyBasedOnFlagAndGetServerCircuitBreakerAssertion(context, true);
+        timeSource.advanceByNanos(TimeUnit.MILLISECONDS.toNanos(CB_LATENCY_CIRCUIT_RECOVERY_PERIOD_DEFAULT) + 10L);
 
         assertEquals(returnStatus, serverAssertion.checkRequest(context));
         executeTestsForAudits(1, AssertionMessages.CB_CIRCUIT_TRIPPED);
+    }
+
+    @Test
+    public void testPolicyCircuitDisabled_ChildReturnsFailure_CircuitStillClosed() throws Exception {
+        final AssertionStatus returnStatus = AssertionStatus.BAD_REQUEST;
+        PolicyEnforcementContext context = createPolicyEnforcementContext();
+        ServerCircuitBreakerAssertion serverAssertion = executePolicyFailureBasedOnFlagAndGetServerCircuitBreakerAssertion(context, false);
+        timeSource.advanceByNanos(TimeUnit.MILLISECONDS.toNanos(10));
+
+        assertEquals(returnStatus, serverAssertion.checkRequest(context));
+        executeTestsForAudits(0);
+    }
+
+    @Test
+    public void testLatencyCircuitDisabled_ChildFinishesAfterLatencyPeriod_CircuitStillClosed() throws Exception {
+        final AssertionStatus returnStatus = AssertionStatus.NONE;
+        PolicyEnforcementContext context = createPolicyEnforcementContext();
+        ServerCircuitBreakerAssertion serverAssertion = executeLatencyBasedOnFlagAndGetServerCircuitBreakerAssertion(context, false);
+        timeSource.advanceByNanos(TimeUnit.MILLISECONDS.toNanos(CB_LATENCY_CIRCUIT_RECOVERY_PERIOD_DEFAULT) + 10L);
+
+        assertEquals(returnStatus, serverAssertion.checkRequest(context));
+        executeTestsForAudits(0);
     }
 
     @Test
@@ -192,7 +221,7 @@ public class ServerCircuitBreakerAssertionTest {
                 (ServerCircuitBreakerAssertion) serverPolicyFactory.compilePolicy(assertion, false);
         injectDependencies(serverAssertion);
 
-        for(int executionNumber = 0; executionNumber < CircuitBreakerAssertion.POLICY_FAILURE_MAX_COUNT; executionNumber++) {
+        for(int executionNumber = 0; executionNumber < CB_POLICY_FAILURE_CIRCUIT_MAX_FAILURES_DEFAULT; executionNumber++) {
             assertEquals(goodReturnStatus, serverAssertion.checkRequest(context));
         }
 
@@ -218,7 +247,7 @@ public class ServerCircuitBreakerAssertionTest {
                 (ServerCircuitBreakerAssertion) serverPolicyFactory.compilePolicy(assertion, false);
         injectDependencies(serverAssertion);
 
-        for(int executionNumber = 0; executionNumber < CircuitBreakerAssertion.POLICY_FAILURE_MAX_COUNT; executionNumber++) {
+        for(int executionNumber = 0; executionNumber < CB_POLICY_FAILURE_CIRCUIT_MAX_FAILURES_DEFAULT; executionNumber++) {
             assertEquals(badReturnStatus, serverAssertion.checkRequest(context));
         }
 
@@ -226,44 +255,54 @@ public class ServerCircuitBreakerAssertionTest {
         executeTestsForAudits(1, AssertionMessages.CB_CIRCUIT_TRIPPED);
     }
 
-    private ServerCircuitBreakerAssertion executePolicyFailureAndGetServerCircuitBreakerAssertion(final PolicyEnforcementContext context) throws Exception {
+    private ServerCircuitBreakerAssertion executePolicyFailureBasedOnFlagAndGetServerCircuitBreakerAssertion(final PolicyEnforcementContext context, final boolean policyCircuitEnabled) throws Exception {
         final AssertionStatus returnStatus = AssertionStatus.BAD_REQUEST;
 
         final CircuitBreakerAssertion assertion = new CircuitBreakerAssertion(getMockAssertions(10L, returnStatus));
+        assertion.setPolicyFailureCircuitEnabled(policyCircuitEnabled);
 
         ServerCircuitBreakerAssertion serverAssertion =
                 (ServerCircuitBreakerAssertion) serverPolicyFactory.compilePolicy(assertion, false);
         injectDependencies(serverAssertion);
 
-        for(int executionNumber = 0; executionNumber < CircuitBreakerAssertion.POLICY_FAILURE_MAX_COUNT; executionNumber++) {
+        for(int executionNumber = 0; executionNumber < CB_POLICY_FAILURE_CIRCUIT_MAX_FAILURES_DEFAULT; executionNumber++) {
             assertEquals(returnStatus, serverAssertion.checkRequest(context));
         }
-
-        assertEquals(AssertionStatus.FALSIFIED, serverAssertion.checkRequest(context));
-        executeTestsForAudits(1, AssertionMessages.CB_CIRCUIT_TRIPPED);
+        if(policyCircuitEnabled) {
+            assertEquals(AssertionStatus.FALSIFIED, serverAssertion.checkRequest(context));
+            executeTestsForAudits(1, AssertionMessages.CB_CIRCUIT_TRIPPED);
+        } else {
+            assertEquals(returnStatus, serverAssertion.checkRequest(context));
+            executeTestsForAudits(0);
+        }
         return serverAssertion;
     }
 
-    private ServerCircuitBreakerAssertion executeLatencyFailureAndGetServerCircuitBreakerAssertion(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException, LicenseException {
+    private ServerCircuitBreakerAssertion executeLatencyBasedOnFlagAndGetServerCircuitBreakerAssertion(final PolicyEnforcementContext context, final boolean latencyCircuitEnabled) throws IOException, PolicyAssertionException, LicenseException {
         final AssertionStatus returnStatus = AssertionStatus.NONE;
 
-        final CircuitBreakerAssertion assertion = new CircuitBreakerAssertion(getMockAssertions(TimeUnit.MILLISECONDS.toNanos(CircuitBreakerAssertion.LATENCY_FAILURE_LIMIT) + 10L, returnStatus));
+        final CircuitBreakerAssertion assertion = new CircuitBreakerAssertion(getMockAssertions(TimeUnit.MILLISECONDS.toNanos(CB_LATENCY_CIRCUIT_MAX_LATENCY_DEFAULT) + 10L, returnStatus));
+        assertion.setLatencyCircuitEnabled(latencyCircuitEnabled);
 
         ServerCircuitBreakerAssertion serverAssertion =
                 (ServerCircuitBreakerAssertion) serverPolicyFactory.compilePolicy(assertion, false);
         injectDependencies(serverAssertion);
 
-        for(int executionNumber = 0; executionNumber < CircuitBreakerAssertion.LATENCY_FAILURE_MAX_COUNT; executionNumber++) {
+        for(int executionNumber = 0; executionNumber < CB_LATENCY_CIRCUIT_MAX_FAILURES_DEFAULT; executionNumber++) {
             assertEquals(returnStatus, serverAssertion.checkRequest(context));
         }
-
-        assertEquals(AssertionStatus.FALSIFIED, serverAssertion.checkRequest(context));
-        executeTestsForAudits(1, AssertionMessages.CB_CIRCUIT_TRIPPED);
+        if(latencyCircuitEnabled) {
+            assertEquals(AssertionStatus.FALSIFIED, serverAssertion.checkRequest(context));
+            executeTestsForAudits(1, AssertionMessages.CB_CIRCUIT_TRIPPED);
+        } else {
+            assertEquals(returnStatus, serverAssertion.checkRequest(context));
+            executeTestsForAudits(0);
+        }
         return serverAssertion;
     }
 
     @NotNull
-    static List<Assertion> getMockAssertions(final long executionTime, final AssertionStatus... returnStatus) {
+    private static List<Assertion> getMockAssertions(final long executionTime, final AssertionStatus... returnStatus) {
         ArrayList<Assertion> assertionList = new ArrayList<>();
 
         for (AssertionStatus status : returnStatus) {
@@ -284,7 +323,7 @@ public class ServerCircuitBreakerAssertionTest {
                 false);
     }
 
-    static void executeTestsForAudits(int numberOfAudits, Messages.M... messages) {
+    private static void executeTestsForAudits(int numberOfAudits, Messages.M... messages) {
         assertEquals(numberOfAudits, testAudit.getAuditCount());
         if(numberOfAudits > 0 && messages.length > 0) {
             for(Messages.M message : messages) {
@@ -293,7 +332,7 @@ public class ServerCircuitBreakerAssertionTest {
         }
     }
 
-    private static void injectDependencies(ServerCircuitBreakerAssertion serverAssertion) {
+    private void injectDependencies(ServerCircuitBreakerAssertion serverAssertion) {
         ApplicationContexts.inject(serverAssertion, CollectionUtils.<String, Object>mapBuilder()
                 .put("auditFactory", testAudit.factory())
                 .put("timeSource", timeSource)

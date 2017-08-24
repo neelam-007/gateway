@@ -1,15 +1,16 @@
 package com.l7tech.external.assertions.circuitbreaker.server;
 
+import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.server.ApplicationContexts;
+import com.l7tech.server.MockClusterPropertyManager;
+import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.TestTimeSource;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.lang.reflect.Field;
-import java.util.Collections;
-import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
+import static com.l7tech.external.assertions.circuitbreaker.CircuitBreakerConstants.CB_EVENT_TRACKER_CLEANUP_INTERVAL_UI_PROPERTY;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
@@ -21,16 +22,22 @@ import static org.junit.Assert.assertNull;
 public class EventTrackerManagerTest {
 
     private TestTimeSource timeSource;
-    private static final long INTERVAL = 10L * 1000L;
+    private static final long CLEANUP_INTERVAL = 10L * 1000L;
     private EventTrackerManager eventTrackerManager;
 
     @Before
     public void setUp() throws Exception {
-        long startTime = INTERVAL;
+        long startTime = CLEANUP_INTERVAL;
         timeSource = new TestTimeSource(startTime, TimeUnit.MILLISECONDS.toNanos(startTime));
+        MockClusterPropertyManager clusterPropertyManager = new MockClusterPropertyManager(
+                new ClusterProperty(CB_EVENT_TRACKER_CLEANUP_INTERVAL_UI_PROPERTY, Long.toString(CLEANUP_INTERVAL))
+        );
         eventTrackerManager = new EventTrackerManager();
-        EventTrackerManager.setCounterCleanupInterval(INTERVAL);
-        ApplicationContexts.inject(eventTrackerManager, Collections.singletonMap("timeSource", timeSource));
+        ApplicationContexts.inject(eventTrackerManager, CollectionUtils.<String, Object>mapBuilder()
+                .put("timeSource", timeSource)
+                .put("clusterPropertyManager", clusterPropertyManager)
+                .unmodifiableMap()
+        );
         eventTrackerManager.start();
     }
 
@@ -48,8 +55,8 @@ public class EventTrackerManagerTest {
 
         assertEquals(3, policyFailureEventTracker.getCountSinceTimestamp(timeSource.getNanoTime() - 40));
 
-        timeSource.advanceByMillis(INTERVAL + 10L);
-        eventTrackerManager.getTIMER_TASK().run();
+        timeSource.advanceByMillis(CLEANUP_INTERVAL + 10L);
+        eventTrackerManager.getCleanupTask().run();
         assertEquals(0, policyFailureEventTracker.getCountSinceTimestamp(0));
     }
 
@@ -57,64 +64,55 @@ public class EventTrackerManagerTest {
     public void testEventsCleanupTask_OnTwoDIfferentTrackers_Success() throws Exception {
         eventTrackerManager.createEventTracker("POLICY_FAILURE_TRACKER_ID");
         eventTrackerManager.createEventTracker("LATENCY_FAILURE_TRACKER_ID");
-        EventTracker policyFailureEventTracker = eventTrackerManager.getEventTracker("POLICY_FAILURE_TRACKER_ID");
-        EventTracker latencyFailureEventTracker = eventTrackerManager.getEventTracker("LATENCY_FAILURE_TRACKER_ID");
+        EventTracker policyFailureCircuitEventTracker = eventTrackerManager.getEventTracker("POLICY_FAILURE_TRACKER_ID");
+        EventTracker latencyCircuitEventTracker = eventTrackerManager.getEventTracker("LATENCY_FAILURE_TRACKER_ID");
 
-        policyFailureEventTracker.recordEvent(timeSource.getNanoTime());
+        policyFailureCircuitEventTracker.recordEvent(timeSource.getNanoTime());
         timeSource.advanceByNanos(10);
-        latencyFailureEventTracker.recordEvent(timeSource.getNanoTime());
+        latencyCircuitEventTracker.recordEvent(timeSource.getNanoTime());
         timeSource.advanceByNanos(5);
-        policyFailureEventTracker.recordEvent(timeSource.getNanoTime());
+        policyFailureCircuitEventTracker.recordEvent(timeSource.getNanoTime());
         timeSource.advanceByNanos(10);
-        latencyFailureEventTracker.recordEvent(timeSource.getNanoTime());
+        latencyCircuitEventTracker.recordEvent(timeSource.getNanoTime());
         timeSource.advanceByNanos(5);
-        policyFailureEventTracker.recordEvent(timeSource.getNanoTime());
+        policyFailureCircuitEventTracker.recordEvent(timeSource.getNanoTime());
         timeSource.advanceByNanos(10);
-        latencyFailureEventTracker.recordEvent(timeSource.getNanoTime());
+        latencyCircuitEventTracker.recordEvent(timeSource.getNanoTime());
         timeSource.advanceByNanos(10);
-        latencyFailureEventTracker.recordEvent(timeSource.getNanoTime());
+        latencyCircuitEventTracker.recordEvent(timeSource.getNanoTime());
         timeSource.advanceByNanos(50);
-        policyFailureEventTracker.recordEvent(timeSource.getNanoTime());
+        policyFailureCircuitEventTracker.recordEvent(timeSource.getNanoTime());
         timeSource.advanceByNanos(150);
-        latencyFailureEventTracker.recordEvent(timeSource.getNanoTime());
+        latencyCircuitEventTracker.recordEvent(timeSource.getNanoTime());
 
-        assertEquals(4, policyFailureEventTracker.getCountSinceTimestamp(0L));
-        assertEquals(5, latencyFailureEventTracker.getCountSinceTimestamp(0L));
+        assertEquals(4, policyFailureCircuitEventTracker.getCountSinceTimestamp(0L));
+        assertEquals(5, latencyCircuitEventTracker.getCountSinceTimestamp(0L));
 
-        timeSource.advanceByMillis(INTERVAL - 1L);
-        eventTrackerManager.getTIMER_TASK().run();
-        assertEquals(4, policyFailureEventTracker.getCountSinceTimestamp(0L));
-        assertEquals(5, latencyFailureEventTracker.getCountSinceTimestamp(0L));
+        timeSource.advanceByMillis(CLEANUP_INTERVAL - 1L);
+        eventTrackerManager.getCleanupTask().run();
+        assertEquals(4, policyFailureCircuitEventTracker.getCountSinceTimestamp(0L));
+        assertEquals(5, latencyCircuitEventTracker.getCountSinceTimestamp(0L));
 
         timeSource.advanceByNanos(999792L);
-        eventTrackerManager.getTIMER_TASK().run();
-        assertEquals(1, policyFailureEventTracker.getCountSinceTimestamp(0L));
-        assertEquals(2, latencyFailureEventTracker.getCountSinceTimestamp(0L));
+        eventTrackerManager.getCleanupTask().run();
+        assertEquals(1, policyFailureCircuitEventTracker.getCountSinceTimestamp(0L));
+        assertEquals(2, latencyCircuitEventTracker.getCountSinceTimestamp(0L));
 
         timeSource.advanceByMillis(1000L);
-        eventTrackerManager.getTIMER_TASK().run();
-        assertEquals(0, policyFailureEventTracker.getCountSinceTimestamp(0L));
-        assertEquals(0, latencyFailureEventTracker.getCountSinceTimestamp(0L));
-
+        eventTrackerManager.getCleanupTask().run();
+        assertEquals(0, policyFailureCircuitEventTracker.getCountSinceTimestamp(0L));
+        assertEquals(0, latencyCircuitEventTracker.getCountSinceTimestamp(0L));
     }
 
     @Test
-    public void testCleanupTaskShutdown() {
+    public void testCleanupTaskShutdown() throws NoSuchFieldException, IllegalAccessException {
         eventTrackerManager.createEventTracker("POLICY_FAILURE_TRACKER_ID");
         eventTrackerManager.createEventTracker("LATENCY_FAILURE_TRACKER_ID");
         eventTrackerManager.shutdown();
-        EventTracker policyFailureEventTracker = eventTrackerManager.getEventTracker("POLICY_FAILURE_TRACKER_ID");
-        EventTracker latencyFailureEventTracker = eventTrackerManager.getEventTracker("LATENCY_FAILURE_TRACKER_ID");
-        assertNull(policyFailureEventTracker);
-        assertNull(latencyFailureEventTracker);
-
-        try {
-            Field field = TimerTask.class.getDeclaredField("state");
-            assertEquals(3, field.get(eventTrackerManager.getTIMER_TASK()));
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            e.printStackTrace();
-        }
+        EventTracker policyFailureCircuitEventTracker = eventTrackerManager.getEventTracker("POLICY_FAILURE_TRACKER_ID");
+        EventTracker latencyCircuitEventTracker = eventTrackerManager.getEventTracker("LATENCY_FAILURE_TRACKER_ID");
+        assertNull(policyFailureCircuitEventTracker);
+        assertNull(latencyCircuitEventTracker);
+        assertNull(eventTrackerManager.getCleanupTask());
     }
-
-    // TODO: add test for shutdown method (add trackers, shutdown, assert expected task state and tracker map cleared)
 }

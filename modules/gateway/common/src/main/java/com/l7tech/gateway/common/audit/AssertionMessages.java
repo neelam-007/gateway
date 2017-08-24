@@ -1423,7 +1423,6 @@ public class AssertionMessages extends Messages {
 
     // Circuit Breaker Assertion
     public static final M CB_CIRCUIT_TRIPPED = m(11500, Level.WARNING, "{0} Circuit tripped; open until {1}");
-    public static final M CB_CIRCUIT_CLOSED = m(11501, Level.INFO, "{0} Circuit closed");
 
     //BulkJdbcInsertAssertion
     //public static final M BULKJDBCINSERT_WARNING = m(11500, Level.WARNING, "Bulk JDBC Insert Assertion failed due to {0}");
