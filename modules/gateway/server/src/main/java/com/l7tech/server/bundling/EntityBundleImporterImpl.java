@@ -1480,7 +1480,8 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
      *                               an error locating an identity provider when mapping identities
      */
     @Nullable
-    private Entity locateExistingEntity(@NotNull final EntityMappingInstructions mapping, @Nullable final Entity entity, @NotNull EntityBundle bundle, @NotNull final Map<EntityHeader, EntityHeader> resourceMapping) throws BundleImportException {
+    private Entity locateExistingEntity(@NotNull final EntityMappingInstructions mapping, @Nullable final Entity entity, @NotNull final EntityBundle bundle,
+                                        @NotNull final Map<EntityHeader, EntityHeader> resourceMapping) throws BundleImportException {
         //this needs to be wrapped in a transaction that ignores rollback. We don't need to rollback if a resource cannot be found.
         //Wrap the transaction manager so that we can ignore rollback.
         final TransactionTemplate tt = new TransactionTemplate(new PlatformTransactionManager() {

@@ -46,7 +46,7 @@ public class EntityBundleBuilder {
         return new EntityBundle(entities, instructions, new ArrayList<>());
     }
 
-    private Folder createRootFolder() {
+    static Folder createRootFolder() {
         final Folder rootFolder = new Folder("Root", null);
         rootFolder.setGoid(Folder.ROOT_FOLDER_ID);
 

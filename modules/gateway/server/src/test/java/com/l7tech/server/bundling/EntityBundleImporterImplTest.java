@@ -235,7 +235,7 @@ public class EntityBundleImporterImplTest {
 
     @Test
     public void testMapByRoutingUri() throws FindException, SaveException, UpdateException {
-        final Folder rootFolder = createRootFolder();
+        final Folder rootFolder = EntityBundleBuilder.createRootFolder();
         final Policy policy = createTestingPolicy();
         final PublishedService service = createTestingPublishedService(policy, rootFolder, "random_service_name", "/random_routing_uri");
         final EntityBundle entityBundle = createTestingEntityBundle(rootFolder, service);
@@ -268,7 +268,7 @@ public class EntityBundleImporterImplTest {
     @Test
     public void testMapByPathSameNameSameRoutingUriWithTargetIDSuccess() throws FindException, SaveException, UpdateException {
         //Two services with same name, routingUri, but different path
-        final Folder rootFolder = createRootFolder();
+        final Folder rootFolder = EntityBundleBuilder.createRootFolder();
         final Folder folder1 = createFolder("folder1", rootFolder);
         final Folder folder2 = createFolder("folder2", rootFolder);
         final Policy policy = createTestingPolicy();
@@ -345,7 +345,7 @@ public class EntityBundleImporterImplTest {
      */
     @Test
     public void updateByPathWithoutSpecifyingTargetPath() throws Exception {
-        final Folder rootFolder = createRootFolder();
+        final Folder rootFolder = EntityBundleBuilder.createRootFolder();
         final Folder subFolder = createFolder("subFolder", rootFolder);
         final PublishedService service =  createTestingPublishedService(createTestingPolicy(), subFolder, "TestService", "/test");
 
@@ -375,8 +375,8 @@ public class EntityBundleImporterImplTest {
         return results.stream().collect(Collectors.toMap(result->result.getSourceEntityHeader().getGoid(), result->result));
     }
 
-    private Folder createFolder(String folder1, Folder parent) {
-        final Folder folder = new Folder(folder1,parent);
+    private Folder createFolder(final String folderName, final Folder parent) {
+        final Folder folder = new Folder(folderName, parent);
         final byte[] bytes = new byte[16];
         new Random().nextBytes(bytes);
         final Goid random_goid = new Goid(bytes);
@@ -432,12 +432,6 @@ public class EntityBundleImporterImplTest {
         policyVersion.setXml(policy.getXml());
 
         return policyVersion;
-    }
-
-    private Folder createRootFolder() {
-        final Folder rootFolder = new Folder("Root", null);
-        rootFolder.setGoid(Folder.ROOT_FOLDER_ID);
-        return rootFolder;
     }
 
     private Policy createTestingPolicy() {

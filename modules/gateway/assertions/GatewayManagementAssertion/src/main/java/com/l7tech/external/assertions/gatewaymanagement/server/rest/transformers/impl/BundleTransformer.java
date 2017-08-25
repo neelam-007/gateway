@@ -47,7 +47,7 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
     //Theses are the different properties that can be in a Mapping
     private static final String FailOnNew = "FailOnNew";
     private static final String FailOnExisting = "FailOnExisting";
-    private static final String MapTo = "MapTo";
+    static final String MapTo = "MapTo";
     static final String MapBy = "MapBy";
     @Inject
     private APIUtilityLocator apiUtilityLocator;
