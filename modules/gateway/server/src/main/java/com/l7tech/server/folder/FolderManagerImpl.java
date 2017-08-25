@@ -189,7 +189,7 @@ public class FolderManagerImpl extends FolderSupportHibernateEntityManager<Folde
         String currentPath = "/";
 
         final String[] folderNames = absFolderPath.split("/");
-        for (String folderName: folderNames) {
+        for (final String folderName: folderNames) {
             if (folderName.equals("")) continue;
 
             boolean found = false;
