@@ -375,7 +375,7 @@ public class EntityBundleImporterImplTest {
 
     @Test
     public void updateAliasByPathWithoutSpecifyingTargetPath() throws Exception {
-        final Folder rootFolder = createRootFolder();
+        final Folder rootFolder = EntityBundleBuilder.createRootFolder();
         final Folder aliasesFolder = createFolder("aliases", rootFolder);
         final PublishedService service =  createTestingPublishedService(createTestingPolicy(), rootFolder, "TestService", "/test");
         final PublishedServiceAlias alias = new PublishedServiceAlias(service, aliasesFolder);
