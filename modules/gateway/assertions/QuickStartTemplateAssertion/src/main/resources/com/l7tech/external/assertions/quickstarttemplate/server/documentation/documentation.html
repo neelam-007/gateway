@@ -134,13 +134,10 @@
     "httpMethods": [ "get", "put", "post" ],
     "policy": [
       {
-        "Cors" : {}
-      },
-      {
         "RateLimit" : {
-          "maxRequestsPerSecond": 250,
-          "hardLimit": true,
-          "counterName": "RateLimit-Counter"
+          "MaxRequestsPerSecond": 250,
+          "HardLimit": true,
+          "CounterName": "RateLimit-${request.clientId}-b0938b7ad6ff"
         }
       },
       {
