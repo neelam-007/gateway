@@ -1,22 +1,58 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl;
 
+import com.l7tech.external.assertions.gatewaymanagement.server.BundleBuilder;
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
-import com.l7tech.gateway.api.Bundle;
-import com.l7tech.gateway.api.ManagedObjectFactory;
-import com.l7tech.gateway.api.Mapping;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.APIUtilityLocator;
+import com.l7tech.gateway.api.*;
+import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.service.PublishedServiceAlias;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.server.bundling.EntityBundle;
+import com.l7tech.server.bundling.EntityContainer;
 import com.l7tech.server.bundling.EntityMappingInstructions;
 import org.jetbrains.annotations.NotNull;
+import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static junit.framework.Assert.assertNotNull;
+import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
+import static org.mockito.Mockito.*;
 
+@RunWith(MockitoJUnitRunner.class)
 public class BundleTransformerTest {
+    @InjectMocks
+    private BundleTransformer bundleTransformer;
+    @Mock
+    private APIUtilityLocator apiUtilityLocator;
+    @Mock
+    private PublishedServiceTransformer serviceTransformer;
+    @Mock
+    private ServiceAliasTransformer aliasTransformer;
+    private ItemBuilder<ServiceMO> serviceItemBuilder;
+    private ItemBuilder<ServiceAliasMO> serviceAliasBuilder;
+
+    @Before
+    public void setup() {
+        serviceItemBuilder = new ItemBuilder<ServiceMO>("serviceMOBuilder", EntityType.SERVICE.toString());
+        serviceAliasBuilder = new ItemBuilder<ServiceAliasMO>("serviceAliasBuilder", EntityType.SERVICE_ALIAS.toString());
+
+        when(apiUtilityLocator.findTransformerByResourceType(EntityType.SERVICE.toString())).thenReturn(serviceTransformer);
+        when(apiUtilityLocator.findTransformerByResourceType(EntityType.SERVICE_ALIAS.toString())).thenReturn(aliasTransformer);
+    }
 
     /**
      * This test case is to use a bundleTransformer object to call convertFromMO, which will call convertEntityMappingInstructionsFromMappingAndEntity
@@ -37,7 +73,6 @@ public class BundleTransformerTest {
         bundleForTest.setMappings(Arrays.asList(new Mapping[]{mappingForTest}));
 
         // Use bundleTransformer to call convertFromMO, which will call convertEntityMappingInstructionsFromMappingAndEntity
-        final BundleTransformer bundleTransformer = new BundleTransformer();
         EntityBundle entityBundle = bundleTransformer.convertFromMO(bundleForTest, null);
         
         final List<EntityMappingInstructions> mappingInstructions = entityBundle.getMappingInstructions();
@@ -57,15 +92,6 @@ public class BundleTransformerTest {
         assertNotNull(sourceEntityHeader);
         assertTrue(sourceEntityHeader.getType() == EntityType.SERVICE);
         assertTrue("799eca6846c453e9a8e23ec887d6a341".equals(sourceEntityHeader.getStrId()));
-    }
-
-    @NotNull
-    private Mapping createMappingForTest(String type, Mapping.Action action, String id) {
-        final Mapping mappingForTest = ManagedObjectFactory.createMapping();
-        mappingForTest.setType(type);
-        mappingForTest.setAction(action);
-        mappingForTest.setSrcId(id);
-        return mappingForTest;
     }
 
     /**
@@ -88,7 +114,6 @@ public class BundleTransformerTest {
         bundleForTest.setMappings(Arrays.asList(new Mapping[]{serviceMapping, folderMapping}));
 
         // Use bundleTransformer to call convertFromMO, which will call convertEntityMappingInstructionsFromMappingAndEntity
-        final BundleTransformer bundleTransformer = new BundleTransformer();
         EntityBundle entityBundle = bundleTransformer.convertFromMO(bundleForTest, null);
 
         final List<EntityMappingInstructions> mappingInstructions = entityBundle.getMappingInstructions();
@@ -122,5 +147,37 @@ public class BundleTransformerTest {
         assertNotNull(folderSourceEntityHeader);
         assertTrue(folderSourceEntityHeader.getType() == EntityType.FOLDER);
         assertTrue("799eca6846c453e9a8e23ec887d6a000".equals(folderSourceEntityHeader.getStrId()));
+    }
+
+    @Test
+    public void convertBundleWithAliasSetsAliasNameOnMapping() throws Exception {
+        final Goid serviceId = new Goid(0, 1);
+        final String serviceName = "test";
+        final PublishedService service = new PublishedService();
+        service.setGoid(new Goid(serviceId));
+        service.setName(serviceName);
+        final Goid aliasId = new Goid(1, 1);
+        final PublishedServiceAlias alias = new PublishedServiceAlias(service, new Folder("aliases", new Folder("root", null)));
+        alias.setGoid(aliasId);
+        when(serviceTransformer.convertFromMO(any(ServiceMO.class), eq(false), eq(null))).thenReturn(new EntityContainer<>(service));
+        when(aliasTransformer.convertFromMO(any(ServiceAliasMO.class), eq(false), eq(null))).thenReturn(new EntityContainer<>(alias));
+
+        final EntityBundle result = bundleTransformer.convertFromMO(new BundleBuilder().addServiceAlias(service, alias).build(), null);
+        final Map<Goid, EntityMappingInstructions> instructionsMap = instructionsToMap(result.getMappingInstructions());
+        assertEquals(2, instructionsMap.size());
+        assertEquals("test alias", instructionsMap.get(aliasId).getSourceEntityHeader().getName());
+    }
+
+    private Map<Goid, EntityMappingInstructions> instructionsToMap(List<EntityMappingInstructions> instructions) {
+        return instructions.stream().collect(Collectors.toMap(instruction -> instruction.getSourceEntityHeader().getGoid(), instruction -> instruction));
+    }
+
+    @NotNull
+    private Mapping createMappingForTest(String type, Mapping.Action action, String id) {
+        final Mapping mappingForTest = ManagedObjectFactory.createMapping();
+        mappingForTest.setType(type);
+        mappingForTest.setAction(action);
+        mappingForTest.setSrcId(id);
+        return mappingForTest;
     }
 }

@@ -799,7 +799,10 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                                 final boolean resetGuid,
                                                 @NotNull final Map<EntityHeader,Callable<String>> cachedPrivateKeyOperations) throws ObjectModelException, IncorrectMappingInstructionsException, CannotReplaceDependenciesException {
         if (entityContainer == null) {
-            throw new IncorrectMappingInstructionsException(mapping, "Cannot find entity type " + mapping.getSourceEntityHeader().getType() + " with id: " + mapping.getSourceEntityHeader().getGoid() + " in this entity bundle.");
+            throw new IncorrectMappingInstructionsException(mapping, "Cannot perform action " + mapping.getMappingAction() +
+                    " because there is no entity of type " + mapping.getSourceEntityHeader().getType() + " with id: " +
+                    mapping.getSourceEntityHeader().getGoid() + " in the bundle. Please specify " +
+                    EntityMappingInstructions.MappingAction.NewOrExisting + " or " + EntityMappingInstructions.MappingAction.Ignore + " instead");
         }
 
         //validate that the id is the same as the existing entity id if the existing entity is specified.
@@ -1654,6 +1657,16 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                         for (Entity entity : childrenUnderThisFolder) {
                                             if (entity instanceof NamedEntity && ((NamedEntity) entity).getName().equals(entityName)) {
                                                 list.add(entity);
+                                            } else if (entity instanceof Alias) {
+                                                final Alias alias = (Alias) entity;
+                                                if (alias.getEntityGoid() != null && alias.getEntityType() != null) {
+                                                    final String aliasedEntityName = entityName.replaceAll(" alias", "");
+                                                    final EntityHeader aliasedEntity = entityCrud.findHeader(alias.getEntityType(), alias.getEntityGoid());
+                                                    if (aliasedEntity != null && aliasedEntity.getName().equals(aliasedEntityName)) {
+                                                        list.add(entity);
+                                                        break; // can't have more than one alias with the same name under the same folder
+                                                    }
+                                                }
                                             }
                                         }
                                         if (list.isEmpty()) {
@@ -1870,7 +1883,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                 targetMapTo = mapping.getSourceEntityHeader().getStrId();
             } else {
                 //cannot find a target id.
-                throw new IncorrectMappingInstructionsException(mapping, "Mapping by " + type + " but could not find target " + type + " to map to");
+                throw new IncorrectMappingInstructionsException(mapping, "Mapping by " + type + " but could not deduce a target " + type + " to map to from the given bundle. Please specify a target " + type + " to map to");
             }
         }
         return targetMapTo;

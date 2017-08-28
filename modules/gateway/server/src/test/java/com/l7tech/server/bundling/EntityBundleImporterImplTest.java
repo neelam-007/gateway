@@ -4,6 +4,7 @@ import com.l7tech.common.password.PasswordHasher;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.gateway.common.security.rbac.RoleEntityHeader;
 import com.l7tech.gateway.common.service.PublishedService;
+import com.l7tech.gateway.common.service.PublishedServiceAlias;
 import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.InternalUserBean;
@@ -363,12 +364,48 @@ public class EntityBundleImporterImplTest {
 
         final Map<Goid, EntityMappingResult> results = resultsToMap(importer.importBundle(bundle, false, true, null));
         assertEquals(3, results.size());
+        results.values().stream().forEach(result->assertTrue(result.isSuccessful()));
         assertEquals(EntityMappingResult.MappingAction.UsedExisting, results.get(rootFolder.getGoid()).getMappingAction());
         assertEquals(EntityMappingResult.MappingAction.UpdatedExisting, results.get(subFolder.getGoid()).getMappingAction());
         assertEquals(EntityMappingResult.MappingAction.UpdatedExisting, results.get(service.getGoid()).getMappingAction());
         verify(folderManager, atLeastOnce()).findByPath("/subFolder");
         verify(entityCrud).update(subFolder);
         verify(serviceManager).update(service);
+    }
+
+    @Test
+    public void updateAliasByPathWithoutSpecifyingTargetPath() throws Exception {
+        final Folder rootFolder = createRootFolder();
+        final Folder aliasesFolder = createFolder("aliases", rootFolder);
+        final PublishedService service =  createTestingPublishedService(createTestingPolicy(), rootFolder, "TestService", "/test");
+        final PublishedServiceAlias alias = new PublishedServiceAlias(service, aliasesFolder);
+        final Goid aliasGoid = new Goid(1, 1);
+        alias.setGoid(aliasGoid);
+
+        when(folderManager.findByPath("/aliases")).thenReturn(aliasesFolder);
+        when(entityCrud.find(Folder.class, Folder.ROOT_FOLDER_ID.toString())).thenReturn(rootFolder);
+
+        final List foundService = Arrays.asList(service);
+        when(entityCrud.findAll(eq(PublishedService.class), anyMap(), eq(0), eq(-1), eq(null), eq(null))).thenReturn(foundService);
+        when(entityCrud.find(any(ServiceHeader.class))).thenReturn(service);
+        when(entityCrud.findHeader(EntityType.SERVICE, service.getGoid())).thenReturn(new ServiceHeader(service));
+        when(policyVersionManager.findLatestRevisionForPolicy(service.getPolicy().getGoid())).thenReturn(new PolicyVersion());
+
+        final List foundAlias = Arrays.asList(alias);
+        when(entityCrud.findAll(eq(PublishedServiceAlias.class), anyMap(), eq(0), eq(-1), eq(null), eq(null))).thenReturn(foundAlias);
+
+        final EntityBundle bundle = new EntityBundleBuilder().
+                expectExistingRootFolder().
+                updateFolderByPath(aliasesFolder).
+                updateServiceByPath(service).
+                updateServiceAliasByPath(alias, "TestService alias").create();
+
+        final Map<Goid, EntityMappingResult> results = resultsToMap(importer.importBundle(bundle, false, true, null));
+        assertEquals(4, results.size());
+        results.values().stream().forEach(result->assertTrue(result.isSuccessful()));
+        assertEquals(EntityMappingResult.MappingAction.UpdatedExisting, results.get(alias.getGoid()).getMappingAction());
+        verify(folderManager, atLeastOnce()).findByPath("/aliases");
+        verify(entityCrud).update(alias);
     }
 
     private Map<Goid, EntityMappingResult> resultsToMap(final List<EntityMappingResult> results) {

@@ -199,7 +199,7 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
         final List<EntityMappingInstructions> mappingInstructions = Functions.map(bundle.getMappings(), new Functions.UnaryThrows<EntityMappingInstructions, Mapping, ResourceFactory.InvalidResourceException>() {
             @Override
             public EntityMappingInstructions call(Mapping mapping) throws ResourceFactory.InvalidResourceException {
-                return convertEntityMappingInstructionsFromMappingAndEntity(mapping, entityContainerMap.get(new Pair<>(mapping.getSrcId(), EntityType.valueOf(mapping.getType()))));
+                return convertEntityMappingInstructionsFromMappingAndEntity(mapping, entityContainerMap);
             }
         });
 
@@ -362,11 +362,12 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
      * Creates entity mapping instructions given the mapping and entity.
      *
      * @param mapping         The mapping
-     * @param entityContainer The entity container
+     * @param entityContainerMap The entity container map
      * @return The entity mapping instruction for the given mapping and entity
      */
     @NotNull
-    private EntityMappingInstructions convertEntityMappingInstructionsFromMappingAndEntity(@NotNull final Mapping mapping, @Nullable final EntityContainer entityContainer) {
+    private EntityMappingInstructions convertEntityMappingInstructionsFromMappingAndEntity(@NotNull final Mapping mapping, @NotNull final Map<Pair<String, EntityType>, EntityContainer> entityContainerMap) {
+        final EntityContainer entityContainer = entityContainerMap.get(new Pair<>(mapping.getSrcId(), EntityType.valueOf(mapping.getType())));
         //Create the source header from the entity
         final EntityHeader sourceHeader;
         if (entityContainer == null) {
@@ -378,6 +379,17 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
             }
         } else {
             sourceHeader = EntityHeaderUtils.fromEntity(entityContainer.getEntity());
+            if (sourceHeader instanceof AliasHeader) {
+                // try to get the alias name from the bundle
+                final AliasHeader alias = (AliasHeader) sourceHeader;
+                if (alias.getAliasedEntityId() != null) {
+                    final EntityContainer aliasedEntity = entityContainerMap.get(new Pair<>(alias.getAliasedEntityId().toString(), alias.getAliasedEntityType()));
+                    if (aliasedEntity != null && aliasedEntity.getEntity() instanceof NamedEntity) {
+                        final NamedEntity named = (NamedEntity) aliasedEntity.getEntity();
+                        alias.setName(named.getName() + " alias");
+                    }
+                }
+            }
         }
         final EntityMappingInstructions.TargetMapping targetMapping;
         if (mapping.getProperties() != null && "name".equals(mapping.getProperties().get(MapBy))) {
