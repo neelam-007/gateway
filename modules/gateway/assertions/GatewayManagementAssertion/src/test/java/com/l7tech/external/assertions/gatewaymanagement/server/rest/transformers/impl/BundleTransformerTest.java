@@ -25,7 +25,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.TestCase.assertEquals;
@@ -42,21 +41,16 @@ public class BundleTransformerTest {
     private PublishedServiceTransformer serviceTransformer;
     @Mock
     private ServiceAliasTransformer aliasTransformer;
-    private ItemBuilder<ServiceMO> serviceItemBuilder;
-    private ItemBuilder<ServiceAliasMO> serviceAliasBuilder;
 
     @Before
     public void setup() {
-        serviceItemBuilder = new ItemBuilder<ServiceMO>("serviceMOBuilder", EntityType.SERVICE.toString());
-        serviceAliasBuilder = new ItemBuilder<ServiceAliasMO>("serviceAliasBuilder", EntityType.SERVICE_ALIAS.toString());
-
         when(apiUtilityLocator.findTransformerByResourceType(EntityType.SERVICE.toString())).thenReturn(serviceTransformer);
         when(apiUtilityLocator.findTransformerByResourceType(EntityType.SERVICE_ALIAS.toString())).thenReturn(aliasTransformer);
     }
 
     /**
      * This test case is to use a bundleTransformer object to call convertFromMO, which will call convertEntityMappingInstructionsFromMappingAndEntity
-     * to convert EntityMappingInstructions from mapping which defines MapBy = "routingUri".
+     * to convert EntityMappingInstructions from mapping which defines MAP_BY = "routingUri".
      *
      * This test will verify a service EntityMappingInstructions with a right TargetMapping type (ROUTING_URI) and a source
      * entity header with right Mapping.Action (i.e., NewOrUpdate), right EntityType (i.e., SERVICE), and right srcId.
@@ -66,8 +60,8 @@ public class BundleTransformerTest {
         final Mapping mappingForTest = createMappingForTest("SERVICE", Mapping.Action.NewOrUpdate, "799eca6846c453e9a8e23ec887d6a341");
 
         final Map<String, Object> propertiesForTest = new HashMap(1);
-        propertiesForTest.put(BundleTransformer.MapBy, "routingUri");
-        propertiesForTest.put(BundleTransformer.MapTo, "/testMapByRoutingUri");
+        propertiesForTest.put(BundleTransformer.MAP_BY, "routingUri");
+        propertiesForTest.put(BundleTransformer.MAP_TO, "/testMapByRoutingUri");
         mappingForTest.setProperties(propertiesForTest);
 
         final Bundle bundleForTest = ManagedObjectFactory.createBundle();
@@ -98,7 +92,7 @@ public class BundleTransformerTest {
 
     /**
      * This test case is to use a bundleTransformer object to call convertFromMO, which will call convertEntityMappingInstructionsFromMappingAndEntity
-     * to convert EntityMappingInstructions from mapping which defines MapBy = "path".
+     * to convert EntityMappingInstructions from mapping which defines MAP_BY = "path".
      * 
      */
     @Test
@@ -106,8 +100,8 @@ public class BundleTransformerTest {
         final Mapping serviceMapping = createMappingForTest("SERVICE", Mapping.Action.NewOrUpdate, "799eca6846c453e9a8e23ec887d6a341");
 
         final Map<String, Object> propertiesForTest = new HashMap(2);
-        propertiesForTest.put(BundleTransformer.MapBy, "path");
-        propertiesForTest.put(BundleTransformer.MapTo, "/folder1/folder2/service1");
+        propertiesForTest.put(BundleTransformer.MAP_BY, "path");
+        propertiesForTest.put(BundleTransformer.MAP_TO, "/folder1/folder2/service1");
         serviceMapping.setProperties(propertiesForTest);
 
         final Bundle bundleForTest = ManagedObjectFactory.createBundle();
@@ -156,7 +150,11 @@ public class BundleTransformerTest {
     }
 
     private Map<Goid, EntityMappingInstructions> instructionsToMap(List<EntityMappingInstructions> instructions) {
-        return instructions.stream().collect(Collectors.toMap(instruction -> instruction.getSourceEntityHeader().getGoid(), instruction -> instruction));
+        final Map<Goid, EntityMappingInstructions> map = new HashMap<>();
+        for (final EntityMappingInstructions instruction : instructions) {
+            map.put(instruction.getSourceEntityHeader().getGoid(), instruction);
+        }
+        return map;
     }
 
     @NotNull
