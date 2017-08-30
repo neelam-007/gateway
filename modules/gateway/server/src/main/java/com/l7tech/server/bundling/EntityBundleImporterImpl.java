@@ -1828,7 +1828,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
      *                                               target mapping id cannot be found
      */
     @NotNull
-    private String getMapTo(@NotNull final EntityMappingInstructions mapping, @NotNull EntityBundle bundle) throws IncorrectMappingInstructionsException {
+    private String getMapTo(@NotNull final EntityMappingInstructions mapping, final @NotNull EntityBundle bundle) throws IncorrectMappingInstructionsException {
         @NotNull
         final String targetMapTo;
         if (mapping.getTargetMapping() != null && mapping.getTargetMapping().getTargetID() != null) {

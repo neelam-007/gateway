@@ -3,6 +3,7 @@ package com.l7tech.server.folder;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.Permission;
 import com.l7tech.gateway.common.security.rbac.Role;
+import com.l7tech.objectmodel.EntityCreator;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
@@ -159,11 +160,11 @@ public class FolderManagerImplTest {
     private List<Folder> pathTestSetup() {
         //Set up dummy folder structure
         final Folder rootFolder = createRootFolder(); //0
-        final Folder folder1 = createFolder("folder1", rootFolder); //1
-        final Folder folder2 = createFolder("folder2", rootFolder); //2
-        final Folder folder1_a = createFolder("folder1_a", folder1); //3
-        final Folder folder1_b = createFolder("folder1_b", folder1); //4
-        final Folder folder2_a = createFolder("folder2_a", folder2); //5
+        final Folder folder1 = EntityCreator.createFolderWithRandomGoid("folder1", rootFolder); //1
+        final Folder folder2 = EntityCreator.createFolderWithRandomGoid("folder2", rootFolder); //2
+        final Folder folder1_a = EntityCreator.createFolderWithRandomGoid("folder1_a", folder1); //3
+        final Folder folder1_b = EntityCreator.createFolderWithRandomGoid("folder1_b", folder1); //4
+        final Folder folder2_a = EntityCreator.createFolderWithRandomGoid("folder2_a", folder2); //5
 
         return Arrays.asList(rootFolder, folder1, folder2, folder1_a, folder1_b, folder2_a);
     }
@@ -172,15 +173,6 @@ public class FolderManagerImplTest {
         final Folder rootFolder = new Folder("Root", new Folder());
         rootFolder.setGoid(Folder.ROOT_FOLDER_ID);
         return rootFolder;
-    }
-
-    private Folder createFolder(String folder1, Folder parent) {
-        final Folder folder = new Folder(folder1,parent);
-        final byte[] bytes = new byte[16];
-        new Random().nextBytes(bytes);
-        final Goid random_goid = new Goid(bytes);
-        folder.setGoid(random_goid);
-        return folder;
     }
 
     private RoleWithReadEncapsulatedAssertionPermission canReadEncapsulatedAssertions() {

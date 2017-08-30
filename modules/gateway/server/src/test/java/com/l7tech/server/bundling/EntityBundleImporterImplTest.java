@@ -270,8 +270,8 @@ public class EntityBundleImporterImplTest {
     public void testMapByPathSameNameSameRoutingUriWithTargetIDSuccess() throws FindException, SaveException, UpdateException {
         //Two services with same name, routingUri, but different path
         final Folder rootFolder = EntityBundleBuilder.createRootFolder();
-        final Folder folder1 = createFolder("folder1", rootFolder);
-        final Folder folder2 = createFolder("folder2", rootFolder);
+        final Folder folder1 = EntityCreator.createFolderWithRandomGoid("folder1", rootFolder);
+        final Folder folder2 = EntityCreator.createFolderWithRandomGoid("folder2", rootFolder);
         final Policy policy = createTestingPolicy();
         final PublishedService serviceToCreate = createTestingPublishedService(policy, folder1, "sameName", "/same_routing_uri");
         final PublishedService serviceToIgnore = createTestingPublishedService(policy, folder2, "sameName", "/same_routing_uri");
@@ -347,7 +347,7 @@ public class EntityBundleImporterImplTest {
     @Test
     public void updateByPathWithoutSpecifyingTargetPath() throws Exception {
         final Folder rootFolder = EntityBundleBuilder.createRootFolder();
-        final Folder subFolder = createFolder("subFolder", rootFolder);
+        final Folder subFolder = EntityCreator.createFolderWithRandomGoid("subFolder", rootFolder);
         final PublishedService service =  createTestingPublishedService(createTestingPolicy(), subFolder, "TestService", "/test");
 
         when(folderManager.findByPath("/subFolder")).thenReturn(subFolder);
@@ -376,7 +376,7 @@ public class EntityBundleImporterImplTest {
     @Test
     public void updateAliasByPathWithoutSpecifyingTargetPath() throws Exception {
         final Folder rootFolder = EntityBundleBuilder.createRootFolder();
-        final Folder aliasesFolder = createFolder("aliases", rootFolder);
+        final Folder aliasesFolder = EntityCreator.createFolderWithRandomGoid("aliases", rootFolder);
         final PublishedService service =  createTestingPublishedService(createTestingPolicy(), rootFolder, "TestService", "/test");
         final PublishedServiceAlias alias = new PublishedServiceAlias(service, aliasesFolder);
         final Goid aliasGoid = new Goid(1, 1);
@@ -410,15 +410,6 @@ public class EntityBundleImporterImplTest {
 
     private Map<Goid, EntityMappingResult> resultsToMap(final List<EntityMappingResult> results) {
         return results.stream().collect(Collectors.toMap(result->result.getSourceEntityHeader().getGoid(), result->result));
-    }
-
-    private Folder createFolder(final String folderName, final Folder parent) {
-        final Folder folder = new Folder(folderName, parent);
-        final byte[] bytes = new byte[16];
-        new Random().nextBytes(bytes);
-        final Goid random_goid = new Goid(bytes);
-        folder.setGoid(random_goid);
-        return folder;
     }
 
     private IdentityHeader createIndentityHeader(User user){

@@ -36,7 +36,7 @@ public class EntityBundleBuilder {
         return this;
     }
 
-    public EntityBundleBuilder updateFolderByPath(@NotNull Folder folder) {
+    public EntityBundleBuilder updateFolderByPath(@NotNull final Folder folder) {
         entities.add(new EntityContainer(folder));
         final EntityMappingInstructions.TargetMapping folderTargetMapping = new EntityMappingInstructions.TargetMapping(EntityMappingInstructions.TargetMapping.Type.PATH);
         instructions.add(new EntityMappingInstructions(
