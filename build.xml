@@ -1997,7 +1997,7 @@
     -->
     <target name="package.licensegenerator"
             description="Compile and packate the License Generator (also testpackage.licensegenerator)"
-            depends="package.internal"/>
+            depends="skiptests, package.internal"/>
 
     <!--
       Package the AuditSignatureChecker (Aways invoked by hand)

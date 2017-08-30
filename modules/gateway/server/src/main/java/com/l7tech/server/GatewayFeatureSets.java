@@ -142,6 +142,8 @@ public class GatewayFeatureSets {
     //Mobile App Services Extension
     public static final String PROFILE_MAS_EXTENSION = "set:Profile:MAS";
 
+    public static final String PROFILE_MICROSERVICES = "set:Profile:Microservices";
+
     public static final String PROFILE_DEVELOPMENT = "set:Profile:Development";
     public static final String FS_WEBSOCKETS = "set:WebSocket:Assertions";
     public static final String FS_CSRSIGNER = "set:CsrSigner:Assertions";
@@ -1353,6 +1355,81 @@ public class GatewayFeatureSets {
                 fs(moduleLoader));
 
         /**
+         * Microservice Gateway
+         *
+         * The Microservices feature set
+         */
+        GatewayFeatureSet microserviceFeaturePack = fsp(PROFILE_MICROSERVICES,
+                "Microservice Gateway",
+                "Includes series of assertions required to support the Microservices gateway functionality.",
+                fs(core),
+                fs(branching),
+                fs(adminAndEms),
+                fs(encass),
+                fs(polback),
+                fs(seczones),
+                fs(trustStore),
+                fs(securePassword),
+                fs(keyStore),
+                ass(AuthenticationAssertion.class),
+                ass(MemberOfGroup.class),
+                fs(jdbcQueryAssertions),
+                mass("assertion:CORS"),
+                ass(HttpBasic.class),
+                ass(SslAssertion.class),
+                fs(generateOAuthSignatureBaseString),
+                fs(jwtAssertion),
+                // decode id token  (custom)
+                mass("assertion:EncodeDecode"),
+                fs(evaluateJsonPathExpression),
+                ass(Regex.class),
+                ass(RequestXpathAssertion.class),
+                ass(ResponseXpathAssertion.class),
+                // generate id token  (custom)
+                ass(AddHeaderAssertion.class),
+                ass(HttpRoutingAssertion.class),
+                mass("assertion:RateLimit"),
+                mass("assertion:CacheLookup"),
+                ass(RemoteIpRange.class),
+                mass("assertion:CacheStorage"),
+                ass(AuditDetailAssertion.class),
+                ass(AuditAssertion.class),
+                ass(CustomizeErrorResponseAssertion.class),
+                ass(CommentAssertion.class),
+                mass("assertion:Comparison"),
+                ass(TrueAssertion.class),
+                ass(FalseAssertion.class),
+                ass(SetVariableAssertion.class),
+                ass(Include.class),
+                ass(ExportVariablesAssertion.class),
+                mass("assertion:HardcodedResponse"),
+                mass("assertion:UUIDGenerator"),
+                mass("assertion:ManipulateMultiValuedVariable"),
+                ass(MapValueAssertion.class),
+                ass(InvokePolicyAsyncAssertion.class),
+                fs(adaptiveLoadBalancingAssertions),
+                fs(splitJoinAssertions),
+                mass("assertion:IndexLookupByItem"),
+                mass("assertion:ItemLookupByIndex"),
+                fs(lookupDynamicContextVariables),
+                fs(concurrentAllAssertion),
+                ass(RequestSizeLimit.class),
+                ass(CodeInjectionProtectionAssertion.class),
+                fs(circuitBreakerAssertion),
+                ass(XpathCredentialSource.class),
+                ass(CustomAssertionHolder.class),
+                mass("assertion:ValidateCertificate"),
+                fs(uiPublishXmlWizard),
+                fs(uiPublishServiceWizard),
+                fs(uiAuditWindow),
+                fs(uiDashboardWindow),
+                fs(uiWsdlCreateWizard),
+                fs(uiLogSinksDialog),
+                fs(uiAuditSinkDialog),
+                fs(moduleLoader));
+
+
+        /**
          * ### FEATURE PACK DEFINITIONS END ###
          */
 
@@ -1369,7 +1446,8 @@ public class GatewayFeatureSets {
                 fs(salesforceFeaturePack),
                 fs(ncesFeaturePack),
                 fs(mobileFeaturePack),
-                fs(masFeaturePack));
+                fs(masFeaturePack),
+                fs(microserviceFeaturePack));
     }
 
     /** @return All registered FeatureSets, including product profiles, building blocks, and twig and leaf features. */
