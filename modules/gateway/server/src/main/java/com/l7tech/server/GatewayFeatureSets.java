@@ -1426,6 +1426,7 @@ public class GatewayFeatureSets {
                 fs(uiWsdlCreateWizard),
                 fs(uiLogSinksDialog),
                 fs(uiAuditSinkDialog),
+                srv(SERVICE_HTTP_MESSAGE_INPUT, "Accept incoming messages over HTTP"),
                 fs(moduleLoader));
 
 
