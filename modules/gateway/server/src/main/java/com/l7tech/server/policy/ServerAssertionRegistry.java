@@ -111,7 +111,8 @@ public class ServerAssertionRegistry extends AssertionRegistry implements Dispos
                 final String[] tuple = entry.getValue();
                 String desc = tuple != null && tuple.length > 0 ? tuple[0] : null;
                 String dflt = tuple != null && tuple.length > 1 ? tuple[1] : null;
-                newClusterProps.put(name, new String[] { desc, dflt });
+                String validation = tuple != null && tuple.length > 2 ? tuple[2] : null;
+                newClusterProps.put(name, new String[] { desc, dflt, validation });
             }
         }
     }
@@ -153,9 +154,10 @@ public class ServerAssertionRegistry extends AssertionRegistry implements Dispos
                 // Dynamically register this new cluster property
                 String desc = tuple[0];
                 String dflt = tuple[1];
+                String validation = tuple.length > 2 ? tuple[2] : null;
                 String serverConfigName = ClusterProperty.asServerConfigPropertyName(clusterPropertyName);
 
-                toAdd.add(new String[] { serverConfigName, clusterPropertyName, desc, dflt });
+                toAdd.add(new String[] { serverConfigName, clusterPropertyName, desc, dflt, validation });
                 logger.info("Dynamically registering cluster property " + clusterPropertyName);
             }
         }

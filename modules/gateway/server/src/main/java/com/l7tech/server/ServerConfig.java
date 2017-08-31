@@ -84,7 +84,7 @@ public class ServerConfig extends DefaultConfig implements ClusterPropertyListen
         registerServerConfigProperties( map( asList( newProps ), new Unary<PropertyRegistrationInfo,String[]>(){
             @Override
             public PropertyRegistrationInfo call( final String[] tuple ) {
-                return new PropertyRegistrationInfo( tuple[0], tuple[1], tuple[2], tuple[3] );
+                return new PropertyRegistrationInfo( tuple[0], tuple[1], tuple[2], tuple[3], tuple.length > 4 ? tuple[4] : null );
             }
         } ) );
     }
