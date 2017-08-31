@@ -374,6 +374,39 @@ public class EntityBundleImporterImplTest {
     }
 
     @Test
+    public void updateNestedFoldersByPathWithoutSpecifyingTargetPath() throws Exception {
+        final Folder rootFolder = EntityBundleBuilder.createRootFolder();
+        final Folder folderA = EntityCreator.createFolderWithRandomGoid("folderA", rootFolder);
+        final Folder folderB = EntityCreator.createFolderWithRandomGoid("folderB", folderA);
+        final PublishedService service =  createTestingPublishedService(createTestingPolicy(), folderB, "TestService", "/test");
+
+        when(folderManager.findByPath("/folderA")).thenReturn(folderA);
+        when(folderManager.findByPath("/folderA/folderB")).thenReturn(folderB);
+        when(entityCrud.find(Folder.class, Folder.ROOT_FOLDER_ID.toString())).thenReturn(rootFolder);
+        final List found = Arrays.asList(service);
+        when(entityCrud.findAll(eq(PublishedService.class), anyMap(), eq(0), eq(-1), eq(null), eq(null))).thenReturn(found);
+        when(entityCrud.find(any(ServiceHeader.class))).thenReturn(service);
+        when(policyVersionManager.findLatestRevisionForPolicy(service.getPolicy().getGoid())).thenReturn(new PolicyVersion());
+
+        final EntityBundle bundle = new EntityBundleBuilder().
+                expectExistingRootFolder().
+                updateFolderByPath(folderA).
+                updateFolderByPath(folderB).
+                updateServiceByPath(service).create();
+
+        final Map<Goid, EntityMappingResult> results = resultsToMap(importer.importBundle(bundle, false, true, null));
+        assertEquals(4, results.size());
+        results.values().stream().forEach(result->assertTrue(result.isSuccessful()));
+        assertEquals(EntityMappingResult.MappingAction.UsedExisting, results.get(rootFolder.getGoid()).getMappingAction());
+        assertEquals(EntityMappingResult.MappingAction.UpdatedExisting, results.get(folderA.getGoid()).getMappingAction());
+        assertEquals(EntityMappingResult.MappingAction.UpdatedExisting, results.get(folderB.getGoid()).getMappingAction());
+        assertEquals(EntityMappingResult.MappingAction.UpdatedExisting, results.get(service.getGoid()).getMappingAction());
+        verify(entityCrud).update(folderA);
+        verify(entityCrud).update(folderB);
+        verify(serviceManager).update(service);
+    }
+
+    @Test
     public void updateAliasByPathWithoutSpecifyingTargetPath() throws Exception {
         final Folder rootFolder = EntityBundleBuilder.createRootFolder();
         final Folder aliasesFolder = EntityCreator.createFolderWithRandomGoid("aliases", rootFolder);
