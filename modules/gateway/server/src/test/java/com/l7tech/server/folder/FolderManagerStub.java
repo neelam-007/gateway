@@ -31,12 +31,12 @@ public class FolderManagerStub extends EntityManagerStub<Folder, FolderHeader> i
     }
 
     @Override
-    public Folder findByPath(String folderPath) {
+    public Folder findByPath(final String folderPath) {
         return null;
     }
 
     @Override
-    public Folder buildByPath(String absFolderPath) throws FindException, SaveException {
+    public Folder createPath(String absFolderPath) throws FindException, SaveException {
         return null;
     }
 

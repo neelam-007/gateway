@@ -6,7 +6,6 @@ import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.objectmodel.EntityCreator;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.server.RoleMatchingTestUtil;
 import com.l7tech.server.security.rbac.RoleManager;
@@ -141,7 +140,7 @@ public class FolderManagerImplTest {
         doReturn(Arrays.asList(folders.get(3), folders.get(4))).when(manager).findByFolder(folders.get(1).getGoid());
         doReturn(null).when(manager).save(any(Folder.class));
 
-        final Folder answer = manager.buildByPath("/folder1/folder1_new");
+        final Folder answer = manager.createPath("/folder1/folder1_new");
 
         assertTrue("folder1_new is created",answer.getName().equals("folder1_new"));
         assertTrue("folder1_new's parent is folder1", answer.getFolder().getName().equals("folder1"));
@@ -150,7 +149,7 @@ public class FolderManagerImplTest {
     @Test
     public void testBuildEmptyPath() throws Exception {
         try {
-            manager.buildByPath("bad");
+            manager.createPath("bad");
             fail("IllegalArgumentException should've been thrown.");
         } catch (IllegalArgumentException e) {
             assertTrue("IllegalArgumentException was thrown", e.getMessage().equals("The folder path is not an absolute path."));

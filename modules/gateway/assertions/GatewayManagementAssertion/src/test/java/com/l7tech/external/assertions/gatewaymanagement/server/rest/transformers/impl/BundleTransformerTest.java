@@ -108,7 +108,7 @@ public class BundleTransformerTest {
         bundleForTest.setMappings(Arrays.asList(new Mapping[]{serviceMapping}));
 
         // Use bundleTransformer to call convertFromMO, which will call convertEntityMappingInstructionsFromMappingAndEntity
-        EntityBundle entityBundle = bundleTransformer.convertFromMO(bundleForTest, null);
+        final EntityBundle entityBundle = bundleTransformer.convertFromMO(bundleForTest, null);
 
         final List<EntityMappingInstructions> mappingInstructions = entityBundle.getMappingInstructions();
         assertTrue(mappingInstructions != null && mappingInstructions.size() == 1);
@@ -149,7 +149,7 @@ public class BundleTransformerTest {
         assertEquals("test alias", instructionsMap.get(aliasId).getSourceEntityHeader().getName());
     }
 
-    private Map<Goid, EntityMappingInstructions> instructionsToMap(List<EntityMappingInstructions> instructions) {
+    private Map<Goid, EntityMappingInstructions> instructionsToMap(final List<EntityMappingInstructions> instructions) {
         final Map<Goid, EntityMappingInstructions> map = new HashMap<>();
         for (final EntityMappingInstructions instruction : instructions) {
             map.put(instruction.getSourceEntityHeader().getGoid(), instruction);
@@ -158,7 +158,7 @@ public class BundleTransformerTest {
     }
 
     @NotNull
-    private Mapping createMappingForTest(String type, Mapping.Action action, String id) {
+    private Mapping createMappingForTest(final String type, final Mapping.Action action, final String id) {
         final Mapping mappingForTest = ManagedObjectFactory.createMapping();
         mappingForTest.setType(type);
         mappingForTest.setAction(action);

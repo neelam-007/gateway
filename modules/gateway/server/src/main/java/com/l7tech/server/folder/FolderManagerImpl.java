@@ -12,6 +12,7 @@ import com.l7tech.util.Config;
 import com.l7tech.util.TextUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -174,16 +175,20 @@ public class FolderManagerImpl extends FolderSupportHibernateEntityManager<Folde
     /**
      * Find a folder by an absolute folder path.
      * e.g., given "/folderA/folderB", try to find the folder with name as "folderB" under the folderA.
-     * This method is top-to-bottom manner to find the last folder on the folder path, to assure the result is unique.
+     * This method uses top-to-bottom manner to find the last folder on the folder path, to assure the result is unique.
      *
-     * @param absFolderPath: a string represents an absolute folder path
+     * @param folderPath: a string represents a folder path.  If it is not an absolute path, then add a leading '/' to it.
      * @return a Folder object found
      *
      * @throws FindException: thrown if no folder can be found by the given folder path
      */
     @Override
-    public Folder findByPath(final String absFolderPath) throws FindException {
-        if (StringUtils.isBlank(absFolderPath) || !absFolderPath.startsWith("/")) return null;
+    @Nullable
+    public Folder findByPath(@Nullable final String folderPath) throws FindException {
+        if (StringUtils.isBlank(folderPath)) return null;
+
+        // If folderPath is not an absolute path, then add a leading '/' to it.
+        final String absFolderPath = folderPath.startsWith("/")? folderPath : ("/" + folderPath);
 
         Folder currentFolder = findRootFolder();
         String currentPath = "/";
@@ -225,17 +230,21 @@ public class FolderManagerImpl extends FolderSupportHibernateEntityManager<Folde
      * will be returned.  If a is an existing folder and b is the first new one, then b and c will be created and c will
      * be returned.
      *
-     * @param absFolderPath an absolute folder path
-     * @return a last folder on the folder path.
+     * @param folderPath: a string represents a folder path.  If it is not an absolute path, then add a leading '/' to it.
+     * @return a last folder on the folder path.  Returns null if all folders in the path already exist.
      *
      * @throws FindException thrown if unable to retrieve entities by folder
      * @throws SaveException thrown if unable to save a folder
      */
     @Override
-    public Folder buildByPath(String absFolderPath) throws FindException, SaveException {
-        if (StringUtils.isBlank(absFolderPath) || !absFolderPath.startsWith("/")) {
-            throw new IllegalArgumentException("The folder path is not an absolute path.");
+    @Nullable
+    public Folder createPath(@NotNull final String folderPath) throws FindException, SaveException {
+        if (StringUtils.isBlank(folderPath)) {
+            throw new IllegalArgumentException("The folder path is not specified.");
         }
+
+        // If folderPath is not an absolute path, then add a leading '/' to it.
+        final String absFolderPath = folderPath.startsWith("/")? folderPath : ("/" + folderPath);
 
         final String[] folderNames = absFolderPath.split("/");
         Folder parentFolder = findRootFolder();
