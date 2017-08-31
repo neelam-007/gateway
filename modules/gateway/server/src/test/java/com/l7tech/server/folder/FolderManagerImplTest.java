@@ -146,16 +146,6 @@ public class FolderManagerImplTest {
         assertTrue("folder1_new's parent is folder1", answer.getFolder().getName().equals("folder1"));
     }
 
-    @Test
-    public void testBuildEmptyPath() throws Exception {
-        try {
-            manager.createPath("bad");
-            fail("IllegalArgumentException should've been thrown.");
-        } catch (IllegalArgumentException e) {
-            assertTrue("IllegalArgumentException was thrown", e.getMessage().equals("The folder path is not an absolute path."));
-        }
-    }
-
     private List<Folder> pathTestSetup() {
         //Set up dummy folder structure
         final Folder rootFolder = createRootFolder(); //0
