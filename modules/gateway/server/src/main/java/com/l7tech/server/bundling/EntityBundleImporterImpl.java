@@ -1804,7 +1804,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                     if (container != null && container.getEntity() instanceof HasFolder) {
                         final HasFolder hasFolder = (HasFolder) container.getEntity();
                         final Folder parent = hasFolder.getFolder();
-                        String parentPath = "";
+                        String parentPath = (parent == null || "/".equals(parent.getPath())) ? "" : parent.getPath();
                         if (parent != null && StringUtils.isEmpty(parent.getName())) { // can't build a full path if parent folder doesn't have its name
                             // try to get the parent from the previously mapped entities first
                             final EntityHeader parentFromMappings = resourceMapping.get(EntityHeaderUtils.fromEntity(parent));
