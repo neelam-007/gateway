@@ -25,7 +25,8 @@ public class PathUtils {
      * @param path a path containing path elements
      * @return an array of elements in the path
      */
-    public static String[] getPathElements(final String path) {
+    @NotNull
+    static String[] getPathElements(@NotNull final String path) {
         final List<String> pathElementsList = new ArrayList<>();
         StringBuffer element = new StringBuffer();
 
@@ -59,7 +60,7 @@ public class PathUtils {
      * @return a pair of folder path and entity name.
      */
     @NotNull
-    public static Pair<String, String> parseEntityPathIntoFolderPathAndEntityName(@Nullable final String path) {
+    public static Pair<String, String> parseEntityPathIntoFolderPathAndEntityName(@NotNull final String path) {
         if (StringUtils.isBlank(path)) return new Pair<>(null, null);
         if (! path.contains("/")) return new Pair<>(null, path);
         if (path.endsWith("/")) return new Pair<>(path.substring(0, path.length() == 1? 1: path.length() - 1), null);
