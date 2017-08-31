@@ -408,6 +408,35 @@ public class EntityBundleImporterImplTest {
         verify(entityCrud).update(alias);
     }
 
+    /**
+     * Parent folder can be missing its name if there is a mapping for the parent folder in the bundle but no item for the parent folder.
+     */
+    @Test
+    public void updateServiceByPathWithMissingParentFolderName() throws Exception {
+        final Folder rootFolder = EntityBundleBuilder.createRootFolder();
+        final Folder parentFolderInBundle = EntityCreator.createFolderWithRandomGoid("", rootFolder);
+        final PublishedService service =  createTestingPublishedService(createTestingPolicy(), parentFolderInBundle, "TestService", "/test");
+        final Folder existingFolder = EntityCreator.createFolderWithRandomGoid("subfolder", rootFolder);
+
+        final List foundService = Arrays.asList(service);
+        when(entityCrud.find(Folder.class, existingFolder.getId())).thenReturn(existingFolder);
+        when(folderManager.findByPath("/subfolder")).thenReturn(existingFolder);
+        when(entityCrud.findAll(eq(PublishedService.class), anyMap(), eq(0), eq(-1), eq(null), eq(null))).thenReturn(foundService);
+        when(entityCrud.find(any(ServiceHeader.class))).thenReturn(service);
+        when(policyVersionManager.findLatestRevisionForPolicy(service.getPolicy().getGoid())).thenReturn(new PolicyVersion());
+
+        final EntityBundle bundle = new EntityBundleBuilder().
+                expectExistingFolderById(parentFolderInBundle, existingFolder.getId()).
+                updateServiceByPath(service).create();
+
+        final Map<Goid, EntityMappingResult> results = resultsToMap(importer.importBundle(bundle, false, true, null));
+        assertEquals(2, results.size());
+        results.values().stream().forEach(result->assertTrue(result.isSuccessful()));
+        assertEquals(EntityMappingResult.MappingAction.UsedExisting, results.get(parentFolderInBundle.getGoid()).getMappingAction());
+        assertEquals(EntityMappingResult.MappingAction.UpdatedExisting, results.get(service.getGoid()).getMappingAction());
+        verify(serviceManager).update(service);
+    }
+
     private Map<Goid, EntityMappingResult> resultsToMap(final List<EntityMappingResult> results) {
         return results.stream().collect(Collectors.toMap(result->result.getSourceEntityHeader().getGoid(), result->result));
     }

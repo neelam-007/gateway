@@ -3,7 +3,6 @@ package com.l7tech.server.bundling;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.PublishedServiceAlias;
 import com.l7tech.objectmodel.AliasHeader;
-import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.server.EntityHeaderUtils;
 import org.jetbrains.annotations.NotNull;
@@ -51,6 +50,13 @@ public class EntityBundleBuilder {
         aliasHeader.setName(aliasName);
         instructions.add(new EntityMappingInstructions(
                 aliasHeader, aliasTargetMapping, EntityMappingInstructions.MappingAction.NewOrUpdate, false, false));
+        return this;
+    }
+
+    public EntityBundleBuilder expectExistingFolderById(@NotNull final Folder folder, @NotNull final String targetId) {
+        final EntityMappingInstructions.TargetMapping folderTargetMapping = new EntityMappingInstructions.TargetMapping(EntityMappingInstructions.TargetMapping.Type.ID, targetId);
+        instructions.add(new EntityMappingInstructions(EntityHeaderUtils.fromEntity(folder), folderTargetMapping,
+                EntityMappingInstructions.MappingAction.NewOrExisting, true, false));
         return this;
     }
 

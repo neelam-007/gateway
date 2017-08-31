@@ -26,6 +26,7 @@ import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.objectmodel.folder.Folder;
+import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.objectmodel.folder.HasFolder;
 import com.l7tech.objectmodel.folder.HasFolderId;
 import com.l7tech.objectmodel.polback.PolicyBackedService;
@@ -1504,7 +1505,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
             }
         });
         //get the mapping target identifier. This is either a name, id or guid depending on the mapping instructions.
-        final String mappingTarget = getMapTo(mapping, bundle);
+        final String mappingTarget = getMapTo(mapping, resourceMapping, bundle);
         //we are not making any changes to the database, just searching for entities.
         tt.setReadOnly(true);
         return Eithers.extract(tt.execute(new TransactionCallback<Either<BundleImportException, Option<Entity>>>() {
@@ -1828,7 +1829,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
      *                                               target mapping id cannot be found
      */
     @NotNull
-    private String getMapTo(@NotNull final EntityMappingInstructions mapping, final @NotNull EntityBundle bundle) throws IncorrectMappingInstructionsException {
+    private String getMapTo(@NotNull final EntityMappingInstructions mapping, @NotNull final Map<EntityHeader, EntityHeader> resourceMapping, final @NotNull EntityBundle bundle) throws IncorrectMappingInstructionsException {
         @NotNull
         final String targetMapTo;
         if (mapping.getTargetMapping() != null && mapping.getTargetMapping().getTargetID() != null) {
@@ -1855,20 +1856,25 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                     final EntityContainer container = bundle.getEntity(mapping.getSourceEntityHeader().getStrId(), mapping.getSourceEntityHeader().getType());
                     if (container != null && container.getEntity() instanceof HasFolder) {
                         final HasFolder hasFolder = (HasFolder) container.getEntity();
-                        Folder parent = hasFolder.getFolder();
-                        if (parent != null && StringUtils.isEmpty(parent.getName())) {
-                            // can't build a path if parent folder doesn't have its name so try to retrieve the full parent entity from the bundle
-                            final EntityContainer pContainer = bundle.getEntity(parent.getId(), EntityType.FOLDER);
-                            if (pContainer != null && pContainer.getEntity() instanceof Folder) {
-                                parent = (Folder) pContainer.getEntity();
-                                hasFolder.setFolder(parent);
+                        final Folder parent = hasFolder.getFolder();
+                        String parentPath = "";
+                        if (parent != null && StringUtils.isEmpty(parent.getName())) { // can't build a full path if parent folder doesn't have its name
+                            // try to get the parent from the previously mapped entities first
+                            final EntityHeader parentFromMappings = resourceMapping.get(EntityHeaderUtils.fromEntity(parent));
+                            if (parentFromMappings != null && parentFromMappings instanceof FolderHeader) {
+                                final FolderHeader parentFolderHeader = (FolderHeader) parentFromMappings;
+                                if (StringUtils.isNotBlank(parentFolderHeader.getPath())) {
+                                    parentPath = parentFolderHeader.getPath();
+                                }
+                            } else {
+                                // otherwise try to retrieve the full parent entity from the bundle
+                                final EntityContainer parentFromBundle = bundle.getEntity(parent.getId(), EntityType.FOLDER);
+                                if (parentFromBundle != null && parentFromBundle.getEntity() instanceof Folder) {
+                                    parentPath = ((Folder) parentFromBundle.getEntity()).getPath();
+                                }
                             }
                         }
-                        if (hasFolder instanceof Folder) {
-                            targetMapTo = ((Folder) hasFolder).getPath();
-                        } else {
-                            targetMapTo = parent.getPath() + "/" + mapping.getSourceEntityHeader().getName();
-                        }
+                        targetMapTo = parentPath + "/" + mapping.getSourceEntityHeader().getName();
                     } else {
                         throw new IncorrectMappingInstructionsException(mapping, "Mapping by path but entity is not a folderable type");
                     }
