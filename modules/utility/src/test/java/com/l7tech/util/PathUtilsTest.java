@@ -2,6 +2,8 @@ package com.l7tech.util;
 
 import org.junit.Test;
 
+import java.util.List;
+
 import static org.junit.Assert.*;
 
 public class PathUtilsTest {
@@ -130,5 +132,40 @@ public class PathUtilsTest {
         final Pair<String, String> result = PathUtils.parseEntityPathIntoFolderPathAndEntityName("/fol\\\\derA/fol\\\\derB/test");
         assertEquals("/fol\\derA/fol\\derB", result.left); //Is this the intended behaviour?
         assertEquals("test", result.right);
+    }
+
+    @Test
+    public void getPathsForRootFolder() {
+        final List<String> paths = PathUtils.getPaths("/");
+        assertNotNull(paths);
+        assertTrue(paths.size() == 1);
+        assertTrue(paths.get(0).equals("/"));
+    }
+
+    @Test
+    public void getPathsForAbsolutePath() {
+        final List<String> paths = PathUtils.getPaths("/a/b/c");
+        assertNotNull(paths);
+        assertTrue(paths.size() == 3);
+        assertTrue(paths.get(0).equals("/a"));
+        assertTrue(paths.get(1).equals("/a/b"));
+        assertTrue(paths.get(2).equals("/a/b/c"));
+    }
+
+    @Test
+    public void getPathsForRelativePath() {
+        final List<String> paths = PathUtils.getPaths("a/b/c");
+        assertNotNull(paths);
+        assertTrue(paths.size() == 3);
+        assertTrue(paths.get(0).equals("a"));
+        assertTrue(paths.get(1).equals("a/b"));
+        assertTrue(paths.get(2).equals("a/b/c"));
+    }
+
+    @Test
+    public void getPathsForEmptyPath() {
+        final List<String> paths = PathUtils.getPaths("");
+        assertNotNull(paths);
+        assertTrue(paths.size() == 0);
     }
 }

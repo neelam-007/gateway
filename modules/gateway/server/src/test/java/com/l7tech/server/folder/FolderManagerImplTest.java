@@ -5,12 +5,12 @@ import com.l7tech.gateway.common.security.rbac.Permission;
 import com.l7tech.gateway.common.security.rbac.Role;
 import com.l7tech.objectmodel.EntityCreator;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.server.RoleMatchingTestUtil;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.test.BugId;
 import com.l7tech.util.MockConfig;
+import com.l7tech.util.PathUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -96,34 +96,28 @@ public class FolderManagerImplTest {
     }
 
     @Test
-    public void testFindFolderByPath() throws Exception {
+    public void testFindByPath() throws Exception {
         //Set up dummy folder structure
         final List<Folder> folders = pathTestSetup();
         manager = spy(new FolderManagerImpl(roleManager, new MockConfig(properties)));
         doReturn(folders.get(0)).when(manager).findRootFolder();
-        doReturn(Arrays.asList(folders.get(1), folders.get(2))).when(manager).findByFolder(folders.get(0).getGoid());
-        doReturn(Arrays.asList(folders.get(3), folders.get(4))).when(manager).findByFolder(folders.get(1).getGoid());
+        doReturn(Arrays.asList(folders.get(2))).when(manager).findByName(folders.get(2).getName());
         final Folder answer = manager.findByPath("/folder1/folder1_a");
 
         //Verify that the folder has the same Id as folder1_a
-        assertTrue("Id of answer is folder1_a", answer.getId().equals(folders.get(3).getId()));
+        assertTrue("Id of answer is folder1_a", answer.getId().equals(folders.get(2).getId()));
     }
 
     @Test
-    public void testFindFolderByPathDoesNotExist() throws Exception {
-        //Set up dummy folder structure
-        final List<Folder> folders = pathTestSetup();
-        manager = spy(new FolderManagerImpl(roleManager, new MockConfig(properties)));
-        doReturn(folders.get(0)).when(manager).findRootFolder();
-        doReturn(Arrays.asList(folders.get(1), folders.get(2))).when(manager).findByFolder(folders.get(0).getGoid());
-        doReturn(Arrays.asList(folders.get(3), folders.get(4))).when(manager).findByFolder(folders.get(1).getGoid());
+    public void testFindByPathForFolderDoesNotExist() throws Exception {
+        final String pathDoesNotExist = "/folder1/NoExisting";
+        final String folderDoesNotExist = PathUtils.getPathElements(pathDoesNotExist)[1];
 
-        try {
-            manager.findByPath("/folder1/NoExisting");
-            fail("Find Exception should have been thrown");
-        } catch (FindException e) {
-            assertTrue("Find Exception was thrown because No existing folder exists", e.getMessage().equals("There is no such folder path: /folder1/NoExisting"));
-        }
+        manager = spy(new FolderManagerImpl(roleManager, new MockConfig(properties)));
+        doReturn(Collections.emptyList()).when(manager).findByName(folderDoesNotExist);
+
+        final Folder answer = manager.findByPath(pathDoesNotExist);
+        assertNull("null returned means not found such folder", answer);
     }
 
     @Test
@@ -132,34 +126,47 @@ public class FolderManagerImplTest {
     }
 
     @Test
-    public void testBuildByPath() throws Exception {
+    public void testCreateByPath() throws Exception {
+        final String newPath = "/folder1/folder1_new";
         final List<Folder> folders = pathTestSetup();
+
         manager = spy(new FolderManagerImpl(roleManager, new MockConfig(properties)));
         doReturn(folders.get(0)).when(manager).findRootFolder();
-        doReturn(Arrays.asList(folders.get(1), folders.get(2))).when(manager).findByFolder(folders.get(0).getGoid());
-        doReturn(Arrays.asList(folders.get(3), folders.get(4))).when(manager).findByFolder(folders.get(1).getGoid());
+        doReturn(folders.get(1)).when(manager).findByPath(folders.get(1).getPath());
+        doReturn(null).when(manager).findByPath(newPath);
         doReturn(null).when(manager).save(any(Folder.class));
 
-        final Folder answer = manager.createPath("/folder1/folder1_new");
-
+        final Folder answer = manager.createPath(newPath);
         assertTrue("folder1_new is created",answer.getName().equals("folder1_new"));
         assertTrue("folder1_new's parent is folder1", answer.getFolder().getName().equals("folder1"));
+    }
+
+    @Test
+    public void testCreateByPathForRelativePath() throws Exception {
+        final String relativePath = "folder_new";
+        final Folder rootFolder = createRootFolder();
+
+        manager = spy(new FolderManagerImpl(roleManager, new MockConfig(properties)));
+        doReturn(rootFolder).when(manager).findRootFolder();
+        doReturn(null).when(manager).findByPath("/" + relativePath);
+        doReturn(null).when(manager).save(any(Folder.class));
+
+        final Folder answer = manager.createPath(relativePath);
+        assertTrue("folder_new is created", answer.getName().equals("folder_new"));
+        assertTrue("folder_new's parent is the root folder", answer.getFolder().equals(rootFolder));
     }
 
     private List<Folder> pathTestSetup() {
         //Set up dummy folder structure
         final Folder rootFolder = createRootFolder(); //0
         final Folder folder1 = EntityCreator.createFolderWithRandomGoid("folder1", rootFolder); //1
-        final Folder folder2 = EntityCreator.createFolderWithRandomGoid("folder2", rootFolder); //2
-        final Folder folder1_a = EntityCreator.createFolderWithRandomGoid("folder1_a", folder1); //3
-        final Folder folder1_b = EntityCreator.createFolderWithRandomGoid("folder1_b", folder1); //4
-        final Folder folder2_a = EntityCreator.createFolderWithRandomGoid("folder2_a", folder2); //5
+        final Folder folder1_a = EntityCreator.createFolderWithRandomGoid("folder1_a", folder1); //2
 
-        return Arrays.asList(rootFolder, folder1, folder2, folder1_a, folder1_b, folder2_a);
+        return Arrays.asList(rootFolder, folder1, folder1_a);
     }
 
     private Folder createRootFolder() {
-        final Folder rootFolder = new Folder("Root", new Folder());
+        final Folder rootFolder = new Folder("Root", null);
         rootFolder.setGoid(Folder.ROOT_FOLDER_ID);
         return rootFolder;
     }

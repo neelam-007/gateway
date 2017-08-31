@@ -8,7 +8,9 @@ import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.server.FolderSupportHibernateEntityManager;
 import com.l7tech.server.security.rbac.RoleManager;
+import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Config;
+import com.l7tech.util.PathUtils;
 import com.l7tech.util.TextUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -180,45 +182,47 @@ public class FolderManagerImpl extends FolderSupportHibernateEntityManager<Folde
      * @param folderPath: a string represents a folder path.  If it is not an absolute path, then add a leading '/' to it.
      * @return a Folder object found
      *
-     * @throws FindException: thrown if no folder can be found by the given folder path
+     * @throws FindException: thrown if root folder cannnot be found.
      */
     @Override
     @Nullable
     public Folder findByPath(@Nullable final String folderPath) throws FindException {
         if (StringUtils.isBlank(folderPath)) return null;
+        if (folderPath.equals("/")) return findRootFolder();
 
         // If folderPath is not an absolute path, then add a leading '/' to it.
         final String absFolderPath = folderPath.startsWith("/")? folderPath : ("/" + folderPath);
 
-        Folder currentFolder = findRootFolder();
-        String currentPath = "/";
+        final String[] pathElements = PathUtils.getPathElements(absFolderPath);
+        final int size = pathElements.length;
+        assert size > 0;
 
-        final String[] folderNames = absFolderPath.split("/");
-        for (final String folderName: folderNames) {
-            if (folderName.equals("")) continue;
+        // Using a bottom up searching manner, search all folders with the name same as the name of lastFolder on the path.
+        final String lastFolderName = pathElements[size - 1];
+        final List<Folder> folders = findByName(lastFolderName);
 
-            boolean found = false;
-            final Collection<Folder> subFolders = findByFolder(currentFolder.getGoid());
-            for (final Folder folder: subFolders) {
-                if (folder.getName().equals(folderName)) {
-                    found = true;
-                    currentFolder = folder; // for next loop, to find its sub-folders
-                    break;
-                }
-            }
-            // Update the current path, just in case any error occurring. currentPath will be used for error reporting.
-            if (currentPath.equals("/")) {
-                currentPath += folderName;
-            } else {
-                currentPath += "/" + folderName;
-            }
-
-            if (!found) {
-                throw new FindException("There is no such folder path: " + currentPath);
+        // Check which folder has a path same as the given path.  If matched, then found.
+        for (final Folder folder: folders) {
+            String thePath = folder.getPath();
+            if (folderPath.equals(thePath)) {
+                return folder;
             }
         }
 
-        return currentFolder;
+        // Otherwise, not found.
+        return null;
+    }
+
+
+    /**
+     * Final all folders with a same name specified by folderName.
+     *
+     * @param folderName the name of folders to be found.
+     * @return a list of folder objects having the name specified by folderName.
+     * @throws FindException thrown if Error finding entities
+     */
+    List<Folder> findByName(@NotNull final String folderName) throws FindException {
+        return findMatching(Arrays.asList(CollectionUtils.MapBuilder.<String, Object>builder().put("name", folderName).map()));
     }
 
     /**
@@ -246,36 +250,25 @@ public class FolderManagerImpl extends FolderSupportHibernateEntityManager<Folde
         // If folderPath is not an absolute path, then add a leading '/' to it.
         final String absFolderPath = folderPath.startsWith("/")? folderPath : ("/" + folderPath);
 
-        final String[] folderNames = absFolderPath.split("/");
+        // Generate all individual paths.  Check if each path is a new path.
+        // If so, create a new folder.  Otherwise, continue next path checking.
+        final List<String> paths = PathUtils.getPaths(absFolderPath);
+        final String[] folderNames = PathUtils.getPathElements(absFolderPath);
         Folder parentFolder = findRootFolder();
         Folder newFolder = null;
-        boolean foundFirstNewFolder = false;  // A flag to find the first new folder
 
-        for (String folderName: folderNames) {
-            if (folderName.equals("")) continue;
-
-            if (!foundFirstNewFolder) { // If the first new folder is found, then do not run this block anymore.
-                boolean found = false;  // A flag to find a matched child folder
-                final Collection<Folder> subFolders = findByFolder(parentFolder.getGoid());
-                for (final Folder folder: subFolders) {
-                    if (folder.getName().equals(folderName)) {
-                        found = true;
-                        parentFolder = folder; // for next loop, to find its sub-folders
-                        break;
-                    }
-                }
-                if (!found) {
-                    foundFirstNewFolder = true;
-                }
-            }
-
-            if (foundFirstNewFolder) {
-                newFolder = new Folder(folderName, parentFolder);
+        for (int i = 0; i < paths.size(); i++) {
+            final Folder folder = findByPath(paths.get(i));
+            if (folder == null) {
+                newFolder = new Folder(folderNames[i], parentFolder);
                 save(newFolder);
                 parentFolder = newFolder;
+            } else {
+                parentFolder = folder;
             }
         }
 
+        // If newFolder == null, it means all folders in the path already exist.
         return newFolder;
     }
 

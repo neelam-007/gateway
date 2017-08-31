@@ -26,7 +26,7 @@ public class PathUtils {
      * @return an array of elements in the path
      */
     @NotNull
-    static String[] getPathElements(@NotNull final String path) {
+    public static String[] getPathElements(@NotNull final String path) {
         final List<String> pathElementsList = new ArrayList<>();
         StringBuffer element = new StringBuffer();
 
@@ -84,5 +84,37 @@ public class PathUtils {
 
             return new Pair<>(folderPath.toString(), pathElements[size - 1]);
         }
+    }
+
+    /**
+     * Generate all individual paths based on given a long path.
+     * For example, /a/b/c/d will return /a, /a/b, /a/b/c, and /a/b/c/d.
+     *
+     * @param longPath a single path
+     * @return a list of paths, which are sub-path of longPath, including itself of longPath.
+     */
+    @NotNull
+    public static List<String> getPaths(@NotNull String longPath) {
+        final String[] pathElements = PathUtils.getPathElements(longPath);
+        final int size = pathElements.length;
+        final List<String> paths = new ArrayList<>(size);
+
+        // Handle the path is a single '/'.
+        if (longPath.equals("/")) {
+            paths.add("/");
+            return paths;
+        }
+
+        String path = longPath.startsWith("/")? "/" : "";
+        for (int i = 0; i < size; i++) {
+            path += pathElements[i];
+            paths.add(path);
+
+            if (i < size - 1) {
+                path += "/";
+            }
+        }
+
+        return paths;
     }
 }
