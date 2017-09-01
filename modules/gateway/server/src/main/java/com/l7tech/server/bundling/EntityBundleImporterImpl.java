@@ -870,6 +870,9 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                         try {
                             folder = folderManager.findByPath(folderPath);
                         } catch (final FindException e) {
+                            throw new IncorrectMappingInstructionsException(mapping, "Error finding the folder by a path '" + folderPath + "'.");
+                        }
+                        if (folder == null) {
                             folder = folderManager.createPath(folderPath);
                             logger.fine("The folder '" + folderPath + "' did not exist and has been created.");
                         }
@@ -1669,6 +1672,12 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                             // If any folder on the folder path is not found, it implies the south entity cannot be found in the target gateway.
                                             resource = null;
                                             logger.fine("The entity '" + entityName + "' cannot be found by its path '" + folderPath + "'.");
+                                            break;
+                                        }
+                                        // If folder path does not exist, then treat this case as resource not found.
+                                        if (folder == null) {
+                                            resource = null;
+                                            logger.fine("The entity '" + entityName + "' cannot be found due to its folder path '" + folderPath + "' not found.");
                                             break;
                                         }
 
