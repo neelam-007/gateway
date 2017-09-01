@@ -203,7 +203,10 @@ public class FolderManagerImpl extends FolderSupportHibernateEntityManager<Folde
 
         // Check which folder has a path same as the given path.  If matched, then found.
         for (final Folder folder: folders) {
-            String thePath = folder.getPath();
+            // Note don't use folder.getPath(), b/c folder's parent might not have folder name info.
+            // However, to get a path, find each folder's parent folder, use the parent's goid to find the acutal parent
+            // folder, then get the parent folder's name.  Repeat this action until reaching the root folder.
+            String thePath = getPath(folder);
             if (folderPath.equals(thePath)) {
                 return folder;
             }
@@ -221,8 +224,40 @@ public class FolderManagerImpl extends FolderSupportHibernateEntityManager<Folde
      * @return a list of folder objects having the name specified by folderName.
      * @throws FindException thrown if Error finding entities
      */
+    @NotNull
     List<Folder> findByName(@NotNull final String folderName) throws FindException {
         return findMatching(Arrays.asList(CollectionUtils.MapBuilder.<String, Object>builder().put("name", folderName).map()));
+    }
+
+    /**
+     * Get the path by finding each folder's parent folder, using the parent's goid to find the acutal parent folder,
+     * then getting the parent folder's name.  Repeat this action until reaching the root folder.
+     *
+     * @param folder a folder to find its path.
+     * @return a path which this folder is on
+     * @throws FindException thrown if cannot find folder by primary key.
+     */
+    @Nullable
+    private String getPath(@NotNull final Folder folder) throws FindException {
+        if (isRootFolder(folder)) return "/";
+
+        final StringBuffer path = new StringBuffer(folder.getName());
+
+        Folder parentFolder = folder.getFolder();
+        while (parentFolder != null) {
+            // Retrieve parent folder again to get more info such as folder name.
+            parentFolder = findByPrimaryKey(parentFolder.getGoid());
+            // Append folder path
+            path.insert(0, "/").insert(0, isRootFolder(parentFolder)? "" : parentFolder.getName());
+            // Update parent folder for next loop
+            parentFolder = parentFolder.getFolder();
+        }
+
+        return path.toString();
+    }
+
+    private boolean isRootFolder(@NotNull final Folder folder) {
+        return Folder.ROOT_FOLDER_ID.equals(folder.getGoid());
     }
 
     /**
