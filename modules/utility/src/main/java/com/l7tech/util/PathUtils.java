@@ -54,7 +54,9 @@ public class PathUtils {
     }
 
     /**
-     * Parse a path and get a folder path and an entity name
+     * Parse a path and get a folder path and an entity name.
+     *
+     * If the given path is not prefixed with '/', it will be added as a prefix to the folder path.
      *
      * @param path: an entity path must not be null.
      * @return a pair of folder path and entity name.
@@ -62,28 +64,39 @@ public class PathUtils {
     @NotNull
     public static Pair<String, String> parseEntityPathIntoFolderPathAndEntityName(@NotNull final String path) {
         if (StringUtils.isBlank(path)) return new Pair<>(null, null);
-        if (! path.contains("/")) return new Pair<>(null, path);
+        if (! path.contains("/")) return new Pair<>("/", path);
         if (path.endsWith("/")) return new Pair<>(path.substring(0, path.length() == 1? 1: path.length() - 1), null);
         // After the above three checks, a '/' is guaranteed to be in the middle of the path string.
+
+        String fpath;
+        String entityName;
 
         // Check if there is an escaping char, '\'.
         if (! path.contains("\\")) {
             final int idxOfLastSlash = path.lastIndexOf('/');
-            return new Pair<>(path.substring(0, idxOfLastSlash == 0? 1 : idxOfLastSlash), path.substring(idxOfLastSlash + 1));
+            fpath = path.substring(0, idxOfLastSlash == 0 ? 1 : idxOfLastSlash);
+            entityName = path.substring(idxOfLastSlash + 1);
         } else {
             final String[] pathElements = getPathElements(path);
             final int size = pathElements.length;
             assert size > 1;
 
-            final StringBuffer folderPath = path.startsWith("/")? new StringBuffer("/") : new StringBuffer();
+            final StringBuffer folderPath = new StringBuffer("/");
             folderPath.append(pathElements[0]);
 
             for (int i = 1; i < size - 1; i++) {
                 folderPath.append("/").append(pathElements[i]);
             }
 
-            return new Pair<>(folderPath.toString(), pathElements[size - 1]);
+            fpath = folderPath.toString();
+            entityName = pathElements[size - 1];
         }
+
+        if (fpath != null && !fpath.startsWith("/")) {
+            fpath = "/" + fpath;
+        }
+
+        return new Pair<>(fpath, entityName);
     }
 
     /**

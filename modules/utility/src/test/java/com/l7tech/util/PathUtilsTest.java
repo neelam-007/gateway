@@ -93,9 +93,16 @@ public class PathUtilsTest {
     }
 
     @Test
+    public void parseEntityPathMissingForwardSlashPrefix() {
+        final Pair<String, String> result = PathUtils.parseEntityPathIntoFolderPathAndEntityName("folderA/folderB");
+        assertEquals("/folderA", result.left);
+        assertEquals("folderB", result.right);
+    }
+
+    @Test
     public void parseEntityPathNoForwardSlashes() {
         final Pair<String, String> result = PathUtils.parseEntityPathIntoFolderPathAndEntityName("test");
-        assertNull(result.left);
+        assertEquals("/", result.left);
         assertEquals("test", result.right);
     }
 
@@ -131,6 +138,13 @@ public class PathUtilsTest {
     public void parseEntityPathWithEscapedBackSlashes() {
         final Pair<String, String> result = PathUtils.parseEntityPathIntoFolderPathAndEntityName("/fol\\\\derA/fol\\\\derB/test");
         assertEquals("/fol\\derA/fol\\derB", result.left); //Is this the intended behaviour?
+        assertEquals("test", result.right);
+    }
+
+    @Test
+    public void parseEntityPathWithEscapedForwardSlashesAndMissingForwardSlashPrefix() {
+        final Pair<String, String> result = PathUtils.parseEntityPathIntoFolderPathAndEntityName("fol\\/derA/fol\\/derB/test");
+        assertEquals("/fol/derA/fol/derB", result.left); //Is this the intended behaviour?
         assertEquals("test", result.right);
     }
 

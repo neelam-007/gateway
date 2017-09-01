@@ -207,7 +207,7 @@ public class FolderManagerImpl extends FolderSupportHibernateEntityManager<Folde
             // However, to get a path, find each folder's parent folder, use the parent's goid to find the acutal parent
             // folder, then get the parent folder's name.  Repeat this action until reaching the root folder.
             String thePath = getPath(folder);
-            if (folderPath.equals(thePath)) {
+            if (absFolderPath.equals(thePath)) {
                 return folder;
             }
         }
@@ -270,7 +270,7 @@ public class FolderManagerImpl extends FolderSupportHibernateEntityManager<Folde
      * be returned.
      *
      * @param folderPath: a string represents a folder path.  If it is not an absolute path, then add a leading '/' to it.
-     * @return a last folder on the folder path.  Returns null if all folders in the path already exist.
+     * @return a last folder on the folder path.
      *
      * @throws FindException thrown if unable to retrieve entities by folder
      * @throws SaveException thrown if unable to save a folder
@@ -304,7 +304,7 @@ public class FolderManagerImpl extends FolderSupportHibernateEntityManager<Folde
         }
 
         // If newFolder == null, it means all folders in the path already exist.
-        return newFolder;
+        return newFolder == null ? parentFolder : newFolder;
     }
 
     @Override
