@@ -100,8 +100,11 @@ public class FolderManagerImplTest {
         //Set up dummy folder structure
         final List<Folder> folders = pathTestSetup();
         manager = spy(new FolderManagerImpl(roleManager, new MockConfig(properties)));
-        doReturn(folders.get(0)).when(manager).findRootFolder();
         doReturn(Arrays.asList(folders.get(2))).when(manager).findByName(folders.get(2).getName());
+        doReturn(folders.get(0)).when(manager).findByPrimaryKey(folders.get(0).getGoid());
+        doReturn(folders.get(1)).when(manager).findByPrimaryKey(folders.get(1).getGoid());
+        doReturn(folders.get(2)).when(manager).findByPrimaryKey(folders.get(2).getGoid());
+
         final Folder answer = manager.findByPath("/folder1/folder1_a");
 
         //Verify that the folder has the same Id as folder1_a
