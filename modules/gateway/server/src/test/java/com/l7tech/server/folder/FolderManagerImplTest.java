@@ -129,6 +129,20 @@ public class FolderManagerImplTest {
     }
 
     @Test
+    public void findByPathMissingBackslashPrefix() throws Exception {
+        final Folder root = createRootFolder();
+        final Folder testFolder = EntityCreator.createFolderWithRandomGoid("test", root);
+        manager = spy(new FolderManagerImpl(roleManager, new MockConfig(properties)));
+        doReturn(Arrays.asList(testFolder)).when(manager).findByName("test");
+        doReturn(root).when(manager).findByPrimaryKey(root.getGoid());
+
+        final Folder folder = manager.findByPath("test");
+
+        assertEquals("test", folder.getName());
+        assertEquals("/test", folder.getPath());
+    }
+
+    @Test
     public void testCreateByPath() throws Exception {
         final String newPath = "/folder1/folder1_new";
         final List<Folder> folders = pathTestSetup();
@@ -157,6 +171,22 @@ public class FolderManagerImplTest {
         final Folder answer = manager.createPath(relativePath);
         assertTrue("folder_new is created", answer.getName().equals("folder_new"));
         assertTrue("folder_new's parent is the root folder", answer.getFolder().equals(rootFolder));
+    }
+
+    @Test
+    public void createPathAlreadyExistsReturnsLastFolder() throws Exception {
+        final Folder rootFolder = createRootFolder();
+        final Folder folderA = EntityCreator.createFolderWithRandomGoid("folderA", rootFolder);
+        final Folder folderB = EntityCreator.createFolderWithRandomGoid("folderB", folderA);
+
+        manager = spy(new FolderManagerImpl(roleManager, new MockConfig(properties)));
+        doReturn(rootFolder).when(manager).findRootFolder();
+        doReturn(folderA).when(manager).findByPath("/folderA");
+        doReturn(folderB).when(manager).findByPath("/folderA/folderB");
+
+        final Folder folder = manager.createPath("/folderA/folderB");
+        assertEquals("folderB", folder.getName());
+        assertEquals("/folderA/folderB", folder.getPath());
     }
 
     private List<Folder> pathTestSetup() {
