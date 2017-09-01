@@ -44,11 +44,13 @@ Authentication:
   externalName: Authentication
   className: com.l7tech.policy.assertion.identity.AuthenticationAssertion
   properties:
-    IdentityProviderOid: IdentityProviderOid
+    IdentityProviderName: IdentityProviderOid
+  propertiesNameToIdEntityType:
+    IdentityProviderName: ID_PROVIDER_CONFIG
   samplePayload: |
     {
       "Authentication" : {
-        "IdentityProviderOid" : "0000000000000000fffffffffffffffe"
+        "IdentityProviderName" : "Internal Identity Provider"
       }
     }
   jsonSchema: |
@@ -59,11 +61,11 @@ Authentication:
         "Authentication": {
           "type": "object",
           "properties": {
-            "IdentityProviderOid": {
+            "IdentityProviderName": {
               "type" : "string"
             }
           },
-          "required": [ "IdentityProviderOid" ]
+          "required": [ "IdentityProviderName" ]
         }
       },
       "required": [ "Authentication" ]

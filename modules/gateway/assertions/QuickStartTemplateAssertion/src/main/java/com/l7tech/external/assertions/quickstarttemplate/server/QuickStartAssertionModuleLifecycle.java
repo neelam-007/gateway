@@ -7,6 +7,7 @@ import com.l7tech.external.assertions.quickstarttemplate.server.policy.*;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.AssertionRegistry;
+import com.l7tech.server.EntityCrud;
 import com.l7tech.server.GatewayState;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.event.system.ReadyForMessages;
@@ -71,11 +72,12 @@ public class QuickStartAssertionModuleLifecycle {
             final ServiceCache ServiceCache = context.getBean("serviceCache", ServiceCache.class);
             final PolicyVersionManager policyVersionManager = context.getBean("policyVersionManager", PolicyVersionManager.class);
             final ClusterPropertyManager clusterPropertyManager = context.getBean("clusterPropertyManager", ClusterPropertyManager.class);
+            final EntityCrud entityCrud = context.getBean("entityCrud", EntityCrud.class);
 
             final AssertionMapper assertionMapper = new AssertionMapper();
             final QuickStartAssertionLocator assertionLocator = new QuickStartAssertionLocator(encassManager, assertionMapper, folderManager, new Goid(PROVIDED_FRAGMENT_FOLDER_GOID));
             final QuickStartPublishedServiceLocator serviceLocator = new QuickStartPublishedServiceLocator(serviceManager);
-            final QuickStartServiceBuilder serviceBuilder = new QuickStartServiceBuilder(ServiceCache, folderManager, serviceLocator, assertionLocator, clusterPropertyManager, assertionMapper);
+            final QuickStartServiceBuilder serviceBuilder = new QuickStartServiceBuilder(ServiceCache, folderManager, serviceLocator, assertionLocator, clusterPropertyManager, assertionMapper, entityCrud);
             final QuickStartJsonServiceInstaller jsonServiceInstaller = new OneTimeJsonServiceInstaller(serviceBuilder, serviceManager, policyVersionManager, new QuickStartParser());
 
             InstanceHolder.INSTANCE = new QuickStartAssertionModuleLifecycle(context, assertionLocator, serviceBuilder, jsonServiceInstaller);

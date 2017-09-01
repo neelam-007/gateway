@@ -5,6 +5,8 @@ import com.google.common.collect.Lists;
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStartAssertionLocator;
 import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStartPolicyBuilderException;
+import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
@@ -14,8 +16,11 @@ import com.l7tech.policy.assertion.EncapsulatedAssertion;
 import com.l7tech.policy.assertion.MessageTargetableAssertion;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.TargetMessageType;
+import com.l7tech.policy.assertion.identity.AuthenticationAssertion;
 import com.l7tech.policy.variable.DataType;
+import com.l7tech.server.EntityCrud;
 import com.l7tech.server.cluster.ClusterPropertyManager;
+import com.l7tech.util.CollectionUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -48,6 +53,9 @@ public class QuickStartMapperTest {
 
     @InjectMocks
     private QuickStartMapper fixture;
+
+    @Mock
+    private EntityCrud entityCrud;
 
     @Before
     public void setUp() {
@@ -146,17 +154,23 @@ public class QuickStartMapperTest {
 
     @Test
     public void callAssertionSetterAuthenticationAssertion() throws Exception {
-        final AtomicBoolean wasAttributeSet = new AtomicBoolean(false);
-        final Assertion assertion = new Assertion() {
-            @SuppressWarnings("UnusedDeclaration")
-            public void setIdentityProviderOid(Goid g) {
-                wasAttributeSet.set(true);
-            }
-        };
+        final AuthenticationAssertion assertion = new AuthenticationAssertion();
 
-        fixture.callAssertionSetter(null, assertion, ImmutableMap.of("IdentityProviderOid", "0000000000000000fffffffffffffffe"));
-        assertTrue(wasAttributeSet.get());
-        wasAttributeSet.set(false);
+        final String idpName = "IDP";
+        IdentityProviderConfig idp = new IdentityProviderConfig();
+        idp.setGoid(new Goid(0,4));
+        idp.setName(idpName);
+        List<IdentityProviderConfig> returnList = new ArrayList<>();
+        returnList.add(idp);
+
+        AssertionSupport assertionSupport = mock(AssertionSupport.class);
+        when(assertionSupport.getPropertiesNameToIdEntityType()).thenReturn(ImmutableMap.of("IdentityProviderName", "ID_PROVIDER_CONFIG"));
+        when(assertionSupport.getProperties()).thenReturn(ImmutableMap.of("IdentityProviderName", "IdentityProviderOid"));
+
+        when(entityCrud.findAll(eq(IdentityProviderConfig.class), eq(CollectionUtils.MapBuilder.<String, List<Object>>builder().put("name", Collections.singletonList(idpName)).map()), anyInt(), anyInt(), anyBoolean(), anyString())).thenReturn(returnList);
+
+        fixture.callAssertionSetter(assertionSupport, assertion, ImmutableMap.of("IdentityProviderName", idpName));
+        assertEquals(idp.getGoid().toString(), assertion.getIdentityProviderOid().toString());
     }
 
     @Test

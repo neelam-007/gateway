@@ -16,6 +16,7 @@ import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.server.EntityCrud;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.folder.FolderManager;
 import com.l7tech.server.service.ServiceCache;
@@ -44,12 +45,12 @@ public class QuickStartServiceBuilder {
             @NotNull final QuickStartPublishedServiceLocator serviceLocator,
             @NotNull final QuickStartAssertionLocator assertionLocator,
             @NotNull final ClusterPropertyManager clusterPropertyManager,
-            @NotNull final AssertionMapper assertionMapper
-    ) {
+            @NotNull final AssertionMapper assertionMapper,
+            @NotNull final EntityCrud entityCrud) {
         this.serviceCache = serviceCache;
         this.folderManager = folderManager;
         this.serviceLocator = serviceLocator;
-        this.mapper = new QuickStartMapper(assertionLocator, assertionMapper, clusterPropertyManager);
+        this.mapper = new QuickStartMapper(assertionLocator, assertionMapper, clusterPropertyManager, entityCrud);
     }
 
     public void setAssertionRegistry(AssertionRegistry assertionRegistry) {
