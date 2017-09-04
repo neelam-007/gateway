@@ -99,14 +99,19 @@ public class JmsResourceManagerTest {
     @Test
     public void testTimeDifference() throws Exception {
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss.SSS");
-        Date start = format.parse("2017-08-11 19:26:25.743");
-        Date end = format.parse("2017-08-11 19:28:44.129");
+        Date start = format.parse("2017-08-23 17:30:53.200");
+        Date end = format.parse("2017-08-23 17:43:05.626");
         long diff = end.getTime() - start.getTime();
         long seconds = diff / 1000 % 60;
         long minutes = diff / (60 * 1000) % 60;
         System.out.print("Microseconds: " + diff);
-        System.out.println(" average " + 250000000L/diff);
-        System.out.print(minutes + ":" + seconds);
+        long msgpersec = 604282L/(diff/1000);
+        System.out.println(" average " + 604282L/(diff/1000));
+        System.out.println(minutes + ":" + seconds);
+        long totalTime = 1000000L/msgpersec;
+        seconds = totalTime % 60;
+        minutes = totalTime / (60) % 60;
+        System.out.println(minutes + ":" + seconds);
     }
 
     public class JmsResourceManagerStub extends JmsResourceManager {
