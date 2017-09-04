@@ -22,19 +22,21 @@ public class PooledConnection {
     private final JmsEndpointConfig endpoint;
     private final long createdTime = System.currentTimeMillis();
 
-    public PooledConnection(final JmsEndpointConfig endpointConfig, final long evictableIdleTime) {
+    public PooledConnection(final JmsEndpointConfig endpointConfig) {
         this.endpoint = endpointConfig;
         GenericObjectPool.Config config = new GenericObjectPool.Config();
-        config.maxActive = Integer.parseInt(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_SESSION_POOL_SIZE,
-                String.valueOf(JmsConnection.DEFAULT_SESSION_POOL_SIZE)));
-        config.maxIdle = Integer.parseInt(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_MAX_SESSION_IDLE,
-                String.valueOf(JmsConnection.DEFAULT_SESSION_POOL_SIZE)));
-        config.maxWait = Long.parseLong(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_SESSION_POOL_MAX_WAIT,
-                String.valueOf(JmsConnection.DEFAULT_SESSION_POOL_MAX_WAIT)));
-        config.minEvictableIdleTimeMillis = evictableIdleTime;
-        config.timeBetweenEvictionRunsMillis = 10000;
-        config.numTestsPerEvictionRun = Integer.parseInt(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_MAX_SESSION_IDLE,
-                String.valueOf(JmsConnection.DEFAULT_SESSION_POOL_SIZE)));
+        config.maxActive = Integer.parseInt(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_CONNECTION_POOL_SIZE,
+                String.valueOf(JmsConnection.DEFAULT_CONNECTION_POOL_SIZE)));
+        config.maxIdle = Integer.parseInt(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_CONNECTION_MAX_IDLE,
+                String.valueOf(JmsConnection.DEFAULT_CONNECTION_POOL_SIZE)));
+        config.maxWait = Long.parseLong(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_CONNECTION_POOL_MAX_WAIT,
+                String.valueOf(JmsConnection.DEFAULT_CONNECTION_POOL_MAX_WAIT)));
+        config.minEvictableIdleTimeMillis = Long.parseLong(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_CONNECTION_MAX_AGE,
+                String.valueOf(JmsConnection.DEFAULT_CONNECTION_MAX_AGE)));
+        config.timeBetweenEvictionRunsMillis = Long.parseLong(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_CONNECTION_POOL_EVICT_INTERVAL,
+                String.valueOf(JmsConnection.DEFAULT_CONNECTION_POOL_EVICT_INTERVAL)));
+        config.numTestsPerEvictionRun = Integer.parseInt(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_CONNECTION_POOL_EVICT_BATCH_SIZE,
+                String.valueOf(JmsConnection.DEFAULT_CONNECTION_POOL_SIZE)));
         pool = new GenericObjectPool<>(new PoolableObjectFactory<CachedConnection>() {
             @Override
             public CachedConnection makeObject() throws Exception {
@@ -87,9 +89,9 @@ public class PooledConnection {
      * method indicates that the connection is invalid and should not
      * be used.
      */
-    public boolean ref() {
+    /*public boolean ref() {
         return referenceCount.getAndIncrement() > 0;
-    }
+    }*/
 
     public boolean unRef() {
         int references = referenceCount.decrementAndGet();
@@ -148,5 +150,18 @@ public class PooledConnection {
 
     public void invalidate(CachedConnection connection) throws Exception {
         pool.invalidateObject(connection);
+    }
+
+    public boolean isPoolEmpty() {
+        return pool.isClosed() || (pool.getNumActive() == 0 && pool.getNumIdle() == 0);
+    }
+
+    public void debugPoolStatus() {
+        logger.log(Level.FINE, "Active: " + pool.getNumActive() + " Idle: " + pool.getNumIdle());
+    }
+
+    @Override
+    public String toString() {
+        return endpoint.getDisplayName();
     }
 }

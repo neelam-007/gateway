@@ -107,11 +107,13 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
             final JmsEndpointConfig.JmsEndpointKey key = endpoint.getJmsEndpointKey();
             PooledConnection pooledConnection = connectionHolder.get(key);
             if(pooledConnection == null) {
-                //TODO: create pool of connections and add it to the connection holder
+                //create pool of connections and add it to the connection holder
                 synchronized (key.toString().intern()) {
+                    pooledConnection = connectionHolder.get(key);
                     if (pooledConnection == null)  {
-                        pooledConnection = new PooledConnection(endpoint, cacheConfigReference.get().maximumIdleTime);
+                        pooledConnection = new PooledConnection(endpoint);
                         connectionHolder.put(key, pooledConnection);
+                        logger.log(Level.FINE, "Created new pooled conneciton " + pooledConnection.toString());
                     }
                 }
             }
@@ -384,6 +386,7 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
 
         @Override
         public void run() {
+            logger.log(Level.FINE, "Running CacheCleanupTask...");
             final JmsResourceManagerConfig cacheConfig = cacheConfigReference.get();
             final long timeNow = System.currentTimeMillis();
             final int overSize = connectionHolder.size() - cacheConfig.maximumSize;
@@ -398,13 +401,20 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
                             }
                     );
 
-
             for (final JmsEndpointConfig.JmsEndpointKey key : connectionHolder.keySet()) {
                 PooledConnection evictionCandidate = connectionHolder.get(key);
+                logger.log(Level.FINE, "Check eviction candidate " + evictionCandidate.toString());
+                if(logger.isLoggable(Level.FINE)) {
+                    evictionCandidate.debugPoolStatus();
+                }
                 if (evictionCandidate.getEndpointConfig().isEvictOnExpired()) { //do not evict inbound jms connections
                     if ( (timeNow-evictionCandidate.getCreatedTime()) > cacheConfig.maximumAge && cacheConfig.maximumAge > 0 ) {
-                        connectionHolder.remove(key);
-                        evictionCandidate.close();
+                        logger.log(Level.FINE, "Maximum age expired for " + evictionCandidate.toString());
+                        if(evictionCandidate.isPoolEmpty()) {
+                            logger.log(Level.FINE, "Remove unused JMS connection "  + evictionCandidate.toString());
+                            evictionCandidate.close();
+                            connectionHolder.remove(key);
+                        }
                     }
                 } else if (overSize > 0) {
                     evictionCandidates.add(new AbstractMap.SimpleEntry<>(key, evictionCandidate));
@@ -415,9 +425,12 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
                 for (int i = 0; i < overSize && evictionIterator.hasNext(); i++) {
                     final Map.Entry<JmsEndpointConfig.JmsEndpointKey, PooledConnection> cachedConnectionEntry =
                             evictionIterator.next();
-                    cachedConnectionEntry.getValue().close();
-                    connectionHolder.remove(cachedConnectionEntry.getKey(), cachedConnectionEntry.getValue());
-                    //evict( connectionHolder, cachedConnectionEntry.getKey(), cachedConnectionEntry.getValue() );
+                    PooledConnection connection = cachedConnectionEntry.getValue();
+                    if(connection.isPoolEmpty()) {
+                        logger.log(Level.FINE, "Remove unused JMS connection "  + connection.toString());
+                        connection.close();
+                        connectionHolder.remove(cachedConnectionEntry.getKey(), cachedConnectionEntry.getValue());
+                    }
                 }
             }
         }

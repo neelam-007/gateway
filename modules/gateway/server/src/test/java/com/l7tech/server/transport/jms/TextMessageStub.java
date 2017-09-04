@@ -166,15 +166,15 @@ public class TextMessageStub implements TextMessage {
         expiration = l;
     }
 
-    @Override
+    /*@Override
     public long getJMSDeliveryTime() throws JMSException {
         return 0;
-    }
+    }*/
 
-    @Override
+/*    @Override
     public void setJMSDeliveryTime(long l) throws JMSException {
 
-    }
+    }*/
 
     @Override
     public int getJMSPriority() throws JMSException {
@@ -291,7 +291,7 @@ public class TextMessageStub implements TextMessage {
     public void clearBody() throws JMSException {
     }
 
-    @Override
+    /*@Override
     public <T> T getBody(Class<T> aClass) throws JMSException {
         return null;
     }
@@ -299,5 +299,5 @@ public class TextMessageStub implements TextMessage {
     @Override
     public boolean isBodyAssignableTo(Class aClass) throws JMSException {
         return false;
-    }
+    }*/
 }
