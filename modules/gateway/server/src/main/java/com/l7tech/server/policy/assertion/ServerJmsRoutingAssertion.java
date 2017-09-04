@@ -435,9 +435,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                 if ( logger.isLoggable( Level.FINE ))
                     logger.fine("Sending JMS outbound message");
 
-                CountDownLatch latch = new CountDownLatch(1);
-                JmsCompletionListener completionListener = new JmsCompletionListener(latch);
-                jmsProducer.send(jmsOutboundRequest, deliveryMode, priority, timeToLive/*, completionListener*/);
+                jmsProducer.send(jmsOutboundRequest, deliveryMode, priority, timeToLive);
 
                 messageSent = true; // no retries once sent
 
@@ -445,7 +443,6 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                     logger.fine("JMS outbound message sent");
 
                 if ( !processReply ) {
-                    //latch.countDown();
                     context.routingFinished();
                     routingFinished = true;
                     logAndAudit(AssertionMessages.JMS_ROUTING_NO_RESPONSE_EXPECTED);
@@ -473,13 +470,6 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                             logger.warning("Using default value (" + emergencyTimeoutDefault + ") for undefined cluster property: " + serverConfig.getClusterPropertyName( ServerConfigParams.PARAM_JMS_RESPONSE_TIMEOUT));
                         }
                     }
-
-                    /*try {
-                        latch.await(timeout, TimeUnit.MILLISECONDS);
-                        //DO something on completion
-                    } catch (InterruptedException e) {
-                        logger.log(Level.FINE, "Latch timeout exception: " + e.getMessage(), ExceptionUtils.getDebugException(e));
-                    }*/
 
                     MessageConsumer jmsConsumer = null;
                     final Message jmsResponse;
@@ -1088,35 +1078,6 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                     }
                 }
             }
-        }
-    }
-
-    private static class JmsCompletionListener implements CompletionListener {
-
-        private final CountDownLatch latch;
-        private Exception exception;
-        private final long startTime;
-
-        public JmsCompletionListener(CountDownLatch latch) {
-            this.latch=latch;
-            startTime = System.currentTimeMillis();
-        }
-
-        @Override
-        public void onCompletion(Message message) {
-            latch.countDown();
-            logger.log(Level.FINE, "JMS send method was successful. Send time " + String.valueOf(System.currentTimeMillis() - startTime) + " milliseconds");
-        }
-
-        @Override
-        public void onException(Message message, Exception exception) {
-            latch.countDown();
-            this.exception=exception;
-            logger.log(Level.SEVERE, "JMS send method failed: " + exception.getMessage(), ExceptionUtils.getDebugException(exception) + ". Send time " + String.valueOf(System.currentTimeMillis() - startTime) + " milliseconds");
-        }
-
-        public Exception getException(){
-            return exception;
         }
     }
     

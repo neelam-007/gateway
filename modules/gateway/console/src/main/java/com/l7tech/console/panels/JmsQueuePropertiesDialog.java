@@ -1233,7 +1233,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
     }
 
     private Integer getMaxConnectionIdle(Properties props) {
-        String val = props.getProperty(JmsConnection.PROP_CONNECTION_MAX_IDLE, String.valueOf(JmsConnection.DEFAULT_SESSION_POOL_SIZE));
+        String val = props.getProperty(JmsConnection.PROP_CONNECTION_MAX_IDLE, String.valueOf(JmsConnection.DEFAULT_CONNECTION_POOL_SIZE));
         if(val == null ) return JmsConnection.DEFAULT_SESSION_POOL_SIZE;
         try{
             return new Integer(val);

@@ -353,11 +353,6 @@ public class JmsUtil {
         return producer;
     }
 
-    public static JMSProducer createJmsProducer( final Session session, final Destination destination) throws JMSException {
-        JMSProducer producer = null;
-        return producer;
-    }
-
     /**
      * Retrieve the destination type, the destination type can be Queue, Topic or Unknown.
      * If we cannot determine the destination type, return as Unknown

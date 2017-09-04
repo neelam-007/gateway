@@ -3402,7 +3402,7 @@
                 <!-- Copy JMS lib -->
                 <copy todir="@{dir}/${install.src.ssg.libext}" flatten="true">
                     <fileset dir="${src.root}/lib/repository/javax.jms" casesensitive="yes">
-                        <include name="javax.jms-api-2.0.1.jar"/>
+                        <include name="jms-1.1.jar"/>
                     </fileset>
                 </copy>
 

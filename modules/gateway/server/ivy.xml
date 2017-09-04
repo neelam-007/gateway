@@ -82,8 +82,8 @@
         <dependency org="ehcache" name="ehcache" rev="2.10.3" force="true" conf="core"/>
         <dependency org="ehcache" name="hibernate-ehcache" rev="3.6.9" force="true" conf="core"/>
         <dependency org="javax.inject" name="javax.inject" rev="1" force="true" conf="core"/>
-        <!--<dependency org="javax.jms" name="geronimo-jms" rev="2.0" force="true" conf="core"/>-->
-        <dependency org="javax.jms" name="javax.jms-api" rev="2.0.1" force="true" conf="core"/>
+        <!--<dependency org="javax.jms" name="javax.jms-api" rev="2.0.1" force="true" conf="core"/>-->
+        <dependency org="javax.jms" name="jms" rev="1.1" force="true" conf="core"/>
         <dependency org="org.javassist" name="javassist" rev="3.19.0-GA" force="true" conf="core"/>
         <!--<dependency org="jboss" name="jboss-j2ee" rev="4.0.5.GA" force="true" conf="core"/>-->
         <dependency org="org.jboss.cache" name="jbosscache-core" rev="3.2.5.GA" force="true" conf="core"/>
