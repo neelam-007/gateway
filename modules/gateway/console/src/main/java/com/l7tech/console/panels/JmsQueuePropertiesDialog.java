@@ -127,6 +127,18 @@ public class JmsQueuePropertiesDialog extends JDialog {
     private JSpinner maxIdleSessionSpinner;
     private JLabel maxSessionIdleLabel;
     private JLabel jmsConsumerConnectionsLabel;
+    private JLabel connectionPoolSizeLabel;
+    private JSpinner connectionPoolSizeSpinner;
+    private JLabel connectionMaxIdleLabel;
+    private JSpinner connectionMaxIdleSpinner;
+    private JLabel connectionMaxWaitLabel;
+    private JTextField connectionMaxWaitTextField;
+    private JLabel connectionMaxAgeLabel;
+    private JTextField connectionMaxAgeTextField;
+    private JLabel connectionPoolEvictionIntervalLabel;
+    private JTextField connectionPoolEvictionIntervalTextField;
+    private JLabel connectionPoolEvictionBatchSizeLabel;
+    private JSpinner connectionPoolEvictionBatchSizeSpinner;
 
 
     private JmsConnection connection = null;
@@ -329,6 +341,15 @@ public class JmsQueuePropertiesDialog extends JDialog {
         Utilities.enableGrayOnDisabled(dedicatedConsumerConnectionLimitSpinner);
 
         inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(dedicatedConsumerConnectionLimitSpinner, jmsConsumerConnectionsLabel.getText()));
+
+        connectionPoolSizeSpinner.setModel((new SpinnerNumberModel((Number) JmsConnection.DEFAULT_CONNECTION_POOL_SIZE, -1, 10000, 1)));
+        inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(connectionPoolSizeSpinner, connectionPoolSizeLabel.getText()));
+
+        connectionMaxIdleSpinner.setModel((new SpinnerNumberModel((Number) JmsConnection.DEFAULT_CONNECTION_POOL_SIZE, -1, 10000, 1)));
+        inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(connectionMaxIdleSpinner,connectionMaxIdleLabel.getText()));
+
+        connectionPoolEvictionBatchSizeSpinner.setModel((new SpinnerNumberModel((Number) JmsConnection.DEFAULT_CONNECTION_POOL_SIZE, 1, 10000, 1)));
+        inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(connectionPoolEvictionBatchSizeSpinner, connectionPoolEvictionBatchSizeLabel.getText()));
 
         sessionPoolSizeSpinner.setModel((new SpinnerNumberModel((Number) JmsConnection.DEFAULT_SESSION_POOL_SIZE, -1, 10000, 1)));
         inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(sessionPoolSizeSpinner,sessionPoolSizeLabel.getText()));
@@ -841,6 +862,14 @@ public class JmsQueuePropertiesDialog extends JDialog {
             }
         }
         else {
+            // set connection properties
+            properties.setProperty(JmsConnection.PROP_CONNECTION_POOL_SIZE, connectionPoolSizeSpinner.getValue().toString());
+            properties.setProperty(JmsConnection.PROP_CONNECTION_MAX_IDLE, connectionMaxIdleSpinner.getValue().toString());
+            properties.setProperty(JmsConnection.PROP_CONNECTION_MAX_AGE, connectionMaxAgeTextField.getText());
+            properties.setProperty(JmsConnection.PROP_CONNECTION_POOL_MAX_WAIT, connectionMaxWaitTextField.getText());
+            properties.setProperty(JmsConnection.PROP_CONNECTION_POOL_EVICT_INTERVAL, connectionPoolEvictionIntervalTextField.getText());
+            properties.setProperty(JmsConnection.PROP_CONNECTION_POOL_EVICT_BATCH_SIZE, connectionPoolEvictionBatchSizeSpinner.getValue().toString());
+            // set session properties
             properties.setProperty(JmsConnection.PROP_SESSION_POOL_SIZE, sessionPoolSizeSpinner.getValue().toString());
             properties.setProperty(JmsConnection.PROP_MAX_SESSION_IDLE, maxIdleSessionSpinner.getValue().toString());
             properties.setProperty(JmsConnection.PROP_SESSION_POOL_MAX_WAIT, sessionPoolMaxWaitTextField.getText());
@@ -1057,6 +1086,14 @@ public class JmsQueuePropertiesDialog extends JDialog {
                 dedicatedConsumerConnectionLimitSpinner.setValue(Registry.getDefault().getJmsManager().getDefaultConsumerConnectionSize());
             }
 
+            // set connection pool properties
+            connectionPoolSizeSpinner.setValue(getConnectionPoolSize(props));
+            connectionMaxIdleSpinner.setValue(getMaxConnectionIdle(props));
+            connectionMaxWaitTextField.setText(getConnectionPoolMaxWait(props).toString());
+            connectionMaxAgeTextField.setText(getConnectionPoolMaxAge(props).toString());
+            connectionPoolEvictionIntervalTextField.setText(getConnectionPoolEvictInterval(props).toString());
+            connectionPoolEvictionBatchSizeSpinner.setValue(getConnectionEvictBatchSize(props));
+            // set session pool properties
             sessionPoolSizeSpinner.setValue(getSessionPoolSize(props));
             maxIdleSessionSpinner.setValue(getMaxSessionIdle(props));
             sessionPoolMaxWaitTextField.setText(getSessionPoolMaxWait(props).toString());
@@ -1182,6 +1219,66 @@ public class JmsQueuePropertiesDialog extends JDialog {
             return new Integer(val);
         } catch (NumberFormatException ex) {
             return Registry.getDefault().getJmsManager().getDefaultConsumerConnectionSize();
+        }
+    }
+
+    private Integer getConnectionPoolSize(Properties props) {
+        String val = props.getProperty(JmsConnection.PROP_CONNECTION_POOL_SIZE, String.valueOf(JmsConnection.DEFAULT_CONNECTION_POOL_SIZE));
+        if(val == null ) return JmsConnection.DEFAULT_CONNECTION_POOL_SIZE;
+        try{
+            return new Integer(val);
+        } catch (NumberFormatException ex) {
+            return JmsConnection.DEFAULT_CONNECTION_POOL_SIZE;
+        }
+    }
+
+    private Integer getMaxConnectionIdle(Properties props) {
+        String val = props.getProperty(JmsConnection.PROP_CONNECTION_MAX_IDLE, String.valueOf(JmsConnection.DEFAULT_SESSION_POOL_SIZE));
+        if(val == null ) return JmsConnection.DEFAULT_SESSION_POOL_SIZE;
+        try{
+            return new Integer(val);
+        } catch (NumberFormatException ex) {
+            return JmsConnection.DEFAULT_SESSION_POOL_SIZE;
+        }
+    }
+
+    private Integer getConnectionEvictBatchSize(Properties props) {
+        String val = props.getProperty(JmsConnection.PROP_CONNECTION_POOL_EVICT_BATCH_SIZE, String.valueOf(JmsConnection.DEFAULT_CONNECTION_POOL_SIZE));
+        if(val == null ) return JmsConnection.DEFAULT_CONNECTION_POOL_SIZE;
+        try{
+            return new Integer(val);
+        } catch (NumberFormatException ex) {
+            return JmsConnection.DEFAULT_CONNECTION_POOL_SIZE;
+        }
+    }
+
+    private Long getConnectionPoolMaxWait(Properties props) {
+        String val = props.getProperty(JmsConnection.PROP_CONNECTION_POOL_MAX_WAIT, String.valueOf(JmsConnection.DEFAULT_CONNECTION_POOL_MAX_WAIT));
+        if(val == null ) return JmsConnection.DEFAULT_CONNECTION_POOL_MAX_WAIT;
+        try{
+            return new Long(val);
+        } catch (NumberFormatException ex) {
+            return JmsConnection.DEFAULT_CONNECTION_POOL_MAX_WAIT;
+        }
+    }
+
+    private Long getConnectionPoolMaxAge(Properties props) {
+        String val = props.getProperty(JmsConnection.PROP_CONNECTION_MAX_AGE, String.valueOf(JmsConnection.DEFAULT_CONNECTION_MAX_AGE));
+        if(val == null ) return JmsConnection.DEFAULT_CONNECTION_MAX_AGE;
+        try{
+            return new Long(val);
+        } catch (NumberFormatException ex) {
+            return JmsConnection.DEFAULT_CONNECTION_MAX_AGE;
+        }
+    }
+
+    private Long getConnectionPoolEvictInterval(Properties props) {
+        String val = props.getProperty(JmsConnection.PROP_CONNECTION_POOL_EVICT_INTERVAL, String.valueOf(JmsConnection.DEFAULT_CONNECTION_POOL_EVICT_INTERVAL));
+        if(val == null ) return JmsConnection.DEFAULT_CONNECTION_POOL_EVICT_INTERVAL;
+        try{
+            return new Long(val);
+        } catch (NumberFormatException ex) {
+            return JmsConnection.DEFAULT_CONNECTION_POOL_EVICT_INTERVAL;
         }
     }
 
