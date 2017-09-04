@@ -20,6 +20,7 @@ import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.PolicyVersion;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.EntityCrud;
+import com.l7tech.server.EntityHeaderUtils;
 import com.l7tech.server.audit.AuditContextFactory;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.folder.FolderManager;
@@ -441,25 +442,23 @@ public class EntityBundleImporterImplTest {
         verify(entityCrud).update(alias);
     }
 
-    /**
-     * Parent folder can be missing its name if there is a mapping for the parent folder in the bundle but no item for the parent folder.
-     */
     @Test
-    public void updateServiceByPathWithMissingParentFolderName() throws Exception {
+    public void updateServiceByPathWithParentFolderMappedToDifferentFolder() throws Exception {
         final Folder rootFolder = EntityBundleBuilder.createRootFolder();
-        final Folder parentFolderInBundle = EntityCreator.createFolderWithRandomGoid("", rootFolder);
+        final Folder parentFolderInBundle = EntityCreator.createFolderWithRandomGoid("bundleFolder", rootFolder);
         final PublishedService service =  createTestingPublishedService(createTestingPolicy(), parentFolderInBundle, "TestService", "/test");
-        final Folder existingFolder = EntityCreator.createFolderWithRandomGoid("subfolder", rootFolder);
+        final Folder mappedParentFolder = EntityCreator.createFolderWithRandomGoid("mappedFolder", rootFolder);
 
         final List foundService = Arrays.asList(service);
-        when(entityCrud.find(Folder.class, existingFolder.getId())).thenReturn(existingFolder);
-        when(folderManager.findByPath("/subfolder")).thenReturn(existingFolder);
+        when(entityCrud.find(Folder.class, mappedParentFolder.getId())).thenReturn(mappedParentFolder);
+        when(folderManager.findByHeader(EntityHeaderUtils.fromEntity(mappedParentFolder))).thenReturn(mappedParentFolder);
+        when(folderManager.findByPath("/mappedFolder")).thenReturn(mappedParentFolder);
         when(entityCrud.findAll(eq(PublishedService.class), anyMap(), eq(0), eq(-1), eq(null), eq(null))).thenReturn(foundService);
         when(entityCrud.find(any(ServiceHeader.class))).thenReturn(service);
         when(policyVersionManager.findLatestRevisionForPolicy(service.getPolicy().getGoid())).thenReturn(new PolicyVersion());
 
         final EntityBundle bundle = new EntityBundleBuilder().
-                expectExistingFolderById(parentFolderInBundle, existingFolder.getId()).
+                expectExistingFolderById(parentFolderInBundle, mappedParentFolder.getId()).
                 updateServiceByPath(service).create();
 
         final Map<Goid, EntityMappingResult> results = resultsToMap(importer.importBundle(bundle, false, true, null));

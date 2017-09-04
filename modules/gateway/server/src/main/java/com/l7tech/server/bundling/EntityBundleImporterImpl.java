@@ -26,7 +26,6 @@ import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.objectmodel.folder.Folder;
-import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.objectmodel.folder.HasFolder;
 import com.l7tech.objectmodel.folder.HasFolderId;
 import com.l7tech.objectmodel.polback.PolicyBackedService;
@@ -1486,6 +1485,8 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
      * Locates an existing entity that this entity should be mapped to given the entity mapping instructions and the
      * entity to import.
      *
+     * TODO: extract this logic into its own 'existing entity finder' class
+     *
      * @param mapping         The entity mapping instructions
      * @param entity          The entity to import
      * @param bundle          The entity bundle to import
@@ -1517,14 +1518,19 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                 //do nothing here. We don't want to rollback when an existing entity cannot be found.
             }
         });
-        //get the mapping target identifier. This is either a name, id or guid depending on the mapping instructions.
-        final String mappingTarget = getMapTo(mapping, resourceMapping, bundle);
         //we are not making any changes to the database, just searching for entities.
         tt.setReadOnly(true);
         return Eithers.extract(tt.execute(new TransactionCallback<Either<BundleImportException, Option<Entity>>>() {
             @Override
             public Either<BundleImportException, Option<Entity>> doInTransaction(final TransactionStatus transactionStatus) {
                 try {
+                    //get the mapping target identifier
+                    final String mappingTarget;
+                    try {
+                        mappingTarget = getMapTo(mapping, resourceMapping, bundle);
+                    } catch (final IncorrectMappingInstructionsException e) {
+                        return Either.left(e);
+                    }
                     @Nullable
                     final Entity resource;
                     //special processing for identities. This is because we need to find the correct identity provider to find the identity using
@@ -1649,6 +1655,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                     break;
                                 }
                                 case PATH: {
+                                    // TODO extract this to a method
                                     //Find the entity by its path
                                     if (EntityType.FOLDER.equals(mapping.getSourceEntityHeader().getType())) {
                                         resource = folderManager.findByPath(mappingTarget);
@@ -1681,30 +1688,42 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                             break;
                                         }
 
-                                        final List<? extends Entity> childrenUnderThisFolder = entityCrud.findAll(mapping.getSourceEntityHeader().getType().getEntityClass(), CollectionUtils.MapBuilder.<String, List<Object>>builder().put("folder", Arrays.<Object>asList(folder)).map(), 0, -1, null, null);
-                                        final List<Entity> list = new ArrayList<>();
-
-                                        for (Entity entity : childrenUnderThisFolder) {
-                                            if (entity instanceof NamedEntity && ((NamedEntity) entity).getName().equals(entityName)) {
-                                                list.add(entity);
-                                            } else if (entity instanceof Alias) {
-                                                final Alias alias = (Alias) entity;
-                                                if (alias.getEntityGoid() != null && alias.getEntityType() != null) {
-                                                    final String aliasedEntityName = entityName.replaceAll(" alias", "");
-                                                    final EntityHeader aliasedEntity = entityCrud.findHeader(alias.getEntityType(), alias.getEntityGoid());
-                                                    if (aliasedEntity != null && aliasedEntity.getName().equals(aliasedEntityName)) {
-                                                        list.add(entity);
-                                                        break; // can't have more than one alias with the same name under the same folder
+                                        final List<Entity> matches = new ArrayList<>();
+                                        if (!EntityType.POLICY_ALIAS.equals(mapping.getSourceEntityHeader().getType()) &&
+                                                !EntityType.SERVICE_ALIAS.equals(mapping.getSourceEntityHeader().getType())) {
+                                            // lookup by parent folder and name
+                                            final List<? extends Entity> matchedFolderAndName = entityCrud.findAll(
+                                                    mapping.getSourceEntityHeader().getType().getEntityClass(),
+                                                    CollectionUtils.MapBuilder.<String, List<Object>>builder().put("folder",
+                                                            Arrays.<Object>asList(folder)).put("name", Arrays.asList(entityName)).map(),
+                                                    0, -1, null, null);
+                                            matches.addAll(matchedFolderAndName);
+                                        } else {
+                                            // lookup by alias children in the folder
+                                            final List<? extends Entity> aliasChildren = entityCrud.findAll(
+                                                    mapping.getSourceEntityHeader().getType().getEntityClass(),
+                                                    CollectionUtils.MapBuilder.<String, List<Object>>builder().put("folder",
+                                                    Arrays.asList(folder)).map(), 0, -1, null, null);
+                                            for (final Entity child : aliasChildren) {
+                                                if (child instanceof Alias) {
+                                                    final Alias alias = (Alias) child;
+                                                    if (alias.getEntityGoid() != null && alias.getEntityType() != null) {
+                                                        final String aliasedEntityName = entityName.replaceAll(" alias", "");
+                                                        final EntityHeader aliasedEntity = entityCrud.findHeader(alias.getEntityType(), alias.getEntityGoid());
+                                                        if (aliasedEntity != null && aliasedEntity.getName().equals(aliasedEntityName)) {
+                                                            matches.add(child);
+                                                            break; // can't have more than one alias with the same name under the same folder
+                                                        }
                                                     }
                                                 }
                                             }
                                         }
-                                        if (list.isEmpty()) {
+                                        if (matches.isEmpty()) {
                                             resource = null;
-                                        } else if (list.size() > 1) {
+                                        } else if (matches.size() > 1) {
                                             return Either.left(new IncorrectMappingInstructionsException(mapping, "Found multiple possible target entities found by path: " + mappingTarget));
                                         } else {
-                                            resource = list.iterator().next();
+                                            resource = matches.iterator().next();
                                         }
                                     }
                                     break;
@@ -1812,24 +1831,28 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                     final EntityContainer container = bundle.getEntity(mapping.getSourceEntityHeader().getStrId(), mapping.getSourceEntityHeader().getType());
                     if (container != null && container.getEntity() instanceof HasFolder) {
                         final HasFolder hasFolder = (HasFolder) container.getEntity();
-                        final Folder parent = hasFolder.getFolder();
-                        String parentPath = (parent == null || "/".equals(parent.getPath())) ? "" : parent.getPath();
-                        if (parent != null && StringUtils.isEmpty(parent.getName())) { // can't build a full path if parent folder doesn't have its name
-                            // try to get the parent from the previously mapped entities first
-                            final EntityHeader parentFromMappings = resourceMapping.get(EntityHeaderUtils.fromEntity(parent));
-                            if (parentFromMappings != null && parentFromMappings instanceof FolderHeader) {
-                                final FolderHeader parentFolderHeader = (FolderHeader) parentFromMappings;
-                                if (StringUtils.isNotBlank(parentFolderHeader.getPath())) {
-                                    parentPath = parentFolderHeader.getPath();
-                                }
-                            } else {
-                                // otherwise try to retrieve the full parent entity from the bundle
-                                final EntityContainer parentFromBundle = bundle.getEntity(parent.getId(), EntityType.FOLDER);
-                                if (parentFromBundle != null && parentFromBundle.getEntity() instanceof Folder) {
-                                    parentPath = ((Folder) parentFromBundle.getEntity()).getPath();
+                        Folder parent = hasFolder.getFolder();
+
+                        if (parent != null) {
+                            // ensure the entity's parent is up-to-date as it can affect determining its path
+                            final EntityHeader parentHeader = EntityHeaderUtils.fromEntity(parent);
+                            final EntityHeader mappedParentHeader = resourceMapping.get(parentHeader);
+                            if (mappedParentHeader != null) {
+                                // parent was previously mapped, make sure we have the mapped parent
+                                try {
+                                    parent = folderManager.findByHeader(mappedParentHeader);
+                                    if (parent != null) {
+                                        hasFolder.setFolder(parent);
+                                    } else {
+                                        logger.log(Level.WARNING, "Unable to find mapped parent folder: " + mappedParentHeader);
+                                    }
+                                } catch (final FindException e) {
+                                    logger.log(Level.WARNING, "Error retrieving mapped parent folder: " + e.getMessage(), ExceptionUtils.getDebugException(e));
                                 }
                             }
                         }
+
+                        final String parentPath = (parent == null || "/".equals(parent.getPath())) ? "" : parent.getPath();
                         targetMapTo = parentPath + "/" + mapping.getSourceEntityHeader().getName();
                     } else {
                         throw new IncorrectMappingInstructionsException(mapping, "Mapping by path but entity is not a folderable type");
