@@ -774,6 +774,12 @@ public class GatewayFeatureSets {
                  "The necessary assertions to enable Kerberos authentication and constrained delegation functionality",
                  mass("assertion:KerberosAuthentication"));
 
+        GatewayFeatureSet qstAssertion =
+                fsr("set:QuickStartTemplateAssertion:Assertions",
+                        "The necessary assertions to enable Quick Start Template functionality",
+                        mass("assertion:QuickStartTemplate"),
+                        mass("assertion:QuickStartDocumentation"));
+
         /**
          * This assertion requires the policy bundle installer assertion so it cannot be added to a license without
          * the policy bundle installer module also being added.
@@ -1364,7 +1370,7 @@ public class GatewayFeatureSets {
                 "Includes series of assertions required to support the Microservices gateway functionality.",
                 fs(core),
                 fs(branching),
-                fs(adminAndEms),
+                fs(admin),
                 fs(encass),
                 fs(polback),
                 fs(seczones),
@@ -1377,7 +1383,6 @@ public class GatewayFeatureSets {
                 mass("assertion:CORS"),
                 ass(HttpBasic.class),
                 ass(SslAssertion.class),
-                fs(generateOAuthSignatureBaseString),
                 fs(jwtAssertion),
                 // decode id token  (custom)
                 mass("assertion:EncodeDecode"),
@@ -1388,9 +1393,10 @@ public class GatewayFeatureSets {
                 // generate id token  (custom)
                 ass(AddHeaderAssertion.class),
                 ass(HttpRoutingAssertion.class),
+                mass("assertion:RateLimitQuery"),
                 mass("assertion:RateLimit"),
-                mass("assertion:CacheLookup"),
                 ass(RemoteIpRange.class),
+                mass("assertion:CacheLookup"),
                 mass("assertion:CacheStorage"),
                 ass(AuditDetailAssertion.class),
                 ass(AuditAssertion.class),
@@ -1427,6 +1433,20 @@ public class GatewayFeatureSets {
                 fs(uiLogSinksDialog),
                 fs(uiAuditSinkDialog),
                 srv(SERVICE_HTTP_MESSAGE_INPUT, "Accept incoming messages over HTTP"),
+                fs(generateSecurityHashAssertion),
+                ass(XslTransformation.class),
+                fs(swaggerAssertion),
+                fs(jsonSchemaAssertion),
+                ass(ContentTypeAssertion.class),
+                ass(SchemaValidation.class),
+                ass(MessageBufferingAssertion.class),
+                fs(csrfProtectionAssertion),
+                fs(jsonDocumentStructureAssertion),
+                ass(SqlAttackAssertion.class),
+                fs(jsonSchemaAssertion),
+                ass(ContentTypeAssertion.class),
+                fs(qstAssertion),
+                mass("assertion:RESTGatewayManagement"),
                 fs(moduleLoader));
 
 

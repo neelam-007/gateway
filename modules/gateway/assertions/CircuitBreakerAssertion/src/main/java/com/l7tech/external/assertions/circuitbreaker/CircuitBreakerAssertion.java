@@ -167,6 +167,7 @@ public class CircuitBreakerAssertion extends CompositeAssertion {
 
         meta.put(MODULE_LOAD_LISTENER_CLASSNAME, CIRCUIT_BREAKER_PACKAGE_PREFIX + "server.CircuitBreakerModuleLoadListener");
 
+        meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
         meta.put(META_INITIALIZED, Boolean.TRUE);
 
         meta.put(PROPERTIES_ACTION_NAME, "Circuit Breaker Properties");
