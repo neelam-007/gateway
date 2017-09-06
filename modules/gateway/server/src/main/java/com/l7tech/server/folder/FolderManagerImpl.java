@@ -241,19 +241,22 @@ public class FolderManagerImpl extends FolderSupportHibernateEntityManager<Folde
     private String getPath(@NotNull final Folder folder) throws FindException {
         if (isRootFolder(folder)) return "/";
 
-        final StringBuffer path = new StringBuffer(folder.getName());
+        final List<String> pathList = new ArrayList<>();
+        pathList.add(folder.getName());
 
         Folder parentFolder = folder.getFolder();
         while (parentFolder != null) {
             // Retrieve parent folder again to get more info such as folder name.
             parentFolder = findByPrimaryKey(parentFolder.getGoid());
             // Append folder path
-            path.insert(0, "/").insert(0, isRootFolder(parentFolder)? "" : parentFolder.getName());
+            if (!isRootFolder(parentFolder)) {
+                pathList.add(0, parentFolder.getName());
+            }
             // Update parent folder for next loop
             parentFolder = parentFolder.getFolder();
         }
 
-        return path.toString();
+        return PathUtils.getEscapedPathString(pathList.toArray(new String[pathList.size()]));
     }
 
     private boolean isRootFolder(@NotNull final Folder folder) {

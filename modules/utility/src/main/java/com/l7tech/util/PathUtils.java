@@ -2,9 +2,9 @@ package com.l7tech.util;
 
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -65,38 +65,50 @@ public class PathUtils {
     public static Pair<String, String> parseEntityPathIntoFolderPathAndEntityName(@NotNull final String path) {
         if (StringUtils.isBlank(path)) return new Pair<>(null, null);
         if (! path.contains("/")) return new Pair<>("/", path);
-        if (path.endsWith("/")) return new Pair<>(path.substring(0, path.length() == 1? 1: path.length() - 1), null);
-        // After the above three checks, a '/' is guaranteed to be in the middle of the path string.
+        if (path.equals("/")) return new Pair<>("/",null);
+        // After the above two checks, a '/' is guaranteed to be in the path string.
+        final String absFolderPath = path.startsWith("/")? path : ("/" + path);
 
         String fpath;
         String entityName;
 
         // Check if there is an escaping char, '\'.
-        if (! path.contains("\\")) {
-            final int idxOfLastSlash = path.lastIndexOf('/');
-            fpath = path.substring(0, idxOfLastSlash == 0 ? 1 : idxOfLastSlash);
-            entityName = path.substring(idxOfLastSlash + 1);
-        } else {
-            final String[] pathElements = getPathElements(path);
-            final int size = pathElements.length;
-            assert size > 1;
+        final String[] pathElements = getPathElements(absFolderPath);
+        final int size = pathElements.length;
+        assert size > 0;
 
-            final StringBuffer folderPath = new StringBuffer("/");
-            folderPath.append(pathElements[0]);
-
-            for (int i = 1; i < size - 1; i++) {
-                folderPath.append("/").append(pathElements[i]);
-            }
-
-            fpath = folderPath.toString();
-            entityName = pathElements[size - 1];
-        }
-
-        if (fpath != null && !fpath.startsWith("/")) {
-            fpath = "/" + fpath;
-        }
-
+        final String escapedString = getEscapedPathString(Arrays.copyOf(pathElements, size-1));
+        fpath = StringUtils.isBlank(escapedString) ? "/" : escapedString;
+        entityName = pathElements[size - 1];
         return new Pair<>(fpath, entityName);
+    }
+
+    /**
+     * Converts a path array holding all the folders/folderable entities into a string with
+     * escaped characters.
+     * ie: [/a,\b,c] -> /\/a/\\b/c
+     * @param path The path array containing folder names.
+     * @return A string with escaped characters.
+     */
+    public static String getEscapedPathString(final String[] path){
+        StringBuffer pathStr = new StringBuffer();
+        StringBuffer element = new StringBuffer();
+        for(String elementStr: path){
+            for(int i =  0; i < elementStr.length(); ++i){
+                char c  = elementStr.charAt(i);
+                if(c == '\\' ){
+                    element.append("\\\\");
+                }else if (c == '/'){
+                    element.append("\\/");
+                }else{
+                    element.append(c);
+                }
+            }
+            pathStr.append('/');
+            pathStr.append(element.toString());
+            element = new StringBuffer();
+        }
+        return pathStr.toString();
     }
 
     /**

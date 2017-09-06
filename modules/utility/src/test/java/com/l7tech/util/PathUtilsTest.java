@@ -88,8 +88,8 @@ public class PathUtilsTest {
     @Test
     public void parseEntityPathEndsWithForwardSlash() {
         final Pair<String, String> result = PathUtils.parseEntityPathIntoFolderPathAndEntityName("/folderA/folderB/");
-        assertEquals("/folderA/folderB", result.left);
-        assertNull(result.right);
+        assertEquals("/folderA", result.left);
+        assertEquals("folderB", result.right);
     }
 
     @Test
@@ -130,21 +130,21 @@ public class PathUtilsTest {
     @Test
     public void parseEntityPathWithEscapedForwardSlashes() {
         final Pair<String, String> result = PathUtils.parseEntityPathIntoFolderPathAndEntityName("/fol\\/derA/fol\\/derB/test");
-        assertEquals("/fol/derA/fol/derB", result.left); //Is this the intended behaviour?
+        assertEquals("/fol\\/derA/fol\\/derB", result.left); //Is this the intended behaviour?
         assertEquals("test", result.right);
     }
 
     @Test
     public void parseEntityPathWithEscapedBackSlashes() {
         final Pair<String, String> result = PathUtils.parseEntityPathIntoFolderPathAndEntityName("/fol\\\\derA/fol\\\\derB/test");
-        assertEquals("/fol\\derA/fol\\derB", result.left); //Is this the intended behaviour?
+        assertEquals("/fol\\\\derA/fol\\\\derB", result.left); //Is this the intended behaviour?
         assertEquals("test", result.right);
     }
 
     @Test
     public void parseEntityPathWithEscapedForwardSlashesAndMissingForwardSlashPrefix() {
         final Pair<String, String> result = PathUtils.parseEntityPathIntoFolderPathAndEntityName("fol\\/derA/fol\\/derB/test");
-        assertEquals("/fol/derA/fol/derB", result.left); //Is this the intended behaviour?
+        assertEquals("/fol\\/derA/fol\\/derB", result.left); //Is this the intended behaviour?
         assertEquals("test", result.right);
     }
 
@@ -181,5 +181,23 @@ public class PathUtilsTest {
         final List<String> paths = PathUtils.getPaths("");
         assertNotNull(paths);
         assertTrue(paths.size() == 0);
+    }
+
+    @Test
+    public void testGetEscapedPathNormal() {
+        final String result = PathUtils.getEscapedPathString(new String[]{"a","b","c"});
+        assertEquals(result, "/a/b/c");
+    }
+
+    @Test
+    public void testGetEscapedPathForwardSlashes() {
+        final String result = PathUtils.getEscapedPathString(new String[]{"/a","//b","c"});
+        assertEquals(result, "/\\/a/\\/\\/b/c");
+    }
+
+    @Test
+    public void testGetEscapedPathBackSlashes() {
+        final String result = PathUtils.getEscapedPathString(new String[]{"\\a","\\\\b","c"});
+        assertEquals(result, "/\\\\a/\\\\\\\\b/c");
     }
 }
