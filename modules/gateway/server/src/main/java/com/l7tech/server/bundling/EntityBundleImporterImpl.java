@@ -1833,28 +1833,28 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                         final HasFolder hasFolder = (HasFolder) container.getEntity();
                         Folder parent = hasFolder.getFolder();
 
-                        if (parent != null) {
+                        if (parent != null && !parent.getGoid().equals(Folder.ROOT_FOLDER_ID)) {
                             // ensure the entity's parent is up-to-date as it can affect determining its path
-                            final EntityHeader parentHeader = EntityHeaderUtils.fromEntity(parent);
-                            final EntityHeader mappedParentHeader = resourceMapping.get(parentHeader);
-                            if (mappedParentHeader != null) {
+                            EntityHeader parentHeader = EntityHeaderUtils.fromEntity(parent);
+                            if (resourceMapping.containsKey(parentHeader)) {
                                 // parent was previously mapped, make sure we have the mapped parent
-                                try {
-                                    parent = folderManager.findByHeader(mappedParentHeader);
-                                    if (parent != null) {
-                                        hasFolder.setFolder(parent);
-                                    } else {
-                                        logger.log(Level.WARNING, "Unable to find mapped parent folder: " + mappedParentHeader);
-                                    }
-                                } catch (final FindException e) {
-                                    logger.log(Level.WARNING, "Error retrieving mapped parent folder: " + e.getMessage(), ExceptionUtils.getDebugException(e));
+                                parentHeader = resourceMapping.get(parentHeader);
+                            }
+                            try {
+                                parent = folderManager.findByHeader(parentHeader);
+                                if (parent != null) {
+                                    hasFolder.setFolder(parent);
+                                } else {
+                                    logger.log(Level.WARNING, "Unable to find parent folder: " + parentHeader);
                                 }
+                            } catch (final FindException e) {
+                                logger.log(Level.WARNING, "Error retrieving parent folder: " + e.getMessage(), ExceptionUtils.getDebugException(e));
                             }
                         }
 
                         final ArrayList<String> names = new ArrayList<>();
                         names.add(mapping.getSourceEntityHeader().getName());
-                        while (parent != null && !parent.getGoid().equals(Folder.ROOT_FOLDER_ID)) {
+                        while (parent != null && !parent.getGoid().equals(Folder.ROOT_FOLDER_ID) && parent.getName() != null) {
                             names.add(0, parent.getName());
                             parent = parent.getFolder();
                         }

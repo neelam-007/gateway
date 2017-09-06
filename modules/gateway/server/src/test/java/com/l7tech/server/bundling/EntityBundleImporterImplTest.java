@@ -351,6 +351,7 @@ public class EntityBundleImporterImplTest {
         final Folder subFolder = EntityCreator.createFolderWithRandomGoid("subFolder", rootFolder);
         final PublishedService service =  createTestingPublishedService(createTestingPolicy(), subFolder, "TestService", "/test");
 
+        when(folderManager.findByHeader(EntityHeaderUtils.fromEntity(subFolder))).thenReturn(subFolder);
         when(folderManager.findByPath("/subFolder")).thenReturn(subFolder);
         when(entityCrud.find(Folder.class, Folder.ROOT_FOLDER_ID.toString())).thenReturn(rootFolder);
         final List found = Arrays.asList(service);
@@ -381,7 +382,9 @@ public class EntityBundleImporterImplTest {
         final Folder folderB = EntityCreator.createFolderWithRandomGoid("folderB", folderA);
         final PublishedService service =  createTestingPublishedService(createTestingPolicy(), folderB, "TestService", "/test");
 
+        when(folderManager.findByHeader(EntityHeaderUtils.fromEntity(folderA))).thenReturn(folderA);
         when(folderManager.findByPath("/folderA")).thenReturn(folderA);
+        when(folderManager.findByHeader(EntityHeaderUtils.fromEntity(folderB))).thenReturn(folderB);
         when(folderManager.findByPath("/folderA/folderB")).thenReturn(folderB);
         when(entityCrud.find(Folder.class, Folder.ROOT_FOLDER_ID.toString())).thenReturn(rootFolder);
         final List found = Arrays.asList(service);
@@ -416,6 +419,7 @@ public class EntityBundleImporterImplTest {
         final Goid aliasGoid = new Goid(1, 1);
         alias.setGoid(aliasGoid);
 
+        when(folderManager.findByHeader(EntityHeaderUtils.fromEntity(aliasesFolder))).thenReturn(aliasesFolder);
         when(folderManager.findByPath("/aliases")).thenReturn(aliasesFolder);
         when(entityCrud.find(Folder.class, Folder.ROOT_FOLDER_ID.toString())).thenReturn(rootFolder);
 
@@ -475,6 +479,7 @@ public class EntityBundleImporterImplTest {
         final Folder subFolder = EntityCreator.createFolderWithRandomGoid("sub/Folder", rootFolder);
         final PublishedService service =  createTestingPublishedService(createTestingPolicy(), subFolder, "Test/Service", "/test");
 
+        when(folderManager.findByHeader(EntityHeaderUtils.fromEntity(subFolder))).thenReturn(subFolder);
         when(folderManager.findByPath("/sub\\/Folder")).thenReturn(subFolder);
         when(entityCrud.find(Folder.class, Folder.ROOT_FOLDER_ID.toString())).thenReturn(rootFolder);
         final List found = Arrays.asList(service);
