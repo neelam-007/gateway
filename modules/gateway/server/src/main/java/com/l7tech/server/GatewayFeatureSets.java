@@ -1447,6 +1447,7 @@ public class GatewayFeatureSets {
                 ass(ContentTypeAssertion.class),
                 fs(qstAssertion),
                 mass("assertion:RESTGatewayManagement"),
+                mass("assertion:LDAPQuery"),
                 fs(moduleLoader));
 
 
