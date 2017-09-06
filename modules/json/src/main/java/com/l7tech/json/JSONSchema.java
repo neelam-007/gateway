@@ -7,16 +7,11 @@
  */
 package com.l7tech.json;
 
-import java.io.IOException;
 import java.util.List;
 
 public interface JSONSchema {
 
-    /**
-     * Get the JSON Schema.
-     * @return String JSON Schema. Never null.
-     */
-    public String getSchemaString();
+    String ATTRIBUTE_SCHEMA_VERSION = "$schema";
 
     /**
      * Validate the JSONData against this JSON Schema.
@@ -29,5 +24,5 @@ public interface JSONSchema {
      * @return List of String, a value for each validation error. Never null. Empty when there were no validation errors.
      * @throws InvalidJsonException if the JSON schema is invalid JSON data.
      */
-    public List<String> validate(JSONData jsonData) throws InvalidJsonException;
+    List<String> validate(JSONData jsonData) throws InvalidJsonException;
 }

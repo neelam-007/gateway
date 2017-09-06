@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="2.0" xmlns:m="http://ant.apache.org/ivy/maven">
+	<info organisation="com.networknt"
+		module="json-schema-validator"
+		revision="0.1.6.l7p1"
+		status="release"
+		publication="20170403193521"
+	>
+		<license name="Apache License Version 2.0" url="http://repository.jboss.org/licenses/apache-2.0.txt" />
+		<description homepage="https://github.com/networknt/json-schema-validator">
+		A json schema validator that supports draft v4
+		</description>
+		<m:properties__version.slf4j>1.6.5</m:properties__version.slf4j>
+		<m:properties__version.undertow>1.4.11.Final</m:properties__version.undertow>
+		<m:properties__java.version>1.8</m:properties__java.version>
+		<m:properties__version.junit>4.12</m:properties__version.junit>
+		<m:properties__version.hamcrest>1.3</m:properties__version.hamcrest>
+		<m:properties__version.jackson>2.8.7</m:properties__version.jackson>
+		<m:properties__version.mockito>2.7.21</m:properties__version.mockito>
+		<m:properties__project.build.sourceEncoding>UTF-8</m:properties__project.build.sourceEncoding>
+		<m:maven.plugins>org.sonatype.plugins__nexus-staging-maven-plugin__1.6.8|org.apache.maven.plugins__maven-source-plugin__3.0.1|org.apache.maven.plugins__maven-javadoc-plugin__2.10.4|org.apache.maven.plugins__maven-compiler-plugin__3.6.1|org.apache.maven.plugins__maven-surefire-plugin__2.19.1|org.jacoco__jacoco-maven-plugin__0.7.9</m:maven.plugins>
+		<m:properties__version.logback>1.2.3</m:properties__version.logback>
+		<m:properties__version.common-lang3>3.5</m:properties__version.common-lang3>
+	</info>
+	<configurations>
+		<conf name="default" visibility="public" description="runtime dependencies and master artifact can be used with this conf" extends="runtime,master"/>
+		<conf name="master" visibility="public" description="contains only the artifact published by this module itself, with no transitive dependencies"/>
+		<conf name="compile" visibility="public" description="this is the default scope, used if none is specified. Compile dependencies are available in all classpaths."/>
+		<conf name="provided" visibility="public" description="this is much like compile, but indicates you expect the JDK or a container to provide it. It is only available on the compilation classpath, and is not transitive."/>
+		<conf name="runtime" visibility="public" description="this scope indicates that the dependency is not required for compilation, but is for execution. It is in the runtime and test classpaths, but not the compile classpath." extends="compile"/>
+		<conf name="test" visibility="private" description="this scope indicates that the dependency is not required for normal use of the application, and is only available for the test compilation and execution phases." extends="runtime"/>
+		<conf name="system" visibility="public" description="this scope is similar to provided except that you have to provide the JAR which contains it explicitly. The artifact is always available and is not looked up in a repository."/>
+		<conf name="sources" visibility="public" description="this configuration contains the source artifact of this module, if any."/>
+		<conf name="javadoc" visibility="public" description="this configuration contains the javadoc artifact of this module, if any."/>
+		<conf name="optional" visibility="public" description="contains all optional dependencies"/>
+	</configurations>
+	<publications>
+		<artifact name="json-schema-validator" type="jar" ext="jar" conf="master"/>
+		<artifact name="json-schema-validator" type="source" ext="jar" conf="sources" m:classifier="sources"/>
+		<artifact name="json-schema-validator" type="javadoc" ext="jar" conf="javadoc" m:classifier="javadoc"/>
+	</publications>
+	<dependencies>
+		<dependency org="com.fasterxml.jackson.core" name="jackson-databind" rev="2.8.6" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
+		<dependency org="org.slf4j" name="slf4j-api" rev="1.6.5" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
+		<dependency org="org.slf4j" name="slf4j-ext" rev="1.6.5" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
+		<dependency org="commons-lang3" name="commons-lang3" rev="3.2.1" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
+		<dependency org="ch.qos.logback" name="logback-classic" rev="1.2.3" force="true" conf="test->runtime(*),master(*)"/>
+		<dependency org="junit" name="junit" rev="4.12" force="true" conf="test->runtime(*),master(*)"/>
+		<dependency org="org.mockito" name="mockito-core" rev="2.7.21" force="true" conf="test->runtime(*),master(*)"/>
+		<dependency org="org.hamcrest" name="hamcrest-all" rev="1.3" force="true" conf="test->runtime(*),master(*)"/>
+		<dependency org="io.undertow" name="undertow-core" rev="1.4.11.Final" force="true" conf="test->runtime(*),master(*)"/>
+	</dependencies>
+</ivy-module>
