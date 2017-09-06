@@ -1833,7 +1833,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                         final HasFolder hasFolder = (HasFolder) container.getEntity();
                         Folder parent = hasFolder.getFolder();
 
-                        if (parent != null && !parent.getGoid().equals(Folder.ROOT_FOLDER_ID)) {
+                        if (parent != null) {
                             // ensure the entity's parent is up-to-date as it can affect determining its path
                             EntityHeader parentHeader = EntityHeaderUtils.fromEntity(parent);
                             if (resourceMapping.containsKey(parentHeader)) {
