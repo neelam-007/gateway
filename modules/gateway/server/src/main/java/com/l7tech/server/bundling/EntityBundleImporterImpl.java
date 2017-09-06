@@ -1852,8 +1852,17 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                             }
                         }
 
-                        final String parentPath = (parent == null || "/".equals(parent.getPath())) ? "" : parent.getPath();
-                        targetMapTo = parentPath + "/" + mapping.getSourceEntityHeader().getName();
+                        final ArrayList<String> names = new ArrayList<>();
+                        names.add(mapping.getSourceEntityHeader().getName());
+                        while (parent != null && !parent.getGoid().equals(Folder.ROOT_FOLDER_ID)) {
+                            names.add(0, parent.getName());
+                            parent = parent.getFolder();
+                        }
+                        String escapedPath = PathUtils.getEscapedPathString(names.toArray(new String[names.size()]));
+                        if (!escapedPath.startsWith("/")) {
+                            escapedPath = "/" + escapedPath;
+                        }
+                        targetMapTo = escapedPath;
                     } else {
                         throw new IncorrectMappingInstructionsException(mapping, "Mapping by path but entity is not a folderable type");
                     }

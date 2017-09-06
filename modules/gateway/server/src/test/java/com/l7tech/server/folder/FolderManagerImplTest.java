@@ -143,6 +143,31 @@ public class FolderManagerImplTest {
     }
 
     @Test
+    public void findByPathExtraBackslashSuffix() throws Exception {
+        final Folder root = createRootFolder();
+        final Folder testFolder = EntityCreator.createFolderWithRandomGoid("test", root);
+        manager = spy(new FolderManagerImpl(roleManager, new MockConfig(properties)));
+        doReturn(Arrays.asList(testFolder)).when(manager).findByName("test");
+        doReturn(root).when(manager).findByPrimaryKey(root.getGoid());
+
+        final Folder folder = manager.findByPath("/test/");
+        assertEquals("test", folder.getName());
+        assertEquals("/test", folder.getPath());
+    }
+
+    @Test
+    public void findByPathEscapedBackslash() throws Exception {
+        final Folder root = createRootFolder();
+        final Folder testFolder = EntityCreator.createFolderWithRandomGoid("special/characters", root);
+        manager = spy(new FolderManagerImpl(roleManager, new MockConfig(properties)));
+        doReturn(Arrays.asList(testFolder)).when(manager).findByName("special/characters");
+        doReturn(root).when(manager).findByPrimaryKey(root.getGoid());
+
+        final Folder folder = manager.findByPath("/special\\/characters");
+        assertEquals("special/characters", folder.getName());
+    }
+
+    @Test
     public void testCreateByPath() throws Exception {
         final String newPath = "/folder1/folder1_new";
         final List<Folder> folders = pathTestSetup();

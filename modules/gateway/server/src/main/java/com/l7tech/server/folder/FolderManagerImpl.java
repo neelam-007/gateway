@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.text.MessageFormat;
 import java.util.*;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -195,21 +196,25 @@ public class FolderManagerImpl extends FolderSupportHibernateEntityManager<Folde
 
         final String[] pathElements = PathUtils.getPathElements(absFolderPath);
         final int size = pathElements.length;
-        assert size > 0;
+        if (size > 0) {
+            final String pathFromElements = PathUtils.getEscapedPathString(pathElements);
 
-        // Using a bottom up searching manner, search all folders with the name same as the name of lastFolder on the path.
-        final String lastFolderName = pathElements[size - 1];
-        final List<Folder> folders = findByName(lastFolderName);
+            // Using a bottom up searching manner, search all folders with the name same as the name of lastFolder on the path.
+            final String lastFolderName = pathElements[size - 1];
+            final List<Folder> folders = findByName(lastFolderName);
 
-        // Check which folder has a path same as the given path.  If matched, then found.
-        for (final Folder folder: folders) {
-            // Note don't use folder.getPath(), b/c folder's parent might not have folder name info.
-            // However, to get a path, find each folder's parent folder, use the parent's goid to find the acutal parent
-            // folder, then get the parent folder's name.  Repeat this action until reaching the root folder.
-            String thePath = getPath(folder);
-            if (absFolderPath.equals(thePath)) {
-                return folder;
+            // Check which folder has a path same as the given path.  If matched, then found.
+            for (final Folder folder : folders) {
+                // Note don't use folder.getPath(), b/c folder's parent might not have folder name info.
+                // However, to get a path, find each folder's parent folder, use the parent's goid to find the acutal parent
+                // folder, then get the parent folder's name.  Repeat this action until reaching the root folder.
+                String thePath = getPath(folder);
+                if (pathFromElements.equals(thePath)) {
+                    return folder;
+                }
             }
+        } else {
+            logger.log(Level.WARNING, "Unable to parse path: " + folderPath);
         }
 
         // Otherwise, not found.

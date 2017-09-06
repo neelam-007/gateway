@@ -469,6 +469,35 @@ public class EntityBundleImporterImplTest {
         verify(serviceManager).update(service);
     }
 
+    @Test
+    public void updateEntitiesWithSpecialCharactersByPathWithoutSpecifyingTargetPath() throws Exception {
+        final Folder rootFolder = EntityBundleBuilder.createRootFolder();
+        final Folder subFolder = EntityCreator.createFolderWithRandomGoid("sub/Folder", rootFolder);
+        final PublishedService service =  createTestingPublishedService(createTestingPolicy(), subFolder, "Test/Service", "/test");
+
+        when(folderManager.findByPath("/sub\\/Folder")).thenReturn(subFolder);
+        when(entityCrud.find(Folder.class, Folder.ROOT_FOLDER_ID.toString())).thenReturn(rootFolder);
+        final List found = Arrays.asList(service);
+        when(entityCrud.findAll(eq(PublishedService.class), anyMap(), eq(0), eq(-1), eq(null), eq(null))).thenReturn(found);
+        when(entityCrud.find(any(ServiceHeader.class))).thenReturn(service);
+        when(policyVersionManager.findLatestRevisionForPolicy(service.getPolicy().getGoid())).thenReturn(new PolicyVersion());
+
+        final EntityBundle bundle = new EntityBundleBuilder().
+                expectExistingRootFolder().
+                updateFolderByPath(subFolder).
+                updateServiceByPath(service).create();
+
+        final Map<Goid, EntityMappingResult> results = resultsToMap(importer.importBundle(bundle, false, true, null));
+        assertEquals(3, results.size());
+        results.values().stream().forEach(result->assertTrue(result.isSuccessful()));
+        assertEquals(EntityMappingResult.MappingAction.UsedExisting, results.get(rootFolder.getGoid()).getMappingAction());
+        assertEquals(EntityMappingResult.MappingAction.UpdatedExisting, results.get(subFolder.getGoid()).getMappingAction());
+        assertEquals(EntityMappingResult.MappingAction.UpdatedExisting, results.get(service.getGoid()).getMappingAction());
+        verify(folderManager, atLeastOnce()).findByPath("/sub\\/Folder");
+        verify(entityCrud).update(subFolder);
+        verify(serviceManager).update(service);
+    }
+
     private Map<Goid, EntityMappingResult> resultsToMap(final List<EntityMappingResult> results) {
         return results.stream().collect(Collectors.toMap(result->result.getSourceEntityHeader().getGoid(), result->result));
     }
