@@ -8,15 +8,19 @@ import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.FolderHeader;
 import com.l7tech.server.FolderSupportHibernateEntityManager;
 import com.l7tech.server.security.rbac.RoleManager;
+import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Config;
-import com.l7tech.util.ConfigFactory;
+import com.l7tech.util.PathUtils;
 import com.l7tech.util.TextUtils;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.text.MessageFormat;
 import java.util.*;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -169,6 +173,146 @@ public class FolderManagerImpl extends FolderSupportHibernateEntityManager<Folde
             }
         }
         throw new FindException("No root folder!!");
+    }
+
+    /**
+     * Find a folder by an absolute folder path.
+     * e.g., given "/folderA/folderB", try to find the folder with name as "folderB" under the folderA.
+     * This method uses top-to-bottom manner to find the last folder on the folder path, to assure the result is unique.
+     *
+     * @param folderPath: a string represents a folder path.  If it is not an absolute path, then add a leading '/' to it.
+     * @return a Folder object found
+     *
+     * @throws FindException: thrown if root folder cannnot be found.
+     */
+    @Override
+    @Nullable
+    public Folder findByPath(@Nullable final String folderPath) throws FindException {
+        if (StringUtils.isBlank(folderPath)) return null;
+        if (folderPath.equals("/")) return findRootFolder();
+
+        // If folderPath is not an absolute path, then add a leading '/' to it.
+        final String absFolderPath = folderPath.startsWith("/")? folderPath : ("/" + folderPath);
+
+        final String[] pathElements = PathUtils.getPathElements(absFolderPath);
+        final int size = pathElements.length;
+        if (size > 0) {
+            final String pathFromElements = PathUtils.getEscapedPathString(pathElements);
+
+            // Using a bottom up searching manner, search all folders with the name same as the name of lastFolder on the path.
+            final String lastFolderName = pathElements[size - 1];
+            final List<Folder> folders = findByName(lastFolderName);
+
+            // Check which folder has a path same as the given path.  If matched, then found.
+            for (final Folder folder : folders) {
+                // Note don't use folder.getPath(), b/c folder's parent might not have folder name info.
+                // However, to get a path, find each folder's parent folder, use the parent's goid to find the acutal parent
+                // folder, then get the parent folder's name.  Repeat this action until reaching the root folder.
+                String thePath = getPath(folder);
+                if (pathFromElements.equals(thePath)) {
+                    return folder;
+                }
+            }
+        } else {
+            logger.log(Level.WARNING, "Unable to parse path: " + folderPath);
+        }
+
+        // Otherwise, not found.
+        return null;
+    }
+
+
+    /**
+     * Final all folders with a same name specified by folderName.
+     *
+     * @param folderName the name of folders to be found.
+     * @return a list of folder objects having the name specified by folderName.
+     * @throws FindException thrown if Error finding entities
+     */
+    @NotNull
+    List<Folder> findByName(@NotNull final String folderName) throws FindException {
+        return findMatching(Arrays.asList(CollectionUtils.MapBuilder.<String, Object>builder().put("name", folderName).map()));
+    }
+
+    /**
+     * Get the path by finding each folder's parent folder, using the parent's goid to find the acutal parent folder,
+     * then getting the parent folder's name.  Repeat this action until reaching the root folder.
+     *
+     * @param folder a folder to find its path.
+     * @return a path which this folder is on
+     * @throws FindException thrown if cannot find folder by primary key.
+     */
+    @Nullable
+    private String getPath(@NotNull final Folder folder) throws FindException {
+        if (isRootFolder(folder)) return "/";
+
+        final List<String> pathList = new ArrayList<>();
+        pathList.add(folder.getName());
+
+        Folder parentFolder = folder.getFolder();
+        while (parentFolder != null) {
+            // Retrieve parent folder again to get more info such as folder name.
+            parentFolder = findByPrimaryKey(parentFolder.getGoid());
+            // Append folder path
+            if (!isRootFolder(parentFolder)) {
+                pathList.add(0, parentFolder.getName());
+            }
+            // Update parent folder for next loop
+            parentFolder = parentFolder.getFolder();
+        }
+
+        return PathUtils.getEscapedPathString(pathList.toArray(new String[pathList.size()]));
+    }
+
+    private boolean isRootFolder(@NotNull final Folder folder) {
+        return Folder.ROOT_FOLDER_ID.equals(folder.getGoid());
+    }
+
+    /**
+     * Build a folder path.  All existing folders on the path starting from the root folder will be ignored until the first
+     * new folder is found.  The first new folder and all folders after the first new folders will be created. The last
+     * folder on the path will be returned.
+     *
+     * For example, the absolute folder path is /a/b/c.  If a, b, and c are new, then a, b, and c will be created and c
+     * will be returned.  If a is an existing folder and b is the first new one, then b and c will be created and c will
+     * be returned.
+     *
+     * @param folderPath: a string represents a folder path.  If it is not an absolute path, then add a leading '/' to it.
+     * @return a last folder on the folder path.
+     *
+     * @throws FindException thrown if unable to retrieve entities by folder
+     * @throws SaveException thrown if unable to save a folder
+     */
+    @Override
+    @Nullable
+    public Folder createPath(@NotNull final String folderPath) throws FindException, SaveException {
+        if (StringUtils.isBlank(folderPath)) {
+            throw new IllegalArgumentException("The folder path is not specified.");
+        }
+
+        // If folderPath is not an absolute path, then add a leading '/' to it.
+        final String absFolderPath = folderPath.startsWith("/")? folderPath : ("/" + folderPath);
+
+        // Generate all individual paths.  Check if each path is a new path.
+        // If so, create a new folder.  Otherwise, continue next path checking.
+        final List<String> paths = PathUtils.getPaths(absFolderPath);
+        final String[] folderNames = PathUtils.getPathElements(absFolderPath);
+        Folder parentFolder = findRootFolder();
+        Folder newFolder = null;
+
+        for (int i = 0; i < paths.size(); i++) {
+            final Folder folder = findByPath(paths.get(i));
+            if (folder == null) {
+                newFolder = new Folder(folderNames[i], parentFolder);
+                save(newFolder);
+                parentFolder = newFolder;
+            } else {
+                parentFolder = folder;
+            }
+        }
+
+        // If newFolder == null, it means all folders in the path already exist.
+        return newFolder == null ? parentFolder : newFolder;
     }
 
     @Override
