@@ -1,12 +1,12 @@
 <div>
     <h1>Migration</h1>
     <p>Use the <a href="$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/doc/gmu.html">Gateway Migration Utility</a> to help facilitate migration.</p>
-    <p>The migration APIs allow you to move entities, including folders, services and policies from one Gateway to another.</p>
+    <p>The migration APIs allow you to move entities, including folders, services and policies from one gateway to another.</p>
     <p>The following is an overview of the migration workflow:</p>
     <ol>
-        <li>Export a bundle from the source Gateway.</li>
+        <li>Export a bundle from the source gateway.</li>
         <li>Map entities as required.</li>
-        <li>Import the bundle into the target Gateway.</li>
+        <li>Import the bundle into the target gateway.</li>
     </ol>
     <h3>Exporting a Bundle</h3>
     <p>Send the following request to export a bundle.</p>
@@ -140,16 +140,16 @@
     <table class="properties-table" cellpadding="0" cellspacing="0">
         <tr><td>type</td><td>Type of entity being mapped</td></tr>
         <tr><td>scrId</td><td>Source ID of the service being mapping; this normally references an entity in the bundle resources section</td></tr>
-        <tr><td>srcUri</td><td>Source URI to retrieve the entity from the Gateway</td></tr>
-        <tr><td>targetId</td><td>During bundle import, this ID instructs the importer to map this entity with the given target ID. The bundle importer will return a list of the mappings that were made (i.e., ID of the entity that was mapped or created on the target Gateway during import).</td></tr>
+        <tr><td>srcUri</td><td>Source URI to retrieve the entity from the gateway</td></tr>
+        <tr><td>targetId</td><td>During bundle import, this ID instructs the importer to map this entity with the given target ID. The bundle importer will return a list of the mappings that were made (i.e., ID of the entity that was mapped or created on the target gateway during import).</td></tr>
         <tr><td>targetUri</td><td>Target uri of the entity that was mapped or created.</td></tr>
         <tr><td>action</td>
             <td>The possible mapping actions are as follows:
                 <table class="properties-table" cellpadding="0" cellspacing="0">
-                    <tr><td>NewOrExisting</td><td>If an existing entity is found on the target Gateway, map to this existing entity (no update occurs). If an existing entity is not found, then create a new one on the target Gateway.</td></tr>
-                    <tr><td>NewOrUpdate</td><td>If an existing entity is found on the target Gateway, map to this existing entity and update it using information from the bundle. If an existing entity is not found, then create a new one on the target Gateway.</td></tr>
-                    <tr><td>AlwaysCreateNew</td><td>If an existing entity is found on the target Gateway, then create a new one with a different ID. If an existing entity is not found, then create a new one with the source ID.</td></tr>
-                    <tr><td>Delete</td><td>If an existing entity is found on the target Gateway it will be removed. If an existing entity is not found, then nothing will happen and bundle import will continue (this will not fail bundle import)</td></tr>
+                    <tr><td>NewOrExisting</td><td>If an existing entity is found on the target gateway, map to this existing entity (no update occurs). If an existing entity is not found, then create a new one on the target gateway.</td></tr>
+                    <tr><td>NewOrUpdate</td><td>If an existing entity is found on the target gateway, map to this existing entity and update it using information from the bundle. If an existing entity is not found, then create a new one on the target gateway.</td></tr>
+                    <tr><td>AlwaysCreateNew</td><td>If an existing entity is found on the target gateway, then create a new one with a different ID. If an existing entity is not found, then create a new one with the source ID.</td></tr>
+                    <tr><td>Delete</td><td>If an existing entity is found on the target gateway it will be removed. If an existing entity is not found, then nothing will happen and bundle import will continue (this will not fail bundle import)</td></tr>
                     <tr><td>Ignore</td><td>Ignore this entity and do not import it.</td></tr>
                 </table>
             </td>
@@ -157,9 +157,9 @@
         <tr><td>actionTaken</td>
             <td>This is the action that was taken during the import. This attribute is only returned by the bundle import results. The possible actions are as follows:
                 <table class="properties-table" cellpadding="0" cellspacing="0">
-                    <tr><td>UsedExisting</td><td>The entity was mapped to an existing entity on the target Gateway. The target entity was not updated.</td></tr>
-                    <tr><td>UpdatedExisting</td><td>The entity was mapped to an existing entity on the target Gateway and the target entity was updated.</td></tr>
-                    <tr><td>CreatedNew</td><td>A new entity was created on the target Gateway.</td></tr>
+                    <tr><td>UsedExisting</td><td>The entity was mapped to an existing entity on the target gateway. The target entity was not updated.</td></tr>
+                    <tr><td>UpdatedExisting</td><td>The entity was mapped to an existing entity on the target gateway and the target entity was updated.</td></tr>
+                    <tr><td>CreatedNew</td><td>A new entity was created on the target gateway.</td></tr>
                     <tr><td>Deleted</td><td>The entity was deleted on the target gateway.</td></tr>
                     <tr><td>Ignored</td><td>The entity was ignored and not imported. If the action was Delete and the action taken was Ignored that means that a target entity could not be found to be deleted.</td></tr>
                 </table>
@@ -168,10 +168,10 @@
         <tr><td>errorType</td>
             <td>This is set if there was an error attempting to import the entity. The possible errors are as follows:
                 <table class="properties-table" cellpadding="0" cellspacing="0">
-                    <tr><td>TargetExists</td><td>A new entity was supposed to be created but an entity already exists on the target Gateway. See the <a href="#failonexisting">FailOnExisting</a> property.</td></tr>
-                    <tr><td>TargetNotFound</td><td>An existing entity should exist on the target Gateway but it cannot be found. See the <a href="#failonnew">FailOnNew</a> property.</td></tr>
+                    <tr><td>TargetExists</td><td>A new entity was supposed to be created but an entity already exists on the target gateway. See the <a href="#failonexisting">FailOnExisting</a> property.</td></tr>
+                    <tr><td>TargetNotFound</td><td>An existing entity should exist on the target gateway but it cannot be found. See the <a href="#failonnew">FailOnNew</a> property.</td></tr>
                     <tr><td>TargetReadOnly</td><td>Target entity is read-only: Not possible to perform action.</td></tr>
-                    <tr><td>UniqueKeyConflict</td><td>There is an entity on the target Gateway with a conflicting unique key (usually name) as the one that is being created or updated.</td></tr>
+                    <tr><td>UniqueKeyConflict</td><td>There is an entity on the target gateway with a conflicting unique key (usually name) as the one that is being created or updated.</td></tr>
                     <tr><td>CannotReplaceDependency</td><td>An error occurred when replacing an entity's dependencies.</td></tr>
                     <tr><td>InvalidResource</td><td>A problem occurred when updating an entity.</td></tr>
                 </table>
@@ -191,7 +191,7 @@
         </pre>
     </div>
     <h6>Possible Responses</h6>
-    <p>An entity with the same ID exists on the target Gateway and this existing entity was used:</p>
+    <p>An entity with the same ID exists on the target gateway and this existing entity was used:</p>
     <div class="code">
         <pre>
 &lt;l7:mapping
@@ -204,7 +204,7 @@
     targetUri=&quot;https://ssgtarget/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot; /&gt;
         </pre>
     </div>
-    <p>An entity with the same ID does NOT exist on the target Gateway and a new entity with the specified ID was created:</p>
+    <p>An entity with the same ID does NOT exist on the target gateway and a new entity with the specified ID was created:</p>
     <div class="code">
         <pre>
 &lt;l7:mapping
@@ -217,7 +217,7 @@
     targetUri=&quot;https://ssgtarget/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot; /&gt;
         </pre>
     </div>
-    <p>An entity with the same ID does NOT exist on the target Gateway but one with a conflicting unique key was present instead, resulting in a 409 error response:</p>
+    <p>An entity with the same ID does NOT exist on the target gateway but one with a conflicting unique key was present instead, resulting in a 409 error response:</p>
     <div class="code">
         <pre>
 &lt;l7:mapping
@@ -246,7 +246,7 @@
         </pre>
     </div>
     <h6>Possible Responses</h6>
-    <p>An entity with the same ID exists on the target Gateway. This entity has been updated using the entity in the import bundle:</p>
+    <p>An entity with the same ID exists on the target gateway. This entity has been updated using the entity in the import bundle:</p>
     <div class="code">
         <pre>
 &lt;l7:mapping
@@ -259,7 +259,7 @@
     targetUri=&quot;https://ssgtarget/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot; /&gt;
         </pre>
     </div>
-    <p>An entity with the same ID does NOT exist on the target Gateway and a new entity with the ID specified was created:</p>
+    <p>An entity with the same ID does NOT exist on the target gateway and a new entity with the ID specified was created:</p>
     <div class="code">
         <pre>
 &lt;l7:mapping
@@ -272,7 +272,7 @@
     targetUri=&quot;https://ssgtarget/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot; /&gt;
         </pre>
     </div>
-    <p>An entity with the same ID does NOT exist on the target Gateway, but an entity with a conflicting unique key is present instead. Alternatively, an entity with the same ID exists, but unique key errors occurred when updating it, resulting in a 409 error response:</p>
+    <p>An entity with the same ID does NOT exist on the target gateway, but an entity with a conflicting unique key is present instead. Alternatively, an entity with the same ID exists, but unique key errors occurred when updating it, resulting in a 409 error response:</p>
     <div class="code">
         <pre>
 &lt;l7:mapping
@@ -289,7 +289,7 @@
 &lt;/l7:Mapping&gt;
         </pre>
     </div>
-    <p>A read-only entity with the same ID exist on the target Gateway:</p>
+    <p>A read-only entity with the same ID exist on the target gateway:</p>
     <div class="code">
         <pre>
 &lt;l7:mapping
@@ -318,7 +318,7 @@
         </pre>
     </div>
     <h6>Possible Responses</h6>
-    <p>An entity with the same ID exists on the target Gateway, resulting in a new entity with a new ID being created on the target Gateway.</p>
+    <p>An entity with the same ID exists on the target gateway, resulting in a new entity with a new ID being created on the target gateway.</p>
     <div class="code">
         <pre>
 &lt;l7:mapping
@@ -331,7 +331,7 @@
     targetUri=&quot;https://ssgtarget/restman/1.0/policies/8756846868e6eb676bf4ed8a9bfba04b&quot; /&gt;
         </pre>
     </div>
-    <p>An entity with the same ID does NOT exist on the target Gateway, resulting in a new entity being created with the specified ID.</p>
+    <p>An entity with the same ID does NOT exist on the target gateway, resulting in a new entity being created with the specified ID.</p>
     <div class="code">
         <pre>
 &lt;l7:mapping
@@ -344,7 +344,7 @@
     targetUri=&quot;https://ssgtarget/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot; /&gt;
         </pre>
     </div>
-    <p>The entity created has unique key conflicts with an entity on the Gateway, resulting in a 409 error response:</p>
+    <p>The entity created has unique key conflicts with an entity on the gateway, resulting in a 409 error response:</p>
     <div class="code">
         <pre>
 &lt;l7:mapping
@@ -373,7 +373,7 @@
         </pre>
     </div>
     <h6>Possible Responses</h6>
-    <p>An entity with the same ID exists on the target Gateway, resulting in the entity being deleted on the target Gateway.</p>
+    <p>An entity with the same ID exists on the target gateway, resulting in the entity being deleted on the target gateway.</p>
     <div class="code">
         <pre>
 &lt;l7:mapping
@@ -386,7 +386,7 @@
     targetUri=&quot;https://ssgtarget/restman/1.0/policies/97cd0afb295cd2d823d0fdd43e720bbc&quot; /&gt;
         </pre>
     </div>
-    <p>An entity with the same ID does NOT exist on the target Gateway, resulting in no entity being deleted.</p>
+    <p>An entity with the same ID does NOT exist on the target gateway, resulting in no entity being deleted.</p>
     <div class="code">
         <pre>
 &lt;l7:mapping
@@ -397,7 +397,7 @@
     actionTaken=&quot;Ignored&quot; /&gt;
         </pre>
     </div>
-    <p>A read-only entity with the same ID exist on the target Gateway:</p>
+    <p>A read-only entity with the same ID exist on the target gateway:</p>
     <div class="code">
         <pre>
 &lt;l7:mapping
@@ -457,12 +457,26 @@
     errorType=&quot;TargetNotFound&quot; /&gt;
             </pre></div>
         </td></tr>
-        <tr><td>MapBy</td><td>This can specify the unique key to map the target by. The possible values are 'name' or 'guid'. If this is not specified mapping is done by the ID. There is also a special mapping, 'mapByRoleEntity', this is used to map a auto created role to an auto created role on the target gateway. This mapping is automatically set when doing a full gateway export. Another special mapping, 'moduleSha256' is used to map a ServerModuleFile using its content digest on the target Gateway. This is the default mapping when exporting ServerModuleFile(s).</td></tr>
-        <tr><td>MapTo</td><td>This allow mapping to a different entity. The default it to map to an entity on the target with the same mapTo property. This is only used with the mapBy property.</td></tr>
+        <tr><td>MapBy</td><td>This can specify the unique key to map the target by. The possible values are:<dl>
+            <dt>name</dt>
+            <dd>The name of the entity.</dd>
+            <dt>guid</dt>
+            <dd>The guid of the entity.</dd>
+            <dt>mapByRoleEntity</dt>
+            <dd>'mapByRoleEntity' is used to map an auto created role to an auto created role on the target gateway. This mapping is automatically set when performing a full gateway export.</dd>
+            <dt>moduleSha256</dt>
+            <dd>'moduleSha256' is used to map a ServerModuleFile using its content digest on the target gateway. This is the default mapping when exporting ServerModuleFile(s).</dd>
+            <dt>routingUri</dt>
+            <dd>'routingUri' is the routing uri for a service entity. This mapping is only applicable for mappings of type=SERVICE.</dd>
+            <dt>path</dt>
+            <dd>'path' is the folder path of the entity. This mapping is only applicable for mappings of type=SERVICE, POLICY, FOLDER, SERVICE_ALIAS, or POLICY_ALIAS.</dd>
+        </dl>
+        </td></tr>
+        <tr><td>MapTo</td><td>This is an optional property that allows for mapping to a different entity and can only used when the 'MapBy' property is specified. If 'MapTo' is not specified, the mapping target is assumed to be the same as the source gateway.</td></tr>
     </table>
     <h4>Complex Mapping Examples</h4>
     <h5>Mapping by Name</h5>
-    <p>Map a policy to a policy on the target Gateway with the same name.</p>
+    <p>Map a policy to a policy on the target gateway with the same name.</p>
     <div class="code">
         <pre>
 &lt;l7:mapping
@@ -477,7 +491,7 @@
         </pre>
     </div>
     <h6>Possible Responses</h6>
-    <p>If an entity with the same Name DOES NOT exist on the target Gateway this will create a new entity with the ID specified.</p>
+    <p>If an entity with the same name DOES NOT exist on the target gateway this will create a new entity with the ID specified.</p>
     <div class="code">
         <pre>
 &lt;l7:mapping
@@ -494,7 +508,7 @@
 &lt;/l7:mapping&gt;
         </pre>
     </div>
-    <p>If an entity with the same Name exist on the target Gateway this will update the entity.</p>
+    <p>If an entity with the same name exist on the target gateway this will update the entity.</p>
     <div class="code">
         <pre>
 &lt;l7:mapping
@@ -511,7 +525,7 @@
 &lt;/l7:mapping&gt;
         </pre>
     </div>
-    <p>If an entity with the same Name DOES NOT exist on the target Gateway but one with the same ID does, this will fail.</p>
+    <p>If an entity with the same name DOES NOT exist on the target gateway but one with the same ID does, this will fail.</p>
     <div class="code">
         <pre>
 &lt;l7:mapping
@@ -533,7 +547,7 @@
         </pre>
     </div>
     <h5>Mapping by Name to a Specific Entity</h5>
-    <p>Map a service to a service on the target Gateway with a specific name.</p>
+    <p>Map a service to a service on the target gateway with a specific name.</p>
     <div class="code">
         <pre>
 &lt;l7:mapping
@@ -549,7 +563,7 @@
         </pre>
     </div>
     <h6>Possible Responses</h6>
-    <p>If an entity with the target name DOES NOT exist on the target Gateway this will create a new entity with the ID specified, and the mapTo name ("MyTargetService").</p>
+    <p>If an entity with the target name DOES NOT exist on the target gateway this will create a new entity with the ID specified, and the mapTo name ("MyTargetService").</p>
     <div class="code">
         <pre>
 &lt;l7:mapping
@@ -567,7 +581,7 @@
 &lt;/l7:mapping&gt;
         </pre>
     </div>
-    <p>If an entity with the target name exist on the target Gateway this will do nothing, used the existing service.</p>
+    <p>If an entity with the target name exist on the target gateway this will do nothing, used the existing service.</p>
     <div class="code">
         <pre>
 &lt;l7:mapping
@@ -585,7 +599,7 @@
 &lt;/l7:mapping&gt;
         </pre>
     </div>
-    <p>If an entity with the target name DOES NOT exist on the target Gateway but one with the same ID does, this will fail.</p>
+    <p>If an entity with the target name DOES NOT exist on the target gateway but one with the same ID does, this will fail.</p>
     <div class="code">
         <pre>
 &lt;l7:mapping
@@ -607,7 +621,7 @@
         </pre>
     </div>
     <h5>Mapping by ID where Entity Must Exist on the Target</h5>
-    <p>Map a service to a service on the target Gateway. The service must exist on the target Gateway.</p>
+    <p>Map a service to a service on the target gateway. The service must exist on the target gateway.</p>
     <div class="code">
         <pre>
 &lt;l7:mapping
@@ -622,7 +636,7 @@
         </pre>
     </div>
     <h6>Possible Responses</h6>
-    <p>If an entity with the same ID DOES NOT exist on the target Gateway this will fail.</p>
+    <p>If an entity with the same ID DOES NOT exist on the target gateway this will fail.</p>
     <div class="code">
         <pre>
 &lt;l7:mapping
@@ -637,7 +651,7 @@
 &lt;/l7:mapping&gt;
         </pre>
     </div>
-    <p>If an entity with the same ID exist on the target Gateway this will do nothing, used the existing service.</p>
+    <p>If an entity with the same ID exist on the target gateway this will do nothing, used the existing service.</p>
     <div class="code">
         <pre>
 &lt;l7:mapping
@@ -656,7 +670,7 @@
     </div>
 
     <h5>Mapping by Name to Specific Entity Do Not Fail on ID Clash </h5>
-    <p>Map a service to a service on the target Gateway with a specific name. Do not fail if a service with the same ID exists on the target Gateway.</p>
+    <p>Map a service to a service on the target gateway with a specific name. Do not fail if a service with the same ID exists on the target gateway.</p>
     <div class="code">
         <pre>
 &lt;l7:mapping
@@ -672,7 +686,7 @@
         </pre>
     </div>
     <h6>Possible Responses</h6>
-    <p>If an entity with the same Name DOES NOT exist on the target Gateway this will create a new entity with the ID specified, and the mapTo name ("MyTargetService").</p>
+    <p>If an entity with the same name DOES NOT exist on the target gateway this will create a new entity with the ID specified, and the mapTo name ("MyTargetService").</p>
     <div class="code">
         <pre>
 &lt;l7:mapping
@@ -689,7 +703,7 @@
 &lt;/l7:mapping&gt;
         </pre>
     </div>
-    <p>If an entity with the same Name exist on the target Gateway this will fail with unique key conflict.</p>
+    <p>If an entity with the same name exists on the target gateway this will fail with unique key conflict.</p>
     <div class="code">
         <pre>
 &lt;l7:mapping
@@ -706,7 +720,7 @@
 &lt;/l7:mapping&gt;
         </pre>
     </div>
-    <p>If an entity with the same Name DOES NOT exist on the target Gateway but one with the same ID does, this will create a new entity with a new ID, and the mapTo name ("MyTargetService").</p>
+    <p>If an entity with the same name DOES NOT exist on the target gateway but one with the same ID does, this will create a new entity with a new ID, and the mapTo name ("MyTargetService").</p>
     <div class="code">
         <pre>
 &lt;l7:mapping
@@ -739,7 +753,7 @@
         </pre>
     </div>
     <h6>Possible Responses</h6>
-    <p>If an entity with the same Name exists on the target Gateway this will delete the entity.</p>
+    <p>If an entity with the same name exists on the target gateway this will delete the entity.</p>
     <div class="code">
         <pre>
 &lt;l7:mapping
@@ -756,7 +770,7 @@
 &lt;/l7:mapping&gt;
         </pre>
     </div>
-    <p>If an entity with the same Name DOES NOT exist on the target Gateway this will fail.</p>
+    <p>If an entity with the same name DOES NOT exist on the target gateway this will fail.</p>
     <div class="code">
         <pre>
 &lt;l7:mapping
@@ -773,7 +787,51 @@
 &lt;/l7:mapping&gt;
         </pre>
     </div>
-    <p>If an entity with the same Name exist on the target Gateway this will fail with unique key conflict.</p>
+    <p>If an entity with the same name exist on the target gateway this will fail with unique key conflict.</p>
+    <h5>Mapping by routingUri</h5>
+    <div class="code">
+        <pre>
+    &lt;l7:Mapping action=&quot;NewOrUpdate&quot; srcId=&quot;7a20dc65166addef9088427e9c65f89f&quot; srcUri=&quot;https://localhost:8443/restman/1.0/services/7a20dc65166addef9088427e9c65f89f&quot; type=&quot;SERVICE&quot;&gt;
+        &lt;l7:Properties&gt;
+            &lt;l7:Property key=&quot;MapBy&quot;&gt;
+                &lt;l7:StringValue&gt;routingURI&lt;/l7:StringValue&gt;
+            &lt;/l7:Property&gt;
+            &lt;l7:Property key=&quot;MapTo&quot;&gt;
+                &lt;l7:StringValue&gt;/newTarget&lt;/l7:StringValue&gt;
+            &lt;/l7:Property&gt;
+        &lt;/l7:Properties&gt;
+    &lt;/l7:Mapping&gt;
+        </pre>
+    </div>
+    <h6>Possible Responses</h6>
+    <ul>
+    <li>If no services have the routingUri='/newTarget', the service will be created using details from the bundle.</li>
+    <li>If there is a service with the routingUri='/newTarget', the service will be updated using details from the bundle.</li>
+    <li>If there are multiple services with routingUri='/newTarget', the bundle import will fail with an error: 'Incorrect mapping instructions: Found multiple possible target entities found with routing URI:...'</li>
+    </ul>
+    <h5>Mapping by path</h5>
+    <div class="code">
+        <pre>
+    &lt;l7:Mapping action=&quot;NewOrUpdate&quot; srcId=&quot;7a20dc65166addef9088427e9c65f89f&quot; srcUri=&quot;https://localhost:8443/restman/1.0/services/7a20dc65166addef9088427e9c65f89f&quot; type=&quot;SERVICE&quot;&gt;
+        &lt;l7:Properties&gt;
+            &lt;l7:Property key=&quot;MapBy&quot;&gt;
+                &lt;l7:StringValue&gt;path&lt;/l7:StringValue&gt;
+            &lt;/l7:Property&gt;
+            &lt;l7:Property key=&quot;MapTo&quot;&gt;
+                &lt;l7:StringValue&gt;/a/b/newService&lt;/l7:StringValue&gt;
+            &lt;/l7:Property&gt;
+        &lt;/l7:Properties&gt;
+    &lt;/l7:Mapping&gt;
+        </pre>
+    </div>
+    <h6>Possible Responses</h6>
+    <ul>
+    <li>If no services have the path='/a/b/newService', the service will be created using details from the bundle. Any folder along the path that does not currently exist will be created as well..</li>
+    <li>If there is a service with the path='/a/b/newService', the service will be updated using details from the bundle. Any folder along the path that does not currently exist will be created as well.</li>
+    <li>If there are multiple services with the path='/a/b/newService', the bundle import will fail with an error: 'Incorrect mapping instructions: Found multiple possible target entities found with path:...'</li>
+    <li>A mapping error message which resembles:</li>
+    <pre>"Cannot add or update a child row: a foreign key constraint fails (`ssg`.`folder`, CONSTRAINT `folder_parent_folder` FOREIGN KEY (`parent_folder_goid`) REFERENCES `folder` (`goid`) ON DELETE NO ACTION ON UPDATE NO ACTION)" means that the parent folder of the relevant entity could not be mapped</pre>indicates that the user should resolve the failed mapping for the parent folder.
+    </ul>
     <h3>Supporting Large Migrations</h3>
     <p>By default the REST Management Service accepts requests up to 50MB in size. If you need to increase the maximum message size that the REST Management Service can accept edit the <span class="italicize">restman.request.message.maxSize</span> cluster property.</p>
     <h3>Migration Example</h3>
