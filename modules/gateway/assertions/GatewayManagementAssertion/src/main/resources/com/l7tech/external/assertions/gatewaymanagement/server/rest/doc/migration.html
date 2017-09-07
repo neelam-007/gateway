@@ -461,15 +461,15 @@
             <dt>name</dt>
             <dd>The name of the entity.</dd>
             <dt>guid</dt>
-            <dd>The guid of the entity. This property is only applicable for mappings of type=SERVICE or ENCAPSULATED_ASSERTION</dd>
+            <dd>The guid of the entity. This property is only applicable for services and encapsulated assertions.</dd>
             <dt>mapByRoleEntity</dt>
             <dd>'mapByRoleEntity' is used to map an auto created role to an auto created role on the target Gateway. This property is automatically set when performing a full Gateway export.</dd>
             <dt>moduleSha256</dt>
             <dd>'moduleSha256' is used to map a ServerModuleFile using its content digest on the target Gateway. This is the default property when exporting ServerModuleFile(s).</dd>
             <dt>routingUri</dt>
-            <dd>'routingUri' is the routing uri for a service entity. This property is only applicable for mappings of type=SERVICE.</dd>
+            <dd>'routingUri' is the routing uri for a service entity. This property is only applicable for services.</dd>
             <dt>path</dt>
-            <dd>'path' is the folder path of the entity. This property is only applicable for mappings of type=SERVICE, POLICY, FOLDER, SERVICE_ALIAS, or POLICY_ALIAS.</dd>
+            <dd>'path' is the folder path of the entity. This property is only applicable for services, policies, folders, and aliases.</dd>
         </dl>
         </td></tr>
         <tr><td>MapTo</td><td>This is an optional property that allows for mapping to a different entity and can only used when the 'MapBy' property is specified. If 'MapTo' is not specified, the mapping target is assumed to be the same as the source Gateway.</td></tr>
@@ -827,11 +827,11 @@
     </div>
     <h6>Possible Responses</h6>
     <ul>
-    <li>If no services have the path='/a/b/newService', the service will be created using details from the bundle. Any folder along the path that does not currently exist will be created as well..</li>
-    <li>If there is a service with the path='/a/b/newService', the service will be updated using details from the bundle. Any folder along the path that does not currently exist will be created as well.</li>
+    <li>If no services have the path='/a/b/newService', the service will be created using details from the bundle. Any folder along the path that does not currently exist will be created as well.</li>
+    <li>If there is a service with the path='/a/b/newService', the service will be updated using details from the bundle.</li>
     <li>If there are multiple services with the path='/a/b/newService', the bundle import will fail with an error: 'Incorrect mapping instructions: Found multiple possible target entities found with path:...'</li>
     <li>A mapping error message which resembles:</li>
-    <pre>Cannot add or update a child row: a foreign key constraint fails (`ssg`.`folder`, CONSTRAINT `folder_parent_folder` FOREIGN KEY (`parent_folder_goid`) REFERENCES `folder` (`goid`) ON DELETE NO ACTION ON UPDATE NO ACTION)</pre>indicates that the user should resolve the failed mapping for the parent folder.
+    <pre>Cannot add or update a child row: a foreign key constraint fails (`ssg`.`folder`, CONSTRAINT `folder_parent_folder` FOREIGN KEY (`parent_folder_goid`) REFERENCES `folder` (`goid`) ON DELETE NO ACTION ON UPDATE NO ACTION)</pre>indicates the failed entity's parent folder should be resolved first.
     </ul>
     <h3>Supporting Large Migrations</h3>
     <p>By default the REST Management Service accepts requests up to 50MB in size. If you need to increase the maximum message size that the REST Management Service can accept edit the <span class="italicize">restman.request.message.maxSize</span> cluster property.</p>
