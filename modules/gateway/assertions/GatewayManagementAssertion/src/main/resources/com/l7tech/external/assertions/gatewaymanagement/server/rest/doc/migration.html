@@ -463,13 +463,13 @@
             <dt>guid</dt>
             <dd>The guid of the entity.</dd>
             <dt>mapByRoleEntity</dt>
-            <dd>'mapByRoleEntity' is used to map an auto created role to an auto created role on the target gateway. This mapping is automatically set when performing a full gateway export.</dd>
+            <dd>'mapByRoleEntity' is used to map an auto created role to an auto created role on the target gateway. This property is automatically set when performing a full gateway export.</dd>
             <dt>moduleSha256</dt>
-            <dd>'moduleSha256' is used to map a ServerModuleFile using its content digest on the target gateway. This is the default mapping when exporting ServerModuleFile(s).</dd>
+            <dd>'moduleSha256' is used to map a ServerModuleFile using its content digest on the target gateway. This is the default property when exporting ServerModuleFile(s).</dd>
             <dt>routingUri</dt>
-            <dd>'routingUri' is the routing uri for a service entity. This mapping is only applicable for mappings of type=SERVICE.</dd>
+            <dd>'routingUri' is the routing uri for a service entity. This property is only applicable for mappings of type=SERVICE.</dd>
             <dt>path</dt>
-            <dd>'path' is the folder path of the entity. This mapping is only applicable for mappings of type=SERVICE, POLICY, FOLDER, SERVICE_ALIAS, or POLICY_ALIAS.</dd>
+            <dd>'path' is the folder path of the entity. This property is only applicable for mappings of type=SERVICE, POLICY, FOLDER, SERVICE_ALIAS, or POLICY_ALIAS.</dd>
         </dl>
         </td></tr>
         <tr><td>MapTo</td><td>This is an optional property that allows for mapping to a different entity and can only used when the 'MapBy' property is specified. If 'MapTo' is not specified, the mapping target is assumed to be the same as the source gateway.</td></tr>
@@ -745,6 +745,7 @@
      type=&quot;SERVICE&quot;
      action=&quot;Delete&quot; &gt;
     &lt;l7:Properties&gt;
+        &lt;l7:property key=&quot;MapBy&quot; value=&quot;name&quot; /&gt;
         &lt;l7:property key=&quot;MapBy&quot; value=&quot;name&quot; /&gt;
         &lt;l7:property key=&quot;MapTo&quot; value=&quot;MyTargetService&quot;
         &lt;l7:property key=&quot;FailOnNew&quot; value=&quot;true&quot; /&gt;
