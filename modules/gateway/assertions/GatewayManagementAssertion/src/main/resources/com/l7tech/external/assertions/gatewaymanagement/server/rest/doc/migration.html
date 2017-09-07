@@ -830,7 +830,7 @@
     <li>If there is a service with the path='/a/b/newService', the service will be updated using details from the bundle. Any folder along the path that does not currently exist will be created as well.</li>
     <li>If there are multiple services with the path='/a/b/newService', the bundle import will fail with an error: 'Incorrect mapping instructions: Found multiple possible target entities found with path:...'</li>
     <li>A mapping error message which resembles:</li>
-    <pre>"Cannot add or update a child row: a foreign key constraint fails (`ssg`.`folder`, CONSTRAINT `folder_parent_folder` FOREIGN KEY (`parent_folder_goid`) REFERENCES `folder` (`goid`) ON DELETE NO ACTION ON UPDATE NO ACTION)" means that the parent folder of the relevant entity could not be mapped</pre>indicates that the user should resolve the failed mapping for the parent folder.
+    <pre>Cannot add or update a child row: a foreign key constraint fails (`ssg`.`folder`, CONSTRAINT `folder_parent_folder` FOREIGN KEY (`parent_folder_goid`) REFERENCES `folder` (`goid`) ON DELETE NO ACTION ON UPDATE NO ACTION)</pre>indicates that the user should resolve the failed mapping for the parent folder.
     </ul>
     <h3>Supporting Large Migrations</h3>
     <p>By default the REST Management Service accepts requests up to 50MB in size. If you need to increase the maximum message size that the REST Management Service can accept edit the <span class="italicize">restman.request.message.maxSize</span> cluster property.</p>
