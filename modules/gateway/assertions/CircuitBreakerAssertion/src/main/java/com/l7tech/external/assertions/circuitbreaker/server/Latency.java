@@ -6,7 +6,7 @@ package com.l7tech.external.assertions.circuitbreaker.server;
  * @author Ekta Khandelwal - khaek01@ca.com
  */
 final public class Latency implements FailureCondition {
-    private static final String FAILURE_CONDITION_LATENCY = "LATENCY";
+    private static final String FAILURE_CONDITION_LATENCY = "Latency";
 
     private final int samplingWindow;
     private final int maxFailureCount;
@@ -24,7 +24,7 @@ final public class Latency implements FailureCondition {
         return samplingWindow;
     }
 
-    public int getLimit() {
+    int getLimit() {
         return limit;
     }
 
@@ -42,11 +42,9 @@ final public class Latency implements FailureCondition {
         if (o == null || getClass() != o.getClass()) return false;
 
         Latency that = (Latency) o;
-        if (this.samplingWindow != that.samplingWindow) return false;
-        if (this.maxFailureCount != that.maxFailureCount) return false;
-        if (this.limit != that.limit) return false;
-
-        return true;
+        return this.samplingWindow == that.samplingWindow &&
+                this.maxFailureCount == that.maxFailureCount &&
+                this.limit == that.limit;
     }
 
     @Override

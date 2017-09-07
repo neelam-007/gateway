@@ -29,6 +29,15 @@ public interface CircuitBreakerConstants {
     // Event Tracker clean up interval cluster property
     String CB_EVENT_TRACKER_CLEANUP_INTERVAL_PROPERTY = "eventTrackerCleanupInterval";
     String CB_EVENT_TRACKER_CLEANUP_INTERVAL_UI_PROPERTY = "circuitBreaker.eventTrackerCleanupInterval";
-    String CB_EVENT_TRACKER_CLEANUP_INTERVAL_DESC = "Event tracker cleanup interval (milliseconds)";
+    String CB_EVENT_TRACKER_CLEANUP_INTERVAL_DESC = "The Event Tracker cleanup interval (milliseconds). Every interval, failure records older than the interval will be removed from Event Trackers (i.e. every 10 minutes, failures older than 10 minutes will be removed). Default is 600000 ms (10 minutes).";
     long CB_EVENT_TRACKER_CLEANUP_INTERVAL_DEFAULT = 10L * 60 * 1000; //10 minutes
+
+    // Force circuit properties
+    String CB_FORCE_EVENT_TRACKER_LIST_CIRCUIT_OPEN =  "circuitBreakerForceCircuitOpen";
+    String CB_FORCE_EVENT_TRACKER_LIST_CIRCUIT_OPEN_UI_PROPERTY =  "circuitBreaker.forceCircuitOpenEventTrackerIdList";
+    String CB_FORCE_EVENT_TRACKER_LIST_CIRCUIT_OPEN_DESC =  "Event Tracker IDs, listed one per line, for which to force Circuits open. Circuits which reference a listed Event Tracker ID will fail immediately and the child policy will not be executed. Remove an Event Tracker ID from the list to return it to standard behaviour.";
+
+    //Circuit types.
+    String CIRCUIT_TYPE_POLICY_FAILURE = "Policy Failure";
+    String CIRCUIT_TYPE_LATENCY = "Latency";
 }

@@ -32,7 +32,8 @@ public class CircuitBreakerModuleLoadListener {
     private static final List<ServerConfig.PropertyRegistrationInfo> MODULE_CLUSTER_PROPERTIES = list(
         prInfo(CB_EVENT_TRACKER_CLEANUP_INTERVAL_PROPERTY, CB_EVENT_TRACKER_CLEANUP_INTERVAL_UI_PROPERTY,
                 CB_EVENT_TRACKER_CLEANUP_INTERVAL_DESC, String.valueOf(CB_EVENT_TRACKER_CLEANUP_INTERVAL_DEFAULT),
-                "greaterThanZeroLong")
+                "greaterThanZeroLong"),
+        prInfo(CB_FORCE_EVENT_TRACKER_LIST_CIRCUIT_OPEN, CB_FORCE_EVENT_TRACKER_LIST_CIRCUIT_OPEN_UI_PROPERTY, CB_FORCE_EVENT_TRACKER_LIST_CIRCUIT_OPEN_DESC, "")
     );
 
     public static synchronized void onModuleLoaded(final ApplicationContext context) {

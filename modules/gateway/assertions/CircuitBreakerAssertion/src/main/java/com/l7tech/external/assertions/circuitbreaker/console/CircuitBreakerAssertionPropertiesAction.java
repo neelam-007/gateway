@@ -1,16 +1,13 @@
 package com.l7tech.external.assertions.circuitbreaker.console;
 
 import com.l7tech.console.action.NodeActionWithMetaSupport;
-import com.l7tech.console.logging.PermissionDeniedErrorHandler;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTree;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.external.assertions.circuitbreaker.CircuitBreakerAssertion;
-import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.util.ExceptionUtils;
 
 import java.awt.*;
 import java.util.logging.Level;

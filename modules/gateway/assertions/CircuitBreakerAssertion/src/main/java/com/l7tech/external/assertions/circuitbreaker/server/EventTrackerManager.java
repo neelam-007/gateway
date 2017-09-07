@@ -8,9 +8,12 @@ import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.util.Background;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.TimeSource;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.context.ApplicationListener;
 
 import javax.inject.Inject;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
@@ -20,8 +23,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.l7tech.external.assertions.circuitbreaker.CircuitBreakerConstants.CB_EVENT_TRACKER_CLEANUP_INTERVAL_DEFAULT;
-import static com.l7tech.external.assertions.circuitbreaker.CircuitBreakerConstants.CB_EVENT_TRACKER_CLEANUP_INTERVAL_UI_PROPERTY;
+import static com.l7tech.external.assertions.circuitbreaker.CircuitBreakerConstants.*;
 
 /**
  * Manages Event Tracker.
@@ -37,6 +39,7 @@ class EventTrackerManager {
     private final AtomicBoolean started = new AtomicBoolean(false);
 
     private final AtomicReference<TimerTask> cleanupTask = new AtomicReference<>(null);
+    private static List<String> forcedOpenEventTrackerList;
 
     @Inject
     private TimeSource timeSource;
@@ -53,6 +56,7 @@ class EventTrackerManager {
         if (null == eventTracker) {
             synchronized (lock) {
                 eventTracker = eventTrackerMap.get(trackerId);
+                // double null check required - Map.computeIfAbsent not suitable
                 if (null == eventTracker) {
                     eventTracker = new EventTracker();
                     //Add EventTracker if not present in eventTrackerMap
@@ -63,10 +67,13 @@ class EventTrackerManager {
         return eventTracker;
     }
 
+    boolean isCircuitForcedOpen(String eventTrackerId) {
+        return forcedOpenEventTrackerList != null && forcedOpenEventTrackerList.contains(eventTrackerId);
+    }
+
     synchronized void start() {
         if (!started.get()) {
-            scheduleEventCleanupTask(getEventCleanupInterval());
-            started.set(true);
+            initialize();
         }
     }
 
@@ -76,6 +83,12 @@ class EventTrackerManager {
             started.set(false);
             eventTrackerMap.clear();
         }
+    }
+
+    private void initialize() {
+        scheduleEventCleanupTask(getEventCleanupInterval());
+        started.set(true);
+        loadForcedOpenEventTrackerList();
     }
 
     private synchronized void rescheduleEventCleanupTask(final long eventCleanupInterval) {
@@ -147,9 +160,26 @@ class EventTrackerManager {
                 } else if (clusterProperty == null && CB_EVENT_TRACKER_CLEANUP_INTERVAL_UI_PROPERTY.equals(((ClusterProperty) entityInvalidationEvent.getSource()).getName())) {// when cluster property is deleted
                     rescheduleEventCleanupTask(CB_EVENT_TRACKER_CLEANUP_INTERVAL_DEFAULT);
                 }
+
+                if (clusterProperty != null && CB_FORCE_EVENT_TRACKER_LIST_CIRCUIT_OPEN_UI_PROPERTY.equals(clusterProperty.getName()) && StringUtils.isNotEmpty(clusterProperty.getValue())) {
+                    forcedOpenEventTrackerList = Arrays.asList(clusterProperty.getValue().split("\n"));
+                } else if (clusterProperty == null && CB_FORCE_EVENT_TRACKER_LIST_CIRCUIT_OPEN_UI_PROPERTY.equals(((ClusterProperty) entityInvalidationEvent.getSource()).getName())) {// when cluster property is deleted
+                    forcedOpenEventTrackerList = null;
+                }
             } catch (FindException e) {
                 logger.log(Level.FINE, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             }
+        }
+    }
+
+    private void loadForcedOpenEventTrackerList() {
+        try {
+            String eventTrackerIds = clusterPropertyManager.getProperty(CB_FORCE_EVENT_TRACKER_LIST_CIRCUIT_OPEN_UI_PROPERTY);
+            if (StringUtils.isNotEmpty(eventTrackerIds)) {
+                forcedOpenEventTrackerList = Arrays.asList(eventTrackerIds.split("\n"));
+            }
+        } catch (FindException e) {
+            logger.log(Level.FINE, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
         }
     }
 

@@ -1,10 +1,11 @@
 package com.l7tech.external.assertions.circuitbreaker;
 
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.AssertionMetadata;
-import com.l7tech.policy.assertion.DefaultAssertionMetadata;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.variable.Syntax;
+import org.apache.commons.lang.StringUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static com.l7tech.external.assertions.circuitbreaker.CircuitBreakerConstants.*;
@@ -14,102 +15,44 @@ import static com.l7tech.policy.assertion.AssertionMetadata.*;
 /**
  * Applies the Circuit Breaker pattern to a block of policy.
  */
-public class CircuitBreakerAssertion extends CompositeAssertion {
+public class CircuitBreakerAssertion extends CompositeAssertion implements UsesVariables {
 
     private static final String BASE_NAME = "Apply Circuit Breaker";
     private static final String CIRCUIT_BREAKER_PACKAGE_PREFIX = "com.l7tech.external.assertions.circuitbreaker.";
 
-    private String policyFailureCircuitTrackerId;
-    private int policyFailureCircuitRecoveryPeriod = CB_POLICY_FAILURE_CIRCUIT_RECOVERY_PERIOD_DEFAULT;
-    private int policyFailureCircuitMaxFailures = CB_POLICY_FAILURE_CIRCUIT_MAX_FAILURES_DEFAULT;
-    private int policyFailureCircuitSamplingWindow = CB_POLICY_FAILURE_CIRCUIT_SAMPLING_WINDOW_DEFAULT;
+    private static final AssertionNodeNameFactory NODE_NAME_FACTORY =
+            (AssertionNodeNameFactory<CircuitBreakerAssertion>) (assertion, decorate) -> {
+        if (!decorate) return BASE_NAME;
 
+        StringBuilder name = new StringBuilder(BASE_NAME);
+
+        if (!assertion.isPolicyFailureCircuitEnabled() && !assertion.isLatencyCircuitEnabled()) {
+            name.append(" (No Circuits enabled)");
+        }
+
+        return name.toString();
+    };
+
+    private boolean policyFailureCircuitCustomTrackerIdEnabled;
+    private String policyFailureCircuitTrackerId;
+    private String policyFailureCircuitRecoveryPeriod = String.valueOf(CB_POLICY_FAILURE_CIRCUIT_RECOVERY_PERIOD_DEFAULT);
+    private String policyFailureCircuitMaxFailures = String.valueOf(CB_POLICY_FAILURE_CIRCUIT_MAX_FAILURES_DEFAULT);
+    private String policyFailureCircuitSamplingWindow = String.valueOf(CB_POLICY_FAILURE_CIRCUIT_SAMPLING_WINDOW_DEFAULT);
+
+    private boolean latencyCircuitCustomTrackerIdEnabled;
     private String latencyCircuitTrackerId;
-    private int latencyCircuitRecoveryPeriod = CB_LATENCY_CIRCUIT_RECOVERY_PERIOD_DEFAULT;
-    private int latencyCircuitMaxFailures = CB_LATENCY_CIRCUIT_MAX_FAILURES_DEFAULT;
-    private int latencyCircuitSamplingWindow = CB_LATENCY_CIRCUIT_SAMPLING_WINDOW_DEFAULT;
-    private int latencyCircuitMaxLatency = CB_LATENCY_CIRCUIT_MAX_LATENCY_DEFAULT;
+    private String latencyCircuitRecoveryPeriod = String.valueOf(CB_LATENCY_CIRCUIT_RECOVERY_PERIOD_DEFAULT);
+    private String latencyCircuitMaxFailures = String.valueOf(CB_LATENCY_CIRCUIT_MAX_FAILURES_DEFAULT);
+    private String latencyCircuitSamplingWindow = String.valueOf(CB_LATENCY_CIRCUIT_SAMPLING_WINDOW_DEFAULT);
+    private String latencyCircuitMaxLatency = String.valueOf(CB_LATENCY_CIRCUIT_MAX_LATENCY_DEFAULT);
 
     private boolean policyFailureCircuitEnabled = true;
     private boolean latencyCircuitEnabled = false;
 
-    public CircuitBreakerAssertion() {
-    }
+    public CircuitBreakerAssertion() {}
 
     public CircuitBreakerAssertion(List<? extends Assertion> children ) {
         super(children);
-    }
-
-    public String getPolicyFailureCircuitTrackerId() {
-        return this.policyFailureCircuitTrackerId;
-    }
-
-    public void setPolicyFailureCircuitTrackerId(String policyFailureCircuitTrackerId) {
-        this.policyFailureCircuitTrackerId = policyFailureCircuitTrackerId;
-    }
-
-    public int getPolicyFailureCircuitRecoveryPeriod() {
-        return this.policyFailureCircuitRecoveryPeriod;
-    }
-
-    public void setPolicyFailureCircuitRecoveryPeriod(int policyFailureCircuitRecoveryPeriod) {
-        this.policyFailureCircuitRecoveryPeriod = policyFailureCircuitRecoveryPeriod;
-    }
-
-    public int getPolicyFailureCircuitMaxFailures() {
-        return this.policyFailureCircuitMaxFailures;
-    }
-
-    public void setPolicyFailureCircuitMaxFailures(int policyFailureCircuitMaxFailures) {
-        this.policyFailureCircuitMaxFailures = policyFailureCircuitMaxFailures;
-    }
-
-    public int getPolicyFailureCircuitSamplingWindow() {
-        return this.policyFailureCircuitSamplingWindow;
-    }
-
-    public void setPolicyFailureCircuitSamplingWindow(int policyFailureCircuitSamplingWindow) {
-        this.policyFailureCircuitSamplingWindow = policyFailureCircuitSamplingWindow;
-    }
-
-    public String getLatencyCircuitTrackerId() {
-        return this.latencyCircuitTrackerId;
-    }
-
-    public void setLatencyCircuitTrackerId(String latencyCircuitTrackerId) {
-        this.latencyCircuitTrackerId = latencyCircuitTrackerId;
-    }
-
-    public int getLatencyCircuitRecoveryPeriod() {
-        return this.latencyCircuitRecoveryPeriod;
-    }
-
-    public void setLatencyCircuitRecoveryPeriod(int latencyCircuitRecoveryPeriod) {
-        this.latencyCircuitRecoveryPeriod = latencyCircuitRecoveryPeriod;
-    }
-
-    public int getLatencyCircuitMaxFailures() {
-        return this.latencyCircuitMaxFailures;
-    }
-
-    public void setLatencyCircuitMaxFailures(int latencyCircuitMaxFailures) {
-        this.latencyCircuitMaxFailures = latencyCircuitMaxFailures;
-    }
-
-    public int getLatencyCircuitSamplingWindow() {
-        return this.latencyCircuitSamplingWindow;
-    }
-
-    public void setLatencyCircuitSamplingWindow(int latencyCircuitSamplingWindow) {
-        this.latencyCircuitSamplingWindow = latencyCircuitSamplingWindow;
-    }
-
-    public int getLatencyCircuitMaxLatency() {
-        return this.latencyCircuitMaxLatency;
-    }
-
-    public void setLatencyCircuitMaxLatency(int latencyCircuitMaxLatency) {
-        this.latencyCircuitMaxLatency = latencyCircuitMaxLatency;
     }
 
     public boolean isPolicyFailureCircuitEnabled() {
@@ -120,6 +63,45 @@ public class CircuitBreakerAssertion extends CompositeAssertion {
         this.policyFailureCircuitEnabled = policyFailureCircuitEnabled;
     }
 
+    public boolean isPolicyFailureCircuitCustomTrackerIdEnabled() {
+        return policyFailureCircuitCustomTrackerIdEnabled;
+    }
+
+    public void setPolicyFailureCircuitCustomTrackerIdEnabled(boolean policyFailureCircuitCustomTrackerIdEnabled) {
+        this.policyFailureCircuitCustomTrackerIdEnabled = policyFailureCircuitCustomTrackerIdEnabled;
+    }
+    public String getPolicyFailureCircuitTrackerId() {
+        return this.policyFailureCircuitTrackerId;
+    }
+
+    public void setPolicyFailureCircuitTrackerId(String policyFailureCircuitTrackerId) {
+        this.policyFailureCircuitTrackerId = policyFailureCircuitTrackerId;
+    }
+
+    public String getPolicyFailureCircuitRecoveryPeriod() {
+        return this.policyFailureCircuitRecoveryPeriod;
+    }
+
+    public void setPolicyFailureCircuitRecoveryPeriod(String policyFailureCircuitRecoveryPeriod) {
+        this.policyFailureCircuitRecoveryPeriod = policyFailureCircuitRecoveryPeriod;
+    }
+
+    public String getPolicyFailureCircuitMaxFailures() {
+        return this.policyFailureCircuitMaxFailures;
+    }
+
+    public void setPolicyFailureCircuitMaxFailures(String policyFailureCircuitMaxFailures) {
+        this.policyFailureCircuitMaxFailures = policyFailureCircuitMaxFailures;
+    }
+
+    public String getPolicyFailureCircuitSamplingWindow() {
+        return this.policyFailureCircuitSamplingWindow;
+    }
+
+    public void setPolicyFailureCircuitSamplingWindow(String policyFailureCircuitSamplingWindow) {
+        this.policyFailureCircuitSamplingWindow = policyFailureCircuitSamplingWindow;
+    }
+
     public boolean isLatencyCircuitEnabled() {
         return this.latencyCircuitEnabled;
     }
@@ -128,13 +110,75 @@ public class CircuitBreakerAssertion extends CompositeAssertion {
         this.latencyCircuitEnabled = latencyCircuitEnabled;
     }
 
+    public boolean isLatencyCircuitCustomTrackerIdEnabled() {
+        return latencyCircuitCustomTrackerIdEnabled;
+    }
+
+    public void setLatencyCircuitCustomTrackerIdEnabled(boolean latencyCircuitCustomTrackerIdEnabled) {
+        this.latencyCircuitCustomTrackerIdEnabled = latencyCircuitCustomTrackerIdEnabled;
+    }
+
+    public String getLatencyCircuitTrackerId() {
+        return this.latencyCircuitTrackerId;
+    }
+
+    public void setLatencyCircuitTrackerId(String latencyCircuitTrackerId) {
+        this.latencyCircuitTrackerId = latencyCircuitTrackerId;
+    }
+
+    public String getLatencyCircuitRecoveryPeriod() {
+        return this.latencyCircuitRecoveryPeriod;
+    }
+
+    public void setLatencyCircuitRecoveryPeriod(String latencyCircuitRecoveryPeriod) {
+        this.latencyCircuitRecoveryPeriod = latencyCircuitRecoveryPeriod;
+    }
+
+    public String getLatencyCircuitMaxFailures() {
+        return this.latencyCircuitMaxFailures;
+    }
+
+    public void setLatencyCircuitMaxFailures(String latencyCircuitMaxFailures) {
+        this.latencyCircuitMaxFailures = latencyCircuitMaxFailures;
+    }
+
+    public String getLatencyCircuitSamplingWindow() {
+        return this.latencyCircuitSamplingWindow;
+    }
+
+    public void setLatencyCircuitSamplingWindow(String latencyCircuitSamplingWindow) {
+        this.latencyCircuitSamplingWindow = latencyCircuitSamplingWindow;
+    }
+
+    public String getLatencyCircuitMaxLatency() {
+        return this.latencyCircuitMaxLatency;
+    }
+
+    public void setLatencyCircuitMaxLatency(String latencyCircuitMaxLatency) {
+        this.latencyCircuitMaxLatency = latencyCircuitMaxLatency;
+    }
+
     @Override
     public boolean permitsEmpty() {
         return true;
     }
 
     public String[] getVariablesUsed() {
-        return new String[0]; //Syntax.getReferencedNames(...);
+        List<String> vars = new ArrayList<>();
+        vars.add(policyFailureCircuitMaxFailures);
+        vars.add(policyFailureCircuitRecoveryPeriod);
+        vars.add(policyFailureCircuitSamplingWindow);
+        if (StringUtils.isNotEmpty(policyFailureCircuitTrackerId)) {
+            vars.add(policyFailureCircuitTrackerId);
+        }
+        vars.add(latencyCircuitMaxFailures);
+        vars.add(latencyCircuitRecoveryPeriod);
+        vars.add(latencyCircuitSamplingWindow);
+        vars.add(latencyCircuitMaxLatency);
+        if (StringUtils.isNotEmpty(latencyCircuitTrackerId)) {
+            vars.add(latencyCircuitTrackerId);
+        }
+        return Syntax.getReferencedNames(vars.toArray(new String[vars.size()]));
     }
 
     //
@@ -157,6 +201,7 @@ public class CircuitBreakerAssertion extends CompositeAssertion {
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[] { "policyLogic" });
         meta.put(PALETTE_NODE_ICON, "com/l7tech/external/assertions/circuitbreaker/console/circuit-breaker-16.png");
         meta.put(POLICY_NODE_ICON_OPEN, "com/l7tech/external/assertions/circuitbreaker/console/circuit-breaker-open-16.png");
+        meta.put(POLICY_NODE_NAME_FACTORY, NODE_NAME_FACTORY);
 
         meta.put(POLICY_NODE_CLASSNAME, CIRCUIT_BREAKER_PACKAGE_PREFIX + "console.CircuitBreakerAssertionTreeNode");
         meta.put(POLICY_ADVICE_CLASSNAME, "auto");

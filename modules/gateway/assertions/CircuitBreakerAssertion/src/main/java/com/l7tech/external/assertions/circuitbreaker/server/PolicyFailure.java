@@ -6,12 +6,13 @@ package com.l7tech.external.assertions.circuitbreaker.server;
  * @author Ekta Khandelwal - khaek01@ca.com
  */
 final public class PolicyFailure implements FailureCondition {
+    private static final String FAILURE_CONDITION_POLICY = "Policy Failure";
+
     private final int samplingWindow;
     private final int maxFailureCount;
-    public static final String FAILURE_CONDITION_POLICY = "POLICY_FAILURE";
 
-    public PolicyFailure(final int samplingWindow,
-                         final int MaxFailureCount) {
+    PolicyFailure (final int samplingWindow,
+                  final int MaxFailureCount) {
 
         this.samplingWindow = samplingWindow;
         this.maxFailureCount = MaxFailureCount;
@@ -26,7 +27,7 @@ final public class PolicyFailure implements FailureCondition {
     }
 
     public String getType() {
-        return this.FAILURE_CONDITION_POLICY;
+        return FAILURE_CONDITION_POLICY;
     }
 
     @Override
@@ -34,11 +35,8 @@ final public class PolicyFailure implements FailureCondition {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        PolicyFailure that = (PolicyFailure)o;
-        if(this.samplingWindow != that.samplingWindow)     return false;
-        if(this.maxFailureCount != that.maxFailureCount)     return false;
-
-        return true;
+        PolicyFailure that = (PolicyFailure) o;
+        return this.samplingWindow == that.samplingWindow && this.maxFailureCount == that.maxFailureCount;
     }
 
     @Override

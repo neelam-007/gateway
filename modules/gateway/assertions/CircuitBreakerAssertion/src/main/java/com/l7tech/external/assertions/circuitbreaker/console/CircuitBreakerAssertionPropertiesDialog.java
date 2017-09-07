@@ -3,10 +3,13 @@ package com.l7tech.external.assertions.circuitbreaker.console;
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.external.assertions.circuitbreaker.CircuitBreakerAssertion;
 import com.l7tech.gui.util.InputValidator;
+import com.l7tech.policy.variable.Syntax;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import javax.swing.event.ChangeListener;
 import java.awt.*;
+import java.text.MessageFormat;
 import java.util.ResourceBundle;
 
 /**
@@ -17,7 +20,7 @@ import java.util.ResourceBundle;
 public class CircuitBreakerAssertionPropertiesDialog extends AssertionPropertiesOkCancelSupport<CircuitBreakerAssertion> {
 
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.external.assertions.circuitbreaker.console.CircuitBreakerAssertionPropertiesDialog");
-    
+
     private JPanel contentPane;
     private JTextField policyFailureCircuitMaxFailuresTextField;
     private JTextField latencyCircuitMaxFailuresTextField;
@@ -28,6 +31,10 @@ public class CircuitBreakerAssertionPropertiesDialog extends AssertionProperties
     private JTextField latencyCircuitRecoveryPeriodTextField;
     private JCheckBox policyFailureCircuitEnabledCheckbox;
     private JCheckBox latencyCircuitEnabledCheckbox;
+    private JTextField policyFailureCircuitEventTrackerIDTextField;
+    private JTextField latencyCircuitEventTrackerIDTextField;
+    private JCheckBox policyFailureCircuitCustomTrackerIdEnabledCheckBox;
+    private JCheckBox latencyCircuitCustomTrackerIdEnabledCheckBox;
 
     private InputValidator inputValidator;
 
@@ -37,49 +44,98 @@ public class CircuitBreakerAssertionPropertiesDialog extends AssertionProperties
 
         initComponents();
         setData(assertion);
-        updateEnableState();
+        updateEnableStateForPolicyFailureCircuit();
+        updateEnableStateForLatencyCircuit();
     }
 
     @Override
     protected void initComponents() {
-        // TODO Make use of buildTextFieldContextVariableValidationRule() from JmsRoutingAssertionDialog, for context variable check, once introduced in 12.4 sprint..
         super.initComponents();
 
         inputValidator = new InputValidator(this, getTitle());
-        inputValidator.constrainTextFieldToNumberRange(resources.getString("policyFailureCircuitMaxFailuresLabel"), policyFailureCircuitMaxFailuresTextField, 1, Integer.MAX_VALUE);
-        inputValidator.constrainTextFieldToNumberRange(resources.getString("policyFailureCircuitSamplingWindowLabel"), policyFailureCircuitSamplingWindowTextField, 1, Integer.MAX_VALUE);
-        inputValidator.constrainTextFieldToNumberRange(resources.getString("policyFailureCircuitRecoveryPeriodLabel"), policyFailureCircuitRecoveryPeriodTextField, 1, Integer.MAX_VALUE);
 
-        inputValidator.constrainTextFieldToNumberRange(resources.getString("latencyCircuitMaxFailuresLabel"), latencyCircuitMaxFailuresTextField, 1, Integer.MAX_VALUE);
-        inputValidator.constrainTextFieldToNumberRange(resources.getString("latencyCircuitMaxLatencyLabel"), latencyCircuitMaxLatencyTextField, 1, Integer.MAX_VALUE);
-        inputValidator.constrainTextFieldToNumberRange(resources.getString("latencyCircuitSamplingWindowLabel"), latencyCircuitSamplingWindowTextField, 1, Integer.MAX_VALUE);
-        inputValidator.constrainTextFieldToNumberRange(resources.getString("latencyCircuitRecoveryPeriodLabel"), latencyCircuitRecoveryPeriodTextField, 1, Integer.MAX_VALUE);
+        inputValidator.constrainTextFieldToBeNonEmpty(resources.getString("policyFailureCircuitMaxFailuresLabel"), policyFailureCircuitMaxFailuresTextField,
+                getOnlyOneContextVariableValidationRule(policyFailureCircuitMaxFailuresTextField, resources.getString("policyFailureCircuitMaxFailuresLabel")));
 
-        inputValidator.addRule(() -> {
-            if (!policyFailureCircuitEnabledCheckbox.isSelected() && !latencyCircuitEnabledCheckbox.isSelected()) {
-                return resources.getString("neitherCircuitEnabledError");
+        inputValidator.constrainTextFieldToBeNonEmpty(resources.getString("policyFailureCircuitSamplingWindowLabel"), policyFailureCircuitSamplingWindowTextField,
+                getOnlyOneContextVariableValidationRule(policyFailureCircuitSamplingWindowTextField, resources.getString("policyFailureCircuitSamplingWindowLabel")));
+
+        inputValidator.constrainTextFieldToBeNonEmpty(resources.getString("policyFailureCircuitRecoveryPeriodLabel"), policyFailureCircuitRecoveryPeriodTextField,
+                getOnlyOneContextVariableValidationRule(policyFailureCircuitRecoveryPeriodTextField, resources.getString("policyFailureCircuitRecoveryPeriodLabel")));
+
+        inputValidator.constrainTextFieldToBeNonEmpty(resources.getString("policyFailureCircuitEventTrackerIDLabel"), policyFailureCircuitEventTrackerIDTextField, null);
+
+        inputValidator.constrainTextFieldToBeNonEmpty(resources.getString("latencyCircuitMaxFailuresLabel"), latencyCircuitMaxFailuresTextField,
+                getOnlyOneContextVariableValidationRule(latencyCircuitMaxFailuresTextField, resources.getString("latencyCircuitMaxFailuresLabel")));
+
+        inputValidator.constrainTextFieldToBeNonEmpty(resources.getString("latencyCircuitMaxLatencyLabel"), latencyCircuitMaxLatencyTextField,
+                getOnlyOneContextVariableValidationRule(latencyCircuitMaxLatencyTextField, resources.getString("latencyCircuitMaxLatencyLabel")));
+
+        inputValidator.constrainTextFieldToBeNonEmpty(resources.getString("latencyCircuitSamplingWindowLabel"), latencyCircuitSamplingWindowTextField,
+                getOnlyOneContextVariableValidationRule(latencyCircuitSamplingWindowTextField, resources.getString("latencyCircuitSamplingWindowLabel")));
+
+        inputValidator.constrainTextFieldToBeNonEmpty(resources.getString("latencyCircuitRecoveryPeriodLabel"), latencyCircuitRecoveryPeriodTextField,
+                getOnlyOneContextVariableValidationRule(latencyCircuitRecoveryPeriodTextField, resources.getString("latencyCircuitRecoveryPeriodLabel")));
+
+        inputValidator.constrainTextFieldToBeNonEmpty(resources.getString("latencyCircuitEventTrackerIDLabel"), latencyCircuitEventTrackerIDTextField, null);
+
+        final ChangeListener enablementListenerForPolicyFailure = e -> updateEnableStateForPolicyFailureCircuit();
+        final ChangeListener enablementListenerForLatencyFailure = e -> updateEnableStateForLatencyCircuit();
+
+        final ChangeListener enablementListenerForPolicyFailureCircuitCustomTrackerId = e -> updatePolicyFailureCircuitCustomTrackerIdEnableState();
+        final ChangeListener enablementListenerForLatencyCircuitCustomTrackerId = e -> updateLatencyCircuitCustomTrackerIdEnableState();
+
+        policyFailureCircuitEnabledCheckbox.addChangeListener(enablementListenerForPolicyFailure);
+        latencyCircuitEnabledCheckbox.addChangeListener(enablementListenerForLatencyFailure);
+
+        policyFailureCircuitCustomTrackerIdEnabledCheckBox.addChangeListener(enablementListenerForPolicyFailureCircuitCustomTrackerId);
+        latencyCircuitCustomTrackerIdEnabledCheckBox.addChangeListener(enablementListenerForLatencyCircuitCustomTrackerId);
+    }
+
+    @NotNull
+    private InputValidator.ValidationRule getOnlyOneContextVariableValidationRule(final JTextField textField, final String label) {
+        return () -> {
+            String msg = MessageFormat.format(InputValidator.MUST_BE_NUMERIC, label, 1, Integer.MAX_VALUE);
+            if (Syntax.isAnyVariableReferenced(textField.getText())) {
+                if (Syntax.isOnlyASingleVariableReferenced(textField.getText())) {
+                    return null;
+                } else {
+                    return MessageFormat.format(resources.getString("errorMessageFieldWithOneContextVariableAllowed"), label);
+                }
+            } else {
+                int intValue;
+                try {
+                    intValue = Integer.parseInt(textField.getText());
+                } catch(NumberFormatException nfe) {
+                    return msg;
+                }
+                if (intValue < 1) {
+                    return msg;
+                } else {
+                    return null;
+                }
             }
-            return null;
-        });
-
-        final ChangeListener enablementListener = e -> updateEnableState();
-
-        policyFailureCircuitEnabledCheckbox.addChangeListener(enablementListener);
-        latencyCircuitEnabledCheckbox.addChangeListener(enablementListener);
+        };
     }
 
     @Override
     public void setData(CircuitBreakerAssertion assertion) {
         policyFailureCircuitEnabledCheckbox.setSelected(assertion.isPolicyFailureCircuitEnabled());
-        latencyCircuitEnabledCheckbox.setSelected(assertion.isLatencyCircuitEnabled());
+        policyFailureCircuitEventTrackerIDTextField.setText(assertion.getPolicyFailureCircuitTrackerId());
+        policyFailureCircuitCustomTrackerIdEnabledCheckBox.setSelected(assertion.isPolicyFailureCircuitCustomTrackerIdEnabled());
+        policyFailureCircuitEventTrackerIDTextField.setEnabled(assertion.isPolicyFailureCircuitCustomTrackerIdEnabled());
+        policyFailureCircuitMaxFailuresTextField.setText(assertion.getPolicyFailureCircuitMaxFailures());
+        policyFailureCircuitSamplingWindowTextField.setText(assertion.getPolicyFailureCircuitSamplingWindow());
+        policyFailureCircuitRecoveryPeriodTextField.setText(assertion.getPolicyFailureCircuitRecoveryPeriod());
 
-        policyFailureCircuitMaxFailuresTextField.setText(Integer.toString(assertion.getPolicyFailureCircuitMaxFailures()));
-        policyFailureCircuitSamplingWindowTextField.setText(Integer.toString(assertion.getPolicyFailureCircuitSamplingWindow()));
-        policyFailureCircuitRecoveryPeriodTextField.setText(Integer.toString(assertion.getPolicyFailureCircuitRecoveryPeriod()));
-        latencyCircuitMaxFailuresTextField.setText(Integer.toString(assertion.getLatencyCircuitMaxFailures()));
-        latencyCircuitRecoveryPeriodTextField.setText(Integer.toString(assertion.getLatencyCircuitRecoveryPeriod()));
-        latencyCircuitSamplingWindowTextField.setText(Integer.toString(assertion.getLatencyCircuitSamplingWindow()));
-        latencyCircuitMaxLatencyTextField.setText(Integer.toString(assertion.getLatencyCircuitMaxLatency()));
+        latencyCircuitEnabledCheckbox.setSelected(assertion.isLatencyCircuitEnabled());
+        latencyCircuitEventTrackerIDTextField.setText(assertion.getLatencyCircuitTrackerId());  //display tracker id value always.
+        latencyCircuitCustomTrackerIdEnabledCheckBox.setSelected(assertion.isLatencyCircuitCustomTrackerIdEnabled());
+        latencyCircuitEventTrackerIDTextField.setEnabled(assertion.isLatencyCircuitCustomTrackerIdEnabled());
+        latencyCircuitMaxFailuresTextField.setText(assertion.getLatencyCircuitMaxFailures());
+        latencyCircuitRecoveryPeriodTextField.setText(assertion.getLatencyCircuitRecoveryPeriod());
+        latencyCircuitSamplingWindowTextField.setText(assertion.getLatencyCircuitSamplingWindow());
+        latencyCircuitMaxLatencyTextField.setText(assertion.getLatencyCircuitMaxLatency());
     }
 
     @Override
@@ -92,23 +148,19 @@ public class CircuitBreakerAssertionPropertiesDialog extends AssertionProperties
 
         assertion.setPolicyFailureCircuitEnabled(policyFailureCircuitEnabledCheckbox.isSelected());
         assertion.setLatencyCircuitEnabled(latencyCircuitEnabledCheckbox.isSelected());
+        assertion.setPolicyFailureCircuitCustomTrackerIdEnabled(policyFailureCircuitCustomTrackerIdEnabledCheckBox.isSelected());
+        assertion.setLatencyCircuitCustomTrackerIdEnabled(latencyCircuitCustomTrackerIdEnabledCheckBox.isSelected());
 
-        try {
-            if (assertion.isPolicyFailureCircuitEnabled()) {
-                assertion.setPolicyFailureCircuitMaxFailures(Integer.valueOf(policyFailureCircuitMaxFailuresTextField.getText()));
-                assertion.setPolicyFailureCircuitSamplingWindow(Integer.valueOf(policyFailureCircuitSamplingWindowTextField.getText()));
-                assertion.setPolicyFailureCircuitRecoveryPeriod(Integer.valueOf(policyFailureCircuitRecoveryPeriodTextField.getText()));
-            }
+        assertion.setPolicyFailureCircuitTrackerId(policyFailureCircuitEventTrackerIDTextField.getText());
+        assertion.setPolicyFailureCircuitMaxFailures(policyFailureCircuitMaxFailuresTextField.getText());
+        assertion.setPolicyFailureCircuitSamplingWindow(policyFailureCircuitSamplingWindowTextField.getText());
+        assertion.setPolicyFailureCircuitRecoveryPeriod(policyFailureCircuitRecoveryPeriodTextField.getText());
 
-            if (assertion.isLatencyCircuitEnabled()) {
-                assertion.setLatencyCircuitMaxFailures(Integer.valueOf(latencyCircuitMaxFailuresTextField.getText()));
-                assertion.setLatencyCircuitMaxLatency(Integer.valueOf(latencyCircuitMaxLatencyTextField.getText()));
-                assertion.setLatencyCircuitSamplingWindow(Integer.valueOf(latencyCircuitSamplingWindowTextField.getText()));
-                assertion.setLatencyCircuitRecoveryPeriod(Integer.valueOf(latencyCircuitRecoveryPeriodTextField.getText()));
-            }
-        } catch (NumberFormatException nfe) {
-            throw new ValidationException("Please enter a valid number.");
-        }
+        assertion.setLatencyCircuitTrackerId(latencyCircuitEventTrackerIDTextField.getText());
+        assertion.setLatencyCircuitMaxFailures(latencyCircuitMaxFailuresTextField.getText());
+        assertion.setLatencyCircuitMaxLatency(latencyCircuitMaxLatencyTextField.getText());
+        assertion.setLatencyCircuitSamplingWindow(latencyCircuitSamplingWindowTextField.getText());
+        assertion.setLatencyCircuitRecoveryPeriod(latencyCircuitRecoveryPeriodTextField.getText());
 
         return assertion;
     }
@@ -118,14 +170,28 @@ public class CircuitBreakerAssertionPropertiesDialog extends AssertionProperties
         return contentPane;
     }
 
-    private void updateEnableState() {
-        policyFailureCircuitMaxFailuresTextField.setEnabled(policyFailureCircuitEnabledCheckbox.isSelected());
-        policyFailureCircuitSamplingWindowTextField.setEnabled(policyFailureCircuitEnabledCheckbox.isSelected());
-        policyFailureCircuitRecoveryPeriodTextField.setEnabled(policyFailureCircuitEnabledCheckbox.isSelected());
+    private void updateEnableStateForPolicyFailureCircuit() {
+            policyFailureCircuitMaxFailuresTextField.setEnabled(policyFailureCircuitEnabledCheckbox.isSelected());
+            policyFailureCircuitSamplingWindowTextField.setEnabled(policyFailureCircuitEnabledCheckbox.isSelected());
+            policyFailureCircuitRecoveryPeriodTextField.setEnabled(policyFailureCircuitEnabledCheckbox.isSelected());
+            policyFailureCircuitCustomTrackerIdEnabledCheckBox.setEnabled(policyFailureCircuitEnabledCheckbox.isSelected());
+            updatePolicyFailureCircuitCustomTrackerIdEnableState();
+    }
 
+    private void updateEnableStateForLatencyCircuit() {
         latencyCircuitMaxFailuresTextField.setEnabled(latencyCircuitEnabledCheckbox.isSelected());
         latencyCircuitMaxLatencyTextField.setEnabled(latencyCircuitEnabledCheckbox.isSelected());
         latencyCircuitSamplingWindowTextField.setEnabled(latencyCircuitEnabledCheckbox.isSelected());
         latencyCircuitRecoveryPeriodTextField.setEnabled(latencyCircuitEnabledCheckbox.isSelected());
+        latencyCircuitCustomTrackerIdEnabledCheckBox.setEnabled(latencyCircuitEnabledCheckbox.isSelected());
+        updateLatencyCircuitCustomTrackerIdEnableState();
+    }
+
+    private void updatePolicyFailureCircuitCustomTrackerIdEnableState() {
+        policyFailureCircuitEventTrackerIDTextField.setEnabled(policyFailureCircuitEnabledCheckbox.isSelected() && policyFailureCircuitCustomTrackerIdEnabledCheckBox.isSelected());
+    }
+
+    private void updateLatencyCircuitCustomTrackerIdEnableState() {
+        latencyCircuitEventTrackerIDTextField.setEnabled(latencyCircuitEnabledCheckbox.isSelected() && latencyCircuitCustomTrackerIdEnabledCheckBox.isSelected());
     }
 }

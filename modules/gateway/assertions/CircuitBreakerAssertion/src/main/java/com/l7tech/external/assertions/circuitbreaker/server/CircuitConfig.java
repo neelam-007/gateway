@@ -10,23 +10,23 @@ final public class CircuitConfig {
     private final int recoveryPeriod;
     private final FailureCondition failureCondition;
 
-    public CircuitConfig(final String trackerID, final int recoveryPeriod,
-                         final FailureCondition failureCondition) {
+    CircuitConfig(final String trackerID, final int recoveryPeriod,
+                  final FailureCondition failureCondition) {
 
         this.trackerId = trackerID;
         this.recoveryPeriod = recoveryPeriod;
         this.failureCondition = failureCondition;
     }
 
-    public String getTrackerId() {
+    String getTrackerId() {
         return trackerId;
     }
 
-    public int getRecoveryPeriod() {
+    int getRecoveryPeriod() {
         return recoveryPeriod;
     }
 
-    public FailureCondition getFailureCondition() {
+    FailureCondition getFailureCondition() {
         return failureCondition;
     }
 
@@ -35,12 +35,10 @@ final public class CircuitConfig {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        CircuitConfig that = (CircuitConfig)o;
-        if (trackerId != null ? !trackerId.equals(that.trackerId) : that.trackerId != null) return false;
-        if(this.recoveryPeriod != that.recoveryPeriod)     return false;
-        if( !this.failureCondition.equals(that.failureCondition)) return false;
-
-        return true;
+        CircuitConfig that = (CircuitConfig) o;
+        return (trackerId != null ? trackerId.equals(that.trackerId) : that.trackerId == null) &&
+                this.recoveryPeriod == that.recoveryPeriod &&
+                this.failureCondition.equals(that.failureCondition);
     }
 
     @Override
