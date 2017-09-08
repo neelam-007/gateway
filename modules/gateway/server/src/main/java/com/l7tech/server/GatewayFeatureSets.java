@@ -1448,6 +1448,7 @@ public class GatewayFeatureSets {
                 fs(qstAssertion),
                 mass("assertion:RESTGatewayManagement"),
                 mass("assertion:LDAPQuery"),
+                mass("assertion:JsonJolt"),
                 fs(moduleLoader));
 
 

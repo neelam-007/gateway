@@ -52,6 +52,7 @@ public class JsonJoltAssertion extends MessageTargetableAssertion {
         // Enable automatic policy advice (default is no advice unless a matching Advice subclass exists)
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
 
+        meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }
