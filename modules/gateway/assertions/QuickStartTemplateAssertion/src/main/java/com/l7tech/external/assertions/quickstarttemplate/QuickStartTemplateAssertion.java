@@ -124,7 +124,7 @@ public class QuickStartTemplateAssertion extends MessageTargetableAssertion impl
 
         // request default feature set name for our class name, since we are a known optional module
         // that is, we want our required feature set to be "assertion:QuickStartTemplate" rather than "set:modularAssertions"
-        meta.put(AssertionMetadata.FEATURE_SET_NAME, "set:modularAssertions");  // TODO change back to "(fromClass)" and add to license feature set
+        meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 
         meta.put(MODULE_LOAD_LISTENER_CLASSNAME, "com.l7tech.external.assertions.quickstarttemplate.server.QuickStartAssertionModuleLifecycle");
 

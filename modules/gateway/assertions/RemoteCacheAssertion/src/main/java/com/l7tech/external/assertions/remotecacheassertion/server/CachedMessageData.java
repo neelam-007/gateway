@@ -54,7 +54,7 @@ public class CachedMessageData implements Serializable {
                         String msgEncoded = HexUtils.encodeBase64(bodyBytes);
                         //create json object with mimeType and message body
                         String jsonString = "{\"mimeType\":\"" + contentType + "\", \"body\":\"" + msgEncoded + "\"}";
-                        final JSONFactory instance = JSONFactory.getInstance();
+                        final JSONFactory instance = JSONFactory.INSTANCE;
                         jsonData = instance.newJsonData(jsonString);
                     }
                     cacheMessageData.put(type, jsonData.getJsonData());

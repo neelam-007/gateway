@@ -182,6 +182,7 @@ public class PgpUtil {
      * @param password       The password to use for encryption
      * @param asciiArmour    True to output with ASCII armour
      * @param integrityCheck True to output with an integrity check
+     * @param publicKeyStream The PGP Public Key - set if Algorithm type is PGP and encryption type is Public Key
      * @throws java.io.IOException If an IO error occurs
      * @throws PGPException        If an encryption error occurs
      */
@@ -191,12 +192,12 @@ public class PgpUtil {
                                final long fileModified,
                                final char[] password,
                                final boolean asciiArmour,
-                               final boolean integrityCheck)
+                               final boolean integrityCheck,
+                               final InputStream publicKeyStream)
             throws IOException, PgpException {
         if (inputStream == null) throw new PgpException("Input is required");
         if (outputStream == null) throw new PgpException("Output is required");
         if (filename == null) throw new PgpException("File name is required");
-        if (password == null) throw new PgpException("Password is required");
 
         final PGPCompressedDataGenerator compressedDataGenerator =
                 new PGPCompressedDataGenerator(PGPCompressedData.ZIP);
@@ -207,13 +208,23 @@ public class PgpUtil {
                 secureRandom,
                 securityProvider);
 
-        try {
-            encryptedDataGenerator.addMethod(password, PGPEncryptedDataGenerator.S2K_SHA512);
-        } catch (NoSuchProviderException e) {
-            throw new PgpException(ExceptionUtils.getMessage(e), e);
-        } catch (PGPException e) {
-            throw new PgpException(ExceptionUtils.getMessage(e), e);
+        if (publicKeyStream != null){
+            try {
+                PGPPublicKey key = getPgpPublicKey(publicKeyStream);
+                encryptedDataGenerator.addMethod(key);
+            } catch (NoSuchProviderException | PGPException e) {
+                throw new PgpException(ExceptionUtils.getMessage(e), e);
+            }
+        } else if (password != null) {
+            try {
+                encryptedDataGenerator.addMethod(password, PGPEncryptedDataGenerator.S2K_SHA512);
+            } catch (NoSuchProviderException | PGPException e) {
+                throw new PgpException(ExceptionUtils.getMessage(e), e);
+            }
+        } else {
+            throw new PgpException("Public Key or passphrase are required for encryption");
         }
+
 
         final byte[] clearData = IOUtils.slurpStream(inputStream);
         OutputStream pgpOut = null;
@@ -247,6 +258,34 @@ public class PgpUtil {
             ResourceUtils.closeQuietly(compressionOut);
             ResourceUtils.closeQuietly(encryptionOut);
             ResourceUtils.closeQuietly(pgpOut);
+            ResourceUtils.closeQuietly(publicKeyStream);
+        }
+    }
+
+    private static PGPPublicKey getPgpPublicKey(InputStream publicKeyStream) throws PgpException {
+        try (InputStream publicKeyStreamDecoder = PGPUtil.getDecoderStream(publicKeyStream)) {
+            PGPPublicKeyRingCollection pgpPub = new PGPPublicKeyRingCollection(publicKeyStreamDecoder);
+            PGPPublicKey key = null;
+            Iterator rIt = pgpPub.getKeyRings();
+            while (key == null && rIt.hasNext()) {
+                PGPPublicKeyRing kRing = (PGPPublicKeyRing) rIt.next();
+                Iterator kIt = kRing.getPublicKeys();
+                while (key == null && kIt.hasNext()) {
+                    PGPPublicKey k = (PGPPublicKey) kIt.next();
+                    if (k.isEncryptionKey()) {
+                        key = k;
+                    }
+                }
+            }
+            if (key == null) {
+                throw new PgpException("Can't find public key in key ring.");
+            }
+
+            return key;
+        } catch (PGPException e) {
+            throw new PgpException("Unable to obtain PGP Public Key Ring Collection", e);
+        } catch (IOException e) {
+            throw new PgpException("Unable to decode PGP Public Key", e);
         }
     }
 

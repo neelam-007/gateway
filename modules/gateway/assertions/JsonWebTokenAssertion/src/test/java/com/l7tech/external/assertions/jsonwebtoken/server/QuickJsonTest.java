@@ -23,7 +23,7 @@ public class QuickJsonTest {
         String duplicateClaims = "{ \"iss\":\"claims\",\r\n" +
                                  "  \"iss\":\"claims2\" }";
 
-        JSONData jsonData = JSONFactory.getInstance().newJsonData(duplicateClaims);
+        JSONData jsonData = JSONFactory.INSTANCE.newJsonData(duplicateClaims);
 
         String algorithm = null;
         String tokenType = null;

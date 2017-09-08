@@ -35,6 +35,7 @@ import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.transport.http.HttpTransportModule;
 import com.l7tech.util.*;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.BeansException;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
@@ -340,7 +341,8 @@ public class ManagerAppletFilter implements Filter {
         }
 
         final boolean isPost = "POST".equals( hreq.getMethod() );
-        String username = isPost ? hreq.getParameter("username") : null;
+        // sanitize username to prevent log forging
+        String username = isPost ? sanitize(hreq.getParameter("username")) : null;
         String password = isPost ? hreq.getParameter("password") : null;
         String newPassword = isPost ? hreq.getParameter("new_password") : null;
         String confirmPassword = isPost ? hreq.getParameter("confirm_password") : null;
@@ -726,6 +728,20 @@ public class ManagerAppletFilter implements Filter {
         } else {
             return "<div style=\"text-align: left\">Invalid password:<ul><li>" + TextUtils.join( "</li><li>", e.getPasswordErrors() ) + "</li></ul></div>";
         }
+    }
+
+    /**
+     * Removes newline characters which might be used for log forging. Does not escape, since
+     * backslashes could be valid/meaningful input.
+     */
+    private String sanitize(@Nullable String unsanitizedInput) {
+        String sanitized = null;
+
+        if (null != unsanitizedInput) {
+            sanitized = unsanitizedInput.replace("\n", "").replace("\r", "");
+        }
+
+        return sanitized;
     }
 
     /**

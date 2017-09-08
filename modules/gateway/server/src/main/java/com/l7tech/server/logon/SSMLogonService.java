@@ -277,20 +277,26 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
             final Collection<Pair<Goid, String>> allPairs = roleManager.getExplicitRoleAssignments();
             for (Pair<Goid, String> pair : allPairs) {
                 Goid providerId = pair.left;
-                final String login;
-                if (providerId.equals(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID)) {
+                String login = null;
+                if (IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID.equals(providerId)) {
                     final InternalUserManager userManager = getInternalUserManager();
                     final InternalUser internalUser = userManager.findByPrimaryKey(pair.right);
-                    login = internalUser.getLogin();
+                    if (internalUser != null) {
+                        login = internalUser.getLogin();
+                    } else {
+                        logger.info("Internal user not found: " + String.valueOf(pair.right));
+                    }
                 } else {
                     login = pair.right;
                 }
 
-                // Called by periodic task, will avoid getting row lock since it'll just retry next time
-                final LogonInfo logonInfo = logonManager.findByCompositeKey(providerId, login, false);
-                if (logonInfo == null) {
-                    final LogonInfo newInfo = new LogonInfo(providerId, login);
-                    logonManager.save(newInfo);
+                if (login != null) {
+                    // Called by periodic task, will avoid getting row lock since it'll just retry next time
+                    final LogonInfo logonInfo = logonManager.findByCompositeKey(providerId, login, false);
+                    if (logonInfo == null) {
+                        final LogonInfo newInfo = new LogonInfo(providerId, login);
+                        logonManager.save(newInfo);
+                    }
                 }
             }
         } catch (FindException e) {

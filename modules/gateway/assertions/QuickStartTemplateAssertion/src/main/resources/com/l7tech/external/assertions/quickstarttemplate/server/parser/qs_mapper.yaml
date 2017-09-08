@@ -44,11 +44,13 @@ Authentication:
   externalName: Authentication
   className: com.l7tech.policy.assertion.identity.AuthenticationAssertion
   properties:
-    IdentityProviderOid: IdentityProviderOid
+    IdentityProviderName: IdentityProviderOid
+  propertiesNameToIdEntityType:
+    IdentityProviderName: ID_PROVIDER_CONFIG
   samplePayload: |
     {
       "Authentication" : {
-        "IdentityProviderOid" : "0000000000000000fffffffffffffffe"
+        "IdentityProviderName" : "Internal Identity Provider"
       }
     }
   jsonSchema: |
@@ -59,11 +61,11 @@ Authentication:
         "Authentication": {
           "type": "object",
           "properties": {
-            "IdentityProviderOid": {
+            "IdentityProviderName": {
               "type" : "string"
             }
           },
-          "required": [ "IdentityProviderOid" ]
+          "required": [ "IdentityProviderName" ]
         }
       },
       "required": [ "Authentication" ]
@@ -209,6 +211,45 @@ HttpBasic:
       },
       "required": [ "HttpBasic" ]
     }
+
+RemoteIpRange:
+  externalName: RemoteIpRange
+  className: com.l7tech.policy.assertion.RemoteIpRange
+  properties:
+    AllowRange: AllowRange
+    NetworkMask: NetworkMask
+    StartIp: StartIp
+  samplePayload: |
+    {
+      "RemoteIpRange": {
+        "AllowRange" : false,
+        "NetworkMask" : "24",
+        "StartIp" : "192.168.1.0"
+     }
+    }
+  jsonSchema: |
+    {
+      "$schema": "http://json-schema.org/draft-04/schema#",
+      "type": "object",
+      "properties": {
+        "RemoteIpRange": {
+          "type": "object",
+          "properties": {
+            "AllowRange": {
+              "type": "boolean"
+            },
+            "NetworkMask": {
+              "type": "string"
+            },
+            "StartIp": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "required": [ "RemoteIpRange" ]
+    }
+
 
 RateLimit:
   externalName: RateLimit

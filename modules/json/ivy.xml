@@ -14,6 +14,10 @@
     </publications>
     <dependencies>
         <dependency name="layer7-utility" rev="latest.integration" conf="core"/>
+        <dependency org="com.networknt" name="json-schema-validator" rev="0.1.6.l7p1" force="true" conf="core"/>
+        <dependency org="com.fasterxml.jackson.core" name="jackson-core" rev="2.8.6" force="true" conf="core"/>
+        <dependency org="com.fasterxml.jackson.core" name="jackson-databind" rev="2.8.6" force="true" conf="core"/>
+        <dependency org="com.fasterxml.jackson.core" name="jackson-annotations" rev="2.8.6" force="true" conf="core"/>
         <dependency org="json-schema-validator" name="json-schema-validator" rev="0.0.1-SNAPSHOT" force="true" conf="core"/>
         <dependency org="org.codehaus.jackson" name="jackson-core-asl" rev="1.9.7" force="true" conf="core"/>
         <dependency org="org.codehaus.jackson" name="jackson-mapper-asl" rev="1.9.7" force="true" conf="core"/>

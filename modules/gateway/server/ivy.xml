@@ -118,9 +118,20 @@
         <dependency org="liquibase" name="liquibase" rev="3.2.2" force="true" conf="core"/>
 
         <!-- Optional dependencies -->
-        <dependency org="com.ibm.mq" name="mq" rev="7.1.0.1" force="true" conf="optional"/>
+        <dependency org="com.ibm.mq" name="com.ibm.mq" rev="7.1.0.1" force="true" conf="optional"/>
+        <dependency org="com.ibm.mq" name="com.ibm.mqjms" rev="7.1.0.1" force="true" conf="optional"/>
+        <dependency org="com.ibm.mq" name="com.ibm.mq.jmqi" rev="7.1.0.1" force="true" conf="optional"/>
+        <dependency org="com.ibm.mq" name="com.ibm.mq.pcf" rev="7.1.0.1" force="true" conf="optional"/>
+        <dependency org="com.ibm.mq" name="com.ibm.mq.commonservices" rev="7.1.0.1" force="true" conf="optional"/>
+        <dependency org="com.ibm.mq" name="com.ibm.mq.headers" rev="7.1.0.1" force="true" conf="optional"/>
+        <dependency org="com.ibm.mq" name="connector" rev="7.1.0.1" force="true" conf="optional"/>
+        <dependency org="com.ibm.mq" name="dhbcore" rev="7.1.0.1" force="true" conf="optional"/>
         <dependency org="com.tarari" name="tarari-raxj" rev="4.4.3.31" force="true" conf="optional"/>
-        <dependency org="com.tibco" name="jms" rev="1.5" force="true" conf="optional"/>
+        <dependency org="com.tibco.jms" name="tibcrypt" rev="1.5" force="true" conf="optional"/>
+        <dependency org="com.tibco.jms" name="tibjmsadmin" rev="1.5" force="true" conf="optional"/>
+        <dependency org="com.tibco.jms" name="tibrvjms" rev="1.5" force="true" conf="optional"/>
+        <dependency org="com.tibco.jms" name="tibjmsapps" rev="1.5" force="true" conf="optional"/>
+        <dependency org="com.tibco.jms" name="tibjms" rev="1.5" force="true" conf="optional"/>
         <dependency org="weblogic" name="wljmsclient" rev="10.3" force="true" conf="optional"/>
 
         <!--Scheduled task-->

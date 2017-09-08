@@ -8,14 +8,13 @@ import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.ext.message.CustomJsonData;
 import com.l7tech.policy.assertion.ext.message.CustomMessage;
 import com.l7tech.policy.assertion.ext.message.CustomMessageAccessException;
-
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.custom.CustomMessageImpl;
 import com.l7tech.util.BufferPool;
-
 import org.jetbrains.annotations.NotNull;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * Implementation of <tt>CustomMessageFormat&lt;CustomJsonData&gt;</tt>
@@ -100,23 +99,27 @@ public class CustomMessageJsonFormat extends CustomMessageFormatBase<CustomJsonD
             throw new CustomMessageAccessException("content cannot be null");
         }
 
-        if (content instanceof String) {
-            return new JsonDataToCustomConverter(JSONFactory.getInstance().newJsonData((String)content));
-        } else if (content instanceof InputStream) {
-            byte[] buf = BufferPool.getBuffer(16384);
-            try {
-                final InputStream inputStream = (InputStream)content;
-                final StringBuilder sb = new StringBuilder();
-                int bytesRead;
-                while ((bytesRead = inputStream.read(buf)) > 0) {
-                    sb.append(new String(buf, 0, bytesRead));
+        try {
+            if (content instanceof String) {
+                return new JsonDataToCustomConverter(JSONFactory.INSTANCE.newJsonData((String)content));
+            } else if (content instanceof InputStream) {
+                byte[] buf = BufferPool.getBuffer(16384);
+                try {
+                    final InputStream inputStream = (InputStream)content;
+                    final StringBuilder sb = new StringBuilder();
+                    int bytesRead;
+                    while ((bytesRead = inputStream.read(buf)) > 0) {
+                        sb.append(new String(buf, 0, bytesRead));
+                    }
+                    return new JsonDataToCustomConverter(JSONFactory.INSTANCE.newJsonData(sb.toString()));
+                } catch (IOException e) {
+                    throw new CustomMessageAccessException("Error while creating CustomJsonData from InputStream", e);
+                } finally {
+                    BufferPool.returnBuffer(buf);
                 }
-                return new JsonDataToCustomConverter(JSONFactory.getInstance().newJsonData(sb.toString()));
-            } catch (IOException e) {
-                throw new CustomMessageAccessException("Error while creating CustomJsonData from InputStream", e);
-            } finally {
-                BufferPool.returnBuffer(buf);
             }
+        } catch (InvalidJsonException e) {
+            throw new CustomMessageAccessException("Invalid JSON", e);
         }
 
         throw new CustomMessageAccessException("Unsupported content type: " + content.getClass().getSimpleName());

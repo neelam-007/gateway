@@ -7,26 +7,26 @@ package com.l7tech.external.assertions.circuitbreaker.server;
  */
 final public class CircuitConfig {
     private final String trackerId;
-    private final long recoveryPeriod;
+    private final int recoveryPeriod;
     private final FailureCondition failureCondition;
 
-    public CircuitConfig(final String trackerID, final long recoveryPeriod,
-                         final FailureCondition failureCondition) {
+    CircuitConfig(final String trackerID, final int recoveryPeriod,
+                  final FailureCondition failureCondition) {
 
         this.trackerId = trackerID;
         this.recoveryPeriod = recoveryPeriod;
         this.failureCondition = failureCondition;
     }
 
-    public String getTrackerId() {
+    String getTrackerId() {
         return trackerId;
     }
 
-    public long getRecoveryPeriod() {
+    int getRecoveryPeriod() {
         return recoveryPeriod;
     }
 
-    public FailureCondition getFailureCondition() {
+    FailureCondition getFailureCondition() {
         return failureCondition;
     }
 
@@ -35,19 +35,17 @@ final public class CircuitConfig {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        CircuitConfig that = (CircuitConfig)o;
-        if (trackerId != null ? !trackerId.equals(that.trackerId) : that.trackerId != null) return false;
-        if(this.recoveryPeriod != that.recoveryPeriod)     return false;
-        if( !this.failureCondition.equals(that.failureCondition)) return false;
-
-        return true;
+        CircuitConfig that = (CircuitConfig) o;
+        return (trackerId != null ? trackerId.equals(that.trackerId) : that.trackerId == null) &&
+                this.recoveryPeriod == that.recoveryPeriod &&
+                this.failureCondition.equals(that.failureCondition);
     }
 
     @Override
     public int hashCode() {
         int result;
         result = (trackerId != null ? trackerId.hashCode() : 0);
-        result = 29 * result + new Long(recoveryPeriod).intValue();
+        result = 29 * result + recoveryPeriod;
         result = 29 * result + failureCondition.hashCode();
         return result;
     }

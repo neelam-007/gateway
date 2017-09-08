@@ -9,11 +9,11 @@ package com.l7tech.json;
  */
 public class InvalidJsonException extends Exception {
 
-    public InvalidJsonException(String message) {
+    public InvalidJsonException(final String message) {
         super(message);
     }
 
-    public InvalidJsonException(Throwable cause) {
+    public InvalidJsonException(final Throwable cause) {
         super(cause);
     }
 }

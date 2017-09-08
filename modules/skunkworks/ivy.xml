@@ -28,7 +28,14 @@
         <dependency name="WhichModuleAssertion" rev="latest.integration" conf="core"/>
         <dependency name="GatewayManagementAssertion" rev="latest.integration" conf="core"/>
         <dependency org="antlr" name="antlr" rev="2.7.7-l7p1" force="true" conf="optional->compile(*),master(*)"/>
-        <dependency org="com.ibm.mq" name="mq" rev="7.1.0.1" force="true" conf="optional->compile(*),master(*)"/>
+        <dependency org="com.ibm.mq" name="com.ibm.mq" rev="7.1.0.1" force="true" conf="optional->compile(*),master(*)"/>
+        <dependency org="com.ibm.mq" name="com.ibm.mqjms" rev="7.1.0.1" force="true" conf="optional->compile(*),master(*)"/>
+        <dependency org="com.ibm.mq" name="com.ibm.mq.jmqi" rev="7.1.0.1" force="true" conf="optional->compile(*),master(*)"/>
+        <dependency org="com.ibm.mq" name="com.ibm.mq.pcf" rev="7.1.0.1" force="true" conf="optional->compile(*),master(*)"/>
+        <dependency org="com.ibm.mq" name="com.ibm.mq.commonservices" rev="7.1.0.1" force="true" conf="optional->compile(*),master(*)"/>
+        <dependency org="com.ibm.mq" name="com.ibm.mq.headers" rev="7.1.0.1" force="true" conf="optional->compile(*),master(*)"/>
+        <dependency org="com.ibm.mq" name="connector" rev="7.1.0.1" force="true" conf="optional->compile(*),master(*)"/>
+        <dependency org="com.ibm.mq" name="dhbcore" rev="7.1.0.1" force="true" conf="optional->compile(*),master(*)"/>
         <dependency org="com.sun.japex" name="japex" rev="1.1" force="true" conf="core"/>
         <dependency org="com.sun.japex.jdsl" name="jdsl" rev="1.1" force="true" conf="core"/>
         <dependency org="com.sun.xml.fastinfoset" name="FastInfoset" rev="1.2.11" force="true" conf="core"/>

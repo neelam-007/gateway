@@ -1423,7 +1423,9 @@ public class AssertionMessages extends Messages {
 
     // Circuit Breaker Assertion
     public static final M CB_CIRCUIT_TRIPPED = m(11500, Level.WARNING, "{0} Circuit tripped; open until {1}");
-    public static final M CB_CIRCUIT_CLOSED = m(11501, Level.INFO, "{0} Circuit closed");
+    public static final M CB_FORCED_CIRCUIT_TRIPPED = m(11501, Level.INFO, "This {0} Circuit has been forced open based on Event Tracker ID: {1}");
+    public static final M CB_CIRCUIT_INVALID_CONFIGURATION = m(11502, Level.WARNING, "Value for {0} Circuit {1} is invalid: {2}");
+    public static final M CB_CIRCUIT_OPEN = m(11503, Level.INFO, "{0} Circuit open until {1}");
 
     //BulkJdbcInsertAssertion
     //public static final M BULKJDBCINSERT_WARNING = m(11500, Level.WARNING, "Bulk JDBC Insert Assertion failed due to {0}");

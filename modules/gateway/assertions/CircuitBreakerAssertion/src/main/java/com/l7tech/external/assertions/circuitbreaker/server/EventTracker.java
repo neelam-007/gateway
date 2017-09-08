@@ -7,11 +7,11 @@ import java.util.concurrent.ConcurrentSkipListSet;
  *
  * @author Ekta Khandelwal - khaek01@ca.com
  */
-public class EventTracker {
+class EventTracker {
 
     private final ConcurrentSkipListSet<Long> eventTimestamps;
 
-    public EventTracker() {
+    EventTracker() {
         eventTimestamps = new ConcurrentSkipListSet<>();
     }
 

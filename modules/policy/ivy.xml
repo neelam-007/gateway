@@ -45,11 +45,12 @@
         <dependency org="com.ibm" name="xss4j.00.patch" rev="1.1" force="true" conf="core"/>
         <dependency org="com.ibm" name="xss4j" rev="1.0" force="true" conf="core"/>
         <!-- Optional security provider -->
-        <dependency org="com.chrysalisits.cryptox" name="luna-libs" rev="1" force="true" conf="optional"/>
+        <dependency org="com.chrysalisits.cryptox" name="luna-jcasp" rev="4.4.1.5" force="true" conf="optional"/>
+        <dependency org="com.chrysalisits.cryptox" name="luna-jcesp" rev="4.4.1.5" force="true" conf="optional"/>
         <!-- Optional security provider -->
         <dependency org="com.safenetinc" name="luna-provider" rev="5.0.0-17" force="true" conf="optional"/>
         <!-- Optional security provider -->
-        <dependency org="com.ncipher" name="ncipher-libs" rev="1" force="true" conf="optional"/>
+        <dependency org="com.ncipher" name="nCipherKM" rev="1.0" force="true" conf="optional"/>
         <!-- RSA needed for running tests (since alternatives jarfiles are not deployed) -->
         <dependency org="com.rsa" name="jcmFIPS" rev="6.2.0.1" force="true" conf="core"/>
         <dependency org="com.rsa" name="cryptojcommon" rev="6.2.0.1" force="true" conf="core"/>
