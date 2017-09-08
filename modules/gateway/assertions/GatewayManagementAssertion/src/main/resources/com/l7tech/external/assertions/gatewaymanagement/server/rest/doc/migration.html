@@ -811,6 +811,7 @@
     <li>If there are multiple services with routingUri='/newTarget', the bundle import will fail with an error: 'Incorrect mapping instructions: Found multiple possible target entities found with routing URI:...'</li>
     </ul>
     <h5>Mapping by path</h5>
+    <p> Map service to a service on the target Gateway with a specific path. </p>
     <div class="code">
         <pre>
     &lt;l7:Mapping action=&quot;NewOrUpdate&quot; srcId=&quot;7a20dc65166addef9088427e9c65f89f&quot; srcUri=&quot;https://localhost:8443/restman/1.0/services/7a20dc65166addef9088427e9c65f89f&quot; type=&quot;SERVICE&quot;&gt;
@@ -832,6 +833,28 @@
     <li>If there are multiple services with the path='/a/b/newService', the bundle import will fail with an error: 'Incorrect mapping instructions: Found multiple possible target entities found with path:...'</li>
     <li>A mapping error message which resembles:</li>
     <pre>Cannot add or update a child row: a foreign key constraint fails (`ssg`.`folder`, CONSTRAINT `folder_parent_folder` FOREIGN KEY (`parent_folder_goid`) REFERENCES `folder` (`goid`) ON DELETE NO ACTION ON UPDATE NO ACTION)</pre>indicates the failed entity's parent folder should be resolved first.
+    </ul>
+    <p> Map folder to another folder on the target Gateway. The folder on the target gateway contains special characters and in this case is called 'Folder/WithSlash'. Use '\' to escape special characters. </p>
+    <div class="code">
+        <pre>
+    &lt;l7:Mapping action=&quot;NewOrUpdate&quot; srcId=&quot;7a20dc65166addef9088427e9c65f89f&quot; srcUri=&quot;https://localhost:8443/restman/1.0/folders/7a20dc65166addef9088427e9c65f89f&quot; type=&quot;FOLDER&quot;&gt;
+        &lt;l7:Properties&gt;
+            &lt;l7:Property key=&quot;MapBy&quot;&gt;
+                &lt;l7:StringValue&gt;path&lt;/l7:StringValue&gt;
+            &lt;/l7:Property&gt;
+            &lt;l7:Property key=&quot;MapTo&quot;&gt;
+                &lt;l7:StringValue&gt;/a/Folder\/WithSlash&lt;/l7:StringValue&gt;
+            &lt;/l7:Property&gt;
+        &lt;/l7:Properties&gt;
+    &lt;/l7:Mapping&gt;
+        </pre>
+    </div>
+    <h6>Possible Responses</h6>
+    <ul>
+        <li>If no folders have the path='/a/Folder\/WithSlash', the folder will be created using details from the bundle. Any folder along the path that does not currently exist will be created as well.</li>
+        <li>If there is a folder with the path='/a/Folder\/WithSlash', the folder will be updated using details from the bundle.</li>
+        <li>A mapping error message which resembles:</li>
+        <pre>Cannot add or update a child row: a foreign key constraint fails (`ssg`.`folder`, CONSTRAINT `folder_parent_folder` FOREIGN KEY (`parent_folder_goid`) REFERENCES `folder` (`goid`) ON DELETE NO ACTION ON UPDATE NO ACTION)</pre>indicates the failed entity's parent folder should be resolved first.
     </ul>
     <h3>Supporting Large Migrations</h3>
     <p>By default the REST Management Service accepts requests up to 50MB in size. If you need to increase the maximum message size that the REST Management Service can accept edit the <span class="italicize">restman.request.message.maxSize</span> cluster property.</p>
