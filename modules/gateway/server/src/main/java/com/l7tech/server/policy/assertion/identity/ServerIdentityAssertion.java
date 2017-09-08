@@ -20,9 +20,11 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Pair;
 import org.springframework.context.ApplicationContext;
 
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 
@@ -53,7 +55,9 @@ public abstract class ServerIdentityAssertion<AT extends IdentityAssertion> exte
     protected AssertionStatus doCheckRequest( final PolicyEnforcementContext context,
                                               final Message message,
                                               final String messageDescription,
-                                              final AuthenticationContext authContext ) {
+                                              final AuthenticationContext authContext) {
+
+        final List<Pair<LoginCredentials,AuthenticationException>> userExceptionsList = new ArrayList<>();
         final List<LoginCredentials> pCredentials = authContext.getCredentials();
 
         if (pCredentials.size() < 1 && authContext.getLastAuthenticatedUser() == null) {
@@ -154,9 +158,12 @@ public abstract class ServerIdentityAssertion<AT extends IdentityAssertion> exte
             } catch (AuthenticationException ae) {
                 logAndAudit(AssertionMessages.IDENTITY_CREDENTIAL_FAILED, pc.getLogin(), ExceptionUtils.getMessage(ae));
                 lastStatus = authFailed(pc, ae);
+                userExceptionsList.add(new Pair(pc,ae));
             }
         }
         logAndAudit(AssertionMessages.IDENTITY_AUTHENTICATION_FAILED, assertion.loggingIdentity());
+        processAuthFailure(context,userExceptionsList);
+
         return lastStatus;
     }
 
@@ -256,5 +263,16 @@ public abstract class ServerIdentityAssertion<AT extends IdentityAssertion> exte
      * Implement to decide whether the authenticated user is acceptable.
      */
     protected abstract AssertionStatus checkUser(AuthenticationResult authResult);
+
+    /**
+     * Implementor to decide if they would like to return via the PEC the list of credentials used for authentication
+     * and their authentication failure.
+     * @param context - PEC
+     * @param authLoginExceptionList - list of LoginCredentials and their associated AuthenticationException
+     */
+    protected void processAuthFailure(final PolicyEnforcementContext context,
+                                      final List<Pair<LoginCredentials,AuthenticationException>> authLoginExceptionList){
+
+    }
 
 }

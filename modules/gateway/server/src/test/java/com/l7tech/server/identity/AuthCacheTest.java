@@ -110,8 +110,14 @@ public class AuthCacheTest {
         //Second should hit
         time[0] = time[0] + 500;
         int invocationsBefore = authInvocations[0];
-        Assert.assertNull(aC.getCachedAuthResult(lc, tIP, MAX_AGE, MAX_AGE));
-        Assert.assertTrue("Cache should have hit", invocationsBefore == authInvocations[0]);
+
+        try {
+            aC.getCachedAuthResult(lc, tIP, MAX_AGE, MAX_AGE);
+            Assert.fail("The user should be in the cache and return BadCredentialsException. This line should not have been executed.");
+        } catch (BadCredentialsException e){
+            Assert.assertTrue("Cache should have hit and return BadCredentialsException", invocationsBefore == authInvocations[0]);
+        }
+
 
         //Third authenticate should be a miss due to max ages
         time[0] = time[0] + 1000;
@@ -194,8 +200,12 @@ public class AuthCacheTest {
 
         //Should be cache hit
         int invocationsBefore = authInvocations[0];
-        Assert.assertNull(aC.getCachedAuthResult(lc1, tIP, MAX_AGE, MAX_AGE));
-        Assert.assertTrue("Cache should have hit", invocationsBefore == authInvocations[0]);
+        try {
+            aC.getCachedAuthResult(lc1, tIP, MAX_AGE, MAX_AGE);
+            Assert.fail("The user should be in the cache and return BadCredentialsException. This line should not have been executed.");
+        } catch (BadCredentialsException e){
+            Assert.assertTrue("Cache should have hit and return BadCredentialsException", invocationsBefore == authInvocations[0]);
+        }
 
         aC.dispose();
     }

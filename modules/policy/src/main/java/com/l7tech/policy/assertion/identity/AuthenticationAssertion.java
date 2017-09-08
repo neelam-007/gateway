@@ -11,6 +11,8 @@ import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.policy.variable.DataType;
+import com.l7tech.policy.variable.VariableMetadata;
 
 /**
  * Authenticates the credentials against a specified provider, but does not authorize any particular
@@ -18,6 +20,9 @@ import com.l7tech.objectmodel.EntityHeader;
  * @author alex
  */
 public class AuthenticationAssertion extends IdentityAssertion {
+
+    public static final String LDAP_PROVIDER_ERROR_LOGIN = "idp.error.login";
+    public static final String LDAP_PROVIDER_ERROR_MESSAGE = "idp.error.message";
     private String loggingIdentity;
 
     public AuthenticationAssertion() {
@@ -75,4 +80,13 @@ public class AuthenticationAssertion extends IdentityAssertion {
 
         return meta;
     }
+
+    @Override
+    protected VariablesSet doGetVariablesSet() {
+        return super.doGetVariablesSet().withVariables(
+                new VariableMetadata(LDAP_PROVIDER_ERROR_LOGIN, true, true, null, false, DataType.STRING),
+                new VariableMetadata(LDAP_PROVIDER_ERROR_MESSAGE, true, true, null, false, DataType.STRING)
+        );
+    }
+
 }

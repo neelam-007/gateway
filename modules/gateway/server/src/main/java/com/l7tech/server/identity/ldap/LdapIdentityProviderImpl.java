@@ -173,7 +173,9 @@ public class LdapIdentityProviderImpl
             }
         }
 
-        if (realUser == null) return null;
+        if (realUser == null) {
+            throw new AuthenticationException("The user does not exist.");
+        }
 
         final CredentialFormat format = pc.getFormat();
         if (format == CredentialFormat.CLEARTEXT) {

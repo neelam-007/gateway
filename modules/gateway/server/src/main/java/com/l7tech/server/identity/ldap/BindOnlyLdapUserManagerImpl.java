@@ -118,7 +118,7 @@ public class BindOnlyLdapUserManagerImpl implements BindOnlyLdapUserManager {
     }
 
     @Override
-    public boolean authenticateBasic(String dn, String passwd) {
+    public boolean authenticateBasic(String dn, String passwd) throws BadCredentialsException {
         return LdapUtils.authenticateBasic(identityProvider, identityProviderConfig, ldapRuntimeConfig, logger, dn, passwd);
     }
 
