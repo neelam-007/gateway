@@ -3,9 +3,7 @@ package com.l7tech.server.transport.jms2;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.server.transport.jms.JmsBag;
-import com.l7tech.server.transport.jms.JmsRuntimeException;
 import com.l7tech.util.Config;
-import org.apache.commons.pool.PoolableObjectFactory;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -15,6 +13,12 @@ import org.mockito.runners.MockitoJUnitRunner;
 import javax.jms.JMSException;
 import javax.naming.NamingException;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.mock;
@@ -27,6 +31,12 @@ public class JmsResourceManagerTest {
 
     @Mock
     JmsEndpointConfig mockJmsEndpointConfig;
+    @Mock
+    JmsEndpointConfig.JmsEndpointKey jmsEndpointKey;
+    @Mock
+    JmsEndpoint mockJmsEndpoint;
+    @Mock
+    JmsConnection jmsConnection;
     @Mock
     JmsBag mockJmsBag;
 
@@ -65,23 +75,22 @@ public class JmsResourceManagerTest {
             }
         });
 
-        JmsEndpointConfig.JmsEndpointKey jmsEndpointKey = mock(JmsEndpointConfig.JmsEndpointKey.class);
-        JmsEndpoint jmsEndpoint = mock(JmsEndpoint.class);
-        JmsConnection jmsConnection = mock(JmsConnection.class);
 
         when(mockJmsEndpointConfig.getJmsEndpointKey()).thenReturn(jmsEndpointKey);
-        when(mockJmsEndpointConfig.getEndpoint()).thenReturn(jmsEndpoint);
+        when(mockJmsEndpointConfig.getEndpoint()).thenReturn(mockJmsEndpoint);
         when(mockJmsEndpointConfig.getConnection()).thenReturn(jmsConnection);
         when(jmsEndpointKey.toString()).thenReturn("JmsEndpointKey");
-        when(jmsEndpoint.getVersion()).thenReturn(1234);
+        when(mockJmsEndpoint.getVersion()).thenReturn(1234);
         when(jmsConnection.getVersion()).thenReturn(5678);
-
-        cachedConnection = ((JmsResourceManagerStub)fixture).new CachedConnectionStub(mockJmsEndpointConfig, mockJmsBag);
-        ((JmsResourceManagerStub)fixture).setCachedConnection(cachedConnection);
+        Properties properties = new Properties();
+        properties.setProperty(JmsConnection.PROP_SESSION_POOL_SIZE, String.valueOf(-1));
+        when(jmsConnection.properties()).thenReturn(properties);
     }
 
     @Test (expected = NamingException.class)
     public void testDoWithJmsResources() throws Exception {
+        cachedConnection = ((JmsResourceManagerStub)fixture).new CachedConnectionStub(mockJmsEndpointConfig, mockJmsBag, new NamingException("Correct exception"));
+        ((JmsResourceManagerStub)fixture).setCachedConnection(cachedConnection);
 
         fixture.doWithJmsResources(mockJmsEndpointConfig, new JmsResourceManager.JmsResourceCallback() {
             @Override
@@ -89,6 +98,51 @@ public class JmsResourceManagerTest {
                 fail("Should not be here");
             }
         });
+    }
+
+    @Test
+    public void testDoWithJmsResource_sessionPoolSizeZero() throws Exception {
+        Properties properties = new Properties();
+        properties.setProperty(JmsConnection.PROP_SESSION_POOL_SIZE, String.valueOf(0));
+        when(jmsConnection.properties()).thenReturn(properties);
+        List<JmsBag> jmsBagList = new ArrayList<>();
+        cachedConnection = ((JmsResourceManagerStub)fixture).new CachedConnectionStub(mockJmsEndpointConfig, mockJmsBag);
+        ((JmsResourceManagerStub)fixture).setCachedConnection(cachedConnection);
+        fixture.doWithJmsResources(mockJmsEndpointConfig, new JmsResourceManager.JmsResourceCallback() {
+            @Override
+            public void doWork(JmsBag bag, JmsResourceManager.JndiContextProvider jndiContextProvider) throws JMSException {
+                jmsBagList.add(bag);
+            }
+        });
+        fixture.doWithJmsResources(mockJmsEndpointConfig, new JmsResourceManager.JmsResourceCallback() {
+            @Override
+            public void doWork(JmsBag bag, JmsResourceManager.JndiContextProvider jndiContextProvider) throws JMSException {
+                jmsBagList.add(bag);
+            }
+        });
+
+        assertNotEquals(jmsBagList.get(0), jmsBagList.get(1));
+    }
+
+    @Test
+    public void testDoWithJmsResource_sessionPoolSizeNotZero() throws Exception {
+
+        List<JmsBag> jmsBagList = new ArrayList<>();
+        cachedConnection = ((JmsResourceManagerStub)fixture).new CachedConnectionStub(mockJmsEndpointConfig, mockJmsBag);
+        ((JmsResourceManagerStub)fixture).setCachedConnection(cachedConnection);
+        fixture.doWithJmsResources(mockJmsEndpointConfig, new JmsResourceManager.JmsResourceCallback() {
+            @Override
+            public void doWork(JmsBag bag, JmsResourceManager.JndiContextProvider jndiContextProvider) throws JMSException {
+                jmsBagList.add(bag);
+            }
+        });
+        fixture.doWithJmsResources(mockJmsEndpointConfig, new JmsResourceManager.JmsResourceCallback() {
+            @Override
+            public void doWork(JmsBag bag, JmsResourceManager.JndiContextProvider jndiContextProvider) throws JMSException {
+                jmsBagList.add(bag);
+            }
+        });
+        assertEquals(jmsBagList.get(0), jmsBagList.get(1));
     }
 
     public class JmsResourceManagerStub extends JmsResourceManager {
@@ -109,47 +163,20 @@ public class JmsResourceManagerTest {
 
         public void setCachedConnection(final CachedConnection cc) {
             this.conn = cc;
-        }
-
-        protected CachedConnection getConnection(JmsEndpointConfig endpoint) throws NamingException, JmsRuntimeException {
-            return conn;
+            connectionHolder.put(jmsEndpointKey, cc);
         }
 
         protected class CachedConnectionStub extends CachedConnection {
 
-            protected CachedConnectionStub(JmsEndpointConfig cfg, JmsBag bag) {
-                super(cfg, bag);
-                this.pool.setFactory(new PoolableObjectFactory<JmsBag>()
-                {
-                    @Override
-                    public JmsBag makeObject() throws Exception {
-                        throw new NamingException("Correct exception");
-                    }
+            private final Exception exception;
 
-                    @Override
-                    public void destroyObject(JmsBag jmsBag) throws Exception {
-
-                    }
-
-                    @Override
-                    public boolean validateObject(JmsBag jmsBag) {
-                        return false;
-                    }
-
-                    @Override
-                    public void activateObject(JmsBag jmsBag) throws Exception {
-
-                    }
-
-                    @Override
-                    public void passivateObject(JmsBag jmsBag) throws Exception {
-
-                    }
-                });
+            protected CachedConnectionStub(JmsEndpointConfig cfg, JmsBag owner) {
+                this(cfg, owner, null);
             }
 
-            protected int getSessionPoolSize() {
-                return -1;
+            protected CachedConnectionStub(JmsEndpointConfig cfg, JmsBag owner, Exception exception) {
+                super(cfg, owner);
+                this.exception = exception;
             }
 
             protected long getSessionPoolMaxWait() {
@@ -158,6 +185,13 @@ public class JmsResourceManagerTest {
 
             protected int getMaxSessionIdle() {
                 return 1;
+            }
+
+            protected JmsBag makeJmsBag() throws Exception {
+                if (exception != null)
+                    throw exception;
+
+                return mock(JmsBag.class);
             }
         }
     }
