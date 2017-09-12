@@ -122,7 +122,7 @@ public class ServerCreateJsonWebKeyAssertionTest {
         String jwks = (String) context.getVariable("result");
         assertNotNull(jwks);
 
-        JSONData jsonData = JSONFactory.getInstance().newJsonData(jwks);
+        JSONData jsonData = JSONFactory.INSTANCE.newJsonData(jwks);
 
         assertKeyObject(jsonData, 1);
     }
@@ -174,7 +174,7 @@ public class ServerCreateJsonWebKeyAssertionTest {
         String jwks = (String) context.getVariable("result");
         assertNotNull(jwks);
 
-        JSONData jsonData = JSONFactory.getInstance().newJsonData(jwks);
+        JSONData jsonData = JSONFactory.INSTANCE.newJsonData(jwks);
         assertKeyObject(jsonData, 2);
     }
 
@@ -206,7 +206,7 @@ public class ServerCreateJsonWebKeyAssertionTest {
         String jwks = (String) context.getVariable("result");
         assertNotNull(jwks);
 
-        JSONData jsonData = JSONFactory.getInstance().newJsonData(jwks);
+        JSONData jsonData = JSONFactory.INSTANCE.newJsonData(jwks);
         assertKeyObject(jsonData, 1);
     }
 
