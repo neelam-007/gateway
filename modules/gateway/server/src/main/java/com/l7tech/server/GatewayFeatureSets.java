@@ -1449,6 +1449,7 @@ public class GatewayFeatureSets {
                 mass("assertion:RESTGatewayManagement"),
                 mass("assertion:LDAPQuery"),
                 mass("assertion:JsonJolt"),
+                ass(HtmlFormDataAssertion.class),
                 fs(moduleLoader));
 
 
