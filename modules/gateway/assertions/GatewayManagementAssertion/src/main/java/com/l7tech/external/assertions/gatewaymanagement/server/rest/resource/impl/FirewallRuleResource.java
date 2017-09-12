@@ -49,7 +49,7 @@ public class FirewallRuleResource extends RestEntityResource<FirewallRuleMO, Fir
      */
     @POST
     public Response create(FirewallRuleMO resource) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-        factory.isHardware();
+        isHardware();
         return super.create(resource);
     }
 
@@ -63,7 +63,7 @@ public class FirewallRuleResource extends RestEntityResource<FirewallRuleMO, Fir
     @GET
     @Path("{id}")
     public Item<FirewallRuleMO> get(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
-        factory.isHardware();
+        isHardware();
         return super.get(id);
     }
 
@@ -92,7 +92,7 @@ public class FirewallRuleResource extends RestEntityResource<FirewallRuleMO, Fir
             @QueryParam("enabled") Boolean enabled,
             @QueryParam("ordinal") List<Integer> ordinal) {
 
-        factory.isHardware();
+        isHardware();
 
         Boolean ascendingSort = ParameterValidationUtils.convertSortOrder(order);
         ParameterValidationUtils.validateNoOtherQueryParamsIncludeDefaults(uriInfo.getQueryParameters(), Arrays.asList("name", "enabled", "ordinal"));
@@ -126,7 +126,7 @@ public class FirewallRuleResource extends RestEntityResource<FirewallRuleMO, Fir
     @PUT
     @Path("{id}")
     public Response update(FirewallRuleMO resource, @PathParam("id") String id) throws ResourceFactory.ResourceFactoryException {
-        factory.isHardware();
+        isHardware();
         return super.update(resource, id);
     }
 
@@ -139,7 +139,7 @@ public class FirewallRuleResource extends RestEntityResource<FirewallRuleMO, Fir
     @DELETE
     @Path("{id}")
     public void delete(@PathParam("id") String id) throws ResourceFactory.ResourceNotFoundException {
-        factory.isHardware();
+        isHardware();
         super.delete(id);
     }
 
@@ -157,5 +157,13 @@ public class FirewallRuleResource extends RestEntityResource<FirewallRuleMO, Fir
         emailListenerMO.setOrdinal(0);
         emailListenerMO.setProperties(CollectionUtils.MapBuilder.<String, String>builder().put("RuleProperty", "PropertyValue").map());
         return super.createTemplateItem(emailListenerMO);
+    }
+
+    /**
+     * Checks if this is an appliance. If it is not a Not Found Exception is thrown.
+     */
+    private void isHardware() {
+        if(!factory.isHardware())
+            throw new NotFoundException();
     }
 }

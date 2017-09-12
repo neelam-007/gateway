@@ -5,12 +5,13 @@ package com.l7tech.server;
 
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.server.event.system.ReadyForMessages;
-import com.l7tech.server.transport.SsgConnectorActivationListener;
+import com.l7tech.server.transport.SsgConnectorActivationEvent;
 import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.FileUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationListener;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -24,12 +25,9 @@ import java.util.logging.Logger;
  * <p>If there is no listener with the PC feature enabled then an empty file is written
  * so that the PC is aware that the port is disabled (as opposed to just not working).</p>
  */
-public final class PcApiConnectorActivationListener implements SsgConnectorActivationListener, PostStartupApplicationListener, InitializingBean {
+public final class PcApiConnectorActivationListener implements PostStartupApplicationListener, InitializingBean {
 
-    //- PUBLIC
-
-    @Override
-    public void notifyActivated( final SsgConnector connector ) {
+    private void notifyActivated( final SsgConnector connector ) {
         if (connector.offersEndpoint(SsgConnector.Endpoint.PC_NODE_API)) {
             sawApiConnector = true;
             final File portFile = getApiPortFile();
@@ -48,10 +46,6 @@ public final class PcApiConnectorActivationListener implements SsgConnectorActiv
     }
 
     @Override
-    public void notifyDeactivated( final SsgConnector connector ) {
-    }    
-
-    @Override
     public void onApplicationEvent( final ApplicationEvent event ) {
         if ( event instanceof ReadyForMessages ) {
             if ( !sawApiConnector ) {
@@ -63,6 +57,9 @@ public final class PcApiConnectorActivationListener implements SsgConnectorActiv
                     logger.log(Level.WARNING, "Unable to write port file", e);
                 }
             }
+        } else if ( event instanceof SsgConnectorActivationEvent ) {
+            SsgConnectorActivationEvent scae  = ( SsgConnectorActivationEvent )event;
+            notifyActivated( scae.getConnector() );
         }
     }
 
@@ -70,8 +67,6 @@ public final class PcApiConnectorActivationListener implements SsgConnectorActiv
     public void afterPropertiesSet() throws Exception {
         initApiPort();
     }
-
-    //- PRIVATE
 
     private static final Logger logger = Logger.getLogger(PcApiConnectorActivationListener.class.getName());
 

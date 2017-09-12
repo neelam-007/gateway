@@ -17,6 +17,8 @@
         </param-value>
     </context-param>
 
+    <includeAdminOnlyContent/>
+
     <filter>
         <filter-name>diagnostic-context</filter-name>
         <filter-class>com.l7tech.server.log.HybridDiagnosticContextServletFilter</filter-class>
@@ -53,26 +55,12 @@
     </filter>
 
     <filter>
-        <filter-name>managerRemotingFilter</filter-name>
-        <filter-class>com.l7tech.gateway.common.spring.remoting.http.SecureHttpFilter</filter-class>
-        <init-param>
-            <param-name>endpoint-names</param-name>
-            <param-value>ADMIN_APPLET, ADMIN_REMOTE</param-value>
-        </init-param>
-    </filter>
-
-    <filter>
         <filter-name>clusterRemotingFilter</filter-name>
         <filter-class>com.l7tech.gateway.common.spring.remoting.http.SecureHttpFilter</filter-class>
         <init-param>
             <param-name>endpoint-names</param-name>
             <param-value>NODE_COMMUNICATION</param-value>
         </init-param>
-    </filter>
-
-    <filter>
-        <filter-name>remotingFilter</filter-name>
-        <filter-class>com.l7tech.gateway.common.spring.remoting.http.SecureHttpFilter</filter-class>
     </filter>
 
     <filter>
@@ -91,38 +79,6 @@
     <filter>
         <filter-name>connectionIdFilter</filter-name>
         <filter-class>com.l7tech.server.transport.http.ConnectionIdFilter</filter-class>
-    </filter>
-
-    <filter>
-        <filter-name>managerAppletFilter</filter-name>
-        <filter-class>com.l7tech.server.admin.ManagerAppletFilter</filter-class>
-    </filter>
-
-   <filter>
-        <filter-name>allCxfApiFilter</filter-name>
-        <filter-class>com.l7tech.gateway.common.transport.http.FeatureFilter</filter-class>
-        <init-param>
-            <param-name>endpoint-names</param-name>
-            <param-value>ADMIN_REMOTE_ESM, PC_NODE_API</param-value>
-        </init-param>
-    </filter>
-
-    <filter>
-        <filter-name>esmApiFilter</filter-name>
-        <filter-class>com.l7tech.gateway.common.transport.http.FeatureFilter</filter-class>
-        <init-param>
-            <param-name>endpoint-names</param-name>
-            <param-value>ADMIN_REMOTE_ESM</param-value>
-        </init-param>
-    </filter>
-
-    <filter>
-        <filter-name>pcNodeApiFilter</filter-name>
-        <filter-class>com.l7tech.gateway.common.transport.http.FeatureFilter</filter-class>
-        <init-param>
-            <param-name>endpoint-names</param-name>
-            <param-value>PC_NODE_API</param-value>
-        </init-param>
     </filter>
 
     <filter-mapping>
@@ -151,53 +107,8 @@
     </filter-mapping>
 
     <filter-mapping>
-        <filter-name>managerRemotingFilter</filter-name>
-        <url-pattern>/ssg/manager/*</url-pattern>
-    </filter-mapping>
-
-    <filter-mapping>
         <filter-name>clusterRemotingFilter</filter-name>
         <url-pattern>/ssg/cluster/*</url-pattern>
-    </filter-mapping>
-
-    <filter-mapping>
-        <filter-name>remotingFilter</filter-name>
-        <url-pattern>/ssg/services/*</url-pattern>
-    </filter-mapping>
-
-    <filter-mapping>
-        <filter-name>managerAppletFilter</filter-name>
-        <servlet-name>managerAppletServlet</servlet-name>
-    </filter-mapping>
-
-    <filter-mapping>
-        <filter-name>managerAppletFilter</filter-name>
-        <url-pattern>/ssg/webadmin/*</url-pattern>
-    </filter-mapping>
-
-    <filter-mapping>
-        <filter-name>allCxfApiFilter</filter-name>
-        <url-pattern>/ssg/services/*</url-pattern>
-    </filter-mapping>
-
-    <filter-mapping>
-        <filter-name>pcNodeApiFilter</filter-name>
-        <url-pattern>/ssg/services/processControllerNodeApi</url-pattern>
-    </filter-mapping>
-
-    <filter-mapping>
-        <filter-name>esmApiFilter</filter-name>
-        <url-pattern>/ssg/services/gatewayApi</url-pattern>
-    </filter-mapping>
-
-    <filter-mapping>
-        <filter-name>esmApiFilter</filter-name>
-        <url-pattern>/ssg/services/reportApi</url-pattern>
-    </filter-mapping>
-
-    <filter-mapping>
-        <filter-name>esmApiFilter</filter-name>
-        <url-pattern>/ssg/services/migrationApi</url-pattern>
     </filter-mapping>
 
     <!--
@@ -259,15 +170,6 @@
     </servlet>
 
     <servlet>
-        <servlet-name>admin</servlet-name>
-        <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
-        <init-param>
-            <param-name>contextConfigLocation</param-name>
-            <param-value>classpath:com/l7tech/server/resources/admin-servlet.xml</param-value>
-        </init-param>
-    </servlet>
-
-    <servlet>
         <servlet-name>cluster</servlet-name>
         <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
         <init-param>
@@ -275,68 +177,6 @@
             <param-value>classpath:com/l7tech/server/resources/cluster-servlet.xml</param-value>
         </init-param>
     </servlet>
-
-    <servlet>
-        <servlet-name>managerAppletServlet</servlet-name>
-        <servlet-class>com.l7tech.server.admin.ManagerAppletServlet</servlet-class>
-    </servlet>
-
-    <servlet>
-        <servlet-name>backup</servlet-name>
-        <servlet-class>com.l7tech.server.BackupServlet</servlet-class>
-    </servlet>
-
-    <servlet>
-        <servlet-name>ssgLoginFormServlet</servlet-name>
-        <servlet-class>com.l7tech.server.admin.SSGLoginFormServlet</servlet-class>
-        <init-param>
-            <param-name>loginPage</param-name>
-            <param-value>/com/l7tech/server/resources/ssglogin.html</param-value>
-        </init-param>
-    </servlet>
-
-    <!-- Servlet to serve changing the password and login in one pass -->
-    <servlet>
-        <servlet-name>ssgLoginAndPasswordUpdateFormServlet</servlet-name>
-        <servlet-class>com.l7tech.server.admin.SSGLoginFormServlet</servlet-class>
-        <init-param>
-            <param-name>loginPage</param-name>
-            <param-value>/com/l7tech/server/resources/ssglogin_passwordupdate.html</param-value>
-        </init-param>
-    </servlet>
-
-    <servlet>
-        <servlet-name>fileDownloadServlet</servlet-name>
-        <servlet-class>com.l7tech.server.FileDownloadServlet</servlet-class>
-    </servlet>
-
-    <servlet>
-        <servlet-name>esmTrustServlet</servlet-name>
-        <servlet-class>com.l7tech.server.EsmTrustServlet</servlet-class>
-    </servlet>
-
-    <servlet>
-        <servlet-name>CXFServlet</servlet-name>
-        <display-name>CXF Servlet</display-name>
-        <init-param>
-            <param-name>hide-service-list-page</param-name>
-            <param-value>true</param-value>
-        </init-param>
-        <servlet-class>
-            org.apache.cxf.transport.servlet.CXFServlet
-        </servlet-class>
-        <load-on-startup>1</load-on-startup>
-    </servlet>
-
-    <servlet-mapping>
-        <servlet-name>fileDownloadServlet</servlet-name>
-        <url-pattern>/ssg/webadmin/filedownload</url-pattern>
-    </servlet-mapping>
-
-    <servlet-mapping>
-        <servlet-name>admin</servlet-name>
-        <url-pattern>/ssg/manager/*</url-pattern>
-    </servlet-mapping>
 
     <servlet-mapping>
         <servlet-name>cluster</servlet-name>
@@ -424,36 +264,6 @@
     <servlet-mapping>
         <servlet-name>TokenService</servlet-name>
         <url-pattern>/ssg/token</url-pattern>
-    </servlet-mapping>
-
-    <servlet-mapping>
-        <servlet-name>managerAppletServlet</servlet-name>
-        <url-pattern>/ssg/webadmin</url-pattern>
-    </servlet-mapping>
-
-    <servlet-mapping>
-        <servlet-name>managerAppletServlet</servlet-name>
-        <url-pattern>/ssg/webadmin/</url-pattern>
-    </servlet-mapping>
-
-    <servlet-mapping>
-        <servlet-name>backup</servlet-name>
-        <url-pattern>/ssg/backup</url-pattern>
-    </servlet-mapping>
-
-    <servlet-mapping>
-        <servlet-name>esmTrustServlet</servlet-name>
-        <url-pattern>/ssg/esmtrust</url-pattern>
-    </servlet-mapping>
-
-    <servlet-mapping>
-        <servlet-name>esmTrustServlet</servlet-name>
-        <url-pattern>/ssg/esmtrust/*</url-pattern>
-    </servlet-mapping>
-
-    <servlet-mapping>
-        <servlet-name>CXFServlet</servlet-name>
-        <url-pattern>/ssg/services/*</url-pattern>
     </servlet-mapping>
 
     <welcome-file-list>

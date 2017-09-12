@@ -16,10 +16,7 @@ import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.event.system.TransportEvent;
 import com.l7tech.server.identity.cert.TrustedCertServices;
 import com.l7tech.server.tomcat.*;
-import com.l7tech.server.transport.ListenerException;
-import com.l7tech.server.transport.SsgConnectorActivationListener;
-import com.l7tech.server.transport.SsgConnectorManager;
-import com.l7tech.server.transport.TransportModule;
+import com.l7tech.server.transport.*;
 import com.l7tech.util.*;
 import com.l7tech.util.Functions.UnaryVoid;
 import org.apache.catalina.Engine;
@@ -30,13 +27,13 @@ import org.apache.catalina.core.StandardThreadExecutor;
 import org.apache.catalina.core.StandardWrapper;
 import org.apache.catalina.loader.WebappClassLoader;
 import org.apache.catalina.loader.WebappLoader;
-import org.apache.catalina.servlets.DefaultServlet;
 import org.apache.catalina.session.ManagerBase;
 import org.apache.catalina.startup.Embedded;
 import org.apache.coyote.ProtocolHandler;
 import org.apache.coyote.http11.Http11Protocol;
 import org.apache.naming.resources.FileDirContext;
 import org.apache.tomcat.util.IntrospectionUtils;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
 
@@ -56,12 +53,13 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.UnaryOperator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.l7tech.gateway.common.Component.GW_HTTPRECV;
-import static com.l7tech.gateway.common.transport.SsgConnector.*;
 import static com.l7tech.gateway.common.transport.SsgConnector.Endpoint.*;
+import static com.l7tech.gateway.common.transport.SsgConnector.*;
 import static com.l7tech.server.GatewayFeatureSets.SERVICE_HTTP_MESSAGE_INPUT;
 import static com.l7tech.util.CollectionUtils.caseInsensitiveSet;
 import static com.l7tech.util.ExceptionUtils.getDebugException;
@@ -103,7 +101,6 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
     private final Map<Goid, AtomicInteger> connectorPoolConcurrency = new ConcurrentHashMap<>();
     private final Map<Goid, Integer> connectorConcurrencyWarningThreshold = new ConcurrentHashMap<>();
     private final AtomicLong lastConcurrencyWarningTime = new AtomicLong();
-    private final Set<SsgConnectorActivationListener> endpointListeners;
 
     private Embedded embedded;
     private StandardContext context;
@@ -114,14 +111,12 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
                                 final DefaultKey defaultKey,
                                 final LicenseManager licenseManager,
                                 final SsgConnectorManager ssgConnectorManager,
-                                final TrustedCertServices trustedCertServices,
-                                final Set<SsgConnectorActivationListener> endpointListeners )
+                                final TrustedCertServices trustedCertServices )
     {
         super("HTTP Transport Module", GW_HTTPRECV, logger, SERVICE_HTTP_MESSAGE_INPUT, licenseManager, ssgConnectorManager, trustedCertServices, defaultKey, serverConfig);
         this.serverConfig = serverConfig;
         this.masterPasswordManager = masterPasswordManager;
         this.instanceId = nextInstanceId.getAndIncrement();
-        this.endpointListeners = endpointListeners;
         //noinspection ThisEscapedInObjectConstruction
         instancesById.put(instanceId, new WeakReference<HttpTransportModule>(this));
     }
@@ -195,9 +190,11 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
             }
         });
 
+        boolean enableAdmin = getApplicationContext().containsBean( "adminSubsystemPresent" );
+
         context.addParameter(INIT_PARAM_INSTANCE_ID, Long.toString(instanceId));
         context.setName("");
-        context.setResources(createHybridDirContext(inf));
+        context.setResources( createHybridDirContext( inf, enableAdmin ) );
         context.addMimeMapping("gif", "image/gif");
         context.addMimeMapping("png", "image/png");
         context.addMimeMapping("jpg", "image/jpeg");
@@ -269,9 +266,10 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
      * but everything else from the specified inf directory on disk.
      *
      * @param inf  the /ssg/etc/inf directory.  required
+     * @param enableAdmin if the admin servlets should be instantiated.
      * @return     a new DirContext that will contain a virtual WEB-INF in addition to the real contents of /ssg/etc/inf/ssg
      */
-    private DirContext createHybridDirContext(File inf) {
+    private DirContext createHybridDirContext( File inf, boolean enableAdmin ) {
         // Splice the real on-disk ssg/ subdirectory into our virtual filesystem under /ssg
         File ssgFile = new File(inf, "ssg");
         FileDirContext ssgFileContext = new FileDirContext();
@@ -280,7 +278,21 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
 
         // Set up our virtual WEB-INF subdirectory
         List<VirtualDirEntry> webinfEntries = new ArrayList<VirtualDirEntry>();
-        webinfEntries.add(createDirEntryFromClassPathResource("web.xml"));
+
+        String extraAdmin = enableAdmin ? new String( loadResourceBytes( "webxml-admin.dat" ) ) : "<!-- admin subsystem omitted -->";
+        String wacRepl = enableAdmin ? "webApplicationContext" : "webApplicationContext-noadmin";
+
+        // TODO replace with lambda when Spring updated
+        UnaryOperator<byte[]> webXmlTransformer = new UnaryOperator<byte[]>() {
+            @Override
+            public byte[] apply( byte[] bytes ) {
+                return new String( bytes )
+                        .replaceAll( "webApplicationContext", wacRepl )
+                        .replaceAll( "\\<includeAdminOnlyContent/\\>", extraAdmin )
+                        .getBytes();
+            }
+        };
+        webinfEntries.add(createDirEntryFromClassPathResource("web.xml", webXmlTransformer ) );
         File extraDir = new File(inf, "extra");
         if (extraDir.isDirectory())
             addDirEntriesFromDirectory(webinfEntries, extraDir);
@@ -295,22 +307,34 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
      * Create a VirtualDirEntry out of an item in the server resources classpath.
      *
      * @param name the local name, ie "web.xml".  We will try to load com/l7tech/server/resources/web.xml
+     * @param fileTransformer an operator to modify the file bytes, or null
+     *
      * @return a VirtualDirEntry.  never null
      */
-    private VirtualDirEntry createDirEntryFromClassPathResource(String name) {
-        InputStream is = null;
-        try {
-            String fullname = HttpTransportModule.RESOURCE_PREFIX + name;
-            is = getClass().getClassLoader().getResourceAsStream(fullname);
-            if (is == null)
-                throw new MissingResourceException("Missing resource: " + fullname, getClass().getName(), fullname);
-            return new VirtualDirEntryImpl(name, IOUtils.slurpStream(is));
-        } catch (IOException e) {
+    private VirtualDirEntry createDirEntryFromClassPathResource( String name, @Nullable UnaryOperator<byte[]> fileTransformer ) {
+        if ( null == fileTransformer ) {
+            // Use identity transform
+            // TODO replace with lambda when Spring updated
+            fileTransformer = new UnaryOperator<byte[]>() {
+                @Override
+                public byte[] apply( byte[] bytes ) {
+                    return bytes;
+                }
+            };
+        }
+        return new VirtualDirEntryImpl(name, fileTransformer.apply( loadResourceBytes( name ) ) );
+    }
+
+    private byte[] loadResourceBytes( String name ) {
+        String fullname = HttpTransportModule.RESOURCE_PREFIX + name;
+        try ( InputStream is = getClass().getClassLoader().getResourceAsStream( fullname ) ) {
+            if ( is == null )
+                throw new MissingResourceException( "Missing resource: " + fullname, getClass().getName(), fullname );
+            return IOUtils.slurpStream( is );
+        } catch ( IOException e ) {
             MissingResourceException mre = new MissingResourceException("Error reading resource: " + name, getClass().getName(), name);
             mre.initCause(e);
             throw mre;
-        } finally {
-            ResourceUtils.closeQuietly(is);
         }
     }
 
@@ -982,14 +1006,8 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
      * Dispatch notifications for endpoint activation.
      * @param connector the connector that was just activated. required.
      */
-    private void notifyEndpointActivation( final SsgConnector connector ) {      
-        for ( SsgConnectorActivationListener listener : endpointListeners ) {
-            try {
-                listener.notifyActivated( connector );
-            } catch ( Exception e ) {
-                logger.log( Level.WARNING, "Unexpected error during connector activation notification.", e );    
-            }
-        }
+    private void notifyEndpointActivation( final SsgConnector connector ) {
+        getApplicationContext().publishEvent( new SsgConnectorActivationEvent( this, connector ) );
     }
 
     /**
@@ -997,13 +1015,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
      * @param connector the connector that was just deactivated. required.
      */
     private void notifyEndpointDeactivation( final SsgConnector connector ) {
-        for ( SsgConnectorActivationListener listener : endpointListeners ) {
-            try {
-                listener.notifyDeactivated( connector );
-            } catch ( Exception e ) {
-                logger.log( Level.WARNING, "Unexpected error during connector deactivation notification.", e );
-            }
-        }
+        getApplicationContext().publishEvent( new SsgConnectorDeactivationEvent( this, connector ) );
     }
 
     /**

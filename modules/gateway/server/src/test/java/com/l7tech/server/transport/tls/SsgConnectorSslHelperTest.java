@@ -61,8 +61,7 @@ public class SsgConnectorSslHelperTest {
                 defaultKey,
                 licenseManager,
                 connectorManager,
-                trustedCertServices,
-                Collections.emptySet()
+                trustedCertServices
         ));
 
         final Pair<X509Certificate, PrivateKey> keys = new TestCertificateGenerator().basicConstraintsCa(1).subject("cn=test1").keySize(1024).generateWithKey();

@@ -1,0 +1,141 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                            http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
+
+    <bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean" depends-on="entityCrud">
+        <property name="targetObject" ref="entityCrud" />
+        <property name="targetMethod" value="addEntityManagers" />
+        <property name="arguments">
+            <list>
+                <list>
+                    <ref bean="uddiRegistryManager"/>
+                    <ref bean="uddiProxiedServiceInfoManager"/>
+                    <ref bean="uddiServiceControlManager"/>
+                </list>
+            </list>
+        </property>
+    </bean>
+
+    <bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean" depends-on="entityInvalidator">
+        <property name="targetObject" ref="entityInvalidator" />
+        <property name="targetMethod" value="addEntityManagers" />
+        <property name="arguments">
+            <list>
+                <list>
+                    <ref bean="uddiRegistryManager"/>
+                    <ref bean="uddiPublishStatusManager"/>
+                    <ref bean="uddiServiceControlManager"/>
+                    <ref bean="uddiProxiedServiceInfoManager"/>
+                </list>
+            </list>
+        </property>
+    </bean>
+
+    <bean id="uddiTemplateManager" class="com.l7tech.server.uddi.UDDITemplateManager">
+        <constructor-arg ref="serverConfig"/>
+    </bean>
+
+    <bean id="uddiHelper" class="com.l7tech.server.uddi.UDDIHelper">
+        <constructor-arg index="0" ref="serverConfig"/>
+        <constructor-arg index="1" ref="ssgKeyStoreManager"/>
+        <constructor-arg index="2" ref="trustManager"/>
+        <constructor-arg index="3" ref="hostnameVerifier"/>
+        <constructor-arg index="4" ref="uddiTemplateManager"/>
+        <constructor-arg index="5">
+            <bean class="org.springframework.beans.factory.config.PropertiesFactoryBean"
+                  depends-on="systemProperties">
+                <property name="ignoreResourceNotFound" value="true"/>
+                <property name="locations">
+                    <list>
+                        <value>file:${com.l7tech.server.configDirectory}${file.separator}uddi.properties</value>
+                    </list>
+                </property>
+            </bean>
+        </constructor-arg>
+    </bean>
+
+    <bean id="uddiCoordinator" class="com.l7tech.server.uddi.UDDICoordinator">
+        <constructor-arg index="0" ref="transactionManager"/>
+        <constructor-arg index="1" ref="uddiHelper"/>
+        <constructor-arg index="2" ref="uddiRegistryManager"/>
+        <constructor-arg index="3" ref="uddiProxiedServiceInfoManager"/>
+        <constructor-arg index="4" ref="uddiPublishStatusManager"/>
+        <constructor-arg index="5" ref="uddiServiceControlManager"/>
+        <constructor-arg index="6" ref="uddiBusinessServiceStatusManager"/>
+        <constructor-arg index="7" ref="serviceCache"/>
+        <constructor-arg index="8" ref="clusterMaster"/>
+        <constructor-arg index="9">
+            <bean class="com.l7tech.server.util.ManagedTimer">
+                <constructor-arg value="UDDI Coordinator"/>
+            </bean>
+        </constructor-arg>
+        <constructor-arg index="10">
+            <list>
+                <bean class="com.l7tech.server.uddi.PublishingUDDITaskFactory">
+                    <constructor-arg index="0" ref="uddiRegistryManager"/>
+                    <constructor-arg index="1" ref="uddiProxiedServiceInfoManager"/>
+                    <constructor-arg index="2" ref="serviceCache"/>
+                    <constructor-arg index="3" ref="uddiHelper"/>
+                    <constructor-arg index="4" ref="uddiServiceControlManager"/>
+                    <constructor-arg index="5" ref="uddiPublishStatusManager"/>
+                    <constructor-arg index="6" ref="serverConfig"/>
+                </bean>
+                <bean class="com.l7tech.server.uddi.WsPolicyAttachmentTaskFactory">
+                    <constructor-arg index="0" ref="uddiRegistryManager"/>
+                    <constructor-arg index="1" ref="uddiHelper"/>
+                    <constructor-arg index="2" ref="uddiTemplateManager"/>
+                    <constructor-arg index="3" ref="uddiBusinessServiceStatusManager"/>
+                </bean>
+                <bean class="com.l7tech.server.uddi.SubscriptionUDDITaskFactory">
+                    <constructor-arg index="0" ref="uddiRegistryManager"/>
+                    <constructor-arg index="1" ref="uddiHelper"/>
+                    <constructor-arg index="2" ref="uddiRegistrySubscriptionManager"/>
+                    <constructor-arg index="3" ref="uddiServiceControlManager"/>
+                    <constructor-arg index="4" ref="uddiServiceControlMonitorRuntimeManager"/>
+                    <constructor-arg index="5" ref="serviceManager"/>
+                    <constructor-arg index="6" ref="serviceDocumentManager"/>
+                    <constructor-arg index="7" ref="httpClientFactory"/>
+                </bean>
+                <bean class="com.l7tech.server.uddi.MetricsUDDITaskFactory">
+                    <constructor-arg index="0" ref="uddiRegistryManager"/>
+                    <constructor-arg index="1" ref="uddiHelper"/>
+                    <constructor-arg index="2" ref="uddiTemplateManager"/>
+                    <constructor-arg index="3" ref="uddiBusinessServiceStatusManager"/>
+                    <constructor-arg index="4" ref="aggregator"/>
+                    <constructor-arg index="5" ref="clusterPropertyCache"/>
+                </bean>
+            </list>
+        </constructor-arg>
+        <constructor-arg index="11" ref="serverConfig"/>
+        <constructor-arg index="12" ref="sessionFactory"/>
+    </bean>
+
+    <bean id="uddiRegistryManager" class="com.l7tech.server.uddi.UDDIRegistryManagerImpl" parent="hibernateBean">
+        <constructor-arg ref="uddiProxiedServiceInfoManager"/>
+    </bean>
+
+    <bean id="uddiProxiedServiceInfoManager" class="com.l7tech.server.uddi.UDDIProxiedServiceInfoManagerImpl"
+          parent="hibernateBean"/>
+
+    <bean id="uddiPublishStatusManager" class="com.l7tech.server.uddi.UDDIPublishStatusManagerImpl"
+          parent="hibernateBean"/>
+
+    <bean id="uddiServiceControlManager" class="com.l7tech.server.uddi.UDDIServiceControlManagerImpl"
+          parent="hibernateBean"/>
+
+    <bean id="uddiRegistrySubscriptionManager" class="com.l7tech.server.uddi.UDDIRegistrySubscriptionManagerImpl"
+          parent="hibernateBean"/>
+
+    <bean id="uddiBusinessServiceStatusManager" class="com.l7tech.server.uddi.UDDIBusinessServiceStatusManagerImpl"
+          parent="hibernateBean"/>
+
+    <bean id="uddiServiceControlMonitorRuntimeManager"
+          class="com.l7tech.server.uddi.UDDIServiceControlRuntimeManagerImpl" parent="hibernateBean"/>
+
+    <bean id="uddiServiceWsdlUpdateChecker" class="com.l7tech.server.uddi.ServiceWsdlUpdateChecker">
+        <constructor-arg index="0" ref="serviceManager"/>
+        <constructor-arg index="1" ref="uddiServiceControlManager"/>
+    </bean>
+
+</beans>
