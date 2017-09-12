@@ -4,7 +4,6 @@ import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.server.*;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.identity.cert.TrustedCertServices;
-import com.l7tech.server.transport.SsgConnectorActivationListener;
 import com.l7tech.server.transport.SsgConnectorManager;
 import com.l7tech.util.MasterPasswordManager;
 import com.l7tech.util.SyspropUtil;
@@ -43,8 +42,7 @@ public class HttpTransportModuleTest {
                 defaultKey,
                 licenseManager,
                 connectorManager,
-                trustedCertServices,
-                Collections.<SsgConnectorActivationListener>emptySet());
+                trustedCertServices);
     }
 
     @After
@@ -78,9 +76,8 @@ public class HttpTransportModuleTest {
                                            final DefaultKey defaultKey,
                                            final LicenseManager licenseManager,
                                            final SsgConnectorManager ssgConnectorManager,
-                                           final TrustedCertServices trustedCertServices,
-                                           final Set<SsgConnectorActivationListener> endpointListeners) {
-            super(serverConfig, masterPasswordManager, defaultKey, licenseManager, ssgConnectorManager, trustedCertServices, endpointListeners);
+                                           final TrustedCertServices trustedCertServices) {
+            super( serverConfig, masterPasswordManager, defaultKey, licenseManager, ssgConnectorManager, trustedCertServices );
         }
 
         @Override

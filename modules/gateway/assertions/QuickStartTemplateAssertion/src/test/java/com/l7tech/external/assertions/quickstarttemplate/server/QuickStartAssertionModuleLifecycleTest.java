@@ -1,9 +1,11 @@
 package com.l7tech.external.assertions.quickstarttemplate.server;
 
+import static org.mockito.Mockito.when;
 import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStartAssertionLocator;
 import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStartJsonServiceInstaller;
 import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStartServiceBuilder;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.server.GatewayState;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.event.system.ReadyForMessages;
@@ -35,6 +37,9 @@ public class QuickStartAssertionModuleLifecycleTest {
 
     @Mock
     private QuickStartJsonServiceInstaller jsonServiceInstaller;
+
+    @Mock
+    private AssertionRegistry assertionRegistry;
 
     @Before
     public void setUp() throws Exception {
@@ -138,7 +143,9 @@ public class QuickStartAssertionModuleLifecycleTest {
         doMockAppContextAndReturn(appContext, gatewayState, "gatewayState", GatewayState.class);
 
         final ApplicationEventProxy applicationEventProxy = new ApplicationEventProxy();
+        final AssertionRegistry assertionRegistry = new AssertionRegistry();
         doMockAppContextAndReturn(appContext, applicationEventProxy, "applicationEventProxy", ApplicationEventProxy.class);
+        doMockAppContextAndReturn(appContext, assertionRegistry, "assertionRegistry", AssertionRegistry.class);
 
         Mockito.doNothing().when(jsonServiceInstaller).installJsonServices();
         new QuickStartAssertionModuleLifecycle(appContext, assertionLocator, serviceBuilder, jsonServiceInstaller);

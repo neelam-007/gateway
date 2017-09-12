@@ -6,7 +6,11 @@ import com.google.common.base.Joiner;
 import com.l7tech.external.assertions.quickstarttemplate.QuickStartTemplateAssertion;
 import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStartAssertionLocator;
 import com.l7tech.external.assertions.quickstarttemplate.server.policy.QuickStartPolicyBuilderException;
+import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.EntityTypeRegistry;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionArgumentDescriptor;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionStringEncoding;
@@ -14,7 +18,9 @@ import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CodeInjectionProtectionType;
 import com.l7tech.policy.assertion.EncapsulatedAssertion;
+import com.l7tech.server.EntityCrud;
 import com.l7tech.server.cluster.ClusterPropertyManager;
+import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.EnumTranslator;
 import com.l7tech.util.HexUtils;
 import org.apache.commons.lang.ArrayUtils;
@@ -42,14 +48,18 @@ public class QuickStartMapper {
     @NotNull
     private final ClusterPropertyManager clusterPropertyManager;
 
+    @NotNull
+    private final EntityCrud entityCrud;
+
     public QuickStartMapper(
             @NotNull final QuickStartAssertionLocator assertionLocator,
             @NotNull final AssertionMapper assertionMapper,
-            @NotNull final ClusterPropertyManager clusterPropertyManager
-    ) {
+            @NotNull final ClusterPropertyManager clusterPropertyManager,
+            @NotNull final EntityCrud entityCrud) {
         this.assertionLocator = assertionLocator;
         this.assertionMapper = assertionMapper;
         this.clusterPropertyManager = clusterPropertyManager;
+        this.entityCrud = entityCrud;
     }
 
     public void setAssertionRegistry(AssertionRegistry assertionRegistry) {
@@ -139,6 +149,7 @@ public class QuickStartMapper {
         try {
             Method method = null;
             String setMethodName;
+            propertiesLoop:
             for (final Map.Entry<String, ?> entry : properties.entrySet()) {
                 final String propertyName = entry.getKey();
                 Object propertyValue = entry.getValue();
@@ -157,6 +168,22 @@ public class QuickStartMapper {
                         .orElse(Boolean.FALSE);
                 if (isFieldBase64Encoded && propertyValue instanceof String) {
                     propertyValue = HexUtils.encodeBase64((propertyValue.toString().getBytes()));
+                }
+
+                final String nameToIdEntityTypeFieldName = Optional.ofNullable(assertionSupport)
+                        .map(AssertionSupport::getPropertiesNameToIdEntityType)
+                        .map(pn2id -> pn2id.get(propertyName))
+                        .orElse(null);
+                if( nameToIdEntityTypeFieldName != null && propertyValue instanceof String){
+                    EntityType entityType = EntityType.valueOf(nameToIdEntityTypeFieldName);
+                    try {
+                        final List<? extends Entity> list = entityCrud.findAll(EntityTypeRegistry.getEntityClass(entityType), CollectionUtils.MapBuilder.<String, List<Object>>builder().put("name", Collections.singletonList(propertyValue.toString())).map(), 0, -1, null, null);
+                        if (list.size() != 1)
+                            throw new QuickStartPolicyBuilderException("Unable to resolve entity, name: " + propertyValue.toString() + " type: " + entityType.getName());
+                        propertyValue = Goid.parseGoid(list.get(0).getId());
+                    } catch ( FindException | IllegalArgumentException e) {
+                        throw new QuickStartPolicyBuilderException("Unable to resolve entity, name: " + propertyValue.toString() + " type: " + entityType.getName() , e);
+                    }
                 }
 
                 try {
@@ -222,8 +249,9 @@ public class QuickStartMapper {
                     }
                 }
 
+
                 // looping through all methods as last resort - performance hit
-                for (Method declaredMethod : assertion.getClass().getDeclaredMethods()) {
+                for (Method declaredMethod : assertion.getClass().getMethods()) {
                     // find matching method name with one argument signature
                     if (setMethodName.equals(declaredMethod.getName()) && declaredMethod.getParameterCount() == 1) {
                         Class<?>[] declaredMethodParameterTypes = declaredMethod.getParameterTypes();
@@ -234,7 +262,7 @@ public class QuickStartMapper {
                             Method getEnumTranslatorMethod = declaredMethodParameterType.getMethod("getEnumTranslator");
                             EnumTranslator enumTranslator = (EnumTranslator) getEnumTranslatorMethod.invoke(null);
                             declaredMethod.invoke(assertion, enumTranslator.stringToObject(propertyValue.toString()));
-                            return;
+                            continue propertiesLoop;
                         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
                             logger.log(Level.FINE, "Reflection failed to invoke : " + declaredMethod.toString());
                         }
@@ -245,7 +273,7 @@ public class QuickStartMapper {
                             if (declaredMethodParameterConstructor != null) {
                                 declaredMethod.invoke(assertion, declaredMethodParameterConstructor.newInstance(propertyValue));
                             }
-                            return;
+                            continue propertiesLoop;
                         } catch (NoSuchMethodException | InstantiationException e) {
                             logger.log(Level.FINE, "Reflection failed to invoke : " + declaredMethod.toString());
                         }
@@ -254,11 +282,12 @@ public class QuickStartMapper {
                         try {
                             Method valueOfMethod = declaredMethodParameterType.getMethod("valueOf", String.class);
                             declaredMethod.invoke(assertion, valueOfMethod.invoke(null, propertyValue));
-                            return;
+                            continue propertiesLoop;
                         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
                             logger.log(Level.FINE, "Reflection failed to invoke : " + declaredMethod.toString());
                         }
                     }
+
                 }
 
                 // can't convert, fail and throw exception

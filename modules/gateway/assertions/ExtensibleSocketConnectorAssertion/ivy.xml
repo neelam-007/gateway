@@ -1,25 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ivy-module version="1.0">
-	<info organisation="com.l7tech"
-		module="ExtensibleSocketConnectorAssertion"
-        status="integration"
-	>
-	</info>
-	<configurations>
+    <info organisation="com.l7tech"
+          module="ExtensibleSocketConnectorAssertion"
+          status="integration">
+    </info>
+    <configurations>
         <include file="../assertion-ivyconfiguration.xml"/>
-	</configurations>
-	<publications>
-		<artifact name="ExtensibleSocketConnectorAssertion" type="aar" ext="aar" conf="master"/>
-	</publications>
-	<dependencies>
-	        <dependency org="org.mockito" name="mockito-core" rev="1.10.19" force="true" conf="test"/>
-	        <dependency name="layer7-modular-assertions" rev="latest.integration" revConstraint="latest.integration" force="true"
+    </configurations>
+    <publications>
+        <artifact type="aar" ext="aar" conf="master"/>
+        <artifact type="pom" ext="pom" conf="pom"/>
+    </publications>
+    <dependencies>
+        <dependency org="org.mockito" name="mockito-core" rev="1.10.19" force="true" conf="test"/>
+	    <dependency name="layer7-modular-assertions" rev="latest.integration" revConstraint="latest.integration" force="true"
                     conf="compile->compile;runtime->runtime;test->test">
-			 <exclude org="org.mockito" name="mockito-core"/>
-		</dependency>
-        	<dependency name="mina-core" org="org.apache.mina" rev="2.0.9" force="true" conf="core">
-           		 <exclude org="org.slf4j" module="slf4j-api" name="*" type="*" ext="*" conf="" matcher="exact"/>
-	        </dependency>
-        	<dependency org="org.powermock" name="powermock-mockito" rev="1.6.3-full-1.6.3" conf="compile"/>
-	</dependencies>
+            <exclude org="org.mockito" name="mockito-core"/>
+        </dependency>
+        <dependency name="mina-core" org="org.apache.mina" rev="2.0.9" force="true" conf="core">
+           	<exclude org="org.slf4j" module="slf4j-api" name="*" type="*" ext="*" conf="" matcher="exact"/>
+        </dependency>
+       	<dependency org="org.powermock" name="powermock-mockito" rev="1.6.3-full-1.6.3" conf="compile"/>
+    </dependencies>
 </ivy-module>

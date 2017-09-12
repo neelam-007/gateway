@@ -38,7 +38,7 @@ public class DocumentSizeFilter extends DocumentFilter {
                         String str, AttributeSet a)
         throws BadLocationException {
         //This vetos the replacement if it would exceed the length
-        if ((fb.getDocument().getLength() + str.length() - length) <= maxLength)
+        if ((fb.getDocument().getLength() + ((str == null) ? 0 : str.length()) - length) <= maxLength)
             super.replace(fb, offs, length, str, a);
     }
 

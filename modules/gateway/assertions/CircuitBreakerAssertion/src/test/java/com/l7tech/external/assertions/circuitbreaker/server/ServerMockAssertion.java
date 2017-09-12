@@ -19,6 +19,7 @@ public class ServerMockAssertion extends AbstractServerAssertion<MockAssertion> 
 
     @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+        assertion.getTimeSource().advanceByNanos(assertion.getExecutionTime());
         return assertion.getReturnStatus();
     }
 }

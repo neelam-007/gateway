@@ -186,8 +186,10 @@ public class EntityMappingInstructions {
         @NotNull
         private final Type type;
 
+        // Note: ROUTING_URI is only applied to published services.
+        // PATH is applied to folder-able entities such as folder, service, service alias, policy, and policy alias.
         public enum Type {
-            ID, NAME, GUID, MAP_BY_ROLE_ENTITY, MODULE_SHA265
+            ID, NAME, GUID, MAP_BY_ROLE_ENTITY, MODULE_SHA265, ROUTING_URI, PATH
         }
 
         /**

@@ -985,16 +985,6 @@
         </constructor-arg>
     </bean>
 
-    <bean id="roleManagerHelper" class="com.l7tech.server.util.TypedMethodInvokingFactoryBean">
-        <property name="targetClass" value="com.l7tech.server.security.rbac.RoleManagerImpl"/>
-        <property name="targetMethod" value="setIdentitySource"/>
-        <property name="arguments">
-            <list>
-                <ref bean="adminSessionManager"/>
-            </list>
-        </property>
-    </bean>
-
     <!-- Initialize the client-side SSLSocketFactory with the trust manager -->
     <bean id="anonClientSocketFactoryInitializer" class="com.l7tech.server.util.TypedMethodInvokingFactoryBean">
         <property name="targetClass" value="com.l7tech.server.transport.http.AnonymousSslClientSocketFactory"/>
@@ -1569,10 +1559,6 @@
           parent="hibernateBean">
     </bean>
 
-    <bean id="uddiTemplateManager" class="com.l7tech.server.uddi.UDDITemplateManager">
-        <constructor-arg ref="serverConfig"/>
-    </bean>
-
     <bean id="aggregator" class="com.l7tech.server.wsdm.Aggregator"/>
 
     <bean id="gatewaySanityChecker" class="com.l7tech.server.util.GatewaySanityChecker" depends-on="cryptoInit">
@@ -1702,10 +1688,6 @@
                 <ref bean="securePasswordManager"/>
                 <ref bean="clusterPropertyManager"/>
                 <ref bean="keystoreFileManager"/>
-                <ref bean="uddiRegistryManager"/>
-                <ref bean="uddiPublishStatusManager"/>
-                <ref bean="uddiServiceControlManager"/>
-                <ref bean="uddiProxiedServiceInfoManager"/>
                 <ref bean="jdbcConnectionManager"/>
                 <ref bean="genericEntityManager"/>
                 <ref bean="ssgConnectorManager"/>
@@ -2018,21 +2000,14 @@
         <constructor-arg ref="licenseManager"/>
         <constructor-arg ref="ssgConnectorManager"/>
         <constructor-arg ref="trustedCertServices"/>
-        <constructor-arg>
-            <set>
-                <bean class="com.l7tech.server.util.ClusterNodeSsgConnectorActivationListener">
-                    <constructor-arg ref="serverConfig"/>
-                </bean>
-                <ref bean="pcApiConnectorListener"/>
-                <ref bean="uddiHelper"/>
-            </set>
-        </constructor-arg>
     </bean>
     <!--
       Top level bean since we want to get application events.
     -->
     <bean id="pcApiConnectorListener" class="com.l7tech.server.PcApiConnectorActivationListener"/>
-
+    <bean id="clusterNodeSsgConnectorActivationListener" class="com.l7tech.server.util.ClusterNodeSsgConnectorActivationListener">
+        <constructor-arg ref="serverConfig"/>
+    </bean>
 
     <bean id="policyCache" class="com.l7tech.server.policy.PolicyCacheImpl">
         <constructor-arg index="0" ref="transactionManager"/>
@@ -2081,7 +2056,6 @@
         <constructor-arg ref="trafficLogger"/>
         <constructor-arg ref="applicationEventProxy"/>
         <constructor-arg ref="clusterInfoManager"/>
-        <constructor-arg ref="clusterContextFactory"/>
         <constructor-arg ref="roleManager"/>
     </bean>
 
@@ -2326,9 +2300,6 @@
                 <ref bean="ssgKeyMetadataManager"/>
                 <ref bean="sampleMessageManager"/>
                 <ref bean="securePasswordManager"/>
-                <ref bean="uddiRegistryManager"/>
-                <ref bean="uddiProxiedServiceInfoManager"/>
-                <ref bean="uddiServiceControlManager"/>
                 <ref bean="siteMinderConfigurationManager"/>
                 <ref bean="securityZoneManager"/>
                 <ref bean="customKeyValueStoreManager"/>
@@ -2410,108 +2381,6 @@
     </bean>
 
     <bean id="policyBackedServiceRegistry" class="com.l7tech.server.polback.PolicyBackedServiceRegistry">
-    </bean>
-
-    <bean id="uddiHelper" class="com.l7tech.server.uddi.UDDIHelper">
-        <constructor-arg index="0" ref="serverConfig"/>
-        <constructor-arg index="1" ref="ssgKeyStoreManager"/>
-        <constructor-arg index="2" ref="trustManager"/>
-        <constructor-arg index="3" ref="hostnameVerifier"/>
-        <constructor-arg index="4" ref="uddiTemplateManager"/>
-        <constructor-arg index="5">
-            <bean class="org.springframework.beans.factory.config.PropertiesFactoryBean"
-                  depends-on="systemProperties">
-                <property name="ignoreResourceNotFound" value="true"/>
-                <property name="locations">
-                    <list>
-                        <value>file:${com.l7tech.server.configDirectory}${file.separator}uddi.properties</value>
-                    </list>
-                </property>
-            </bean>
-        </constructor-arg>
-    </bean>
-
-    <bean id="uddiCoordinator" class="com.l7tech.server.uddi.UDDICoordinator">
-        <constructor-arg index="0" ref="transactionManager"/>
-        <constructor-arg index="1" ref="uddiHelper"/>
-        <constructor-arg index="2" ref="uddiRegistryManager"/>
-        <constructor-arg index="3" ref="uddiProxiedServiceInfoManager"/>
-        <constructor-arg index="4" ref="uddiPublishStatusManager"/>
-        <constructor-arg index="5" ref="uddiServiceControlManager"/>
-        <constructor-arg index="6" ref="uddiBusinessServiceStatusManager"/>
-        <constructor-arg index="7" ref="serviceCache"/>
-        <constructor-arg index="8" ref="clusterMaster"/>
-        <constructor-arg index="9">
-            <bean class="com.l7tech.server.util.ManagedTimer">
-                <constructor-arg value="UDDI Coordinator"/>
-            </bean>
-        </constructor-arg>
-        <constructor-arg index="10">
-            <list>
-                <bean class="com.l7tech.server.uddi.PublishingUDDITaskFactory">
-                    <constructor-arg index="0" ref="uddiRegistryManager"/>
-                    <constructor-arg index="1" ref="uddiProxiedServiceInfoManager"/>
-                    <constructor-arg index="2" ref="serviceCache"/>
-                    <constructor-arg index="3" ref="uddiHelper"/>
-                    <constructor-arg index="4" ref="uddiServiceControlManager"/>
-                    <constructor-arg index="5" ref="uddiPublishStatusManager"/>
-                    <constructor-arg index="6" ref="serverConfig"/>
-                </bean>
-                <bean class="com.l7tech.server.uddi.WsPolicyAttachmentTaskFactory">
-                    <constructor-arg index="0" ref="uddiRegistryManager"/>
-                    <constructor-arg index="1" ref="uddiHelper"/>
-                    <constructor-arg index="2" ref="uddiTemplateManager"/>
-                    <constructor-arg index="3" ref="uddiBusinessServiceStatusManager"/>
-                </bean>
-                <bean class="com.l7tech.server.uddi.SubscriptionUDDITaskFactory">
-                    <constructor-arg index="0" ref="uddiRegistryManager"/>
-                    <constructor-arg index="1" ref="uddiHelper"/>
-                    <constructor-arg index="2" ref="uddiRegistrySubscriptionManager"/>
-                    <constructor-arg index="3" ref="uddiServiceControlManager"/>
-                    <constructor-arg index="4" ref="uddiServiceControlMonitorRuntimeManager"/>
-                    <constructor-arg index="5" ref="serviceManager"/>
-                    <constructor-arg index="6" ref="serviceDocumentManager"/>
-                    <constructor-arg index="7" ref="httpClientFactory"/>
-                </bean>
-                <bean class="com.l7tech.server.uddi.MetricsUDDITaskFactory">
-                    <constructor-arg index="0" ref="uddiRegistryManager"/>
-                    <constructor-arg index="1" ref="uddiHelper"/>
-                    <constructor-arg index="2" ref="uddiTemplateManager"/>
-                    <constructor-arg index="3" ref="uddiBusinessServiceStatusManager"/>
-                    <constructor-arg index="4" ref="aggregator"/>
-                    <constructor-arg index="5" ref="clusterPropertyCache"/>
-                </bean>
-            </list>
-        </constructor-arg>
-        <constructor-arg index="11" ref="serverConfig"/>
-        <constructor-arg index="12" ref="sessionFactory"/>
-    </bean>
-
-    <bean id="uddiRegistryManager" class="com.l7tech.server.uddi.UDDIRegistryManagerImpl" parent="hibernateBean">
-        <constructor-arg ref="uddiProxiedServiceInfoManager"/>
-    </bean>
-
-    <bean id="uddiProxiedServiceInfoManager" class="com.l7tech.server.uddi.UDDIProxiedServiceInfoManagerImpl"
-          parent="hibernateBean"/>
-
-    <bean id="uddiPublishStatusManager" class="com.l7tech.server.uddi.UDDIPublishStatusManagerImpl"
-          parent="hibernateBean"/>
-
-    <bean id="uddiServiceControlManager" class="com.l7tech.server.uddi.UDDIServiceControlManagerImpl"
-          parent="hibernateBean"/>
-
-    <bean id="uddiRegistrySubscriptionManager" class="com.l7tech.server.uddi.UDDIRegistrySubscriptionManagerImpl"
-          parent="hibernateBean"/>
-
-    <bean id="uddiBusinessServiceStatusManager" class="com.l7tech.server.uddi.UDDIBusinessServiceStatusManagerImpl"
-          parent="hibernateBean"/>
-
-    <bean id="uddiServiceControlMonitorRuntimeManager"
-          class="com.l7tech.server.uddi.UDDIServiceControlRuntimeManagerImpl" parent="hibernateBean"/>
-
-    <bean id="uddiServiceWsdlUpdateChecker" class="com.l7tech.server.uddi.ServiceWsdlUpdateChecker">
-        <constructor-arg index="0" ref="serviceManager"/>
-        <constructor-arg index="1" ref="uddiServiceControlManager"/>
     </bean>
 
     <bean id="serviceDocumentResolver" class="com.l7tech.server.service.ServiceDocumentResolver">
@@ -2769,6 +2638,9 @@
     <bean id="protectedEntityTracker" class="com.l7tech.server.security.rbac.ProtectedEntityTracker" >
         <constructor-arg index="0" ref="serverConfig"/>
     </bean>
+
+    <!-- Override the ExtensionManagerBus with one that does not return a classloader extension. See EM-1020 -->
+    <bean id="cxf" class="com.l7tech.server.util.ClassLoaderDisablingExtensionManagerBus"/>
 
     <bean id="trustedSignerCertsManager" class="com.l7tech.server.security.signer.TrustedSignerCertsManagerImpl" depends-on="systemProperties">
         <constructor-arg index="0" type="java.io.File" value="file:${com.l7tech.server.configDirectory}${file.separator}trusted_signers"/>

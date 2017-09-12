@@ -30,16 +30,20 @@ import java.util.*;
 @Transactional(propagation = Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class EntityCrudImpl extends HibernateDaoSupport implements EntityCrud {
     private final EntityFinder entityFinder;
-    private final Map<Class<? extends Entity>, ReadOnlyEntityManager<? extends Entity, ? extends EntityHeader>> managersByClass;
+    private final Map<Class<? extends Entity>, ReadOnlyEntityManager<? extends Entity, ? extends EntityHeader>> managersByClass = new LinkedHashMap<>();
 
-    public EntityCrudImpl( final EntityFinder entityFinder, final ReadOnlyEntityManager... managers) {
+    public EntityCrudImpl( final EntityFinder entityFinder, final List<ReadOnlyEntityManager<? extends Entity, ? extends EntityHeader>> managers) {
         this.entityFinder = entityFinder;
-
-        final Map<Class<? extends Entity>, ReadOnlyEntityManager<? extends Entity, ? extends EntityHeader>> managersByClass = new HashMap<Class<? extends Entity>, ReadOnlyEntityManager<? extends Entity,? extends EntityHeader>>();
         for (ReadOnlyEntityManager manager : managers) {
-            managersByClass.put(manager.getImpClass(), manager);
+            this.managersByClass.put(manager.getImpClass(), manager);
         }
-        this.managersByClass = Collections.unmodifiableMap(managersByClass);
+    }
+
+    @Override
+    public void addEntityManagers(final List<ReadOnlyEntityManager<? extends Entity, ? extends EntityHeader>> managers) {
+        for (ReadOnlyEntityManager manager : managers) {
+            this.managersByClass.put(manager.getImpClass(), manager);
+        }
     }
 
     @Override

@@ -18,6 +18,10 @@ public interface FolderManager extends FolderedEntityManager<Folder, FolderHeade
      */
     public Folder findRootFolder() throws FindException;
 
+    public Folder findByPath(final String folderPath) throws FindException;
+
+    public Folder createPath(final String absFolderPath) throws FindException, SaveException;
+
     public void addManageFolderRole( Folder folder ) throws SaveException;
 
     public void addReadonlyFolderRole( Folder folder ) throws SaveException;

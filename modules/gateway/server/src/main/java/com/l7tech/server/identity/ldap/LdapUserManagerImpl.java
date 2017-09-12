@@ -1,5 +1,6 @@
 package com.l7tech.server.identity.ldap;
 
+import com.l7tech.identity.BadCredentialsException;
 import com.l7tech.identity.UserBean;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.identity.ldap.LdapUser;
@@ -272,7 +273,7 @@ public class LdapUserManagerImpl implements LdapUserManager {
     }
 
     @Override
-    public boolean authenticateBasic(String dn, String passwd) {
+    public boolean authenticateBasic(String dn, String passwd) throws BadCredentialsException {
         return LdapUtils.authenticateBasic(getIdentityProvider(), getIdentityProviderConfig(), this.ldapRuntimeConfig, this.logger, dn, passwd);
     }
 

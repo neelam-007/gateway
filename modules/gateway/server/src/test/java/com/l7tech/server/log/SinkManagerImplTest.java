@@ -50,7 +50,6 @@ public class SinkManagerImplTest {
                                            new SoapFaultManager(_config, null)),
                                            new ApplicationEventProxy(),
                                            new ClusterInfoManagerImpl(null),
-                                           new ClusterContextFactory(null,null,null),
                                            new RoleManagerImpl());
     }
 

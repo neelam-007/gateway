@@ -1,16 +1,20 @@
 package com.l7tech.external.assertions.jsonschema;
 
-import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.json.JsonSchemaVersion;
 import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.SingleUrlResourceInfo;
 import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
+import com.l7tech.policy.wsp.Java5EnumTypeMapping;
+import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Logger;
+
+import static com.l7tech.gateway.common.cluster.ClusterProperty.asServerConfigPropertyName;
 
 /**
  * Configuration for the 'Validate JSON Schema' assertion. JSON schema can be configured in advance or obtained from a
@@ -19,21 +23,30 @@ import java.util.logging.Logger;
  * @author darmstrong 
  */
 public class JSONSchemaAssertion extends MessageTargetableAssertion implements UsesVariables, UsesResourceInfo, SetsVariables {
-    public static final String JSON_SCHEMA_FAILURE_VARIABLE = "jsonschema.failure";
 
+    public static final String JSON_SCHEMA_FAILURE_VARIABLE = "jsonschema.failure";
     public static final String CPROP_JSON_SCHEMA_CACHE_MAX_ENTRIES = "json.schemaCache.maxEntries";
     public static final String CPROP_JSON_SCHEMA_CACHE_MAX_AGE = "json.schemaCache.maxAge";
     public static final String CPROP_JSON_SCHEMA_CACHE_MAX_STALE_AGE = "json.schemaCache.maxStaleAge";
     public static final String CPROP_JSON_SCHEMA_MAX_DOWNLOAD_SIZE = "json.schemaCache.maxDownloadSize";
-    public static final String PARAM_JSON_SCHEMA_CACHE_MAX_ENTRIES = ClusterProperty.asServerConfigPropertyName(CPROP_JSON_SCHEMA_CACHE_MAX_ENTRIES);
-    public static final String PARAM_JSON_SCHEMA_CACHE_MAX_AGE = ClusterProperty.asServerConfigPropertyName(CPROP_JSON_SCHEMA_CACHE_MAX_AGE);
-    public static final String PARAM_JSON_SCHEMA_CACHE_MAX_STALE_AGE = ClusterProperty.asServerConfigPropertyName(CPROP_JSON_SCHEMA_CACHE_MAX_STALE_AGE);
-    public static final String PARAM_JSON_SCHEMA_MAX_DOWNLOAD_SIZE = ClusterProperty.asServerConfigPropertyName(CPROP_JSON_SCHEMA_MAX_DOWNLOAD_SIZE);
+    public static final String CPROP_JSON_SCHEMA_VERSION_STRICT = "json.schemaVersionStrict.enabled";
+    public static final String PARAM_JSON_SCHEMA_CACHE_MAX_ENTRIES = asServerConfigPropertyName(CPROP_JSON_SCHEMA_CACHE_MAX_ENTRIES);
+    public static final String PARAM_JSON_SCHEMA_CACHE_MAX_AGE = asServerConfigPropertyName(CPROP_JSON_SCHEMA_CACHE_MAX_AGE);
+    public static final String PARAM_JSON_SCHEMA_CACHE_MAX_STALE_AGE = asServerConfigPropertyName(CPROP_JSON_SCHEMA_CACHE_MAX_STALE_AGE);
+    public static final String PARAM_JSON_SCHEMA_MAX_DOWNLOAD_SIZE = asServerConfigPropertyName(CPROP_JSON_SCHEMA_MAX_DOWNLOAD_SIZE);
+    public static final String PARAM_JSON_SCHEMA_VERSION_STRICT = asServerConfigPropertyName(CPROP_JSON_SCHEMA_VERSION_STRICT);
+
+    private static final String META_INITIALIZED = JSONSchemaAssertion.class.getName() + ".metadataInitialized";
+    private static final String CLASS_NAME_ADVICE = "com.l7tech.external.assertions.jsonschema.JSONSchemaAssertionAdvice";
+
+    private AssertionResourceInfo resourceInfo = new StaticResourceInfo();
+    private JsonSchemaVersion jsonSchemaVersion = JsonSchemaVersion.DRAFT_V2;
 
     @Override
     protected VariablesSet doGetVariablesSet() {
         return super.doGetVariablesSet().withVariables(
-                new VariableMetadata(JSON_SCHEMA_FAILURE_VARIABLE, false, true, JSON_SCHEMA_FAILURE_VARIABLE, false, DataType.STRING)
+                new VariableMetadata(JSON_SCHEMA_FAILURE_VARIABLE, false, true, JSON_SCHEMA_FAILURE_VARIABLE,
+                        false, DataType.STRING)
         );
     }
 
@@ -53,13 +66,14 @@ public class JSONSchemaAssertion extends MessageTargetableAssertion implements U
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
-        if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
+        if (Boolean.TRUE.equals(meta.get(META_INITIALIZED))) {
             return meta;
+        }
 
         meta.put(AssertionMetadata.PALETTE_FOLDERS, new String[]{"xml", "threatProtection"});
 
         // Cluster properties used by this assertion
-        Map<String, String[]> props = new HashMap<String, String[]>();
+        Map<String, String[]> props = new HashMap<>();
         props.put(CPROP_JSON_SCHEMA_CACHE_MAX_AGE, new String[] {
                 "Maximum age of cached JSON Schema documents loaded from URLs (Milliseconds). Requires gateway restart.",
                 "300000"
@@ -80,6 +94,11 @@ public class JSONSchemaAssertion extends MessageTargetableAssertion implements U
                 "${documentDownload.maxSize}"
         });
 
+        props.put(CPROP_JSON_SCHEMA_VERSION_STRICT, new String[] {
+                "If true, the $schema property in the JSON schema must match with the policy configured schema version in the assertion (Boolean). Requires gateway restart",
+                "false"
+        });
+
         meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
 
         // Set description for GUI
@@ -93,9 +112,13 @@ public class JSONSchemaAssertion extends MessageTargetableAssertion implements U
         
         meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "JSON Schema Validation Properties");
 
-        // Enable automatic policy advice (default is no advice unless a matching Advice subclass exists)
-        meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
-        
+        // Enable policy advice to default newly dragged policies to JSON Schema version draft v4
+        meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, CLASS_NAME_ADVICE);
+
+        meta.put(AssertionMetadata.WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Collections.singletonList(
+                new Java5EnumTypeMapping(JsonSchemaVersion.class, "jsonSchemaVersion")
+        )));
+
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }
@@ -106,12 +129,16 @@ public class JSONSchemaAssertion extends MessageTargetableAssertion implements U
     }
 
     @Override
-    public void setResourceInfo(AssertionResourceInfo resourceInfo) throws IllegalArgumentException {
+    public void setResourceInfo(final AssertionResourceInfo resourceInfo) throws IllegalArgumentException {
         this.resourceInfo = resourceInfo;
     }
 
-    // - PRIVATE
-    private AssertionResourceInfo resourceInfo = new StaticResourceInfo();
-    private static final String META_INITIALIZED = JSONSchemaAssertion.class.getName() + ".metadataInitialized";
-    private static final Logger logger = Logger.getLogger(JSONSchemaAssertion.class.getName());
+    public JsonSchemaVersion getJsonSchemaVersion() {
+        return jsonSchemaVersion;
+    }
+
+    public void setJsonSchemaVersion(final JsonSchemaVersion jsonSchemaVersion) {
+        this.jsonSchemaVersion = jsonSchemaVersion;
+    }
+
 }

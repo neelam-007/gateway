@@ -81,7 +81,7 @@
         </pathconvert>
         <echo file="${package.classes.dir}/AAR-INF/console.index">${aar.console.fileset.property}</echo>
         <replaceregexp file="${package.classes.dir}/AAR-INF/console.index" match="^[/\\]" replace="" byline="true"/>
-        <jar destfile="build/${moduleName}.${moduleFileExtension}" duplicate="fail">
+        <jar destfile="build/aar/${moduleName}.${moduleFileExtension}" duplicate="fail">
             <manifest>
                 <attribute name="Specification-Title" value="ModularAssertion"/>
                 <attribute name="Specification-Version" value="3.7.0"/>

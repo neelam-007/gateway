@@ -2,17 +2,18 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.i
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.FirewallRuleTransformer;
-import com.l7tech.gateway.api.*;
-import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
+import com.l7tech.gateway.api.FirewallRuleMO;
 import com.l7tech.gateway.common.transport.firewall.SsgFirewallRule;
-import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.server.transport.firewall.SsgFirewallRuleManager;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
-import javax.ws.rs.NotFoundException;
 import javax.ws.rs.WebApplicationException;
+import java.io.File;
 import java.util.List;
 
 /**
@@ -25,8 +26,6 @@ public class FirewallRuleAPIResourceFactory extends EntityManagerAPIResourceFact
     private FirewallRuleTransformer transformer;
     @Inject
     private SsgFirewallRuleManager firewallRuleManager;
-    @Inject
-    private ClusterStatusAdmin clusterStatusAdmin;
 
     @NotNull
     @Override
@@ -147,9 +146,8 @@ public class FirewallRuleAPIResourceFactory extends EntityManagerAPIResourceFact
     }
 
     public boolean isHardware()throws WebApplicationException {
-        if ("true".equals(clusterStatusAdmin.getHardwareCapability("appliance.firewall"))){
-            return true;
-        }
-        throw new NotFoundException();
+        // TODO is there some cleaner way to do this?
+        final File applianceDir = new File("/opt/SecureSpan/Appliance");
+        return (applianceDir.exists() && applianceDir.isDirectory());
     }
 }

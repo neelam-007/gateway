@@ -11,8 +11,7 @@ public class JacksonJsonDataTest {
     @Test(expected = InvalidJsonException.class)
     public void testException() throws Exception{
 
-        final JSONFactory instance = JSONFactory.getInstance();
-        final JSONData jsonData = instance.newJsonData("{\"result\"\"success\"}");
+        final JSONData jsonData = JSONFactory.INSTANCE.newJsonData("{\"result\"\"success\"}");
         jsonData.getJsonObject();
     }
 }

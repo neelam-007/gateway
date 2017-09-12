@@ -30,6 +30,11 @@ public interface EntityCrud extends EntityFinder, SecurityZoneEntityManager {
     @Secured(stereotype=MethodStereotype.DELETE_ENTITY)
     void delete(Entity entity) throws DeleteException;
 
+    @Secured(stereotype=MethodStereotype.NONE)
+    default void addEntityManagers(List<ReadOnlyEntityManager<? extends Entity, ? extends EntityHeader>> managers) {
+        throw new RuntimeException("Unexpected call to addEntityManagers on EntityCrud that does not extend from EntityCrudImpl");
+    }
+
     @Secured(stereotype=MethodStereotype.FIND_HEADERS)
     @Override
     EntityHeaderSet<EntityHeader> findAll(Class<? extends Entity> entityClass) throws FindException;

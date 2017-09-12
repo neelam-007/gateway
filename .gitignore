@@ -11,6 +11,7 @@ idea-classes/
 
 # Build directories/files
 build
+!etc/build
 .idea
 **/.grunt/**
 **/target/**

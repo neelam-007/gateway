@@ -1,13 +1,13 @@
 package com.l7tech.external.assertions.jsonwebtoken.jsonwebtoken;
 
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
 import com.l7tech.external.assertions.jsonwebtoken.jsonwebtoken.exceptions.MissingJwtClaimsException;
 import com.l7tech.external.assertions.jsonwebtoken.jsonwebtoken.exceptions.MultipleJwtClaimsException;
 import com.l7tech.json.InvalidJsonException;
 import com.l7tech.json.JSONData;
 import com.l7tech.json.JSONFactory;
-import org.codehaus.jackson.JsonFactory;
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.JsonToken;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -133,7 +133,7 @@ public class JwtHeader {
 
     private void validateHeader(String header, boolean checkForAlgorithmClaim) throws InvalidJsonException, MissingJwtClaimsException, MultipleJwtClaimsException, IOException {
 
-        JSONData jsonHeader = JSONFactory.getInstance().newJsonData(header);
+        JSONData jsonHeader = JSONFactory.INSTANCE.newJsonData(header);
         String algorithm = null;
 
         Map<String, String> objectMap = (Map<String, String>) jsonHeader.getJsonObject();

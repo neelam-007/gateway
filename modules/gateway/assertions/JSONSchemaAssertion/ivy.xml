@@ -15,5 +15,7 @@
 	<dependencies>
         <dependency name="layer7-modular-assertions" rev="latest.integration"
                     conf="compile->compile;runtime->runtime;test->test"/>
+        <dependency org="org.mockito" name="mockito-core" rev="1.10.19" force="true" conf="test"/>
+        <dependency org="org.powermock" name="powermock-mockito-1.6.3-full" rev="1.6.3" force="true" conf="test"/>
 	</dependencies>
 </ivy-module>

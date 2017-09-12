@@ -20,7 +20,7 @@ import java.security.GeneralSecurityException;
 import java.security.Provider;
 import java.security.Security;
 import java.sql.SQLException;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -265,15 +265,33 @@ public class GatewayBoot {
         logger.info("Database type: " + dbType);
         final boolean useMysql = "mysql".equals(dbType);
         Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
-        applicationContext = new ClassPathXmlApplicationContext(new String[]{
+
+        final List<String> applicationContexts = new ArrayList<>();
+        applicationContexts.addAll( Arrays.asList(
                 "com/l7tech/server/resources/dataAccessContext.xml",
+                "com/l7tech/server/resources/rbacContext.xml",
                 useMysql ?
                         "com/l7tech/server/resources/standardDbContext.xml" :
                         "com/l7tech/server/resources/embeddedDbContext.xml",
-                "com/l7tech/server/resources/ssgApplicationContext.xml",
-                "com/l7tech/server/resources/adminContext.xml",
-                "com/l7tech/server/resources/cxfSupportContext.xml",
-        }, false );
+                "com/l7tech/server/resources/ssgApplicationContext.xml"
+                ) );
+
+        final Mode mode = GatewayBootUtil.getMode();
+        logger.log( Level.INFO, "Starting gateway in {0} mode", mode );
+
+        if(Mode.TRADITIONAL.equals(mode)){
+            applicationContexts.addAll( Arrays.asList(
+                    "com/l7tech/server/resources/adminContext.xml",
+                    "com/l7tech/server/resources/cxfSupportContext.xml"
+            ) );
+        }
+
+        final List<String> componentsContexts = GatewayBootUtil.getComponentsContexts(mode);
+        logger.log( Level.INFO, "Enabled component: {0}", componentsContexts );
+        applicationContexts.addAll(componentsContexts);
+
+
+        applicationContext = new ClassPathXmlApplicationContext( applicationContexts.toArray( new String[applicationContexts.size()] ), false );
         applicationContext.setAllowCircularReferences( allowCircularDependencies );
         applicationContext.refresh();
         shutdowner = applicationContext.getBean("ssgShutdown", ShutdownWatcher.class);
@@ -403,5 +421,9 @@ public class GatewayBoot {
         public void resetLogs() throws SecurityException {
             super.reset();
         }
+    }
+
+    public enum Mode {
+        TRADITIONAL, RUNTIME
     }
 }

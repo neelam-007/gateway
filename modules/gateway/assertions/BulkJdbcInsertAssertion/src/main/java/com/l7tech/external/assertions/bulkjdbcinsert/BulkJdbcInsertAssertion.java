@@ -210,10 +210,7 @@ public class BulkJdbcInsertAssertion extends MessageTargetableAssertion implemen
 
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.bulkjdbcinsert.console.BulkJdbcInsertPropertiesDialog");
 
-        // request default feature set name for our class name, since we are a known optional module
-        // we want to make sure this assertion has backward compatible licensing requirements. For that we use "set:modularAssertions" instead licensing from the class
-        //meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
-        meta.put(AssertionMetadata.FEATURE_SET_NAME, "set:modularAssertions");
+        meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 
         meta.put(WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(
                 new BeanTypeMapping(ColumnMapper.class, "columnMapper"),

@@ -1,0 +1,231 @@
+Index: src/main/java/com/networknt/schema/DefaultReferenceResolver.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/java/com/networknt/schema/DefaultReferenceResolver.java	(revision )
++++ src/main/java/com/networknt/schema/DefaultReferenceResolver.java	(revision )
+@@ -0,0 +1,54 @@
++package com.networknt.schema;
++
++import com.fasterxml.jackson.databind.JsonNode;
++import com.fasterxml.jackson.databind.ObjectMapper;
++
++import java.io.InputStream;
++import java.net.MalformedURLException;
++import java.net.URL;
++
++public class DefaultReferenceResolver implements ReferenceResolver {
++
++    private final ObjectMapper mapper;
++
++    public DefaultReferenceResolver(ObjectMapper mapper) {
++        this.mapper = mapper;
++    }
++
++    @Override
++    public JsonSchema resolveReference(String refValue) {
++        int index = refValue.indexOf("#");
++        String schemaUrl = refValue;
++        if (index > 0) {
++            schemaUrl = schemaUrl.substring(0, index);
++        }
++
++        JsonSchema parentSchema;
++        final JsonSchemaFactory factory = new JsonSchemaFactory(mapper);
++        try {
++            URL url = new URL(schemaUrl);
++            parentSchema = factory.getSchema(url);
++        } catch (MalformedURLException e) {
++            InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream(schemaUrl);
++            parentSchema = factory.getSchema(is);
++        }
++
++        JsonSchema schema = null;
++        if (index < 0) {
++            schema = parentSchema.findAncestor();
++        } else {
++            refValue = refValue.substring(index);
++            if (refValue.equals("#")) {
++                schema = parentSchema.findAncestor();
++            } else {
++                JsonNode node = parentSchema.getRefSchemaNode(refValue);
++                if (node != null) {
++                    schema = new JsonSchema(mapper, refValue, node, parentSchema);
++                }
++            }
++        }
++
++        return schema;
++    }
++
++}
+Index: src/main/java/com/networknt/schema/JsonSchemaFactory.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/java/com/networknt/schema/JsonSchemaFactory.java	(date 1491273255000)
++++ src/main/java/com/networknt/schema/JsonSchemaFactory.java	(revision )
+@@ -29,19 +29,25 @@
+     private static final Logger logger = LoggerFactory
+             .getLogger(JsonSchemaFactory.class);
+     private ObjectMapper mapper;
++    private final ReferenceResolver referenceResolver;
+ 
+     public JsonSchemaFactory() {
+         this(new ObjectMapper());
+     }
+ 
+     public JsonSchemaFactory(ObjectMapper mapper) {
++        this(mapper, new DefaultReferenceResolver(mapper));
++    }
++
++    public JsonSchemaFactory(ObjectMapper mapper, ReferenceResolver referenceResolver) {
+         this.mapper = mapper;
++        this.referenceResolver = referenceResolver == null ? new DefaultReferenceResolver(mapper) : referenceResolver;
+     }
+ 
+     public JsonSchema getSchema(String schema) {
+         try {
+             JsonNode schemaNode = mapper.readTree(schema);
+-            return new JsonSchema(mapper, schemaNode);
++            return new JsonSchema(mapper, "#", schemaNode, null, referenceResolver);
+         } catch (IOException ioe) {
+             logger.error("Failed to load json schema!", ioe);
+             throw new JsonSchemaException(ioe);
+@@ -51,7 +57,7 @@
+     public JsonSchema getSchema(InputStream schemaStream) {
+         try {
+             JsonNode schemaNode = mapper.readTree(schemaStream);
+-            return new JsonSchema(mapper, schemaNode);
++            return new JsonSchema(mapper, "#", schemaNode, null, referenceResolver);
+         } catch (IOException ioe) {
+             logger.error("Failed to load json schema!", ioe);
+             throw new JsonSchemaException(ioe);
+@@ -61,7 +67,7 @@
+     public JsonSchema getSchema(URL schemaURL) {
+         try {
+             JsonNode schemaNode = mapper.readTree(schemaURL.openStream());
+-            return new JsonSchema(mapper, schemaNode);
++            return new JsonSchema(mapper, "#", schemaNode, null, referenceResolver);
+         } catch (IOException ioe) {
+             logger.error("Failed to load json schema!", ioe);
+             throw new JsonSchemaException(ioe);
+@@ -69,7 +75,7 @@
+     }
+ 
+     public JsonSchema getSchema(JsonNode jsonNode) {
+-        return new JsonSchema(mapper, jsonNode);
++        return new JsonSchema(mapper, "#", jsonNode, null, referenceResolver);
+     }
+ 
+ }
+Index: src/main/java/com/networknt/schema/JsonSchema.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/java/com/networknt/schema/JsonSchema.java	(date 1491273255000)
++++ src/main/java/com/networknt/schema/JsonSchema.java	(revision )
+@@ -39,6 +39,7 @@
+     private static final Pattern intPattern = Pattern.compile("^[0-9]+$");
+     protected Map<String, JsonValidator> validators;
+     private ObjectMapper mapper;
++    private final ReferenceResolver referenceResolver;
+ 
+     JsonSchema(ObjectMapper mapper, JsonNode schemaNode) {
+         this(mapper, "#", schemaNode, null);
+@@ -46,10 +47,15 @@
+ 
+     JsonSchema(ObjectMapper mapper, String schemaPath, JsonNode schemaNode,
+                JsonSchema parent) {
++        this(mapper, schemaPath, schemaNode, parent, new DefaultReferenceResolver(mapper));
++    }
++
++    JsonSchema(ObjectMapper mapper, String schemaPath, JsonNode schemaNode, JsonSchema parent, ReferenceResolver referenceResolver) {
+         super(schemaPath, schemaNode, parent, null);
+         this.mapper = mapper;
+ 
+         validators = new LinkedHashMap<String, JsonValidator>();
++        this.referenceResolver = referenceResolver;
+ 
+         read(schemaNode);
+     }
+@@ -150,4 +156,7 @@
+         return "\"" + getSchemaPath() + "\" : " + getSchemaNode().toString();
+     }
+ 
++    public ReferenceResolver getReferenceResolver() {
++        return referenceResolver;
++    }
+ }
+Index: src/main/java/com/networknt/schema/ReferenceResolver.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/java/com/networknt/schema/ReferenceResolver.java	(revision )
++++ src/main/java/com/networknt/schema/ReferenceResolver.java	(revision )
+@@ -0,0 +1,9 @@
++package com.networknt.schema;
++
++import java.net.URL;
++
++public interface ReferenceResolver {
++
++    JsonSchema resolveReference(String refValue);
++
++}
+Index: src/main/java/com/networknt/schema/RefValidator.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/java/com/networknt/schema/RefValidator.java	(date 1491273255000)
++++ src/main/java/com/networknt/schema/RefValidator.java	(revision )
+@@ -21,9 +21,6 @@
+ import org.slf4j.Logger;
+ import org.slf4j.LoggerFactory;
+ 
+-import java.io.InputStream;
+-import java.net.MalformedURLException;
+-import java.net.URL;
+ import java.util.HashSet;
+ import java.util.Set;
+ 
+@@ -48,33 +45,7 @@
+                 }
+             }
+         } else {
+-            // handle remote ref
+-            int index = refValue.indexOf("#");
+-            String schemaUrl = refValue;
+-            if (index > 0) {
+-                schemaUrl = schemaUrl.substring(0, index);
+-            }
+-            JsonSchemaFactory factory = new JsonSchemaFactory(mapper);
+-            try {
+-                URL url = new URL(schemaUrl);
+-                parentSchema = factory.getSchema(url);
+-            } catch (MalformedURLException e) {
+-                InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream(schemaUrl);
+-                parentSchema = factory.getSchema(is);
+-            }
+-            if (index < 0) {
+-                schema = parentSchema.findAncestor();
+-            } else {
+-                refValue = refValue.substring(index);
+-                if (refValue.equals("#")) {
+-                    schema = parentSchema.findAncestor();
+-                } else {
+-                    JsonNode node = parentSchema.getRefSchemaNode(refValue);
+-                    if (node != null) {
+-                        schema = new JsonSchema(mapper, refValue, node, parentSchema);
+-                    }
+-                }
+-            }
++            schema = parentSchema.findAncestor().getReferenceResolver().resolveReference(refValue);
+         }
+     }
+ 

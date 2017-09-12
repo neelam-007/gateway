@@ -2,11 +2,10 @@
 <!--
   Ivy module for runtime gateway modules for use running the Gateway in IDEA (including production modular assertions).
 -->
-<ivy-module version="1.0">
+<ivy-module version="2.0" xmlns:m="http://ant.apache.org/ivy/maven">
     <info organisation="com.l7tech"
           module="layer7-gateway-idea-runtime"
-          status="integration"
-            >
+          status="integration">
     </info>
     <configurations
             defaultconfmapping="core->default">
@@ -27,7 +26,7 @@
               description="Contains the SkarSigner-signed archive files (saar, sjar) and the corresponding RESTMAN XML files (saar.xml, sjar.xml)"/>
     </configurations>
     <publications>
-		<artifact name="layer7-gateway-idea-runtime" type="pom" ext="pom" conf="pom"/>
+        <artifact type="pom" ext="pom" conf="pom"/>
     </publications>
     <dependencies>
         <!-- Product Leaf Modules -->

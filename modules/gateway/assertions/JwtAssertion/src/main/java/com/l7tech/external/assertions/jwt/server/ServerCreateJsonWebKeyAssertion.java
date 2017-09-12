@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.jwt.server;
 
 import com.google.common.collect.Lists;
+import com.l7tech.common.io.CertUtils;
 import com.l7tech.external.assertions.jwt.CreateJsonWebKeyAssertion;
 import com.l7tech.external.assertions.jwt.JsonWebTokenConstants;
 import com.l7tech.external.assertions.jwt.JwkKeyInfo;
@@ -18,13 +19,16 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.jetbrains.annotations.NotNull;
 import org.jose4j.jwk.JsonWebKey;
 import org.jose4j.jwk.JsonWebKeySet;
+import org.jose4j.jwk.PublicJsonWebKey;
 import org.jose4j.lang.JoseException;
 
 import javax.inject.Inject;
 import java.io.IOException;
 import java.security.KeyStoreException;
+import java.security.cert.CertificateEncodingException;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
 
 public class ServerCreateJsonWebKeyAssertion extends AbstractServerAssertion<CreateJsonWebKeyAssertion> {
 
@@ -65,29 +69,55 @@ public class ServerCreateJsonWebKeyAssertion extends AbstractServerAssertion<Cre
         final Goid goid = jwkKeyInfo.getSourceKeyGoid();
         final String alias = jwkKeyInfo.getSourceKeyAlias();
 
+        final SsgKeyEntry entry;
+
         try {
-            final SsgKeyEntry entry = defaultKey.lookupKeyByKeyAlias(alias, goid);
-            final JsonWebKey jwk = JsonWebKey.Factory.newJwk(entry.getPublic());
-            final String keyId = ExpandVariables.process(jwkKeyInfo.getKeyId(), variables, getAudit(), false);
-            if(keyId == null || keyId.isEmpty()){
-                logAndAudit(AssertionMessages.JWT_JWK_ERROR, "Could not find the specified key id");
-                return null;
-            }
-            jwk.setKeyId(keyId);
-            jwk.setUse(JsonWebTokenConstants.PUBLIC_KEY_USE.inverse().get(jwkKeyInfo.getPublicKeyUse()));
-            return jwk;
-        } catch (FindException e) {
+            entry = defaultKey.lookupKeyByKeyAlias(alias, goid);
+        } catch (FindException e1) {
             logAndAudit(AssertionMessages.JWT_JWK_NOT_FOUND, jwkKeyInfo.getSourceKeyAlias());
-        } catch (KeyStoreException e){
+            return null;
+        } catch (IOException | KeyStoreException e1) {
             logAndAudit(AssertionMessages.JWT_KEYSTORE_ERROR);
+            return null;
+        }
+
+        final String keyId = ExpandVariables.process(jwkKeyInfo.getKeyId(), variables, getAudit(), false);
+
+        if (keyId == null || keyId.isEmpty()) {
+            logAndAudit(AssertionMessages.JWT_JWK_ERROR, "Could not find the specified key id");
+            return null;
+        }
+
+        final JsonWebKey jwk;
+
+        try {
+            jwk = JsonWebKey.Factory.newJwk(entry.getPublic());
         } catch (JoseException e) {
             logAndAudit(AssertionMessages.JWT_JWK_ERROR, e.getMessage());
-        } catch (IOException e) {
-            logAndAudit(AssertionMessages.JWT_KEYSTORE_ERROR);
-        } catch(NullPointerException e){
+            return null;
+        } catch (NullPointerException e) {
             //catch NPE cause underlying api throws NPE when it encounter an unsupported key type
             logAndAudit(AssertionMessages.JWT_JOSE_ERROR, "Unsupported Key Type");
+            return null;
         }
-        return null;
+
+        jwk.setKeyId(keyId);
+        jwk.setUse(JsonWebTokenConstants.PUBLIC_KEY_USE.inverse().get(jwkKeyInfo.getPublicKeyUse()));
+
+        if (jwk instanceof PublicJsonWebKey) {
+            final PublicJsonWebKey publicJwk = (PublicJsonWebKey) jwk;
+            publicJwk.setCertificateChain(entry.getCertificateChain()); // RFC 7517 - 'x5c' parameter
+
+            try {
+                publicJwk.setX509CertificateSha1Thumbprint(CertUtils.getThumbprintSHA1(entry.getCertificate())); // RFC 7517 - 'x5t' parameter
+            } catch(CertificateEncodingException e) {
+                logAndAudit(AssertionMessages.JWT_JWK_ERROR, e.getMessage());
+            }
+        } else {
+            // this scenario should never happen because we don't support using symmetric keys to create JWKs
+            logger.log(Level.FINE, "Unable to retrieve certificate chain or SHA-1 thumbprint for key with the alias of {0}", alias);
+        }
+
+        return jwk;
     }
 }

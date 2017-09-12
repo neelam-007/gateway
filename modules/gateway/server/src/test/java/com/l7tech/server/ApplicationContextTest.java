@@ -49,10 +49,13 @@ public class ApplicationContextTest  {
 
     private static final String[] CONTEXTS = {
         "com/l7tech/server/resources/adminContext.xml",
+        "com/l7tech/server/resources/rbacContext.xml",
         "com/l7tech/server/resources/dataAccessContext.xml",
         "com/l7tech/server/resources/standardDbContext.xml",
         "com/l7tech/server/resources/ssgApplicationContext.xml" ,
-        "com/l7tech/server/resources/admin-servlet.xml"
+        "com/l7tech/server/resources/admin-servlet.xml",
+        // TODO: remove the component specific contexts
+        "com/l7tech/server/resources/uddiRuntimeContext.xml"
     };
 
     private static final Set<String> NON_ADMIN_PROXY_BEANS = Collections.emptySet();

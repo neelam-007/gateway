@@ -193,11 +193,7 @@ public class CORSAssertion extends Assertion implements SetsVariables, UsesVaria
 
         meta.put(POLICY_VALIDATOR_CLASSNAME, Validator.class.getName());
 
-        /**
-         * N.B. This is set to set:modularAssertions because the module is required to work on version 9.0 without
-         * any updates. It should be changed to (fromClass) in the future.
-         */
-        meta.put(AssertionMetadata.FEATURE_SET_NAME, "set:modularAssertions");
+        meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
 

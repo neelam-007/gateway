@@ -7,6 +7,7 @@ import com.l7tech.common.io.ByteOrderMarkInputStream;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.external.assertions.samlpassertion.ProcessSamlAuthnRequestAssertion;
 import static com.l7tech.external.assertions.samlpassertion.ProcessSamlAuthnRequestAssertion.*;
+import static com.l7tech.external.assertions.samlpassertion.SamlAuthnRequestAttribute.*;
 import static com.l7tech.external.assertions.samlpassertion.server.ProtocolRequestUtilities.*;
 
 import com.l7tech.gateway.common.audit.AssertionMessages;
@@ -120,6 +121,12 @@ public class ServerProcessSamlAuthnRequestAssertion extends AbstractMessageTarge
                 context.setVariable( prefix(SUFFIX_X509CERT_BASE64), certData.left );
                 context.setVariable( prefix(SUFFIX_X509CERT), certData.right );
                 context.setVariable( prefix(SUFFIX_ACS_URL), authnRequest.getAssertionConsumerServiceURL() );
+                context.setVariable( prefix(SUFFIX_ACS_INDEX), authnRequest.getAssertionConsumerServiceIndex() );
+                context.setVariable( prefix(SUFFIX_PROVIDER_NAME), authnRequest.getProviderName());
+                context.setVariable( prefix(SUFFIX_PROTOCOL_BINDING), authnRequest.getProtocolBinding());
+                context.setVariable( prefix(SUFFIX_ATTR_CON_SRV_IDX), authnRequest.getAttributeConsumingServiceIndex());
+                context.setVariable( prefix(SUFFIX_FORCE_AUTHN), authnRequest.isForceAuthn() == null ? false : authnRequest.isForceAuthn());
+                context.setVariable( prefix(SUFFIX_IS_PASSIVE), authnRequest.isIsPassive() == null ? false : authnRequest.isIsPassive());
                 context.setVariable( prefix(SUFFIX_ID), authnRequest.getID() );
                 context.setVariable( prefix(SUFFIX_VERSION), authnRequest.getVersion() );
                 context.setVariable( prefix(SUFFIX_ISSUE_INSTANT), getIsoTime(authnRequest.getIssueInstant()) );
@@ -367,6 +374,22 @@ public class ServerProcessSamlAuthnRequestAssertion extends AbstractMessageTarge
         checkMissingOrEmpty( authnRequest.getID(), "ID" );
         checkMissingOrEmpty( authnRequest.getVersion(), "Version" );
         checkMissing( authnRequest.getIssueInstant(), "IssueInstant" );
+
+        if (assertion.isRequiredAssertionConsumerServiceIndex()) {
+            checkMissing(authnRequest.getAssertionConsumerServiceIndex(), ASSERTION_CONSUMER_SERVICE_INDEX);
+        }
+        if (assertion.isRequiredAttributeConsumingServiceIndex()) {
+            checkMissing(authnRequest.getAttributeConsumingServiceIndex(), ATTRIBUTE_CONSUMING_SERVICE_INDEX);
+        }
+        if (assertion.isRequiredAssertionConsumerServiceURL()) {
+            checkMissingOrEmpty(authnRequest.getAssertionConsumerServiceURL(), ASSERTION_CONSUMER_SERVICE_URL);
+        }
+        if (assertion.isRequiredProtocolBinding()) {
+            checkMissingOrEmpty(authnRequest.getProtocolBinding(), PROTOCOL_BINDING);
+        }
+        if (assertion.isRequiredProviderName()) {
+            checkMissingOrEmpty(authnRequest.getProviderName(), PROVIDER_NAME);
+        }
     }
 
     private void checkMissingOrEmpty( final String value, final String description ) {

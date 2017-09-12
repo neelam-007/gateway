@@ -297,6 +297,8 @@ public class SoapFaultManager implements ApplicationContextAware {
 
     //- PRIVATE
 
+    public static final String SOAPFAULT_DETAIL_VAR = "soapfault.detail";
+
     public static final String FAULT_NS = "http://www.layer7tech.com/ws/policy/fault";
 
     private static final String FAULT_TEMPLATE_SOAP_1_1 = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
@@ -364,6 +366,7 @@ public class SoapFaultManager implements ApplicationContextAware {
                 break;
             case SoapFaultLevel.TEMPLATE_FAULT:
                 variables = pec.getVariableMap(faultLevelInfo.getVariablesUsed(), auditor);
+                variables.put(SOAPFAULT_DETAIL_VAR, StringUtils.isEmpty(statusTextOverride) ? globalStatus.getMessage() : statusTextOverride);
                 if ( faultLevelInfo.getFaultTemplateHttpStatus() != null ) {
                     String httpStatusText = ExpandVariables.process( faultLevelInfo.getFaultTemplateHttpStatus(), variables, auditor );
                     try {

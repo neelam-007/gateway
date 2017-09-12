@@ -44,11 +44,13 @@ Authentication:
   externalName: Authentication
   className: com.l7tech.policy.assertion.identity.AuthenticationAssertion
   properties:
-    IdentityProviderOid: IdentityProviderOid
+    IdentityProviderName: IdentityProviderOid
+  propertiesNameToIdEntityType:
+    IdentityProviderName: ID_PROVIDER_CONFIG
   samplePayload: |
     {
       "Authentication" : {
-        "IdentityProviderOid" : "0000000000000000fffffffffffffffe"
+        "IdentityProviderName" : "Internal Identity Provider"
       }
     }
   jsonSchema: |
@@ -59,11 +61,11 @@ Authentication:
         "Authentication": {
           "type": "object",
           "properties": {
-            "IdentityProviderOid": {
+            "IdentityProviderName": {
               "type" : "string"
             }
           },
-          "required": [ "IdentityProviderOid" ]
+          "required": [ "IdentityProviderName" ]
         }
       },
       "required": [ "Authentication" ]
@@ -77,13 +79,15 @@ CodeInjectionProtection:
     IncludeUrlPath: IncludeUrlPath
     IncludeUrlQueryString: IncludeUrlQueryString
     Protections: Protections
+    Target: Target
   samplePayload: |
     {
       "CodeInjectionProtection": {
         "IncludeBody": true,
         "IncludeUrlPath": false,
         "IncludeUrlQueryString": false,
-        "Protections": [ "htmlJavaScriptInjection", "shellInjection" ]
+        "Protections": [ "htmlJavaScriptInjection", "shellInjection" ],
+        "Target": "REQUEST",
       }
     }
   jsonSchema: |
@@ -109,7 +113,11 @@ CodeInjectionProtection:
                 "type": "string",
                 "enum": [ "htmlJavaScriptInjection", "phpEvalInjection", "shellInjection", "ldapDnInjection", "ldapSearchInjection", "xpathInjection"  ]
               }
-            }
+            },
+            "Target": {
+              "type": "string",
+              "enum": [ "REQUEST","RESPONSE"  ]
+           }
           }
         }
       },
@@ -204,40 +212,44 @@ HttpBasic:
       "required": [ "HttpBasic" ]
     }
 
-HttpRouting:
-  externalName: HttpRouting
-  className: com.l7tech.policy.assertion.HttpRoutingAssertion
+RemoteIpRange:
+  externalName: RemoteIpRange
+  className: com.l7tech.policy.assertion.RemoteIpRange
   properties:
-    ProtectedServiceUrl: ProtectedServiceUrl
-    HttpMethod: HttpMethodAsString
+    AllowRange: AllowRange
+    NetworkMask: NetworkMask
+    StartIp: StartIp
   samplePayload: |
     {
-      "HttpRouting": {
-        "ProtectedServiceUrl": "http://myservice.com",
-        "HttpMethod": "DELETE"
-      }
+      "RemoteIpRange": {
+        "AllowRange" : false,
+        "NetworkMask" : "24",
+        "StartIp" : "192.168.1.0"
+     }
     }
   jsonSchema: |
     {
       "$schema": "http://json-schema.org/draft-04/schema#",
       "type": "object",
       "properties": {
-        "HttpRouting": {
+        "RemoteIpRange": {
           "type": "object",
           "properties": {
-            "ProtectedServiceUrl": {
+            "AllowRange": {
+              "type": "boolean"
+            },
+            "NetworkMask": {
               "type": "string"
             },
-            "HttpMethod": {
-              "type": "string",
-              "enum": [ "GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS", "OTHER" ]
+            "StartIp": {
+              "type": "string"
             }
-          },
-          "required": [ "ProtectedServiceUrl", "HttpMethod" ]
+          }
         }
       },
-      "required": [ "HttpRouting" ]
+      "required": [ "RemoteIpRange" ]
     }
+
 
 RateLimit:
   externalName: RateLimit
@@ -345,33 +357,4 @@ Ssl:
         }
       },
       "required": [ "Ssl" ]
-    }
-
-ThroughputQuota:
-  externalName: ThroughputQuota
-  className: com.l7tech.policy.assertion.sla.ThroughputQuota
-  properties:
-    CounterName: CounterName
-  samplePayload: |
-    {
-      "ThroughputQuota": {
-        "CounterName": "ThroughputQuota-${request.clientId}-b0938b7ad6fe"
-      }
-    }
-  jsonSchema: |
-    {
-      "$schema": "http://json-schema.org/draft-04/schema#",
-      "type": "object",
-      "properties": {
-        "ThroughputQuota": {
-          "type": "object",
-          "properties": {
-            "CounterName": {
-              "type": "string"
-            }
-          },
-          "required": [ "CounterName" ]
-        }
-      },
-      "required": [ "ThroughputQuota" ]
     }

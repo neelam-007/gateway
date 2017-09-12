@@ -40,6 +40,11 @@ public class AssertionSupport {
     @NotNull
     private final Map<String, Boolean> propertiesIsBase64Encoded;
     /**
+     * Optional indicator that a property is entity name on the Gateway
+     */
+    @NotNull
+    private final Map<String, String> propertiesNameToIdEntityType;
+    /**
      * Optional Sample payload
      */
     @Nullable
@@ -56,6 +61,7 @@ public class AssertionSupport {
             @JsonProperty("className") final String className,
             @JsonProperty("properties") @Nullable final Map<String, String> properties,
             @JsonProperty("propertiesIsBase64Encoded") @Nullable final Map<String, Boolean> propertiesIsBase64Encoded,
+            @JsonProperty("propertiesNameToIdEntityType") @Nullable final Map<String, String> propertiesNameToIdEntityType,
             @JsonProperty("samplePayload") @Nullable final String samplePayload,
             @JsonProperty("jsonSchema") @Nullable final String jsonSchema
     ) {
@@ -66,6 +72,7 @@ public class AssertionSupport {
         this.className = className;
         this.properties = properties != null ? Collections.unmodifiableMap(properties) : Collections.emptyMap();
         this.propertiesIsBase64Encoded = propertiesIsBase64Encoded != null ? Collections.unmodifiableMap(propertiesIsBase64Encoded) : Collections.emptyMap();
+        this.propertiesNameToIdEntityType = propertiesNameToIdEntityType != null ? Collections.unmodifiableMap(propertiesNameToIdEntityType) : Collections.emptyMap();
         this.samplePayload = samplePayload;
         this.jsonSchema = jsonSchema;
     }
@@ -87,6 +94,10 @@ public class AssertionSupport {
     @NotNull
     public Map<String, Boolean> getPropertiesIsBase64Encoded() {
         return propertiesIsBase64Encoded;
+    }
+    @NotNull
+    public Map<String, String> getPropertiesNameToIdEntityType() {
+        return propertiesNameToIdEntityType;
     }
 
     @Nullable

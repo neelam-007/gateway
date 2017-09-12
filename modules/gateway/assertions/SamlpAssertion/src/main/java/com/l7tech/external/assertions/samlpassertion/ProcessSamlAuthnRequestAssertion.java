@@ -1,6 +1,5 @@
 package com.l7tech.external.assertions.samlpassertion;
 
-import com.l7tech.external.assertions.samlpassertion.server.ProtocolRequestUtilities;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.AssertionNodeNameFactory;
 import com.l7tech.policy.assertion.AssertionUtils;
@@ -12,11 +11,10 @@ import com.l7tech.policy.wsp.Java5EnumTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
+import java.util.*;
 
 import static com.l7tech.external.assertions.samlpassertion.server.ProtocolRequestUtilities.*;
+import static com.l7tech.policy.assertion.AssertionMetadata.POLICY_ADVICE_CLASSNAME;
 
 /**
  * Assertion for processing SAML protocol AuthnRequest messages.
@@ -34,6 +32,12 @@ public class ProcessSamlAuthnRequestAssertion extends MessageTargetableAssertion
         SUFFIX_X509CERT_BASE64,
         SUFFIX_X509CERT,
         SUFFIX_ACS_URL,
+        SUFFIX_ACS_INDEX,
+        SUFFIX_ATTR_CON_SRV_IDX,
+        SUFFIX_PROTOCOL_BINDING,
+        SUFFIX_PROVIDER_NAME,
+        SUFFIX_FORCE_AUTHN,
+        SUFFIX_IS_PASSIVE,
         SUFFIX_ID,
         SUFFIX_VERSION,
         SUFFIX_ISSUE_INSTANT,
@@ -69,6 +73,54 @@ public class ProcessSamlAuthnRequestAssertion extends MessageTargetableAssertion
 
     public void setVerifySignature( final boolean verifySignature ) {
         this.verifySignature = verifySignature;
+    }
+
+    /**
+     * Determine if AssertionConsumerServiceIndex attribute is required
+     * @return true if required, false otherwise, defaults to false
+     */
+    public boolean isRequiredAssertionConsumerServiceIndex() {
+        return requiresAssertionConsumerServiceIndex;
+    }
+
+    /**
+     * Helper to set whether AssertionConsumerServiceIndex attribute is required
+     * @param requires whether the attribute is required
+     */
+    public void setRequiredAssertionConsumerServiceIndex(boolean requires) {
+        requiresAssertionConsumerServiceIndex = requires;
+    }
+
+    public boolean isRequiredAssertionConsumerServiceURL() {
+        return requiresAssertionConsumerServiceURL;
+    }
+
+    public void setRequiredAssertionConsumerServiceURL(boolean requires) {
+        requiresAssertionConsumerServiceURL = requires;
+    }
+
+    public boolean isRequiredAttributeConsumingServiceIndex() {
+        return requiresAttributeConsumingServiceIndex;
+    }
+
+    public void setRequiredAttributeConsumingServiceIndex(boolean requires) {
+        requiresAttributeConsumingServiceIndex = requires;
+    }
+
+    public boolean isRequiredProtocolBinding() {
+        return requiresProtocolBinding;
+    }
+
+    public void setRequiredProtocolBinding(boolean requires) {
+        requiresProtocolBinding = requires;
+    }
+
+    public boolean isRequiredProviderName() {
+        return requiresProviderName;
+    }
+
+    public void setRequiredProviderName(boolean requires) {
+        requiresProviderName = requires;
     }
 
     @Override
@@ -116,6 +168,8 @@ public class ProcessSamlAuthnRequestAssertion extends MessageTargetableAssertion
         )));
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 
+        meta.put(POLICY_ADVICE_CLASSNAME, "com.l7tech.external.assertions.samlpassertion.console.ProcessSamlAuthnRequestAssertionAdvice");
+
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }
@@ -150,6 +204,12 @@ public class ProcessSamlAuthnRequestAssertion extends MessageTargetableAssertion
                         new VariableMetadata(variablePrefix+"."+SUFFIX_X509CERT_BASE64, false, false, null, false, DataType.STRING),
                         new VariableMetadata(variablePrefix+"."+SUFFIX_X509CERT, false, false, null, false, DataType.CERTIFICATE),
                         new VariableMetadata(variablePrefix+"."+SUFFIX_ACS_URL, false, false, null, false, DataType.STRING),
+                        new VariableMetadata(variablePrefix+"."+SUFFIX_ACS_INDEX, false, false, null, false, DataType.INTEGER),
+                        new VariableMetadata(variablePrefix+"."+SUFFIX_ATTR_CON_SRV_IDX, false, false, null, false, DataType.INTEGER),
+                        new VariableMetadata(variablePrefix+"."+SUFFIX_PROTOCOL_BINDING, false, false, null, false, DataType.STRING),
+                        new VariableMetadata(variablePrefix+"."+SUFFIX_PROVIDER_NAME, false, false, null, false, DataType.STRING),
+                        new VariableMetadata(variablePrefix+"."+SUFFIX_FORCE_AUTHN, false, false, null, false, DataType.BOOLEAN),
+                        new VariableMetadata(variablePrefix+"."+SUFFIX_IS_PASSIVE, false, false, null, false, DataType.BOOLEAN),
                         new VariableMetadata(variablePrefix+"."+SUFFIX_ID, false, false, null, false, DataType.STRING),
                         new VariableMetadata(variablePrefix+"."+SUFFIX_VERSION, false, false, null, false, DataType.STRING),
                         new VariableMetadata(variablePrefix+"."+SUFFIX_ISSUE_INSTANT, false, false, null, false, DataType.STRING),
@@ -173,4 +233,11 @@ public class ProcessSamlAuthnRequestAssertion extends MessageTargetableAssertion
     private String variablePrefix = "authnRequest";
     private boolean verifySignature = true;
     private SamlProtocolBinding samlProtocolBinding = null;
+
+    // Optional attributes
+    private boolean requiresAssertionConsumerServiceURL = true;
+    private boolean requiresAssertionConsumerServiceIndex = false;
+    private boolean requiresAttributeConsumingServiceIndex = false;
+    private boolean requiresProtocolBinding = false;
+    private boolean requiresProviderName = false;
 }

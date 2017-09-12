@@ -2,35 +2,28 @@
 <!--
   Ivy module for production gateway modules (and modular assertions).
 -->
-<ivy-module version="1.0">
+<ivy-module version="2.0" xmlns:m="http://ant.apache.org/ivy/maven">
     <info organisation="com.l7tech"
           module="layer7-gateway-production"
-          status="integration"
-            >
+          status="integration">
     </info>
-    <configurations
-            defaultconfmapping="compile->default; core->default; runtime->default; test->default; optional->default; module->default; module-optional->default; module-client->default">
+    <configurations defaultconfmapping="compile->default; core->default; runtime->default; test->default; optional->default; module->default; module-optional->default; module-client->default">
         <conf name="core" description="Core dependencies for all configurations" visibility="private"/>
-        <conf name="default" description="Runtime dependencies and master artifact can be used with this conf"
-              extends="runtime,master"/>
-        <conf name="master"
-              description="Contains only the artifact published by this module itself, with no transitive dependencies"/>
+        <conf name="default" description="Runtime dependencies and master artifact can be used with this conf" extends="runtime,master"/>
+        <conf name="master" description="Contains only the artifact published by this module itself, with no transitive dependencies"/>
         <conf name="compile" description="The dependency is required at compile time." extends="core,optional"/>
         <conf name="runtime" description="The dependency is required at runtime." extends="core"/>
-        <conf name="test" description="The dependency required for building/running tests only."
-              extends="runtime,compile"/>
+        <conf name="test" description="The dependency required for building/running tests only." extends="runtime,compile"/>
         <conf name="optional" description="Contains all optional dependencies"/>
         <conf name="module" description="Packaged modular assertion dependencies"/>
         <conf name="module-optional" description="Optional modular assertion dependencies"/>
         <conf name="module-client" description="XML VPN Client modular assertion dependencies"/>
-        <conf name="pom"
-              description="Contains only the pom files related to master artifacts"/>
-		<conf name="skarsigner"
-              description="Contains the SkarSigner-signed archive files (saar, sjar) and the corresponding RESTMAN XML files (saar.xml, sjar.xml)"/>
+        <conf name="pom" description="Contains only the pom files related to master artifacts"/>
+        <conf name="skarsigner" description="Contains the SkarSigner-signed archive files (saar, sjar) and the corresponding RESTMAN XML files (saar.xml, sjar.xml)"/>
     </configurations>
     <publications>
-		<artifact name="layer7-gateway-production" type="pom" ext="pom" conf="pom"/>
-	</publications>
+        <artifact type="pom" ext="pom" conf="pom"/>
+    </publications>
     <dependencies>
         <!-- Product Leaf Modules -->
         <dependency name="layer7-gateway-console" rev="latest.integration" conf="core"/>

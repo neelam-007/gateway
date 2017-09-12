@@ -31,6 +31,8 @@ public class SsgFinderImpl implements SsgFinder {
     protected HashMap endpointCache = new HashMap();
     protected boolean init = false;
     String storePath = null;
+
+    @NonObfuscatable
     static ExceptionListener exceptionListener = null;
 
     private static class SsgFinderHolder {

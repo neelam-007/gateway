@@ -7,13 +7,15 @@
  */
 package com.l7tech.json;
 
+import java.io.IOException;
+
 public interface JSONData {
 
     /**
      * Get the JSON Data
      * @return String JSON data. Never null.
      */
-    public String getJsonData();
+    String getJsonData();
 
     /**
      * Get the JSON data converted to simple Java objects.
@@ -23,4 +25,7 @@ public interface JSONData {
      * @throws InvalidJsonException If the JSON contained by this JSONData is invalid.
      */
     Object getJsonObject() throws InvalidJsonException;
+
+    <T> T getJsonNode() throws InvalidJsonException;
+
 }

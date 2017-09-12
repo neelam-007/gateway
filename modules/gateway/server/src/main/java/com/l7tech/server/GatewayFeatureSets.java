@@ -142,6 +142,8 @@ public class GatewayFeatureSets {
     //Mobile App Services Extension
     public static final String PROFILE_MAS_EXTENSION = "set:Profile:MAS";
 
+    public static final String PROFILE_MICROSERVICES = "set:Profile:Microservices";
+
     public static final String PROFILE_DEVELOPMENT = "set:Profile:Development";
     public static final String FS_WEBSOCKETS = "set:WebSocket:Assertions";
     public static final String FS_CSRSIGNER = "set:CsrSigner:Assertions";
@@ -772,6 +774,12 @@ public class GatewayFeatureSets {
                  "The necessary assertions to enable Kerberos authentication and constrained delegation functionality",
                  mass("assertion:KerberosAuthentication"));
 
+        GatewayFeatureSet qstAssertion =
+                fsr("set:QuickStartTemplateAssertion:Assertions",
+                        "The necessary assertions to enable Quick Start Template functionality",
+                        mass("assertion:QuickStartTemplate"),
+                        mass("assertion:QuickStartDocumentation"));
+
         /**
          * This assertion requires the policy bundle installer assertion so it cannot be added to a license without
          * the policy bundle installer module also being added.
@@ -1353,6 +1361,99 @@ public class GatewayFeatureSets {
                 fs(moduleLoader));
 
         /**
+         * Microservice Gateway
+         *
+         * The Microservices feature set
+         */
+        GatewayFeatureSet microserviceFeaturePack = fsp(PROFILE_MICROSERVICES,
+                "Microservice Gateway",
+                "Includes series of assertions required to support the Microservices gateway functionality.",
+                fs(core),
+                fs(branching),
+                fs(admin),
+                fs(encass),
+                fs(polback),
+                fs(seczones),
+                fs(trustStore),
+                fs(securePassword),
+                fs(keyStore),
+                ass(AuthenticationAssertion.class),
+                ass(MemberOfGroup.class),
+                fs(jdbcQueryAssertions),
+                mass("assertion:CORS"),
+                ass(HttpBasic.class),
+                ass(SslAssertion.class),
+                fs(jwtAssertion),
+                // decode id token  (custom)
+                mass("assertion:EncodeDecode"),
+                fs(evaluateJsonPathExpression),
+                ass(Regex.class),
+                ass(RequestXpathAssertion.class),
+                ass(ResponseXpathAssertion.class),
+                // generate id token  (custom)
+                ass(AddHeaderAssertion.class),
+                ass(HttpRoutingAssertion.class),
+                mass("assertion:RateLimitQuery"),
+                mass("assertion:RateLimit"),
+                ass(RemoteIpRange.class),
+                mass("assertion:CacheLookup"),
+                mass("assertion:CacheStorage"),
+                ass(AuditDetailAssertion.class),
+                ass(AuditAssertion.class),
+                ass(CustomizeErrorResponseAssertion.class),
+                ass(CommentAssertion.class),
+                mass("assertion:Comparison"),
+                ass(TrueAssertion.class),
+                ass(FalseAssertion.class),
+                ass(SetVariableAssertion.class),
+                ass(Include.class),
+                ass(ExportVariablesAssertion.class),
+                mass("assertion:HardcodedResponse"),
+                mass("assertion:UUIDGenerator"),
+                mass("assertion:ManipulateMultiValuedVariable"),
+                ass(MapValueAssertion.class),
+                ass(InvokePolicyAsyncAssertion.class),
+                fs(adaptiveLoadBalancingAssertions),
+                fs(splitJoinAssertions),
+                mass("assertion:IndexLookupByItem"),
+                mass("assertion:ItemLookupByIndex"),
+                fs(lookupDynamicContextVariables),
+                fs(concurrentAllAssertion),
+                ass(RequestSizeLimit.class),
+                ass(CodeInjectionProtectionAssertion.class),
+                fs(circuitBreakerAssertion),
+                ass(XpathCredentialSource.class),
+                ass(CustomAssertionHolder.class),
+                mass("assertion:ValidateCertificate"),
+                fs(uiPublishXmlWizard),
+                fs(uiPublishServiceWizard),
+                fs(uiAuditWindow),
+                fs(uiDashboardWindow),
+                fs(uiWsdlCreateWizard),
+                fs(uiLogSinksDialog),
+                fs(uiAuditSinkDialog),
+                srv(SERVICE_HTTP_MESSAGE_INPUT, "Accept incoming messages over HTTP"),
+                fs(generateSecurityHashAssertion),
+                ass(XslTransformation.class),
+                fs(swaggerAssertion),
+                fs(jsonSchemaAssertion),
+                ass(ContentTypeAssertion.class),
+                ass(SchemaValidation.class),
+                ass(MessageBufferingAssertion.class),
+                fs(csrfProtectionAssertion),
+                fs(jsonDocumentStructureAssertion),
+                ass(SqlAttackAssertion.class),
+                fs(jsonSchemaAssertion),
+                ass(ContentTypeAssertion.class),
+                fs(qstAssertion),
+                mass("assertion:RESTGatewayManagement"),
+                mass("assertion:LDAPQuery"),
+                mass("assertion:JsonJolt"),
+                ass(HtmlFormDataAssertion.class),
+                fs(moduleLoader));
+
+
+        /**
          * ### FEATURE PACK DEFINITIONS END ###
          */
 
@@ -1369,7 +1470,8 @@ public class GatewayFeatureSets {
                 fs(salesforceFeaturePack),
                 fs(ncesFeaturePack),
                 fs(mobileFeaturePack),
-                fs(masFeaturePack));
+                fs(masFeaturePack),
+                fs(microserviceFeaturePack));
     }
 
     /** @return All registered FeatureSets, including product profiles, building blocks, and twig and leaf features. */
