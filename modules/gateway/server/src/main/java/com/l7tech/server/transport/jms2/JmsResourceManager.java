@@ -89,7 +89,6 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
                 //not much we can do. log it
                 logger.log(Level.WARNING, "Unable to return cached connection " + cachedConnection.toString());
             }
-            //if ( cachedConnection!= null ) cachedConnection.unRef();
         }
     }
 
@@ -111,7 +110,7 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
                 synchronized (key.toString().intern()) {
                     pooledConnection = connectionHolder.get(key);
                     if (pooledConnection == null)  {
-                        pooledConnection = new PooledConnection(endpoint);
+                        pooledConnection = new PooledConnection(endpoint, cacheConfigReference.get());
                         connectionHolder.put(key, pooledConnection);
                         logger.log(Level.FINE, "Created new pooled conneciton " + pooledConnection.toString());
                     }
@@ -125,13 +124,19 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
     }
 
     protected void returnConnection(JmsEndpointConfig endpoint, CachedConnection connection) throws JmsRuntimeException{
-        final JmsEndpointConfig.JmsEndpointKey key = endpoint.getJmsEndpointKey();
-        PooledConnection pool = connectionHolder.get(key);
         try {
-            pool.returnConnection(connection);
+            final JmsEndpointConfig.JmsEndpointKey key = endpoint.getJmsEndpointKey();
+            PooledConnection pooledConnection = connectionHolder.get(key);
+            if(pooledConnection != null) {
+                pooledConnection.returnConnection(connection);
+            }
+            else {
+                logger.log(Level.WARNING, "JMS Connection with the key " + key.toString() + " does not exist.");
+            }
         } catch ( Exception ex ) {
             throw new JmsRuntimeException(ex);
         }
+
     }
 
     /**
@@ -277,7 +282,7 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
     private final Config config;
     protected final ConcurrentHashMap<JmsEndpointConfig.JmsEndpointKey, PooledConnection> connectionHolder;
     private final Timer timer;
-    private final AtomicReference<JmsResourceManagerConfig> cacheConfigReference = new AtomicReference<JmsResourceManagerConfig>( new JmsResourceManagerConfig(0,0,100) );
+    private final AtomicReference<JmsResourceManagerConfig> cacheConfigReference = new AtomicReference<JmsResourceManagerConfig>( new JmsResourceManagerConfig(0,0, 1,100, 5000, 300000) );
     private final AtomicBoolean active = new AtomicBoolean(true);
 
     /**
@@ -303,13 +308,15 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
                                final CachedConnection connection ) {
         try {
             PooledConnection pool = connectionHolder.get(key);
-            pool.invalidate(connection);
+            if(pool != null) {
+                pool.invalidate(connection);
+            }
+            else {
+                logger.log(Level.WARNING, "JMS connection with key" + key.toString() + " does not exist.");
+            }
         } catch (Exception e) {
-            logger.log(Level.SEVERE, "Unable to close connection " + connection.toString());
+            logger.log(Level.SEVERE, "Unable to close connection " + key.toString());
         }
-        /*if ( connectionHolder.remove( key, connection ) ) {
-            connection.unRef(); // clear cache reference
-        }*/
     }
 
     private void updateConfig() {
@@ -318,11 +325,17 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
         final long maximumAge = config.getTimeUnitProperty( "ioJmsConnectionCacheMaxAge", DEFAULT_CONNECTION_MAX_AGE );
         final long maximumIdleTime = config.getTimeUnitProperty( "ioJmsConnectionCacheMaxIdleTime", DEFAULT_CONNECTION_MAX_IDLE );
         final int maximumSize = config.getIntProperty( "ioJmsConnectionCacheSize", DEFAULT_CONNECTION_CACHE_SIZE );
+        final int maximumPoolSize = config.getIntProperty("ioJmsConnectionPoolSize", JmsConnection.DEFAULT_CONNECTION_POOL_SIZE);
+        final long maximumWait = config.getTimeUnitProperty("ioJmsConnectionMaxWait", JmsConnection.DEFAULT_CONNECTION_POOL_MAX_WAIT);
+        final long timeBetweenEvictions = config.getTimeUnitProperty("ioJmsConnectionTimeBetweenEviction", JmsConnection.DEFAULT_CONNECTION_POOL_EVICT_INTERVAL);
 
         cacheConfigReference.set( new JmsResourceManagerConfig(
                 rangeValidate(maximumAge, DEFAULT_CONNECTION_MAX_AGE, 0L, Long.MAX_VALUE, "JMS Connection Maximum Age" ),
                 rangeValidate(maximumIdleTime, DEFAULT_CONNECTION_MAX_IDLE, 0L, Long.MAX_VALUE, "JMS Connection Maximum Idle" ),
-                rangeValidate(maximumSize, DEFAULT_CONNECTION_CACHE_SIZE, 0, Integer.MAX_VALUE, "JMS Connection Cache Size" ))
+                rangeValidate(maximumSize, DEFAULT_CONNECTION_CACHE_SIZE, 0, Integer.MAX_VALUE, "JMS Connection Cache Size" ),
+                rangeValidate(maximumPoolSize, JmsConnection.DEFAULT_CONNECTION_POOL_SIZE, -1, 10000, "JMS Connection Pool Size" ),
+                rangeValidate(maximumWait, JmsConnection.DEFAULT_CONNECTION_POOL_MAX_WAIT, 0L, Long.MAX_VALUE, "JMS Connection Maximum Wait"),
+                rangeValidate(timeBetweenEvictions, JmsConnection.DEFAULT_CONNECTION_POOL_EVICT_INTERVAL, 0L, Long.MAX_VALUE, "JMS Connection Pool Time Between Eviction"))
         );
     }
 
@@ -352,23 +365,6 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
 
 
     /**
-     * Bean for cache configuration.
-     */
-    private static final class JmsResourceManagerConfig {
-        private final long maximumAge;
-        private final long maximumIdleTime;
-        private final int maximumSize;
-
-        private JmsResourceManagerConfig( final long maximumAge,
-                                          final long maximumIdleTime,
-                                          final int maximumSize) {
-            this.maximumAge = maximumAge;
-            this.maximumIdleTime = maximumIdleTime;
-            this.maximumSize = maximumSize;
-        }
-    }
-
-    /**
      * Timer task to remove idle, expired or surplus connections from the cache.
      *
      * <p>When the cache size is exceeded the oldest JMS connections are
@@ -389,7 +385,7 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
             logger.log(Level.FINE, "Running CacheCleanupTask...");
             final JmsResourceManagerConfig cacheConfig = cacheConfigReference.get();
             final long timeNow = System.currentTimeMillis();
-            final int overSize = connectionHolder.size() - cacheConfig.maximumSize;
+            final int overSize = connectionHolder.size() - cacheConfig.getMaximumSize();
             final Set<Map.Entry<JmsEndpointConfig.JmsEndpointKey, PooledConnection>> evictionCandidates =
                     new TreeSet<Map.Entry<JmsEndpointConfig.JmsEndpointKey, PooledConnection>>(
                             new Comparator<Map.Entry<JmsEndpointConfig.JmsEndpointKey, PooledConnection>>() {
@@ -408,7 +404,7 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
                     evictionCandidate.debugPoolStatus();
                 }
                 if (evictionCandidate.getEndpointConfig().isEvictOnExpired()) { //do not evict inbound jms connections
-                    if ( (timeNow-evictionCandidate.getCreatedTime()) > cacheConfig.maximumAge && cacheConfig.maximumAge > 0 ) {
+                    if ( (timeNow-evictionCandidate.getCreatedTime()) > cacheConfig.getMaximumAge() && cacheConfig.getMaximumAge() > 0 ) {
                         logger.log(Level.FINE, "Maximum age expired for " + evictionCandidate.toString());
                         if(evictionCandidate.isPoolEmpty()) {
                             logger.log(Level.FINE, "Remove unused JMS connection "  + evictionCandidate.toString());

@@ -1,14 +1,12 @@
 package com.l7tech.server.transport.jms2;
 
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
-import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.server.transport.jms.JmsBag;
 import com.l7tech.server.transport.jms.JmsRuntimeException;
 import com.l7tech.server.transport.jms.JmsUtil;
 import org.apache.commons.pool.PoolableObjectFactory;
 import org.apache.commons.pool.impl.GenericObjectPool;
 
-import javax.jms.JMSException;
 import javax.naming.NamingException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
@@ -22,21 +20,21 @@ public class PooledConnection {
     private final JmsEndpointConfig endpoint;
     private final long createdTime = System.currentTimeMillis();
 
-    public PooledConnection(final JmsEndpointConfig endpointConfig) {
+    public PooledConnection(final JmsEndpointConfig endpointConfig, JmsResourceManagerConfig cacheConfig) {
         this.endpoint = endpointConfig;
         GenericObjectPool.Config config = new GenericObjectPool.Config();
         config.maxActive = Integer.parseInt(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_CONNECTION_POOL_SIZE,
-                String.valueOf(JmsConnection.DEFAULT_CONNECTION_POOL_SIZE)));
+                String.valueOf(cacheConfig.getDefaultPoolSize())));
         config.maxIdle = Integer.parseInt(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_CONNECTION_MAX_IDLE,
-                String.valueOf(JmsConnection.DEFAULT_CONNECTION_POOL_SIZE)));
+                String.valueOf(cacheConfig.getDefaultPoolSize())));
         config.maxWait = Long.parseLong(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_CONNECTION_POOL_MAX_WAIT,
-                String.valueOf(JmsConnection.DEFAULT_CONNECTION_POOL_MAX_WAIT)));
+                String.valueOf(cacheConfig.getDefaultWait())));
         config.minEvictableIdleTimeMillis = Long.parseLong(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_CONNECTION_MAX_AGE,
-                String.valueOf(JmsConnection.DEFAULT_CONNECTION_MAX_AGE)));
+                String.valueOf(cacheConfig.getMaximumIdleTime())));
         config.timeBetweenEvictionRunsMillis = Long.parseLong(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_CONNECTION_POOL_EVICT_INTERVAL,
-                String.valueOf(JmsConnection.DEFAULT_CONNECTION_POOL_EVICT_INTERVAL)));
+                String.valueOf(cacheConfig.getTimeBetweewnEviction())));
         config.numTestsPerEvictionRun = Integer.parseInt(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_CONNECTION_POOL_EVICT_BATCH_SIZE,
-                String.valueOf(JmsConnection.DEFAULT_CONNECTION_POOL_SIZE)));
+                String.valueOf(cacheConfig.getDefaultPoolSize())));
         pool = new GenericObjectPool<>(new PoolableObjectFactory<CachedConnection>() {
             @Override
             public CachedConnection makeObject() throws Exception {
