@@ -23,18 +23,19 @@ public class PooledConnection {
     public PooledConnection(final JmsEndpointConfig endpointConfig, JmsResourceManagerConfig cacheConfig) {
         this.endpoint = endpointConfig;
         GenericObjectPool.Config config = new GenericObjectPool.Config();
-        config.maxActive = Integer.parseInt(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_CONNECTION_POOL_SIZE,
-                String.valueOf(cacheConfig.getDefaultPoolSize())));
-        config.maxIdle = Integer.parseInt(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_CONNECTION_MAX_IDLE,
-                String.valueOf(cacheConfig.getDefaultPoolSize())));
-        config.maxWait = Long.parseLong(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_CONNECTION_POOL_MAX_WAIT,
-                String.valueOf(cacheConfig.getDefaultWait())));
+        config.maxActive = endpointConfig.isEvictOnExpired() ? Integer.parseInt(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_CONNECTION_POOL_SIZE,
+                String.valueOf(cacheConfig.getDefaultPoolSize()))) : -1;
+        config.maxIdle = endpointConfig.isEvictOnExpired() ? Integer.parseInt(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_CONNECTION_MAX_IDLE,
+                String.valueOf(cacheConfig.getDefaultPoolSize()))) : -1;
+        config.maxWait = endpointConfig.isEvictOnExpired() ? Long.parseLong(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_CONNECTION_POOL_MAX_WAIT,
+                String.valueOf(cacheConfig.getDefaultWait()))) : -1;
         config.minEvictableIdleTimeMillis = Long.parseLong(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_CONNECTION_MAX_AGE,
                 String.valueOf(cacheConfig.getMaximumIdleTime())));
         config.timeBetweenEvictionRunsMillis = Long.parseLong(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_CONNECTION_POOL_EVICT_INTERVAL,
                 String.valueOf(cacheConfig.getTimeBetweewnEviction())));
         config.numTestsPerEvictionRun = Integer.parseInt(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_CONNECTION_POOL_EVICT_BATCH_SIZE,
                 String.valueOf(cacheConfig.getDefaultPoolSize())));
+        config.whenExhaustedAction = endpointConfig.isEvictOnExpired() ? GenericObjectPool.WHEN_EXHAUSTED_BLOCK : GenericObjectPool.WHEN_EXHAUSTED_GROW;
         pool = new GenericObjectPool<>(new PoolableObjectFactory<CachedConnection>() {
             @Override
             public CachedConnection makeObject() throws Exception {
@@ -99,10 +100,9 @@ public class PooledConnection {
                     Level.FINE,
                     "Closing pooled connection ", this.toString());
             try {
-                pool.clear();
                 pool.close();
             } catch (Exception e) {
-                //Ignore if we can't close it.
+                logger.log(Level.FINE, "Unable to close the pool: ", e);
             }
             return false;
         }
@@ -111,10 +111,9 @@ public class PooledConnection {
 
     public void close() {
         try {
-            pool.clear();
             pool.close();
         } catch (Exception e) {
-            //Ignore if we can't close it.
+            logger.log(Level.FINE, "Unable to close the pool: ", e);
         }
     }
 
