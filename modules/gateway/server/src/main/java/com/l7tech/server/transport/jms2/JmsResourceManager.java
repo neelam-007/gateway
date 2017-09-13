@@ -59,7 +59,8 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
         this.config = config;
         this.connectionHolder = new ConcurrentHashMap<JmsEndpointConfig.JmsEndpointKey, PooledConnection>();
         this.timer = new ManagedTimer("JmsResourceManager-CacheCleanup-" + name);
-        timer.schedule( new CacheCleanupTask(connectionHolder, cacheConfigReference ), 17371, CACHE_CLEAN_INTERVAL );
+        this.cleanupTask = new CacheCleanupTask(connectionHolder, cacheConfigReference );
+        timer.schedule( cleanupTask, 17371, CACHE_CLEAN_INTERVAL );
         updateConfig();
     }
 
@@ -282,6 +283,7 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
     private final Config config;
     protected final ConcurrentHashMap<JmsEndpointConfig.JmsEndpointKey, PooledConnection> connectionHolder;
     private final Timer timer;
+    private final TimerTask cleanupTask;
     private final AtomicReference<JmsResourceManagerConfig> cacheConfigReference = new AtomicReference<JmsResourceManagerConfig>( new JmsResourceManagerConfig(0,0, 1,100, 5000, 300000) );
     private final AtomicBoolean active = new AtomicBoolean(true);
 
