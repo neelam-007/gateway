@@ -279,20 +279,26 @@ public class CachedConnection {
         int references = referenceCount.decrementAndGet();
         //check if no one references the cached session or if the endpoint is inbound which we have to clean up anyways
         if ( references <= 0 || endpointConfig.getEndpoint().isMessageSource()) {
-            logger.log(
-                    Level.FINE,
-                    "Closing JMS connection ({0}), version {1}:{2}",
-                    new Object[]{
-                            name, connectionVersion, endpointVersion
-                    });
-            try {
-                if(pool != null)
-                    pool.close();
-            } catch (Exception e) {
-                //Ignore if we can't close it.
-            }
-            bag.close();
+            close();
         }
+    }
+
+    public void close() {
+        logger.log(
+                Level.FINE,
+                "Closing JMS connection ({0}), version {1}:{2}",
+                new Object[]{
+                        name, connectionVersion, endpointVersion
+                });
+        try {
+            if(pool != null)
+                pool.close();
+        } catch (Exception e) {
+            //Ignore if we can't close it.
+        }
+        bag.close();
+        //reset referenceCount
+        referenceCount.set(0);
     }
 
 
