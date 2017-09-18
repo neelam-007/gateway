@@ -16,6 +16,7 @@ import com.l7tech.util.ValidationUtils.Validator;
 import static java.util.Collections.list;
 import static java.util.Collections.reverse;
 
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -72,7 +73,7 @@ public class ConfigFactory {
      * @param defaultValue The default value for the property
      * @return The value of the property or the default value
      */
-    @Nullable
+    @Contract("_, !null -> !null; _, null -> _")
     public static String getProperty( final String propertyName, @Nullable final String defaultValue ) {
         return getCachedConfig().getProperty(propertyName, defaultValue);
     }

@@ -5,7 +5,6 @@
  */
 package com.l7tech.console.security;
 
-import com.l7tech.gateway.common.VersionException;
 import com.l7tech.objectmodel.InvalidPasswordException;
 
 import javax.security.auth.login.LoginException;

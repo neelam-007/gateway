@@ -102,16 +102,6 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
     }
 
     /**
-     * Returns a version string. This can be compared to version on client-side.
-     *
-     * @return value to be compared with the client side value of Service.VERSION;
-     */
-    @Override
-    public String echoVersion() {
-        return SecureSpanConstants.ADMIN_PROTOCOL_VERSION;
-    }
-
-    /**
      * @return Array of entity headers for all existing id provider config
      */
     @Override

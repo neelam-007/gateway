@@ -13,10 +13,7 @@ import com.l7tech.console.panels.identity.finder.Options;
 import com.l7tech.console.panels.licensing.ManageLicensesDialog;
 import com.l7tech.console.panels.policydiff.PolicyDiffContext;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
-import com.l7tech.console.security.AuthenticationProvider;
-import com.l7tech.console.security.LogonListener;
-import com.l7tech.console.security.PermissionRefreshListener;
-import com.l7tech.console.security.SecurityProvider;
+import com.l7tech.console.security.*;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.tree.identity.IdentitiesRootNode;
 import com.l7tech.console.tree.identity.IdentityProvidersTree;
@@ -26,7 +23,6 @@ import com.l7tech.console.tree.servicesAndPolicies.FolderNode;
 import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.util.*;
 import com.l7tech.gateway.common.Authorizer;
-import com.l7tech.gateway.common.VersionException;
 import com.l7tech.gateway.common.audit.LogonEvent;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
@@ -3816,7 +3812,7 @@ public class MainWindow extends JFrame implements SheetHolder {
 
         setName("MainWindow");
         setJMenuBar(isApplet() ? null : getMainJMenuBar());
-        setTitle( resapplication.getString("SSG") + " " + BuildInfo.getProductVersion() );
+        setTitle( resapplication.getString("SSG") + " " + PolicyManagerBuildInfo.getInstance().getProductVersion() );
 
         ImageIcon smallIcon =
                 new ImageIcon(ImageCache.getInstance().getIcon(RESOURCE_PATH + "/CA_Logo_Black_16x16.png"));
@@ -4277,8 +4273,8 @@ public class MainWindow extends JFrame implements SheetHolder {
         // extract the node name from the status message
         int startIndex = getStatusMsgLeft().getText().indexOf(CONNECTION_PREFIX);
         if (startIndex > 0) {
-            String nodeName = getStatusMsgLeft().getText().substring(startIndex + CONNECTION_PREFIX.length(), getStatusMsgLeft().getText().length() - 1);
-
+            String nodeName = getStatusMsgLeft().getText().substring(startIndex + CONNECTION_PREFIX.length(), getStatusMsgLeft().getText().length());
+            nodeName = nodeName.substring(nodeName.indexOf(']'));
             if (nodeName.equals(oldName)) {
                 // update the node name only when the nodeName mataches with the oldName
                 String newStatus = connectionID + connectionContext + getNodeNameMsg(newName);
@@ -4294,7 +4290,7 @@ public class MainWindow extends JFrame implements SheetHolder {
 
         String nodeNameMsg = "";
         if (nodeName != null) {
-            nodeNameMsg = CONNECTION_PREFIX + nodeName + "]";
+            nodeNameMsg = CONNECTION_PREFIX + nodeName + "] Gateway Version: " + GatewayInfoHolder.getInstance().getGatewayVersion();
         }
         return nodeNameMsg;
     }
@@ -4658,11 +4654,14 @@ public class MainWindow extends JFrame implements SheetHolder {
 
                 if (!l.hasTrustedIssuer()) {
                     message.append(" was not signed by a trusted issuer.");
-                } else if (!l.isProductEnabled(BuildInfo.getProductName()) ||
-                        !l.isVersionEnabled(BuildInfo.getProductVersionMajor(), BuildInfo.getProductVersionMinor())) {
-                    message.append(" does not grant access to this version of this product.");
-                } else if (!l.isLicensePeriodStartBefore(System.currentTimeMillis())) {
-                    message.append(" is not yet valid.");
+                } else {
+                    Version gatewayVersion = GatewayInfoHolder.getInstance().getGatewayVersion();
+                    if (!l.isProductEnabled(PolicyManagerBuildInfo.getInstance().getProductName()) ||
+                            (gatewayVersion != null && !l.isVersionEnabled(String.valueOf(gatewayVersion.getMajor()), String.valueOf(gatewayVersion.getMinor())))) {
+                        message.append(" does not grant access to this version of this product.");
+                    } else if (!l.isLicensePeriodStartBefore(System.currentTimeMillis())) {
+                        message.append(" is not yet valid.");
+                    }
                 }
 
                 message.append("\n");
@@ -4808,7 +4807,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     }
 
     public void showHelpTopicsRoot() {
-        ssmApplication.showHelpTopicsRoot();
+        ssmApplication.showHelpTopicsRoot(GatewayInfoHolder.getInstance().getGatewayVersion());
     }
 
     public void showNoPrivilegesErrorMessage() {

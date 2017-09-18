@@ -1,12 +1,16 @@
 package com.l7tech.console;
 
 import com.l7tech.console.util.ClusterPropertyCrud;
+import com.l7tech.console.security.PolicyManagerBuildInfo;
+import com.l7tech.console.security.Version;
 import com.l7tech.gui.util.HelpUtil;
+import com.l7tech.gui.util.SaveErrorStrategy;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.gui.util.FileChooserUtil;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SyspropUtil;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.context.support.ApplicationObjectSupport;
 
 import javax.swing.*;
@@ -28,6 +32,11 @@ public abstract class SsmApplication extends ApplicationObjectSupport {
     private String resourcePath;
     private boolean trusted = true;
     protected MainWindow mainWindow;
+
+    public SsmApplication() {
+        // TODO: This is really gross and ugly but unless the entire error reporting system in the PM is redone there is no other way to do this.
+        SaveErrorStrategy.setBuildInfoRetriever(PolicyManagerBuildInfo.getInstance()::getLongBuildString);
+    }
 
     protected MainWindow getMainWindow() {
         return mainWindow;
@@ -169,5 +178,5 @@ public abstract class SsmApplication extends ApplicationObjectSupport {
         }
     }
 
-    public abstract void showHelpTopicsRoot();
+    public abstract void showHelpTopicsRoot(@Nullable final Version gatewayVersion);
 }

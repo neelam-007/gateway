@@ -5,13 +5,10 @@ package com.l7tech.console.security;
 
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.password.Sha512Crypt;
-import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.console.action.ImportCertificateAction;
-import com.l7tech.console.panels.LogonDialog;
 import com.l7tech.console.util.AdminContextFactory;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.gateway.common.VersionException;
 import com.l7tech.gateway.common.admin.AdminContext;
 import com.l7tech.gateway.common.admin.AdminLogin;
 import com.l7tech.gateway.common.admin.AdminLoginResult;
@@ -22,6 +19,8 @@ import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.InvalidPasswordException;
 import com.l7tech.util.*;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -44,10 +43,8 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.text.MessageFormat;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -57,6 +54,7 @@ import java.util.logging.Logger;
  */
 public class SecurityProviderImpl extends SecurityProvider
   implements ApplicationContextAware, ApplicationListener {
+    private static final ResourceBundle resources = ResourceBundle.getBundle(SecurityProviderImpl.class.getName(), Locale.getDefault());
     private static final Boolean suppressVersionCheck = ConfigFactory.getBooleanProperty( "com.l7tech.console.suppressVersionCheck", false );
 
     //- PUBLIC
@@ -146,16 +144,26 @@ public class SecurityProviderImpl extends SecurityProvider
                             }
 
                             // Update the principal with the actual internal user
-
-                            String remoteVersion = checkRemoteProtocolVersion(result);
-                            String remoteSoftwareVersion = checkRemoteSoftwareVersion(result);
+                            @NotNull final Pair<Version, Version> versions = validateVersionCompatibility(result.getSoftwareVersion(), result.getVersion(), PolicyManagerBuildInfo.getInstance());
 
                             authenticated[0] = true;
 
                             User user = result.getUser();
                             String sessionCookie = result.getSessionCookie();
-                            setAuthenticated(sessionCookie, user, remoteSoftwareVersion, remoteVersion, host);
+                            setAuthenticated(sessionCookie, user, versions.left, versions.right, host);
                             TopComponents.getInstance().setLogonWarningBanner(result.getLogonWarningBanner());
+
+                            //TODO: remove this once the policy manager no longer supports the 9.2 gateway
+                            if(versions.left.getMajor() == 9 && versions.left.getMinor() == 2) {
+                                GatewayInfoHolder.getInstance().setGatewayProductName("CA API Gateway");
+                                GatewayInfoHolder.getInstance().setGatewayLegacyProductName("Layer 7 SecureSpan Suite");
+                            } else {
+                                //do not call this on a 9.2 gateway. This only exists on 9.3 gateways and above
+                                Map<String, String> gatewayInfo = Registry.getDefault().getAdminLogin().getGatewayInfo();
+                                GatewayInfoHolder.getInstance().setGatewayProductName(gatewayInfo.get("gateway.product.name"));
+                                GatewayInfoHolder.getInstance().setGatewayLegacyProductName(gatewayInfo.get("gateway.product.legacyName"));
+                            }
+
                             return null;
                         }
                     });
@@ -188,21 +196,32 @@ public class SecurityProviderImpl extends SecurityProvider
         }
     }
 
-    private String checkRemoteSoftwareVersion(AdminLoginResult result) throws VersionException {
-        String remoteSoftwareVersion = result.getSoftwareVersion();
-        if (!Boolean.TRUE.equals(suppressVersionCheck) && !BuildInfo.getProductVersion().equals(remoteSoftwareVersion)) {
-            throw new VersionException("Version mismatch", BuildInfo.getProductVersion(), remoteSoftwareVersion);
-        }
-        return remoteSoftwareVersion;
-    }
+    /**
+     * Validates that this policy manager can connect to the gateway
+     *
+     * @param gatewayVersionString The version of the gateway
+     * @param minimumPolicyManagerVersionRequiredString The minimum policy manager version required.
+     * @return A pair of versions, the gateway version is left, the minimum policy manager version is right
+     * @throws VersionException This is thrown if the policy manager is not able to connect to the gateway
+     */
+    Pair<Version, Version> validateVersionCompatibility(@NotNull final String gatewayVersionString, @NotNull final String minimumPolicyManagerVersionRequiredString, @NotNull final PolicyManagerBuildInfo policyManagerBuildInfo) throws VersionException {
+        // TODO: This is needed to support the 9.2.00 gateway. Once the minimum gateway version is raised above 9.2.00 remove this check.
+        final String revisedMinimumPolicyManagerVersionRequired = "20060228".equals(minimumPolicyManagerVersionRequiredString) ? "1.0.00" : minimumPolicyManagerVersionRequiredString;
 
-    private String checkRemoteProtocolVersion(AdminLoginResult result) throws VersionException {
-        // version checks
-        String remoteVersion = result.getVersion();
-        if (!SecureSpanConstants.ADMIN_PROTOCOL_VERSION.equals(remoteVersion)) {
-            throw new VersionException("Version mismatch", SecureSpanConstants.ADMIN_PROTOCOL_VERSION, remoteVersion);
+        @NotNull final Version gatewayVersion = new Version(gatewayVersionString);
+        @NotNull final Version minimumPolicyManagerVersionRequired = new Version(revisedMinimumPolicyManagerVersionRequired);
+        if (!suppressVersionCheck) {
+            //check that the gateway version is at lease version the minimum required by the policy manager
+            final @Nullable Integer gatewayVersionComparison = policyManagerBuildInfo.compareVersions(policyManagerBuildInfo.getMinimumGatewayVersionRequired().toString(), gatewayVersion.toString());
+            if (gatewayVersionComparison == null || gatewayVersionComparison > 0) {
+                throw new VersionException(MessageFormat.format(resources.getString("gateway.version.unsupported"), gatewayVersion, minimumPolicyManagerVersionRequired));
+            }
+            final @Nullable Integer policyManagerVersionComparison = policyManagerBuildInfo.compareVersions(revisedMinimumPolicyManagerVersionRequired, policyManagerBuildInfo.getPolicyManagerVersion().toString());
+            if (policyManagerVersionComparison == null || policyManagerVersionComparison > 0) {
+                throw new VersionException(MessageFormat.format(resources.getString("policyManager.version.unsupported"), policyManagerBuildInfo.getPolicyManagerVersion(), minimumPolicyManagerVersionRequired));
+            }
         }
-        return remoteVersion;
+        return new Pair<>(gatewayVersion, minimumPolicyManagerVersionRequired);
     }
 
     // Called by the Applet to connect to the server
@@ -222,14 +241,13 @@ public class SecurityProviderImpl extends SecurityProvider
                 public Object call() throws Exception {
                     AdminLoginResult result = adminLogin.resume(sessionId);
 
-                    String remoteVersion = checkRemoteProtocolVersion(result);
-                    String remoteSoftwareVersion = checkRemoteSoftwareVersion(result);
+                    final Pair<Version, Version> versions = validateVersionCompatibility(result.getSoftwareVersion(), result.getVersion(), PolicyManagerBuildInfo.getInstance());
 
                     authenticated[0] = true;
 
                     User user = result.getUser();
                     String sessionCookie = result.getSessionCookie(); // Server is allowed to assign a new one if it wishes
-                    setAuthenticated(sessionCookie, user, remoteSoftwareVersion, remoteVersion, host);
+                    setAuthenticated(sessionCookie, user, versions.left, versions.right, host);
                     TopComponents.getInstance().setLogonWarningBanner(result.getLogonWarningBanner());
                     return null;
                 }
@@ -252,7 +270,7 @@ public class SecurityProviderImpl extends SecurityProvider
     /**
      * Enable the authenticated state.
      */
-    private void setAuthenticated(String sessionCookie, User user, String remoteSoftwareVersion, String remoteVersion, String remoteHost)
+    private void setAuthenticated(String sessionCookie, User user, Version gatewayVersion, Version minimumPolicyManagerVersion, String remoteHost)
     {
         resetCredentials();
 
@@ -276,8 +294,8 @@ public class SecurityProviderImpl extends SecurityProvider
             this.user = user;
         }
 
-        LogonDialog.setLastRemoteSoftwareVersion(remoteSoftwareVersion);
-        LogonDialog.setLastRemoteProtocolVersion(remoteVersion);
+        GatewayInfoHolder.getInstance().setGatewayVersion(gatewayVersion);
+        GatewayInfoHolder.getInstance().setMinimumPolicyManagerVersionRequired(minimumPolicyManagerVersion);
         LogonEvent le = new LogonEvent(ac, LogonEvent.LOGON);
         applicationContext.publishEvent(le);
     }
@@ -337,7 +355,7 @@ public class SecurityProviderImpl extends SecurityProvider
                             }
                             else
                             {
-                                logger.log(Level.WARNING, msg + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));                                
+                                logger.log(Level.WARNING, msg + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                             }
                         }
                     }
@@ -439,14 +457,14 @@ public class SecurityProviderImpl extends SecurityProvider
                 Collection<String> names = null;
                 Collection<String> ipAddresses = null;
                 try {
-                    
+
                     names = CertUtils.getSubjectAlternativeNames(chain[0], CertUtils.SUBJALT_NAME_TYPE_DNS);
                     for ( String altName : names ) {
                         if ( hostBuffer.toString().equals(altName) ) {
                             return true;
                         }
                     }
-                    
+
                     ipAddresses = CertUtils.getSubjectAlternativeNames(chain[0], CertUtils.SUBJALT_NAME_TYPE_IPADDRESS);
                     for ( String altName : ipAddresses ) {
                         if ( hostBuffer.toString().equals(altName) ) {
@@ -515,6 +533,7 @@ public class SecurityProviderImpl extends SecurityProvider
     private void onLogoff() {
         logger.finer("Disconnect message received, invalidating service lookup reference");
         resetCredentials();
+        GatewayInfoHolder.getInstance().clear();
     }
 
     private Pair<String,Integer> getHostAndPort(String hostAndPossiblyPort) {

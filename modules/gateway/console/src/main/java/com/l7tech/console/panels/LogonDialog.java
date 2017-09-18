@@ -1,26 +1,31 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.MainWindow;
 import com.l7tech.console.action.ChangePasswordAction;
+import com.l7tech.console.logging.ErrorManager;
+import com.l7tech.console.security.AuthenticationProvider;
+import com.l7tech.console.security.InvalidHostCertificateException;
+import com.l7tech.console.security.InvalidHostNameException;
+import com.l7tech.console.security.SecurityProvider;
+import com.l7tech.console.util.History;
+import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.SsmPreferences;
+import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.security.VersionException;
 import com.l7tech.gateway.common.admin.AdminLogin;
-import com.l7tech.identity.*;
-import com.l7tech.util.BuildInfo;
-import com.l7tech.gateway.common.VersionException;
+import com.l7tech.gui.FilterDocument;
+import com.l7tech.gui.TrustCertificateDialog;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.ImageCache;
 import com.l7tech.gui.util.SwingWorker;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.console.MainWindow;
-import com.l7tech.console.logging.ErrorManager;
-import com.l7tech.console.security.*;
-import com.l7tech.gui.FilterDocument;
-import com.l7tech.gui.TrustCertificateDialog;
-import com.l7tech.console.util.*;
+import com.l7tech.identity.*;
 import com.l7tech.objectmodel.InvalidPasswordException;
+import com.l7tech.util.ExceptionUtils;
 
 import javax.net.ssl.SSLHandshakeException;
-import javax.security.auth.login.LoginException;
 import javax.security.auth.login.AccountLockedException;
+import javax.security.auth.login.LoginException;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -29,14 +34,14 @@ import java.awt.*;
 import java.awt.event.*;
 import java.io.IOException;
 import java.net.*;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.security.cert.X509Certificate;
-import java.security.cert.CertificateException;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
 
 /**
  * This class is the SSG console Logon dialog.
@@ -103,10 +108,6 @@ public class LogonDialog extends JDialog {
     private History serverUrlHistory;
     private SsmPreferences preferences;
     private LogonListener logonListener;
-
-    // Cache version info here so we don't do needless repeat calls to get it again   TODO move this somewhere more reasonable
-    public static String remoteProtocolVersion;
-    public static String remoteSoftwareVersion;
 
     /**
      * Create a new LogonDialog
@@ -835,28 +836,6 @@ public class LogonDialog extends JDialog {
         return Registry.getDefault().getSecurityProvider();
     }
 
-    public static void setLastRemoteProtocolVersion(String rv) {
-        remoteProtocolVersion = rv;
-    }
-
-    public static void setLastRemoteSoftwareVersion(String rv) {
-        remoteSoftwareVersion = rv;
-    }
-
-    /**
-     * @return the remote protocol version, ie "".
-     */
-    public static String getLastRemoteProtocolVersion() {
-        return remoteProtocolVersion;
-    }
-
-    /**
-     * @return the remote software version, ie "4.0", or null if this is a logoff event.
-     */
-    public static String getLastRemoteSoftwareVersion() {
-        return remoteSoftwareVersion;
-    }
-
     private static class LogonInProgressDialog extends JDialog {
         private SwingWorker worker;
         private String serviceUrl;
@@ -952,22 +931,7 @@ public class LogonDialog extends JDialog {
         if (cause instanceof VersionException) {
             VersionException versionex = (VersionException) cause;
             log.log(Level.WARNING, "logon()", e);
-            String msg;
-            if (versionex.getExpectedVersion() != null &&
-                    versionex.getExpectedVersion().equals(BuildInfo.getProductVersion())) {
-                msg = MessageFormat.format(resources.getString("logon.version.mismatch3"),
-                        "'" + versionex.getReceivedVersion() + "'",
-                        "'" + versionex.getExpectedVersion() + "'",
-                        BuildInfo.getProductVersion() + " build " + BuildInfo.getBuildNumber());
-            } else if (versionex.getExpectedVersion() != null && versionex.getReceivedVersion() != null) {
-                msg = MessageFormat.format(resources.getString("logon.version.mismatch2"),
-                        "'" + versionex.getReceivedVersion() + "'",
-                        "'" + versionex.getExpectedVersion() + "'",
-                        BuildInfo.getProductVersion() + " build " + BuildInfo.getBuildNumber());
-            } else {
-                msg = MessageFormat.format(resources.getString("logon.version.mismatch"),
-                        BuildInfo.getProductVersion() + " build " + BuildInfo.getBuildNumber());
-            }
+            String msg = MessageFormat.format(resources.getString("logon.version.mismatch"), versionex.getMessage());
             JOptionPane.showMessageDialog(parentFrame, msg, "Warning", JOptionPane.ERROR_MESSAGE);
         } else if (cause instanceof ConnectException ||
                 cause instanceof UnknownHostException) {

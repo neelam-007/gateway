@@ -5,7 +5,6 @@
  */
 package com.l7tech.gateway.common.admin;
 
-import com.l7tech.gateway.common.GatewayConfiguration;
 import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.objectmodel.InvalidPasswordException;
@@ -13,6 +12,7 @@ import com.l7tech.objectmodel.InvalidPasswordException;
 import javax.security.auth.login.LoginException;
 import java.io.Serializable;
 import java.security.AccessControlException;
+import java.util.Map;
 
 /**
  * Interface used to establish and manage an admin session.
@@ -169,4 +169,10 @@ public interface AdminLogin {
      */
     @Administrative(licensed=false)
     void ping();
+
+    /**
+     * Returns a map containing gateway info
+     */
+    @Administrative(licensed = false)
+    Map<String, String> getGatewayInfo();
 }

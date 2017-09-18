@@ -6,7 +6,7 @@ import com.jgoodies.plaf.plastic.PlasticLookAndFeel;
 import com.jgoodies.plaf.plastic.PlasticXPLookAndFeel;
 import com.jgoodies.plaf.plastic.theme.SkyBluerTahoma;
 import com.jgoodies.plaf.windows.ExtWindowsLookAndFeel;
-import com.l7tech.util.BuildInfo;
+import com.l7tech.console.security.PolicyManagerBuildInfo;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.util.FileUtils;
 import com.l7tech.util.JdkLoggerConfigurator;
@@ -52,7 +52,7 @@ public class Main {
                 screen.splash();
                 JdkLoggerConfigurator.configure("com.l7tech.console", "com/l7tech/console/resources/logging.properties");
                 // create logger after logging is configured
-                Logger.getLogger( Main.class.getName() ).info("Starting " + BuildInfo.getLongBuildString());
+                Logger.getLogger( Main.class.getName() ).info("Starting " + PolicyManagerBuildInfo.getInstance().getLongBuildString());
 
                 configureSecurity();
 
@@ -151,8 +151,8 @@ public class Main {
         System.setProperty("sun.awt.exception.handler", com.l7tech.console.logging.AwtErrorHandler.class.getName());
 
         // Build information
-        System.setProperty("com.l7tech.buildstring", BuildInfo.getBuildString());
-        System.setProperty("com.l7tech.builddate", BuildInfo.getBuildDate() + BuildInfo.getBuildTime());
+        System.setProperty("com.l7tech.buildstring", PolicyManagerBuildInfo.getInstance().getBuildString());
+        System.setProperty("com.l7tech.builddate", PolicyManagerBuildInfo.getInstance().getBuildDate() + PolicyManagerBuildInfo.getInstance().getBuildTime());
 
         // Software-only TransformerFactory to ignore the alluring Tarari impl, even if tarari_raxj.jar is sitting right there
         System.setProperty("javax.xml.transform.TransformerFactory", "org.apache.xalan.processor.TransformerFactoryImpl");

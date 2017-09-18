@@ -191,7 +191,7 @@ public class BuildInfo {
      *                OR null on error (for parsing errors when the version string is in an incorrect format)
      */
     @Nullable
-    static int[] parseVersionString(final String versionString) {
+    public static int[] parseVersionString(final String versionString) {
         if (versionString == null || versionString.trim().isEmpty()) {
             logger.log(Level.WARNING, VERSION_PARSING_ERR_MSG_START + versionString + VERSION_PARSING_ERR_MSG_END);
             return null;

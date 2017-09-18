@@ -1,11 +1,13 @@
 package com.l7tech.console;
 
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.security.Version;
 import com.l7tech.gui.util.HelpUtil;
 import com.l7tech.security.prov.ProviderUtil;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.Pair;
 import com.l7tech.util.SyspropUtil;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.security.Provider;
@@ -115,8 +117,8 @@ public class SsmApplicationHeavy extends SsmApplication  {
      * The "Help Topics".
      * This procedure displays the help contents in the preferred browser for the system on which the SSM is running.
      */
-    public void showHelpTopicsRoot() {
-        HelpUtil.showHelpTopicsRoot( TopComponents.getInstance().getTopParent(), false );
+    public void showHelpTopicsRoot(@Nullable final Version gatewayVersion) {
+        HelpUtil.showHelpTopicsRoot(TopComponents.getInstance().getTopParent(), false, (gatewayVersion == null ? null : gatewayVersion.getMajor() + "" + gatewayVersion.getMinor()));
     }
 
     private void installAdditionalSecurityProviders() {

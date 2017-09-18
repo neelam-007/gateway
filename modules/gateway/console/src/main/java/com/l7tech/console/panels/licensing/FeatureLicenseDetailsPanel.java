@@ -1,11 +1,11 @@
 package com.l7tech.console.panels.licensing;
 
-import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.security.GatewayInfoHolder;
 import com.l7tech.gateway.common.licensing.FeatureLicense;
 import com.l7tech.gateway.common.licensing.LicenseUtils;
 import com.l7tech.gui.widgets.WrappingLabel;
-import com.l7tech.util.BuildInfo;
 import com.l7tech.util.DateUtils;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import java.awt.*;
@@ -23,7 +23,7 @@ public class FeatureLicenseDetailsPanel extends JPanel {
     private JPanel rootPanel;
     private JPanel grantsPanel;
     private JLabel gatewayField;
-    private JLabel statusField;
+    JLabel statusField;
     private JLabel idField;
     private JLabel descriptionField;
     private JLabel licenseeField;
@@ -34,9 +34,13 @@ public class FeatureLicenseDetailsPanel extends JPanel {
     private JTextArea attributesTextArea;
 
     private final FeatureLicense featureLicense;
+    private final GatewayInfoHolder gatewayInfoHolder;
+    private final String ssgHost;
 
-    public FeatureLicenseDetailsPanel(FeatureLicense featureLicense) {
+    public FeatureLicenseDetailsPanel(FeatureLicense featureLicense, @NotNull final GatewayInfoHolder gatewayInfoHolder, final String ssgHost) {
         this.featureLicense = featureLicense;
+        this.gatewayInfoHolder = gatewayInfoHolder;
+        this.ssgHost = ssgHost;
         init();
     }
 
@@ -46,7 +50,7 @@ public class FeatureLicenseDetailsPanel extends JPanel {
 
         setStatus();
 
-        gatewayField.setText(TopComponents.getInstance().ssgURL().getHost());
+        gatewayField.setText(ssgHost);
         idField.setText(Long.toString(featureLicense.getId()));
         descriptionField.setText(featureLicense.getDescription());
         licenseeField.setText(featureLicense.getLicenseeName());
@@ -116,10 +120,11 @@ public class FeatureLicenseDetailsPanel extends JPanel {
 
         // check for malformed, unsigned, wrong product/version, or not started yet
         if (null == featureLicense || !featureLicense.hasTrustedIssuer() ||
-                !(featureLicense.isProductEnabled(BuildInfo.getProductName()) || featureLicense.isProductEnabled(BuildInfo.getLegacyProductName())) ||
-                (!featureLicense.isVersionEnabled(BuildInfo.getProductVersionMajor(), BuildInfo.getProductVersionMinor()) &&
-                        !featureLicense.isFutureVersionEnabled(BuildInfo.getProductVersionMajor(), BuildInfo.getProductVersionMinor())) ||
-                !featureLicense.isLicensePeriodStartBefore(System.currentTimeMillis())) {
+
+                !(featureLicense.isProductEnabled(gatewayInfoHolder.getGatewayProductName()) || featureLicense.isProductEnabled(gatewayInfoHolder.getGatewayLegacyProductName())) ||
+                (gatewayInfoHolder.getGatewayVersion() != null && !featureLicense.isVersionEnabled(String.valueOf(gatewayInfoHolder.getGatewayVersion().getMajor()), String.valueOf(gatewayInfoHolder.getGatewayVersion().getMinor())) &&
+                        !featureLicense.isFutureVersionEnabled(String.valueOf(gatewayInfoHolder.getGatewayVersion().getMajor()), String.valueOf(gatewayInfoHolder.getGatewayVersion().getMinor())) ||
+                !featureLicense.isLicensePeriodStartBefore(System.currentTimeMillis()))) {
             statusField.setText(LICENSE_STATUS_INVALID);
             statusField.setForeground(Color.WHITE);
             statusField.setBackground(new Color(255, 92, 92)); // dark red

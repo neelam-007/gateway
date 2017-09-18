@@ -2,6 +2,8 @@
 # Must be edited by hand whenever a new branch is created:
 #   - tag the branch
 #   - in HEAD, edit this file (build.version) to bump up the major and minor versions
+
+# Note the policy manager version is now kept in UneasyRooster/modules/gateway/console/src/main/resources/com/l7tech/config.properties
 build.version.major=9
 build.version.minor=3
 build.version.subminor=00

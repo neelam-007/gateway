@@ -12,6 +12,8 @@ import com.l7tech.console.panels.AppletContentStolenPanel;
 import com.l7tech.console.util.AppletSsmPreferences;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.security.GatewayInfoHolder;
+import com.l7tech.console.security.Version;
 import com.l7tech.gui.ErrorMessageDialog;
 import com.l7tech.gui.ExceptionDialog;
 import com.l7tech.gui.util.DialogDisplayer;
@@ -21,6 +23,7 @@ import com.l7tech.gui.util.SheetHolder;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.util.SyspropUtil;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
@@ -150,7 +153,7 @@ public class AppletMain extends JApplet implements SheetHolder {
             @Override
             public void actionPerformed(ActionEvent e) {
                 logger.fine("Attempting to show help topics root in response to F1 key");
-                showHelpTopicsRoot();
+                showHelpTopicsRoot(GatewayInfoHolder.getInstance().getGatewayVersion());
             }
         };
 
@@ -389,9 +392,9 @@ public class AppletMain extends JApplet implements SheetHolder {
             + "Applet version of Policy Manager.";
     }
 
-    public void showHelpTopicsRoot() {
+    public void showHelpTopicsRoot(@Nullable final Version gatewayVersion) {
         try {
-            URL url = new URL( HelpUtil.getHelpUrl() );
+            URL url = new URL(HelpUtil.getHelpUrl(gatewayVersion == null ? null : gatewayVersion.getMajor() + "" + gatewayVersion.getMinor()));
             getAppletContext().showDocument(url, helpTarget);
         } catch (MalformedURLException e) {
             logger.warning("Unable to display help: bad help URL: " + ExceptionUtils.getMessage(e));

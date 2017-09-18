@@ -1,7 +1,8 @@
 package com.l7tech.gui.util;
 
-import com.l7tech.util.BuildInfo;
 import com.l7tech.util.SyspropUtil;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.text.SimpleDateFormat;
 import java.text.MessageFormat;
@@ -10,6 +11,7 @@ import java.util.ResourceBundle;
 import java.io.StringWriter;
 import java.io.PrintWriter;
 import java.awt.*;
+import java.util.function.Supplier;
 
 /**
  * The class specifies a save-error strategy to save error into a file.
@@ -28,6 +30,9 @@ public abstract class SaveErrorStrategy {
             "os.name",
             "os.arch",
     };
+
+    @Nullable
+    private static Supplier<String> buildInfoRetriever;
 
     public void setErrorMessageDialog(Window errorMessageDialog) {
         this.errorMessageDialog = errorMessageDialog;
@@ -49,11 +54,13 @@ public abstract class SaveErrorStrategy {
 
         sb.append(MessageFormat.format(resources.getString("date.time"), dateFormat.format(new Date())));
 
-        String buildInfo = BuildInfo.getLongBuildString();
-        // Tentatively add an if-statement to change the product name to "CA API Gateway" for Gateway Re-branding Phase 1 (Bug SSM-4601).
-        // In future phase, the if-statement should be removed after the field "productName" is changed in BuildInfo.
-        if (buildInfo.startsWith(BuildInfo.getProductName())) {
-            buildInfo = buildInfo.replace(BuildInfo.getProductName(), "CA API Gateway");
+        // TODO: This is really gross and ugly but unless the entire error reporting system in the PM is redone there is no other way to do this.
+        final String buildInfo;
+        if(buildInfoRetriever != null) {
+            buildInfo = buildInfoRetriever.get();
+        } else {
+            //This should never really happen, but in case it does...
+            buildInfo = resources.getString( "build.info.fail" );
         }
         sb.append(MessageFormat.format(resources.getString("build.info"), buildInfo));
 
@@ -96,6 +103,15 @@ public abstract class SaveErrorStrategy {
         public UnableToSaveException(String message) {
             super(message);
         }
+    }
+
+    /**
+     * Sets the buildInfoRetriever
+     *
+     * @param buildInfoRetriever The supplier that provides the build info
+     */
+    public static void setBuildInfoRetriever(@NotNull final Supplier<String> buildInfoRetriever) {
+        SaveErrorStrategy.buildInfoRetriever = buildInfoRetriever;
     }
 }
 

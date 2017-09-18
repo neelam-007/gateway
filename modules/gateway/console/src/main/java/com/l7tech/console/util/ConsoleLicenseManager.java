@@ -6,7 +6,8 @@
 package com.l7tech.console.util;
 
 import com.l7tech.console.action.SecureAction;
-import com.l7tech.console.panels.LogonDialog;
+import com.l7tech.console.security.GatewayInfoHolder;
+import com.l7tech.console.security.Version;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.licensing.CompositeLicense;
 import com.l7tech.gateway.common.licensing.CompositeLicenseManager;
@@ -76,7 +77,8 @@ public class ConsoleLicenseManager implements CompositeLicenseManager {
      * Add any compat feature sets, required by connecting to older versions of the software.
      */
     private void addCompatFeatures() {
-        String v = LogonDialog.getLastRemoteSoftwareVersion();
+        final Version gatewayVersion = GatewayInfoHolder.getInstance().getGatewayVersion();
+        final String v = gatewayVersion == null ? null : gatewayVersion.toString();
         if (license == null || v == null) return;
 
         if (("HEAD".equals(v) || "3.6".equals(v)) &&

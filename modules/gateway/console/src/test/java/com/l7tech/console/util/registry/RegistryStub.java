@@ -6,7 +6,7 @@ import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.ConsoleLicenseManager;
 import com.l7tech.console.util.EntityNameResolver;
 import com.l7tech.console.util.Registry;
-import com.l7tech.gateway.common.VersionException;
+import com.l7tech.console.security.VersionException;
 import com.l7tech.gateway.common.admin.*;
 import com.l7tech.gateway.common.audit.AuditAdmin;
 import com.l7tech.gateway.common.audit.AuditAdminStub;
