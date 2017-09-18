@@ -60,12 +60,12 @@
         </tr>
         </tbody>
     </table>
-    <p>The request URI contains query parameters of the folders, services or policies to export, specified by their ids. You can also specify all=true to export all the entities on the gateway.</p>
+    <p>The request URI contains query parameters of the folders, services or policies to export, specified by their ids. You can also specify all=true to export all the entities on the Gateway.</p>
     <p>For example:</p>
     <p class="code indent">$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/bundle?folder=97cd0afb295cd2d823d0fdd43e720bbc&service=08890dfa5e893770ac234e5d5a43000b&service=0ef0d5dd06fe67ab15b6a1b16517e0f5</p>
     <p>The above URI will bundle folder with ID 97cd0afb295cd2d823d0fdd43e720bbc, and services with ID 08890dfa5e893770ac234e5d5a43000b and 0ef0d5dd06fe67ab15b6a1b16517e0f5.</p>
     <p class="code indent"><a href="$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/bundle?all=true">$#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/bundle?all=true</a></p>
-    <p>The above URI will bundle all the entities in the gateway.</p>
+    <p>The above URI will bundle all the entities in the Gateway.</p>
     <h3>Importing a Bundle</h3>
     <p>To import a bundle send a PUT request with the same bundle XML to $#{scheme}://$#{host}:$#{port}/$#{service-url}/1.0/bundle</p>
     <table cellpadding="0" cellspacing="0" class="api-example"> 
@@ -160,7 +160,7 @@
                     <tr><td>UsedExisting</td><td>The entity was mapped to an existing entity on the target Gateway. The target entity was not updated.</td></tr>
                     <tr><td>UpdatedExisting</td><td>The entity was mapped to an existing entity on the target Gateway and the target entity was updated.</td></tr>
                     <tr><td>CreatedNew</td><td>A new entity was created on the target Gateway.</td></tr>
-                    <tr><td>Deleted</td><td>The entity was deleted on the target gateway.</td></tr>
+                    <tr><td>Deleted</td><td>The entity was deleted on the target Gateway.</td></tr>
                     <tr><td>Ignored</td><td>The entity was ignored and not imported. If the action was Delete and the action taken was Ignored that means that a target entity could not be found to be deleted.</td></tr>
                 </table>
             </td>
@@ -234,6 +234,7 @@
 &lt;/l7:Mapping&gt;
         </pre>
     </div>
+    <hr/>
     <h5>NewOrUpdate</h5>
     <p>This will create a new entity or update an existing one:</p>
     <div class="code">
@@ -306,6 +307,7 @@
 &lt;/l7:Mapping&gt;
         </pre>
     </div>
+    <hr/>
     <h5>AlwaysCreateNew</h5>
     <p>This will create a new entity:</p>
     <div class="code">
@@ -361,6 +363,7 @@
 &lt;/l7:Mapping&gt;
         </pre>
     </div>
+    <hr/>
     <h5>Delete</h5>
     <p>This will delete an  entity:</p>
     <div class="code">
@@ -414,6 +417,7 @@
 &lt;/l7:Mapping&gt;
         </pre>
     </div>
+    <hr/>
     <h5>Ignore</h5>
     <p>This will ignore the entity. No attempt will be made to import the entity.</p>
     <div class="code">
@@ -457,8 +461,22 @@
     errorType=&quot;TargetNotFound&quot; /&gt;
             </pre></div>
         </td></tr>
-        <tr><td>MapBy</td><td>This can specify the unique key to map the target by. The possible values are 'name' or 'guid'. If this is not specified mapping is done by the ID. There is also a special mapping, 'mapByRoleEntity', this is used to map a auto created role to an auto created role on the target gateway. This mapping is automatically set when doing a full gateway export. Another special mapping, 'moduleSha256' is used to map a ServerModuleFile using its content digest on the target Gateway. This is the default mapping when exporting ServerModuleFile(s).</td></tr>
-        <tr><td>MapTo</td><td>This allow mapping to a different entity. The default it to map to an entity on the target with the same mapTo property. This is only used with the mapBy property.</td></tr>
+        <tr><td>MapBy</td><td>This can specify the unique key to map the target by. The possible values are:<dl>
+            <dt>name</dt>
+            <dd>The name of the entity.</dd>
+            <dt>guid</dt>
+            <dd>The guid of the entity. This property is only applicable for services and encapsulated assertions.</dd>
+            <dt>mapByRoleEntity</dt>
+            <dd>'mapByRoleEntity' is used to map an auto created role to an auto created role on the target Gateway. This property is automatically set when performing a full Gateway export.</dd>
+            <dt>moduleSha256</dt>
+            <dd>'moduleSha256' is used to map a ServerModuleFile using its content digest on the target Gateway. This is the default property when exporting ServerModuleFile(s).</dd>
+            <dt>routingUri</dt>
+            <dd>'routingUri' is the routing uri for a service entity. This property is only applicable for services. The usage of this property is best suited for cases where there are duplicate entity names, or when the ids of entities from the source and target gateway are different.</dd>
+            <dt>path</dt>
+            <dd>'path' is the folder path of the entity. This property is only applicable for services, policies, folders, and aliases. The usage of this property is best suited for cases where there are duplicate entity names, or when the ids of entities from the source and target gateway are different.</dd>
+        </dl>
+        </td></tr>
+        <tr><td>MapTo</td><td>This is an optional property that allows for mapping to a different entity and can only used when the 'MapBy' property is specified. If 'MapTo' is not specified, the mapping target is assumed to be the same as the source Gateway.</td></tr>
     </table>
     <h4>Complex Mapping Examples</h4>
     <h5>Mapping by Name</h5>
@@ -477,7 +495,7 @@
         </pre>
     </div>
     <h6>Possible Responses</h6>
-    <p>If an entity with the same Name DOES NOT exist on the target Gateway this will create a new entity with the ID specified.</p>
+    <p>If an entity with the same name DOES NOT exist on the target Gateway this will create a new entity with the ID specified.</p>
     <div class="code">
         <pre>
 &lt;l7:mapping
@@ -494,7 +512,7 @@
 &lt;/l7:mapping&gt;
         </pre>
     </div>
-    <p>If an entity with the same Name exist on the target Gateway this will update the entity.</p>
+    <p>If an entity with the same name exist on the target Gateway this will update the entity.</p>
     <div class="code">
         <pre>
 &lt;l7:mapping
@@ -511,7 +529,7 @@
 &lt;/l7:mapping&gt;
         </pre>
     </div>
-    <p>If an entity with the same Name DOES NOT exist on the target Gateway but one with the same ID does, this will fail.</p>
+    <p>If an entity with the same name DOES NOT exist on the target Gateway but one with the same ID does, this will fail.</p>
     <div class="code">
         <pre>
 &lt;l7:mapping
@@ -532,6 +550,7 @@
 &lt;/l7:Mapping&gt;
         </pre>
     </div>
+    <hr/>
     <h5>Mapping by Name to a Specific Entity</h5>
     <p>Map a service to a service on the target Gateway with a specific name.</p>
     <div class="code">
@@ -606,6 +625,7 @@
 &lt;/l7:mapping&gt;
         </pre>
     </div>
+    <hr/>
     <h5>Mapping by ID where Entity Must Exist on the Target</h5>
     <p>Map a service to a service on the target Gateway. The service must exist on the target Gateway.</p>
     <div class="code">
@@ -654,7 +674,7 @@
 &lt;/l7:mapping&gt;
         </pre>
     </div>
-
+    <hr/>
     <h5>Mapping by Name to Specific Entity Do Not Fail on ID Clash </h5>
     <p>Map a service to a service on the target Gateway with a specific name. Do not fail if a service with the same ID exists on the target Gateway.</p>
     <div class="code">
@@ -672,7 +692,7 @@
         </pre>
     </div>
     <h6>Possible Responses</h6>
-    <p>If an entity with the same Name DOES NOT exist on the target Gateway this will create a new entity with the ID specified, and the mapTo name ("MyTargetService").</p>
+    <p>If an entity with the same name DOES NOT exist on the target Gateway this will create a new entity with the ID specified, and the mapTo name ("MyTargetService").</p>
     <div class="code">
         <pre>
 &lt;l7:mapping
@@ -689,7 +709,7 @@
 &lt;/l7:mapping&gt;
         </pre>
     </div>
-    <p>If an entity with the same Name exist on the target Gateway this will fail with unique key conflict.</p>
+    <p>If an entity with the same name exists on the target Gateway this will fail with unique key conflict.</p>
     <div class="code">
         <pre>
 &lt;l7:mapping
@@ -706,7 +726,7 @@
 &lt;/l7:mapping&gt;
         </pre>
     </div>
-    <p>If an entity with the same Name DOES NOT exist on the target Gateway but one with the same ID does, this will create a new entity with a new ID, and the mapTo name ("MyTargetService").</p>
+    <p>If an entity with the same name DOES NOT exist on the target Gateway but one with the same ID does, this will create a new entity with a new ID, and the mapTo name ("MyTargetService").</p>
     <div class="code">
         <pre>
 &lt;l7:mapping
@@ -723,14 +743,16 @@
 &lt;/l7:mapping&gt;
         </pre>
     </div>
+    <hr/>
     <h5>Delete by Name a Specific Entity Fail if Entity Does Not Exist</h5>
-    <p>Delete a service on the target gateway with the name 'MyTargetService'. If the service does not exist fail the bundle import.</p>
+    <p>Delete a service on the target Gateway with the name 'MyTargetService'. If the service does not exist fail the bundle import.</p>
     <div class="code">
         <pre>
 &lt;l7:mapping
      type=&quot;SERVICE&quot;
      action=&quot;Delete&quot; &gt;
     &lt;l7:Properties&gt;
+        &lt;l7:property key=&quot;MapBy&quot; value=&quot;name&quot; /&gt;
         &lt;l7:property key=&quot;MapBy&quot; value=&quot;name&quot; /&gt;
         &lt;l7:property key=&quot;MapTo&quot; value=&quot;MyTargetService&quot;
         &lt;l7:property key=&quot;FailOnNew&quot; value=&quot;true&quot; /&gt;
@@ -739,7 +761,7 @@
         </pre>
     </div>
     <h6>Possible Responses</h6>
-    <p>If an entity with the same Name exists on the target Gateway this will delete the entity.</p>
+    <p>If an entity with the same name exists on the target Gateway this will delete the entity.</p>
     <div class="code">
         <pre>
 &lt;l7:mapping
@@ -756,7 +778,7 @@
 &lt;/l7:mapping&gt;
         </pre>
     </div>
-    <p>If an entity with the same Name DOES NOT exist on the target Gateway this will fail.</p>
+    <p>If an entity with the same name DOES NOT exist on the target Gateway this will fail.</p>
     <div class="code">
         <pre>
 &lt;l7:mapping
@@ -773,7 +795,86 @@
 &lt;/l7:mapping&gt;
         </pre>
     </div>
-    <p>If an entity with the same Name exist on the target Gateway this will fail with unique key conflict.</p>
+    <p>If an entity with the same name exist on the target Gateway this will fail with unique key conflict.</p>
+    <hr/>
+    <h5>Mapping by routingUri</h5>
+    <div class="code">
+        <pre>
+    &lt;l7:Mapping action=&quot;NewOrUpdate&quot; srcId=&quot;7a20dc65166addef9088427e9c65f89f&quot; srcUri=&quot;https://localhost:8443/restman/1.0/services/7a20dc65166addef9088427e9c65f89f&quot; type=&quot;SERVICE&quot;&gt;
+        &lt;l7:Properties&gt;
+            &lt;l7:Property key=&quot;MapBy&quot;&gt;
+                &lt;l7:StringValue&gt;routingURI&lt;/l7:StringValue&gt;
+            &lt;/l7:Property&gt;
+            &lt;l7:Property key=&quot;MapTo&quot;&gt;
+                &lt;l7:StringValue&gt;/newTarget&lt;/l7:StringValue&gt;
+            &lt;/l7:Property&gt;
+        &lt;/l7:Properties&gt;
+    &lt;/l7:Mapping&gt;
+        </pre>
+    </div>
+    <h6>Possible Responses</h6>
+    <ul>
+    <li>If no services have the routingUri='/newTarget', the service will be created using details from the bundle.</li>
+        <ul>
+            <li>A UniqueKeyConflict error may arise if the service with the routingUri '/newTarget' has the same id as another service on the target gateway.</li>
+        </ul>
+    <li>If there is a service with the routingUri='/newTarget', the service will be updated using details from the bundle.</li>
+    <li>If there are multiple services with routingUri='/newTarget', the bundle import will fail with an error: 'Incorrect mapping instructions: Found multiple possible target entities found with routing URI:...'</li>
+    </ul>
+    <hr/>
+    <h5>Mapping by path</h5>
+    <p> Map service to a service on the target Gateway with a specific path. </p>
+    <div class="code">
+        <pre>
+    &lt;l7:Mapping action=&quot;NewOrUpdate&quot; srcId=&quot;7a20dc65166addef9088427e9c65f89f&quot; srcUri=&quot;https://localhost:8443/restman/1.0/services/7a20dc65166addef9088427e9c65f89f&quot; type=&quot;SERVICE&quot;&gt;
+        &lt;l7:Properties&gt;
+            &lt;l7:Property key=&quot;MapBy&quot;&gt;
+                &lt;l7:StringValue&gt;path&lt;/l7:StringValue&gt;
+            &lt;/l7:Property&gt;
+            &lt;l7:Property key=&quot;MapTo&quot;&gt;
+                &lt;l7:StringValue&gt;/a/b/newService&lt;/l7:StringValue&gt;
+            &lt;/l7:Property&gt;
+        &lt;/l7:Properties&gt;
+    &lt;/l7:Mapping&gt;
+        </pre>
+    </div>
+    <h6>Possible Responses</h6>
+    <ul>
+    <li>If no services have the path='/a/b/newService', the service will be created using details from the bundle. Any folder along the path that does not currently exist will be created as well.</li>
+        <ul>
+            <li>A UniqueKeyConflict error may arise if the service with the path '/a/b/newService' has the same id as another service on the target gateway.</li>
+        </ul>
+    <li>If there is a service with the path='/a/b/newService', the service will be updated using details from the bundle.</li>
+    <li>If there are multiple services with the path='/a/b/newService', the bundle import will fail with an error: 'Incorrect mapping instructions: Found multiple possible target entities found with path:...'</li>
+    <li>A mapping error message which resembles:</li>
+    <pre>Cannot add or update a child row: a foreign key constraint fails (`ssg`.`folder`, CONSTRAINT `folder_parent_folder` FOREIGN KEY (`parent_folder_goid`) REFERENCES `folder` (`goid`) ON DELETE NO ACTION ON UPDATE NO ACTION)</pre>indicates the failed entity's parent folder should be resolved first.
+    </ul>
+    <hr/>
+    <p> Map folder to another folder on the target Gateway. The folder on the target gateway contains special characters and in this case is called 'Folder/WithSlash'. Use '\' to escape special characters. </p>
+    <div class="code">
+        <pre>
+    &lt;l7:Mapping action=&quot;NewOrUpdate&quot; srcId=&quot;7a20dc65166addef9088427e9c65f89f&quot; srcUri=&quot;https://localhost:8443/restman/1.0/folders/7a20dc65166addef9088427e9c65f89f&quot; type=&quot;FOLDER&quot;&gt;
+        &lt;l7:Properties&gt;
+            &lt;l7:Property key=&quot;MapBy&quot;&gt;
+                &lt;l7:StringValue&gt;path&lt;/l7:StringValue&gt;
+            &lt;/l7:Property&gt;
+            &lt;l7:Property key=&quot;MapTo&quot;&gt;
+                &lt;l7:StringValue&gt;/a/Folder\/WithSlash&lt;/l7:StringValue&gt;
+            &lt;/l7:Property&gt;
+        &lt;/l7:Properties&gt;
+    &lt;/l7:Mapping&gt;
+        </pre>
+    </div>
+    <h6>Possible Responses</h6>
+    <ul>
+        <li>If no folders have the path='/a/Folder\/WithSlash', the folder will be created using details from the bundle. Any folder along the path that does not currently exist will be created as well.</li>
+        <ul>
+            <li>A UniqueKeyConflict error may arise if the folder with the path '/a/Folder\/WithSlash' has the same id as another folder on the target gateway.</li>
+        </ul>
+        <li>If there is a folder with the path='/a/Folder\/WithSlash', the folder will be updated using details from the bundle.</li>
+        <li>A mapping error message which resembles:</li>
+        <pre>Cannot add or update a child row: a foreign key constraint fails (`ssg`.`folder`, CONSTRAINT `folder_parent_folder` FOREIGN KEY (`parent_folder_goid`) REFERENCES `folder` (`goid`) ON DELETE NO ACTION ON UPDATE NO ACTION)</pre>indicates the failed entity's parent folder should be resolved first.
+    </ul>
     <h3>Supporting Large Migrations</h3>
     <p>By default the REST Management Service accepts requests up to 50MB in size. If you need to increase the maximum message size that the REST Management Service can accept edit the <span class="italicize">restman.request.message.maxSize</span> cluster property.</p>
     <h3>Migration Example</h3>
