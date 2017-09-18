@@ -839,6 +839,10 @@ public class GatewayFeatureSets {
                 "The necessary assertions to enable Circuit Breaker pattern functionality",
                 mass("assertion:CircuitBreaker"));
 
+        GatewayFeatureSet corsAssertion = fsr("set:CORS:Assertions",
+                "The necessary assertions to enable CORS functionality",
+                mass("assertion:CORS"));
+
         GatewayFeatureSet apiPortalIntegration = fsr("set:ApiPortalIntegration:Assertions",
                 "The necessary assertions to enable API Portal integration features",
                 mass("assertion:UpgradePortal"),
@@ -1066,6 +1070,8 @@ public class GatewayFeatureSets {
             fs(jsonTransformationAssertion),
             fs(siteMinderAssertions),
             fs(sophosAssertions),
+            fs(corsAssertion),
+            fs(bulkJdbcInsertAssertions),
             fs(modularAssertions),
             fs(csrfProtectionAssertion),
             fs(retrieveServiceWsdlAssertion),
@@ -1145,6 +1151,7 @@ public class GatewayFeatureSets {
             fs(radiusAssertions),
             fs(retrieveServiceWsdlAssertion),
             fs(jwtAssertion),
+            fs(corsAssertion),
             mass("assertion:ValidateCertificate"));
             mass("assertion:PortalBootstrap");
 
@@ -1228,6 +1235,7 @@ public class GatewayFeatureSets {
             fs(siteMinderAssertions),
             fs(sophosAssertions),
             fs(csrfProtectionAssertion),
+            fs(corsAssertion),
             fs(retrieveServiceWsdlAssertion),
             mass("assertion:ValidateCertificate"));
 
@@ -1275,6 +1283,7 @@ public class GatewayFeatureSets {
                 fs(oDataValidationAssertion),
                 fs(swaggerAssertion),
                 fs(circuitBreakerAssertion),
+                fs(corsAssertion),
                 fs(concurrentAllAssertion),
                 fs(caWsdmAssertions),
                 fs(adaptiveLoadBalancingAssertions),
@@ -1380,7 +1389,7 @@ public class GatewayFeatureSets {
                 ass(AuthenticationAssertion.class),
                 ass(MemberOfGroup.class),
                 fs(jdbcQueryAssertions),
-                mass("assertion:CORS"),
+                fs(corsAssertion),
                 ass(HttpBasic.class),
                 ass(SslAssertion.class),
                 fs(jwtAssertion),
