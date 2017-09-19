@@ -32,7 +32,7 @@ public class PooledConnection {
         config.minEvictableIdleTimeMillis = Long.parseLong(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_CONNECTION_MAX_AGE,
                 String.valueOf(cacheConfig.getMaximumIdleTime())));
 
-        isPooled = !endpointConfig.getEndpoint().isMessageSource() && (config.maxActive > 1 || config.maxActive < 0);
+        isPooled = !endpointConfig.getEndpoint().isMessageSource() && Boolean.valueOf(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_CONNECTION_POOL_ENABLE, Boolean.FALSE.toString()));
 
         if(isPooled) {
             //set other pool properties
