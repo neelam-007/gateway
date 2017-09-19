@@ -32,7 +32,7 @@ public class PooledConnection {
         config.minEvictableIdleTimeMillis = Long.parseLong(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_CONNECTION_MAX_AGE,
                 String.valueOf(cacheConfig.getMaximumIdleTime())));
 
-        isPooled = !endpointConfig.getEndpoint().isMessageSource() && (config.maxActive != 0);
+        isPooled = !endpointConfig.getEndpoint().isMessageSource() && (config.maxActive > 1 || config.maxActive < 0);
 
         if(isPooled) {
             //set other pool properties
@@ -44,7 +44,7 @@ public class PooledConnection {
             config.timeBetweenEvictionRunsMillis = Long.parseLong(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_CONNECTION_POOL_EVICT_INTERVAL,
                     String.valueOf(cacheConfig.getTimeBetweewnEviction())));
             config.numTestsPerEvictionRun = Integer.parseInt(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_CONNECTION_POOL_EVICT_BATCH_SIZE,
-                    String.valueOf(cacheConfig.getDefaultPoolSize())));
+                    String.valueOf(cacheConfig.getDefaultEvictionBatchSize())));
             config.whenExhaustedAction = GenericObjectPool.WHEN_EXHAUSTED_BLOCK;
             pool = new GenericObjectPool<>(new PoolableObjectFactory<CachedConnection>() {
                 @Override
@@ -87,6 +87,7 @@ public class PooledConnection {
             else {
                 synchronized (singleConnection) {
                     singleConnection.touch();
+                    singleConnection.ref();
                     return singleConnection;
                 }
             }

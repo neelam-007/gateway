@@ -7,15 +7,17 @@ public class JmsResourceManagerConfig {
     private final int defaultPoolSize;
     private final long defaultWait;
     private final long timeBetweewnEviction;
+    private final int defaultEvictionBatchSize;
 
     public JmsResourceManagerConfig(final long maximumAge, final long maximumIdleTime, final int maximumSize,
-                                    final int defaultPoolSize, final long defaultWait, final long timeBetweewnEviction) {
+                                    final int defaultPoolSize, final long defaultWait, final long timeBetweewnEviction, final int defaultEvictionBatchSize) {
         this.maximumAge = maximumAge;
         this.maximumIdleTime = maximumIdleTime;
         this.maximumSize = maximumSize;
         this.defaultPoolSize = defaultPoolSize;
         this.defaultWait = defaultWait;
         this.timeBetweewnEviction = timeBetweewnEviction;
+        this.defaultEvictionBatchSize = defaultEvictionBatchSize;
     }
 
     public long getMaximumAge() {
@@ -40,5 +42,9 @@ public class JmsResourceManagerConfig {
 
     public long getTimeBetweewnEviction() {
         return timeBetweewnEviction;
+    }
+
+    public int getDefaultEvictionBatchSize() {
+        return defaultEvictionBatchSize;
     }
 }
