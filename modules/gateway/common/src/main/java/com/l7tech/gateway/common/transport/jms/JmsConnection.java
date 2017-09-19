@@ -84,6 +84,7 @@ public class JmsConnection extends ZoneableNamedEntityImp implements UsesPrivate
     public static final String PROP_SESSION_POOL_MAX_WAIT = PREFIX + ".session.pool.max.wait";
     public static final int DEFAULT_SESSION_POOL_SIZE = 8;
     public static final long DEFAULT_SESSION_POOL_MAX_WAIT = 5000;
+    public static final String PROP_CONNECTION_POOL_ENABLE = PREFIX + ".connection.pool.enable";
     public static final String PROP_CONNECTION_POOL_SIZE = PREFIX + ".connection.pool.size";
     public static final String PROP_CONNECTION_MAX_IDLE = PREFIX + ".connection.max.idle";
     public static final String PROP_CONNECTION_POOL_MAX_WAIT = PREFIX + ".connection.pool.max.wait";
