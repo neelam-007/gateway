@@ -47,7 +47,11 @@ import static com.l7tech.util.Option.some;
  * To change this template use File | Settings | File Templates.
  */
 public class AMQPDestinationDialog extends JDialog {
+
+    private static final Logger logger = Logger.getLogger(AMQPDestinationDialog.class.getName());
+
     private static class ContentTypeComboBoxItem {
+
         private final ContentTypeHeader cType;
 
         private ContentTypeComboBoxItem(final ContentTypeHeader cType) {
@@ -78,13 +82,14 @@ public class AMQPDestinationDialog extends JDialog {
         public int hashCode() {
             return (cType != null ? cType.hashCode() : 0);
         }
+
     }
 
-    private class ContentTypeComboBoxModel extends DefaultComboBoxModel {
+    private static class ContentTypeComboBoxModel extends DefaultComboBoxModel {
+
         private ContentTypeComboBoxModel(ContentTypeComboBoxItem[] items) {
             super(items);
         }
-
         // implements javax.swing.MutableComboBoxModel
         @Override
         public void addElement(Object anObject) {
@@ -98,9 +103,8 @@ public class AMQPDestinationDialog extends JDialog {
                 }
             }
         }
-    }
 
-    private Logger logger = Logger.getLogger(AMQPDestinationDialog.class.getName());
+    }
 
     private JPanel mainPanel;
     private JTabbedPane tabbedPane;
@@ -159,7 +163,9 @@ public class AMQPDestinationDialog extends JDialog {
     private JRadioButton outboundCorrelationIdRadioButton;
     private JRadioButton outboundMessageIdRadioButton;
     private JButton testButton;
+    private JButton tlsVersionsButton;
     private boolean modified = false;
+    private String[] tlsProtocols = new String[]{};
 
     private boolean confirmed = false;
 
@@ -480,6 +486,24 @@ public class AMQPDestinationDialog extends JDialog {
                 setVisible(false);
             }
         });
+
+        tlsVersionsButton.addActionListener(
+                new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent event) {
+                        TlsSelectionDialog.show(AMQPDestinationDialog.this, "Enabled TLS Protocols", null,
+                                tlsProtocols,
+                                new Functions.UnaryVoid<String[]>() {
+                                    @Override
+                                    public void call(String[] s) {
+                                        tlsProtocols = s;
+                                    }
+                                }
+                        );
+                    }
+                }
+        );
+
         destinationNameField.getDocument().addDocumentListener(amqpDocumentListener);
         exchangeNameField.getDocument().addDocumentListener(amqpDocumentListener);
         outboundReplySpecifiedQueueField.getDocument().addDocumentListener(amqpDocumentListener);
@@ -599,7 +623,7 @@ public class AMQPDestinationDialog extends JDialog {
                             enableSaveButton = false;
                         }
                     }
-                } else if (getContentTypeFromRadioButton.isSelected() && (getContentTypeFromProperty.getText().trim() == "")) {
+                } else if (getContentTypeFromRadioButton.isSelected() && "".equals(getContentTypeFromProperty.getText().trim())) {
                     enableSaveButton = false;
                 }
             }
@@ -712,6 +736,7 @@ public class AMQPDestinationDialog extends JDialog {
             if (destination.getCipherSpec() != null) {
                 cipherSpecComboBox.setSelectedItem(destination.getCipherSpec());
             }
+            tlsProtocols = destination.getTlsProtocols();
 
             useClientAuthenticationCheckBox.setSelected(destination.getSslClientKeyId() != null);
             if (destination.getSslClientKeyId() != null) {
@@ -929,6 +954,7 @@ public class AMQPDestinationDialog extends JDialog {
         destination.setUseSsl(enableSSLCheckBox.isSelected());
         if (enableSSLCheckBox.isSelected()) {
             destination.setCipherSpec((String) cipherSpecComboBox.getSelectedItem());
+            destination.setTlsProtocols(tlsProtocols);
 
             if (useClientAuthenticationCheckBox.isSelected() && keystoreComboBox.getSelectedItem() != null) {
                 destination.setSslClientKeyId(keystoreComboBox.getSelectedKeystoreId() + ":" + (keystoreComboBox.getSelectedKeyAlias() == null ? "" : keystoreComboBox.getSelectedKeyAlias()));
