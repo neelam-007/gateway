@@ -87,6 +87,9 @@ public class AMQPDestinationHelper {
         setNotNullProperty(ssgConnector, AmqpSsgActiveConnector.PROPERTY_KEY_AMQP_USERNAME, destination.getUsername(), false);
         setNotNullProperty(ssgConnector, AmqpSsgActiveConnector.PROPERTY_KEY_AMQP_PASSWORD_GOID, destination.getPasswordGoid(), false);
         setNotNullProperty(ssgConnector, AmqpSsgActiveConnector.PROPERTY_KEY_AMQP_USESSL, destination.isUseSsl(), false);
+        if (destination.getTlsProtocols() != null) {
+            ssgConnector.setProperty(AmqpSsgActiveConnector.PROPERTY_KEY_AMQP_TLS_PROTOCOLS, objectToStringRepresentation(destination.getTlsProtocols()));
+        }
         setNotNullProperty(ssgConnector, AmqpSsgActiveConnector.PROPERTY_KEY_AMQP_CIPHERSPEC, destination.getCipherSpec(), false);
         setNotNullProperty(ssgConnector, AmqpSsgActiveConnector.PROPERTY_KEY_AMQP_SSL_CLIENT_KEY_ID, destination.getSslClientKeyId(), false);
         setNotNullProperty(ssgConnector, AmqpSsgActiveConnector.PROPERTY_KEY_AMQP_QUEUE_NAME, destination.getQueueName(), false);
@@ -140,6 +143,10 @@ public class AMQPDestinationHelper {
                 destination.setUseSsl(Boolean.parseBoolean(ssgConnector.getProperty(AmqpSsgActiveConnector.PROPERTY_KEY_AMQP_USESSL)));
             }
 
+            String tempTlsProtocols = ssgConnector.getProperty(AmqpSsgActiveConnector.PROPERTY_KEY_AMQP_TLS_PROTOCOLS);
+            if (tempTlsProtocols != null) {
+                destination.setTlsProtocols(stringRepresentationToObject(tempTlsProtocols));
+            }
 
             destination.setCipherSpec(ssgConnector.getProperty(AmqpSsgActiveConnector.PROPERTY_KEY_AMQP_CIPHERSPEC));
             destination.setSslClientKeyId(ssgConnector.getProperty(AmqpSsgActiveConnector.PROPERTY_KEY_AMQP_SSL_CLIENT_KEY_ID));

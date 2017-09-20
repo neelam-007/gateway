@@ -29,16 +29,22 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.stubbing.Answer;
 import org.springframework.context.ApplicationContext;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocket;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
+import java.util.function.Predicate;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.*;
 
 /**
  * Created by IntelliJ IDEA.
@@ -47,8 +53,7 @@ import java.util.logging.Logger;
  * Time: 3:45 PM
  * To change this template use File | Settings | File Templates.
  */
-@PowerMockIgnore({"org.xml.*", "javax.xml.*"})
-@RunWith(PowerMockRunner.class)
+@RunWith(MockitoJUnitRunner.class)
 public class ServerAMQPDestinationManagerTest {
     private static final Logger log = Logger.getLogger(ServerRouteViaAMQPAssertionTest.class.getName());
     private static final String PROPERTY_KEY_ADDRESS = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
@@ -74,15 +79,15 @@ public class ServerAMQPDestinationManagerTest {
     public void setUp() {
         // Get the spring app context
         if (applicationContext == null) {
-            applicationContext = Mockito.mock(ApplicationContext.class);
+            applicationContext = mock(ApplicationContext.class);
             Assert.assertNotNull("Fail - Unable to get applicationContext instance", applicationContext);
         }
         AmqpSupportAssertion assertion = new AmqpSupportAssertion();
         AssertionMetadata assertionMetadata = assertion.meta();
         Functions.Unary<ExtensionInterfaceBinding, ApplicationContext> o = assertionMetadata.get(AssertionMetadata.EXTENSION_INTERFACES_FACTORY);
         o.call(applicationContext);
-        Mockito.when(applicationContext.getBean("clusterPropertyManager", ClusterPropertyManager.class)).
-                thenReturn(Mockito.mock(ClusterPropertyManager.class));
+        when(applicationContext.getBean("clusterPropertyManager", ClusterPropertyManager.class)).
+                thenReturn(mock(ClusterPropertyManager.class));
     }
 
     private void createOutboundDestination1(List<AMQPDestination> destinations) throws FindException, SaveException {
@@ -126,39 +131,34 @@ public class ServerAMQPDestinationManagerTest {
         setDestinationsClusterProperty(destinations);
 
         ServerConfig config = new ServerConfigStub();
-        Mockito.when(applicationContext.getBean("ssgActiveConnectorManager", SsgActiveConnectorManager.class)).
+        when(applicationContext.getBean("ssgActiveConnectorManager", SsgActiveConnectorManager.class)).
                 thenReturn(ssgActiveConnectorManager);
-        SsgActiveConnector amqpconnector = Mockito.mock(SsgActiveConnector.class);
-        Mockito.when(amqpconnector.getName()).thenReturn("AMQP");
+        SsgActiveConnector amqpconnector = mock(SsgActiveConnector.class);
+        when(amqpconnector.getName()).thenReturn("AMQP");
         // to match the default GOID when a new AMQPDestination is created
-        Mockito.when(amqpconnector.getGoid()).thenReturn(new Goid(0, -1));
-        Mockito.when(amqpconnector.getType()).thenReturn(AmqpSsgActiveConnector.ACTIVE_CONNECTOR_TYPE_AMQP);
-        Mockito.when(amqpconnector.getProperty(AmqpSsgActiveConnector.PROPERTY_KEY_AMQP_ADDRESSES)).thenReturn(PROPERTY_KEY_ADDRESS);
+        when(amqpconnector.getGoid()).thenReturn(new Goid(0, -1));
+        when(amqpconnector.getType()).thenReturn(AmqpSsgActiveConnector.ACTIVE_CONNECTOR_TYPE_AMQP);
+        when(amqpconnector.getProperty(AmqpSsgActiveConnector.PROPERTY_KEY_AMQP_ADDRESSES)).thenReturn(PROPERTY_KEY_ADDRESS);
         Collection<SsgActiveConnector> connectorList = new ArrayList<>();
         connectorList.add(amqpconnector);
-        Mockito.when(ssgActiveConnectorManager.findSsgActiveConnectorsByType(AmqpSsgActiveConnector.ACTIVE_CONNECTOR_TYPE_AMQP)).thenReturn(connectorList);
-        Mockito.when(applicationContext.getBean("serviceCache", ServiceCache.class)).thenReturn(serviceCache);
+        when(ssgActiveConnectorManager.findSsgActiveConnectorsByType(AmqpSsgActiveConnector.ACTIVE_CONNECTOR_TYPE_AMQP)).thenReturn(connectorList);
+        when(applicationContext.getBean("serviceCache", ServiceCache.class)).thenReturn(serviceCache);
 
         ServerAMQPDestinationManager manager = new ServerAMQPDestinationManager(config, applicationContext);
         ServerAMQPDestinationManager spyManager = Mockito.spy(manager);
 
-        AmqpSupportServer amqpSupportServer = Mockito.mock(AmqpSupportServer.class);
-        Channel amqpDestinationChannel = Mockito.mock(Channel.class);
-        ConnectionFactory cf = Mockito.mock(ConnectionFactory.class);
-        Mockito.doReturn(cf).when(spyManager).createNewConnectionFactory();
-        Connection connection = Mockito.mock(Connection.class);
-        Mockito.when(connection.createChannel()).thenReturn(amqpDestinationChannel);
-        Mockito.when(cf.newConnection(Mockito.any(Address[].class))).thenReturn(connection);
-
-//        Mockito.when(amqpSupportServer.activateProducerDestination(Mockito.any(AMQPDestination.class))).thenReturn(amqpDestinationChannel);
+        ConnectionFactory connectionFactory = new ConnectionFactoryBuilder()
+                .whenNewConnectionReturn(new ConnectionBuilder().whenCreateChannelReturn(mock(Channel.class)).build())
+                .build();
+        Mockito.doReturn(connectionFactory).when(spyManager).createNewConnectionFactory();
 
         spyManager.loadClusterProperties();
         spyManager.loadDestinations();
 
         Assert.assertEquals(1, spyManager.destinations.size());
-        Assert.assertTrue(spyManager.destinations.containsKey(destinations.get(0).getGoid()));
+        assertTrue(spyManager.destinations.containsKey(destinations.get(0).getGoid()));
         Assert.assertEquals(0, spyManager.failedProducers.size());
-        Assert.assertTrue(spyManager.clientChannels.containsKey(destinations.get(0).getGoid()));
+        assertTrue(spyManager.clientChannels.containsKey(destinations.get(0).getGoid()));
 
         Channel channel = spyManager.clientChannels.get(destinations.get(0).getGoid()).getClientChannel();
         Assert.assertNotNull(channel);
@@ -171,43 +171,154 @@ public class ServerAMQPDestinationManagerTest {
         setDestinationsClusterProperty(destinations);
 
         ServerConfig config = new ServerConfigStub();
-        Mockito.when(applicationContext.getBean("ssgActiveConnectorManager", SsgActiveConnectorManager.class)).
+        when(applicationContext.getBean("ssgActiveConnectorManager", SsgActiveConnectorManager.class)).
                 thenReturn(ssgActiveConnectorManager);
-        SsgActiveConnector amqpconnector = Mockito.mock(SsgActiveConnector.class);
-        Mockito.when(amqpconnector.getName()).thenReturn("AMQP");
+        SsgActiveConnector amqpconnector = mock(SsgActiveConnector.class);
+        when(amqpconnector.getName()).thenReturn("AMQP");
         // to match the default GOID when a new AMQPDestination is created
-        Mockito.when(amqpconnector.getGoid()).thenReturn(new Goid(0, -1));
-        Mockito.when(amqpconnector.getType()).thenReturn(AmqpSsgActiveConnector.ACTIVE_CONNECTOR_TYPE_AMQP);
-        Mockito.when(amqpconnector.getProperty(AmqpSsgActiveConnector.PROPERTY_KEY_AMQP_ADDRESSES)).thenReturn(PROPERTY_KEY_ADDRESS);
+        when(amqpconnector.getGoid()).thenReturn(new Goid(0, -1));
+        when(amqpconnector.getType()).thenReturn(AmqpSsgActiveConnector.ACTIVE_CONNECTOR_TYPE_AMQP);
+        when(amqpconnector.getProperty(AmqpSsgActiveConnector.PROPERTY_KEY_AMQP_ADDRESSES)).thenReturn(PROPERTY_KEY_ADDRESS);
         Collection<SsgActiveConnector> connectorList = new ArrayList<>();
         connectorList.add(amqpconnector);
-        Mockito.when(ssgActiveConnectorManager.findSsgActiveConnectorsByType(AmqpSsgActiveConnector.ACTIVE_CONNECTOR_TYPE_AMQP)).thenReturn(connectorList);
-        Mockito.when(applicationContext.getBean("serviceCache", ServiceCache.class)).thenReturn(serviceCache);
+        when(ssgActiveConnectorManager.findSsgActiveConnectorsByType(AmqpSsgActiveConnector.ACTIVE_CONNECTOR_TYPE_AMQP)).thenReturn(connectorList);
+        when(applicationContext.getBean("serviceCache", ServiceCache.class)).thenReturn(serviceCache);
 
         ServerAMQPDestinationManager manager = new ServerAMQPDestinationManager(config, applicationContext);
         ServerAMQPDestinationManager spyManager = Mockito.spy(manager);
 
-        Channel amqpDestinationChannel = Mockito.mock(Channel.class);
-        ConnectionFactory cf = Mockito.mock(ConnectionFactory.class);
-        Mockito.doReturn(cf).when(spyManager).createNewConnectionFactory();
-        Connection connection = Mockito.mock(Connection.class);
-
-        Mockito.when(connection.createChannel()).thenReturn(amqpDestinationChannel);
-        Mockito.when(cf.newConnection(Mockito.any(Address[].class))).thenReturn(connection);
-
+        ConnectionFactory connectionFactory = new ConnectionFactoryBuilder()
+                .whenNewConnectionReturn(new ConnectionBuilder().whenCreateChannelReturn(mock(Channel.class)).build())
+                .build();
+        Mockito.doReturn(connectionFactory).when(spyManager).createNewConnectionFactory();
 
         spyManager.loadClusterProperties();
         spyManager.loadDestinations();
 
         Assert.assertEquals(1, spyManager.destinations.size());
-        Assert.assertTrue(spyManager.destinations.containsKey(destinations.get(0).getGoid()));
+        assertTrue(spyManager.destinations.containsKey(destinations.get(0).getGoid()));
         Assert.assertEquals(0, spyManager.failedProducers.size());
-        Assert.assertTrue(spyManager.clientChannels.containsKey(destinations.get(0).getGoid()));
+        assertTrue(spyManager.clientChannels.containsKey(destinations.get(0).getGoid()));
 
         HashMap amqpProperties = new HashMap();
         String routingKey = "key";
         Message request = new Message();
         Message response = new Message();
         spyManager.queueMessage(destinations.get(0).getGoid(), routingKey, request, response, amqpProperties);
+    }
+
+    @Test
+    public void testTlsProtocolSelection() throws Exception {
+        final ServerConfig config = new ServerConfigStub();
+        when(applicationContext.getBean("ssgActiveConnectorManager", SsgActiveConnectorManager.class)).
+                thenReturn(ssgActiveConnectorManager);
+        when(applicationContext.getBean("serviceCache", ServiceCache.class)).thenReturn(serviceCache);
+
+        final ServerAMQPDestinationManager manager = new ServerAMQPDestinationManager(config, applicationContext);
+        final SSLContext[] sslContextHolder = new SSLContext[1];
+        final ConnectionFactory connectionFactory = new ConnectionFactoryBuilder()
+                .trapUsesSslProtocolArgument(sslContextHolder)
+                .build();
+        final String[] supportedSslProtocols = new String[] {AMQPDestination.PROCOCOL_TLS1, AMQPDestination.PROTOCOL_TLS12};
+        final AMQPDestination destination = new DestinationFactory()
+                .withIsUseSsl(true).withSslProtocols(supportedSslProtocols)
+                .build();
+
+        manager.initSSLSettings(destination, connectionFactory);
+
+        final SSLContext sslContext = sslContextHolder[0];
+        final SSLSocket sslSocket = (SSLSocket) sslContext.getSocketFactory().createSocket();
+        final List<String> supportedList = Arrays.asList(supportedSslProtocols);
+        final List<String> returnedList = Arrays.asList(sslSocket.getEnabledProtocols());
+
+        final List<String> supportedButNotReturned = supportedList.stream().filter(new Predicate<String>() {
+            @Override
+            public boolean test(String i) {
+                return !returnedList.contains(i);
+            }
+        })
+                .collect(Collectors.toList());
+        assertTrue("Protocols were supposed to be supported but are not: "
+                + Arrays.toString(supportedButNotReturned.toArray()),
+                supportedButNotReturned.isEmpty());
+
+        final List<String> returnedButNotSupported = returnedList.stream().filter(new Predicate<String>() {
+            @Override
+            public boolean test(String i) {
+                return !supportedList.contains(i);
+            }
+        })
+                .collect(Collectors.toList());
+        assertTrue("Protocols were not supposed to be supported but are: "
+                        + Arrays.toString(returnedButNotSupported.toArray()),
+                returnedButNotSupported.isEmpty());
+    }
+
+}
+
+class ConnectionFactoryBuilder {
+    private final ConnectionFactory connectionFactory;
+
+    ConnectionFactoryBuilder() {
+        connectionFactory = mock(ConnectionFactory.class);
+    }
+
+    ConnectionFactoryBuilder whenNewConnectionReturn(Connection connection) throws Exception {
+        when(connectionFactory.newConnection(any(Address[].class))).thenReturn(connection);
+        return this;
+    }
+
+    ConnectionFactoryBuilder trapUsesSslProtocolArgument(SSLContext[] contextHolder) {
+        doAnswer(new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocationOnMock) throws Throwable {
+                return contextHolder[0] = (SSLContext) invocationOnMock.getArguments()[0];
+            }
+        }).
+                when(connectionFactory).useSslProtocol(any(SSLContext.class));
+        return this;
+    }
+
+    ConnectionFactory build() {
+        return connectionFactory;
+    }
+}
+
+class ConnectionBuilder {
+    private final Connection connection;
+
+    ConnectionBuilder() {
+        this.connection = mock(Connection.class);
+    }
+
+    ConnectionBuilder whenCreateChannelReturn(Channel channel) throws Exception {
+        when(connection.createChannel()).thenReturn(channel);
+        return this;
+    }
+
+    Connection build() {
+        return connection;
+    }
+}
+
+class DestinationFactory {
+    private final AMQPDestination destination;
+
+    DestinationFactory() {
+        destination = mock(AMQPDestination.class);
+    }
+
+    DestinationFactory withIsUseSsl(boolean useSsl) {
+        when(destination.isUseSsl()).thenReturn(useSsl);
+        return this;
+    }
+
+    public DestinationFactory withSslProtocols(String[] supportedSslProtocols) {
+        when(destination.getTlsProtocols()).thenReturn(supportedSslProtocols);
+        return this;
+    }
+
+    AMQPDestination build() {
+        return destination;
     }
 }
