@@ -1459,6 +1459,7 @@ public class GatewayFeatureSets {
                 mass("assertion:LDAPQuery"),
                 mass("assertion:JsonJolt"),
                 ass(HtmlFormDataAssertion.class),
+                ass(RemoveElement.class),
                 fs(moduleLoader));
 
 
