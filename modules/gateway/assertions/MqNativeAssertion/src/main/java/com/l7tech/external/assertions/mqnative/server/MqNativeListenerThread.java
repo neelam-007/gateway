@@ -20,12 +20,14 @@ import static com.ibm.mq.constants.MQConstants.MQGMO_PROPERTIES_FORCE_MQRFH2;
 import static com.ibm.mq.constants.MQConstants.MQGMO_CONVERT;
 import static java.text.MessageFormat.format;
 import static com.l7tech.external.assertions.mqnative.MqNativeConstants.MQ_LISTENER_INBOUND_GET_MESSAGE_OPTIONS_PROPERTY;
-import static com.l7tech.gateway.common.transport.SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_INBOUND_IS_GET_MESSAGE_OPTIONS_USED;
-import static com.l7tech.gateway.common.transport.SsgActiveConnector.PROPERTIES_KEY_MQ_NATIVE_INBOUND_GET_MESSAGE_OPTIONS;
 /**
  * Listener thread responsible for receiving messages from the MQ endpoint.
  */
 class MqNativeListenerThread extends Thread {
+
+    public static final String PROPERTIES_KEY_MQ_NATIVE_INBOUND_IS_GET_MESSAGE_OPTIONS_USED = "MqNativeInboundIsGetMessageOptionsUsed";
+    public static final String PROPERTIES_KEY_MQ_NATIVE_INBOUND_GET_MESSAGE_OPTIONS = "MqNativeInboundGetMessageOptions";
+
     // The amount of time the thread sleeps when the MAXIMUM_OOPSES limit is reached
     private final AtomicLong oopsSleep = new AtomicLong(MqNativeListener.DEFAULT_OOPS_SLEEP);
     // Time interval to wait before polling again on an empty queue

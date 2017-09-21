@@ -68,6 +68,11 @@ import static com.l7tech.util.JdkLoggerConfigurator.debugState;
  * MQ native listener module (aka boot process).
  */
 public class MqNativeModule extends ActiveTransportModule implements ApplicationListener {
+    public static final String PROPERTIES_KEY_MQ_NATIVE_INBOUND_IS_REPLY_QUEUE_PUT_MESSAGE_OPTIONS_USED = "MqNativeInboundIsReplyQueuePutMessageOptionsUsed";
+    public static final String PROPERTIES_KEY_MQ_NATIVE_INBOUND_REPLY_QUEUE_PUT_MESSAGE_OPTIONS = "MqNativeInboundReplyQueuePutMessageOptions";
+    public static final String PROPERTIES_KEY_MQ_NATIVE_INBOUND_IS_FAILED_QUEUE_PUT_MESSAGE_OPTIONS_USED = "MqNativeInboundIsFailedQueuePutMessageOptionsUsed";
+    public static final String PROPERTIES_KEY_MQ_NATIVE_INBOUND_FAILED_QUEUE_PUT_MESSAGE_OPTIONS = "MqNativeInboundFailedQueuePutMessageOptions";
+
     static final int DEFAULT_MESSAGE_MAX_BYTES = 2621440;
     static final int DEFAULT_LISTENER_MAX_CONCURRENT_CONNECTIONS = 1000;
 
