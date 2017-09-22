@@ -18,9 +18,12 @@ import javax.naming.NamingException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.fail;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.mock;
 
@@ -32,6 +35,8 @@ public class JmsResourceManagerTest {
 
     @Mock
     JmsEndpointConfig mockJmsEndpointConfig;
+    @Mock
+    PooledConnection mockPooledConnection;
     @Mock
     JmsBag mockJmsBag;
 
@@ -73,6 +78,12 @@ public class JmsResourceManagerTest {
         JmsEndpointConfig.JmsEndpointKey jmsEndpointKey = mock(JmsEndpointConfig.JmsEndpointKey.class);
         JmsEndpoint jmsEndpoint = mock(JmsEndpoint.class);
         JmsConnection jmsConnection = mock(JmsConnection.class);
+        Properties mockJmsConnectionProps = mock(Properties.class);
+
+        when(mockJmsConnectionProps.getProperty(eq(JmsConnection.PROP_CONNECTION_POOL_SIZE), anyString())).thenReturn(String.valueOf(JmsConnection.DEFAULT_CONNECTION_POOL_SIZE));
+        when(mockJmsConnectionProps.getProperty(eq(JmsConnection.PROP_CONNECTION_MAX_AGE), anyString())).thenReturn(String.valueOf(JmsConnection.DEFAULT_CONNECTION_MAX_AGE));
+        when(mockJmsConnectionProps.getProperty(eq(JmsConnection.PROP_CONNECTION_POOL_ENABLE), anyString())).thenReturn("false");
+
 
         when(mockJmsEndpointConfig.getJmsEndpointKey()).thenReturn(jmsEndpointKey);
         when(mockJmsEndpointConfig.getEndpoint()).thenReturn(jmsEndpoint);
@@ -80,9 +91,14 @@ public class JmsResourceManagerTest {
         when(jmsEndpointKey.toString()).thenReturn("JmsEndpointKey");
         when(jmsEndpoint.getVersion()).thenReturn(1234);
         when(jmsConnection.getVersion()).thenReturn(5678);
+        when(jmsConnection.properties()).thenReturn(mockJmsConnectionProps);
+        when(jmsConnection.getInitialContextFactoryClassname()).thenReturn("javax.jms.InitialContextFactory");
 
         cachedConnection = ((JmsResourceManagerStub)fixture).new CachedConnectionStub(mockJmsEndpointConfig, mockJmsBag);
-        ((JmsResourceManagerStub)fixture).setCachedConnection(cachedConnection);
+
+        when(mockPooledConnection.borrowConnection()).thenReturn(cachedConnection);
+
+        ((JmsResourceManagerStub)fixture).setPooledConnection(mockPooledConnection);
     }
 
     @Test (expected = NamingException.class)
@@ -96,27 +112,9 @@ public class JmsResourceManagerTest {
         });
     }
 
-    @Test
-    public void testTimeDifference() throws Exception {
-        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss.SSS");
-        Date start = format.parse("2017-08-23 17:30:53.200");
-        Date end = format.parse("2017-08-23 17:43:05.626");
-        long diff = end.getTime() - start.getTime();
-        long seconds = diff / 1000 % 60;
-        long minutes = diff / (60 * 1000) % 60;
-        System.out.print("Microseconds: " + diff);
-        long msgpersec = 604282L/(diff/1000);
-        System.out.println(" average " + 604282L/(diff/1000));
-        System.out.println(minutes + ":" + seconds);
-        long totalTime = 1000000L/msgpersec;
-        seconds = totalTime % 60;
-        minutes = totalTime / (60) % 60;
-        System.out.println(minutes + ":" + seconds);
-    }
-
     public class JmsResourceManagerStub extends JmsResourceManager {
 
-        private CachedConnection conn;
+        private PooledConnection conn;
 
         /**
          * Create a new JMS Resource manager.
@@ -130,12 +128,12 @@ public class JmsResourceManagerTest {
             super(name, config);
         }
 
-        public void setCachedConnection(final CachedConnection cc) {
+        public void setPooledConnection(final PooledConnection cc) {
             this.conn = cc;
         }
 
-        protected CachedConnection getConnection(JmsEndpointConfig endpoint) throws NamingException, JmsRuntimeException {
-            return conn;
+        protected CachedConnection getPooledConnection(JmsEndpointConfig endpoint) throws JmsRuntimeException {
+            return conn.borrowConnection();
         }
 
         protected class CachedConnectionStub extends CachedConnection {
