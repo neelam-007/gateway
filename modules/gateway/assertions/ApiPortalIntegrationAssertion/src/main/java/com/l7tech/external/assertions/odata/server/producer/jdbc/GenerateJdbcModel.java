@@ -26,7 +26,7 @@ public class GenerateJdbcModel implements ThrowingFunc1<Connection, JdbcModel> {
             if (rs != null && rs.next()) {//we only support the first returned schema for oracle
                 paramSchemaName = rs.getString(1);
             }
-        } else if (databaseTypeName.contains("hsql database")) {
+        } else if (databaseTypeName.contains("hsql database") || databaseTypeName.contains("postgres")) {
             paramSchemaName = null;
         }
 
