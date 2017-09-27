@@ -247,7 +247,6 @@ public class ServerConfigTest {
 
         list.add(PropertyRegistrationInfo.prInfo("myName", "my.name", "My Name", "Hello World"));
         list.add(PropertyRegistrationInfo.prInfo("myId", "my.id", "My ID", "1234567890", "long"));
-        list.add(PropertyRegistrationInfo.prInfo("timeUnitProp", "timeUnit.prop", "Time Unit Property", "1m", "timeUnit"));
 
         sc.registerServerConfigProperties(list);
 
@@ -256,7 +255,5 @@ public class ServerConfigTest {
         assertNull(sc.getClusterPropertyValidators().get("my.name"));
         assertTrue(sc.getClusterPropertyValidators().get("my.id").isValid("1234"));
         assertFalse(sc.getClusterPropertyValidators().get("my.id").isValid("Hello1234"));
-        assertTrue(sc.getClusterPropertyValidators().get("timeUnit.prop").isValid("2h"));
-        assertEquals(60000, TimeUnit.parse(sc.getProperty("timeUnitProp")));
     }
 }

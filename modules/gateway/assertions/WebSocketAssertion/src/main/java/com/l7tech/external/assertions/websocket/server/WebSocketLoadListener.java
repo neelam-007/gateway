@@ -40,6 +40,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -162,39 +163,52 @@ public class WebSocketLoadListener {
     private static boolean hasValidWebSocketLicense() {
         return licenseManager.isFeatureEnabled(GatewayFeatureSets.FS_WEBSOCKETS);
     }
-    private static int getProp(String key, int defaultValue) {
-        int prop;
-        String clusterProp = null;
+    protected static int getIntegerProp (String key, int defaultValue) {
+        return getProp(key, defaultValue, Integer::parseInt);
+    }
+
+    protected static int getTimeProp (String key, int defaultValue) {
+        Number convertedValue = getProp(key, defaultValue, TimeUnit::parse);
+        if (convertedValue.longValue() >= Integer.MAX_VALUE) {
+            logger.log(Level.INFO, "Cluster property : '" + key + "' value is too long.  setting default value");
+            return defaultValue;
+        } else {
+            return convertedValue.intValue();
+        }
+    }
+
+    private static <T> T getProp(String key, T defaultValue, Function<String,T> valueTransformer ) {
+        final String clusterProp;
         try {
             clusterProp = clusterPropertyManager.getProperty(key);
-            if (clusterProp == null || "".equals(clusterProp)) {
-                prop = defaultValue;
-            } else {
-                prop = Integer.parseInt(clusterProp);
-            }
-        } catch(FindException e){
-            logger.log(Level.INFO, "Cluster property : " + key + " doesn't exist setting default");
-            prop = defaultValue;
-        } catch (NumberFormatException ne) {
-            logger.log(Level.INFO, "Cluster property : " + key + " value contains shorthand abbreviation, setting to converted value");
-            prop = (int) TimeUnit.parse(clusterProp);
+        } catch (FindException e) {
+            logger.log(Level.INFO, "Cluster property : '" + key + "' doesn't exist setting default");
+            return defaultValue;
         }
-        return prop;
+        if (clusterProp == null || "".equals(clusterProp)) {
+            return defaultValue;
+        }
+        try {
+            return valueTransformer.apply(clusterProp);
+        } catch (Throwable t) {
+            logger.log(Level.INFO, "Cluster property : '" + key + "' value is invalid: '" + clusterProp + "'. Using default value");
+            return defaultValue;
+        }
     }
 
     private static void loadProps() {
-        WebSocketConstants.setClusterProperty(WebSocketConstants.CONNECT_TIMEOUT_KEY, getProp(WebSocketConstants.CONNECT_TIMEOUT_KEY, WebSocketConstants.CONNECT_TIMEOUT));
-        WebSocketConstants.setClusterProperty(WebSocketConstants.BUFFER_SIZE_KEY, getProp(WebSocketConstants.BUFFER_SIZE_KEY, WebSocketConstants.BUFFER_SIZE));
-        WebSocketConstants.setClusterProperty(WebSocketConstants.MAX_BINARY_MSG_SIZE_KEY, getProp(WebSocketConstants.MAX_BINARY_MSG_SIZE_KEY, WebSocketConstants.MAX_BINARY_MSG_SIZE));
-        WebSocketConstants.setClusterProperty(WebSocketConstants.MAX_TEXT_MSG_SIZE_KEY, getProp(WebSocketConstants.MAX_TEXT_MSG_SIZE_KEY, WebSocketConstants.MAX_TEXT_MSG_SIZE));
-        WebSocketConstants.setClusterProperty(WebSocketConstants.MAX_INBOUND_IDLE_TIME_MS_KEY, getProp(WebSocketConstants.MAX_INBOUND_IDLE_TIME_MS_KEY, WebSocketConstants.MAX_INBOUND_IDLE_TIME_MS));
-        WebSocketConstants.setClusterProperty(WebSocketConstants.MAX_OUTBOUND_IDLE_TIME_MS_KEY, getProp(WebSocketConstants.MAX_OUTBOUND_IDLE_TIME_MS_KEY, WebSocketConstants.MAX_OUTBOUND_IDLE_TIME_MS));
-        WebSocketConstants.setClusterProperty(WebSocketConstants.MAX_INBOUND_CONNECTIONS_KEY, getProp(WebSocketConstants.MAX_INBOUND_CONNECTIONS_KEY, WebSocketConstants.MAX_INBOUND_CONNECTIONS));
-        WebSocketConstants.setClusterProperty(WebSocketConstants.MAX_OUTBOUND_THREADS_KEY, getProp(WebSocketConstants.MAX_OUTBOUND_THREADS_KEY, WebSocketConstants.MAX_OUTBOUND_THREADS));
-        WebSocketConstants.setClusterProperty(WebSocketConstants.MIN_OUTBOUND_THREADS_KEY, getProp(WebSocketConstants.MIN_OUTBOUND_THREADS_KEY, WebSocketConstants.MIN_OUTBOUND_THREADS));
-        WebSocketConstants.setClusterProperty(WebSocketConstants.MAX_INBOUND_THREADS_KEY, getProp(WebSocketConstants.MAX_INBOUND_THREADS_KEY, WebSocketConstants.MAX_INBOUND_THREADS));
-        WebSocketConstants.setClusterProperty(WebSocketConstants.MIN_INBOUND_THREADS_KEY, getProp(WebSocketConstants.MIN_INBOUND_THREADS_KEY, WebSocketConstants.MIN_INBOUND_THREADS));
-        WebSocketConstants.setClusterProperty(WebSocketConstants.ACCEPT_QUEUE_SIZE_KEY, getProp(WebSocketConstants.ACCEPT_QUEUE_SIZE_KEY, WebSocketConstants.ACCEPT_QUEUE_SIZE));
+        WebSocketConstants.setClusterProperty(WebSocketConstants.CONNECT_TIMEOUT_KEY, getTimeProp(WebSocketConstants.CONNECT_TIMEOUT_KEY, WebSocketConstants.CONNECT_TIMEOUT));
+        WebSocketConstants.setClusterProperty(WebSocketConstants.BUFFER_SIZE_KEY, getIntegerProp(WebSocketConstants.BUFFER_SIZE_KEY, WebSocketConstants.BUFFER_SIZE));
+        WebSocketConstants.setClusterProperty(WebSocketConstants.MAX_BINARY_MSG_SIZE_KEY, getIntegerProp(WebSocketConstants.MAX_BINARY_MSG_SIZE_KEY, WebSocketConstants.MAX_BINARY_MSG_SIZE));
+        WebSocketConstants.setClusterProperty(WebSocketConstants.MAX_TEXT_MSG_SIZE_KEY, getIntegerProp(WebSocketConstants.MAX_TEXT_MSG_SIZE_KEY, WebSocketConstants.MAX_TEXT_MSG_SIZE));
+        WebSocketConstants.setClusterProperty(WebSocketConstants.MAX_INBOUND_IDLE_TIME_MS_KEY, getTimeProp(WebSocketConstants.MAX_INBOUND_IDLE_TIME_MS_KEY, WebSocketConstants.MAX_INBOUND_IDLE_TIME_MS));
+        WebSocketConstants.setClusterProperty(WebSocketConstants.MAX_OUTBOUND_IDLE_TIME_MS_KEY, getTimeProp(WebSocketConstants.MAX_OUTBOUND_IDLE_TIME_MS_KEY, WebSocketConstants.MAX_OUTBOUND_IDLE_TIME_MS));
+        WebSocketConstants.setClusterProperty(WebSocketConstants.MAX_INBOUND_CONNECTIONS_KEY, getIntegerProp(WebSocketConstants.MAX_INBOUND_CONNECTIONS_KEY, WebSocketConstants.MAX_INBOUND_CONNECTIONS));
+        WebSocketConstants.setClusterProperty(WebSocketConstants.MAX_OUTBOUND_THREADS_KEY, getIntegerProp(WebSocketConstants.MAX_OUTBOUND_THREADS_KEY, WebSocketConstants.MAX_OUTBOUND_THREADS));
+        WebSocketConstants.setClusterProperty(WebSocketConstants.MIN_OUTBOUND_THREADS_KEY, getIntegerProp(WebSocketConstants.MIN_OUTBOUND_THREADS_KEY, WebSocketConstants.MIN_OUTBOUND_THREADS));
+        WebSocketConstants.setClusterProperty(WebSocketConstants.MAX_INBOUND_THREADS_KEY, getIntegerProp(WebSocketConstants.MAX_INBOUND_THREADS_KEY, WebSocketConstants.MAX_INBOUND_THREADS));
+        WebSocketConstants.setClusterProperty(WebSocketConstants.MIN_INBOUND_THREADS_KEY, getIntegerProp(WebSocketConstants.MIN_INBOUND_THREADS_KEY, WebSocketConstants.MIN_INBOUND_THREADS));
+        WebSocketConstants.setClusterProperty(WebSocketConstants.ACCEPT_QUEUE_SIZE_KEY, getIntegerProp(WebSocketConstants.ACCEPT_QUEUE_SIZE_KEY, WebSocketConstants.ACCEPT_QUEUE_SIZE));
     }
 
     @SuppressWarnings({"UnusedDeclaration"})
