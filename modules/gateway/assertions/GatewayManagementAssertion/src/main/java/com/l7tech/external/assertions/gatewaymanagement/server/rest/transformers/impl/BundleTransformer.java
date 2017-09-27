@@ -156,6 +156,18 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
         return convertFromMO(bundle, true, secretsEncryptor);
     }
 
+    @NotNull
+    public List<EntityBundle> convertFromMO(@NotNull final BundleList bundles, SecretsEncryptor secretsEncryptor) throws ResourceFactory.InvalidResourceException {
+        final List<Bundle> bundleList = bundles.getBundles();
+        final List<EntityBundle> entityBundles = new ArrayList<>(bundleList.size());
+
+        for (final Bundle bundle: bundleList) {
+            entityBundles.add(convertFromMO(bundle, secretsEncryptor));
+        }
+
+        return entityBundles;
+    }
+
     /**
      * This converts a bundle to an entity bundle.
      *

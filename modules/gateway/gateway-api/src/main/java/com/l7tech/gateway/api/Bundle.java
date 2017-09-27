@@ -9,6 +9,7 @@ public class Bundle {
     private List<Item> references;
     private List<Mapping> mappings;
     private DependencyListMO dependencies;
+    private String name; // used to identify this bundle
 
     Bundle(){}
 
@@ -35,6 +36,15 @@ public class Bundle {
     @XmlElement(name = "DependencyGraph")
     public DependencyListMO getDependencyGraph() {
         return dependencies;
+    }
+
+    @XmlAttribute(name="name")
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public void setDependencyGraph(DependencyListMO dependencies) {
