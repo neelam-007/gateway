@@ -6,6 +6,7 @@ import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.PasswordGuiUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SecurityZoneWidget;
+import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.security.rbac.*;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceAdmin;
@@ -14,14 +15,8 @@ import com.l7tech.gui.MaxLengthDocument;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.*;
 import com.l7tech.gui.widgets.TextListCellRenderer;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.PersistentEntity;
-import com.l7tech.objectmodel.VersionException;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Functions;
-import com.l7tech.util.GoidUpgradeMapper;
-import com.l7tech.util.Pair;
+import com.l7tech.objectmodel.*;
+import com.l7tech.util.*;
 
 import javax.naming.Context;
 import javax.swing.*;
@@ -32,6 +27,7 @@ import java.awt.event.*;
 import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -148,7 +144,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
     private boolean isOk;
     private boolean outboundOnly = false;
     private FormAuthorizationPreparer securityFormAuthorizationPreparer;
-    private Logger logger = Logger.getLogger(JmsQueuePropertiesDialog.class.getName());
+    private static Logger logger = Logger.getLogger(JmsQueuePropertiesDialog.class.getName());
     private ContentTypeComboBoxModel contentTypeModel;
     private SimpleTableModel<NameValuePair> environmentPropertiesTableModel;
 
@@ -344,13 +340,17 @@ public class JmsQueuePropertiesDialog extends JDialog {
 
         inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(dedicatedConsumerConnectionLimitSpinner, jmsConsumerConnectionsLabel.getText()));
 
-        connectionPoolSizeSpinner.setModel((new SpinnerNumberModel((Number) JmsConnection.DEFAULT_CONNECTION_POOL_SIZE, 1, 10000, 1)));
+        connectionPoolSizeSpinner.setModel((new SpinnerNumberModel((Number)
+                safeNumber(() -> Integer.valueOf(getClusterPropertyValue(JmsConnection.CLUSTER_PROP_CONNECTION_POOL_SIZE, String.valueOf(JmsConnection.DEFAULT_CONNECTION_POOL_SIZE)))
+                , JmsConnection.DEFAULT_CONNECTION_POOL_SIZE), 1, 10000, 1)));
         inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(connectionPoolSizeSpinner, connectionPoolSizeLabel.getText()));
 
-        connectionMaxIdleSpinner.setModel((new SpinnerNumberModel((Number) JmsConnection.DEFAULT_CONNECTION_POOL_SIZE, -1, 10000, 1)));
+        connectionMaxIdleSpinner.setModel((new SpinnerNumberModel((Number) safeNumber(() -> Integer.valueOf(getClusterPropertyValue(JmsConnection.CLUSTER_PROP_CONNECTION_POOL_SIZE, String.valueOf(JmsConnection.DEFAULT_CONNECTION_POOL_SIZE)))
+                ,JmsConnection.DEFAULT_CONNECTION_POOL_SIZE), -1, 10000, 1)));
         inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(connectionMaxIdleSpinner,connectionMaxIdleLabel.getText()));
 
-        connectionPoolEvictionBatchSizeSpinner.setModel((new SpinnerNumberModel((Number) JmsConnection.DEFAULT_CONNECTION_POOL_SIZE, 1, 10000, 1)));
+        connectionPoolEvictionBatchSizeSpinner.setModel((new SpinnerNumberModel((Number) safeNumber(() -> Integer.valueOf(getClusterPropertyValue(JmsConnection.CLUSTER_PROP_CONNECTION_POOL_EVICT_BATCH_SIZE, String.valueOf(JmsConnection.DEFAULT_CONNECTION_POOL_SIZE)))
+                , JmsConnection.DEFAULT_CONNECTION_POOL_SIZE), 1, 10000, 1)));
         inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(connectionPoolEvictionBatchSizeSpinner, connectionPoolEvictionBatchSizeLabel.getText()));
 
         sessionPoolSizeSpinner.setModel((new SpinnerNumberModel((Number) JmsConnection.DEFAULT_SESSION_POOL_SIZE, -1, 10000, 1)));
@@ -1128,9 +1128,10 @@ public class JmsQueuePropertiesDialog extends JDialog {
             environmentPropertiesTableModel.setRows( Collections.<NameValuePair>emptyList() );
             sessionPoolMaxWaitTextField.setText(String.valueOf(JmsConnection.DEFAULT_SESSION_POOL_MAX_WAIT));
             //set connection default values
-            connectionMaxWaitTextField.setText(String.valueOf(JmsConnection.DEFAULT_CONNECTION_POOL_MAX_WAIT));
-            connectionMaxAgeTextField.setText(String.valueOf(JmsConnection.DEFAULT_CONNECTION_MAX_AGE));
-            connectionPoolEvictionIntervalTextField.setText(String.valueOf(JmsConnection.DEFAULT_CONNECTION_POOL_EVICT_INTERVAL));
+            connectionMaxWaitTextField.setText(String.valueOf(TimeUnit.parse(getClusterPropertyValue(JmsConnection.CLUSTER_PROP_CONNECTION_MAX_WAIT,String.valueOf(JmsConnection.DEFAULT_CONNECTION_POOL_MAX_WAIT)),TimeUnit.MILLIS)));
+            connectionMaxAgeTextField.setText(String.valueOf(TimeUnit.parse(getClusterPropertyValue(JmsConnection.CLUSTER_PROP_CONNECTION_MAX_AGE, String.valueOf(JmsConnection.DEFAULT_CONNECTION_MAX_AGE)),TimeUnit.MILLIS)));
+            connectionPoolEvictionIntervalTextField.setText(getClusterPropertyValue(JmsConnection.CLUSTER_PROP_CONNECTION_POOL_EVICT_INTERVAL, String.valueOf(JmsConnection.DEFAULT_CONNECTION_POOL_EVICT_INTERVAL)));
+
         }
 
         boolean associateQueue = ServiceComboBox.populateAndSelect(serviceNameCombo, isHardWired, hardWiredId);
@@ -1245,7 +1246,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
     }
 
     private Integer getConnectionPoolSize(Properties props) {
-        String val = props.getProperty(JmsConnection.PROP_CONNECTION_POOL_SIZE, String.valueOf(JmsConnection.DEFAULT_CONNECTION_POOL_SIZE));
+        String val = props.getProperty(JmsConnection.PROP_CONNECTION_POOL_SIZE, getClusterPropertyValue(JmsConnection.CLUSTER_PROP_CONNECTION_POOL_SIZE, String.valueOf(JmsConnection.DEFAULT_CONNECTION_POOL_SIZE)));
         if(val == null ) return JmsConnection.DEFAULT_CONNECTION_POOL_SIZE;
         try{
             return new Integer(val);
@@ -1255,7 +1256,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
     }
 
     private Integer getMaxConnectionIdle(Properties props) {
-        String val = props.getProperty(JmsConnection.PROP_CONNECTION_MAX_IDLE, String.valueOf(JmsConnection.DEFAULT_CONNECTION_POOL_SIZE));
+        String val = props.getProperty(JmsConnection.PROP_CONNECTION_MAX_IDLE, getClusterPropertyValue(JmsConnection.CLUSTER_PROP_CONNECTION_POOL_SIZE, String.valueOf(JmsConnection.DEFAULT_CONNECTION_POOL_SIZE)));
         if(val == null ) return JmsConnection.DEFAULT_SESSION_POOL_SIZE;
         try{
             return new Integer(val);
@@ -1265,7 +1266,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
     }
 
     private Integer getConnectionEvictBatchSize(Properties props) {
-        String val = props.getProperty(JmsConnection.PROP_CONNECTION_POOL_EVICT_BATCH_SIZE, String.valueOf(JmsConnection.DEFAULT_CONNECTION_POOL_SIZE));
+        String val = props.getProperty(JmsConnection.PROP_CONNECTION_POOL_EVICT_BATCH_SIZE, getClusterPropertyValue(JmsConnection.CLUSTER_PROP_CONNECTION_POOL_EVICT_BATCH_SIZE, String.valueOf(JmsConnection.DEFAULT_CONNECTION_POOL_SIZE)));
         if(val == null ) return JmsConnection.DEFAULT_CONNECTION_POOL_SIZE;
         try{
             return new Integer(val);
@@ -1275,7 +1276,8 @@ public class JmsQueuePropertiesDialog extends JDialog {
     }
 
     private Long getConnectionPoolMaxWait(Properties props) {
-        String val = props.getProperty(JmsConnection.PROP_CONNECTION_POOL_MAX_WAIT, String.valueOf(JmsConnection.DEFAULT_CONNECTION_POOL_MAX_WAIT));
+        Long defaultValue = TimeUnit.parse(getClusterPropertyValue(JmsConnection.CLUSTER_PROP_CONNECTION_MAX_WAIT, String.valueOf(JmsConnection.DEFAULT_CONNECTION_POOL_MAX_WAIT)), TimeUnit.MILLIS);
+        String val = props.getProperty(JmsConnection.PROP_CONNECTION_POOL_MAX_WAIT, String.valueOf(defaultValue));
         if(val == null ) return JmsConnection.DEFAULT_CONNECTION_POOL_MAX_WAIT;
         try{
             return new Long(val);
@@ -1285,7 +1287,8 @@ public class JmsQueuePropertiesDialog extends JDialog {
     }
 
     private Long getConnectionPoolMaxAge(Properties props) {
-        String val = props.getProperty(JmsConnection.PROP_CONNECTION_MAX_AGE, String.valueOf(JmsConnection.DEFAULT_CONNECTION_MAX_AGE));
+        long defaultValue = TimeUnit.parse(getClusterPropertyValue(JmsConnection.CLUSTER_PROP_CONNECTION_MAX_AGE,String.valueOf(JmsConnection.DEFAULT_CONNECTION_MAX_AGE)),TimeUnit.MILLIS);
+        String val = props.getProperty(JmsConnection.PROP_CONNECTION_MAX_AGE, String.valueOf(defaultValue));
         if(val == null ) return JmsConnection.DEFAULT_CONNECTION_MAX_AGE;
         try{
             return new Long(val);
@@ -1295,7 +1298,8 @@ public class JmsQueuePropertiesDialog extends JDialog {
     }
 
     private Long getConnectionPoolEvictInterval(Properties props) {
-        String val = props.getProperty(JmsConnection.PROP_CONNECTION_POOL_EVICT_INTERVAL, String.valueOf(JmsConnection.DEFAULT_CONNECTION_POOL_EVICT_INTERVAL));
+        long defaultValue = TimeUnit.parse(getClusterPropertyValue(JmsConnection.CLUSTER_PROP_CONNECTION_POOL_EVICT_INTERVAL, String.valueOf(JmsConnection.DEFAULT_CONNECTION_POOL_EVICT_INTERVAL)), TimeUnit.MILLIS);
+        String val = props.getProperty(JmsConnection.PROP_CONNECTION_POOL_EVICT_INTERVAL, String.valueOf(defaultValue));
         if(val == null ) return JmsConnection.DEFAULT_CONNECTION_POOL_EVICT_INTERVAL;
         try{
             return new Long(val);
@@ -1700,5 +1704,27 @@ public class JmsQueuePropertiesDialog extends JDialog {
         NameValuePair( final String key, final String value ) {
             super( key, value );
         }
+    }
+
+    private static <T extends Number> T safeNumber(Callable<T> action, T defaultVal) {
+        try{
+            return action.call();
+        } catch(Exception ex) {
+            return defaultVal;
+        }
+    }
+
+    private static String getClusterPropertyValue(String propertyName, String defaultValue) {
+        Registry reg = Registry.getDefault();
+        if (reg != null && reg.getClusterStatusAdmin() != null)
+        {
+            try {
+                ClusterProperty clusterProperty = reg.getClusterStatusAdmin().findPropertyByName(propertyName);
+                if(clusterProperty != null) return clusterProperty.getValue();
+            } catch (FindException  e) {
+                logger.log(Level.FINE, "Unable to find a value of" + propertyName + ". Using default " + defaultValue);
+            }
+        }
+        return defaultValue;
     }
 }
