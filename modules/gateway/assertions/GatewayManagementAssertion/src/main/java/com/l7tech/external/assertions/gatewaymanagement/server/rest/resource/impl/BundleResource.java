@@ -525,7 +525,7 @@ public class BundleResource {
      * @param test                 If true the bundle import will be tested no changes will be made to the gateway
      * @param activate             False to not activate the updated services and policies.
      * @param versionComment       The comment to set for updated/created services and policies
-     * @param encodedKeyPassphrase The optional base-64 encoded passphrase to uadmimnse for the encryption key when
+     * @param encodedKeyPassphrase The optional base-64 encoded passphrase to use for the encryption key when
      *                             encrypting passwords.
      * @param bundle               The bundle to import
      * @return The mappings performed during the bundle import
@@ -537,7 +537,7 @@ public class BundleResource {
                                  @QueryParam("versionComment") final String versionComment,
                                  @HeaderParam("L7-key-passphrase") @Since(RestManVersion.VERSION_1_0_1) String encodedKeyPassphrase,
                                  @NotNull final Bundle bundle) throws Exception {
-        final BundleList bundles = new BundleList();
+        final BundleList bundles = ManagedObjectFactory.createBundleList();
         bundles.setBundles(Arrays.asList(new Bundle[]{bundle}));
 
         final Response response = importBundles(test, activate, versionComment, encodedKeyPassphrase, bundles);
@@ -553,7 +553,7 @@ public class BundleResource {
      * @param test                 If true the bundles import will be tested no changes will be made to the gateway
      * @param activate             False to not activate the updated services and policies.
      * @param versionComment       The comment to set for updated/created services and policies
-     * @param encodedKeyPassphrase The optional base-64 encoded passphrase to uadmimnse for the encryption key when
+     * @param encodedKeyPassphrase The optional base-64 encoded passphrase to use for the encryption key when
      *                             encrypting passwords.
      * @param bundles              The batch of bundles to import
      * @return The mappings performed during each bundle import
@@ -574,20 +574,16 @@ public class BundleResource {
 
         final List<Item<Mappings>> items = new ArrayList<>();
         final String itemUri = uriInfo.getRequestUri().toString().replaceAll("/batch", "");
-        boolean containsErrors = false;
-
-        // Creating the following bundle list is to proivde the 'name' attribute for each bundle.
-        // If a name attribute value is not null, then the name attribute value will be a part of the value of the 'Name' element in each Item element in the resturn item list.
-        // The Name value of Item is used to identify a corresponding bundle.
         final List<Bundle> bundleList = bundles.getBundles();
+        boolean foundError = false;
 
         for (int i = 0; i < listMappings.size(); i++) {
             final List<Mapping> mappings = listMappings.get(i);
             final String bundleName = bundleList.get(i).getName(); // bundle name will be assigned to Id element of Item element to identify the bundle.
 
             // Find whether any error exists
-            if (containsErrors(mappings)) {
-                containsErrors = true;
+            if (!foundError && containsErrors(mappings)) {
+                foundError = true;
             }
 
             // Build one item to hold mappings, per bundle
@@ -606,7 +602,7 @@ public class BundleResource {
             .build();
 
         // Return response with the item list
-        return containsErrors? Response.status(Response.Status.CONFLICT).entity(itemsList).build() : Response.ok(itemsList).build();
+        return foundError? Response.status(Response.Status.CONFLICT).entity(itemsList).build() : Response.ok(itemsList).build();
     }
 
     /**

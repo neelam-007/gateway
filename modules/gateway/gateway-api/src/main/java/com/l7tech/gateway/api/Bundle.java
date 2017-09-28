@@ -4,12 +4,12 @@ import javax.xml.bind.annotation.*;
 import java.util.List;
 
 @XmlRootElement(name = "Bundle")
-@XmlType(name = "Bundle", propOrder = {"references", "mappings","dependencyGraph"})
+@XmlType(name = "Bundle", propOrder = {"name", "references", "mappings", "dependencyGraph"})
 public class Bundle {
     private List<Item> references;
     private List<Mapping> mappings;
     private DependencyListMO dependencies;
-    private String name; // used to identify this bundle
+    private String name; // used to identify or describe this bundle
 
     Bundle(){}
 
@@ -38,7 +38,7 @@ public class Bundle {
         return dependencies;
     }
 
-    @XmlAttribute(name="name")
+    @XmlElement(name="name")
     public String getName() {
         return name;
     }

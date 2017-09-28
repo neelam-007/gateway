@@ -641,6 +641,8 @@ public class ManagedObjectFactory {
         return new EntityOwnershipDescriptorMO();
     }
 
+
+
     /**
      * Create a new AuditConfigurationMO instance.
      *
@@ -754,6 +756,10 @@ public class ManagedObjectFactory {
 
     public static Link createLink(String rel, String uri){
         return new Link(rel, uri);
+    }
+
+    public static BundleList createBundleList(){
+        return new BundleList();
     }
 
     public static PolicyVersionMO createPolicyVersionMO() {
