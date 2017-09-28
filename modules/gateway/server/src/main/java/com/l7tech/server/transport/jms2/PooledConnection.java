@@ -42,7 +42,7 @@ public class PooledConnection {
                     String.valueOf(cacheConfig.getDefaultWait())));
 
             config.timeBetweenEvictionRunsMillis = Long.parseLong(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_CONNECTION_POOL_EVICT_INTERVAL,
-                    String.valueOf(cacheConfig.getTimeBetweewnEviction())));
+                    String.valueOf(cacheConfig.getTimeBetweenEviction())));
             config.numTestsPerEvictionRun = Integer.parseInt(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_CONNECTION_POOL_EVICT_BATCH_SIZE,
                     String.valueOf(cacheConfig.getDefaultEvictionBatchSize())));
             config.whenExhaustedAction = GenericObjectPool.WHEN_EXHAUSTED_BLOCK;
@@ -80,34 +80,34 @@ public class PooledConnection {
     }
 
     public CachedConnection borrowConnection() throws JmsRuntimeException {
-        try {
-            if(isPooled) {
+        if(isPooled) {
+            try {
                 return pool.borrowObject();
+            } catch ( Exception e ) {
+                throw new JmsRuntimeException(e);
             }
-            else {
-                synchronized (singleConnection) {
-                    singleConnection.touch();
-                    singleConnection.ref();
-                    return singleConnection;
-                }
+        }
+        else {
+            synchronized (singleConnection) {
+                singleConnection.touch();
+                singleConnection.ref();
+                return singleConnection;
             }
-        } catch ( Exception e ) {
-            throw new JmsRuntimeException(e);
         }
     }
 
     public void returnConnection(CachedConnection connection) throws JmsRuntimeException {
-        try {
-            if(isPooled) {
-                pool.returnObject(connection);
+        if(isPooled) {
+            try {
+            pool.returnObject(connection);
+            } catch (Exception e) {
+                throw new JmsRuntimeException(e);
             }
-            else {
-                synchronized (singleConnection) {
-                    singleConnection.unRef();
-                }
+        }
+        else {
+            synchronized (singleConnection) {
+                singleConnection.unRef();
             }
-        } catch (Exception e) {
-            throw new JmsRuntimeException(e);
         }
     }
 
@@ -115,32 +115,6 @@ public class PooledConnection {
         return endpoint;
     }
 
-    /**
-     * Once a connection is in the cache a return of false from this
-     * method indicates that the connection is invalid and should not
-     * be used.
-     */
-    /*public boolean ref() {
-        return referenceCount.getAndIncrement() > 0;
-    }
-
-    public boolean unRef() {
-        int references = referenceCount.decrementAndGet();
-        //check if no one references the cached session or if the endpoint is inbound which we have to clean up anyways
-        if ( references <= 0 || endpoint.getEndpoint().isMessageSource()) {
-            logger.log(
-                    Level.FINE,
-                    "Closing pooled connection ", this.toString());
-            try {
-                pool.close();
-            } catch (Exception e) {
-                logger.log(Level.FINE, "Unable to close the pool: ", e);
-            }
-            return false;
-        }
-        return true;
-    }
-*/
     public void close() {
         if(isPooled) {
             try {

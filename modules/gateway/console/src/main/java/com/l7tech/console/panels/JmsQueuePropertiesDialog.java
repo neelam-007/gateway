@@ -20,6 +20,8 @@ import com.l7tech.util.*;
 
 import javax.naming.Context;
 import javax.swing.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
@@ -42,6 +44,24 @@ import static com.l7tech.gateway.common.transport.jms.JmsAcknowledgementType.*;
 public class JmsQueuePropertiesDialog extends JDialog {
     private static final String TYPE_QUEUE = "Queue";
     private static final String TYPE_TOPIC = "Topic";
+
+    public static final String PREFIX = "com.l7tech.server.jms.prop";
+    public static final String PROP_CONNECTION_POOL_ENABLE = PREFIX + ".connection.pool.enable";
+    public static final String PROP_CONNECTION_POOL_SIZE = PREFIX + ".connection.pool.size";
+    public static final String PROP_CONNECTION_MAX_IDLE = PREFIX + ".connection.max.idle";
+    public static final String PROP_CONNECTION_POOL_MAX_WAIT = PREFIX + ".connection.pool.max.wait";
+    public static final String PROP_CONNECTION_MAX_AGE = PREFIX + ".connection.max.age";
+    public static final String PROP_CONNECTION_POOL_EVICT_INTERVAL = PREFIX + ".connection.pool.evict.interval";
+    public static final String PROP_CONNECTION_POOL_EVICT_BATCH_SIZE = PREFIX + ".connection.pool.evict.batch.size";
+    public static final int DEFAULT_CONNECTION_POOL_SIZE = 1;
+    public static final long DEFAULT_CONNECTION_POOL_MAX_WAIT = 5000;
+    public static final long DEFAULT_CONNECTION_POOL_EVICT_INTERVAL = 10000;
+    public static final long DEFAULT_CONNECTION_MAX_AGE = 300000;
+    public static final String CLUSTER_PROP_CONNECTION_POOL_SIZE = "io.jmsConnectionPoolSize";
+    public static final String CLUSTER_PROP_CONNECTION_MAX_WAIT = "io.jmsConnectionMaxWait";
+    public static final String CLUSTER_PROP_CONNECTION_POOL_EVICT_INTERVAL = "io.jmsConnectionTimeBetweenEviction";
+    public static final String CLUSTER_PROP_CONNECTION_POOL_EVICT_BATCH_SIZE = "io.jmsConnectionEvictionBatchSize";
+    public static final String CLUSTER_PROP_CONNECTION_MAX_AGE = "io.jmsConnectionCacheMaxAge";
 
     private JPanel contentPane;
     private JRadioButton outboundRadioButton;
@@ -137,6 +157,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
     private JSpinner connectionPoolEvictionBatchSizeSpinner;
     private JCheckBox enableConnectionPoolheckBox;
     private JPanel connectionPoolingPanel;
+    private JCheckBox advancedPoolingCheckBox;
 
 
     private JmsConnection connection = null;
@@ -341,16 +362,24 @@ public class JmsQueuePropertiesDialog extends JDialog {
         inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(dedicatedConsumerConnectionLimitSpinner, jmsConsumerConnectionsLabel.getText()));
 
         connectionPoolSizeSpinner.setModel((new SpinnerNumberModel((Number)
-                safeNumber(() -> Integer.valueOf(getClusterPropertyValue(JmsConnection.CLUSTER_PROP_CONNECTION_POOL_SIZE, String.valueOf(JmsConnection.DEFAULT_CONNECTION_POOL_SIZE)))
-                , JmsConnection.DEFAULT_CONNECTION_POOL_SIZE), 1, 10000, 1)));
+                safeNumber(() -> Integer.valueOf(getClusterPropertyValue(CLUSTER_PROP_CONNECTION_POOL_SIZE, String.valueOf(DEFAULT_CONNECTION_POOL_SIZE)))
+                , DEFAULT_CONNECTION_POOL_SIZE), 1, 10000, 1)));
         inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(connectionPoolSizeSpinner, connectionPoolSizeLabel.getText()));
 
-        connectionMaxIdleSpinner.setModel((new SpinnerNumberModel((Number) safeNumber(() -> Integer.valueOf(getClusterPropertyValue(JmsConnection.CLUSTER_PROP_CONNECTION_POOL_SIZE, String.valueOf(JmsConnection.DEFAULT_CONNECTION_POOL_SIZE)))
-                ,JmsConnection.DEFAULT_CONNECTION_POOL_SIZE), -1, 10000, 1)));
+        connectionPoolSizeSpinner.addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                connectionMaxIdleSpinner.setValue(connectionPoolSizeSpinner.getValue());
+                connectionPoolEvictionBatchSizeSpinner.setValue(connectionPoolSizeSpinner.getValue());
+            }
+        });
+
+        connectionMaxIdleSpinner.setModel((new SpinnerNumberModel((Number) safeNumber(() -> Integer.valueOf(getClusterPropertyValue(CLUSTER_PROP_CONNECTION_POOL_SIZE, String.valueOf(DEFAULT_CONNECTION_POOL_SIZE)))
+                ,DEFAULT_CONNECTION_POOL_SIZE), -1, 10000, 1)));
         inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(connectionMaxIdleSpinner,connectionMaxIdleLabel.getText()));
 
-        connectionPoolEvictionBatchSizeSpinner.setModel((new SpinnerNumberModel((Number) safeNumber(() -> Integer.valueOf(getClusterPropertyValue(JmsConnection.CLUSTER_PROP_CONNECTION_POOL_EVICT_BATCH_SIZE, String.valueOf(JmsConnection.DEFAULT_CONNECTION_POOL_SIZE)))
-                , JmsConnection.DEFAULT_CONNECTION_POOL_SIZE), 1, 10000, 1)));
+        connectionPoolEvictionBatchSizeSpinner.setModel((new SpinnerNumberModel((Number) safeNumber(() -> Integer.valueOf(getClusterPropertyValue(CLUSTER_PROP_CONNECTION_POOL_EVICT_BATCH_SIZE, String.valueOf(DEFAULT_CONNECTION_POOL_SIZE)))
+                ,DEFAULT_CONNECTION_POOL_SIZE), 1, 10000, 1)));
         inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(connectionPoolEvictionBatchSizeSpinner, connectionPoolEvictionBatchSizeLabel.getText()));
 
         sessionPoolSizeSpinner.setModel((new SpinnerNumberModel((Number) JmsConnection.DEFAULT_SESSION_POOL_SIZE, -1, 10000, 1)));
@@ -572,11 +601,32 @@ public class JmsQueuePropertiesDialog extends JDialog {
         zoneControl.configure(Arrays.asList(EntityType.JMS_CONNECTION, EntityType.JMS_ENDPOINT), operation,
                 connection != null ? connection.getSecurityZone() : null);
 
+        advancedPoolingCheckBox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                hideOrDisplayAdvancedPoolingOptions();
+            }
+        });
+
+        hideOrDisplayAdvancedPoolingOptions();
         pack();
         initializeView();
         enableOrDisableComponents();
         applyFormSecurity();
         Utilities.setEscKeyStrokeDisposes(this);
+    }
+
+    private void hideOrDisplayAdvancedPoolingOptions() {
+        connectionMaxIdleLabel.setVisible(advancedPoolingCheckBox.isSelected());
+        connectionMaxIdleSpinner.setVisible(advancedPoolingCheckBox.isSelected());
+        connectionMaxWaitLabel.setVisible(advancedPoolingCheckBox.isSelected());
+        connectionMaxWaitTextField.setVisible(advancedPoolingCheckBox.isSelected());
+        connectionMaxAgeLabel.setVisible(advancedPoolingCheckBox.isSelected());
+        connectionMaxAgeTextField.setVisible(advancedPoolingCheckBox.isSelected());
+        connectionPoolEvictionIntervalLabel.setVisible(advancedPoolingCheckBox.isSelected());
+        connectionPoolEvictionIntervalTextField.setVisible(advancedPoolingCheckBox.isSelected());
+        connectionPoolEvictionBatchSizeLabel.setVisible(advancedPoolingCheckBox.isSelected());
+        connectionPoolEvictionBatchSizeSpinner.setVisible(advancedPoolingCheckBox.isSelected());
     }
 
     private void loadContentTypesModel() {
@@ -1128,9 +1178,9 @@ public class JmsQueuePropertiesDialog extends JDialog {
             environmentPropertiesTableModel.setRows( Collections.<NameValuePair>emptyList() );
             sessionPoolMaxWaitTextField.setText(String.valueOf(JmsConnection.DEFAULT_SESSION_POOL_MAX_WAIT));
             //set connection default values
-            connectionMaxWaitTextField.setText(String.valueOf(TimeUnit.parse(getClusterPropertyValue(JmsConnection.CLUSTER_PROP_CONNECTION_MAX_WAIT,String.valueOf(JmsConnection.DEFAULT_CONNECTION_POOL_MAX_WAIT)),TimeUnit.MILLIS)));
-            connectionMaxAgeTextField.setText(String.valueOf(TimeUnit.parse(getClusterPropertyValue(JmsConnection.CLUSTER_PROP_CONNECTION_MAX_AGE, String.valueOf(JmsConnection.DEFAULT_CONNECTION_MAX_AGE)),TimeUnit.MILLIS)));
-            connectionPoolEvictionIntervalTextField.setText(getClusterPropertyValue(JmsConnection.CLUSTER_PROP_CONNECTION_POOL_EVICT_INTERVAL, String.valueOf(JmsConnection.DEFAULT_CONNECTION_POOL_EVICT_INTERVAL)));
+            connectionMaxWaitTextField.setText(String.valueOf(TimeUnit.parse(getClusterPropertyValue(CLUSTER_PROP_CONNECTION_MAX_WAIT,String.valueOf(DEFAULT_CONNECTION_POOL_MAX_WAIT)),TimeUnit.MILLIS)));
+            connectionMaxAgeTextField.setText(String.valueOf(TimeUnit.parse(getClusterPropertyValue(CLUSTER_PROP_CONNECTION_MAX_AGE, String.valueOf(DEFAULT_CONNECTION_MAX_AGE)),TimeUnit.MILLIS)));
+            connectionPoolEvictionIntervalTextField.setText(getClusterPropertyValue(CLUSTER_PROP_CONNECTION_POOL_EVICT_INTERVAL, String.valueOf(DEFAULT_CONNECTION_POOL_EVICT_INTERVAL)));
 
         }
 
@@ -1241,66 +1291,66 @@ public class JmsQueuePropertiesDialog extends JDialog {
     }
 
     private boolean isConnectionPoolEnabled(Properties props) {
-        String val = props.getProperty(JmsConnection.PROP_CONNECTION_POOL_ENABLE, Boolean.FALSE.toString());
+        String val = props.getProperty(PROP_CONNECTION_POOL_ENABLE, Boolean.FALSE.toString());
         return Boolean.valueOf(val);
     }
 
     private Integer getConnectionPoolSize(Properties props) {
-        String val = props.getProperty(JmsConnection.PROP_CONNECTION_POOL_SIZE, getClusterPropertyValue(JmsConnection.CLUSTER_PROP_CONNECTION_POOL_SIZE, String.valueOf(JmsConnection.DEFAULT_CONNECTION_POOL_SIZE)));
-        if(val == null ) return JmsConnection.DEFAULT_CONNECTION_POOL_SIZE;
+        String val = props.getProperty(PROP_CONNECTION_POOL_SIZE, getClusterPropertyValue(CLUSTER_PROP_CONNECTION_POOL_SIZE, String.valueOf(DEFAULT_CONNECTION_POOL_SIZE)));
+        if(val == null ) return DEFAULT_CONNECTION_POOL_SIZE;
         try{
             return new Integer(val);
         } catch (NumberFormatException ex) {
-            return JmsConnection.DEFAULT_CONNECTION_POOL_SIZE;
+            return DEFAULT_CONNECTION_POOL_SIZE;
         }
     }
 
     private Integer getMaxConnectionIdle(Properties props) {
-        String val = props.getProperty(JmsConnection.PROP_CONNECTION_MAX_IDLE, getClusterPropertyValue(JmsConnection.CLUSTER_PROP_CONNECTION_POOL_SIZE, String.valueOf(JmsConnection.DEFAULT_CONNECTION_POOL_SIZE)));
-        if(val == null ) return JmsConnection.DEFAULT_SESSION_POOL_SIZE;
+        String val = props.getProperty(PROP_CONNECTION_MAX_IDLE, getClusterPropertyValue(CLUSTER_PROP_CONNECTION_POOL_SIZE, String.valueOf(DEFAULT_CONNECTION_POOL_SIZE)));
+        if(val == null ) return DEFAULT_CONNECTION_POOL_SIZE;
         try{
             return new Integer(val);
         } catch (NumberFormatException ex) {
-            return JmsConnection.DEFAULT_SESSION_POOL_SIZE;
+            return DEFAULT_CONNECTION_POOL_SIZE;
         }
     }
 
     private Integer getConnectionEvictBatchSize(Properties props) {
-        String val = props.getProperty(JmsConnection.PROP_CONNECTION_POOL_EVICT_BATCH_SIZE, getClusterPropertyValue(JmsConnection.CLUSTER_PROP_CONNECTION_POOL_EVICT_BATCH_SIZE, String.valueOf(JmsConnection.DEFAULT_CONNECTION_POOL_SIZE)));
-        if(val == null ) return JmsConnection.DEFAULT_CONNECTION_POOL_SIZE;
+        String val = props.getProperty(PROP_CONNECTION_POOL_EVICT_BATCH_SIZE, getClusterPropertyValue(CLUSTER_PROP_CONNECTION_POOL_EVICT_BATCH_SIZE, String.valueOf(DEFAULT_CONNECTION_POOL_SIZE)));
+        if(val == null ) return DEFAULT_CONNECTION_POOL_SIZE;
         try{
             return new Integer(val);
         } catch (NumberFormatException ex) {
-            return JmsConnection.DEFAULT_CONNECTION_POOL_SIZE;
+            return DEFAULT_CONNECTION_POOL_SIZE;
         }
     }
 
     private Long getConnectionPoolMaxWait(Properties props) {
-        Long defaultValue = TimeUnit.parse(getClusterPropertyValue(JmsConnection.CLUSTER_PROP_CONNECTION_MAX_WAIT, String.valueOf(JmsConnection.DEFAULT_CONNECTION_POOL_MAX_WAIT)), TimeUnit.MILLIS);
-        String val = props.getProperty(JmsConnection.PROP_CONNECTION_POOL_MAX_WAIT, String.valueOf(defaultValue));
-        if(val == null ) return JmsConnection.DEFAULT_CONNECTION_POOL_MAX_WAIT;
+        Long defaultValue = TimeUnit.parse(getClusterPropertyValue(CLUSTER_PROP_CONNECTION_MAX_WAIT, String.valueOf(DEFAULT_CONNECTION_POOL_MAX_WAIT)), TimeUnit.MILLIS);
+        String val = props.getProperty(PROP_CONNECTION_POOL_MAX_WAIT, String.valueOf(defaultValue));
+        if(val == null ) return DEFAULT_CONNECTION_POOL_MAX_WAIT;
         try{
             return new Long(val);
         } catch (NumberFormatException ex) {
-            return JmsConnection.DEFAULT_CONNECTION_POOL_MAX_WAIT;
+            return DEFAULT_CONNECTION_POOL_MAX_WAIT;
         }
     }
 
     private Long getConnectionPoolMaxAge(Properties props) {
-        long defaultValue = TimeUnit.parse(getClusterPropertyValue(JmsConnection.CLUSTER_PROP_CONNECTION_MAX_AGE,String.valueOf(JmsConnection.DEFAULT_CONNECTION_MAX_AGE)),TimeUnit.MILLIS);
+        long defaultValue = TimeUnit.parse(getClusterPropertyValue(CLUSTER_PROP_CONNECTION_MAX_AGE,String.valueOf(DEFAULT_CONNECTION_MAX_AGE)),TimeUnit.MILLIS);
         String val = props.getProperty(JmsConnection.PROP_CONNECTION_MAX_AGE, String.valueOf(defaultValue));
-        if(val == null ) return JmsConnection.DEFAULT_CONNECTION_MAX_AGE;
+        if(val == null ) return DEFAULT_CONNECTION_MAX_AGE;
         try{
             return new Long(val);
         } catch (NumberFormatException ex) {
-            return JmsConnection.DEFAULT_CONNECTION_MAX_AGE;
+            return DEFAULT_CONNECTION_MAX_AGE;
         }
     }
 
     private Long getConnectionPoolEvictInterval(Properties props) {
-        long defaultValue = TimeUnit.parse(getClusterPropertyValue(JmsConnection.CLUSTER_PROP_CONNECTION_POOL_EVICT_INTERVAL, String.valueOf(JmsConnection.DEFAULT_CONNECTION_POOL_EVICT_INTERVAL)), TimeUnit.MILLIS);
-        String val = props.getProperty(JmsConnection.PROP_CONNECTION_POOL_EVICT_INTERVAL, String.valueOf(defaultValue));
-        if(val == null ) return JmsConnection.DEFAULT_CONNECTION_POOL_EVICT_INTERVAL;
+        long defaultValue = TimeUnit.parse(getClusterPropertyValue(CLUSTER_PROP_CONNECTION_POOL_EVICT_INTERVAL, String.valueOf(DEFAULT_CONNECTION_POOL_EVICT_INTERVAL)), TimeUnit.MILLIS);
+        String val = props.getProperty(PROP_CONNECTION_POOL_EVICT_INTERVAL, String.valueOf(defaultValue));
+        if(val == null ) return DEFAULT_CONNECTION_POOL_EVICT_INTERVAL;
         try{
             return new Long(val);
         } catch (NumberFormatException ex) {
@@ -1494,6 +1544,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
 
     private void enableOrDisableConnectionPoolingSettings() {
         connectionPoolingPanel.setEnabled(enableConnectionPoolheckBox.isSelected());
+        advancedPoolingCheckBox.setEnabled(enableConnectionPoolheckBox.isSelected());
         connectionPoolSizeLabel.setEnabled(enableConnectionPoolheckBox.isSelected());
         connectionPoolSizeSpinner.setEnabled(enableConnectionPoolheckBox.isSelected());
         connectionMaxIdleLabel.setEnabled(enableConnectionPoolheckBox.isSelected());

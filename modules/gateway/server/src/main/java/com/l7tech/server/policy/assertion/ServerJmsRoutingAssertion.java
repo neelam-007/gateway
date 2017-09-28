@@ -811,7 +811,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                 }
                 return outboundRequestMsg;
             default:
-                throw new java.lang.IllegalStateException("Un known JmsReplyType " + replyType);
+                throw new java.lang.IllegalStateException("Unknown JmsReplyType " + replyType);
         }
     }
 

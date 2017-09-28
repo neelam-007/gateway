@@ -28,7 +28,6 @@
         <dependency org="com.ibm.mq" name="com.ibm.mq.headers" rev="7.1.0.1" force="true" conf="runtime"/>
         <dependency org="com.ibm.mq" name="connector" rev="7.1.0.1" force="true" conf="runtime"/>
         -->
-		<dependency org="jboss" name="jboss-j2ee" rev="4.0.5.GA" force="true" conf="core"/>
 
         <dependency name="layer7-modular-assertions" rev="latest.integration" force="true"
                     conf="compile->compile;runtime->runtime;test->test"/>

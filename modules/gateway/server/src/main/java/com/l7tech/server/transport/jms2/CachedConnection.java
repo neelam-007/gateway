@@ -22,7 +22,6 @@ import java.util.logging.Logger;
 public class CachedConnection {
 
     private static final Logger logger = Logger.getLogger(CachedConnection.class.getName());
-    private static final long MAX_CLOSE_CONNECTION_WAIT = 30; //30 seconds
     private final AtomicInteger referenceCount = new AtomicInteger(0);
     private final long createdTime = System.currentTimeMillis();
     private final AtomicLong lastAccessTime = new AtomicLong(createdTime);

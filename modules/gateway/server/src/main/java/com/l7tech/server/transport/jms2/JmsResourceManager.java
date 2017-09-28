@@ -103,25 +103,24 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
      */
 
     protected CachedConnection getPooledConnection(JmsEndpointConfig endpoint) throws JmsRuntimeException {
-        try {
-            final JmsEndpointConfig.JmsEndpointKey key = endpoint.getJmsEndpointKey();
-            PooledConnection pooledConnection = connectionHolder.get(key);
-            if(pooledConnection == null) {
-                //create pool of connections and add it to the connection holder
-                synchronized (key.toString().intern()) {
-                    pooledConnection = connectionHolder.get(key);
-                    if (pooledConnection == null)  {
+        final JmsEndpointConfig.JmsEndpointKey key = endpoint.getJmsEndpointKey();
+        PooledConnection pooledConnection = connectionHolder.get(key);
+        if(pooledConnection == null) {
+            //create pool of connections and add it to the connection holder
+            synchronized (key.toString().intern()) {
+                pooledConnection = connectionHolder.get(key);
+                if (pooledConnection == null)  {
+                    try {
                         pooledConnection = new PooledConnection(endpoint, cacheConfigReference.get());
-                        connectionHolder.put(key, pooledConnection);
-                        logger.log(Level.FINE, "Created new pooled conneciton " + pooledConnection.toString());
+                    } catch ( Exception e ) {
+                        throw new JmsRuntimeException(e);
                     }
+                    connectionHolder.put(key, pooledConnection);
+                    logger.log(Level.FINE, "Created new pooled conneciton " + pooledConnection.toString());
                 }
             }
-
-            return pooledConnection.borrowConnection();
-        } catch ( Exception e ) {
-            throw new JmsRuntimeException(e);
         }
+        return pooledConnection.borrowConnection();
     }
 
     protected void returnConnection(JmsEndpointConfig endpoint, CachedConnection connection) throws JmsRuntimeException{
