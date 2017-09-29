@@ -48,6 +48,7 @@ public class ServerSnmpAgentAssertion extends AbstractServerAssertion<SnmpAgentA
     //from original snmp agent servlet impl.
     private static final String BASE = ".1.3.6.1.4.1.17304";
     private static final String BASE_PUBLISHED_SERVICES = ".7.1";
+    private static final String BASE_PUBLISHED_SERVICE_TABLE = ".7";
     private ServiceUsage[] serviceTable = null;
     private long serviceTableTime = 0;
 
@@ -127,6 +128,10 @@ public class ServerSnmpAgentAssertion extends AbstractServerAssertion<SnmpAgentA
         }
 
         try {
+            if(advance && subOids.equals(BASE_PUBLISHED_SERVICE_TABLE)) {
+                //DE312161 - In order to support third party tools request, we are concatinating OID with .1, currently we receive only .1.3.6.1.4.1.17304.7 as an oid, which was not supported before this fix.
+                subOids = subOids.concat(".1");
+            }
             if (subOids.startsWith(BASE_PUBLISHED_SERVICES)) {
                 String returnText = getServiceResponseText(responseKnob,
                         subOids.substring(BASE_PUBLISHED_SERVICES.length()),
@@ -186,7 +191,17 @@ public class ServerSnmpAgentAssertion extends AbstractServerAssertion<SnmpAgentA
             service = convertIntsToGoid(subMatchWithGoid.group(2));
         } else if (subMatchWithoutGoid.matches()) {
             field = Integer.parseInt(subMatchWithoutGoid.group(1));
-            if(table!=null&&table.length>0){
+            // SNMP version 2c sends 0 for snmptable commands. This code helps return next available oid when 0 is received by the service.
+            // get should return null as before
+            if(field == 0 && advance) {
+                String returnText = null;
+                // getnext calls should return next available oid as before.
+                while (returnText == null || field > maxField) {
+                    returnText = getServiceResponseText(responseKnob, "." + ++field, advance);
+                }
+                return returnText;
+            }
+            if (table != null && table.length > 0) {
                     service = table[0].getServiceid();
                     advance = false;
             }

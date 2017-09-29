@@ -9,6 +9,7 @@ import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.message.HttpResponseKnob;
 import com.l7tech.message.Message;
 import com.l7tech.objectmodel.Goid;
+import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import org.jetbrains.annotations.Nullable;
@@ -29,6 +30,8 @@ import java.util.Map;
 
 import static junit.framework.Assert.assertTrue;
 import static junit.framework.Assert.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * Unit test for the SnmpAgentAssertion.
@@ -209,6 +212,13 @@ public class ServerSnmpAgentAssertionTest {
     }
 
     @Test
+    // Tests service entry 0 against null
+    public void testServiceEntry0() {
+        performLoopbackSecurityTest(buildGetServiceCall(0));
+        assertEquals(HttpServletResponse.SC_BAD_REQUEST, policyContext.getResponse().getHttpResponseKnob().getStatus());
+    }
+
+    @Test
     // Tests service entry 1 against a known value
     public void testServiceEntry1() {
         performLoopbackSecurityTest(buildGetServiceCall(MockSnmpValues.GET_SERVICE_OID));
@@ -360,6 +370,36 @@ public class ServerSnmpAgentAssertionTest {
         assertTrue(Arrays.equals(expectedUsages, result));
     }
 
+    @Test
+    // This attempts to send the GETNEXT command on a service
+    public void testGetNextServiceForOID0() {
+        performLoopbackSecurityTest(buildGetNextServiceCall(0));
+        int status = policyContext.getResponse().getHttpResponseKnob().getStatus();
+        if (status != HttpServletResponse.SC_BAD_REQUEST) {
+            // This is the failure we're looking for, as it's not a loopback address.
+            fail("The assertion test has failed, it refused a GETNEXT request.");
+        }
+    }
+
+    @Test
+    // Tests get service table against null
+    public void testGetServiceTable() {
+        performLoopbackSecurityTest(buildGetServiceTableCall());
+        assertEquals(HttpServletResponse.SC_BAD_REQUEST, policyContext.getResponse().getHttpResponseKnob().getStatus());
+    }
+
+    @Test
+    // Tests getnext service table against null
+    public void testServiceTable() {
+        performLoopbackSecurityTest(buildGetNextServiceTableCall());
+        assertEquals(HttpServletResponse.SC_OK, policyContext.getResponse().getHttpResponseKnob().getStatus());
+        try {
+            assertNotNull(policyContext.getVariable(ServerSnmpAgentAssertion.SNMP_RESPONSE_CONTEXT_VAR));
+        } catch (NoSuchVariableException e) {
+
+        }
+    }
+
     /**
      *
      * Support Methods
@@ -425,6 +465,26 @@ public class ServerSnmpAgentAssertionTest {
 
     private String buildGetNextServiceCall(int fieldID) {
         return this.buildGenericServiceCall(null, MockSnmpValues.GET_NEXT_COMMAND, null, fieldID, null);
+    }
+
+    private String buildGenericServiceTableCall(@Nullable String serviceUrl, @Nullable String snmpCommand, @Nullable String serviceAddress, @Nullable Integer fieldID, @Nullable String serviceGOID) {
+        // Builds a string in the pattern of:
+        // "https://localhost:8080/snmp/management/GETNEXT/.1.3.6.1.4.1.17304.7"
+        StringBuilder urlCall = new StringBuilder();
+        urlCall.append(serviceUrl == null ? MockSnmpValues.TEST_SERVICE_URL : serviceUrl);
+        urlCall.append("/");
+        urlCall.append(snmpCommand == null ? MockSnmpValues.GET_COMMAND : snmpCommand);
+        urlCall.append("/");
+        urlCall.append(serviceAddress == null ? MockSnmpValues.TEST_SERVICE_TABLE : serviceAddress);
+        return new String(urlCall);
+    }
+
+    private String buildGetServiceTableCall() {
+        return this.buildGenericServiceTableCall(null, null, null, null, null);
+    }
+
+    private String buildGetNextServiceTableCall() {
+        return this.buildGenericServiceTableCall(null, MockSnmpValues.GET_NEXT_COMMAND, null, null, null);
     }
 
     private void compareResponseForServiceCall(int fieldId) {
