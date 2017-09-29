@@ -67,25 +67,32 @@ public class BundleResourceTest {
         when(uriInfo.getRequestUri()).thenReturn(new URI(BUNDLE_URI));
     }
 
+    private Properties defaultExpectedProperties(){
+        Properties expectedProperties = new Properties();
+        expectedProperties.put(BundleExporter.IgnoreDependenciesOption, Collections.emptyList());
+        expectedProperties.setProperty(BundleExporter.IncludeRequestFolderOption, "true");
+        expectedProperties.setProperty(BundleExporter.DefaultMappingActionOption, NEW_OR_EXISTING);
+        expectedProperties.setProperty(BundleExporter.DefaultMapByOption, "id");
+        expectedProperties.setProperty(BundleExporter.EncryptSecrets, "false");
+        expectedProperties.setProperty(BundleExporter.IncludeSolutionKitsOption, "false");
+        expectedProperties.setProperty(BundleExporter.EncassAsPolicyDependencyOption, "false");
+        expectedProperties.setProperty(BundleExporter.IncludeOnlyServicePolicyOption, "false");
+        expectedProperties.setProperty(BundleExporter.IncludeOnlyDependenciesOption, "false");
+        expectedProperties.setProperty(BundleExporter.IncludeGatewayConfigurationOption, "false");
+        return expectedProperties;
+    }
+
     @Test
     public void exportEncryptPasswords() throws Exception {
         when(bundleExporter.exportBundle(any(Properties.class), anyBoolean(), anyBoolean(), anyString())).thenReturn(bundle);
         when(transformer.convertToItem(bundle)).thenReturn(itemBundle);
         final Item<Bundle> resultBundle = resource.exportBundle(NEW_OR_EXISTING, false, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), folderIds, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), policyIds, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), serviceIds, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(),
                 Collections.<String>emptyList(), Collections.<String>emptyList(),Collections.<String>emptyList(), Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),
-                true, false, false, true, true, null, false, false, false);
+                true, false, false, true, true, null, false, false, false, false);
         assertEquals(itemBundle, resultBundle);
 
-        final Properties expectedProperties = new Properties();
-        expectedProperties.put(BundleExporter.IgnoreDependenciesOption, Collections.emptyList());
-        expectedProperties.setProperty(BundleExporter.IncludeRequestFolderOption, "true");
-        expectedProperties.setProperty(BundleExporter.DefaultMappingActionOption, NEW_OR_EXISTING);
-        expectedProperties.setProperty(BundleExporter.DefaultMapByOption, "id");
+        final Properties expectedProperties = defaultExpectedProperties();
         expectedProperties.setProperty(BundleExporter.EncryptSecrets, "true");
-        expectedProperties.setProperty(BundleExporter.IncludeSolutionKitsOption, "false");
-        expectedProperties.setProperty(BundleExporter.EncassAsPolicyDependencyOption, "false");
-        expectedProperties.setProperty(BundleExporter.IncludeOnlyServicePolicyOption, "false");
-        expectedProperties.setProperty(BundleExporter.IncludeOnlyDependenciesOption, "false");
         verify(bundleExporter).exportBundle(expectedProperties, false, true, null, new EntityHeader[]{});
     }
 
@@ -96,19 +103,11 @@ public class BundleResourceTest {
         when(transformer.convertToItem(bundle)).thenReturn(itemBundle);
         final Item<Bundle> resultBundle = resource.exportBundle(NEW_OR_EXISTING, false, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), folderIds, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), policyIds, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), serviceIds, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(),
                 Collections.<String>emptyList(), Collections.<String>emptyList(),Collections.<String>emptyList(), Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),
-                true, false, false, true, false, encodedPassphrase, false, false, false);
+                true, false, false, true, false, encodedPassphrase, false, false, false, false);
         assertEquals(itemBundle, resultBundle);
 
-        final Properties expectedProperties = new Properties();
-        expectedProperties.put(BundleExporter.IgnoreDependenciesOption, Collections.emptyList());
-        expectedProperties.setProperty(BundleExporter.IncludeRequestFolderOption, "true");
-        expectedProperties.setProperty(BundleExporter.DefaultMappingActionOption, NEW_OR_EXISTING);
-        expectedProperties.setProperty(BundleExporter.DefaultMapByOption, "id");
+        final Properties expectedProperties = defaultExpectedProperties();
         expectedProperties.setProperty(BundleExporter.EncryptSecrets, "true");
-        expectedProperties.setProperty(BundleExporter.IncludeSolutionKitsOption, "false");
-        expectedProperties.setProperty(BundleExporter.EncassAsPolicyDependencyOption, "false");
-        expectedProperties.setProperty(BundleExporter.IncludeOnlyServicePolicyOption, "false");
-        expectedProperties.setProperty(BundleExporter.IncludeOnlyDependenciesOption, "false");
         verify(bundleExporter).exportBundle(expectedProperties, false, true, encodedPassphrase, new EntityHeader[]{});
     }
 
@@ -118,19 +117,10 @@ public class BundleResourceTest {
         when(transformer.convertToItem(bundle)).thenReturn(itemBundle);
         final Item<Bundle> resultBundle = resource.exportBundle(NEW_OR_EXISTING, false, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), folderIds, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), policyIds, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), serviceIds, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(),
                 Collections.<String>emptyList(), Collections.<String>emptyList(),Collections.<String>emptyList(), Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),
-                true, false, false, false, false, null, false, false, false);
+                true, false, false, false, false, null, false, false, false, false);
         assertEquals(itemBundle, resultBundle);
 
-        final Properties expectedProperties = new Properties();
-        expectedProperties.put(BundleExporter.IgnoreDependenciesOption, Collections.emptyList());
-        expectedProperties.setProperty(BundleExporter.IncludeRequestFolderOption, "true");
-        expectedProperties.setProperty(BundleExporter.DefaultMappingActionOption, NEW_OR_EXISTING);
-        expectedProperties.setProperty(BundleExporter.DefaultMapByOption, "id");
-        expectedProperties.setProperty(BundleExporter.EncryptSecrets, "false");
-        expectedProperties.setProperty(BundleExporter.IncludeSolutionKitsOption, "false");
-        expectedProperties.setProperty(BundleExporter.EncassAsPolicyDependencyOption, "false");
-        expectedProperties.setProperty(BundleExporter.IncludeOnlyServicePolicyOption, "false");
-        expectedProperties.setProperty(BundleExporter.IncludeOnlyDependenciesOption, "false");
+        final Properties expectedProperties = defaultExpectedProperties();
         verify(bundleExporter).exportBundle(expectedProperties, false, false, null, new EntityHeader[]{});
     }
 
@@ -140,19 +130,10 @@ public class BundleResourceTest {
         when(transformer.convertToItem(bundle)).thenReturn(itemBundle);
         final Item<Bundle> resultBundle = resource.exportBundle(NEW_OR_EXISTING, false, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), folderIds, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), policyIds, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), serviceIds, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(),
                 Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),
-                true, false, false, false, false, "should be ignored", false, false, false);
+                true, false, false, false, false, "should be ignored", false, false, false, false);
         assertEquals(itemBundle, resultBundle);
 
-        final Properties expectedProperties = new Properties();
-        expectedProperties.put(BundleExporter.IgnoreDependenciesOption, Collections.emptyList());
-        expectedProperties.setProperty(BundleExporter.IncludeRequestFolderOption, "true");
-        expectedProperties.setProperty(BundleExporter.DefaultMappingActionOption, NEW_OR_EXISTING);
-        expectedProperties.setProperty(BundleExporter.DefaultMapByOption, "id");
-        expectedProperties.setProperty(BundleExporter.EncryptSecrets, "false");
-        expectedProperties.setProperty(BundleExporter.IncludeSolutionKitsOption, "false");
-        expectedProperties.setProperty(BundleExporter.EncassAsPolicyDependencyOption, "false");
-        expectedProperties.setProperty(BundleExporter.IncludeOnlyServicePolicyOption, "false");
-        expectedProperties.setProperty(BundleExporter.IncludeOnlyDependenciesOption, "false");
+        final Properties expectedProperties = defaultExpectedProperties();
         verify(bundleExporter).exportBundle(expectedProperties, false, false, null, new EntityHeader[]{});
     }
 
@@ -162,19 +143,11 @@ public class BundleResourceTest {
         when(transformer.convertToItem(bundle)).thenReturn(itemBundle);
         final Item<Bundle> resultBundle = resource.exportBundle(NEW_OR_EXISTING, false, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), folderIds, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), policyIds, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), serviceIds, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(),
                 Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),
-                true, false, false, true, true, "should be ignored", false, false, false);
+                true, false, false, true, true, "should be ignored", false, false, false, false);
         assertEquals(itemBundle, resultBundle);
 
-        final Properties expectedProperties = new Properties();
-        expectedProperties.put(BundleExporter.IgnoreDependenciesOption, Collections.emptyList());
-        expectedProperties.setProperty(BundleExporter.IncludeRequestFolderOption, "true");
-        expectedProperties.setProperty(BundleExporter.DefaultMappingActionOption, NEW_OR_EXISTING);
-        expectedProperties.setProperty(BundleExporter.DefaultMapByOption, "id");
+        final Properties expectedProperties = defaultExpectedProperties();
         expectedProperties.setProperty(BundleExporter.EncryptSecrets, "true");
-        expectedProperties.setProperty(BundleExporter.IncludeSolutionKitsOption, "false");
-        expectedProperties.setProperty(BundleExporter.EncassAsPolicyDependencyOption, "false");
-        expectedProperties.setProperty(BundleExporter.IncludeOnlyServicePolicyOption, "false");
-        expectedProperties.setProperty(BundleExporter.IncludeOnlyDependenciesOption, "false");
         verify(bundleExporter).exportBundle(expectedProperties, false, true, null, new EntityHeader[]{});
     }
 
@@ -183,7 +156,7 @@ public class BundleResourceTest {
         try {
             final Item<Bundle> resultBundle = resource.exportBundle(NEW_OR_EXISTING, false, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), folderIds, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), policyIds, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), serviceIds, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(),
                     Collections.<String>emptyList(), Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),
-                    true, false, false, true, false, null, false, false, false);
+                    true, false, false, true, false, null, false, false, false, false);
             fail("Expected InvalidArgumentException");
         } catch (final InvalidArgumentException e) {
             verify(bundleExporter, never()).exportBundle(any(Properties.class), anyBoolean(), anyBoolean(), anyString());
@@ -201,16 +174,9 @@ public class BundleResourceTest {
         final Item<Bundle> resultBundle = resource.exportFolderServiceOrPolicyBundle("policy", id, NEW_OR_EXISTING, "id", false, false, false, true, true, null, false, false);
         assertEquals(itemBundle, resultBundle);
 
-        final Properties expectedProperties = new Properties();
-        expectedProperties.put(BundleExporter.IgnoreDependenciesOption, Collections.emptyList());
+        final Properties expectedProperties = defaultExpectedProperties();
         expectedProperties.setProperty(BundleExporter.IncludeRequestFolderOption, "false");
-        expectedProperties.setProperty(BundleExporter.DefaultMappingActionOption, NEW_OR_EXISTING);
-        expectedProperties.setProperty(BundleExporter.DefaultMapByOption, "id");
         expectedProperties.setProperty(BundleExporter.EncryptSecrets, "true");
-        expectedProperties.setProperty(BundleExporter.IncludeSolutionKitsOption, "false");
-        expectedProperties.setProperty(BundleExporter.EncassAsPolicyDependencyOption, "false");
-        expectedProperties.setProperty(BundleExporter.IncludeOnlyServicePolicyOption, "false");
-        expectedProperties.setProperty(BundleExporter.IncludeOnlyDependenciesOption, "false");
         verify(bundleExporter).exportBundle(expectedProperties, false, true, null, header);
     }
 
@@ -224,16 +190,9 @@ public class BundleResourceTest {
         final Item<Bundle> resultBundle = resource.exportFolderServiceOrPolicyBundle("policy", id, NEW_OR_EXISTING, "id", false, false, false, true, false, encodedPassphrase, false, false);
         assertEquals(itemBundle, resultBundle);
 
-        final Properties expectedProperties = new Properties();
-        expectedProperties.put(BundleExporter.IgnoreDependenciesOption, Collections.emptyList());
+        final Properties expectedProperties = defaultExpectedProperties();
         expectedProperties.setProperty(BundleExporter.IncludeRequestFolderOption, "false");
-        expectedProperties.setProperty(BundleExporter.DefaultMappingActionOption, NEW_OR_EXISTING);
-        expectedProperties.setProperty(BundleExporter.DefaultMapByOption, "id");
         expectedProperties.setProperty(BundleExporter.EncryptSecrets, "true");
-        expectedProperties.setProperty(BundleExporter.IncludeSolutionKitsOption, "false");
-        expectedProperties.setProperty(BundleExporter.EncassAsPolicyDependencyOption, "false");
-        expectedProperties.setProperty(BundleExporter.IncludeOnlyServicePolicyOption, "false");
-        expectedProperties.setProperty(BundleExporter.IncludeOnlyDependenciesOption, "false");
         verify(bundleExporter).exportBundle(expectedProperties, false, true, encodedPassphrase, header);
     }
 
@@ -246,16 +205,8 @@ public class BundleResourceTest {
         final Item<Bundle> resultBundle = resource.exportFolderServiceOrPolicyBundle("policy", id, NEW_OR_EXISTING, "id", false, false, false, false, false, null, false, false);
         assertEquals(itemBundle, resultBundle);
 
-        final Properties expectedProperties = new Properties();
-        expectedProperties.put(BundleExporter.IgnoreDependenciesOption, Collections.emptyList());
+        final Properties expectedProperties = defaultExpectedProperties();
         expectedProperties.setProperty(BundleExporter.IncludeRequestFolderOption, "false");
-        expectedProperties.setProperty(BundleExporter.DefaultMappingActionOption, NEW_OR_EXISTING);
-        expectedProperties.setProperty(BundleExporter.DefaultMapByOption, "id");
-        expectedProperties.setProperty(BundleExporter.EncryptSecrets, "false");
-        expectedProperties.setProperty(BundleExporter.IncludeSolutionKitsOption, "false");
-        expectedProperties.setProperty(BundleExporter.EncassAsPolicyDependencyOption, "false");
-        expectedProperties.setProperty(BundleExporter.IncludeOnlyServicePolicyOption, "false");
-        expectedProperties.setProperty(BundleExporter.IncludeOnlyDependenciesOption, "false");
         verify(bundleExporter).exportBundle(expectedProperties, false, false, null, header);
     }
 
@@ -268,16 +219,8 @@ public class BundleResourceTest {
         final Item<Bundle> resultBundle = resource.exportFolderServiceOrPolicyBundle("policy", id, NEW_OR_EXISTING, "id", false, false, false, false, false, "should be ignored", false, false);
         assertEquals(itemBundle, resultBundle);
 
-        final Properties expectedProperties = new Properties();
-        expectedProperties.put(BundleExporter.IgnoreDependenciesOption, Collections.emptyList());
+        final Properties expectedProperties = defaultExpectedProperties();
         expectedProperties.setProperty(BundleExporter.IncludeRequestFolderOption, "false");
-        expectedProperties.setProperty(BundleExporter.DefaultMappingActionOption, NEW_OR_EXISTING);
-        expectedProperties.setProperty(BundleExporter.DefaultMapByOption, "id");
-        expectedProperties.setProperty(BundleExporter.EncryptSecrets, "false");
-        expectedProperties.setProperty(BundleExporter.IncludeSolutionKitsOption, "false");
-        expectedProperties.setProperty(BundleExporter.EncassAsPolicyDependencyOption, "false");
-        expectedProperties.setProperty(BundleExporter.IncludeOnlyServicePolicyOption, "false");
-        expectedProperties.setProperty(BundleExporter.IncludeOnlyDependenciesOption, "false");
         verify(bundleExporter).exportBundle(expectedProperties, false, false, null, header);
     }
 
@@ -290,16 +233,9 @@ public class BundleResourceTest {
         final Item<Bundle> resultBundle = resource.exportFolderServiceOrPolicyBundle("policy", id, NEW_OR_EXISTING, "id", false, false, false, true, true, "should be ignored", false, false);
         assertEquals(itemBundle, resultBundle);
 
-        final Properties expectedProperties = new Properties();
-        expectedProperties.put(BundleExporter.IgnoreDependenciesOption, Collections.emptyList());
+        final Properties expectedProperties = defaultExpectedProperties();
         expectedProperties.setProperty(BundleExporter.IncludeRequestFolderOption, "false");
-        expectedProperties.setProperty(BundleExporter.DefaultMappingActionOption, NEW_OR_EXISTING);
-        expectedProperties.setProperty(BundleExporter.DefaultMapByOption, "id");
         expectedProperties.setProperty(BundleExporter.EncryptSecrets, "true");
-        expectedProperties.setProperty(BundleExporter.IncludeSolutionKitsOption, "false");
-        expectedProperties.setProperty(BundleExporter.EncassAsPolicyDependencyOption, "false");
-        expectedProperties.setProperty(BundleExporter.IncludeOnlyServicePolicyOption, "false");
-        expectedProperties.setProperty(BundleExporter.IncludeOnlyDependenciesOption, "false");
         verify(bundleExporter).exportBundle(expectedProperties, false, true, null, header);
     }
 
@@ -321,19 +257,12 @@ public class BundleResourceTest {
         when(transformer.convertToItem(bundle)).thenReturn(itemBundle);
         final Item<Bundle> resultBundle = resource.exportBundle(NEW_OR_EXISTING, false, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), folderIds, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), policyIds, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), serviceIds, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(),
                 Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),
-                true, false, true, true, true, "should be ignored", false, false, false);
+                true, false, true, true, true, "should be ignored", false, false, false, false);
         assertEquals(itemBundle, resultBundle);
 
-        final Properties expectedProperties = new Properties();
-        expectedProperties.put(BundleExporter.IgnoreDependenciesOption, Collections.emptyList());
-        expectedProperties.setProperty(BundleExporter.IncludeRequestFolderOption, "true");
-        expectedProperties.setProperty(BundleExporter.DefaultMappingActionOption, NEW_OR_EXISTING);
-        expectedProperties.setProperty(BundleExporter.DefaultMapByOption, "id");
+        final Properties expectedProperties = defaultExpectedProperties();
         expectedProperties.setProperty(BundleExporter.EncryptSecrets, "true");
         expectedProperties.setProperty(BundleExporter.IncludeSolutionKitsOption, "true");
-        expectedProperties.setProperty(BundleExporter.EncassAsPolicyDependencyOption, "false");
-        expectedProperties.setProperty(BundleExporter.IncludeOnlyServicePolicyOption, "false");
-        expectedProperties.setProperty(BundleExporter.IncludeOnlyDependenciesOption, "false");
         verify(bundleExporter).exportBundle(expectedProperties, false, true, null, new EntityHeader[]{});
     }
 
@@ -343,19 +272,28 @@ public class BundleResourceTest {
         when(transformer.convertToItem(bundle)).thenReturn(itemBundle);
         final Item<Bundle> resultBundle = resource.exportBundle(NEW_OR_EXISTING, false, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), folderIds, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), policyIds, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), serviceIds, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(),
                 Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),
-                true, false, true, true, true, "should be ignored", true, false, false);
+                true, false, true, true, true, "should be ignored", true, false, false, false);
         assertEquals(itemBundle, resultBundle);
 
-        final Properties expectedProperties = new Properties();
-        expectedProperties.put(BundleExporter.IgnoreDependenciesOption, Collections.emptyList());
-        expectedProperties.setProperty(BundleExporter.IncludeRequestFolderOption, "true");
-        expectedProperties.setProperty(BundleExporter.DefaultMappingActionOption, NEW_OR_EXISTING);
-        expectedProperties.setProperty(BundleExporter.DefaultMapByOption, "id");
+        final Properties expectedProperties = defaultExpectedProperties();
         expectedProperties.setProperty(BundleExporter.EncryptSecrets, "true");
         expectedProperties.setProperty(BundleExporter.IncludeSolutionKitsOption, "true");
         expectedProperties.setProperty(BundleExporter.EncassAsPolicyDependencyOption, "true");
-        expectedProperties.setProperty(BundleExporter.IncludeOnlyServicePolicyOption, "false");
-        expectedProperties.setProperty(BundleExporter.IncludeOnlyDependenciesOption, "false");
+        verify(bundleExporter).exportBundle(expectedProperties, false, true, null, new EntityHeader[]{});
+    }
+
+    @Test
+    public void exportGatewayConfigurations() throws Exception {
+        when(bundleExporter.exportBundle(any(Properties.class), anyBoolean(), anyBoolean(), anyString())).thenReturn(bundle);
+        when(transformer.convertToItem(bundle)).thenReturn(itemBundle);
+        final Item<Bundle> resultBundle = resource.exportBundle(NEW_OR_EXISTING, false, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), folderIds, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), policyIds, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), serviceIds, Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(),
+                Collections.<String>emptyList(), Collections.<String>emptyList(), Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),Collections.<String>emptyList(),
+                true, false, false, true, true, "should be ignored", false, false, false, true);
+        assertEquals(itemBundle, resultBundle);
+
+        final Properties expectedProperties = defaultExpectedProperties();
+        expectedProperties.setProperty(BundleExporter.EncryptSecrets, "true");
+        expectedProperties.setProperty(BundleExporter.IncludeGatewayConfigurationOption, "true");
         verify(bundleExporter).exportBundle(expectedProperties, false, true, null, new EntityHeader[]{});
     }
 }

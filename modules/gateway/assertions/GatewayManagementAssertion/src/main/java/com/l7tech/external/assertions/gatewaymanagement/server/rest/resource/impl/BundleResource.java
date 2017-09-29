@@ -201,6 +201,7 @@ public class BundleResource {
      * @param encassAsPolicyDependency            True to include the encapsulated assertion entities when exporting policies.
      * @param includeOnlyServicePolicy            True to export only service policy. False by default.
      * @param includeOnlyDependencies             True to export only dependencies. False by default.
+     * @param includeGatewayConfiguration         True to include gateway configurations. Includes audit configuration. False by default.
      * @return The bundle for the resources
      */
     @GET
@@ -282,7 +283,8 @@ public class BundleResource {
                                      @HeaderParam("L7-key-passphrase") @Since(RestManVersion.VERSION_1_0_1) String encodedKeyPassphrase,
                                      @QueryParam("encassAsPolicyDependency") @DefaultValue("false") @Since(RestManVersion.VERSION_1_0_3) Boolean encassAsPolicyDependency,
                                      @QueryParam("includeOnlyServicePolicy") @DefaultValue("false") @Since(RestManVersion.VERSION_1_0_3) Boolean includeOnlyServicePolicy,
-                                     @QueryParam("includeOnlyDependencies") @DefaultValue("false") @Since(RestManVersion.VERSION_1_0_3) Boolean includeOnlyDependencies) throws IOException, ResourceFactory.ResourceNotFoundException, FindException, CannotRetrieveDependenciesException, GeneralSecurityException {
+                                     @QueryParam("includeOnlyDependencies") @DefaultValue("false") @Since(RestManVersion.VERSION_1_0_3) Boolean includeOnlyDependencies,
+                                     @QueryParam("includeGatewayConfiguration") @DefaultValue("false") @Since(RestManVersion.VERSION_1_0_4) Boolean includeGatewayConfiguration) throws IOException, ResourceFactory.ResourceNotFoundException, FindException, CannotRetrieveDependenciesException, GeneralSecurityException {
         rbacAccessService.validateFullAdministrator();
         ParameterValidationUtils.validateNoOtherQueryParams(uriInfo.getQueryParameters(), Arrays.asList("defaultAction", "exportGatewayRestManagementService",
                 "activeConnector",
@@ -351,7 +353,7 @@ public class BundleResource {
                 "requireSiteMinderConfiguration",
                 "requireWorkQueue",
                 "requireSolutionKit",
-                "all", "includeDependencies", "includeSolutionKits", "encryptSecrets", "encryptUsingClusterPassphrase", "encassAsPolicyDependency", "includeOnlyServicePolicy", "includeOnlyDependencies"));
+                "all", "includeDependencies", "includeSolutionKits", "encryptSecrets", "encryptUsingClusterPassphrase", "encassAsPolicyDependency", "includeOnlyServicePolicy", "includeOnlyDependencies", "includeGatewayConfiguration"));
         final String encodedPassphrase = getEncryptionPassphrase(encryptSecrets, encryptUsingClusterPassphrase, encodedKeyPassphrase);
         //validate that something is being exported
         if (activeConnectorIds.isEmpty() && cassandraConnectionIds.isEmpty() && trustedCertificateIds.isEmpty() && clusterPropertyIds.isEmpty() && customKeyValueIds.isEmpty() && emailListenerIds.isEmpty() && encapsulatedAssertionIds.isEmpty() &&
@@ -441,6 +443,7 @@ public class BundleResource {
                 encassAsPolicyDependency,
                 includeOnlyServicePolicy,
                 includeOnlyDependencies,
+                includeGatewayConfiguration,
                 entityHeadersToExport.toArray(new EntityHeader[entityHeadersToExport.size()]));
         return new ItemBuilder<>(transformer.convertToItem(bundle))
                 .addLink(ManagedObjectFactory.createLink(Link.LINK_REL_SELF, uriInfo.getRequestUri().toString()))
@@ -509,7 +512,7 @@ public class BundleResource {
 
         EntityHeader header = new EntityHeader(id, entityType, null, null);
         final Bundle bundle = createBundle(includeRequestFolder, Mapping.Action.valueOf(defaultAction), defaultMapBy,
-                exportGatewayRestManagementService, includeDependencies, encryptSecrets, encodedPassphrase, Collections.<EntityHeader>emptyList(), false /* do not include solution kits on partial export*/, false, includeOnlyServicePolicy, includeOnlyDependencies, header);
+                exportGatewayRestManagementService, includeDependencies, encryptSecrets, encodedPassphrase, Collections.<EntityHeader>emptyList(), false /* do not include solution kits on partial export*/, false, includeOnlyServicePolicy, includeOnlyDependencies, false, header);
         return new ItemBuilder<>(transformer.convertToItem(bundle))
                 .addLink(ManagedObjectFactory.createLink(Link.LINK_REL_SELF, uriInfo.getRequestUri().toString()))
                 .build();
@@ -568,6 +571,7 @@ public class BundleResource {
      * @param defaultMapBy         The default map by property
      * @param includeDependencies  true to include dependencies
      * @param includeSolutionKits  true to include Solution Kits entities during export.
+     * @param includeGatewayConfiguration   true to include gateway configuration entities during export
      * @param headers              The header to bundle a bundle for
      * @return The bundle from the headers
      */
@@ -585,6 +589,7 @@ public class BundleResource {
                                 boolean encassAsPolicyDependency,
                                 boolean includeOnlyServicePolicy,
                                 boolean includeOnlyDependencies,
+                                boolean includeGatewayConfiguration,
                                 @NotNull final EntityHeader... headers) throws FindException, CannotRetrieveDependenciesException, FileNotFoundException, GeneralSecurityException {
         //build the bundling properties
         final Properties bundleOptionsBuilder = new Properties();
@@ -596,6 +601,8 @@ public class BundleResource {
         bundleOptionsBuilder.setProperty(BundleExporter.EncassAsPolicyDependencyOption, Boolean.toString(encassAsPolicyDependency));
         bundleOptionsBuilder.setProperty(BundleExporter.IncludeOnlyServicePolicyOption, Boolean.toString(includeOnlyServicePolicy));
         bundleOptionsBuilder.setProperty(BundleExporter.IncludeOnlyDependenciesOption, Boolean.toString(includeOnlyDependencies));
+        bundleOptionsBuilder.setProperty(BundleExporter.IncludeGatewayConfigurationOption, Boolean.toString(includeGatewayConfiguration));
+
 
         //ignore the rest man service so it is not exported
         if (containerRequest.getProperty("ServiceId") != null && !exportGatewayRestManagementService) {

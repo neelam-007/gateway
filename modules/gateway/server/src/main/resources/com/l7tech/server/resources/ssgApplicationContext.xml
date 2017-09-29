@@ -1341,6 +1341,12 @@
         <constructor-arg ref="entityVersionCheckerTimer"/>
     </bean>
 
+    <bean id="auditConfigurationManager" class="com.l7tech.server.audit.AuditConfigurationManagerImpl">
+        <constructor-arg index="0" ref="policyManager"/>
+        <constructor-arg index="1" ref="clusterPropertyManager"/>
+        <constructor-arg index="2" ref="transactionManager"/>
+    </bean>
+
     <!-- server side audit record manager -->
     <bean id="auditRecordManager" class="com.l7tech.server.audit.AuditRecordManagerImpl" parent="hibernateBean">
         <property name="serverConfig" ref="serverConfig"/>
@@ -2310,6 +2316,7 @@
                 <ref bean="workQueueEntityManager"/>
                 <ref bean="policyBackedServiceManager"/>
                 <ref bean="solutionKitManager"/>
+                <ref bean="auditConfigurationManager"/>
             </list>
         </constructor-arg>
     </bean>

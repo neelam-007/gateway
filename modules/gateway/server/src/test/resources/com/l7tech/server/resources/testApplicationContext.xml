@@ -77,6 +77,11 @@
         <constructor-arg index="0" ref="folderManager"/>
     </bean>
 
+    <bean id="auditConfigurationManager" class="com.l7tech.server.audit.AuditConfigurationManagerStub">
+        <constructor-arg index="0" ref="policyManager"/>
+        <constructor-arg index="1" ref="clusterPropertyManager"/>
+    </bean>
+
     <!-- service cache -->
     <bean id="serviceCache" class="com.l7tech.server.service.ServiceCacheStub" depends-on="wsdlStrategyServiceDocumentsInitializer">
         <constructor-arg index="0" ref="policyCache"/>
@@ -636,6 +641,7 @@
                 <ref bean="policyManager" />
                 <ref bean="genericEntityManager"/>
                 <ref bean="policyBackedServiceManager"/>
+                <ref bean="auditConfigurationManager"/>
             </list>
         </constructor-arg>
     </bean>

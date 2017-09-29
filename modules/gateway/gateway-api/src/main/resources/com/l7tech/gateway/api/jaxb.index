@@ -63,3 +63,5 @@ WorkQueueMO
 ServerModuleFileMO
 PolicyBackedServiceMO
 SolutionKitMO
+AuditConfigurationMO
+AuditFtpConfig

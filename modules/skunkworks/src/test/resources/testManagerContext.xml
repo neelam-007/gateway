@@ -765,6 +765,7 @@
                 <ref bean="workQueueEntityManager"/>
                 <ref bean="scheduledTaskManager"/>
                 <ref bean="policyBackedServiceManager"/>
+                <ref bean="auditConfigurationManager"/>
             </list>
         </constructor-arg>
     </bean>
@@ -1597,7 +1598,6 @@
         <constructor-arg ref="trafficLogger"/>
         <constructor-arg ref="applicationEventProxy"/>
         <constructor-arg ref="clusterInfoManager"/>
-        <constructor-arg ref="clusterContextFactory"/>
         <constructor-arg ref="roleManager"/>
     </bean>
 
@@ -1606,6 +1606,13 @@
         <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="soapFaultManager"/>
     </bean>
+
+    <bean id="auditConfigurationManager" class="com.l7tech.server.audit.AuditConfigurationManagerImpl">
+        <constructor-arg index="0" ref="policyManager"/>
+        <constructor-arg index="1" ref="clusterPropertyManager"/>
+        <constructor-arg index="2" ref="transactionManager"/>
+    </bean>
+    
     <bean id="applicationEventProxy" class="com.l7tech.server.util.ApplicationEventProxy" primary="true"/>
 
     <bean id="soapFaultManager" class="com.l7tech.server.util.SoapFaultManager" depends-on="clusterPropertyManager">

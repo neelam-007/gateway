@@ -1,5 +1,6 @@
 package com.l7tech.server.search;
 
+import com.l7tech.gateway.common.audit.AuditConfiguration;
 import com.l7tech.gateway.common.cassandra.CassandraConnection;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
@@ -112,7 +113,8 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
             ScheduledTask.class,
             WorkQueue.class,
             ServerModuleFile.class,
-            SolutionKit.class
+            SolutionKit.class,
+            AuditConfiguration.class
     );
     @Inject
     private EntityCrud entityCrud;
@@ -172,6 +174,11 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
         } else {
             headerLists = new ArrayList<>();
             headerLists.add(entityHeaders);
+            if(PropertiesUtil.getOption("IncludeGatewayConfiguration", Boolean.class, false, searchOptions)){
+                List<EntityHeader> gatewayConfigHeaders = new ArrayList<>();
+                gatewayConfigHeaders.add(AuditConfiguration.getDefaultEntityHeader());
+                headerLists.add(gatewayConfigHeaders);
+            }
         }
 
         //create a new dependency finder to perform the search

@@ -1,15 +1,19 @@
 package com.l7tech.server.search.processors;
 
+import com.l7tech.gateway.common.audit.AuditConfiguration;
 import com.l7tech.objectmodel.*;
 import com.l7tech.search.Dependency;
 import com.l7tech.server.EntityCrud;
 import com.l7tech.server.EntityHeaderUtils;
+import com.l7tech.server.bundling.EntityBundleExporterImpl;
 import com.l7tech.server.search.DependencyAnalyzer;
 import com.l7tech.server.search.DependencyAnalyzerImpl;
 import com.l7tech.server.search.exceptions.CannotReplaceDependenciesException;
 import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
 import com.l7tech.server.search.objects.DependencySearchResults;
 import com.l7tech.util.CollectionUtils;
+import java.util.Collections;
+import java.util.List;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -142,6 +146,17 @@ public class DependencyAnalyzerGeneralTest {
         public MyEntityWithInheritedDependency(String name, Goid id, Entity dependency) {
             super(name, id, dependency);
         }
+    }
+
+    @Test
+    public void testFindGatewayConfigurationEntities() throws FindException, CannotRetrieveDependenciesException {
+        Mockito.when(entityCrud.find(AuditConfiguration.getDefaultEntityHeader())).thenReturn(myEntityWithNoDependencies);
+        List<DependencySearchResults> dependencies = dependencyAnalyzer.getDependencies(CollectionUtils.list(EntityHeaderUtils.fromEntity(myEntityWithDifferentGetter)),CollectionUtils.MapBuilder.<String, Object>builder()
+                .put(EntityBundleExporterImpl.IncludeGatewayConfigurationOption,true).map());
+
+        Assert.assertEquals(2, dependencies.size());
+        Assert.assertEquals(myEntityWithDifferentGetter.getName(),dependencies.get(0).getDependent().getName());
+        Assert.assertEquals(myEntityWithNoDependencies.getName(),dependencies.get(1).getDependent().getName());
     }
 
     public class MyEntityWithOneDependency extends MyEntityWithNoDependencies {

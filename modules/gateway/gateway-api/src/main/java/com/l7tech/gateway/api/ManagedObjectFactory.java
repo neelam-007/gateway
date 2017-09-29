@@ -642,6 +642,25 @@ public class ManagedObjectFactory {
     }
 
     /**
+     * Create a new AuditConfigurationMO instance.
+     *
+     * @return The new instance.
+     */
+    public static AuditConfigurationMO createAuditConfiguration() {
+        return new AuditConfigurationMO();
+    }
+
+    /**
+     * Create a new AuditFtpConfig instance.
+     *
+     * @return The new instance.
+     */
+    public static AuditFtpConfig createAuditFtpConfig() {
+        return new AuditFtpConfig();
+    }
+
+
+    /**
      * Read a managed object from the given data.
      *
      * @param in The input data.
