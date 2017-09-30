@@ -564,7 +564,7 @@ public class BundleResource {
     public Response importBundles(@QueryParam("test") @DefaultValue("false") final boolean test,
                                  @QueryParam("activate") @DefaultValue("true") final boolean activate,
                                  @QueryParam("versionComment") final String versionComment,
-                                 @HeaderParam("L7-key-passphrase") @Since(RestManVersion.VERSION_1_0_1) String encodedKeyPassphrase,
+                                 @HeaderParam("L7-key-passphrase") @Since(RestManVersion.VERSION_1_0_1) final String encodedKeyPassphrase,
                                  @NotNull final BundleList bundles) throws Exception {
         rbacAccessService.validateFullAdministrator();
         ParameterValidationUtils.validateNoOtherQueryParams(uriInfo.getQueryParameters(), Arrays.asList("test", "activate", "versionComment"));

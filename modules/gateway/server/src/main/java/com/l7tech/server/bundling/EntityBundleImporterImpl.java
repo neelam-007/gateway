@@ -152,10 +152,11 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
      */
     @Override
     public List<List<EntityMappingResult>> importBundles(@NotNull List<EntityBundle> bundles, boolean test, boolean activate, @Nullable String versionComment) {
+        final String suffix = bundles.size() <= 1? "!" : "s!";
         if (!test) {
-            logger.log(Level.INFO, "Importing bundle(s)!");
+            logger.log(Level.INFO, "Importing bundle" + suffix);
         } else {
-            logger.log(Level.FINE, "Test Importing bundle(s)!");
+            logger.log(Level.FINE, "Test Importing bundle" + suffix);
         }
         final AuditsCollector collector = new AuditsCollector();
         final List<List<EntityMappingResult>> results =  AuditContextUtils.doWithAuditsCollector(collector, new Functions.Nullary<List<List<EntityMappingResult>>>() {
@@ -166,14 +167,18 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
         });
 
         if (!test) {
-            for (final List<EntityMappingResult> result: results) {
+            for (int i = 0; i < results.size(); i++) {
+                final List<EntityMappingResult> result = results.get(i);
+                final String bundleName = bundles.get(i).getBundleName();
+                final String bundleInfo = StringUtils.isBlank(bundleName)? "" : " '" + bundleName + "'";
+
                 if (containsErrors(result)) {
-                    logger.log(Level.INFO, "Error importing bundle(s)");
+                    logger.log(Level.INFO, "Error importing bundle" + bundleInfo);
                 } else {
                     for (Triple<AuditRecord, Object, Collection<AuditDetail>> record : collector) {
                         auditContextFactory.emitAuditRecordWithDetails(record.left, false, record.middle, record.right);
                     }
-                    logger.log(Level.INFO, "Bundle(s) imported.");
+                    logger.log(Level.INFO, "Bundle" + bundleInfo + " imported.");
                 }
             }
         }

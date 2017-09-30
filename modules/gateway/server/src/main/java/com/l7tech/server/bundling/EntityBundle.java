@@ -22,6 +22,7 @@ public class EntityBundle {
     @NotNull
     private final Map<Pair<String, EntityType>, EntityContainer> idEntityMap;
     private final List<DependencySearchResults> dependencySearchResults;
+    private final String bundleName; // To track bundle name (We introduce a new 'Name' element for each bundle content when implementing multi-bundle import.)
 
     /**
      * Creates a new Entity bundle with the given entity containers and mapping instructions
@@ -30,6 +31,13 @@ public class EntityBundle {
      * @param dependencySearchResults  The dependency analysis results used to create bundle
      */
     public EntityBundle(@NotNull final Collection<EntityContainer> entities, @NotNull final List<EntityMappingInstructions> mappingInstructions, @NotNull final List<DependencySearchResults> dependencySearchResults) {
+        this(null, entities, mappingInstructions, dependencySearchResults);
+    }
+
+    public EntityBundle(@Nullable final String bundleName, @NotNull final Collection<EntityContainer> entities,
+                        @NotNull final List<EntityMappingInstructions> mappingInstructions,
+                        @NotNull final List<DependencySearchResults> dependencySearchResults) {
+        this.bundleName = bundleName;
         this.mappingInstructions = mappingInstructions;
         this.dependencySearchResults = dependencySearchResults;
 
@@ -83,5 +91,10 @@ public class EntityBundle {
     @Nullable
     public EntityContainer getEntity(@NotNull final String id, @NotNull final EntityType entityType) {
         return idEntityMap.get(new Pair<>(id, entityType));
+    }
+
+    @Nullable
+    public String getBundleName() {
+        return bundleName;
     }
 }

@@ -791,5 +791,4 @@ public class ManagedObjectFactory {
             super( cause );
         }
     }
-
 }
