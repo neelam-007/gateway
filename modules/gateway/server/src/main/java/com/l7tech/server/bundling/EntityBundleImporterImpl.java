@@ -140,7 +140,8 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
 
     /**
      * This will import the given entity bundles. If test is true or there is an error during bundles import nothing is
-     * committed and all changes that were made are rolled back
+     * committed and all changes that were made are rolled back.  No matter whether each bundle is imported successfully
+     * or failed to import, one list of EntityMappingResults is generated per one bundle import.
      *
      * @param bundles         The bundles to import
      * @param test           if true the bundles import will be performed but rolled back afterwards and the results of
@@ -148,7 +149,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
      *                       successful.
      * @param activate       True to activate the updated services and policies.
      * @param versionComment The comment to set for updated/created services and policies
-     * @return A list of the mapping results of the bundles import.
+     * @return A list of "EntityMappingResult lists" for all bundles processed (i.e., one list of EntityMappingResults per one bundle import)
      */
     @Override
     public List<List<EntityMappingResult>> importBundles(@NotNull List<EntityBundle> bundles, boolean test, boolean activate, @Nullable String versionComment) {

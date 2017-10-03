@@ -22,7 +22,7 @@ public class BundleList {
         return bundles;
     }
 
-    public void setBundles(List<Bundle> bundles) {
+    public void setBundles(final List<Bundle> bundles) {
         this.bundles = bundles;
     }
 }
