@@ -265,6 +265,17 @@
         <servlet-name>TokenService</servlet-name>
         <url-pattern>/ssg/token</url-pattern>
     </servlet-mapping>
+  
+    <servlet>
+        <servlet-name>JnlpDownloadServlet</servlet-name>
+        <servlet-class>jnlp.sample.servlet.JnlpDownloadServlet</servlet-class>
+    </servlet>
+
+
+    <servlet-mapping>
+        <servlet-name>JnlpDownloadServlet</servlet-name>
+        <url-pattern>/ssg/webstart/*</url-pattern>
+    </servlet-mapping>
 
     <welcome-file-list>
         <welcome-file>index.html</welcome-file>

@@ -22,6 +22,7 @@ import com.l7tech.console.tree.servicesAndPolicies.AlterFilterAction;
 import com.l7tech.console.tree.servicesAndPolicies.FolderNode;
 import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.util.*;
+import com.l7tech.console.util.CustomAssertionRMIClassLoaderSpi;
 import com.l7tech.gateway.common.Authorizer;
 import com.l7tech.gateway.common.audit.LogonEvent;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
@@ -3058,6 +3059,12 @@ public class MainWindow extends JFrame implements SheetHolder {
     }
 
     /**
+     +     * @return true if we are running as Web Start
+     +     */
+    public boolean isWebStart() {
+        return ssmApplication.isWebStart();
+    }
+    /**
      * @return true if we are running as an Applet
      */
     public boolean isApplet() {
@@ -4318,6 +4325,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             ConsoleGoidUpgradeMapper.updatePrefixesFromGateway();
 
             final boolean isApplet = isApplet();
+            final boolean isWebStart = isWebStart();
 
             if (isApplet) {
                 User user = Registry.getDefault().getSecurityProvider().getUser();
@@ -4336,8 +4344,19 @@ public class MainWindow extends JFrame implements SheetHolder {
             auditSigningCert = null;
 
             /* init rmi cl */
-            if (!isApplet)
+            if (!isApplet && !isWebStart)
                 RMIClassLoader.getDefaultProviderInstance();
+
+
+            if (isWebStart) {
+                try {
+                    Thread.currentThread().getContextClassLoader().loadClass("com.l7tech.console.util.CustomAssertionRMIClassLoaderSpi").newInstance();
+                } catch (Exception e) {
+                    log.log(Level.WARNING, "Unable to load  class com.l7tech.console.util.CustomAssertionRMIClassLoaderSpi " + ExceptionUtils.getMessage(e) + ".",
+                            ExceptionUtils.getDebugException(e));
+                }
+            }
+
 
             /* set the preferences */
             try {

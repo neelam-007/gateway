@@ -46,7 +46,16 @@ public class CustomAssertionRMIClassLoaderSpi extends RMIClassLoaderSpi {
     public static void resetRemoteClassLoader() {
         CustomAssertionRMIClassLoaderSpi that = lastInstance;
         if (that != null) {
-            that.classLoader.set(new CustomAssertionClassLoader());
+            /*
+            Passing JNLPClassLoader as parameter to the constructor so that, JNLPClassLoader is used for loading the resources/assertions
+             */
+            if (TopComponents.getInstance().isWebStart()) {
+                that.classLoader.set(new CustomAssertionClassLoader(Thread.currentThread().getContextClassLoader()));
+            }
+            else
+            {
+                that.classLoader.set(new CustomAssertionClassLoader());
+            }
             ClassLoaderUtil.setClassloader(that.classLoader.get());
         }
     }
