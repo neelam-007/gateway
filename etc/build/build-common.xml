@@ -183,6 +183,7 @@
                     <fileset dir="${java.home}/lib/ext">
                         <include name="*.jar"/>
                     </fileset>
+					<fileset dir="${java.home}/lib" includes="javaws.jar" />
                     <path refid="lib.obfuscate.path.id"/>
                 </path>
                 <pathconvert property="lib.obfuscate.path.text" targetos="unix" pathsep="&quot;${line.separator}&quot;" refid="full.obfuscate.path.id"/>
