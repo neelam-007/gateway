@@ -11,7 +11,11 @@ mount  ${EBS_DEVICE} ${EBS_MOUNT_POINT}
 
 # make a local working copy
 service ssg stop
-service mysql stop
+if [ -e /etc/init.d/mysqld ]; then
+    service mysqld stop
+else
+    service mysql stop
+fi
 service rsyslogd stop
 rsync --stats -av --exclude=/root/.bash_history --exclude=/root/*.sh --exclude=/root/*.rpm --exclude=/root/.ssh/authorized_keys --exclude=/home/*/.ssh/authorized_keys --exclude=/home/*/.bash_history --exclude=/etc/ssh/ssh_host_* --exclude=/etc/ssh/moduli --exclude=/etc/udev/rules.d/*persistent-net.rules --exclude=/var/lib/ec2/* --exclude=/mnt/* --exclude=/proc/* --exclude=/tmp/* / ${EBS_MOUNT_POINT} > /mnt/rsync.log.$$ 2>&1
 
