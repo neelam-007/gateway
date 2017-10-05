@@ -8,7 +8,7 @@ import com.l7tech.gateway.common.solutionkit.SolutionKitHeader;
 import com.l7tech.gateway.common.spring.remoting.http.SecureHttpInvokerServiceExporter;
 import com.l7tech.gateway.common.spring.remoting.http.SecureHttpInvokerServiceExporterStub;
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.solutionkit.SolutionKitBuilder;
+import com.l7tech.gateway.common.solutionkit.SolutionKitBuilder;
 import com.l7tech.test.BugId;
 import com.l7tech.util.*;
 import org.hamcrest.Matchers;
@@ -782,6 +782,12 @@ public class SecureHttpInvokerServiceExporterTest {
 
                     @Override
                     public SolutionKit get(@NotNull Goid goid) throws FindException {
+                        methodCalled.set(true);
+                        return sampleSolutionKit;
+                    }
+
+                    @Override
+                    public SolutionKit get(@NotNull String guid, @Nullable String instanceModifier) throws FindException {
                         methodCalled.set(true);
                         return sampleSolutionKit;
                     }

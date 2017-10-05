@@ -52,11 +52,11 @@ public class SolutionKitProcessorTest {
         // solution kits for the test
         final int numberOfSolutionKits = 2;
         final Set<SolutionKit> selectedSolutionKits = new HashSet<>(numberOfSolutionKits);
-        SolutionKit solutionKit1 = new SolutionKit();
-        solutionKit1.setName("SK1");
+        SolutionKit solutionKit1 = new SolutionKitBuilder()
+                .name("SK1").build();
         selectedSolutionKits.add(solutionKit1);
-        SolutionKit solutionKit2 = new SolutionKit();
-        solutionKit2.setName("SK2");
+        SolutionKit solutionKit2 = new SolutionKitBuilder()
+                .name("SK2").build();
         selectedSolutionKits.add(solutionKit2);
         when(solutionKitsConfig.getSelectedSolutionKits()).thenReturn(selectedSolutionKits);
 
@@ -98,11 +98,11 @@ public class SolutionKitProcessorTest {
         // solution kits for the test
         final int numberOfSolutionKits = 2;
         final Set<SolutionKit> selectedSolutionKits = new HashSet<>(numberOfSolutionKits);
-        SolutionKit solutionKit1 = new SolutionKit();
-        solutionKit1.setName("SK1");
+        SolutionKit solutionKit1 = new SolutionKitBuilder()
+                .name("SK1").build();
         selectedSolutionKits.add(solutionKit1);
-        SolutionKit solutionKit2 = new SolutionKit();
-        solutionKit2.setName("SK2");
+        SolutionKit solutionKit2 = new SolutionKitBuilder()
+                .name("SK2").build();
         selectedSolutionKits.add(solutionKit2);
 
         when(solutionKitsConfig.getSelectedSolutionKits()).thenReturn(selectedSolutionKits);
@@ -148,22 +148,25 @@ public class SolutionKitProcessorTest {
     @Test
     public void installOrUpgradeWithParent() throws Exception {
         // parent skar for the test
-        SolutionKit parentSolutionKit = new SolutionKit();
-        parentSolutionKit.setName("ParentSK");
-        parentSolutionKit.setSolutionKitGuid("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz");
-        parentSolutionKit.setGoid(new Goid(0, 1));
+        SolutionKit parentSolutionKit = new SolutionKitBuilder()
+                .name("ParentSK")
+                .skGuid("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz")
+                .goid(new Goid(0, 1))
+                .build();
         when(solutionKitsConfig.getParentSolutionKitLoaded()).thenReturn(parentSolutionKit);
 
         // skar of skar for the test
         final int numberOfSolutionKits = 2;
         final Set<SolutionKit> selectedSolutionKits = new HashSet<>(numberOfSolutionKits);
-        SolutionKit solutionKit1 = new SolutionKit();
-        solutionKit1.setName("SK1");
-        solutionKit1.setParentGoid(parentSolutionKit.getGoid());
+        SolutionKit solutionKit1 = new SolutionKitBuilder()
+                .name("SK1")
+                .parent(parentSolutionKit)
+                .build();
         selectedSolutionKits.add(solutionKit1);
-        SolutionKit solutionKit2 = new SolutionKit();
-        solutionKit2.setName("SK2");
-        solutionKit2.setParentGoid(parentSolutionKit.getGoid());
+        SolutionKit solutionKit2 = new SolutionKitBuilder()
+                .name("SK2")
+                .parent(parentSolutionKit)
+                .build();
         selectedSolutionKits.add(solutionKit2);
         when(solutionKitsConfig.getSelectedSolutionKits()).thenReturn(selectedSolutionKits);
 
@@ -172,7 +175,7 @@ public class SolutionKitProcessorTest {
         verify(solutionKitAdmin).save(parentSolutionKit);
 
         // test parent already saved on Gateway calls solutionKitAdmin.update() - install code path
-        when(solutionKitAdmin.find(parentSolutionKit.getSolutionKitGuid())).thenReturn(Collections.singleton(parentSolutionKit));
+        when(solutionKitAdmin.get(parentSolutionKit.getSolutionKitGuid(), "")).thenReturn(parentSolutionKit);
         solutionKitProcessor.installOrUpgrade();
         verify(solutionKitAdmin).update(parentSolutionKit);
 
@@ -223,14 +226,15 @@ public class SolutionKitProcessorTest {
     @Test
     public void invokeCustomCallback() throws Exception {
         // setup solution kit metadata
-        final SolutionKit solutionKit = new SolutionKit();
-        solutionKit.setName("SK1");
-        solutionKit.setSolutionKitGuid("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz");
-        solutionKit.setGoid(new Goid(0, 1));
-        solutionKit.setSolutionKitVersion("v1");
-        solutionKit.setProperty(SolutionKit.SK_PROP_DESC_KEY, "SK1 description");
-        solutionKit.setProperty(SolutionKit.SK_PROP_TIMESTAMP_KEY, "2016-03-24T09:08:01.603-08:00");
-        solutionKit.setProperty(SolutionKit.SK_PROP_IS_COLLECTION_KEY, "false");
+        final SolutionKit solutionKit = new SolutionKitBuilder()
+                .name("SK1")
+                .skGuid("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz")
+                .goid(new Goid(0, 1))
+                .skVersion("v1")
+                .addProperty(SolutionKit.SK_PROP_DESC_KEY, "SK1 description")
+                .addProperty(SolutionKit.SK_PROP_TIMESTAMP_KEY, "2016-03-24T09:08:01.603-08:00")
+                .addProperty(SolutionKit.SK_PROP_IS_COLLECTION_KEY, "false")
+                .build();
 
         // mock customizations
         Map<String, Pair<SolutionKit, SolutionKitCustomization>> customizations = mock(Map.class);

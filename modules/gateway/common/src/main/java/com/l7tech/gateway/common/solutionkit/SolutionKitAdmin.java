@@ -171,6 +171,18 @@ public interface SolutionKitAdmin extends AsyncAdminMethods {
     public  SolutionKit get(@NotNull Goid goid) throws FindException;
 
     /**
+     * Retrieve solution kit entity with the given guid and instanceModifier.
+     *
+     * @param guid the guid of solution kit entity
+     * @param instanceModifier the instance Modifier of the solution kit
+     * @return the solution kit entity
+     * @throws FindException
+     */
+    @Transactional(readOnly = true)
+    @Secured(stereotype = MethodStereotype.FIND_ENTITY)
+    public  SolutionKit get(@NotNull String guid, @Nullable String instanceModifier) throws FindException;
+
+    /**
      * Save a solution kit
      * @param solutionKit: a solution kit to be saved.
      * @return a Goid of the saved solution kit

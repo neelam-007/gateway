@@ -14,8 +14,7 @@ import org.jetbrains.annotations.Nullable;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -84,13 +83,25 @@ public class SolutionKitProcessor {
 
         // Check if the loaded skar is a collection of skars.  If so process parent solution kit first.
         final SolutionKit parentSKFromLoad = solutionKitsConfig.getParentSolutionKitLoaded(); // Note: The parent solution kit has a dummy default GOID.
-        Goid parentGoid = saveOrUpdateParentSolutionKit(parentSKFromLoad, errorKitList);
+        final Map<String, Goid> instanceModifierWithParentGoid = new HashMap<>();
 
         // install or upgrade skars
         // After processing the parent, process selected solution kits if applicable.
         for (SolutionKit solutionKit : solutionKitsConfig.getSelectedSolutionKits()) {
-            // If the solution kit is under a parent solution kit, then set its parent goid before it gets saved.
             if (parentSKFromLoad != null) {
+                String solutionKitIM = solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY);
+                //initialize a string key to store in hashmap in cases of null IM
+                solutionKitIM = solutionKitIM == null ? "" : solutionKitIM;
+                final Goid parentGoid;
+                //saveOrUpdate parent if the instance modifier has not been seen so far
+                if (!instanceModifierWithParentGoid.containsKey(solutionKitIM)) {
+                    parentGoid = saveOrUpdateParentSolutionKit(parentSKFromLoad, solutionKitIM, errorKitList);
+                    instanceModifierWithParentGoid.put(solutionKitIM, parentGoid);
+                } else {
+                    //just retrieve the parent goid for an instance modifier
+                    parentGoid = instanceModifierWithParentGoid.get(solutionKitIM);
+                }
+                // If the solution kit is under a parent solution kit, then set its parent goid before it gets saved.
                 solutionKit.setParentGoid(parentGoid);
             }
 
@@ -111,7 +122,7 @@ public class SolutionKitProcessor {
     }
 
     @Nullable
-    private Goid saveOrUpdateParentSolutionKit(@Nullable final SolutionKit parentSKFromLoad, @Nullable final List<Pair<String, SolutionKit>> errorKitList) throws Exception {
+    private Goid saveOrUpdateParentSolutionKit(@Nullable final SolutionKit parentSKFromLoad, @Nullable String newInstanceModifier, @Nullable final List<Pair<String, SolutionKit>> errorKitList) throws Exception {
         Goid parentGoid = null;
 
         if (parentSKFromLoad != null) {
@@ -121,19 +132,27 @@ public class SolutionKitProcessor {
                     final List<SolutionKit> solutionKitsToUpgrade = solutionKitsConfig.getSolutionKitsToUpgrade();
                     assert solutionKitsToUpgrade.size() > 0; // should always be greater then 0 as check is done above (early fail)
                     final SolutionKit parentSKFromDB = solutionKitsToUpgrade.get(0);
+                    final String originalParentIM = parentSKFromDB.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY);
+                    //Set the parentSkFromLoad to have the same IM as the parentSK from DB
+                    parentSKFromLoad.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, originalParentIM);
 
                     if (isSameGuid(parentSKFromLoad, parentSKFromDB)) {
-                        // Update the parent solution kit attributes
-                        parentSKFromDB.setName(parentSKFromLoad.getName());
-                        parentSKFromDB.setSolutionKitVersion(parentSKFromLoad.getSolutionKitVersion());
-                        parentSKFromDB.setXmlProperties(parentSKFromLoad.getXmlProperties());
+                        if (InstanceModifier.isSame(originalParentIM, newInstanceModifier)) {
+                            // Update the parent solution kit attributes
+                            parentSKFromDB.setName(parentSKFromLoad.getName());
+                            parentSKFromDB.setSolutionKitVersion(parentSKFromLoad.getSolutionKitVersion());
+                            parentSKFromDB.setXmlProperties(parentSKFromLoad.getXmlProperties());
 
-                        parentGoid = parentSKFromDB.getGoid();
-                        solutionKitAdmin.update(parentSKFromDB);
+                            parentGoid = parentSKFromDB.getGoid();
+                            solutionKitAdmin.update(parentSKFromDB);
+                        } else {
+                            //Parent with new IM needs to be created during upgrade
+                            parentGoid = saveOrUpdate(parentSKFromLoad, newInstanceModifier);
+                        }
                     } else if (isConversionToCollection(parentSKFromLoad, parentSKFromDB)) {
                         // parentSKFromDB is single and parent-less
                         // it's is being changed to be a child of the new uploaded parent (parentSKFromLoad)
-                        parentGoid = saveOrUpdate(parentSKFromLoad);
+                        parentGoid = saveOrUpdate(parentSKFromLoad, newInstanceModifier);
                     } else {
                         String msg = "Unexpected:  GUID (" + parentSKFromLoad.getSolutionKitGuid() + ") from the database does not match the GUID (" + parentSKFromDB.getSolutionKitGuid() + ") of the loaded solution kit from file.";
                         logger.info(msg);
@@ -142,7 +161,7 @@ public class SolutionKitProcessor {
                 }
                 // Case 2: Parent for install
                 else {
-                    parentGoid = saveOrUpdate(parentSKFromLoad);
+                    parentGoid = saveOrUpdate(parentSKFromLoad, newInstanceModifier);
                 }
             } catch (Exception e) {
                 addToErrorListOrRethrowException(e, errorKitList, parentSKFromLoad);
@@ -171,18 +190,25 @@ public class SolutionKitProcessor {
     }
 
     @Nullable
-    private Goid saveOrUpdate(@NotNull SolutionKit parentSolutionKit) throws FindException, SaveException, UpdateException {
+    private Goid saveOrUpdate(@NotNull SolutionKit parentSolutionKit, @Nullable String newInstanceModifier) throws FindException, SaveException, UpdateException {
         Goid goid;
-        final Collection<SolutionKit> solutionKitsExistingOnGateway = solutionKitAdmin.find(parentSolutionKit.getSolutionKitGuid());
+        final SolutionKit solutionKitOnGateway = solutionKitAdmin.get(parentSolutionKit.getSolutionKitGuid(), newInstanceModifier);
         // update if already installed
-        if (solutionKitsExistingOnGateway.size() > 0) {
-            final SolutionKit parentExistingOnGateway = solutionKitsExistingOnGateway.iterator().next();
-            goid = parentExistingOnGateway.getGoid();
-            solutionKitAdmin.update(parentExistingOnGateway);
+        if (solutionKitOnGateway != null) {
+            goid = solutionKitOnGateway.getGoid();
+            solutionKitAdmin.update(solutionKitOnGateway);
         }
         // save if new
         else {
+            //Store the original IM
+            final String originalIM = parentSolutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY);
+
+            //Save a parent SK with new IM
+            parentSolutionKit.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, newInstanceModifier);
             goid = solutionKitAdmin.save(parentSolutionKit);
+
+            //Put back the original IM
+            parentSolutionKit.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, originalIM);
         }
 
         return goid;

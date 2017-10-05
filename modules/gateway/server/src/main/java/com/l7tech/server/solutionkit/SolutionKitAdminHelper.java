@@ -497,6 +497,11 @@ public class SolutionKitAdminHelper implements SolutionKitAdmin {
         return solutionKitManager.findByPrimaryKey(goid);
     }
 
+    @Override
+    public SolutionKit get(@NotNull String guid, @Nullable String instanceModifier) throws FindException {
+        return solutionKitManager.findBySolutionKitGuidAndIM(guid, instanceModifier);
+    }
+
     @NotNull
     public Goid save(@NotNull SolutionKit solutionKit) throws SaveException {
         return solutionKitManager.save(solutionKit);
