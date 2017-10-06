@@ -181,13 +181,42 @@ public class SolutionKitProcessorTest {
 
         // test parent already saved on Gateway calls solutionKitAdmin.update() - upgrade code path
         when(solutionKitsConfig.isUpgrade()).thenReturn(true);
-        final List<SolutionKit> solutionKitsToUpgrade = new ArrayList<>(3);
-        solutionKitsToUpgrade.add(parentSolutionKit);
-        solutionKitsToUpgrade.add(solutionKit1);
-        solutionKitsToUpgrade.add(solutionKit2);
-        when(solutionKitsConfig.getSolutionKitsToUpgrade()).thenReturn(solutionKitsToUpgrade);
+        when(solutionKitsConfig.getSolutionKitToUpgrade(parentSolutionKit.getSolutionKitGuid())).thenReturn(parentSolutionKit);
         solutionKitProcessor.installOrUpgrade();
         verify(solutionKitAdmin, times(2)).update(parentSolutionKit);
+    }
+
+    @Test
+    public void installChildrenWithDifferentIM() throws Exception {
+        // parent skar for the test
+        SolutionKit parentSolutionKit = new SolutionKitBuilder()
+                .name("ParentSK")
+                .skGuid("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz")
+                .goid(new Goid(0, 1))
+                .build();
+        when(solutionKitsConfig.getParentSolutionKitLoaded()).thenReturn(parentSolutionKit);
+
+        // skar of skar for the test
+        final int numberOfSolutionKits = 2;
+        final Set<SolutionKit> selectedSolutionKits = new HashSet<>(numberOfSolutionKits);
+        SolutionKit solutionKit1 = new SolutionKitBuilder()
+                .name("SK1")
+                .parent(parentSolutionKit)
+                .addProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, "test1")
+                .build();
+        selectedSolutionKits.add(solutionKit1);
+        SolutionKit solutionKit2 = new SolutionKitBuilder()
+                .name("SK2")
+                .parent(parentSolutionKit)
+                .addProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, "test2")
+                .build();
+        selectedSolutionKits.add(solutionKit2);
+        when(solutionKitsConfig.getSelectedSolutionKits()).thenReturn(selectedSolutionKits);
+
+        //test 1: Install should make new parents
+        solutionKitProcessor.installOrUpgrade();
+        //verify that two parents were saved, one for test1, the other for test2
+        verify(solutionKitAdmin, times(2)).save(parentSolutionKit);
     }
 
     @Test

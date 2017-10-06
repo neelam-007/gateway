@@ -1,10 +1,7 @@
 package com.l7tech.gateway.common.solutionkit;
 
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.Goid;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.policy.solutionkit.SolutionKitManagerCallback;
 import com.l7tech.policy.solutionkit.SolutionKitManagerContext;
 import com.l7tech.policy.solutionkit.SolutionKitManagerUi;
@@ -89,9 +86,7 @@ public class SolutionKitProcessor {
         // After processing the parent, process selected solution kits if applicable.
         for (SolutionKit solutionKit : solutionKitsConfig.getSelectedSolutionKits()) {
             if (parentSKFromLoad != null) {
-                String solutionKitIM = solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY);
-                //initialize a string key to store in hashmap in cases of null IM
-                solutionKitIM = solutionKitIM == null ? "" : solutionKitIM;
+                final String solutionKitIM = InstanceModifier.getInstanceModifierAsString(solutionKit);
                 final Goid parentGoid;
                 //saveOrUpdate parent if the instance modifier has not been seen so far
                 if (!instanceModifierWithParentGoid.containsKey(solutionKitIM)) {
@@ -119,19 +114,30 @@ public class SolutionKitProcessor {
                 addToErrorListOrRethrowException(e, errorKitList, solutionKit);
             }
         }
+        //If upgrade, remove parent SK metadata who no longer have children... sadness
+        removeParentSKWithNoChildren(parentSKFromLoad, instanceModifierWithParentGoid);
+    }
+
+    private void removeParentSKWithNoChildren(SolutionKit parentSKFromLoad, Map<String, Goid> instanceModifierWithParentGoid) throws FindException, DeleteException {
+        if (solutionKitsConfig.isUpgrade() && parentSKFromLoad != null) {
+            final SolutionKit parentSKFromDB = solutionKitsConfig.getSolutionKitToUpgrade(parentSKFromLoad.getSolutionKitGuid());
+            assert parentSKFromDB != null;
+            final String solutionKitIM = InstanceModifier.getInstanceModifierAsString(parentSKFromDB);
+            if (!instanceModifierWithParentGoid.containsKey(solutionKitIM) &&
+                    solutionKitAdmin.findHeaders(parentSKFromDB.getGoid()).isEmpty()) {
+                solutionKitAdmin.delete(parentSKFromDB.getGoid());
+            }
+        }
     }
 
     @Nullable
     private Goid saveOrUpdateParentSolutionKit(@Nullable final SolutionKit parentSKFromLoad, @Nullable String newInstanceModifier, @Nullable final List<Pair<String, SolutionKit>> errorKitList) throws Exception {
         Goid parentGoid = null;
-
-        if (parentSKFromLoad != null) {
             try {
                 // Case 1: Parent for upgrade
                 if (solutionKitsConfig.isUpgrade()) {
-                    final List<SolutionKit> solutionKitsToUpgrade = solutionKitsConfig.getSolutionKitsToUpgrade();
-                    assert solutionKitsToUpgrade.size() > 0; // should always be greater then 0 as check is done above (early fail)
-                    final SolutionKit parentSKFromDB = solutionKitsToUpgrade.get(0);
+                    final SolutionKit parentSKFromDB = solutionKitsConfig.getSolutionKitToUpgrade(parentSKFromLoad.getSolutionKitGuid());
+                    assert parentSKFromDB != null;
                     final String originalParentIM = parentSKFromDB.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY);
                     //Set the parentSkFromLoad to have the same IM as the parentSK from DB
                     parentSKFromLoad.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, originalParentIM);
@@ -166,7 +172,6 @@ public class SolutionKitProcessor {
             } catch (Exception e) {
                 addToErrorListOrRethrowException(e, errorKitList, parentSKFromLoad);
             }
-        }
 
         return parentGoid;
     }

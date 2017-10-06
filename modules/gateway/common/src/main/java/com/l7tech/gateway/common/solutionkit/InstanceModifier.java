@@ -498,4 +498,10 @@ public class InstanceModifier {
 
         return null;
     }
+
+    @NotNull
+    static String getInstanceModifierAsString(SolutionKit solutionKit) {
+        String solutionKitIM = solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY);
+        return solutionKitIM == null ? "" : solutionKitIM;
+    }
 }
