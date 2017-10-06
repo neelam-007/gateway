@@ -17,6 +17,7 @@ import com.l7tech.gui.util.*;
 import com.l7tech.gui.widgets.TextListCellRenderer;
 import com.l7tech.objectmodel.*;
 import com.l7tech.util.*;
+import org.apache.commons.lang.StringUtils;
 
 import javax.naming.Context;
 import javax.swing.*;
@@ -611,6 +612,24 @@ public class JmsQueuePropertiesDialog extends JDialog {
             @Override
             public void actionPerformed(ActionEvent e) {
                 enableOrDisableConnectionPoolingSettings();
+            }
+        });
+
+        overrideSystemDefaultsCcheckBox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                enableOrDisableConnectionPoolingSettings();
+                if(overrideSystemDefaultsCcheckBox.isSelected()) {
+                    if(StringUtils.isBlank(connectionMaxAgeTextField.getText())) {
+                        connectionMaxAgeTextField.setText(String.valueOf(TimeUnit.parse(getClusterPropertyValue(CLUSTER_PROP_CONNECTION_MAX_AGE, String.valueOf(DEFAULT_CONNECTION_MAX_AGE)), TimeUnit.MILLIS)));
+                    }
+                    if(StringUtils.isBlank(connectionMaxWaitTextField.getText())) {
+                        connectionMaxAgeTextField.setText(String.valueOf(TimeUnit.parse(getClusterPropertyValue(CLUSTER_PROP_CONNECTION_MAX_WAIT, String.valueOf(DEFAULT_CONNECTION_POOL_MAX_WAIT)), TimeUnit.MILLIS)));
+                    }
+                    if(StringUtils.isBlank(connectionPoolEvictionIntervalTextField.getText())) {
+                        connectionPoolEvictionIntervalTextField.setText(String.valueOf(TimeUnit.parse(getClusterPropertyValue(CLUSTER_PROP_CONNECTION_POOL_EVICT_INTERVAL, String.valueOf(DEFAULT_CONNECTION_POOL_EVICT_INTERVAL)), TimeUnit.MILLIS)));
+                    }
+                }
             }
         });
 
@@ -1211,7 +1230,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
             //set connection default values
             connectionMaxWaitTextField.setText(String.valueOf(TimeUnit.parse(getClusterPropertyValue(CLUSTER_PROP_CONNECTION_MAX_WAIT,String.valueOf(DEFAULT_CONNECTION_POOL_MAX_WAIT)),TimeUnit.MILLIS)));
             connectionMaxAgeTextField.setText(String.valueOf(TimeUnit.parse(getClusterPropertyValue(CLUSTER_PROP_CONNECTION_MAX_AGE, String.valueOf(DEFAULT_CONNECTION_MAX_AGE)),TimeUnit.MILLIS)));
-            connectionPoolEvictionIntervalTextField.setText(getClusterPropertyValue(CLUSTER_PROP_CONNECTION_POOL_EVICT_INTERVAL, String.valueOf(DEFAULT_CONNECTION_POOL_EVICT_INTERVAL)));
+            connectionPoolEvictionIntervalTextField.setText(String.valueOf(TimeUnit.parse(getClusterPropertyValue(CLUSTER_PROP_CONNECTION_POOL_EVICT_INTERVAL, String.valueOf(DEFAULT_CONNECTION_POOL_EVICT_INTERVAL)),TimeUnit.MILLIS)));
 
         }
 
