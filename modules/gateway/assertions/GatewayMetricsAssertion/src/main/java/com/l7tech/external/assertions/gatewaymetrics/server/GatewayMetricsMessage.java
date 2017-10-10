@@ -34,7 +34,7 @@ import java.util.logging.Logger;
  */
 public class GatewayMetricsMessage {
     private static final Logger logger = Logger.getLogger(GatewayMetricsMessage.class.getName());
-    private static final String MISSING_SERVICE = "<MISSING SERVICE>";
+    private static final String MISSING_SERVICE = "SERVICE NO LONGER EXISTS: GOID=";
     private static final String MESSAGE_MISSING_SERVICE = "ServiceUsage record GOID={0} points to nonexistent " +
             "published service by primary key {1}";
     private static SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
@@ -212,7 +212,7 @@ public class GatewayMetricsMessage {
             }
             PublishedService publishedService = serviceManager.findByPrimaryKey(currentServiceUsage.getServiceid());
             if (publishedService == null) {
-                logger.log(Level.WARNING, MESSAGE_MISSING_SERVICE,
+                logger.log(Level.FINE, MESSAGE_MISSING_SERVICE,
                         new Object[] {currentServiceUsage.getGoid(), currentServiceUsage.getServiceid()});
             }
 
@@ -227,7 +227,7 @@ public class GatewayMetricsMessage {
             Goid serviceId = currentServiceUsage.getServiceid();
             String nodeId = currentServiceUsage.getNodeid();
             String nodeName = clusterNodes.get(nodeId);
-            String routingUri = getServiceNameOrRoutingUri(currentServiceUsage, publishedService);
+            String routingUri = getServiceRoutingUriOrId(currentServiceUsage, publishedService);
             long numRoutingFailures = statsRecord.getNumRoutingFailure();
             long numPolicyViolations = statsRecord.getNumPolicyViolation();
             long numSuccesses = statsRecord.getCompletedCount();
@@ -263,7 +263,7 @@ public class GatewayMetricsMessage {
         return publishedService == null ? MISSING_SERVICE + serviceUsage.getServiceid() : publishedService.getName();
     }
 
-    private static String getServiceNameOrRoutingUri(ServiceUsage serviceUsage, PublishedService publishedService) {
+    private static String getServiceRoutingUriOrId(ServiceUsage serviceUsage, PublishedService publishedService) {
         return publishedService == null ? MISSING_SERVICE + serviceUsage.getServiceid() : publishedService.getRoutingUri();
     }
 
