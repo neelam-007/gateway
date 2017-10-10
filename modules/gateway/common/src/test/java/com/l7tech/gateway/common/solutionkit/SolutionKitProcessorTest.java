@@ -18,6 +18,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import javax.swing.*;
@@ -172,7 +173,9 @@ public class SolutionKitProcessorTest {
 
         // test parent not yet saved on Gateway calls solutionKitAdmin.save()
         solutionKitProcessor.installOrUpgrade();
-        verify(solutionKitAdmin).save(parentSolutionKit);
+        ArgumentCaptor<SolutionKit> parentSKCaptor = ArgumentCaptor.forClass(SolutionKit.class);
+        verify(solutionKitAdmin).save(parentSKCaptor.capture());
+        assertEquals("ParentSK", parentSKCaptor.getValue().getName());
 
         // test parent already saved on Gateway calls solutionKitAdmin.update() - install code path
         when(solutionKitAdmin.get(parentSolutionKit.getSolutionKitGuid(), "")).thenReturn(parentSolutionKit);
@@ -213,10 +216,95 @@ public class SolutionKitProcessorTest {
         selectedSolutionKits.add(solutionKit2);
         when(solutionKitsConfig.getSelectedSolutionKits()).thenReturn(selectedSolutionKits);
 
-        //test 1: Install should make new parents
+        //test: Install should make new parents
         solutionKitProcessor.installOrUpgrade();
         //verify that two parents were saved, one for test1, the other for test2
-        verify(solutionKitAdmin, times(2)).save(parentSolutionKit);
+        ArgumentCaptor<SolutionKit> parentSKCaptor = ArgumentCaptor.forClass(SolutionKit.class);
+        verify(solutionKitAdmin, times(2)).save(parentSKCaptor.capture());
+        List<SolutionKit> allParents = parentSKCaptor.getAllValues();
+        assertEquals(2, parentSKCaptor.getAllValues().size());
+        assertEquals("test2", allParents.get(0).getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY));
+        assertEquals("test1", allParents.get(1).getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY));
+    }
+
+    @Test
+    public void upgradeParentWithSameCurrentIMToDifferentIM() throws Exception {
+        // parent skar for the test
+        SolutionKit parentSolutionKit = new SolutionKitBuilder()
+                .name("ParentSK")
+                .skGuid("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz")
+                .addProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, "test1")
+                .goid(new Goid(0, 1))
+                .build();
+        when(solutionKitsConfig.getParentSolutionKitLoaded()).thenReturn(parentSolutionKit);
+
+        // skar of skar for the test
+        final int numberOfSolutionKits = 2;
+        final Set<SolutionKit> selectedSolutionKits = new HashSet<>(numberOfSolutionKits);
+        SolutionKit solutionKit1 = new SolutionKitBuilder()
+                .name("SK1")
+                .addProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, "test2")
+                .build();
+        selectedSolutionKits.add(solutionKit1);
+        SolutionKit solutionKit2 = new SolutionKitBuilder()
+                .name("SK2")
+                .addProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, "test3")
+                .build();
+        selectedSolutionKits.add(solutionKit2);
+        when(solutionKitsConfig.getSelectedSolutionKits()).thenReturn(selectedSolutionKits);
+
+        // test upgrade specified, two new parents were created for each instance modifier
+        when(solutionKitsConfig.isUpgrade()).thenReturn(true);
+        when(solutionKitsConfig.getSolutionKitToUpgrade(parentSolutionKit.getSolutionKitGuid())).thenReturn(parentSolutionKit);
+        solutionKitProcessor.installOrUpgrade();
+        //verify that two parents were saved, one for test2, the other for test3
+        ArgumentCaptor<SolutionKit> parentSKCaptor = ArgumentCaptor.forClass(SolutionKit.class);
+        verify(solutionKitAdmin, times(2)).save(parentSKCaptor.capture());
+        List<SolutionKit> allParents = parentSKCaptor.getAllValues();
+        assertEquals(2, parentSKCaptor.getAllValues().size());
+        assertEquals("test3", allParents.get(0).getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY));
+        assertEquals("test2", allParents.get(1).getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY));
+    }
+
+    @Test
+    public void upgradeChildrenWithSameCurrentIMToSameAndDifferentIM() throws Exception {
+        // parent skar for the test
+        SolutionKit parentSolutionKit = new SolutionKitBuilder()
+                .name("ParentSK")
+                .skGuid("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz")
+                .addProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, "same")
+                .goid(new Goid(0, 1))
+                .build();
+        when(solutionKitsConfig.getParentSolutionKitLoaded()).thenReturn(parentSolutionKit);
+
+        // skar of skar for the test
+        final int numberOfSolutionKits = 2;
+        final Set<SolutionKit> selectedSolutionKits = new HashSet<>(numberOfSolutionKits);
+        SolutionKit solutionKit1 = new SolutionKitBuilder()
+                .name("SK1")
+                .parent(parentSolutionKit)
+                .addProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, "same")
+                .build();
+        selectedSolutionKits.add(solutionKit1);
+        SolutionKit solutionKit2 = new SolutionKitBuilder()
+                .name("SK2")
+                .addProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, "different")
+                .build();
+        selectedSolutionKits.add(solutionKit2);
+        when(solutionKitsConfig.getSelectedSolutionKits()).thenReturn(selectedSolutionKits);
+
+        // test one parent was updated, one parent is created
+        when(solutionKitsConfig.isUpgrade()).thenReturn(true);
+        when(solutionKitsConfig.getSolutionKitToUpgrade(parentSolutionKit.getSolutionKitGuid())).thenReturn(parentSolutionKit);
+        solutionKitProcessor.installOrUpgrade();
+        //verify instance modifier "different" is saved
+        ArgumentCaptor<SolutionKit> saveParentCaptor = ArgumentCaptor.forClass(SolutionKit.class);
+        verify(solutionKitAdmin).save(saveParentCaptor.capture());
+        assertEquals("different", saveParentCaptor.getValue().getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY));
+        //verify instance modifier "same" is updated
+        ArgumentCaptor<SolutionKit> updateParentCaptor = ArgumentCaptor.forClass(SolutionKit.class);
+        verify(solutionKitAdmin).update(updateParentCaptor.capture());
+        assertEquals("same", updateParentCaptor.getValue().getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY));
     }
 
     @Test

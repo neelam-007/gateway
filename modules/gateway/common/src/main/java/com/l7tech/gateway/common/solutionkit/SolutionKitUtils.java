@@ -411,5 +411,24 @@ public final class SolutionKitUtils {
         return Boolean.parseBoolean(candidate.getProperty(SolutionKit.SK_PROP_IS_COLLECTION_KEY));
     }
 
+    /**
+     * Copy the contents of a parent solution kit object to make another parent solution kit object.
+     * @param originalSK The SolutionKit target
+     * @param instanceModifier The new instance modifier
+     * @return solutionKit is the copied solution kit
+     */
+    public static SolutionKit copyParentSolutionKit(@NotNull final SolutionKit originalSK, @Nullable final String instanceModifier) {
+        final SolutionKit solutionKit = new SolutionKit();
+        solutionKit.setSolutionKitGuid(originalSK.getSolutionKitGuid());
+        solutionKit.setSolutionKitVersion(originalSK.getSolutionKitVersion());
+        solutionKit.setName(originalSK.getName());
+        solutionKit.setMappings(originalSK.getMappings());
+        solutionKit.setLastUpdateTime(originalSK.getLastUpdateTime());
+        solutionKit.setXmlProperties(originalSK.getXmlProperties());
+        solutionKit.setInstallationXmlProperties(originalSK.getInstallationXmlProperties());
+        solutionKit.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, instanceModifier);
+        return solutionKit;
+    }
+
     private SolutionKitUtils() {}
 }

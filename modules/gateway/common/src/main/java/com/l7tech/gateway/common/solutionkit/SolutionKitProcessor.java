@@ -205,15 +205,7 @@ public class SolutionKitProcessor {
         }
         // save if new
         else {
-            //Store the original IM
-            final String originalIM = parentSolutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY);
-
-            //Save a parent SK with new IM
-            parentSolutionKit.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, newInstanceModifier);
-            goid = solutionKitAdmin.save(parentSolutionKit);
-
-            //Put back the original IM
-            parentSolutionKit.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, originalIM);
+            goid = solutionKitAdmin.save(SolutionKitUtils.copyParentSolutionKit(parentSolutionKit, newInstanceModifier));
         }
 
         return goid;
