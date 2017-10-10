@@ -168,7 +168,16 @@ public class PooledConnection {
             return pool.isClosed() || (pool.getNumActive() == 0 && pool.getNumIdle() == 0);
         }
         else {
-            return (System.currentTimeMillis() - singleConnection.getLastAccessTime().get() > config.minEvictableIdleTimeMillis);
+            return true;
+        }
+    }
+
+    public boolean isIdleTimeoutExpired() {
+        if(isPooled) {
+            return isPoolEmpty();
+        }
+        else {
+            return (System.currentTimeMillis() - singleConnection.getLastAccessTime().get() > config.minEvictableIdleTimeMillis && config.minEvictableIdleTimeMillis > 0);
         }
     }
 

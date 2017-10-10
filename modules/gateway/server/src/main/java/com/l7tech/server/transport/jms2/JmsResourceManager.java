@@ -415,8 +415,15 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
                             connectionHolder.remove(key);
                         }
                     }
-                } else if (overSize > 0) {
-                    evictionCandidates.add(new AbstractMap.SimpleEntry<>(key, evictionCandidate));
+                    else if(evictionCandidate.isIdleTimeoutExpired()) {
+                        logger.log(Level.FINE, "Remove expired idle JMS connection "  + evictionCandidate.toString());
+                        evictionCandidate.close();
+                        connectionHolder.remove(key);
+                    }
+                    else if (overSize > 0) {
+                        evictionCandidates.add(new AbstractMap.SimpleEntry<>(key, evictionCandidate));
+                    }
+
                 }
 
                 // evict oldest first to reduce cache size

@@ -59,11 +59,12 @@ public class JmsQueuePropertiesDialog extends JDialog {
     public static final long DEFAULT_CONNECTION_POOL_MAX_WAIT = 5000;
     public static final long DEFAULT_CONNECTION_POOL_EVICT_INTERVAL = 10000;
     public static final long DEFAULT_CONNECTION_MAX_AGE = 300000;
+    public static final long DEFAULT_CONNECTION_MAX_IDLE_TIME = 30000;
     public static final String CLUSTER_PROP_CONNECTION_POOL_SIZE = "io.jmsConnectionPoolSize";
     public static final String CLUSTER_PROP_CONNECTION_MAX_WAIT = "io.jmsConnectionMaxWait";
     public static final String CLUSTER_PROP_CONNECTION_POOL_EVICT_INTERVAL = "io.jmsConnectionTimeBetweenEviction";
     public static final String CLUSTER_PROP_CONNECTION_POOL_EVICT_BATCH_SIZE = "io.jmsConnectionEvictionBatchSize";
-    public static final String CLUSTER_PROP_CONNECTION_MAX_AGE = "io.jmsConnectionCacheMaxAge";
+    public static final String CLUSTER_PROP_CONNECTION_MAX_IDLE_TIME = "io.jmsConnectionCacheMaxIdleTime";
 
     private JPanel contentPane;
     private JRadioButton outboundRadioButton;
@@ -621,7 +622,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
                 enableOrDisableConnectionPoolingSettings();
                 if(overrideSystemDefaultsCcheckBox.isSelected()) {
                     if(StringUtils.isBlank(connectionMaxAgeTextField.getText())) {
-                        connectionMaxAgeTextField.setText(String.valueOf(TimeUnit.parse(getClusterPropertyValue(CLUSTER_PROP_CONNECTION_MAX_AGE, String.valueOf(DEFAULT_CONNECTION_MAX_AGE)), TimeUnit.MILLIS)));
+                        connectionMaxAgeTextField.setText(String.valueOf(TimeUnit.parse(getClusterPropertyValue(CLUSTER_PROP_CONNECTION_MAX_IDLE_TIME, String.valueOf(DEFAULT_CONNECTION_MAX_AGE)), TimeUnit.MILLIS)));
                     }
                     if(StringUtils.isBlank(connectionMaxWaitTextField.getText())) {
                         connectionMaxAgeTextField.setText(String.valueOf(TimeUnit.parse(getClusterPropertyValue(CLUSTER_PROP_CONNECTION_MAX_WAIT, String.valueOf(DEFAULT_CONNECTION_POOL_MAX_WAIT)), TimeUnit.MILLIS)));
@@ -1229,7 +1230,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
             sessionPoolMaxWaitTextField.setText(String.valueOf(JmsConnection.DEFAULT_SESSION_POOL_MAX_WAIT));
             //set connection default values
             connectionMaxWaitTextField.setText(String.valueOf(TimeUnit.parse(getClusterPropertyValue(CLUSTER_PROP_CONNECTION_MAX_WAIT,String.valueOf(DEFAULT_CONNECTION_POOL_MAX_WAIT)),TimeUnit.MILLIS)));
-            connectionMaxAgeTextField.setText(String.valueOf(TimeUnit.parse(getClusterPropertyValue(CLUSTER_PROP_CONNECTION_MAX_AGE, String.valueOf(DEFAULT_CONNECTION_MAX_AGE)),TimeUnit.MILLIS)));
+            connectionMaxAgeTextField.setText(String.valueOf(TimeUnit.parse(getClusterPropertyValue(CLUSTER_PROP_CONNECTION_MAX_IDLE_TIME, String.valueOf(DEFAULT_CONNECTION_MAX_IDLE_TIME)),TimeUnit.MILLIS)));
             connectionPoolEvictionIntervalTextField.setText(String.valueOf(TimeUnit.parse(getClusterPropertyValue(CLUSTER_PROP_CONNECTION_POOL_EVICT_INTERVAL, String.valueOf(DEFAULT_CONNECTION_POOL_EVICT_INTERVAL)),TimeUnit.MILLIS)));
 
         }
@@ -1387,7 +1388,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
     }
 
     private Long getConnectionPoolMaxAge(Properties props) {
-        long defaultValue = TimeUnit.parse(getClusterPropertyValue(CLUSTER_PROP_CONNECTION_MAX_AGE,String.valueOf(DEFAULT_CONNECTION_MAX_AGE)),TimeUnit.MILLIS);
+        long defaultValue = TimeUnit.parse(getClusterPropertyValue(CLUSTER_PROP_CONNECTION_MAX_IDLE_TIME,String.valueOf(DEFAULT_CONNECTION_MAX_IDLE_TIME)),TimeUnit.MILLIS);
         String val = props.getProperty(JmsConnection.PROP_CONNECTION_MAX_AGE, String.valueOf(defaultValue));
         if(val == null ) return DEFAULT_CONNECTION_MAX_AGE;
         try{
