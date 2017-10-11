@@ -35,8 +35,8 @@ import java.util.logging.Logger;
 public class GatewayMetricsMessage {
     private static final Logger logger = Logger.getLogger(GatewayMetricsMessage.class.getName());
     private static final String MISSING_SERVICE = "SERVICE NO LONGER EXISTS: GOID=";
-    private static final String MESSAGE_MISSING_SERVICE = "ServiceUsage record GOID={0} points to nonexistent " +
-            "published service by primary key {1}";
+    private static final String MESSAGE_MISSING_SERVICE = "ServiceUsage record points to nonexistent " +
+            "published service by primary key {0}";
     private static SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
 
     private String clusterNodeId;
@@ -212,8 +212,7 @@ public class GatewayMetricsMessage {
             }
             PublishedService publishedService = serviceManager.findByPrimaryKey(currentServiceUsage.getServiceid());
             if (publishedService == null) {
-                logger.log(Level.FINE, MESSAGE_MISSING_SERVICE,
-                        new Object[] {currentServiceUsage.getServiceid(), currentServiceUsage.getServiceid()});
+                logger.log(Level.FINE, MESSAGE_MISSING_SERVICE, currentServiceUsage.getServiceid());
             }
 
             StatisticsRecord statsRecord = new StatisticsRecord(
