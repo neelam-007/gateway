@@ -213,7 +213,7 @@ public class GatewayMetricsMessage {
             PublishedService publishedService = serviceManager.findByPrimaryKey(currentServiceUsage.getServiceid());
             if (publishedService == null) {
                 logger.log(Level.FINE, MESSAGE_MISSING_SERVICE,
-                        new Object[] {currentServiceUsage.getGoid(), currentServiceUsage.getServiceid()});
+                        new Object[] {currentServiceUsage.getServiceid(), currentServiceUsage.getServiceid()});
             }
 
             StatisticsRecord statsRecord = new StatisticsRecord(
