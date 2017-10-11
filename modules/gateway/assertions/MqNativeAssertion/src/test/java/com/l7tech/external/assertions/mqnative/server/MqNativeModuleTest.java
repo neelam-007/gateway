@@ -677,8 +677,8 @@ public class MqNativeModuleTest extends AbstractJUnit4SpringContextTests {
         when(ssgActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_QUEUE_MANAGER_NAME)).thenReturn(queueManagerName);
         when(ssgActiveConnector.getEnumProperty(PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, REPLY_AUTOMATIC, MqNativeReplyType.class)).thenReturn(MqNativeReplyType.REPLY_SPECIFIED_QUEUE);
         when(ssgActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_SPECIFIED_REPLY_QUEUE_NAME)).thenReturn(replyQueueName);
-        when(ssgActiveConnector.getBooleanProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_IS_REPLY_QUEUE_PUT_MESSAGE_OPTIONS_USED)).thenReturn(true);
-        when(ssgActiveConnector.getIntegerProperty(eq(PROPERTIES_KEY_MQ_NATIVE_INBOUND_REPLY_QUEUE_PUT_MESSAGE_OPTIONS), anyInt())).thenReturn(7654321);
+        when(ssgActiveConnector.getBooleanProperty(MqNativeModule.PROPERTIES_KEY_MQ_NATIVE_INBOUND_IS_REPLY_QUEUE_PUT_MESSAGE_OPTIONS_USED)).thenReturn(true);
+        when(ssgActiveConnector.getIntegerProperty(eq(MqNativeModule.PROPERTIES_KEY_MQ_NATIVE_INBOUND_REPLY_QUEUE_PUT_MESSAGE_OPTIONS), anyInt())).thenReturn(7654321);
 
         @SuppressWarnings("unchecked")
         NullaryThrows<Hashtable, MqNativeConfigException>  queueManagerProperties =
@@ -763,8 +763,8 @@ public class MqNativeModuleTest extends AbstractJUnit4SpringContextTests {
         when(ssgActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_QUEUE_MANAGER_NAME)).thenReturn(queueManagerName);
         when(ssgActiveConnector.getBooleanProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_IS_FAILED_QUEUE_USED)).thenReturn(true);
         when(ssgActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_FAILED_QUEUE_NAME)).thenReturn("failureQueueName");
-        when(ssgActiveConnector.getBooleanProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_IS_FAILED_QUEUE_PUT_MESSAGE_OPTIONS_USED)).thenReturn(true);
-        when(ssgActiveConnector.getIntegerProperty(eq(PROPERTIES_KEY_MQ_NATIVE_INBOUND_FAILED_QUEUE_PUT_MESSAGE_OPTIONS), anyInt())).thenReturn(7654321);
+        when(ssgActiveConnector.getBooleanProperty(MqNativeModule.PROPERTIES_KEY_MQ_NATIVE_INBOUND_IS_FAILED_QUEUE_PUT_MESSAGE_OPTIONS_USED)).thenReturn(true);
+        when(ssgActiveConnector.getIntegerProperty(eq(MqNativeModule.PROPERTIES_KEY_MQ_NATIVE_INBOUND_FAILED_QUEUE_PUT_MESSAGE_OPTIONS), anyInt())).thenReturn(7654321);
 
         @SuppressWarnings("unchecked")
         NullaryThrows<Hashtable, MqNativeConfigException>  queueManagerProperties =

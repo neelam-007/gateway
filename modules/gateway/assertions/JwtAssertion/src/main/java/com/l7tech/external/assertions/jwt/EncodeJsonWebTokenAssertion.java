@@ -4,6 +4,9 @@ import com.l7tech.gateway.common.security.keystore.SsgKeyEntryId;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SsgKeyHeader;
+import com.l7tech.objectmodel.migration.Migration;
+import com.l7tech.objectmodel.migration.MigrationMappingSelection;
+import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.*;
@@ -394,6 +397,7 @@ public class EncodeJsonWebTokenAssertion extends Assertion implements UsesVariab
     };
 
     @Override
+    @Migration(mapName = MigrationMappingSelection.REQUIRED, resolver = PropertyResolver.Type.ASSERTION)
     public EntityHeader[] getEntitiesUsed() {
         //no key selected or being used
         if(getKeyGoid() == null){
