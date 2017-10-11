@@ -93,6 +93,12 @@ public class EntityBundle {
         return idEntityMap.get(new Pair<>(id, entityType));
     }
 
+    /**
+     * Bundle name is used to describe or identify the bundle, especially in multi-bundle import.
+     * This method returns the name of a Bundle.
+     *
+     * @return the value of Name element in Bundle.  If no such Name element specified, then return null.
+     */
     @Nullable
     public String getBundleName() {
         return bundleName;
