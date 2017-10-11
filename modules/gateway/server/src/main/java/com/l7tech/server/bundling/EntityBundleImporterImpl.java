@@ -152,7 +152,8 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
      * @return A list of "EntityMappingResult lists" for all bundles processed (i.e., one list of EntityMappingResults per one bundle import)
      */
     @Override
-    public List<List<EntityMappingResult>> importBundles(@NotNull List<EntityBundle> bundles, boolean test, boolean activate, @Nullable String versionComment) {
+    @NotNull
+    public List<List<EntityMappingResult>> importBundles(@NotNull final List<EntityBundle> bundles, boolean test, boolean activate, @Nullable final String versionComment) {
         final String suffix = bundles.size() <= 1? "!" : "s!";
         if (!test) {
             logger.log(Level.INFO, "Importing bundle" + suffix);
@@ -171,7 +172,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
             for (int i = 0; i < results.size(); i++) {
                 final List<EntityMappingResult> result = results.get(i);
                 final String bundleName = bundles.get(i).getBundleName();
-                final String bundleInfo = StringUtils.isBlank(bundleName)? "" : " '" + bundleName + "'";
+                final String bundleInfo = (" (" + (i + 1) + "/" + results.size() + ")") + (StringUtils.isBlank(bundleName)? "" : " '" + bundleName + "'");
 
                 if (containsErrors(result)) {
                     logger.log(Level.INFO, "Error importing bundle" + bundleInfo);
@@ -209,13 +210,13 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
         return tt.execute(new TransactionCallback<List<List<EntityMappingResult>>>() {
             @Override
             public List<List<EntityMappingResult>> doInTransaction(final TransactionStatus transactionStatus) {
-            final List<List<EntityMappingResult>> mappingRtnList = new ArrayList<>();
+                final List<List<EntityMappingResult>> mappingRtnList = new ArrayList<>();
 
-            for (final EntityBundle bundle: bundles) {
-                mappingRtnList.add(doImportBundle(transactionStatus, bundle, test, activate, versionComment));
-            }
+                for (final EntityBundle bundle: bundles) {
+                    mappingRtnList.add(doImportBundle(transactionStatus, bundle, test, activate, versionComment));
+                }
 
-            return mappingRtnList;
+                return mappingRtnList;
             }
         });
     }
