@@ -560,6 +560,7 @@ public class BundleResource {
      */
     @PUT
     @Path("batch")
+    @Since(RestManVersion.VERSION_1_0_4)
     @NotNull
     public Response importBundles(@QueryParam("test") @DefaultValue("false") final boolean test,
                                  @QueryParam("activate") @DefaultValue("true") final boolean activate,
