@@ -265,6 +265,39 @@ public class SolutionKitProcessorTest {
     }
 
     @Test
+    public void upgradeParentIMToDifferentIMError() throws Exception {
+        // parent skar for the test
+        SolutionKit parentSolutionKit = new SolutionKitBuilder()
+                .name("ParentSK")
+                .skGuid("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz")
+                .addProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, "same")
+                .goid(new Goid(0, 1))
+                .build();
+        when(solutionKitsConfig.getParentSolutionKitLoaded()).thenReturn(parentSolutionKit);
+
+        // skar of skar for the test
+        final int numberOfSolutionKits = 1;
+        final Set<SolutionKit> selectedSolutionKits = new HashSet<>(numberOfSolutionKits);
+        SolutionKit solutionKit1 = new SolutionKitBuilder()
+                .name("SK1")
+                .parent(parentSolutionKit)
+                .addProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, "different")
+                .build();
+        selectedSolutionKits.add(solutionKit1);
+        when(solutionKitsConfig.getSelectedSolutionKits()).thenReturn(selectedSolutionKits);
+
+        // test parent solution kit was updated once
+        when(solutionKitsConfig.isUpgrade()).thenReturn(true);
+        when(solutionKitsConfig.getSolutionKitToUpgrade(parentSolutionKit.getSolutionKitGuid())).thenReturn(parentSolutionKit);
+        try {
+            solutionKitProcessor.installOrUpgrade();
+            fail("Exception should've been thrown");
+        } catch (SolutionKitException e) {
+            assertEquals(e.getMessage(), "Unable to change the instance modifier on upgrade. Please install the Solution Kit and specify a unique instance modifier instead.");
+        }
+    }
+
+    @Test
     public void invokeCustomCallbackFromInputStream() throws Exception {
         final SolutionKitsConfig solutionKitsConfig = new SolutionKitsConfig();
 
