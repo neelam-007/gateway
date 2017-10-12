@@ -25,8 +25,9 @@ public class EntityBundle {
     private final String bundleName; // To track bundle name (We introduce a new 'Name' element for each bundle content when implementing multi-bundle import.)
 
     /**
-     * Creates a new Entity bundle with the given entity containers and mapping instructions
-     *  @param entities            The entity containers that are part of this bundle
+     * Creates a new Entity bundle with the given entity containers, mapping instructions, and dependency analysis results.
+     *
+     * @param entities The entity containers that are part of this bundle
      * @param mappingInstructions The mapping instructions.
      * @param dependencySearchResults  The dependency analysis results used to create bundle
      */
@@ -34,6 +35,14 @@ public class EntityBundle {
         this(null, entities, mappingInstructions, dependencySearchResults);
     }
 
+    /**
+     * Creates a new Entity bundle with the given bundle name, entity containers, mapping instructions, and dependency analysis results.
+     *
+     * @param bundleName The value of Name element in Bundle.
+     * @param entities The entity containers that are part of this bundle
+     * @param mappingInstructions The mapping instructions.
+     * @param dependencySearchResults The dependency analysis results used to create bundle
+     */
     public EntityBundle(@Nullable final String bundleName, @NotNull final Collection<EntityContainer> entities,
                         @NotNull final List<EntityMappingInstructions> mappingInstructions,
                         @NotNull final List<DependencySearchResults> dependencySearchResults) {
