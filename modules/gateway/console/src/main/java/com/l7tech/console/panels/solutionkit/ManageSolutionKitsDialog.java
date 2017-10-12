@@ -9,6 +9,7 @@ import com.l7tech.gateway.common.solutionkit.*;
 import com.l7tech.gui.ErrorMessageDialog;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.Either;
@@ -183,6 +184,7 @@ public class ManageSolutionKitsDialog extends JDialog {
 
                         List<String> resultMsgs = new ArrayList<>();
                         Pair<Boolean, String> result = new Pair<>(true, "");
+                        Set<Goid> possibleParentsToRemove = new HashSet<>();
 
                         for (SolutionKitHeader header : headers) {
                             try {
@@ -217,6 +219,8 @@ public class ManageSolutionKitsDialog extends JDialog {
                                             resultMsgs.add("- " + header.getName() +
                                                     (!StringUtils.isBlank(header.getInstanceModifier()) ? " (Instance Modifier: '" + header.getInstanceModifier()+"')" :
                                                     " (no Instance Modifier)") + "<br/> ");
+                                            final Goid parentGoid = header.getParentGoid();
+                                            possibleParentsToRemove.add(parentGoid);
                                         }
                                     }
                                 }
@@ -252,11 +256,36 @@ public class ManageSolutionKitsDialog extends JDialog {
                             Utilities.centerOnParentWindow(errorMessageDialog);
                             DialogDisplayer.pack(errorMessageDialog);
                             DialogDisplayer.display(errorMessageDialog);
+                        } else {
+                            //TODO: Confirmation dialog of success?
+                            if (logger.getLevel() == Level.FINE) {
+                                logger.log(Level.FINE, "Solution kits uninstalled successfully!");
+                            }
                         }
 
+                        removeStrayParents(possibleParentsToRemove);
                         refreshSolutionKitsTable();
                     }
                 });
+    }
+
+    /**
+     * After uninstall, if all the children of a parent are uninstalled successfully, remove the parent SK
+     * @param possibleParentsToRemove Set of all possible parents to remove
+     */
+    private void removeStrayParents(Set<Goid> possibleParentsToRemove) {
+        for (Goid parent : possibleParentsToRemove) {
+            try {
+                if (solutionKitAdmin.findHeaders(parent).isEmpty()) {
+                    solutionKitAdmin.delete(parent);
+                }
+            } catch (FindException e) {
+                logger.log(Level.WARNING, "Problem occurred while finding a parent solution kit.");
+            } catch (DeleteException e) {
+                logger.log(Level.WARNING, "Problem occurred while deleting a parent solution kit with no children.");
+
+            }
+        }
     }
 
     private Pair<Boolean, String> uninstallSolutionKit(@NotNull final String skName, @NotNull final Goid skGoid) throws InvocationTargetException, InterruptedException {

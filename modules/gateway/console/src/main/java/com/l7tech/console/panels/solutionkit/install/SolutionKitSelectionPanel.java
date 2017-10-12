@@ -388,20 +388,22 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
 
     private void enableDisableInstanceModifierButton() {
         boolean enabled = false;
-        final int selectedRows[] = solutionKitsTable.getSelectedRows();
-        int row;
+        if (!settings.isUpgrade()) {
+            final int selectedRows[] = solutionKitsTable.getSelectedRows();
+            int row;
 
-        for (int selectedRow : selectedRows) {
-            row = selectedRow;
-            if (isEditableOrEnabledAt(row)) {
-                enabled = true;
-            } else {
-                enabled = false;
-                break;
+            for (int selectedRow : selectedRows) {
+                row = selectedRow;
+                if (isEditableOrEnabledAt(row)) {
+                    enabled = true;
+                } else {
+                    enabled = false;
+                    break;
+                }
             }
         }
 
-        // The button is enabled if at least one solution kit is selected and it must be available for install or upgrade.
+        // The button is enabled if at least one solution kit is selected and it must be available for install.
         instanceModifierButton.setEnabled(enabled);
     }
 
