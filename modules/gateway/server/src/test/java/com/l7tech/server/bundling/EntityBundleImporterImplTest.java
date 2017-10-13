@@ -15,6 +15,7 @@ import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.FolderHeader;
+import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.PolicyVersion;
@@ -501,6 +502,126 @@ public class EntityBundleImporterImplTest {
         verify(folderManager, atLeastOnce()).findByPath("/sub\\/Folder");
         verify(entityCrud).update(subFolder);
         verify(serviceManager).update(service);
+    }
+
+    @Test
+    public void testImportMultipleBundles() throws FindException {
+        final Folder rootFolder = EntityBundleBuilder.createRootFolder();
+        final Folder subFolder1 = EntityCreator.createFolderWithRandomGoid("SubFolder1", rootFolder);
+        final Folder subFolder2 = EntityCreator.createFolderWithRandomGoid("SubFolder2", rootFolder);
+        final PublishedService service1 = createTestingPublishedService(createTestingPolicy(), subFolder1, "TestService1", "/test1");
+        final PublishedService service2 = createTestingPublishedService(createTestingPolicy(), subFolder2, "TestService2", "/test2");
+
+        when(folderManager.findByHeader(EntityHeaderUtils.fromEntity(subFolder1))).thenReturn(subFolder1);
+        when(folderManager.findByHeader(EntityHeaderUtils.fromEntity(subFolder2))).thenReturn(subFolder2);
+        when(folderManager.findByPath("/SubFolder1")).thenReturn(subFolder1);
+        when(folderManager.findByPath("/SubFolder2")).thenReturn(subFolder2);
+        when(entityCrud.find(Folder.class, Folder.ROOT_FOLDER_ID.toString())).thenReturn(rootFolder);
+        when(entityCrud.findAll(PublishedService.class,
+            CollectionUtils.MapBuilder.<String, List<Object>>builder().put("folder",Arrays.asList(subFolder1)).put("name", Arrays.asList("TestService1")).map(),
+            0, -1, null, null)).thenReturn(Arrays.asList(service1));
+        when(entityCrud.findAll(PublishedService.class,
+            CollectionUtils.MapBuilder.<String, List<Object>>builder().put("folder",Arrays.asList(subFolder2)).put("name", Arrays.asList("TestService2")).map(),
+            0, -1, null, null)).thenReturn(Arrays.asList(service2));
+        when(entityCrud.find(EntityHeaderUtils.fromEntity(service1))).thenReturn(service1);
+        when(entityCrud.find(EntityHeaderUtils.fromEntity(service2))).thenReturn(service2);
+        when(policyVersionManager.findLatestRevisionForPolicy(anyObject())).thenReturn(new PolicyVersion());
+
+        final EntityBundle bundle1 = new EntityBundleBuilder().
+            expectExistingRootFolder().
+            updateFolderByPath(subFolder1).
+            updateServiceByPath(service1).create();
+
+        final EntityBundle bundle2 = new EntityBundleBuilder().
+            expectExistingRootFolder().
+            updateFolderByPath(subFolder2).
+            updateServiceByPath(service2).create();
+
+
+        final List<List<EntityMappingResult>> results = importer.importBundles(Arrays.asList(new EntityBundle[]{bundle1, bundle2}), false, true, "");
+        assertTrue(results.size() == 2);
+
+        //////////////////////////////////////////////////////
+        // 1. Verify the mapping result of the first bundle //
+        //////////////////////////////////////////////////////
+
+        final List<EntityMappingResult> bundleResult1 = results.get(0);
+        assertTrue(bundleResult1.size() == 3);
+
+        // 1.1 Verify the first mapping result - Folder: root folder
+        final EntityMappingResult entityMappingResult_1_1 = bundleResult1.get(0);
+        verifyEntityHeaderFromEntityMappingResult(entityMappingResult_1_1, rootFolder, EntityMappingResult.MappingAction.UsedExisting);
+
+        // 1.2 Verify the second mapping result - Folder: SubFolder1
+        final EntityMappingResult entityMappingResult_1_2 = bundleResult1.get(1);
+        verifyEntityHeaderFromEntityMappingResult(entityMappingResult_1_2, subFolder1, EntityMappingResult.MappingAction.UpdatedExisting);
+
+        // 1.3 Verify the third mapping result - Service: TestService1
+        final EntityMappingResult entityMappingResult_1_3 = bundleResult1.get(2);
+        verifyEntityHeaderFromEntityMappingResult(entityMappingResult_1_3, service1, EntityMappingResult.MappingAction.UpdatedExisting);
+
+        ///////////////////////////////////////////////////////
+        // 2. Verify the mapping result of the second bundle //
+        ///////////////////////////////////////////////////////
+
+        final List<EntityMappingResult> bundleResult2 = results.get(1);
+        assertTrue(bundleResult2.size() == 3);
+
+        // 2.1 Verify the first mapping result - Folder: root folder
+        final EntityMappingResult entityMappingResult_2_1 = bundleResult2.get(0);
+        verifyEntityHeaderFromEntityMappingResult(entityMappingResult_2_1, rootFolder, EntityMappingResult.MappingAction.UsedExisting);
+
+        // 2.2 Verify the second mapping result - Folder: SubFolder1
+        final EntityMappingResult entityMappingResult_2_2 = bundleResult2.get(1);
+        verifyEntityHeaderFromEntityMappingResult(entityMappingResult_2_2, subFolder2, EntityMappingResult.MappingAction.UpdatedExisting);
+
+        // 2.3 Verify the third mapping result - Service: TestService1
+        final EntityMappingResult entityMappingResult_2_3 = bundleResult2.get(2);
+        verifyEntityHeaderFromEntityMappingResult(entityMappingResult_2_3, service2, EntityMappingResult.MappingAction.UpdatedExisting);
+    }
+
+    /**
+     * Use a given Folder or PublishedService entity and an expected mapping action to verify the source and target entity headers from the entity mapping result.
+     *
+     * @param entityMappingResult: The result contains all entity mappings.
+     * @param entity: the given Folder or PublishedService object to verify entity headers
+     * @param expectedAction: the expected mapping action
+     */
+    private void verifyEntityHeaderFromEntityMappingResult(@NotNull final EntityMappingResult entityMappingResult, @NotNull final NamedEntityImp entity,
+                                                           @NotNull final EntityMappingResult.MappingAction expectedAction) {
+        // Verify entity header types
+        if (entity instanceof Folder) {
+            assertTrue(entityMappingResult.getSourceEntityHeader() instanceof FolderHeader && entityMappingResult.getTargetEntityHeader() instanceof FolderHeader);
+        } else if (entity instanceof PublishedService) {
+            assertTrue(entityMappingResult.getSourceEntityHeader() instanceof ServiceHeader && entityMappingResult.getTargetEntityHeader() instanceof ServiceHeader);
+        } else {
+            throw new IllegalArgumentException("Entity type must be either FOLDER or SERVICE");
+        }
+
+        // Verify the source entity header
+        final EntityHeader sourceEntityHeader = entityMappingResult.getSourceEntityHeader();
+        assertTrue(sourceEntityHeader.getType() == (entity instanceof Folder? EntityType.FOLDER : EntityType.SERVICE));
+        assertTrue(sourceEntityHeader.getStrId().equals(entity.getGoid().toString()));
+        assertTrue(sourceEntityHeader.getName().equals(entity.getName()));
+        if (entity instanceof Folder) {
+            assertTrue(((FolderHeader) sourceEntityHeader).getPath().equals(((Folder) entity).getPath()));
+        } else {
+            assertTrue(((ServiceHeader) sourceEntityHeader).getRoutingUri().equals(((PublishedService) entity).getRoutingUri()));
+        }
+
+        // Verify the target entity header
+        final EntityHeader targetEntityHeader = entityMappingResult.getTargetEntityHeader();
+        assertTrue(targetEntityHeader.getType() == (entity instanceof Folder? EntityType.FOLDER : EntityType.SERVICE));
+        assertTrue(targetEntityHeader.getStrId().equals(entity.getGoid().toString()));
+        assertTrue(targetEntityHeader.getName().equals(entity.getName()));
+        if (entity instanceof Folder) {
+            assertTrue(((FolderHeader) targetEntityHeader).getPath().equals(((Folder) entity).getPath()));
+        } else {
+            assertTrue(((ServiceHeader) targetEntityHeader).getRoutingUri().equals(((PublishedService) entity).getRoutingUri()));
+        }
+
+        // Verify the mapping action
+        assertTrue(entityMappingResult.getMappingAction() == expectedAction);
     }
 
     private Map<Goid, EntityMappingResult> resultsToMap(final List<EntityMappingResult> results) {

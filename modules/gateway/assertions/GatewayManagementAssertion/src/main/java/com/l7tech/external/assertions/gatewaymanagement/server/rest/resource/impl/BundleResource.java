@@ -20,6 +20,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
 import com.l7tech.util.Functions;
+import org.apache.commons.lang.StringUtils;
 import org.glassfish.jersey.process.internal.RequestScoped;
 import org.glassfish.jersey.server.ContainerRequest;
 import org.jetbrains.annotations.NotNull;
@@ -524,28 +525,85 @@ public class BundleResource {
      * @param test                 If true the bundle import will be tested no changes will be made to the gateway
      * @param activate             False to not activate the updated services and policies.
      * @param versionComment       The comment to set for updated/created services and policies
-     * @param encodedKeyPassphrase The optional base-64 encoded passphrase to uadmimnse for the encryption key when
+     * @param encodedKeyPassphrase The optional base-64 encoded passphrase to use for the encryption key when
      *                             encrypting passwords.
      * @param bundle               The bundle to import
      * @return The mappings performed during the bundle import
      */
     @PUT
+    @NotNull
     public Response importBundle(@QueryParam("test") @DefaultValue("false") final boolean test,
                                  @QueryParam("activate") @DefaultValue("true") final boolean activate,
                                  @QueryParam("versionComment") final String versionComment,
                                  @HeaderParam("L7-key-passphrase") @Since(RestManVersion.VERSION_1_0_1) String encodedKeyPassphrase,
-                                 final Bundle bundle) throws Exception {
+                                 @NotNull final Bundle bundle) throws Exception {
+        final BundleList bundles = ManagedObjectFactory.createBundleList();
+        bundles.setBundles(Arrays.asList(new Bundle[]{bundle}));
+
+        final Response response = importBundles(test, activate, versionComment, encodedKeyPassphrase, bundles);
+        final Item<Mappings> item = ((ItemsList<Mappings>) response.getEntity()).getContent().get(0);  // Since there is only one bundle, the item list should have one item element.
+
+        return response.getStatus() == Response.Status.CONFLICT.getStatusCode()?
+            Response.status(Response.Status.CONFLICT).entity(item).build() : Response.ok(item).build();
+    }
+
+    /**
+     * This will import a batch of bundles.
+     *
+     * @param test                 If true the bundles import will be tested no changes will be made to the gateway
+     * @param activate             False to not activate the updated services and policies.
+     * @param versionComment       The comment to set for updated/created services and policies
+     * @param encodedKeyPassphrase The optional base-64 encoded passphrase to use for the encryption key when
+     *                             encrypting passwords.
+     * @param bundles              The batch of bundles to import
+     * @return The mappings performed during each bundle import
+     */
+    @PUT
+    @Path("batch")
+    @Since(RestManVersion.VERSION_1_0_4)
+    @NotNull
+    public Response importBundles(@QueryParam("test") @DefaultValue("false") final boolean test,
+                                 @QueryParam("activate") @DefaultValue("true") final boolean activate,
+                                 @QueryParam("versionComment") final String versionComment,
+                                 @HeaderParam("L7-key-passphrase") @Since(RestManVersion.VERSION_1_0_1) final String encodedKeyPassphrase,
+                                 @NotNull final BundleList bundles) throws Exception {
         rbacAccessService.validateFullAdministrator();
         ParameterValidationUtils.validateNoOtherQueryParams(uriInfo.getQueryParameters(), Arrays.asList("test", "activate", "versionComment"));
 
-        List<Mapping> mappings =
-                bundleImporter.importBundle(bundle, test, activate, versionComment, encodedKeyPassphrase);
+        final List<List<Mapping>> listMappings =
+            bundleImporter.importBundles(bundles, test, activate, versionComment, encodedKeyPassphrase);
 
-        Item<Mappings> item = new ItemBuilder<Mappings>("Bundle mappings", "BUNDLE MAPPINGS")
-                .addLink(ManagedObjectFactory.createLink(Link.LINK_REL_SELF, uriInfo.getRequestUri().toString()))
+        final List<Item<Mappings>> items = new ArrayList<>();
+        final String itemUri = uriInfo.getRequestUri().toString().replaceAll("/batch", "");
+        final List<Bundle> bundleList = bundles.getBundles();
+        boolean foundError = false;
+
+        for (int i = 0; i < listMappings.size(); i++) {
+            final List<Mapping> mappings = listMappings.get(i);
+            final String bundleName = bundleList.get(i).getName(); // bundle name will be assigned to Id element of Item element to identify the bundle.
+
+            // Find whether any error exists
+            if (!foundError && containsErrors(mappings)) {
+                foundError = true;
+            }
+
+            // Build one item to hold mappings, per bundle
+            final Item<Mappings> item = new ItemBuilder<Mappings>("Bundle mappings" + (StringUtils.isBlank(bundleName)? "" : " for '" + bundleName + "'"), "BUNDLE MAPPINGS")
+                .addLink(ManagedObjectFactory.createLink(Link.LINK_REL_SELF, itemUri))
                 .setContent(ManagedObjectFactory.createMappings(mappings))
                 .build();
-        return containsErrors(mappings) ? Response.status(Response.Status.CONFLICT).entity(item).build() : Response.ok(item).build();
+
+            items.add(item);
+        }
+
+        // Build the item list
+        final ItemsList<Mappings> itemsList = new ItemsListBuilder<Mappings>(transformer.getResourceType() + " List", "List")
+            .addLink(ManagedObjectFactory.createLink(Link.LINK_REL_SELF, uriInfo.getRequestUri().toString()))
+            .setContent(items)
+            .build();
+
+        // Return response with the item list
+        return foundError? Response.status(Response.Status.CONFLICT).entity(itemsList).build() : Response.ok(itemsList).build();
     }
 
     /**
