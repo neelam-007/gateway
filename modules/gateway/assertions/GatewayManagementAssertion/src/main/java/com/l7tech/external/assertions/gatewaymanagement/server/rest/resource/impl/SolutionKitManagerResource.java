@@ -438,21 +438,21 @@ public class SolutionKitManagerResource {
         solutionKitsConfig.setSolutionKitsToUpgrade(finalUpgradeList);
     }
 
-    private Pair<Boolean, SolutionKit> isParentSolutionKit(String solutionKitGuid) throws FindException, SolutionKitManagerResourceException {
-        final List<SolutionKit> solutionKits = solutionKitManager.findBySolutionKitGuid(solutionKitGuid);
-        final int size = solutionKits.size();
+    private Pair<Boolean, SolutionKit> isParentSolutionKit(@NotNull String solutionKitGuid) throws FindException, SolutionKitManagerResourceException {
+        return isParentSolutionKit(solutionKitGuid, null);
+    }
 
-        if (size == 0) {
-            throw new SolutionKitManagerResourceException(status(NOT_FOUND).entity("There does not exist any solution kit matching the GUID (" + solutionKitGuid + ")" + lineSeparator()).build());
-        } else if (size > 1) {
-            // Every parent is unique.  If found more than one, guarantee it is not a parent.
-            return new Pair<>(false, null);
+    private Pair<Boolean, SolutionKit> isParentSolutionKit(@NotNull final String solutionKitGuid, @Nullable final String instanceModifier) throws FindException, SolutionKitManagerResourceException {
+        final SolutionKit parentSK = solutionKitManager.findBySolutionKitGuidAndIM(solutionKitGuid, instanceModifier);
+
+        if (parentSK == null) {
+            final String instanceModifierMessage = instanceModifier.isEmpty() ? "" : " with instance modifier " + instanceModifier;
+            throw new SolutionKitManagerResourceException(status(NOT_FOUND).entity("There does not exist any solution kit matching the GUID (" + solutionKitGuid + ")" +
+                    instanceModifierMessage + lineSeparator()).build());
         }
 
-        final SolutionKit parentCandidate = solutionKits.get(0);
-
-        if (SolutionKitUtils.isParentSolutionKit(parentCandidate)) {
-            return new Pair<>(true, parentCandidate);
+        if (SolutionKitUtils.isParentSolutionKit(parentSK)) {
+            return new Pair<>(true, parentSK);
         }
 
         return new Pair<>(false, null);
@@ -624,11 +624,12 @@ public class SolutionKitManagerResource {
             final String deleteGuid = substringBefore(deleteGuidIM, PARAMETER_DELIMINATOR).trim();
             final String instanceModifier = substringAfter(deleteGuidIM, PARAMETER_DELIMINATOR).trim();
 
-            final Pair<Boolean, SolutionKit> resultOfCheckingParent = isParentSolutionKit(deleteGuid);
+            final Pair<Boolean, SolutionKit> resultOfCheckingParent = isParentSolutionKit(deleteGuid, instanceModifier);
             final boolean isParent = resultOfCheckingParent.left;
             final SolutionKit solutionKitToUninstall;
 
             if (isParent) {
+                validateInstanceModifiersOnUninstall(deleteGuidIM, childGuidIMList);
                 solutionKitToUninstall = resultOfCheckingParent.right;
             } else {
                 final SolutionKit tempSK = solutionKitManager.findBySolutionKitGuidAndIM(deleteGuid, instanceModifier);
@@ -649,7 +650,7 @@ public class SolutionKitManagerResource {
 
             // If the solution kit is a parent solution kit, then check if there are any child guids specified from query parameters.
             if (isParent) {
-                // No child list and no instance modifier specified means uninstall all child solution kits.
+                // No child list and no instance modifier specified means uninstall all child solution kits with no instance modifier.
                 if ((childGuidIMList == null || childGuidIMList.isEmpty()) && !deleteGuidIM.contains(PARAMETER_DELIMINATOR)) {
                     for (SolutionKit child: childrenList) {
                         currentSolutionKitName = child.getName();
@@ -783,6 +784,47 @@ public class SolutionKitManagerResource {
 
         //Return a response with noContent() if all the uninstalls were successful
         return Response.noContent().build();
+    }
+
+    /**
+     * Validate instance modifiers for uninstall for the following rules:
+     * if the parentIM is specified
+     *   - if children IM is specified, it must be the same as the parent
+     *   -  children IM must be left unspecified
+     * if the parent IM is unspecified
+     *   - all children IM must be the same as each other
+     *
+     * Note:"<child_guid>" and "<child_guid>::" both have an instance modifier of ""
+     *
+     * @param parentGuidIM the parent guid and instance modifier
+     * @param childGuidIMList the list of child and their instance modifiers
+     * @throws SolutionKitManagerResourceException
+     */
+    private void validateInstanceModifiersOnUninstall(final @NotNull String parentGuidIM,
+                                                      final @Nullable List<String> childGuidIMList) throws SolutionKitManagerResourceException {
+        if (!parentGuidIM.contains(PARAMETER_DELIMINATOR)) {
+            // If IM not specified, all children need to have same IM as another or no IM
+            final Set<String> sameIM = new HashSet<>();
+            for (String childGuidIm : childGuidIMList) {
+                sameIM.add(substringAfter(childGuidIm, PARAMETER_DELIMINATOR).trim());
+            }
+            if (sameIM.size() != 1 && !childGuidIMList.isEmpty()) {
+                throw new SolutionKitManagerResourceException(status(CONFLICT).entity("Error: all children solution kit " +
+                        "instance modifiers must be the same.").build());
+            }
+
+        } else {
+            // if IM specified, All children need to have IM the same or no IM
+            final String parentIM = substringAfter(parentGuidIM,PARAMETER_DELIMINATOR);
+            for (String childGuidIm : childGuidIMList) {
+                final String childIM = substringAfter(childGuidIm, PARAMETER_DELIMINATOR).trim();
+                if (!parentIM.equals(childIM) && childGuidIm.contains(PARAMETER_DELIMINATOR)) {
+                    throw new SolutionKitManagerResourceException(status(CONFLICT).entity("Error: if child solution kit " +
+                            "instance modifiers are specified, it must be the same as parent instance modifier.").build());
+                }
+            }
+        }
+
     }
 
     public String printIM(String instanceModifier) {
