@@ -34,6 +34,9 @@ import java.util.logging.Logger;
  */
 public class GatewayMetricsMessage {
     private static final Logger logger = Logger.getLogger(GatewayMetricsMessage.class.getName());
+    private static final String MISSING_SERVICE = "SERVICE NO LONGER EXISTS: GOID=";
+    private static final String MESSAGE_MISSING_SERVICE = "ServiceUsage record points to nonexistent " +
+            "published service by primary key {0}";
     private static SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
 
     private String clusterNodeId;
@@ -208,8 +211,12 @@ public class GatewayMetricsMessage {
                 continue;
             }
             PublishedService publishedService = serviceManager.findByPrimaryKey(currentServiceUsage.getServiceid());
+            if (publishedService == null) {
+                logger.log(Level.FINE, MESSAGE_MISSING_SERVICE, currentServiceUsage.getServiceid());
+            }
+
             StatisticsRecord statsRecord = new StatisticsRecord(
-                publishedService.getName(),
+                getServiceIdOrName(currentServiceUsage, publishedService),
                 currentServiceUsage.getRequests(),
                 currentServiceUsage.getAuthorized(),
                 currentServiceUsage.getCompleted(),
@@ -219,7 +226,7 @@ public class GatewayMetricsMessage {
             Goid serviceId = currentServiceUsage.getServiceid();
             String nodeId = currentServiceUsage.getNodeid();
             String nodeName = clusterNodes.get(nodeId);
-            String routingUri = publishedService.getRoutingUri();
+            String routingUri = getServiceRoutingUriOrId(currentServiceUsage, publishedService);
             long numRoutingFailures = statsRecord.getNumRoutingFailure();
             long numPolicyViolations = statsRecord.getNumPolicyViolation();
             long numSuccesses = statsRecord.getCompletedCount();
@@ -249,6 +256,14 @@ public class GatewayMetricsMessage {
         Element element = document.createElement(tagName);
         parentElement.appendChild(element);
         return element;
+    }
+
+    private static String getServiceIdOrName(ServiceUsage serviceUsage, PublishedService publishedService) {
+        return publishedService == null ? MISSING_SERVICE + serviceUsage.getServiceid() : publishedService.getName();
+    }
+
+    private static String getServiceRoutingUriOrId(ServiceUsage serviceUsage, PublishedService publishedService) {
+        return publishedService == null ? MISSING_SERVICE + serviceUsage.getServiceid() : publishedService.getRoutingUri();
     }
 
     private String formatTime(long time) {
