@@ -220,7 +220,9 @@ public class ManageSolutionKitsDialog extends JDialog {
                                                     (!StringUtils.isBlank(header.getInstanceModifier()) ? " (Instance Modifier: '" + header.getInstanceModifier()+"')" :
                                                     " (no Instance Modifier)") + "<br/> ");
                                             final Goid parentGoid = header.getParentGoid();
-                                            possibleParentsToRemove.add(parentGoid);
+                                            if (parentGoid != null) {
+                                                possibleParentsToRemove.add(parentGoid);
+                                            }
                                         }
                                     }
                                 }
