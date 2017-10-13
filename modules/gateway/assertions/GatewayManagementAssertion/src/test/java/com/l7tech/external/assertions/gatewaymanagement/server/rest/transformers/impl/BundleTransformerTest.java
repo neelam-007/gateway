@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.BundleBuilder;
+import com.l7tech.external.assertions.gatewaymanagement.server.MappingBuilder;
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.APIUtilityLocator;
 import com.l7tech.gateway.api.*;
@@ -131,6 +132,56 @@ public class BundleTransformerTest {
     }
 
     @Test
+    public void testMultiBundleOnConvertFromMO() throws ResourceFactory.InvalidResourceException {
+        // Prepare one mapping list for bundle #1
+        final Mapping mapping1_1 = createMappingForTest("FOLDER", Mapping.Action.NewOrUpdate, "599eca6846c453e9a8e23ec887d6a341");
+        final Mapping mapping1_2 = createMappingForTest("SERVICE", Mapping.Action.NewOrUpdate, "699eca6846c453e9a8e23ec887d6a342");
+        final List<Mapping> mappingList1 = Arrays.asList(new Mapping[]{mapping1_1, mapping1_2});
+
+        // Prepare one mapping list for bundle #2
+        final Mapping mapping2_1 = createMappingForTest("SERVICE", Mapping.Action.NewOrUpdate, "799eca6846c453e9a8e23ec887d6a343");
+        final Mapping mapping2_2 = createMappingForTest("POLICY", Mapping.Action.NewOrUpdate, "899eca6846c453e9a8e23ec887d6a344");
+        final List<Mapping> mappingList2 = Arrays.asList(new Mapping[]{mapping2_1, mapping2_2});
+
+        // Prepare a BundleList object using the above two mapping lists.
+        final BundleList bundleList = ManagedObjectFactory.createBundleList();
+        final Bundle bundle1 = ManagedObjectFactory.createBundle();
+        final Bundle bundle2 = ManagedObjectFactory.createBundle();
+
+        bundle1.setMappings(mappingList1);
+        bundle2.setMappings(mappingList2);
+        bundleList.setBundles(Arrays.asList(new Bundle[]{bundle1, bundle2}));
+
+        // Call convertFromMO for multiple bundles
+        final List<EntityBundle> entityBundles = bundleTransformer.convertFromMO(bundleList, null);
+        assertTrue(entityBundles.size() == 2);
+
+        // Verify the first EntityBundle object.
+        List<EntityMappingInstructions> mappingInstructionsList = entityBundles.get(0).getMappingInstructions();
+        EntityMappingInstructions mappingInstructions = mappingInstructionsList.get(0);
+        assertTrue(mappingInstructions.getSourceEntityHeader().getType() == EntityType.FOLDER);
+        assertTrue(mappingInstructions.getSourceEntityHeader().getStrId().equals("599eca6846c453e9a8e23ec887d6a341"));
+        assertTrue(mappingInstructions.getMappingAction() == EntityMappingInstructions.MappingAction.NewOrUpdate);
+
+        mappingInstructions = mappingInstructionsList.get(1);
+        assertTrue(mappingInstructions.getSourceEntityHeader().getType() == EntityType.SERVICE);
+        assertTrue(mappingInstructions.getSourceEntityHeader().getStrId().equals("699eca6846c453e9a8e23ec887d6a342"));
+        assertTrue(mappingInstructions.getMappingAction() == EntityMappingInstructions.MappingAction.NewOrUpdate);
+
+        // Verify the second EntityBundle object.
+        mappingInstructionsList = entityBundles.get(1).getMappingInstructions();
+        mappingInstructions = mappingInstructionsList.get(0);
+        assertTrue(mappingInstructions.getSourceEntityHeader().getType() == EntityType.SERVICE);
+        assertTrue(mappingInstructions.getSourceEntityHeader().getStrId().equals("799eca6846c453e9a8e23ec887d6a343"));
+        assertTrue(mappingInstructions.getMappingAction() == EntityMappingInstructions.MappingAction.NewOrUpdate);
+
+        mappingInstructions = mappingInstructionsList.get(1);
+        assertTrue(mappingInstructions.getSourceEntityHeader().getType() == EntityType.POLICY);
+        assertTrue(mappingInstructions.getSourceEntityHeader().getStrId().equals("899eca6846c453e9a8e23ec887d6a344"));
+        assertTrue(mappingInstructions.getMappingAction() == EntityMappingInstructions.MappingAction.NewOrUpdate);
+    }
+
+    @Test
     public void convertBundleWithAliasSetsAliasNameOnMapping() throws Exception {
         final Goid serviceId = new Goid(0, 1);
         final String serviceName = "test";
@@ -159,10 +210,6 @@ public class BundleTransformerTest {
 
     @NotNull
     private Mapping createMappingForTest(final String type, final Mapping.Action action, final String id) {
-        final Mapping mappingForTest = ManagedObjectFactory.createMapping();
-        mappingForTest.setType(type);
-        mappingForTest.setAction(action);
-        mappingForTest.setSrcId(id);
-        return mappingForTest;
+        return new MappingBuilder().withType(type).withAction(action).withSrcId(id).build();
     }
 }
