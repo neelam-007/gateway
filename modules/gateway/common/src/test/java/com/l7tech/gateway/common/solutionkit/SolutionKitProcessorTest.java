@@ -285,10 +285,9 @@ public class SolutionKitProcessorTest {
                 .build();
         selectedSolutionKits.add(solutionKit1);
         when(solutionKitsConfig.getSelectedSolutionKits()).thenReturn(selectedSolutionKits);
-
-        // test parent solution kit was updated once
         when(solutionKitsConfig.isUpgrade()).thenReturn(true);
         when(solutionKitsConfig.getSolutionKitToUpgrade(parentSolutionKit.getSolutionKitGuid())).thenReturn(parentSolutionKit);
+
         try {
             solutionKitProcessor.installOrUpgrade();
             fail("Exception should've been thrown");

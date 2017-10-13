@@ -173,7 +173,7 @@ public interface SolutionKitAdmin extends AsyncAdminMethods {
     /**
      * Retrieve solution kit entity with the given guid and instanceModifier.
      *
-     * @param guid the guid of solution kit entity
+     * @param guid The globally unique identifier of the solution kit entity (author specified)
      * @param instanceModifier the instance Modifier of the solution kit
      * @return the solution kit entity
      * @throws FindException

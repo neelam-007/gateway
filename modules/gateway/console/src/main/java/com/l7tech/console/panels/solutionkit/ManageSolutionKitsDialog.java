@@ -261,9 +261,8 @@ public class ManageSolutionKitsDialog extends JDialog {
                             if (logger.getLevel() == Level.FINE) {
                                 logger.log(Level.FINE, "Solution kits uninstalled successfully!");
                             }
+                            removeStrayParents(possibleParentsToRemove);
                         }
-
-                        removeStrayParents(possibleParentsToRemove);
                         refreshSolutionKitsTable();
                     }
                 });

@@ -413,20 +413,23 @@ public final class SolutionKitUtils {
 
     /**
      * Copy the contents of a parent solution kit object to make another parent solution kit object.
-     * @param originalSK The SolutionKit source to copy from
+     * @param sourceSK The SolutionKit source to copy from
+     * @param resultSK The solution kit to hold the result. If null, return a new instance of the copy
      * @param instanceModifier The new instance modifier to apply to the new parent solution kit
      * @return solutionKit is the copied solution kit
      */
-    public static SolutionKit copyParentSolutionKitWithIM(@NotNull final SolutionKit originalSK, @Nullable final String instanceModifier) {
-        final SolutionKit solutionKit = new SolutionKit();
-        solutionKit.setSolutionKitGuid(originalSK.getSolutionKitGuid());
-        solutionKit.setSolutionKitVersion(originalSK.getSolutionKitVersion());
-        solutionKit.setName(originalSK.getName());
-        solutionKit.setMappings(originalSK.getMappings());
-        solutionKit.setLastUpdateTime(originalSK.getLastUpdateTime());
-        solutionKit.setXmlProperties(originalSK.getXmlProperties());
-        solutionKit.setInstallationXmlProperties(originalSK.getInstallationXmlProperties());
-        solutionKit.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, instanceModifier);
+    public static SolutionKit copyParentSolutionKitWithIM(@NotNull final SolutionKit sourceSK, @Nullable final SolutionKit resultSK, @Nullable final String instanceModifier) {
+        final SolutionKit solutionKit = resultSK == null ? new SolutionKit() : resultSK;
+        solutionKit.setSolutionKitGuid(sourceSK.getSolutionKitGuid());
+        solutionKit.setSolutionKitVersion(sourceSK.getSolutionKitVersion());
+        solutionKit.setName(sourceSK.getName());
+        solutionKit.setMappings(sourceSK.getMappings());
+        solutionKit.setLastUpdateTime(sourceSK.getLastUpdateTime());
+        solutionKit.setXmlProperties(sourceSK.getXmlProperties());
+        solutionKit.setInstallationXmlProperties(sourceSK.getInstallationXmlProperties());
+        if (!StringUtils.isBlank(instanceModifier)) {
+            solutionKit.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, instanceModifier);
+        }
         return solutionKit;
     }
 

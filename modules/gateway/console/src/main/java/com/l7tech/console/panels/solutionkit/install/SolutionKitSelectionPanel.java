@@ -388,18 +388,13 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
 
     private void enableDisableInstanceModifierButton() {
         boolean enabled = false;
-        if (!settings.isUpgrade()) {
-            final int selectedRows[] = solutionKitsTable.getSelectedRows();
-            int row;
-
-            for (int selectedRow : selectedRows) {
-                row = selectedRow;
-                if (isEditableOrEnabledAt(row)) {
-                    enabled = true;
-                } else {
-                    enabled = false;
-                    break;
-                }
+        final int selectedRows[] = solutionKitsTable.getSelectedRows();
+        for (final int selectedRow : selectedRows) {
+            if (isEditableOrEnabledAt(selectedRow)) {
+                enabled = true;
+            } else {
+                enabled = false;
+                break;
             }
         }
 
@@ -408,37 +403,42 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
     }
 
     private void initializeInstanceModifierButton() {
-        ActionListener[] actionListeners = instanceModifierButton.getActionListeners();
-        for (ActionListener actionListener: actionListeners) instanceModifierButton.removeActionListener(actionListener);
+        if (settings.isUpgrade()) {
+            instanceModifierButton.setVisible(false);
+        } else {
+            ActionListener[] actionListeners = instanceModifierButton.getActionListeners();
+            for (ActionListener actionListener : actionListeners)
+                instanceModifierButton.removeActionListener(actionListener);
 
-        // Instance modifier button only modifies the solution kits in highlighted rows
-        instanceModifierButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                final int[] selectedRows = solutionKitsTable.getSelectedRows();
-                if (selectedRows.length == 0) return;
+            // Instance modifier button only modifies the solution kits in highlighted rows
+            instanceModifierButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    final int[] selectedRows = solutionKitsTable.getSelectedRows();
+                    if (selectedRows.length == 0) return;
 
-                final List<SolutionKit> toBeModified = new ArrayList<>(selectedRows.length);
-                final SolutionKit[] solutionKitsLoadedArray = solutionKitsLoaded.toArray(new SolutionKit[solutionKitsLoaded.size()]);
-                for (int row : selectedRows) {
-                    toBeModified.add(solutionKitsLoadedArray[row]);
-                }
-
-                final SolutionKitInstanceModifierDialog instanceModifierDialog = new SolutionKitInstanceModifierDialog(
-                    TopComponents.getInstance().getTopParent(), toBeModified, settings
-                );
-                instanceModifierDialog.pack();
-                Utilities.centerOnParentWindow(instanceModifierDialog);
-                DialogDisplayer.display(instanceModifierDialog, new Runnable() {
-                    @Override
-                    public void run() {
-                        initializeSolutionKitsTable();
+                    final List<SolutionKit> toBeModified = new ArrayList<>(selectedRows.length);
+                    final SolutionKit[] solutionKitsLoadedArray = solutionKitsLoaded.toArray(new SolutionKit[solutionKitsLoaded.size()]);
+                    for (int row : selectedRows) {
+                        toBeModified.add(solutionKitsLoadedArray[row]);
                     }
-                });
-            }
-        });
 
-        enableDisableInstanceModifierButton();
+                    final SolutionKitInstanceModifierDialog instanceModifierDialog = new SolutionKitInstanceModifierDialog(
+                            TopComponents.getInstance().getTopParent(), toBeModified, settings
+                    );
+                    instanceModifierDialog.pack();
+                    Utilities.centerOnParentWindow(instanceModifierDialog);
+                    DialogDisplayer.display(instanceModifierDialog, new Runnable() {
+                        @Override
+                        public void run() {
+                            initializeSolutionKitsTable();
+                        }
+                    });
+                }
+            });
+
+            enableDisableInstanceModifierButton();
+        }
     }
 
     private void onManageLicenses() {

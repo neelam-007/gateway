@@ -500,7 +500,7 @@ public class InstanceModifier {
     }
 
     @NotNull
-    static String getInstanceModifierAsString(SolutionKit solutionKit) {
+    static String getInstanceModifier(@NotNull final SolutionKit solutionKit) {
         String solutionKitIM = solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY);
         return solutionKitIM == null ? "" : solutionKitIM;
     }
