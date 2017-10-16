@@ -442,20 +442,32 @@ public class SolutionKitManagerResource {
         return isParentSolutionKit(solutionKitGuid, null);
     }
 
-    private Pair<Boolean, SolutionKit> isParentSolutionKit(@NotNull final String solutionKitGuid, @Nullable final String instanceModifier) throws FindException, SolutionKitManagerResourceException {
-        final SolutionKit parentSK = solutionKitManager.findBySolutionKitGuidAndIM(solutionKitGuid, instanceModifier);
+    /**
+     * Return a solution kit from the database and whether or not it is a parent solution kit
+     * @param solutionKitGuid the solution kit guid
+     * @param instanceModifier instance modifier of the solution kit in question
+     * @return The result is of Pair.left is true if it is a parent, the result of Pair.right is the solution kit on the database
+     * @throws FindException exception thrown by hibernate
+     * @throws SolutionKitManagerResourceException exception thrown if there is not solution kit to delete
+     */
+    private Pair<@NotNull Boolean, @NotNull SolutionKit> isParentSolutionKit(@NotNull final String solutionKitGuid, @Nullable final String instanceModifier) throws FindException, SolutionKitManagerResourceException {
+        final SolutionKit skFromDb = solutionKitManager.findBySolutionKitGuidAndIM(solutionKitGuid, instanceModifier);
 
-        if (parentSK == null) {
-            final String instanceModifierMessage = instanceModifier.isEmpty() ? "" : " with instance modifier " + instanceModifier;
-            throw new SolutionKitManagerResourceException(status(NOT_FOUND).entity("There does not exist any solution kit matching the GUID (" + solutionKitGuid + ")" +
-                    instanceModifierMessage + lineSeparator()).build());
+        if (skFromDb == null) {
+            // There is a requirement from the note in the story SSG-10996, Upgrade Solution Kit.
+            // - dis-allow upgrade if you don't have SK already installed (install only)
+            final String instanceModifierMessage = instanceModifier.isEmpty() ? "" : " with instance modifier " + instanceModifier + ".";
+            final String warningMsg = "There does not exist any solution kit matching the GUID (" + solutionKitGuid + ")" +
+                    instanceModifierMessage;
+            logger.warning(warningMsg);
+            throw new SolutionKitManagerResourceException(status(NOT_FOUND).entity(warningMsg + lineSeparator()).build());
         }
 
-        if (SolutionKitUtils.isParentSolutionKit(parentSK)) {
-            return new Pair<>(true, parentSK);
+        if (SolutionKitUtils.isParentSolutionKit(skFromDb)) {
+            return new Pair<>(true, skFromDb);
         }
 
-        return new Pair<>(false, null);
+        return new Pair<>(false, skFromDb);
     }
 
     /**
@@ -622,28 +634,11 @@ public class SolutionKitManagerResource {
             }
 
             final String deleteGuid = substringBefore(deleteGuidIM, PARAMETER_DELIMINATOR).trim();
-            final String instanceModifier = substringAfter(deleteGuidIM, PARAMETER_DELIMINATOR).trim();
+            final String instanceModifier = validateInstanceModifiersOnUninstall(deleteGuidIM, childGuidIMList);
 
             final Pair<Boolean, SolutionKit> resultOfCheckingParent = isParentSolutionKit(deleteGuid, instanceModifier);
             final boolean isParent = resultOfCheckingParent.left;
-            final SolutionKit solutionKitToUninstall;
-
-            if (isParent) {
-                validateInstanceModifiersOnUninstall(deleteGuidIM, childGuidIMList);
-                solutionKitToUninstall = resultOfCheckingParent.right;
-            } else {
-                final SolutionKit tempSK = solutionKitManager.findBySolutionKitGuidAndIM(deleteGuid, instanceModifier);
-                if (tempSK == null) {
-                    // There is a requirement from the note in the story SSG-10996, Upgrade Solution Kit.
-                    // - dis-allow upgrade if you don't have SK already installed (install only)
-                    final String warningMsg = "Uninstall failed: cannot find any existing solution kit (GUID = '" + deleteGuid + "', "+
-                            printIM(instanceModifier) + ") for uninstall.";
-                    logger.warning(warningMsg);
-                    return status(NOT_FOUND).entity(warningMsg + lineSeparator()).build();
-                } else {
-                    solutionKitToUninstall = tempSK;
-                }
-            }
+            final SolutionKit solutionKitToUninstall = resultOfCheckingParent.right;
 
             final SolutionKitAdminHelper solutionKitAdminHelper = new SolutionKitAdminHelper(licenseManager, solutionKitManager, identityProviderConfigManager);
             final Collection<SolutionKit> childrenList = solutionKitAdminHelper.find(solutionKitToUninstall.getGoid());
@@ -797,11 +792,12 @@ public class SolutionKitManagerResource {
      * Note:"<child_guid>" and "<child_guid>::" both have an instance modifier of ""
      *
      * @param parentGuidIM the parent guid and instance modifier
-     * @param childGuidIMList the list of child and their instance modifiers
+     * @param childGuidIMList the list of child and their instance modifiers.
+     * @return the instanceModifier determined by childGuidIM or by the parentGuidIM
      * @throws SolutionKitManagerResourceException
      */
-    private void validateInstanceModifiersOnUninstall(final @NotNull String parentGuidIM,
-                                                      final @Nullable List<String> childGuidIMList) throws SolutionKitManagerResourceException {
+    private String validateInstanceModifiersOnUninstall(final @NotNull String parentGuidIM,
+                                                      final @NotNull List<String> childGuidIMList) throws SolutionKitManagerResourceException {
         if (!parentGuidIM.contains(PARAMETER_DELIMINATOR)) {
             // If IM not specified, all children need to have same IM as another or no IM
             final Set<String> sameIM = new HashSet<>();
@@ -810,8 +806,9 @@ public class SolutionKitManagerResource {
             }
             if (sameIM.size() != 1 && !childGuidIMList.isEmpty()) {
                 throw new SolutionKitManagerResourceException(status(CONFLICT).entity("Error: all children solution kit " +
-                        "instance modifiers must be the same.").build());
+                        "instance modifiers must be the same." + lineSeparator()).build());
             }
+            return sameIM.iterator().next();
 
         } else {
             // if IM specified, All children need to have IM the same or no IM
@@ -820,9 +817,10 @@ public class SolutionKitManagerResource {
                 final String childIM = substringAfter(childGuidIm, PARAMETER_DELIMINATOR).trim();
                 if (!parentIM.equals(childIM) && childGuidIm.contains(PARAMETER_DELIMINATOR)) {
                     throw new SolutionKitManagerResourceException(status(CONFLICT).entity("Error: if child solution kit " +
-                            "instance modifiers are specified, it must be the same as parent instance modifier.").build());
+                            "instance modifiers are specified, it must be the same as parent instance modifier." + lineSeparator()).build());
                 }
             }
+            return parentIM;
         }
 
     }
