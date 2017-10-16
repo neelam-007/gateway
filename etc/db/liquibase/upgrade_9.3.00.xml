@@ -19,7 +19,7 @@
         <column name="version" valueNumeric="0"/>
         <column name="propkey" value="upgrade.task.900301"/>
         <column name="propvalue" value="com.l7tech.server.upgrade.Upgrade9200To9300SolutionKits"/>
-        <column name="properties"/>
+        <column name="properties" value=""/>
         </insert>
     </changeSet>
 </databaseChangeLog>
