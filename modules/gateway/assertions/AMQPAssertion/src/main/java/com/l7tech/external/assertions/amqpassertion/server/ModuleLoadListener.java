@@ -126,7 +126,10 @@ public class ModuleLoadListener {
     * that would otherwise keep our instances from getting collected.
     */
     public static synchronized void onModuleUnloaded() {
-        destinationManager.shutdown();
+        if (destinationManager != null){
+            destinationManager.shutdown();
+            destinationManager = null;
+        }
         unregisterExternalReferenceFactory();
     }
 
