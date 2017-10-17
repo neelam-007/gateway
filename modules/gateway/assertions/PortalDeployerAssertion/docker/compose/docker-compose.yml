@@ -1,0 +1,27 @@
+#
+#  Copyright (c) 2017 CA. All rights reserved.
+#
+#  This software may be modified and distributed under the terms
+#  of the MIT license. See the LICENSE file for details.
+#
+version: '3'
+services:
+  modass:
+    image: isl-dsdc.ca.com:5000/apim-gateway/microgateway
+    ports:
+      - "1080:8080"
+      - "1443:8443"
+      - "1000:8000"
+      - "6005:5005"
+    hostname: modass
+    #volumes:
+      #- ssg-db:/opt/SecureSpan/Gateway/node/default/var/db
+    environment:
+      - SSG_CLUSTER_PASSWORD
+      - SSG_DATABASE_TYPE
+      - SSG_DATABASE_DERBY_IN_MEMORY
+      - SSG_JVM_HEAP
+      - SSG_LICENSE
+      - SSG_HTTP_CORE_CONCURRENCY
+#volumes:
+  #ssg-db:

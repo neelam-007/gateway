@@ -1,0 +1,209 @@
+<l7:Bundle xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management">
+  <l7:References>
+    <l7:Item>
+      <l7:Name>portal.deployer.broker.host</l7:Name>
+      <l7:Id>39aaa6a24b2c4db4a7afb07ab30b1172</l7:Id>
+      <l7:Type>CLUSTER_PROPERTY</l7:Type>
+      <l7:TimeStamp>2017-10-13T02:03:06.381Z</l7:TimeStamp>
+      <l7:Resource>
+        <l7:ClusterProperty id="39aaa6a24b2c4db4a7afb07ab30b1172" version="0">
+          <l7:Name>portal.deployer.broker.host</l7:Name>
+          <l7:Value>mqtt-ws-bagjo04.app.dev1.w2.saasqa.ca.com</l7:Value>
+        </l7:ClusterProperty>
+      </l7:Resource>
+    </l7:Item>
+    <l7:Item>
+      <l7:Name>portal.deployer.enabled</l7:Name>
+      <l7:Id>7c1ac686b0e2429ea9bd380cf9623ee1</l7:Id>
+      <l7:Type>CLUSTER_PROPERTY</l7:Type>
+      <l7:TimeStamp>2017-10-13T02:03:06.381Z</l7:TimeStamp>
+      <l7:Resource>
+        <l7:ClusterProperty id="7c1ac686b0e2429ea9bd380cf9623ee1" version="0">
+          <l7:Name>portal.deployer.enabled</l7:Name>
+          <l7:Value>false</l7:Value>
+        </l7:ClusterProperty>
+      </l7:Resource>
+    </l7:Item>
+    <l7:Item>
+      <l7:Name>portal.config.name</l7:Name>
+      <l7:Id>b4cf444ea1a0d9763116c4332dff735e</l7:Id>
+      <l7:Type>CLUSTER_PROPERTY</l7:Type>
+      <l7:TimeStamp>2017-10-13T02:03:06.381Z</l7:TimeStamp>
+      <l7:Resource>
+        <l7:ClusterProperty id="b4cf444ea1a0d9763116c4332dff735e" version="0">
+          <l7:Name>portal.config.name</l7:Name>
+          <l7:Value>bagjo04t1</l7:Value>
+        </l7:ClusterProperty>
+      </l7:Resource>
+    </l7:Item>
+    <l7:Item>
+      <l7:Name>portal.config.node.id</l7:Name>
+      <l7:Id>b4cf444ea1a0d9763116c4dff735e332</l7:Id>
+      <l7:Type>CLUSTER_PROPERTY</l7:Type>
+      <l7:TimeStamp>2017-10-13T01:55:17.069Z</l7:TimeStamp>
+      <l7:Link rel="self" uri="https://3d7c6a977f96:8443/restman/1.0/clusterProperties/b4cf444ea1a0d9763116c4dff735e332"/>
+      <l7:Resource>
+        <l7:ClusterProperty id="b4cf444ea1a0d9763116c4dff735e332" version="0">
+          <l7:Name>portal.config.node.id</l7:Name>
+          <l7:Value>eb6e55ee-4f86-49c5-874c-c6ac9f87ad85</l7:Value>
+        </l7:ClusterProperty>
+      </l7:Resource>
+    </l7:Item>
+    <l7:Item>
+      <l7:Name>dssg</l7:Name>
+      <l7:Id>107de357f084dfbd7448f1902436af00</l7:Id>
+      <l7:Type>TRUSTED_CERT</l7:Type>
+      <l7:TimeStamp>2017-10-16T04:16:51.393Z</l7:TimeStamp>
+      <l7:Link rel="self" uri="https://eaed28f53c47:38443/restman/1.0/trustedCertificates/107de357f084dfbd7448f1902436af00"/>
+      <l7:Resource>
+        <l7:TrustedCertificate id="107de357f084dfbd7448f1902436af00" version="0">
+          <l7:Name>dssg</l7:Name>
+          <l7:CertificateData>
+            <l7:IssuerName>CN=dssg</l7:IssuerName>
+            <l7:SerialNumber>13373168913193858950</l7:SerialNumber>
+            <l7:SubjectName>CN=dssg</l7:SubjectName>
+            <l7:Encoded>MIIDETCCAfmgAwIBAgIJALmXCkXAN3eGMA0GCSqGSIb3DQEBBQUAMA8xDTALBgNVBAMTBGRzc2cwHhcNMTYxMjIwMTcwODUyWhcNMjExMjE5MTcwODUyWjAPMQ0wCwYDVQQDEwRkc3NnMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA20EYRkZUoZW/1BmNz7koV4yDu3SHOSDOEhoZ/YyuuUQtn8RqGxHDNPC1OsAT9h7yodzzF7/LQ/7WFmy7aV9nz1toSKfXYBYW2XGVOtTBA52lVLlH1y79sCJr54l/+Jno9Xro9gsvSVFUAGpTf0gKUulUuDnoC+PSZqigNh/ZLNVrpTcUfTM5DuV065hUJavpXefNEyKBE15I4YslHifKa64S8nWFdeER9CZGLwP9Swz5Q0x7Nrrmkma6clsUzCfHBnKX9b8XJ5WzMWqafswodGPdfJJODfE+aoC6bIlMcYjaMiRwJLjw7/DU3eJsJY054Yfh+0JMipk6yY0LqvvmDQIDAQABo3AwbjAdBgNVHQ4EFgQUii42/mS/6+zhgJg/cygmbthi89MwPwYDVR0jBDgwNoAUii42/mS/6+zhgJg/cygmbthi89OhE6QRMA8xDTALBgNVBAMTBGRzc2eCCQC5lwpFwDd3hjAMBgNVHRMEBTADAQH/MA0GCSqGSIb3DQEBBQUAA4IBAQCIYu78C0GajuSx2uzH6DawxAv+JZtqmEeaURzZGbmaXNVJamnz7stuE6gZVcKRHxekltjFIjmYQslrbHWmZoZm19qBo4JEjgJslOra+28x0beeMzHio81tXFhEkEVtHD9y6Kyx6fXWvg6+HhraeLDHt2CuZiuc3RX6AArXc1qbvm9Ft0rUaWQ19HTGWkZp8m2hdiGv2/9BShPkOp8slv4QYMhhM3/CmzA/jzPawd6lAwovHC9Dtd9dRc9qqqm0V/9fnbnGP2JnkwuYO1r326qeViarjypXkhqhIkah4htYeGgAqh2HQqeOT3Af+8OFTW7BmHEfp9AfoekSzIjxMwVR</l7:Encoded>
+          </l7:CertificateData>
+          <l7:Properties>
+            <l7:Property key="revocationCheckingEnabled">
+              <l7:BooleanValue>true</l7:BooleanValue>
+            </l7:Property>
+            <l7:Property key="trustAnchor">
+              <l7:BooleanValue>true</l7:BooleanValue>
+            </l7:Property>
+            <l7:Property key="trustedAsSamlAttestingEntity">
+              <l7:BooleanValue>false</l7:BooleanValue>
+            </l7:Property>
+            <l7:Property key="trustedAsSamlIssuer">
+              <l7:BooleanValue>false</l7:BooleanValue>
+            </l7:Property>
+            <l7:Property key="trustedForSigningClientCerts">
+              <l7:BooleanValue>false</l7:BooleanValue>
+            </l7:Property>
+            <l7:Property key="trustedForSigningServerCerts">
+              <l7:BooleanValue>false</l7:BooleanValue>
+            </l7:Property>
+            <l7:Property key="trustedForSsl">
+              <l7:BooleanValue>true</l7:BooleanValue>
+            </l7:Property>
+            <l7:Property key="verifyHostname">
+              <l7:BooleanValue>false</l7:BooleanValue>
+            </l7:Property>
+          </l7:Properties>
+        </l7:TrustedCertificate>
+      </l7:Resource>
+    </l7:Item>
+    <l7:Item>
+      <l7:Name>portalman</l7:Name>
+      <l7:Id>00000000000000000000000000000002:portalman</l7:Id>
+      <l7:Type>SSG_KEY_ENTRY</l7:Type>
+      <l7:Resource>
+        <l7:PrivateKey alias="portalman" keystoreId="00000000000000000000000000000002" id="00000000000000000000000000000002:portalman">
+          <l7:CertificateChain>
+            <l7:CertificateData>
+              <l7:Encoded>MIIDETCCAfmgAwIBAgIJALmXCkXAN3eGMA0GCSqGSIb3DQEBBQUAMA8xDTALBgNVBAMTBGRzc2cwHhcNMTYxMjIwMTcwODUyWhcNMjExMjE5MTcwODUyWjAPMQ0wCwYDVQQDEwRkc3NnMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA20EYRkZUoZW/1BmNz7koV
+                4yDu3SHOSDOEhoZ/YyuuUQtn8RqGxHDNPC1OsAT9h7yodzzF7/LQ/7WFmy7aV9nz1toSKfXYBYW2XGVOtTBA52lVLlH1y79sCJr54l/+Jno9Xro9gsvSVFUAGpTf0gKUulUuDnoC+PSZqigNh/ZLNVrpTcUfTM5DuV065hUJavpXefNEyKBE15I4YslHifKa64S8nWFdeER9CZGLwP9Swz5Q0x7Nrrmkma6clsUzCfHBnK
+                X9b8XJ5WzMWqafswodGPdfJJODfE+aoC6bIlMcYjaMiRwJLjw7/DU3eJsJY054Yfh+0JMipk6yY0LqvvmDQIDAQABo3AwbjAdBgNVHQ4EFgQUii42/mS/6+zhgJg/cygmbthi89MwPwYDVR0jBDgwNoAUii42/mS/6+zhgJg/cygmbthi89OhE6QRMA8xDTALBgNVBAMTBGRzc2eCCQC5lwpFwDd3hjAMBgNVHRMEBTADA
+                QH/MA0GCSqGSIb3DQEBBQUAA4IBAQCIYu78C0GajuSx2uzH6DawxAv+JZtqmEeaURzZGbmaXNVJamnz7stuE6gZVcKRHxekltjFIjmYQslrbHWmZoZm19qBo4JEjgJslOra+28x0beeMzHio81tXFhEkEVtHD9y6Kyx6fXWvg6+HhraeLDHt2CuZiuc3RX6AArXc1qbvm9Ft0rUaWQ19HTGWkZp8m2hdiGv2/9BShPkOp8
+                slv4QYMhhM3/CmzA/jzPawd6lAwovHC9Dtd9dRc9qqqm0V/9fnbnGP2JnkwuYO1r326qeViarjypXkhqhIkah4htYeGgAqh2HQqeOT3Af+8OFTW7BmHEfp9AfoekSzIjxMwVR
+              </l7:Encoded>
+            </l7:CertificateData>
+          </l7:CertificateChain>
+          <l7:Properties>
+            <l7:Property key="keyAlgorithm">
+              <l7:StringValue>RSA</l7:StringValue>
+            </l7:Property>
+            <l7:Property key="keyData">
+              <l7:StringValue algorithm="RSA" bundleKey="$L7C2$1bead,ECeojZRqNiIMAvBGyW/FrS8Qd6Jm1CCZfX++KuhOxyg=$1HdKssmv53OCm8CxwzVxtg3bi7bC107mUqFkluj2Kl2VC0Vd3vx/ApnGx0owrvJ/G1jXG14ftGfoXhoAydVzeaq3zcCxhOkVM/WrK/5wrLaW9oBWHoqDS
+KzoAxSPppzY">$L7C2$1,ZOT3/STYCjkmYnfTE0t5gc2fXP+5GuMQNBvlQON61ro=$XdEYItPn//iY2w1eU0npjq3kzTXC6Wykl6D55VBgTZRkJo6x5umCP9iIHz54dNgMO5GcJrgB/7bYQHnwL0OG3CXWk44mk8RyVeTPi2tIwm5YNU/3wfjbC847I1leSXPV6cAusFcmKfMYwY7qTRqMUOigB7qFuZD520s9vPaF+5o1
+                ZI+eKgA5OrnfiGQ8qXJB6rVdZ1Bu7cUPtgg6SKE/hj5/WVGCaBZQkYdXeA92zNJqQF2AujqCHETZuJlDHoQv5XCSpZnGQNaw6Zfe4HCGdAyU0Z8JGrTCOXKTXyZaGzGcJwmTjIkpV4Qmk/riA3WTwz4r92B78KHud/LIP7qrhaPgZNyDxX9C6Yw1Xs+J9jOY2DWhJuiHkg09ScMuWDe03ZjZiG6OYlQwAMSExx5wVccKGZ
+                uAyfYDJ8LvBrtvRIyiyO6X6owpJAgK1Wlt6fToyvS3UMJZ8o/7Jcd7YDEw9yZScYMZBmuLV/b9kjvFScMCEelUiQfwIP4GxomVGDz8UykbWRpLM9Z2cjBX+JpxLHF3PTGdZ0kEhHrPI++YIV4kNM2b9uWJPoVR8J8xAKteKKXO3Q29JQvKuNJjCGnb54DHCj7Oj1fUD7Ove6rs1Mt9iBIc6bcdGinS/3G48H/aXaXrkUwC
+                IEHAUBypatJ7KguERMQ5xjc0C+72WMr4Los7X0sPTC9Dh0n1WxWGsT6etgbNn/0QvG4eB3tcFGR4ewlWCT/CimngwaPkRzwcWiRJfvgSTAUIpkD9eONrZ32u+ADFNceHUllLKqt1HkmUV509xpc3+Z1XQ1XzIzxZKJymvCqANfz2oCzh/EvVRK7KHWh/0VihRaHFwq2M26fnYX9D4Peg7ioqe8sVLfFrHS1rUugVy6XB6A
+                oIblGEWXWeuGu5ZgbTiEgh3pWXWWdSIl8Rn4PquU6j/IolPdKWjwfyzqV6ipZPpj0Dj96IloYu/gBW0o6vkwbHkpmkuhiKmD+lQSdmWGdtqxBehsdve8vkyzKtU1foR6uy98Vc90ttPDvBD6tgRxcO/OWF0mkxl6lDeOdQpPCVKDOK3Ya/b8ylQ9vyBn7WX2UwXazZ9LByG2ecRu7YtGd+gY7shnU08bafYu34gZzfW6D2
+                EUpx617CcGcS84EFjRqhG20Q0qoxsyk5VPmdY6uQr+HZ3uFiiJO3l+0J+nEKeEJA/20xkTD/bQ4KO7bnlLrG8XxnMfPTJMtxLGBGen7mAruu0vJnBPAE+al2YiGF+wbFMFL3HUVtrtgSYpzApDmvSGxUppyFdnSYNUVzdvEv61+7b4aywY58oRP25pSspCxhj1SPTCzbtd+Jd4QYO6r3QGTCmiOeO0XF+8dtJK4+HQmZvg
+                T0+iuFNMuqFY8qexNVFYlwFc7lUP0ujPpNv//4j4EraW994iMmGEEdeyvnjEwv2zfC3SpmJh8hYVlb3pXWZW4DF4/qJXkT5jIZjveBZtYgPVlZVv1XkbMgRpfe0E5FtVrBkPkFW98L3MzFUW9KtUL4zZ9nvpJHgaI0KiEuyPNFKlKFBAPJoN7tsZ19oAeKQQB7J/Q4T4UC9xtQ+pLOzHbPVJj0C1llEKQXXmbAHXHzr/rz
+                fkb4v/ayDKrtN2k5VjU6d/YsoiQfdYB4TxL7QUEmN63QmpoJ7II0XHLrvnNzZKINNGC2/MwiRy0ixcwJAyWZwN9gaE5ZHOaBOBwXUq0q6bQ=
+              </l7:StringValue>
+            </l7:Property>
+          </l7:Properties>
+        </l7:PrivateKey>
+      </l7:Resource>
+    </l7:Item>
+    <l7:Item>
+      <l7:Name>tssg</l7:Name>
+      <l7:Id>9fb2de01d64a9edb081c8d424d4a63f9</l7:Id>
+      <l7:Type>TRUSTED_CERT</l7:Type>
+      <l7:TimeStamp>2017-10-16T05:43:42.584Z</l7:TimeStamp>
+      <l7:Resource>
+        <l7:TrustedCertificate id="9fb2de01d64a9edb081c8d424d4a63f9" version="0">
+          <l7:Name>tssg</l7:Name>
+          <l7:CertificateData>
+            <l7:IssuerName>CN=tssg</l7:IssuerName>
+            <l7:SerialNumber>12433122717374518872</l7:SerialNumber>
+            <l7:SubjectName>CN=tssg</l7:SubjectName>
+            <l7:Encoded>MIIDETCCAfmgAwIBAgIJAKyLUzzp8pZYMA0GCSqGSIb3DQEBBQUAMA8xDTALBgNVBAMTBHRzc2cwHhcNMTYxMjIyMTk1NTA4WhcNMTcxMjIyMTk1NTA4WjAPMQ0wCwYDVQQDEwR0c3NnMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4YDFeSOjkqa28sZHS8x6i43ZEmKfS/Us2x38RPDMydH+LahZVDSpVW9FV4V6WIVoqY8fDRt58J0xFkxWrOyGm2Z5TiPcViJPObDGNkQ15Gi9TXT4U1B20k/ODd0aCzaRsljYCbGfaGwv3cyaFrih01rJ/sC/SJYB+mZ9RI83hgBeBNWK3VPmGwuZ9IEX/wAMsv8NsfqP4ibxz3i41HZGn1jAZVmhOs3BI7dUOm6Fl2O/qTCPWCa7EW3rQfMVJOCkx4hPQg5gngEqE82HC5acZrMeHvm0JVlz34m9J4AaGtt5hFNRYfE2r7IUJ64Y9wNf/MBwsbqQOcz9lVPn2c8rKwIDAQABo3AwbjAdBgNVHQ4EFgQUyzkjzsdpmHTNlVROj51fVsxJLLQwPwYDVR0jBDgwNoAUyzkjzsdpmHTNlVROj51fVsxJLLShE6QRMA8xDTALBgNVBAMTBHRzc2eCCQCsi1M86fKWWDAMBgNVHRMEBTADAQH/MA0GCSqGSIb3DQEBBQUAA4IBAQBLnrsobDKoIrwTnmtAwe2ycEAaaNNaN28Lnry2MeszXXrMAVmxPTGj0JxMCPqI0p+IbXaZxwIZt07nS3bWfcgwCBjSvUv/yt+Id+41NFhSpQuhPPqXb3AFk+a9GzYHJlhrzKgYYgctS21fvmy4R3emkyw4YDcIAFw/rHiMZpMeQpCvXzSzFyWDW2OF4XoU6Et/362f+uxFL0wVin2uSaYnet1uI7Y2Z4kt0uOryp+5OhVVy82XYKeiLkSVRjywxc6FRcJ99r4RgrjKGgrzG2LeuOsOYloC3QMdMIVG+feGD8xFPbOdC+W12QfuvXs0AAj0cv9PsoGH1Obq25/P5IRR</l7:Encoded>
+          </l7:CertificateData>
+          <l7:Properties>
+            <l7:Property key="revocationCheckingEnabled">
+              <l7:BooleanValue>true</l7:BooleanValue>
+            </l7:Property>
+            <l7:Property key="trustAnchor">
+              <l7:BooleanValue>true</l7:BooleanValue>
+            </l7:Property>
+            <l7:Property key="trustedAsSamlAttestingEntity">
+              <l7:BooleanValue>false</l7:BooleanValue>
+            </l7:Property>
+            <l7:Property key="trustedAsSamlIssuer">
+              <l7:BooleanValue>false</l7:BooleanValue>
+            </l7:Property>
+            <l7:Property key="trustedForSigningClientCerts">
+              <l7:BooleanValue>false</l7:BooleanValue>
+            </l7:Property>
+            <l7:Property key="trustedForSigningServerCerts">
+              <l7:BooleanValue>false</l7:BooleanValue>
+            </l7:Property>
+            <l7:Property key="trustedForSsl">
+              <l7:BooleanValue>true</l7:BooleanValue>
+            </l7:Property>
+            <l7:Property key="verifyHostname">
+              <l7:BooleanValue>false</l7:BooleanValue>
+            </l7:Property>
+          </l7:Properties>
+        </l7:TrustedCertificate>
+      </l7:Resource>
+    </l7:Item>
+  </l7:References>
+  <l7:Mappings>
+    <l7:Mapping action="NewOrExisting" srcId="9fb2de01d64a9edb081c8d424d4a63f9" srcUri="https://modass:1443/restman/1.0/trustedCertificates/9fb2de01d64a9edb081c8d424d4a63f9" type="TRUSTED_CERT"/>
+    <l7:Mapping action="NewOrExisting" srcId="00000000000000000000000000000002:portalman" srcUri="https://eaed28f53c47:38443/restman/1.0/trustedCertificates/00000000000000000000000000000002:portalman" type="SSG_KEY_ENTRY"/>
+    <l7:Mapping action="NewOrExisting" srcId="107de357f084dfbd7448f1902436af00" srcUri="https://eaed28f53c47:38443/restman/1.0/trustedCertificates/107de357f084dfbd7448f1902436af00" type="TRUSTED_CERT"/>
+    <l7:Mapping action="NewOrExisting" srcId="39aaa6a24b2c4db4a7afb07ab30b1172" srcUri="https://3d7c6a977f96:8443/restman/1.0/clusterProperties/39aaa6a24b2c4db4a7afb07ab30b1172" type="CLUSTER_PROPERTY">
+      <l7:Properties>
+        <l7:Property key="MapBy">
+          <l7:StringValue>name</l7:StringValue>
+        </l7:Property>
+      </l7:Properties>
+    </l7:Mapping>
+    <l7:Mapping action="NewOrExisting" srcId="7c1ac686b0e2429ea9bd380cf9623ee1" srcUri="https://3d7c6a977f96:8443/restman/1.0/clusterProperties/7c1ac686b0e2429ea9bd380cf9623ee1" type="CLUSTER_PROPERTY">
+      <l7:Properties>
+        <l7:Property key="MapBy">
+          <l7:StringValue>name</l7:StringValue>
+        </l7:Property>
+      </l7:Properties>
+    </l7:Mapping>
+    <l7:Mapping action="NewOrExisting" srcId="b4cf444ea1a0d9763116c4332dff735e" srcUri="https://3d7c6a977f96:8443/restman/1.0/clusterProperties/0744d7453720999acaa7a04311e446b7" type="CLUSTER_PROPERTY">
+      <l7:Properties>
+        <l7:Property key="MapBy">
+          <l7:StringValue>name</l7:StringValue>
+        </l7:Property>
+      </l7:Properties>
+    </l7:Mapping>
+    <l7:Mapping action="NewOrExisting" srcId="b4cf444ea1a0d9763116c4dff735e332" srcUri="https://3d7c6a977f96:8443/restman/1.0/clusterProperties/0744d7453720999acaa7a04311e446b7" type="CLUSTER_PROPERTY">
+      <l7:Properties>
+        <l7:Property key="MapBy">
+          <l7:StringValue>name</l7:StringValue>
+        </l7:Property>
+      </l7:Properties>
+    </l7:Mapping>
+  </l7:Mappings>
+</l7:Bundle>
