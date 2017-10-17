@@ -277,7 +277,7 @@ public class ManageSolutionKitsDialog extends JDialog {
     private void removeStrayParents(Set<Goid> possibleParentsToRemove) {
         for (Goid parent : possibleParentsToRemove) {
             try {
-                if (solutionKitAdmin.findHeaders(parent).isEmpty()) {
+                if (solutionKitAdmin.find(parent).isEmpty()) {
                     solutionKitAdmin.delete(parent);
                 }
             } catch (FindException e) {
