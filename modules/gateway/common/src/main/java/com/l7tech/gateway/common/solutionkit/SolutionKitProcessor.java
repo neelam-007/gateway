@@ -293,7 +293,7 @@ public class SolutionKitProcessor {
         }
         // save if new
         else {
-            goid = solutionKitAdmin.save(SolutionKitUtils.copyParentSolutionKitWithIM(parentSolutionKit, null, newInstanceModifier));
+            goid = solutionKitAdmin.save(SolutionKitUtils.copyParentSolutionKitWithIM(parentSolutionKit, new SolutionKit(), newInstanceModifier));
         }
 
         return goid;
