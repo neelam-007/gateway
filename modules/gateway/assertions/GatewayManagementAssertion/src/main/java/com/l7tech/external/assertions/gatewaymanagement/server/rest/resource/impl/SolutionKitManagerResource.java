@@ -685,21 +685,16 @@ public class SolutionKitManagerResource {
                                                   final @NotNull List<String> childGuidIMList) throws SolutionKitManagerResourceException {
         if (!parentGuidIM.contains(PARAMETER_DELIMINATOR)) {
             // If parent IM not specified, all children need to have same IM as another or no IM
-            String instanceModifier = null;
+            final String instanceModifier = childGuidIMList.isEmpty()? "" :
+                    substringAfter(childGuidIMList.get(0), PARAMETER_DELIMINATOR).trim();
             for (String childGuidIm : childGuidIMList) {
-                //Skip childGuidIM with no specified IM
-                if (childGuidIm.contains(PARAMETER_DELIMINATOR)) {
-                    //Set the first child instanceModifier seen
-                    if (instanceModifier == null) {
-                        instanceModifier = substringAfter(childGuidIm, PARAMETER_DELIMINATOR).trim();
-                        //Instance modifier has already been set, compare it with the current childGuidIM
-                    } else if (!instanceModifier.equals(substringAfter(childGuidIm, PARAMETER_DELIMINATOR).trim())) {
-                        throw new SolutionKitManagerResourceException(status(CONFLICT).entity("Error: all child solution kit " +
-                                "instance modifiers must be the same." +
-                                lineSeparator() + "--------------------" +
-                                lineSeparator() +
-                                "List of child solution kits:" + lineSeparator() + StringUtils.join(childGuidIMList, lineSeparator())).build());
-                    }
+                //Set the first child instanceModifier seen
+                if (!instanceModifier.equals(substringAfter(childGuidIm, PARAMETER_DELIMINATOR).trim())) {
+                    throw new SolutionKitManagerResourceException(status(CONFLICT).entity("Error: all child solution kit " +
+                            "instance modifiers must be the same." +
+                            lineSeparator() + "--------------------" +
+                            lineSeparator() +
+                            "List of child solution kits:" + lineSeparator() + StringUtils.join(childGuidIMList, lineSeparator())).build());
                 }
             }
             // if childGuidIMList is empty, return a default IM, otherwise return the unique child IM (should only be one)

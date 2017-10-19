@@ -1023,6 +1023,19 @@ public class SolutionKitManagerResourceTest {
         assertTrue(errorResponse.getEntity().toString().contains("c2_guid::b"));
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // parent solution kit IM not specified, child IM is not same as each other ("" != b)
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //Test
+        errorResponse = solutionKitResource.uninstall("test", Arrays.asList("c1_guid","c2_guid::b"));
+
+        //expect invalid params error
+        assertTrue(errorResponse.getEntity().toString().contains("Error: all child solution kit " +
+                "instance modifiers must be the same."));
+        // expect list of child sk listed
+        assertTrue(errorResponse.getEntity().toString().contains("c1_guid"));
+        assertTrue(errorResponse.getEntity().toString().contains("c2_guid::b"));
+
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // cannot find solution kit GUID and IM
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         initializeSolutionKits();
