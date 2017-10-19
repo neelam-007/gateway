@@ -36,8 +36,10 @@ public class PooledConnection {
 
         if(isPooled) {
             //set other pool properties
-            config.maxIdle = Integer.parseInt(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_CONNECTION_MAX_IDLE,
+            config.maxIdle = config.maxActive;
+            config.minIdle = Integer.parseInt(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_CONNECTION_MIN_IDLE,
                     String.valueOf(cacheConfig.getDefaultPoolSize())));
+
             config.maxWait = Long.parseLong(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_CONNECTION_POOL_MAX_WAIT,
                     String.valueOf(cacheConfig.getDefaultWait())));
 
@@ -46,6 +48,9 @@ public class PooledConnection {
             config.numTestsPerEvictionRun = Integer.parseInt(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_CONNECTION_POOL_EVICT_BATCH_SIZE,
                     String.valueOf(cacheConfig.getDefaultEvictionBatchSize())));
             config.whenExhaustedAction = GenericObjectPool.WHEN_EXHAUSTED_BLOCK;
+
+            config.softMinEvictableIdleTimeMillis = Long.parseLong(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_CONNECTION_IDLE_TIMEOUT,
+                    String.valueOf(cacheConfig.getIdleTime())));
             pool = new GenericObjectPool<>(new PoolableObjectFactory<CachedConnection>() {
                 @Override
                 public CachedConnection makeObject() throws Exception {
@@ -160,7 +165,11 @@ public class PooledConnection {
     }
 
     public void invalidate(CachedConnection connection) throws Exception {
-        pool.invalidateObject(connection);
+        if(isPooled)
+            pool.invalidateObject(connection);
+        else {
+            singleConnection.close();
+        }
     }
 
     public boolean isPoolEmpty() {
@@ -170,6 +179,10 @@ public class PooledConnection {
         else {
             return true;
         }
+    }
+
+    public boolean isPoolActive() {
+        return isPooled ? pool.getNumActive() > 0 : false;
     }
 
     public boolean isIdleTimeoutExpired() {

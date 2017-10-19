@@ -2,19 +2,14 @@ package com.l7tech.server.transport.jms2;
 
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.server.transport.jms.JmsBag;
-import com.l7tech.server.transport.jms.JmsConfigException;
 import com.l7tech.server.transport.jms.JmsRuntimeException;
-import com.l7tech.server.transport.jms.JmsUtil;
 import com.l7tech.server.util.ManagedTimer;
 import com.l7tech.util.Config;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.TimeUnit;
-import org.apache.commons.pool.PoolableObjectFactory;
-import org.apache.commons.pool.impl.GenericObjectPool;
 import org.springframework.beans.factory.DisposableBean;
 
-import javax.jms.*;
-import javax.jms.Queue;
+import javax.jms.JMSException;
 import javax.naming.Context;
 import javax.naming.NamingException;
 import java.beans.PropertyChangeEvent;
@@ -22,8 +17,6 @@ import java.beans.PropertyChangeListener;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -273,6 +266,7 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
 
     private static final long DEFAULT_CONNECTION_MAX_AGE = TimeUnit.MINUTES.toMillis( 30 );
     private static final long DEFAULT_CONNECTION_MAX_IDLE = TimeUnit.MINUTES.toMillis( 5 );
+    private static final long DEFAULT_CONNECTION_IDLE_TIME = TimeUnit.MINUTES.toMillis(2);
     private static final int DEFAULT_CONNECTION_CACHE_SIZE = 100;
 
     private static final String PROP_CACHE_CLEAN_INTERVAL = "com.l7tech.server.transport.jms.cacheCleanInterval";
@@ -283,7 +277,7 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
     protected final ConcurrentHashMap<JmsEndpointConfig.JmsEndpointKey, PooledConnection> connectionHolder;
     private final Timer timer;
     private final TimerTask cleanupTask;
-    private final AtomicReference<JmsResourceManagerConfig> cacheConfigReference = new AtomicReference<JmsResourceManagerConfig>( new JmsResourceManagerConfig(0,0, 1,100, 5000, 300000, 1) );
+    private final AtomicReference<JmsResourceManagerConfig> cacheConfigReference = new AtomicReference<JmsResourceManagerConfig>( new JmsResourceManagerConfig(0,0, 0,1,100, 5000, 300000, 1) );
     private final AtomicBoolean active = new AtomicBoolean(true);
 
     /**
@@ -311,6 +305,9 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
             PooledConnection pool = connectionHolder.get(key);
             if(pool != null) {
                 pool.invalidate(connection);
+                if(pool.isPoolEmpty()) {
+                    connectionHolder.remove(key);// remove closed entry
+                }
             }
             else {
                 logger.log(Level.WARNING, "JMS connection with key" + key.toString() + " does not exist.");
@@ -325,6 +322,7 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
 
         final long maximumAge = config.getTimeUnitProperty( "ioJmsConnectionCacheMaxAge", DEFAULT_CONNECTION_MAX_AGE );
         final long maximumIdleTime = config.getTimeUnitProperty( "ioJmsConnectionCacheMaxIdleTime", DEFAULT_CONNECTION_MAX_IDLE );
+        final long idleTime = config.getTimeUnitProperty("ioJmsConnectionIdleTime", DEFAULT_CONNECTION_IDLE_TIME);
         final int maximumSize = config.getIntProperty( "ioJmsConnectionCacheSize", DEFAULT_CONNECTION_CACHE_SIZE );
         final int maximumPoolSize = config.getIntProperty("ioJmsConnectionPoolSize", JmsConnection.DEFAULT_CONNECTION_POOL_SIZE);
         final long maximumWait = config.getTimeUnitProperty("ioJmsConnectionMaxWait", JmsConnection.DEFAULT_CONNECTION_POOL_MAX_WAIT);
@@ -334,6 +332,7 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
         cacheConfigReference.set( new JmsResourceManagerConfig(
                 rangeValidate(maximumAge, DEFAULT_CONNECTION_MAX_AGE, 0L, Long.MAX_VALUE, "JMS Connection Maximum Age" ),
                 rangeValidate(maximumIdleTime, DEFAULT_CONNECTION_MAX_IDLE, 0L, Long.MAX_VALUE, "JMS Connection Maximum Idle" ),
+                rangeValidate(idleTime, DEFAULT_CONNECTION_IDLE_TIME, 0L, Long.MAX_VALUE, "JMS Pool Soft Idle Timeout"),
                 rangeValidate(maximumSize, DEFAULT_CONNECTION_CACHE_SIZE, 0, Integer.MAX_VALUE, "JMS Connection Cache Size" ),
                 rangeValidate(maximumPoolSize, JmsConnection.DEFAULT_CONNECTION_POOL_SIZE, 1, 10000, "JMS Connection Pool Size" ),
                 rangeValidate(maximumWait, JmsConnection.DEFAULT_CONNECTION_POOL_MAX_WAIT, 0L, Long.MAX_VALUE, "JMS Connection Maximum Wait"),
@@ -409,7 +408,7 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
                 if (evictionCandidate.getEndpointConfig().isEvictOnExpired()) { //do not evict inbound jms connections
                     if ( (timeNow-evictionCandidate.getCreatedTime()) > cacheConfig.getMaximumAge() && cacheConfig.getMaximumAge() > 0 ) {
                         logger.log(Level.FINE, "Maximum age expired for " + evictionCandidate.toString());
-                        if(evictionCandidate.isPoolEmpty()) {
+                        if(!evictionCandidate.isPoolActive()) {
                             logger.log(Level.FINE, "Remove unused JMS connection "  + evictionCandidate.toString());
                             evictionCandidate.close();
                             connectionHolder.remove(key);

@@ -293,7 +293,7 @@ public class CachedConnection {
             if(pool != null)
                 pool.close();
         } catch (Exception e) {
-            //Ignore if we can't close it.
+            logger.log(Level.FINE, "Unable to close the connection pool");
         }
         bag.close();
         //reset referenceCount

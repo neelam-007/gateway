@@ -3,16 +3,18 @@ package com.l7tech.server.transport.jms2;
 public class JmsResourceManagerConfig {
     private final long maximumAge;
     private final long maximumIdleTime;
+    private final long idleTime;
     private final int maximumSize;
     private final int defaultPoolSize;
     private final long defaultWait;
     private final long timeBetweenEviction;
     private final int defaultEvictionBatchSize;
 
-    public JmsResourceManagerConfig(final long maximumAge, final long maximumIdleTime, final int maximumSize,
+    public JmsResourceManagerConfig(final long maximumAge, final long maximumIdleTime, final long idleTime, final int maximumSize,
                                     final int defaultPoolSize, final long defaultWait, final long timeBetweenEviction, final int defaultEvictionBatchSize) {
         this.maximumAge = maximumAge;
         this.maximumIdleTime = maximumIdleTime;
+        this.idleTime = idleTime;
         this.maximumSize = maximumSize;
         this.defaultPoolSize = defaultPoolSize;
         this.defaultWait = defaultWait;
@@ -26,6 +28,10 @@ public class JmsResourceManagerConfig {
 
     public long getMaximumIdleTime() {
         return maximumIdleTime;
+    }
+
+    public long getIdleTime() {
+        return idleTime;
     }
 
     public int getMaximumSize() {
