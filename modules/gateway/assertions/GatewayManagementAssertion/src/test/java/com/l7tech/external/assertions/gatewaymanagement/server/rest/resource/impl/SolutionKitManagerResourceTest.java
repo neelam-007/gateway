@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl;
 
+import com.l7tech.gateway.api.Bundle;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.security.signer.TrustedSignerCertsManager;
 import com.l7tech.gateway.common.solutionkit.*;
@@ -16,6 +17,7 @@ import org.apache.commons.lang.CharEncoding;
 import org.glassfish.jersey.media.multipart.FormDataBodyPart;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import org.hamcrest.Matchers;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.*;
 import org.junit.runner.RunWith;
@@ -30,6 +32,7 @@ import javax.ws.rs.core.Response;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.text.MessageFormat;
 import java.util.*;
@@ -216,6 +219,7 @@ public class SolutionKitManagerResourceTest {
         solutionKitResource.setLicenseManager(licenseManager);
         solutionKitResource.setTrustedSignerCertsManager(TRUSTED_SIGNER_MANAGER);
         solutionKitResource.setIdentityProviderConfigManager(identityProviderConfigManager);
+        solutionKitResource.setSolutionKitAdminHelper(solutionKitAdminHelper);
     }
 
     @After
@@ -873,220 +877,6 @@ public class SolutionKitManagerResourceTest {
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     }
 
-//    @Test
-//    public void setSelectedGuidAndImForHeadlessUpgradeSuccess() throws Exception{
-//        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//        //simulate selecting non-parent solution kit for upgrade success
-//        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//        solutionKitsConfig = new SolutionKitsConfig();
-//        Map<String, Pair<String, String>> selectedGuidAndImForHeadlessUpgrade = solutionKitResource.getSelectedGuidAndImForHeadlessUpgrade();
-//        assertEquals(selectedGuidAndImForHeadlessUpgrade.size(), 0);
-//
-//        //Test for solution kit upgrade child success
-//        solutionKitResource.setSelectedGuidAndImForHeadlessUpgrade(false, "1f87436b-7ca5-41c8-9418-21d7a7848853", solutionKitsConfig, "im1", null);
-//
-//        //Expect the solution kit is put on the map "selectedGuidAndImForHeadlessUpgrade" for upgrade
-//        assertEquals(selectedGuidAndImForHeadlessUpgrade.get("1f87436b-7ca5-41c8-9418-21d7a7848853").left, "im1");
-//        assertEquals(selectedGuidAndImForHeadlessUpgrade.size(),1);
-//
-//        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//        //simulate selecting for parent upgrade success, only solution kit with matching instanceModifiers will be added
-//        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-//        initializeSolutionKits();
-//
-//        final List<SolutionKit> childKits = solutionKitList.subList(1,4);
-//        final SolutionKit parentSolutionKit = solutionKitList.get(0);
-//
-//        when(solutionKitManager.findBySolutionKitGuid(parentSolutionKit.getSolutionKitGuid())).thenReturn(Collections.singletonList(parentSolutionKit));
-//
-//        when(solutionKitManager.findAllChildrenByParentGoid(parentSolutionKit.getGoid())).thenReturn(childKits);
-//
-//        //Test
-//        solutionKitResource.setSelectedGuidAndImForHeadlessUpgrade(true, parentSolutionKit.getSolutionKitGuid(), solutionKitsConfig, "im1", null);
-//
-//        selectedGuidAndImForHeadlessUpgrade = solutionKitResource.getSelectedGuidAndImForHeadlessUpgrade();
-//
-//        //Expect only the kits with IM "im1" to be selected for upgrade
-//        assertEquals(selectedGuidAndImForHeadlessUpgrade.size(), 3);
-//        assertTrue(selectedGuidAndImForHeadlessUpgrade.containsKey(solutionKitList.get(1).getSolutionKitGuid()));
-//        assertTrue(selectedGuidAndImForHeadlessUpgrade.containsKey(solutionKitList.get(2).getSolutionKitGuid()));
-//        assertTrue(selectedGuidAndImForHeadlessUpgrade.containsKey(solutionKitList.get(3).getSolutionKitGuid()));
-//
-//
-//        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//        //simulate selected solution kit for upgrade based on solutionKitSelect
-//        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//        initializeSolutionKits();
-//
-//
-//        // only select solutionkit1a with instance modifier im1
-//        FormDataBodyPart solutionKitSelect = new FormDataBodyPart("solutionKitSelect", solutionKitList.get(1).getSolutionKitGuid()+"::im1");
-//        solutionKitsConfig.setSolutionKitsToUpgrade(childKits);
-//
-//        //Test, select for only solutionKit1
-//        solutionKitResource.setSelectedGuidAndImForHeadlessUpgrade(true, parentSolutionKit.getSolutionKitGuid(), solutionKitsConfig, "im1", Collections.singletonList(solutionKitSelect));
-//
-//        selectedGuidAndImForHeadlessUpgrade = solutionKitResource.getSelectedGuidAndImForHeadlessUpgrade();
-//
-//        //expect only solutionKit1 to be selected
-//        assertEquals(selectedGuidAndImForHeadlessUpgrade.size(), 1);
-//        assertTrue(selectedGuidAndImForHeadlessUpgrade.containsKey(solutionKitList.get(1).getSolutionKitGuid()));
-//
-//    }
-
-//    @Test
-//    public void setSelectedGuidAndImForHeadlessUpgradeError() throws Exception {
-//        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//        //simulate selecting for parent upgrade, same child error
-//        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//        initializeSolutionKits();
-//
-//        //same GUID as solutionKit1
-//        solutionKit2.setSolutionKitGuid(solutionKit1.getSolutionKitGuid());
-//
-//        final List<SolutionKit> childKits = new ArrayList<>(2);
-//        childKits.add(solutionKit1);
-//        childKits.add(solutionKit2);
-//
-//        when(solutionKitManager.findBySolutionKitGuid(parentSolutionKit.getSolutionKitGuid())).thenReturn(Collections.singletonList(parentSolutionKit));
-//        when(solutionKitManager.findAllChildrenByParentGoid(parentSolutionKit.getGoid())).thenReturn(childKits);
-//
-//        //Test
-//        try {
-//            solutionKitResource.setSelectedGuidAndImForHeadlessUpgrade(true, parentSolutionKit.getSolutionKitGuid(), solutionKitsConfig, null, null);
-//            fail("Same child error should be thrown");
-//        } catch (SolutionKitManagerResource.SolutionKitManagerResourceException e) {
-//            assertEquals(e.getResponse().getEntity().toString(), "Upgrade failed: at least two child solution kits with a same GUID (" + "1f87436b-7ca5-41c8-9418-21d7a7848999" + ") are selected for upgrade at same time." + System.lineSeparator());
-//        }
-//
-//        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//        //simulate selecting for parent upgrade, no IM error
-//        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//        initializeSolutionKits();
-//
-//        //reset back to original Guid
-//        solutionKit2.setSolutionKitGuid("1f87436b-7ca5-41c8-9418-21d7a7848988");
-//        childKits.clear();
-//        childKits.add(solutionKit1);
-//        childKits.add(solutionKit2);
-//
-//        //Test for an invalid IM
-//        try {
-//            solutionKitResource.setSelectedGuidAndImForHeadlessUpgrade(true, parentSolutionKit.getSolutionKitGuid(), solutionKitsConfig, "INVALID_IM", null);
-//            fail("No child with IM error should be thrown");
-//        } catch (SolutionKitManagerResource.SolutionKitManagerResourceException e) {
-//            assertEquals(e.getResponse().getEntity().toString(), "Cannot find any to-be-upgraded solution kit(s), which matches the instance modifier (INVALID_IM) specified by the parameter 'instanceModifier'" + System.lineSeparator());
-//        }
-//
-//        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//        //simulate selecting parent upgrade, no parent error
-//        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//        when(solutionKitManager.findBySolutionKitGuid(parentSolutionKit.getSolutionKitGuid())).thenReturn(null);
-//        //Test
-//        try {
-//            solutionKitResource.setSelectedGuidAndImForHeadlessUpgrade(true, parentSolutionKit.getSolutionKitGuid(), solutionKitsConfig, null, null);
-//            fail("Parent solution kit not found error should be thrown");
-//        } catch (SolutionKitManagerResource.SolutionKitManagerResourceException e) {
-//            assertEquals(e.getResponse().getEntity().toString(),  "Upgrade failed: cannot find a parent solution kit with GUID,  '" + parentSolutionKit.getSolutionKitGuid() + "'" + System.lineSeparator());
-//        }
-//
-//        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//        //Cannot find selected solutionKit based on solutionKitSelect
-//        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-//        //same instance modifier as solutionKit1
-//        solutionKit2.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, "im1");
-//
-//        //select invalid solution kit
-//        FormDataBodyPart invalidSolutionKitSelect = new FormDataBodyPart("solutionKitSelect", solutionKit1.getSolutionKitGuid()+"INVALID");
-//        childKits.clear();
-//        childKits.add(solutionKit1);
-//        childKits.add(solutionKit2);
-//        solutionKitsConfig.setSolutionKitsToUpgrade(childKits);
-//
-//        //Test, select for an invalid solution kit
-//        try {
-//            solutionKitResource.setSelectedGuidAndImForHeadlessUpgrade(true, parentSolutionKit.getSolutionKitGuid(), solutionKitsConfig, "im1", Collections.singletonList(invalidSolutionKitSelect));
-//            fail("Invalid selected solution kit error should be thrown");
-//        } catch (SolutionKitManagerResource.SolutionKitManagerResourceException e) {
-//            assertEquals(e.getResponse().getEntity().toString(),
-//                    "Cannot find any to-be-upgraded solution kit, whose GUID matches to the given GUID (" +
-//                    solutionKit1.getSolutionKitGuid()+"INVALID) specified from the parameter 'solutionKitSelect'" + System.lineSeparator());
-//        }
-//
-//        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//        // duplicate GUID error based on solutionKitSelects
-//        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-//        //same instance modifier as solutionKit1 and 2
-//        solutionKit3.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, "im1");
-//
-//        childKits.add(solutionKit3);
-//
-//        //select solution kits with duplicate guid
-//        invalidSolutionKitSelect = new FormDataBodyPart("solutionKitSelect", solutionKit2.getSolutionKitGuid());
-//        FormDataBodyPart invalidSolutionKitSelect2 = new FormDataBodyPart("solutionKitSelect", solutionKit2.getSolutionKitGuid());
-//        List<FormDataBodyPart> invalidSolutionKitSelects = new ArrayList<>();
-//        invalidSolutionKitSelects.add(invalidSolutionKitSelect);
-//        invalidSolutionKitSelects.add(invalidSolutionKitSelect2);
-//
-//        solutionKitsConfig.setSolutionKitsToUpgrade(childKits);
-//
-//        //Test, select for kits with a duplicate guid
-//        try {
-//            solutionKitResource.setSelectedGuidAndImForHeadlessUpgrade(true, parentSolutionKit.getSolutionKitGuid(), solutionKitsConfig, "im1", invalidSolutionKitSelects);
-//            fail("Duplicate solution kit selected should be thrown");
-//        } catch (SolutionKitManagerResource.SolutionKitManagerResourceException e) {
-//           assertEquals(e.getResponse().getEntity().toString(),
-//                    "Upgrade failed: at least two 'solutionKitSelect' parameters specify a same GUID (" +
-//                            solutionKit2.getSolutionKitGuid() + "), since two solution kit instances cannot be upgraded at the same time." + System.lineSeparator());
-//        }
-//
-//        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//        // select for solution kit with invalid instance modifier
-//        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//        //select solution kits invalid instance modifier
-//        invalidSolutionKitSelect = new FormDataBodyPart("solutionKitSelect", solutionKit3.getSolutionKitGuid()+"::INVALID_IM");
-//
-//        //Test, select for kit with invalid instance modifier
-//        try {
-//            solutionKitResource.setSelectedGuidAndImForHeadlessUpgrade(true, parentSolutionKit.getSolutionKitGuid(), solutionKitsConfig, "im1", Collections.singletonList(invalidSolutionKitSelect));
-//            fail("Invalid selected instance modifier error should be thrown");
-//        } catch (SolutionKitManagerResource.SolutionKitManagerResourceException e) {
-//            assertEquals(e.getResponse().getEntity().toString(),
-//                    "Cannot find any to-be-upgraded solution kit, which matches the given GUID (" + solutionKit3.getSolutionKitGuid() +
-//                            ") and the given Instance Modifier (INVALID_IM)" + System.lineSeparator());
-//        }
-//    }
-//
-//    @Test
-//    public void updateSolutionKitsToUpgradeBasedOnGivenParametersSuccess() throws Exception{
-//        initializeSolutionKits();
-//
-//        final List<SolutionKit> childKits = new ArrayList<>(3);
-//        childKits.add(solutionKit1);
-//        childKits.add(solutionKit2);
-//        childKits.add(solutionKit3);
-//
-//        solutionKitsConfig.setSolutionKitsToUpgrade(childKits);
-//
-//        when(solutionKitManager.findBySolutionKitGuid(parentSolutionKit.getSolutionKitGuid())).thenReturn(Collections.singletonList(parentSolutionKit));
-//        when(solutionKitManager.findAllChildrenByParentGoid(parentSolutionKit.getGoid())).thenReturn(childKits);
-//
-//        //Assume the list to be unchanged before test
-//        solutionKitsConfig.setSolutionKitsToUpgrade(childKits);
-//        assertEquals(solutionKitsConfig.getSolutionKitsToUpgrade().size(),3);
-//
-//        //Test
-//        solutionKitResource.setSelectedGuidAndImForHeadlessUpgrade(true, parentSolutionKit.getSolutionKitGuid(), solutionKitsConfig, "im2", null );
-//        solutionKitResource.updateSolutionKitsToUpgradeBasedOnGivenParameters(solutionKitsConfig);
-//
-//        //Expect the solutionKitsConfig solution Kits upgrade list to be updated with solutionKit2
-//        assertEquals(solutionKitsConfig.getSolutionKitsToUpgrade().size(), 1);
-//        assertEquals(solutionKitsConfig.getSolutionKitsToUpgrade().get(0).getSolutionKitGuid(), solutionKit2.getSolutionKitGuid());
-//    }
-//
     @Test
     public void uninstallSuccess() throws Exception {
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1290,267 +1080,464 @@ public class SolutionKitManagerResourceTest {
                 "Solution kits selected for uninstall that failed:" + System.lineSeparator() +
                 "Uninstall failed: Cannot find any child solution kit matching the GUID = '1f87436b-7ca5-41c8-9418-21d7a7848999INVALID'" + System.lineSeparator());
     }
-//
-//    @Test
-//    public void selectSolutionKitsForInstallSuccess() throws Exception{
-//        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//        //install all solution kits
-//        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//        initializeSolutionKits();
-//
-//        Map<SolutionKit, Bundle> loaded = new HashMap<>();
-//        loaded.put(solutionKit1, null);
-//        loaded.put(solutionKit2, null);
-//        loaded.put(solutionKit3, null);
-//
-//        when(solutionKitsConfig.getLoadedSolutionKits()).thenReturn(loaded);
-//
-//        //test Install solution kits with IM "global IM"
-//        solutionKitResource.selectSolutionKitsForInstall(solutionKitsConfig, "global IM", null, solutionKitAdminHelper, true);
-//
-//        //expect all the solution kits installed have IM "global IM"
-//        Set<SolutionKit> selected = solutionKitsConfig.getSelectedSolutionKits();
-//        for(SolutionKit solutionKit : selected) {
-//            assertEquals((solutionKit.getProperty(SK_PROP_INSTANCE_MODIFIER_KEY)),"global IM");
-//        }
-//        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//        //install selected solution kits
-//        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//        initializeSolutionKits();
-//
-//        when(solutionKitsConfig.getLoadedSolutionKits()).thenReturn(loaded);
-//
-//        // only select solutionkit1 and 2
-//        FormDataBodyPart solutionKitSelect1 = new FormDataBodyPart("solutionKitSelect", solutionKit1.getSolutionKitGuid()+"::im1");
-//        FormDataBodyPart solutionKitSelect2 = new FormDataBodyPart("solutionKitSelect", solutionKit2.getSolutionKitGuid());
-//        List<FormDataBodyPart> solutionKitSelects = new ArrayList<>();
-//        solutionKitSelects.add(solutionKitSelect1);
-//        solutionKitSelects.add(solutionKitSelect2);
-//
-//        //Only Install
-//        solutionKitResource.selectSolutionKitsForInstall(solutionKitsConfig, "global IM", solutionKitSelects, solutionKitAdminHelper, true);
-//
-//        //Expect only solutionKit 1 and 2 to be added
-//        selected = solutionKitsConfig.getSelectedSolutionKits();
-//        assertEquals(selected.size(), 2);
-//        for (SolutionKit solutionKit : selected) {
-//            assertTrue(solutionKit.getSolutionKitGuid().equals(solutionKit1.getSolutionKitGuid()) ||
-//            solutionKit.getSolutionKitGuid().equals(solutionKit2.getSolutionKitGuid()));
-//        }
-//    }
-//
-//    @Test
-//    public void selectSolutionKitsForInstallWithFailOnExistFalse() throws Exception{
-//        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//        //install all solution kits
-//        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//        initializeSolutionKits();
-//
-//        Map<SolutionKit, Bundle> loaded = new HashMap<>();
-//        loaded.put(solutionKit1, null);
-//        loaded.put(solutionKit2, null);
-//        loaded.put(solutionKit3, null);
-//
-//        when(solutionKitsConfig.getLoadedSolutionKits()).thenReturn(loaded);
-//        when(solutionKitAdminHelper.find(solutionKit2.getSolutionKitGuid())).thenReturn(CollectionUtils.set(solutionKit2));
-//
-//        //test Install solution kits with IM "global IM"
-//        solutionKitResource.selectSolutionKitsForInstall(solutionKitsConfig, "global IM", null, solutionKitAdminHelper, false);
-//
-//        //expect all the solution kits installed have IM "global IM"
-//        Set<SolutionKit> selected = solutionKitsConfig.getSelectedSolutionKits();
-//        for(SolutionKit solutionKit : selected) {
-//            assertEquals((solutionKit.getProperty(SK_PROP_INSTANCE_MODIFIER_KEY)),"global IM");
-//        }
-//        assertEquals("Expecting only 2 solution kits to be selected", 2, selected.size());
-//        assertFalse("The second solution should not be selected.", selected.contains(solutionKit2));
-//        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//        //install selected solution kits
-//        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//        initializeSolutionKits();
-//
-//        when(solutionKitsConfig.getLoadedSolutionKits()).thenReturn(loaded);
-//        when(solutionKitAdminHelper.find(solutionKit2.getSolutionKitGuid())).thenReturn(CollectionUtils.set(solutionKit2));
-//
-//        // only select solutionkit1 and 2
-//        FormDataBodyPart solutionKitSelect1 = new FormDataBodyPart("solutionKitSelect", solutionKit1.getSolutionKitGuid()+"::im1");
-//        FormDataBodyPart solutionKitSelect2 = new FormDataBodyPart("solutionKitSelect", solutionKit2.getSolutionKitGuid());
-//        List<FormDataBodyPart> solutionKitSelects = new ArrayList<>();
-//        solutionKitSelects.add(solutionKitSelect1);
-//        solutionKitSelects.add(solutionKitSelect2);
-//
-//        //Only Install
-//        solutionKitResource.selectSolutionKitsForInstall(solutionKitsConfig, "global IM", solutionKitSelects, solutionKitAdminHelper, false);
-//
-//        //Expect only solutionKit 1
-//        selected = solutionKitsConfig.getSelectedSolutionKits();
-//        assertEquals(selected.size(), 1);
-//        for (SolutionKit solutionKit : selected) {
-//            assertTrue(solutionKit.getSolutionKitGuid().equals(solutionKit1.getSolutionKitGuid()));
-//        }
-//    }
-//
-//    @Test
-//    public void selectSolutionKitsForInstallWithFailOnExistFalseAndNoInstanceModifier() throws Exception{
-//        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//        //install all solution kits
-//        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//        initializeSolutionKits();
-//
-//        Map<SolutionKit, Bundle> loaded = new HashMap<>();
-//        loaded.put(solutionKit1, null);
-//        loaded.put(solutionKit2, null);
-//        loaded.put(solutionKit3, null);
-//
-//        when(solutionKitsConfig.getLoadedSolutionKits()).thenReturn(loaded);
-//        when(solutionKitAdminHelper.find(solutionKit2.getSolutionKitGuid())).thenReturn(CollectionUtils.set(solutionKit2));
-//
-//        //test Install solution kits with IM "global IM"
-//        solutionKitResource.selectSolutionKitsForInstall(solutionKitsConfig, null, null, solutionKitAdminHelper, false);
-//
-//        //expect all the solution kits installed have IM "global IM"
-//        Set<SolutionKit> selected = solutionKitsConfig.getSelectedSolutionKits();
-//        assertEquals("Expecting only 2 solution kits to be selected", 2, selected.size());
-//        assertFalse("The second solution should not be selected.", selected.contains(solutionKit2));
-//        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//        //install selected solution kits
-//        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//        initializeSolutionKits();
-//
-//        when(solutionKitsConfig.getLoadedSolutionKits()).thenReturn(loaded);
-//        when(solutionKitAdminHelper.find(solutionKit2.getSolutionKitGuid())).thenReturn(CollectionUtils.set(solutionKit2));
-//
-//        // only select solutionkit1 and 2
-//        FormDataBodyPart solutionKitSelect1 = new FormDataBodyPart("solutionKitSelect", solutionKit1.getSolutionKitGuid());
-//        FormDataBodyPart solutionKitSelect2 = new FormDataBodyPart("solutionKitSelect", solutionKit2.getSolutionKitGuid());
-//        List<FormDataBodyPart> solutionKitSelects = new ArrayList<>();
-//        solutionKitSelects.add(solutionKitSelect1);
-//        solutionKitSelects.add(solutionKitSelect2);
-//
-//        //Only Install
-//        solutionKitResource.selectSolutionKitsForInstall(solutionKitsConfig, null, solutionKitSelects, solutionKitAdminHelper, false);
-//
-//        //Expect only solutionKit 1
-//        selected = solutionKitsConfig.getSelectedSolutionKits();
-//        assertEquals(selected.size(), 1);
-//        for (SolutionKit solutionKit : selected) {
-//            assertTrue(solutionKit.getSolutionKitGuid().equals(solutionKit1.getSolutionKitGuid()));
-//        }
-//    }
-//
-//    @Test
-//    public void selectSolutionKitsForInstallFail() throws Exception {
-//        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//        // guid not found in skar
-//        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//        initializeSolutionKits();
-//
-//        //missing SolutionKit1
-//        Map<SolutionKit, Bundle> loaded = new HashMap<>();
-//        loaded.put(solutionKit2, null);
-//        loaded.put(solutionKit3, null);
-//
-//        when(solutionKitsConfig.getLoadedSolutionKits()).thenReturn(loaded);
-//
-//        FormDataBodyPart solutionKitSelect1 = new FormDataBodyPart("solutionKitSelect", solutionKit1.getSolutionKitGuid()+"::im1");
-//
-//        //test try to Install solution kits with IM "global IM" with no solution kits loaded
-//        try {
-//            solutionKitResource.selectSolutionKitsForInstall(solutionKitsConfig, "global IM", Collections.singletonList(solutionKitSelect1), solutionKitAdminHelper, true);
-//            fail("Solution kit to install not found in skar error should be thrown");
-//        } catch (SolutionKitManagerResource.SolutionKitManagerResourceException e) {
-//            assertEquals(e.getResponse().getEntity().toString(), "Solution Kit ID to install: " +
-//                    solutionKit1.getSolutionKitGuid() + " not found in the skar." + System.lineSeparator());
-//        }
-//
-//        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//        // selected solution kits are empty
-//        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-//        // this is supposed to test for lines 824-826 in SolutionKitManagerResource, however I think it's impossible to hit these lines because there is an earlier
-//        // condition for empty selected SKs. Please Review
-//    }
-//
-//    @Test
-//    public void selectSolutionKitsForUpgradeSuccess() throws Exception {
-//        initializeSolutionKits();
-//        Map<String, Pair<String, String>> selectedGuidAndIm = solutionKitResource.getSelectedGuidAndImForHeadlessUpgrade();
-//
-//        //Selected solutionKit1 and 2 for upgrade
-//        selectedGuidAndIm.put(solutionKit1.getSolutionKitGuid(), new Pair<>("im1", "newIM"));
-//        selectedGuidAndIm.put(solutionKit2.getSolutionKitGuid(), new Pair<>("im2", "newIM"));
-//
-//        //Loaded all three solution kits
-//        Map<SolutionKit, Bundle> loadedSolutionKits = new HashMap<>();
-//        loadedSolutionKits.put(solutionKit1, null);
-//        loadedSolutionKits.put(solutionKit2, null);
-//        loadedSolutionKits.put(solutionKit3, null);
-//        when(solutionKitsConfig.getLoadedSolutionKits()).thenReturn(loadedSolutionKits);
-//
-//        //Test
-//        solutionKitResource.selectSolutionKitsForUpgrade(solutionKitsConfig);
-//
-//        //Expect the 2 solution kits selected to be upgraded from the ones already loaded
-//        Set<SolutionKit> updateSelectedSK = solutionKitsConfig.getSelectedSolutionKits();
-//        assertEquals(updateSelectedSK.size(), 2);
-//
-//        //Expect all two solution kits to be in the set of updated solution Kit
-//        assertTrue(updateSelectedSK.contains(solutionKit1));
-//        assertTrue(updateSelectedSK.contains(solutionKit2));
-//
-//        //Expect that the instance modifier is updated to "newIM"
-//        assertEquals(solutionKit1.getProperty(SK_PROP_INSTANCE_MODIFIER_KEY), "newIM");
-//        assertEquals(solutionKit2.getProperty(SK_PROP_INSTANCE_MODIFIER_KEY), "newIM");
-//
-//    }
-//
-//    @Test
-//    public void selectSolutionKitsForUpgradeFail() throws Exception {
-//        initializeSolutionKits();
-//
-//        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//        // selected Guid and IM are empty
-//        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//        try {
-//            //test
-//            solutionKitResource.selectSolutionKitsForUpgrade(solutionKitsConfig);
-//            fail("Empty selected Guid and IM error should be thrown");
-//        } catch (IllegalArgumentException e) {
-//            //expect
-//            assertEquals(e.getMessage(), "A map of guid and instance modifier for selected to-be-upgraded solution kits has not been initialized.");
-//        }
-//
-//        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//        // selected Guid and IM are not in the set of loaded solution Kits
-//        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-//        //Selected solutionKit1
-//        Map<String, Pair<String, String>> selectedGuidAndIm = solutionKitResource.getSelectedGuidAndImForHeadlessUpgrade();
-//        selectedGuidAndIm.put(solutionKit1.getSolutionKitGuid(), new Pair<>("im1", "newIM"));
-//
-//        //Loaded solutionKit2 and 3
-//        Map<SolutionKit, Bundle> loadedSolutionKits = new HashMap<>();
-//        loadedSolutionKits.put(solutionKit2, null);
-//        loadedSolutionKits.put(solutionKit3, null);
-//        when(solutionKitsConfig.getLoadedSolutionKits()).thenReturn(loadedSolutionKits);
-//
-//        try {
-//            //test
-//            solutionKitResource.selectSolutionKitsForUpgrade(solutionKitsConfig);
-//            fail("Selected Guid and IM not in loaded SKs error should be thrown");
-//        } catch (SolutionKitManagerResource.SolutionKitManagerResourceException e) {
-//            //expect
-//            assertEquals(e.getResponse().getEntity(), "Solution Kit ID to upgrade: " +
-//                    solutionKit1.getSolutionKitGuid() + " not found in the skar." + System.lineSeparator());
-//        }
-//
-//        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//        // selected SKs are empty
-//        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//
-//        // this is supposed to test for lines 882-883 in SolutionKitManagerResource, however I think it's impossible to hit these lines because there is an earlier
-//        // condition that checks for empty selected Guid and IM. Please Review
-//    }
+
+    @Test
+    public void selectSolutionKitsForInstallSuccess() throws Exception{
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //install all solution kits
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        initializeSolutionKits();
+
+        Map<SolutionKit, Bundle> loaded = new HashMap<>();
+        loaded.put(solutionKitList.get(1), null);
+        loaded.put(solutionKitList.get(2), null);
+        loaded.put(solutionKitList.get(3), null);
+
+        when(solutionKitsConfig.getLoadedSolutionKits()).thenReturn(loaded);
+
+        //test Install solution kits with IM "global IM"
+        solutionKitResource.selectSolutionKitsForInstall(solutionKitsConfig, "global IM", null, true);
+
+        //expect all the solution kits installed have IM "global IM"
+        Set<SolutionKit> selected = solutionKitsConfig.getSelectedSolutionKits();
+        for(SolutionKit solutionKit : selected) {
+            assertEquals((solutionKit.getProperty(SK_PROP_INSTANCE_MODIFIER_KEY)),"global IM");
+        }
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //install selected solution kits
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        initializeSolutionKits();
+
+        when(solutionKitsConfig.getLoadedSolutionKits()).thenReturn(loaded);
+
+        // only select solutionkit1 and 2
+        FormDataBodyPart solutionKitSelect1 = new FormDataBodyPart("solutionKitSelect", solutionKitList.get(1).getSolutionKitGuid()+"::im1");
+        FormDataBodyPart solutionKitSelect2 = new FormDataBodyPart("solutionKitSelect", solutionKitList.get(2).getSolutionKitGuid());
+        List<FormDataBodyPart> solutionKitSelects = new ArrayList<>();
+        solutionKitSelects.add(solutionKitSelect1);
+        solutionKitSelects.add(solutionKitSelect2);
+
+        //Only Install
+        solutionKitResource.selectSolutionKitsForInstall(solutionKitsConfig, "global IM", solutionKitSelects, true);
+
+        //Expect only solutionKit 1 and 2 to be added
+        selected = solutionKitsConfig.getSelectedSolutionKits();
+        assertEquals(selected.size(), 2);
+        for (SolutionKit solutionKit : selected) {
+            assertTrue(solutionKit.getSolutionKitGuid().equals(solutionKitList.get(1).getSolutionKitGuid()) ||
+            solutionKit.getSolutionKitGuid().equals(solutionKitList.get(2).getSolutionKitGuid()));
+        }
+    }
+
+    @Test
+    public void selectSolutionKitsForInstallWithFailOnExistFalse() throws Exception{
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //install all solution kits
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        initializeSolutionKits();
+
+        Map<SolutionKit, Bundle> loaded = new HashMap<>();
+        loaded.put(solutionKitList.get(1), null);
+        loaded.put(solutionKitList.get(2), null);
+        loaded.put(solutionKitList.get(3), null);
+
+        when(solutionKitsConfig.getLoadedSolutionKits()).thenReturn(loaded);
+        when(solutionKitAdminHelper.find(solutionKitList.get(2).getSolutionKitGuid())).thenReturn(CollectionUtils.set(solutionKitList.get(2)));
+
+        //test Install solution kits with IM "global IM"
+        solutionKitResource.selectSolutionKitsForInstall(solutionKitsConfig, "global IM", null, false);
+
+        //expect all the solution kits installed have IM "global IM"
+        Set<SolutionKit> selected = solutionKitsConfig.getSelectedSolutionKits();
+        for(SolutionKit solutionKit : selected) {
+            assertEquals((solutionKit.getProperty(SK_PROP_INSTANCE_MODIFIER_KEY)),"global IM");
+        }
+        assertEquals("Expecting only 2 solution kits to be selected", 2, selected.size());
+        assertFalse("The second solution should not be selected.", selected.contains(solutionKitList.get(2)));
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //install selected solution kits
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        initializeSolutionKits();
+
+        when(solutionKitsConfig.getLoadedSolutionKits()).thenReturn(loaded);
+        when(solutionKitAdminHelper.find(solutionKitList.get(2).getSolutionKitGuid())).thenReturn(CollectionUtils.set(solutionKitList.get(2)));
+
+        // only select solutionkit1 and 2
+        FormDataBodyPart solutionKitSelect1 = new FormDataBodyPart("solutionKitSelect", solutionKitList.get(1).getSolutionKitGuid()+"::im1");
+        FormDataBodyPart solutionKitSelect2 = new FormDataBodyPart("solutionKitSelect", solutionKitList.get(2).getSolutionKitGuid());
+        List<FormDataBodyPart> solutionKitSelects = new ArrayList<>();
+        solutionKitSelects.add(solutionKitSelect1);
+        solutionKitSelects.add(solutionKitSelect2);
+
+        //Only Install
+        solutionKitResource.selectSolutionKitsForInstall(solutionKitsConfig, "global IM", solutionKitSelects, false);
+
+        //Expect only solutionKit 1
+        selected = solutionKitsConfig.getSelectedSolutionKits();
+        assertEquals(selected.size(), 1);
+        for (SolutionKit solutionKit : selected) {
+            assertTrue(solutionKit.getSolutionKitGuid().equals(solutionKitList.get(1).getSolutionKitGuid()));
+        }
+    }
+
+    @Test
+    public void selectSolutionKitsForInstallWithFailOnExistFalseAndNoInstanceModifier() throws Exception{
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //install all solution kits
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        initializeSolutionKits();
+
+        Map<SolutionKit, Bundle> loaded = new HashMap<>();
+        loaded.put(solutionKitList.get(1), null);
+        loaded.put(solutionKitList.get(2), null);
+        loaded.put(solutionKitList.get(3), null);
+
+        when(solutionKitsConfig.getLoadedSolutionKits()).thenReturn(loaded);
+        when(solutionKitAdminHelper.find(solutionKitList.get(2).getSolutionKitGuid())).thenReturn(CollectionUtils.set(solutionKitList.get(2)));
+
+        //test Install solution kits with IM "global IM"
+        solutionKitResource.selectSolutionKitsForInstall(solutionKitsConfig, null, null, false);
+
+        //expect all the solution kits installed have IM "global IM"
+        Set<SolutionKit> selected = solutionKitsConfig.getSelectedSolutionKits();
+        assertEquals("Expecting only 2 solution kits to be selected", 2, selected.size());
+        assertFalse("The second solution should not be selected.", selected.contains(solutionKitList.get(2)));
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //install selected solution kits
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        initializeSolutionKits();
+
+        when(solutionKitsConfig.getLoadedSolutionKits()).thenReturn(loaded);
+        when(solutionKitAdminHelper.find(solutionKitList.get(2).getSolutionKitGuid())).thenReturn(CollectionUtils.set(solutionKitList.get(2)));
+
+        // only select solutionkit1 and 2
+        FormDataBodyPart solutionKitSelect1 = new FormDataBodyPart("solutionKitSelect", solutionKitList.get(1).getSolutionKitGuid());
+        FormDataBodyPart solutionKitSelect2 = new FormDataBodyPart("solutionKitSelect", solutionKitList.get(2).getSolutionKitGuid());
+        List<FormDataBodyPart> solutionKitSelects = new ArrayList<>();
+        solutionKitSelects.add(solutionKitSelect1);
+        solutionKitSelects.add(solutionKitSelect2);
+
+        //Only Install
+        solutionKitResource.selectSolutionKitsForInstall(solutionKitsConfig, null, solutionKitSelects, false);
+
+        //Expect only solutionKit 1
+        selected = solutionKitsConfig.getSelectedSolutionKits();
+        assertEquals(selected.size(), 1);
+        for (SolutionKit solutionKit : selected) {
+            assertTrue(solutionKit.getSolutionKitGuid().equals(solutionKitList.get(1).getSolutionKitGuid()));
+        }
+    }
+
+    @Test
+    public void selectSolutionKitsForInstallFail() throws Exception {
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // guid not found in skar
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        initializeSolutionKits();
+
+        //missing SolutionKit1
+        Map<SolutionKit, Bundle> loaded = new HashMap<>();
+        loaded.put(solutionKitList.get(2), null);
+        loaded.put(solutionKitList.get(3), null);
+
+        when(solutionKitsConfig.getLoadedSolutionKits()).thenReturn(loaded);
+
+        FormDataBodyPart solutionKitSelect1 = new FormDataBodyPart("solutionKitSelect", solutionKitList.get(1).getSolutionKitGuid()+"::im1");
+
+        //test try to Install solution kits with IM "global IM" with no solution kits loaded
+        try {
+            solutionKitResource.selectSolutionKitsForInstall(solutionKitsConfig, "global IM", Collections.singletonList(solutionKitSelect1), true);
+            fail("Solution kit to install not found in skar error should be thrown");
+        } catch (SolutionKitManagerResource.SolutionKitManagerResourceException e) {
+            assertEquals(e.getResponse().getEntity().toString(), "Solution Kit ID to install: " +
+                    solutionKitList.get(1).getSolutionKitGuid() + " not found in the skar." + System.lineSeparator());
+        }
+    }
+
+    @Test
+    public void selectSolutionKitsForUpgradeSuccess() throws Exception {
+        initializeSolutionKits();
+
+        ////////////////////////////////////////////////////////////////
+        // Select a parent and all children solution kits for upgrade //
+        ////////////////////////////////////////////////////////////////
+
+        // The selected list is empty.  No specific child solution kits selected means all child solution kits selected.
+        final List<String> selectedGuidList = new ArrayList<>();
+
+        // The initial upgrade candidate list contains a parent and all three solution kits.
+        List<SolutionKit> upgradeList = new ArrayList<>(solutionKitList.size());
+        for (final SolutionKit sk: solutionKitList) upgradeList.add(sk);
+
+        // The loaded solution kit list contains all three solution kits, each of which has not set an instance modifier,
+        // b/c when any solution kit is loaded from the skar, its instance modifier has not been set.
+        Map<SolutionKit, Bundle> loadedSolutionKits = new HashMap<>();
+        loadedSolutionKits.put(createLoadedSolutionKit(solutionKitList.get(1)), null);
+        loadedSolutionKits.put(createLoadedSolutionKit(solutionKitList.get(2)), null);
+        loadedSolutionKits.put(createLoadedSolutionKit(solutionKitList.get(3)), null);
+
+        when(solutionKitsConfig.getSolutionKitsToUpgrade()).thenReturn(upgradeList);
+        when(solutionKitsConfig.getLoadedSolutionKits()).thenReturn(loadedSolutionKits);
+
+        // Test by passing a parent solution kit without child solution kits selected.
+        solutionKitResource.selectSolutionKitsForUpgrade(solutionKitList.get(0), "im1", selectedGuidList, solutionKitsConfig);
+
+        //Expect the three solution kits selected to be upgraded from the ones already loaded
+        Set<SolutionKit> selectedLoadedSKs = solutionKitsConfig.getSelectedSolutionKits();
+        assertEquals(selectedLoadedSKs.size(), 3);
+
+        for (final SolutionKit selected: selectedLoadedSKs) {
+            // Expect all selected solution kits to be in the set of updated solution Kit
+            assertTrue(loadedSolutionKits.keySet().contains(selected));
+
+            // Expect that the instance modifier is updated to "im1" instead of default instance modifier (i.e., null).
+            assertEquals(selected.getProperty(SK_PROP_INSTANCE_MODIFIER_KEY), "im1");
+        }
+
+        /////////////////////////////////////////////////
+        // Select some child solution kits for upgrade //
+        /////////////////////////////////////////////////
+
+        // Select two solution kits for upgrade
+        selectedGuidList.clear();
+        selectedGuidList.add(solutionKitList.get(1).getSolutionKitGuid());
+        selectedGuidList.add(solutionKitList.get(2).getSolutionKitGuid());
+
+        // The upgrade candidate list still has four solution kits (parent + 3 children).
+        when(solutionKitsConfig.getSolutionKitsToUpgrade()).thenReturn(upgradeList);
+
+        // The loaded solution kit list still have three solution kits.
+        when(solutionKitsConfig.getLoadedSolutionKits()).thenReturn(loadedSolutionKits);
+
+        // Test by passing a parent solution kit with two child solution kits selected.
+        solutionKitResource.selectSolutionKitsForUpgrade(solutionKitList.get(0), "im1", selectedGuidList, solutionKitsConfig);
+
+        //Expect the three solution kits selected to be upgraded from the ones already loaded
+        selectedLoadedSKs = solutionKitsConfig.getSelectedSolutionKits();
+        assertEquals(selectedLoadedSKs.size(), 2);
+
+        for (final SolutionKit selected: selectedLoadedSKs) {
+            // Expect all selected solution kits to be in the set of updated solution Kit
+            assertTrue(loadedSolutionKits.keySet().contains(selected));
+
+            // Expect that the instance modifier is updated to "im1" instead of default instance modifier (i.e., null).
+            assertEquals(selected.getProperty(SK_PROP_INSTANCE_MODIFIER_KEY), "im1");
+        }
+
+        /////////////////////////////////////////////////////////
+        // Select a single non-parent solution kit for upgrade //
+        /////////////////////////////////////////////////////////
+
+        // No selected solution kits specified
+        selectedGuidList.clear();
+
+        // The upgrade candidate lis has one solution kit, which is not a parent.
+        upgradeList.clear();
+        upgradeList.add(solutionKitList.get(1));
+        when(solutionKitsConfig.getSolutionKitsToUpgrade()).thenReturn(upgradeList);
+
+        // The loaded solution kit list still have three solution kits.
+        when(solutionKitsConfig.getLoadedSolutionKits()).thenReturn(loadedSolutionKits);
+
+        // Test by passing a non-parent solution kit without solution kits selected.
+        solutionKitResource.selectSolutionKitsForUpgrade(solutionKitList.get(1), "im1", selectedGuidList, solutionKitsConfig);
+
+        //Expect the three solution kits selected to be upgraded from the ones already loaded
+        selectedLoadedSKs = solutionKitsConfig.getSelectedSolutionKits();
+        assertEquals(selectedLoadedSKs.size(), 1);
+
+        for (final SolutionKit selected: selectedLoadedSKs) {
+            // Expect all selected solution kits to be in the set of updated solution Kit
+            assertTrue(loadedSolutionKits.keySet().contains(selected));
+
+            // Expect that the instance modifier is updated to "im1" instead of default instance modifier (i.e., null).
+            assertEquals(selected.getProperty(SK_PROP_INSTANCE_MODIFIER_KEY), "im1");
+        }
+    }
+
+    @Test
+    public void selectSolutionKitsForUpgradeFail() throws Exception {
+        initializeSolutionKits();
+
+        /////////////////////////////////////////////////////////
+        // Selected SK is not in the upgrade candidate SK list //
+        /////////////////////////////////////////////////////////
+
+        // Select a fake solution kit for upgrade
+        final List<String> selectedGuidList = new ArrayList<>();
+        selectedGuidList.add("A_FAKE_GUID");
+
+        final List<SolutionKit> upgradeList = new ArrayList<>(solutionKitList.size());
+        for (final SolutionKit sk: solutionKitList) upgradeList.add(sk);
+
+        when(solutionKitsConfig.getSolutionKitsToUpgrade()).thenReturn(upgradeList);
+
+        try {
+            solutionKitResource.selectSolutionKitsForUpgrade(solutionKitList.get(0), "im1", selectedGuidList, solutionKitsConfig);
+            fail("SolutionKitManagerResourceException should be thrown since the selected soluition kit is not in the candidate list.");
+        } catch (SolutionKitManagerResource.SolutionKitManagerResourceException e) {
+            final Response response = e.getResponse();
+            assertNotNull(response);
+            assertTrue("Checking response status", response.getStatus() == Response.Status.NOT_ACCEPTABLE.getStatusCode());
+            assertEquals(
+                "Checking response message",
+                "The solution kit (GUID='A_FAKE_GUID', Instance Modifier='im1') is not a child solution kit of 'parent' and cannot be selected for upgrade." + System.lineSeparator(),
+                response.getEntity()
+            );
+        }
+
+        //////////////////////////////////////////////
+        // Selected SK is not in the loaded SK list //
+        //////////////////////////////////////////////
+
+        selectedGuidList.clear();
+        selectedGuidList.add(solutionKitList.get(1).getSolutionKitGuid());
+        selectedGuidList.add(solutionKitList.get(2).getSolutionKitGuid());
+        selectedGuidList.add(solutionKitList.get(3).getSolutionKitGuid());
+
+        // Loaded all three solution kits
+        Map<SolutionKit, Bundle> loadedSolutionKits = new HashMap<>();
+        loadedSolutionKits.put(createLoadedSolutionKit(solutionKitList.get(1)), null);
+        loadedSolutionKits.put(createLoadedSolutionKit(solutionKitList.get(2)), null);
+
+        upgradeList.clear();
+        for (final SolutionKit sk: solutionKitList) upgradeList.add(sk);
+
+        when(solutionKitsConfig.getSolutionKitsToUpgrade()).thenReturn(upgradeList);
+        when(solutionKitsConfig.getLoadedSolutionKits()).thenReturn(loadedSolutionKits);
+
+        try {
+            solutionKitResource.selectSolutionKitsForUpgrade(solutionKitList.get(0), "im1", selectedGuidList, solutionKitsConfig);
+            fail("SolutionKitManagerResourceException should be thrown since there isn't any solution kit in the skar file to match the selected solution kit for upgrade.");
+        } catch (SolutionKitManagerResource.SolutionKitManagerResourceException e) {
+            final Response response = e.getResponse();
+            assertNotNull(response);
+            assertTrue("Checking response status", response.getStatus() == Response.Status.NOT_FOUND.getStatusCode());
+            assertEquals(
+                "Checking response message",
+                "There isn't any solution kit in the uploaded skar to match a selected solution kit (GUID='1f87436b-7ca5-41c8-9418-21d7a7848977', Instance Modifier='im1')" + System.lineSeparator(),
+                response.getEntity()
+            );
+        }
+    }
+
+    @Test
+    public void testBackwardsCompatibilitySuccess() {
+        final String upgradeGuid = "PARENT_SK_GUID";  // A fake GUID b/c the guid is not important in this test.
+
+        //////////////////////////////////////////////
+        // The global instance modifier is not set. //
+        //////////////////////////////////////////////
+
+        String instanceModifierParameter = null; // The global instance modifier parameter is not set, which means using default instance modifier.
+        List<FormDataBodyPart> solutionKitSelects = new ArrayList<>();
+        solutionKitSelects.add(new FormDataBodyPart("solutionKitSelect", "CHILD_GUID_1"));     // Use the global default IM
+        solutionKitSelects.add(new FormDataBodyPart("solutionKitSelect", "CHILD_GUID_2::"));   // No New IM specified
+        solutionKitSelects.add(new FormDataBodyPart("solutionKitSelect", "CHILD_GUID_3::::")); // New IM is specified and same as Current IM.
+
+        try {
+            final Pair<String, List<String>> resultPair = solutionKitResource.validateUpgradeParameters(upgradeGuid, instanceModifierParameter, solutionKitSelects);
+            assertNotNull(resultPair);
+
+            // Verify the derived instance modifier
+            final String instanceModifierDerived = resultPair.left;
+            assertNull("All derived instance modifiers must be same and equal to default instance modifier.", instanceModifierDerived);
+
+            // Verify the selected solution kit GUIDs.
+            final List<String> selectedSKs = resultPair.right;
+            assertEquals(selectedSKs.size(), 3);
+            assertEquals("Selected child sk 1 GUID", "CHILD_GUID_1", selectedSKs.get(0));
+            assertEquals("Selected child sk 2 GUID", "CHILD_GUID_2", selectedSKs.get(1));
+            assertEquals("Selected child sk 2 GUID", "CHILD_GUID_3", selectedSKs.get(2));
+        } catch (Exception e) {
+            fail("This is a successful test case.  Should not reach here!");
+        }
+
+        //////////////////////////////////////////
+        // The global instance modifier is set. //
+        //////////////////////////////////////////
+
+        instanceModifierParameter = "IM1"; // The global instance modifier parameter is set and the value is "IM1".
+        solutionKitSelects.clear();
+        solutionKitSelects.add(new FormDataBodyPart("solutionKitSelect", "CHILD_GUID_1"));           // Use the global IM 'IM1'
+        solutionKitSelects.add(new FormDataBodyPart("solutionKitSelect", "CHILD_GUID_2::IM1"));      // No New IM specified
+        solutionKitSelects.add(new FormDataBodyPart("solutionKitSelect", "CHILD_GUID_3::IM1::IM1")); // New IM is specified and same as Current IM.
+
+        try {
+            final Pair<String, List<String>> resultPair = solutionKitResource.validateUpgradeParameters(upgradeGuid, instanceModifierParameter, solutionKitSelects);
+            assertNotNull(resultPair);
+
+            // Verify the derived instance modifier
+            final String instanceModifierDerived = resultPair.left;
+            assertEquals("All derived instance modifiers must be same and equal to 'IM1'.", "IM1", instanceModifierDerived);
+
+            // Verify the selected solution kit GUIDs.
+            final List<String> selectedSKs = resultPair.right;
+            assertEquals(selectedSKs.size(), 3);
+            assertEquals("Selected child sk 1 GUID", "CHILD_GUID_1", selectedSKs.get(0));
+            assertEquals("Selected child sk 2 GUID", "CHILD_GUID_2", selectedSKs.get(1));
+            assertEquals("Selected child sk 2 GUID", "CHILD_GUID_3", selectedSKs.get(2));
+        } catch (Exception e) {
+            fail("This is a successful test case.  Should not reach here!");
+        }
+    }
+
+    @Test
+    public void testBackwardsCompatibilityFail() {
+        final String upgradeGuid = "PARENT_SK_GUID";  // A fake GUID b/c the guid is not important in this test.
+
+        ////////////////////////////////////////////////////////////////
+        //         Current instance modifiers are different.          //
+        // Two child solution kits have different instance modifiers. //
+        ////////////////////////////////////////////////////////////////
+
+        String instanceModifierParameter = null; // The global instance modifier parameter is not set, which means using default instance modifier.
+        List<FormDataBodyPart> solutionKitSelects = new ArrayList<>();
+        solutionKitSelects.add(new FormDataBodyPart("solutionKitSelect", "CHILD_GUID_1"));      // Use the global default IM
+        solutionKitSelects.add(new FormDataBodyPart("solutionKitSelect", "CHILD_GUID_2::IM1")); // Use 'IM1' as Current IM
+        solutionKitSelects.add(new FormDataBodyPart("solutionKitSelect", "CHILD_GUID_3::IM2")); // Use 'IM2' as Current IM
+
+        try {
+            solutionKitResource.validateUpgradeParameters(upgradeGuid, instanceModifierParameter, solutionKitSelects);
+        } catch (SolutionKitManagerResource.SolutionKitManagerResourceException e) {
+            final Response response = e.getResponse();
+            assertNotNull(response);
+            assertTrue("Checking response status", response.getStatus() == Response.Status.NOT_ACCEPTABLE.getStatusCode());
+            assertEquals(
+                "Checking response message",
+                "Upgrading multiple child solution kits with different instance modifiers is not acceptable.\n" +
+                    "Failure detail: Solution Kit 1 ID: CHILD_GUID_1, Instance Modifier: N/A" + System.lineSeparator() +
+                    "                Solution Kit 2 ID: CHILD_GUID_2, Instance Modifier: IM1" + System.lineSeparator(),
+                response.getEntity()
+            );
+        } catch (UnsupportedEncodingException e) {
+            fail("This test case does not test URLDecoder, so the type of UnsupportedEncodingException should not happen here.");
+        }
+
+        ///////////////////////////////////////////////////////////
+        //             New instance modifiers are us.            //
+        //  One solution kit uses different instance modifiers.  //
+        ///////////////////////////////////////////////////////////
+
+        instanceModifierParameter = null; // The global instance modifier parameter is not set.
+        solutionKitSelects.clear();
+        solutionKitSelects.add(new FormDataBodyPart("solutionKitSelect", "CHILD_GUID_1::IM0::IM1")); // Set current and new instance modifiers
+
+        try {
+            solutionKitResource.validateUpgradeParameters(upgradeGuid, instanceModifierParameter, solutionKitSelects);
+        } catch (SolutionKitManagerResource.SolutionKitManagerResourceException e) {
+            final Response response = e.getResponse();
+            assertNotNull(response);
+            assertTrue("Checking response status", response.getStatus() == Response.Status.NOT_ACCEPTABLE.getStatusCode());
+            assertEquals(
+                "Upgrading a solution kit by changing its instance modifier to a new instance modifier is not acceptable." + System.lineSeparator() +
+                    "Failure detail: Solution Kit 1 ID: CHILD_GUID_1, Current Instance Modifier: IM0, New Instance Modifier: IM1" + System.lineSeparator(),
+                response.getEntity()
+            );
+        } catch (UnsupportedEncodingException e) {
+            fail("This test case does not test URLDecoder, so the type of UnsupportedEncodingException should not happen here.");
+        }
+    }
 
     private static InputStream[] creteSignedSampleChildScars(
             final int numChildren,
@@ -1700,6 +1687,26 @@ public class SolutionKitManagerResourceTest {
 
         solutionKitList = Arrays.asList(parentSolutionKit1, solutionKit1, solutionKit2, solutionKit3);
 
+    }
+
+    /**
+     * Make a new loaded solution kit from the source solution kit except copying parent GOID and instance modifier.
+     *
+     * @param source a solution kit used as a source for copy
+     * @return a new solution kit having same attributes with source except parent GOID and instance modifier.
+     */
+    private SolutionKit createLoadedSolutionKit(@NotNull final SolutionKit source) {
+        final SolutionKit solutionKit = new SolutionKit();
+        solutionKit.setSolutionKitGuid(source.getSolutionKitGuid());
+        solutionKit.setSolutionKitVersion(source.getSolutionKitVersion());
+        solutionKit.setName(source.getName());
+        solutionKit.setMappings(source.getMappings());
+        solutionKit.setLastUpdateTime(source.getLastUpdateTime());
+        solutionKit.setXmlProperties(source.getXmlProperties());
+        solutionKit.setInstallationXmlProperties(source.getInstallationXmlProperties());
+        solutionKit.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, null);
+
+        return solutionKit;
     }
 
     @Test

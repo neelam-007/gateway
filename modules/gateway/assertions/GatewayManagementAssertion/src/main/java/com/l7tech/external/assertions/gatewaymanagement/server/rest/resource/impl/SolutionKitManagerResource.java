@@ -96,6 +96,10 @@ public class SolutionKitManagerResource {
 
     public SolutionKitManagerResource() {}
 
+    public void setSolutionKitAdminHelper(final SolutionKitAdminHelper solutionKitAdminHelper) {
+        this.solutionKitAdminHelper = solutionKitAdminHelper;
+    }
+
     /**
      * Utility method to create a {@code HashSet} from the specified {@code String} value array.
      * Note that the method throws {@code Error} if there is a duplicate value.
@@ -831,7 +835,7 @@ public class SolutionKitManagerResource {
      * @throws FindException
      * @throws SolutionKitManagerResourceException
      */
-    private void selectSolutionKitsForUpgrade(@NotNull final SolutionKit solutionKitForUpgrade,
+    void selectSolutionKitsForUpgrade(@NotNull final SolutionKit solutionKitForUpgrade,
                                               @Nullable final String instanceModifier,
                                               @NotNull List<String> selectedGuidList,
                                               @NotNull final SolutionKitsConfig solutionKitsConfig) throws UnsupportedEncodingException, FindException, SolutionKitManagerResourceException {
@@ -881,7 +885,11 @@ public class SolutionKitManagerResource {
         final Set<String> loadedGuidSet = loadedSolutionKitMap.keySet();
 
         // Use selected solution kits to update the loaded solution kits such as updating attributes.
+        final String parentGuid = isParent? solutionKitForUpgrade.getSolutionKitGuid() : null;
         for (final String selectedGuid: selectedGuidList) {
+            // First skip checking on parent solution kit, since the loaded list never includes a parent.
+            if (selectedGuid.equals(parentGuid)) continue;
+
             // If any solution kit from the uploaded skar couldn't be found to match the selected solution kit for upgrade, throw exception.
             if (! loadedGuidSet.contains(selectedGuid)) {
                 throw new SolutionKitManagerResourceException(status(NOT_FOUND).entity("There isn't any solution kit in " +
@@ -982,9 +990,9 @@ public class SolutionKitManagerResource {
      * @throws SolutionKitManagerResourceException thrown when INTERNAL_SERVER_ERROR and NOT_ACCEPTABLE cases happen during validating parameters.
      */
     @NotNull
-    private Pair<String, List<String>> validateUpgradeParameters(@NotNull final String upgradeGuid,
-                                                                 @Nullable final String instanceModifierParameter,
-                                                                 @Nullable final List<FormDataBodyPart> solutionKitSelects)
+    Pair<String, List<String>> validateUpgradeParameters(@NotNull final String upgradeGuid,
+                                                         @Nullable final String instanceModifierParameter,
+                                                         @Nullable final List<FormDataBodyPart> solutionKitSelects)
         throws UnsupportedEncodingException, SolutionKitManagerResourceException {
 
         final Pair<String, String> globalIMPair = processGlobalInstanceModifiers(instanceModifierParameter); // The global instance modifier specified by instanceModifierParameter
