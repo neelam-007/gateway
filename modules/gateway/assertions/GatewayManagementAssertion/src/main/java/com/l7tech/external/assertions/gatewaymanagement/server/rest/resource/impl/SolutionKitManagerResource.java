@@ -285,9 +285,8 @@ public class SolutionKitManagerResource {
                 // Find a unique solution kit by GUID + Instance Modifier
                 foundByGuidAndIM = solutionKitManager.findBySolutionKitGuidAndIM(upgradeGuid, instanceModifierForUpgrade);
                 if (foundByGuidAndIM == null) {
-                    throw new SolutionKitManagerResourceException(status(NOT_FOUND).entity("Upgrade failed: cannot find any " +
-                        "existing solution kit (GUID = '" + upgradeGuid + "',  Instance Modifier = '" +
-                        InstanceModifier.getDisplayName(instanceModifierForUpgrade) + "') for upgrade." + lineSeparator()).build()
+                    throw new SolutionKitManagerResourceException(status(NOT_FOUND).entity("Upgrade failed: "+
+                            cannotFindSolutionKitMessage(instanceModifierForUpgrade, upgradeGuid)+" for upgrade." + lineSeparator()).build()
                     );
                 }
 
@@ -529,7 +528,7 @@ public class SolutionKitManagerResource {
         StringBuilder message = new StringBuilder();
         String currentSolutionKitName = "";
         String currentSolutionKitGuid = "";
-        String instanceModifierMessage = "without instance modifier";
+        String instanceModifier = "";
 
         try {
             if (StringUtils.isEmpty(deleteGuidIM)) {
@@ -538,13 +537,11 @@ public class SolutionKitManagerResource {
             }
 
             final String deleteGuid = substringBefore(deleteGuidIM, PARAMETER_DELIMINATOR).trim();
-            final String instanceModifier = getValidDeleteInstanceModifier(deleteGuidIM, childGuidIMList);
-            instanceModifierMessage = printIM(instanceModifier);
+            instanceModifier = getValidDeleteInstanceModifier(deleteGuidIM, childGuidIMList);
 
             final SolutionKit solutionKitToUninstall = solutionKitManager.findBySolutionKitGuidAndIM(deleteGuid, instanceModifier);
             if (solutionKitToUninstall == null) {
-                final String warningMsg = "Uninstall failed: Cannot find any existing solution kit (GUID = '" + deleteGuid +
-                        "', " + instanceModifierMessage + ") for uninstall.";
+                final String warningMsg = "Uninstall failed: "+ cannotFindSolutionKitMessage(instanceModifier, deleteGuid) + " for uninstall.";
                 logger.warning(warningMsg);
                 throw new SolutionKitManagerResourceException(status(NOT_FOUND).entity(warningMsg + lineSeparator()).build());
             }
@@ -562,7 +559,7 @@ public class SolutionKitManagerResource {
                         currentSolutionKitGuid = child.getSolutionKitGuid();
                         solutionKitAdminHelper.uninstall(child.getGoid());
                         uninstallSuccessMessages.add("- '"+ currentSolutionKitName+ "' (GUID = '" + currentSolutionKitGuid +
-                                "', "+ instanceModifierMessage + ")" + lineSeparator());
+                                "', and Instance Modifier = '" + InstanceModifier.getDisplayName(instanceModifier) + "')" + lineSeparator());
                     }
                 }
                 // Otherwise, uninstall specified child solution kits.
@@ -583,16 +580,15 @@ public class SolutionKitManagerResource {
                         final SolutionKit selectedSolutionKit = solutionKitManager.findBySolutionKitGuidAndIM(guid, instanceModifier);
 
                         if (selectedSolutionKit == null) {
-                            final String warningMsg = "Uninstall failed: Cannot find any existing solution kit (GUID = '" + guid +
-                                    "', " + instanceModifierMessage + ") for uninstall." + lineSeparator();
+                            final String warningMsg = "Uninstall failed: " + cannotFindSolutionKitMessage(instanceModifier, guid) + " for uninstall." + lineSeparator();
                             logger.warning(warningMsg);
                             errorMessages.add(warningMsg);
                         } else {
                             currentSolutionKitName = selectedSolutionKit.getName();
                             currentSolutionKitGuid = selectedSolutionKit.getSolutionKitGuid();
                             solutionKitAdminHelper.uninstall(selectedSolutionKit.getGoid());
-                            String uninstallMessage = "- '" + currentSolutionKitName + "' (GUID = '" + currentSolutionKitGuid + "', " +
-                                    instanceModifierMessage + ")" + lineSeparator();
+                            String uninstallMessage = "- '" + currentSolutionKitName + "' (GUID = '" + currentSolutionKitGuid +
+                                    "', and Instance Modifier = '" + InstanceModifier.getDisplayName(instanceModifier) + "')" + lineSeparator();
                             uninstallSuccessMessages.add(uninstallMessage);
                         }
                     }
@@ -619,8 +615,8 @@ public class SolutionKitManagerResource {
                 currentSolutionKitName = solutionKitToUninstall.getName();
                 currentSolutionKitGuid = solutionKitToUninstall.getSolutionKitGuid();
                 solutionKitAdminHelper.uninstall(solutionKitToUninstall.getGoid());
-                uninstallSuccessMessages.add("- '" + currentSolutionKitName + "' (GUID = '" + currentSolutionKitGuid + "', " +
-                        instanceModifierMessage + ")" + lineSeparator());
+                uninstallSuccessMessages.add("- '" + currentSolutionKitName + "' (GUID = '" + currentSolutionKitGuid +
+                        "', and Instance Modifier = '" + InstanceModifier.getDisplayName(instanceModifier) + "')" + lineSeparator());
             }
 
             //response 202 in the case where selected child kit does not exist
@@ -649,7 +645,7 @@ public class SolutionKitManagerResource {
             }
             message.append("ERROR IN SOLUTION KIT UNINSTALLATION WHEN PROCESSING '").append(currentSolutionKitName)
                     .append("' (GUID = '").append(currentSolutionKitGuid).append("', ")
-                    .append(instanceModifierMessage).append(")")
+                    .append(" and Instance Modifier = '").append(InstanceModifier.getDisplayName(instanceModifier)).append("')")
                     .append(lineSeparator()).append(lineSeparator())
                     .append("Please see below for more details").append(lineSeparator()).append("--------------------");
             logger.log(Level.WARNING, e.getMessage(), e);    // log full exception for unexpected errors
@@ -658,6 +654,17 @@ public class SolutionKitManagerResource {
 
         //Return a response with noContent() if all the uninstalls were successful
         return Response.noContent().build();
+    }
+
+    /**
+     * Error message to display when solution kit is not found.
+     * @param instanceModifier Solution kit instance modifier.
+     * @param guid Solution kit guid
+     * @return The error message
+     */
+    private String cannotFindSolutionKitMessage(@Nullable final String instanceModifier, @NotNull final String guid) {
+        return "Cannot find any existing solution kit (GUID = '" + guid +
+                "', and Instance Modifier = '" + InstanceModifier.getDisplayName(instanceModifier) + "')";
     }
 
     /**
@@ -672,41 +679,48 @@ public class SolutionKitManagerResource {
      * @param parentGuidIM the parent guid and instance modifier
      * @param childGuidIMList the list of child and their instance modifiers.
      * @return the instanceModifier determined by childGuidIM or by the parentGuidIM
-     * @throws SolutionKitManagerResourceException
+     * @throws SolutionKitManagerResourceException Exception thrown when parameters are not valid
      */
-    private String getValidDeleteInstanceModifier(final @NotNull String parentGuidIM,
+    private @Nullable String getValidDeleteInstanceModifier(final @NotNull String parentGuidIM,
                                                   final @NotNull List<String> childGuidIMList) throws SolutionKitManagerResourceException {
         if (!parentGuidIM.contains(PARAMETER_DELIMINATOR)) {
-            // If IM not specified, all children need to have same IM as another or no IM
-            final Set<String> childrenInstanceModifiers = new HashSet<>();
+            // If parent IM not specified, all children need to have same IM as another or no IM
+            String instanceModifier = null;
             for (String childGuidIm : childGuidIMList) {
-                childrenInstanceModifiers.add(substringAfter(childGuidIm, PARAMETER_DELIMINATOR).trim());
-                if (childrenInstanceModifiers.size() != 1) {
-                    throw new SolutionKitManagerResourceException(status(CONFLICT).entity("Error: all children solution kit " +
-                            "instance modifiers must be the same." + lineSeparator()).build());
+                //Skip childGuidIM with no specified IM
+                if (childGuidIm.contains(PARAMETER_DELIMINATOR)) {
+                    //Set the first child instanceModifier seen
+                    if (instanceModifier == null) {
+                        instanceModifier = substringAfter(childGuidIm, PARAMETER_DELIMINATOR).trim();
+                        //Instance modifier has already been set, compare it with the current childGuidIM
+                    } else if (!instanceModifier.equals(substringAfter(childGuidIm, PARAMETER_DELIMINATOR).trim())) {
+                        throw new SolutionKitManagerResourceException(status(CONFLICT).entity("Error: all child solution kit " +
+                                "instance modifiers must be the same." +
+                                lineSeparator() + "--------------------" +
+                                lineSeparator() +
+                                "List of child solution kits:" + lineSeparator() + StringUtils.join(childGuidIMList, lineSeparator())).build());
+                    }
                 }
             }
-            // if childGuidIMList is empty, return a default IM, or return the unique child IM (should only be one)
-            return childGuidIMList.isEmpty() ? "" : childrenInstanceModifiers.iterator().next();
+            // if childGuidIMList is empty, return a default IM, otherwise return the unique child IM (should only be one)
+            return instanceModifier;
 
         } else {
-            // if IM specified, All children need to have IM the same or no IM
+            // if parent IM specified, All children need to have IM the same or no IM
             final String parentIM = substringAfter(parentGuidIM,PARAMETER_DELIMINATOR);
             for (String childGuidIm : childGuidIMList) {
-                final String childIM = substringAfter(childGuidIm, PARAMETER_DELIMINATOR).trim();
-                if (!parentIM.equals(childIM) && childGuidIm.contains(PARAMETER_DELIMINATOR)) {
+                if (!parentIM.equals(substringAfter(childGuidIm, PARAMETER_DELIMINATOR).trim()) &&
+                        childGuidIm.contains(PARAMETER_DELIMINATOR)) {
                     throw new SolutionKitManagerResourceException(status(CONFLICT).entity("Error: if child solution kit " +
-                            "instance modifiers are specified, it must be the same as parent instance modifier." + lineSeparator()).build());
+                            "instance modifiers are specified, it must be the same as parent instance modifier." +
+                            lineSeparator() + "--------------------" + lineSeparator() +
+                            "Parent Solution Kit Instance Modifier: " + InstanceModifier.getDisplayName(parentIM) + lineSeparator() +
+                            "List of child solution kits:" + lineSeparator() + StringUtils.join(childGuidIMList, lineSeparator())).build());
                 }
             }
             return parentIM;
         }
 
-    }
-
-    public String printIM(String instanceModifier) {
-        return (StringUtils.isBlank(instanceModifier)? "without instance modifier" :
-                ("instance modifier = '"+ instanceModifier + "'"));
     }
 
     private StringBuilder makeUninstallMessage(List<String> uninstallSuccessMessages, StringBuilder message) {

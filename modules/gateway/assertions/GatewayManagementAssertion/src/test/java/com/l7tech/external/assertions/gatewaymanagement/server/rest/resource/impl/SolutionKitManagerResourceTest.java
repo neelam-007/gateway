@@ -975,9 +975,12 @@ public class SolutionKitManagerResourceTest {
         //Test
         errorResponse = solutionKitResource.uninstall("test::a", Collections.singletonList("child::aaa"));
 
-        //expect invalid params error
-        assertEquals(errorResponse.getEntity(), "Error: if child solution kit " +
-                "instance modifiers are specified, it must be the same as parent instance modifier." + System.lineSeparator());
+        // expect invalid params error
+        assertTrue(errorResponse.getEntity().toString().contains("Error: if child solution kit instance modifiers are specified, it must be the same as parent instance modifier."));
+        // expect parent instance modifier listed
+        assertTrue(errorResponse.getEntity().toString().contains("Parent Solution Kit Instance Modifier: a"));
+        // expect list of child sk listed
+        assertTrue(errorResponse.getEntity().toString().contains("child::aaa"));
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // parent solution kit IM specified as default, child IM is not default
@@ -985,9 +988,12 @@ public class SolutionKitManagerResourceTest {
         //Test
         errorResponse = solutionKitResource.uninstall("test::", Collections.singletonList("child::aaa"));
 
-        //expect invalid params error
-        assertEquals(errorResponse.getEntity(), "Error: if child solution kit " +
-                "instance modifiers are specified, it must be the same as parent instance modifier." + System.lineSeparator());
+        // expect invalid params error
+        assertTrue(errorResponse.getEntity().toString().contains("Error: if child solution kit instance modifiers are specified, it must be the same as parent instance modifier.\n"));
+        // expect parent instance modifier listed
+        assertTrue(errorResponse.getEntity().toString().contains("Parent Solution Kit Instance Modifier: N/A"));
+        // expect list of child sk listed
+        assertTrue(errorResponse.getEntity().toString().contains("child::aaa"));
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // parent solution kit IM not specified, child IM is not same as each other ( a != b)
@@ -996,8 +1002,12 @@ public class SolutionKitManagerResourceTest {
         errorResponse = solutionKitResource.uninstall("test", Arrays.asList("c1_guid::a","c2_guid::b"));
 
         //expect invalid params error
-        assertEquals(errorResponse.getEntity(), "Error: all children solution kit " +
-                "instance modifiers must be the same." + System.lineSeparator());
+        assertTrue(errorResponse.getEntity().toString().contains("Error: all child solution kit " +
+                "instance modifiers must be the same."));
+        // expect list of child sk listed
+        assertTrue(errorResponse.getEntity().toString().contains("c1_guid::a"));
+        assertTrue(errorResponse.getEntity().toString().contains("c2_guid::b"));
+
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // parent solution kit IM not specified, child IM is not same as each other ("" != b)
@@ -1006,8 +1016,11 @@ public class SolutionKitManagerResourceTest {
         errorResponse = solutionKitResource.uninstall("test", Arrays.asList("c1_guid::","c2_guid::b"));
 
         //expect invalid params error
-        assertEquals(errorResponse.getEntity(), "Error: all children solution kit " +
-                "instance modifiers must be the same." + System.lineSeparator());
+        assertTrue(errorResponse.getEntity().toString().contains("Error: all child solution kit " +
+                "instance modifiers must be the same."));
+        // expect list of child sk listed
+        assertTrue(errorResponse.getEntity().toString().contains("c1_guid::"));
+        assertTrue(errorResponse.getEntity().toString().contains("c2_guid::b"));
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // cannot find solution kit GUID and IM
@@ -1022,7 +1035,7 @@ public class SolutionKitManagerResourceTest {
 
         //expect solution kit does not exist error
         assertEquals(errorResponse.getEntity(), "Uninstall failed: Cannot find any existing solution kit (GUID = '" +
-                solutionKit1.getSolutionKitGuid() + "', instance modifier = 'INVALID_IM') for uninstall." + System.lineSeparator());
+                solutionKit1.getSolutionKitGuid() + "', and Instance Modifier = 'INVALID_IM') for uninstall." + System.lineSeparator());
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // no child with matching guid
@@ -1054,7 +1067,7 @@ public class SolutionKitManagerResourceTest {
 
         //expect child kit with IM selected does not match existing child kits
         assertEquals(errorResponse.getEntity(),"Uninstall failed: Cannot find any existing solution kit (GUID = '" +
-                parentSolutionKit.getSolutionKitGuid() + "', instance modifier = 'INVALID_IM') for uninstall." + System.lineSeparator());
+                parentSolutionKit.getSolutionKitGuid() + "', and Instance Modifier = 'INVALID_IM') for uninstall." + System.lineSeparator());
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // when child kits are selected, show which child kits uninstalled successfully, and which have errors
@@ -1073,7 +1086,7 @@ public class SolutionKitManagerResourceTest {
 
         //expect solutionKit1 uninstallation to fail with error, and solutionKit2 to be successfully uninstalled
         assertEquals(errorResponse.getEntity(),"Uninstalled solution kits:" + System.lineSeparator() +
-                "- 'SolutionKit2' (GUID = '1f87436b-7ca5-41c8-9418-21d7a7848988', instance modifier = 'im1')" + System.lineSeparator() +
+                "- 'SolutionKit2' (GUID = '1f87436b-7ca5-41c8-9418-21d7a7848988', and Instance Modifier = 'im1')" + System.lineSeparator() +
                 System.lineSeparator() +
                 "Total Solution Kits deleted: 1" + System.lineSeparator() +
                 System.lineSeparator() +
