@@ -220,7 +220,9 @@ public class ManageSolutionKitsDialog extends JDialog {
                                                     (!StringUtils.isBlank(header.getInstanceModifier()) ? " (Instance Modifier: '" + header.getInstanceModifier()+"')" :
                                                     " (no Instance Modifier)") + "<br/> ");
                                             final Goid parentGoid = header.getParentGoid();
-                                            possibleParentsToRemove.add(parentGoid);
+                                            if (parentGoid != null) {
+                                                possibleParentsToRemove.add(parentGoid);
+                                            }
                                         }
                                     }
                                 }
@@ -275,7 +277,7 @@ public class ManageSolutionKitsDialog extends JDialog {
     private void removeStrayParents(Set<Goid> possibleParentsToRemove) {
         for (Goid parent : possibleParentsToRemove) {
             try {
-                if (solutionKitAdmin.findHeaders(parent).isEmpty()) {
+                if (solutionKitAdmin.find(parent).isEmpty()) {
                     solutionKitAdmin.delete(parent);
                 }
             } catch (FindException e) {

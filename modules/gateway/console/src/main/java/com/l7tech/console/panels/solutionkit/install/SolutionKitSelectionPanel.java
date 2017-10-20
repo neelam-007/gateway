@@ -45,7 +45,7 @@ import static com.l7tech.gateway.common.solutionkit.SolutionKit.*;
 public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfig>  {
     private static final Logger logger = Logger.getLogger(SolutionKitSelectionPanel.class.getName());
     private static final String STEP_LABEL = "Select Solution Kit";
-    private static final String STEP_DESC = "Use the checkbox(es) to select the solution kit(s) to install.  Optionally highlight the solution kit row(s) to perform a button action.  For example to enable the Set Instance Modifier button.";
+    private static final String STEP_DESC = "Use the checkbox(es) to select the solution kit(s) to install or upgrade.  Optionally highlight the solution kit row(s) to perform a button action.";
     private final String[] tableColumnNames = {"", "Name", "Version", "Instance Modifier", "Description"};
 
     private JPanel mainPanel;
