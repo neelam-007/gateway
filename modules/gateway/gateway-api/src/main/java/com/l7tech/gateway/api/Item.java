@@ -62,6 +62,7 @@ public class Item<R> extends Reference<R> {
             @XmlElementRef(type = GroupMO.class),
             @XmlElementRef(type = CertificateData.class),
             @XmlElementRef(type = WorkQueueMO.class),
+            @XmlElementRef(type = LogSinkMO.class),
             @XmlElementRef(type = ScheduledTaskMO.class),
             @XmlElementRef(type = ServerModuleFileMO.class),
             @XmlElementRef(type = PolicyBackedServiceMO.class),

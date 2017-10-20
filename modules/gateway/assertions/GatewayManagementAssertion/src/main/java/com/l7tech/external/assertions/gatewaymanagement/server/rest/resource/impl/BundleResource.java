@@ -123,6 +123,7 @@ public class BundleResource {
      * @param serverModuleFileIds                 Server Modules Files to export
      * @param siteMinderConfigurationIds          Siteminder Configurations to export
      * @param workQueueIds                        Work Queues to export
+     * @param logSinkIds                          Log Sinks to export
      * @param requiredActiveConnectorIds          Marks these Active Connectors as required in the bundle (does not
      *                                            export their dependencies and FailOnNew is set to true)
      * @param requiredCassandraConnectionIds      Marks these Cassandra Connections as required in the bundle (does not
@@ -241,6 +242,7 @@ public class BundleResource {
                                      @Since(RestManVersion.VERSION_1_0_2) @QueryParam("serverModuleFile") List<String> serverModuleFileIds,
                                      @Since(RestManVersion.VERSION_1_0_2) @QueryParam("siteMinderConfiguration") List<String> siteMinderConfigurationIds,
                                      @Since(RestManVersion.VERSION_1_0_2) @QueryParam("workQueue") List<String> workQueueIds,
+                                     @Since(RestManVersion.VERSION_1_0_4) @QueryParam("logSink") List<String> logSinkIds,
                                      //These are the entities that will be required on import
                                      @Since(RestManVersion.VERSION_1_0_2) @QueryParam("requireActiveConnector") List<String> requiredActiveConnectorIds,
                                      @Since(RestManVersion.VERSION_1_0_2) @QueryParam("requireCassandraConnection") List<String> requiredCassandraConnectionIds,
@@ -320,6 +322,7 @@ public class BundleResource {
                 "serverModuleFile",
                 "siteMinderConfiguration",
                 "workQueue",
+                "logSink",
 
                 "requireActiveConnector",
                 "requireCassandraConnection",
@@ -360,7 +363,7 @@ public class BundleResource {
         if (activeConnectorIds.isEmpty() && cassandraConnectionIds.isEmpty() && trustedCertificateIds.isEmpty() && clusterPropertyIds.isEmpty() && customKeyValueIds.isEmpty() && emailListenerIds.isEmpty() && encapsulatedAssertionIds.isEmpty() &&
                 firewallRuleIds.isEmpty() && folderIds.isEmpty() && genericEntityIds.isEmpty() && httpConfigurationIds.isEmpty() && identityProviderIds.isEmpty() && interfaceTagIds.isEmpty() && jdbcConnectionIds.isEmpty() && jmsDestinationIds.isEmpty() &&
                 listenPortIds.isEmpty() && policyIds.isEmpty() && policyAliasIds.isEmpty() && policyBackedServiceIds.isEmpty() && privateKeyIds.isEmpty() && serviceIds.isEmpty() && serviceAliasIds.isEmpty() && resourceIds.isEmpty() && revocationCheckingPolicyIds.isEmpty() && roleIds.isEmpty() &&
-                sampleMessageIds.isEmpty() && scheduledTaskIds.isEmpty() && passwordIds.isEmpty() && securityZoneIds.isEmpty() && serverModuleFileIds.isEmpty() && siteMinderConfigurationIds.isEmpty() && workQueueIds.isEmpty() && !fullGateway) {
+                sampleMessageIds.isEmpty() && scheduledTaskIds.isEmpty() && passwordIds.isEmpty() && securityZoneIds.isEmpty() && serverModuleFileIds.isEmpty() && siteMinderConfigurationIds.isEmpty() && workQueueIds.isEmpty() && logSinkIds.isEmpty() && !fullGateway) {
             throw new InvalidArgumentException("Must specify at least one entity to export");
         }
 
@@ -398,6 +401,7 @@ public class BundleResource {
         buildEntityHeaders(serverModuleFileIds, entityHeadersToExport, EntityType.SERVER_MODULE_FILE);
         buildEntityHeaders(siteMinderConfigurationIds, entityHeadersToExport, EntityType.SITEMINDER_CONFIGURATION);
         buildEntityHeaders(workQueueIds, entityHeadersToExport, EntityType.WORK_QUEUE);
+        buildEntityHeaders(logSinkIds, entityHeadersToExport, EntityType.LOG_SINK);
 
         List<EntityHeader> entityHeadersToIgnoreDependencies = new ArrayList<>();
         buildEntityHeaders(requiredActiveConnectorIds, entityHeadersToIgnoreDependencies, EntityType.SSG_ACTIVE_CONNECTOR);

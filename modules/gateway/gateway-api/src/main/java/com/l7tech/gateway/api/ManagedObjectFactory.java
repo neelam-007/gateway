@@ -597,6 +597,25 @@ public class ManagedObjectFactory {
     }
 
     /**
+     * Create a new Logsink instance.
+     *
+     * @return The new instance.
+     */
+    public static LogSinkMO createLogSinkMO() {
+        return new LogSinkMO();
+    }
+
+
+    /**
+     * Create a new LogSinkFilter instance.
+     *
+     * @return The new instance.
+     */
+    public static LogSinkFilter createLogSinkFilter() {
+        return new LogSinkFilter();
+    }
+
+    /**
      * Create a new ScheduledTaskMO instance.
      *
      * @return The new instance.

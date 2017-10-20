@@ -197,6 +197,21 @@ public abstract class MigrationTestBase {
         }
     }
 
+    protected void validateDependency(final DependencyMO dependency, final String id, final String name, final EntityType entityType) {
+        Assert.assertNotNull(dependency);
+        Assert.assertNull(dependency.getDependencies());
+        Assert.assertEquals(name, dependency.getName());
+        Assert.assertEquals(entityType.toString(), dependency.getType());
+    }
+
+    protected void validateMapping(final Mapping mapping, final EntityType entityType, final Mapping.Action action, final Mapping.ActionTaken actionTaken, final String srcId, final String targetId) {
+        Assert.assertEquals(entityType.toString(), mapping.getType());
+        Assert.assertEquals(action, mapping.getAction());
+        Assert.assertEquals(actionTaken, mapping.getActionTaken());
+        Assert.assertEquals(srcId, mapping.getSrcId());
+        Assert.assertEquals(targetId, mapping.getTargetId());
+    }
+
     private String getUri(String uri) {
         return uri == null ? null : uri.substring(uri.indexOf("/restman/1.0/") + 13);
     }

@@ -574,6 +574,10 @@
                     <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.POLICY_BACKED_SERVICE"/></key>
                     <bean class="com.l7tech.server.search.processors.PolicyBackedServiceDependencyProcessor"/>
                 </entry>
+                <entry>
+                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.LOG_SINK"/></key>
+                    <bean class="com.l7tech.server.search.processors.LogSinkDependencyProcessor"/>
+                </entry>
             </util:map>
         </constructor-arg>
     </bean>
@@ -1614,7 +1618,7 @@
         <constructor-arg index="1" ref="clusterPropertyManager"/>
         <constructor-arg index="2" ref="transactionManager"/>
     </bean>
-    
+
     <bean id="applicationEventProxy" class="com.l7tech.server.util.ApplicationEventProxy" primary="true"/>
 
     <bean id="soapFaultManager" class="com.l7tech.server.util.SoapFaultManager" depends-on="clusterPropertyManager">

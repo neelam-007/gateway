@@ -26,3 +26,8 @@ UneasyRooster.ipr
 
 # Application specific
 *.env
+
+# Derby files
+derby.log
+hs_err*.log
+dataSources/

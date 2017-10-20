@@ -2586,6 +2586,10 @@
                     <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.POLICY_BACKED_SERVICE"/></key>
                     <bean class="com.l7tech.server.search.processors.PolicyBackedServiceDependencyProcessor"/>
                 </entry>
+                <entry>
+                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.LOG_SINK"/></key>
+                    <bean class="com.l7tech.server.search.processors.LogSinkDependencyProcessor"/>
+                </entry>
             </util:map>
         </constructor-arg>
     </bean>
