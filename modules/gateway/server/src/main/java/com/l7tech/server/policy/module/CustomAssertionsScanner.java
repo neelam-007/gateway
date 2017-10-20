@@ -115,6 +115,7 @@ public class CustomAssertionsScanner extends ScheduledModuleScanner<CustomAssert
         }
 
         boolean resourceFound = !scannerHelper.hasCustomAssertionPropertyFileName();
+        boolean preferAssertionInternalClassLoader = false;
 
         final List<File> moduleJarFiles = new ArrayList<>();
         moduleJarFiles.add(moduleJar);
@@ -167,6 +168,15 @@ public class CustomAssertionsScanner extends ScheduledModuleScanner<CustomAssert
                             ResourceUtils.closeQuietly(entryIn);
                             ResourceUtils.closeQuietly(entryOut);
                         }
+                    } else if(scannerHelper.isCustomAssertionPropertiesFile(entry)) {
+                        final Properties props = new Properties();
+                        try {
+                            InputStream in = jarFile.getInputStream(entry);
+                            props.load(in);
+                        } catch (Exception e) {
+                            logger.info("Unable to load custom assertion classloader properties. " + e.getMessage());
+                        }
+                        preferAssertionInternalClassLoader = Boolean.parseBoolean(props.getProperty("CustomAssertion.classloader.preferAssertionInternal", "false"));
                     }
                 }
             }
@@ -184,7 +194,7 @@ public class CustomAssertionsScanner extends ScheduledModuleScanner<CustomAssert
             }
         }
 
-        return !resourceFound ? null : createClassLoader(parent, moduleJarFiles);
+        return !resourceFound ? null : createClassLoader(parent, moduleJarFiles, preferAssertionInternalClassLoader);
     }
 
     /**
@@ -194,10 +204,13 @@ public class CustomAssertionsScanner extends ScheduledModuleScanner<CustomAssert
      *
      * @param parent      the parent ClassLoader.
      * @param jarFiles    a list of jar files to be accessed by the ClassLoader.
+     * @param preferAssertionInternalClassLoader A hint on how to load classes for this custom assertion. If true this
+     *                                           will attempt to load them from within the custom assertion before
+     *                                           checking the parent classloader.
      * @throws com.l7tech.server.policy.module.ModuleException if an error occur during <code>ClassLoader</code> creation.
      * @return on success an instance of {@link com.l7tech.server.policy.module.CustomAssertionClassLoader} or <code>null</code> on failure.
      */
-    private CustomAssertionClassLoader createClassLoader(final ClassLoader parent, final List<File> jarFiles) throws ModuleException {
+    private CustomAssertionClassLoader createClassLoader(final ClassLoader parent, final List<File> jarFiles, final boolean preferAssertionInternalClassLoader) throws ModuleException {
         CustomAssertionClassLoader loader;
         try {
             final List<URL> urlList = new ArrayList<>();
@@ -208,6 +221,8 @@ public class CustomAssertionsScanner extends ScheduledModuleScanner<CustomAssert
             final URL[] urls = urlList.toArray(new URL[urlList.size()]);
             if (parent == null) {
                 loader = new CustomAssertionClassLoader(urls);
+            } else if (preferAssertionInternalClassLoader) {
+                loader = new CustomAssertionPriorityClassLoader(urls, parent);
             } else {
                 loader = new CustomAssertionClassLoader(urls, parent);
             }
