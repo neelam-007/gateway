@@ -60,10 +60,11 @@ public class ServerSiteMinderAuthenticateAssertion extends AbstractServerSiteMin
 
         final Map<String, Object> variableMap = context.getVariableMap(variablesUsed, getAudit());
         String varPrefix = SiteMinderAssertionUtil.extractContextVarValue(assertion.getPrefix(), variableMap, getAudit());
+        String ssoZoneName = SiteMinderAssertionUtil.extractContextVarValue(assertion.getSsoZoneName(), variableMap, getAudit());
         String ssoToken = extractSsoToken(variableMap);
         boolean createSsoToken = assertion.isCreateSsoToken();
 
-      SiteMinderContext smContext = null;
+      SiteMinderContext smContext;
         try {
             try {
                 smContext = (SiteMinderContext) context.getVariable(varPrefix + "." + SiteMinderAssertionUtil.SMCONTEXT);
@@ -78,6 +79,9 @@ public class ServerSiteMinderAuthenticateAssertion extends AbstractServerSiteMin
                 logAndAudit(AssertionMessages.SINGLE_SIGN_ON_ERROR, (String)assertion.meta().get(AssertionMetadata.SHORT_NAME), "Agent is null or not initialized!");
                 return AssertionStatus.FALSIFIED;
             }
+
+            // Save or update the SSO Zone name, which will be passed down to SiteMinderLowLevelAgent.authenticate(...)
+            smContext.setSsoZoneName(ssoZoneName);
 
             //first check what credentials are accepted by the policy server
             SiteMinderCredentials credentials = collectCredentials(authContext, variableMap, smContext);

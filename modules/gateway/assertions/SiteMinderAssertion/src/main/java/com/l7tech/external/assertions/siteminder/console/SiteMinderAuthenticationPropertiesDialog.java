@@ -25,7 +25,7 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
     private JPanel propertyPanel;
     private JRadioButton useLastCredentialsRadioButton;
     private JRadioButton specifyCredentialsRadioButton;
-    private JCheckBox authenticateViaSiteMinderCookieCheckBox;
+    private JRadioButton authenticateViaSiteMinderCookieRadioButton;
     private TargetVariablePanel siteminderPrefixVariablePanel;
     private TargetVariablePanel cookieVariablePanel;
     private JCheckBox usernameAndPasswordCheckBox;
@@ -34,7 +34,9 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
     private JTextField namedCertificate;
     private JLabel usernameLabel;
     private JLabel certificateNameLabel;
-    private JCheckBox createSsoTokenCheckBox;
+    private JRadioButton createSsoTokenRadioButton;
+    private JTextField ssoZoneNameTextField;
+    private JRadioButton noSsoTokenRadioButton;
     private final InputValidator inputValidator;
 
     public SiteMinderAuthenticationPropertiesDialog(final Frame owner, final SiteMinderAuthenticateAssertion assertion) {
@@ -60,11 +62,14 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
 
         useLastCredentialsRadioButton.addActionListener(buttonSwitchListener);
         specifyCredentialsRadioButton.addActionListener(buttonSwitchListener);
-        authenticateViaSiteMinderCookieCheckBox.addActionListener(buttonSwitchListener);
+        authenticateViaSiteMinderCookieRadioButton.addActionListener(buttonSwitchListener);
         usernameAndPasswordCheckBox.addActionListener(buttonSwitchListener);
         x509CertificateCheckBox.addActionListener(buttonSwitchListener);
+        createSsoTokenRadioButton.addActionListener(buttonSwitchListener);
+        noSsoTokenRadioButton.addActionListener(buttonSwitchListener);
 
-        createSsoTokenCheckBox.setSelected(true);
+        createSsoTokenRadioButton.setSelected(true);
+        cookieVariablePanel.setAllowDynamicStatusLabelVisibility(true);
 
         Utilities.enableGrayOnDisabled(usernameLabel,namedUser,certificateNameLabel,namedCertificate);
 
@@ -119,11 +124,18 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
     }
 
     private void enableDisableComponents() {
-        cookieVariablePanel.setEnabled(authenticateViaSiteMinderCookieCheckBox.isSelected());
+        boolean packNeeded = (cookieVariablePanel.isEnabled() != authenticateViaSiteMinderCookieRadioButton.isSelected());
+
+        cookieVariablePanel.setEnabled(authenticateViaSiteMinderCookieRadioButton.isSelected());
         usernameLabel.setEnabled(specifyCredentialsRadioButton.isSelected() && usernameAndPasswordCheckBox.isSelected());
         namedUser.setEnabled(specifyCredentialsRadioButton.isSelected() && usernameAndPasswordCheckBox.isSelected());
         certificateNameLabel.setEnabled(specifyCredentialsRadioButton.isSelected() && x509CertificateCheckBox.isSelected());
         namedCertificate.setEnabled(specifyCredentialsRadioButton.isSelected() && x509CertificateCheckBox.isSelected());
+        ssoZoneNameTextField.setEnabled(createSsoTokenRadioButton.isSelected());
+
+        if (packNeeded) {
+            pack();
+        }
     }
 
     /**
@@ -134,7 +146,7 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
      */
     @Override
     public void setData(SiteMinderAuthenticateAssertion assertion) {
-        authenticateViaSiteMinderCookieCheckBox.setSelected(assertion.isUseSMCookie());
+        authenticateViaSiteMinderCookieRadioButton.setSelected(assertion.isUseSMCookie());
         cookieVariablePanel.setVariable(assertion.getCookieSourceVar());
 
         if(assertion.getPrefix() != null && !assertion.getPrefix().isEmpty()) {
@@ -149,7 +161,15 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
         x509CertificateCheckBox.setSelected(assertion.isSendX509CertificateCredential());
         namedUser.setText(assertion.getNamedUser());
         namedCertificate.setText(assertion.getNamedCertificate());
-        createSsoTokenCheckBox.setSelected(assertion.isCreateSsoToken());
+
+        // Use SSO Token from the context variable option takes the precedence over Create SSO Token.
+        if (!assertion.isUseSMCookie()) {
+            createSsoTokenRadioButton.setSelected(assertion.isCreateSsoToken());
+            ssoZoneNameTextField.setText(assertion.getSsoZoneName());
+        }
+
+        // Select None if neither of the SSO Token options are selected.
+        noSsoTokenRadioButton.setSelected(!assertion.isCreateSsoToken() && !assertion.isUseSMCookie());
 
         enableDisableComponents();
     }
@@ -173,7 +193,7 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
             throw new ValidationException(validationErrorMessage);
         }
 
-        assertion.setUseSMCookie(authenticateViaSiteMinderCookieCheckBox.isSelected());
+        assertion.setUseSMCookie(authenticateViaSiteMinderCookieRadioButton.isSelected());
         assertion.setCookieSourceVar(cookieVariablePanel.getVariable());
         assertion.setPrefix(siteminderPrefixVariablePanel.getVariable());
         assertion.setLastCredential(useLastCredentialsRadioButton.isSelected());
@@ -181,7 +201,8 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
         assertion.setSendX509CertificateCredential(x509CertificateCheckBox.isSelected());
         assertion.setNamedUser(namedUser.getText().trim());
         assertion.setNamedCertificate(namedCertificate.getText().trim());
-        assertion.setCreateSsoToken(createSsoTokenCheckBox.isSelected());
+        assertion.setCreateSsoToken(createSsoTokenRadioButton.isSelected());
+        assertion.setSsoZoneName(ssoZoneNameTextField.getText().trim());
         //set user credentials
 
         return assertion;
