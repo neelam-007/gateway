@@ -27,7 +27,7 @@ public class GenerateCountQuery extends GenerateSqlQuery {
         }
         SqlStatement sqlStatement = super.generate(mapping, entitySet, queryInfo, filter, databaseTypeName);
         StringBuffer sb = new StringBuffer(SELECT_COUNT);
-        if ("CUSTOM".equals(table.tableType)) {
+        if ("VIEW".equals(table.tableType) || "CUSTOM".equals(table.tableType)) {
             String normalizeQuey = Util.normalizeQuery(sqlStatement.sql);
             sb.append(" FROM ( ");
             int fromIndex = 0;
@@ -48,8 +48,7 @@ public class GenerateCountQuery extends GenerateSqlQuery {
             int fromIndex = sqlStatement.sql.indexOf(" FROM " + table.tableName);
             sb.append(sqlStatement.sql.substring(fromIndex, sqlStatement.sql.length()));
         }
-
-        logger.info(sb.toString());
+        logger.info(">>>>>>>>>>>>" + sb.toString());
         return new SqlStatement(sb.toString(), sqlStatement.params);
 
     }

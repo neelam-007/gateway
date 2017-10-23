@@ -162,7 +162,7 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
                             "\tJOIN APPLICATION_API_XREF ax on ax.APPLICATION_UUID = a.UUID\n" +
                             "\tLEFT JOIN REQUEST r ON a.UUID = r.ENTITY_UUID" +
                             "\tWHERE a.API_KEY IS NOT NULL AND a.TENANT_ID='"+tenantId+"' AND a.STATUS IN ('ENABLED','DISABLED','EDIT_APPLICATION_PENDING_APPROVAL')" +
-                            "\tGROUP BY a.UUID, ax.API_UUID", Collections.EMPTY_LIST);
+                            "\tGROUP BY a.UUID, ax.API_UUID, o.NAME, a.NAME, a.API_KEY, a.KEY_SECRET, a.STATUS, a.ORGANIZATION_UUID, a.OAUTH_CALLBACK_URL, a.OAUTH_SCOPE, a.OAUTH_TYPE, a.MAG_SCOPE, a.MAG_MASTER_KEY, a.CREATED_BY,a.MODIFIED_BY, r.PREVIOUS_STATE", Collections.EMPTY_LIST);
 
             // do not include deleted list in json response
             appJsonObj.setDeletedIds(null);
@@ -235,7 +235,7 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
     final String UUID_PARAM = "{{UUID_LIST}}";
     final String CF_QUERY = "SELECT ENTITY_UUID, SYSTEM_PROPERTY_NAME, VALUE \n" +
             "from CUSTOM_FIELD cf inner join CUSTOM_FIELD_VALUE cfv on cf.UUID = cfv.CUSTOM_FIELD_UUID \n" +
-            "where ENTITY_UUID in (" + UUID_PARAM + ") AND cf.STATUS=\"ENABLED\"";
+            "where ENTITY_UUID in (" + UUID_PARAM + ") AND cf.STATUS='ENABLED'";
 
     String app_uuids = "'"+StringUtils.join(((HashMap) values).keySet(), "','")+"'";
 
