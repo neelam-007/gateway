@@ -17,10 +17,10 @@
       <ivy:deliver deliverpattern="${ivy.build.file}" pubrevision="@{build-version}" organisation="com.layer7.portal" module="${build.name}${ssg.version}" status="release"/>
       <ivy:makepom ivyfile="${ivy.build.file}" pomfile="${src.root}/target/${build.org}-${build.name}${ssg.version}-@{build-version}-pom.pom"/>
       <!-- copy artifacts into correct name to be published -->
-      <copy file="${src.root}/build/ivy/repository/PortalBootstrapAssertion-${ssg.version}.aar" tofile="${src.root}/target/${build.org}-${build.name}${ssg.version}-@{build-version}-aar.aar"/>
-      <copy file="${src.root}/build/ivy/repository/PortalBootstrapAssertion-${ssg.version}.saar" tofile="${src.root}/target/${build.org}-${build.name}${ssg.version}-@{build-version}-saar.saar"/>
-      <copy file="${src.root}/build/ivy/repository/PortalBootstrapAssertion-${ssg.version}.saar.xml" tofile="${src.root}/target/${build.org}-${build.name}${ssg.version}-@{build-version}-saar-xml.saar-xml"/>
-      <copy file="${src.root}/build/ivy/repository/PortalBootstrapAssertion-${ssg.version}.bundle.xml" tofile="${src.root}/target/${build.org}-${build.name}${ssg.version}-@{build-version}-bundle-xml.bundle-xml"/>
+      <copy file="${src.root}/build/ivy/repository/PortalDeployerAssertion-${ssg.version}.aar" tofile="${src.root}/target/${build.org}-${build.name}${ssg.version}-@{build-version}-aar.aar"/>
+      <copy file="${src.root}/build/ivy/repository/PortalDeployerAssertion-${ssg.version}.saar" tofile="${src.root}/target/${build.org}-${build.name}${ssg.version}-@{build-version}-saar.saar"/>
+      <copy file="${src.root}/build/ivy/repository/PortalDeployerAssertion-${ssg.version}.saar.xml" tofile="${src.root}/target/${build.org}-${build.name}${ssg.version}-@{build-version}-saar-xml.saar-xml"/>
+      <copy file="${src.root}/build/ivy/repository/PortalDeployerAssertion-${ssg.version}.bundle.xml" tofile="${src.root}/target/${build.org}-${build.name}${ssg.version}-@{build-version}-bundle-xml.bundle-xml"/>
     </sequential>
   </macrodef>
 </project>
