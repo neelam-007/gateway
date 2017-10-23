@@ -9,6 +9,7 @@ import org.apache.commons.pool.impl.GenericObjectPool;
 
 import javax.naming.NamingException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -22,6 +23,7 @@ public class PooledConnection {
     private final AtomicInteger referenceCount = new AtomicInteger(0);
     private final JmsEndpointConfig endpoint;
     private final long createdTime = System.currentTimeMillis();
+    private AtomicLong lastAccessTime = new AtomicLong(createdTime);
 
     public PooledConnection(final JmsEndpointConfig endpointConfig, JmsResourceManagerConfig cacheConfig) throws  Exception{
         this.endpoint = endpointConfig;
@@ -140,6 +142,24 @@ public class PooledConnection {
         return createdTime;
     }
 
+    public void touch() {
+        if(isPooled) {
+            lastAccessTime.set(System.currentTimeMillis());
+        }
+        else {
+            singleConnection.touch();
+        }
+    }
+
+    public AtomicLong getLastAccessTime() {
+        if(isPooled) {
+            return lastAccessTime;
+        }
+        else {
+            return singleConnection.getLastAccessTime();
+        }
+    }
+
     private CachedConnection newConnection(final JmsEndpointConfig endpoint ) throws NamingException, JmsRuntimeException {
         final JmsEndpointConfig.JmsEndpointKey key = endpoint.getJmsEndpointKey();
 
@@ -186,12 +206,7 @@ public class PooledConnection {
     }
 
     public boolean isIdleTimeoutExpired() {
-        if(isPooled) {
-            return isPoolEmpty();
-        }
-        else {
-            return (System.currentTimeMillis() - singleConnection.getLastAccessTime().get() > config.minEvictableIdleTimeMillis && config.minEvictableIdleTimeMillis > 0);
-        }
+        return (isPooled ? isPoolEmpty() : true) && (System.currentTimeMillis() - getLastAccessTime().get() > config.minEvictableIdleTimeMillis && config.minEvictableIdleTimeMillis > 0);
     }
 
     public void debugPoolStatus() {
