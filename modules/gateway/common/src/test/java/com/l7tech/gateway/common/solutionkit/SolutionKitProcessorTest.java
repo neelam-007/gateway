@@ -94,6 +94,117 @@ public class SolutionKitProcessorTest {
         }
     }
 
+
+    @Test
+    public void testInstallParentWithDifferentMetadataError() throws Throwable {
+        // test install a parent with different metadata than one that already exists in the database. Occurs when users
+        // want to install one child solution kit at a time. If the meta data is different then return error.
+
+        // parent skar loaded
+        SolutionKit parentSolutionKitLoaded = new SolutionKitBuilder()
+                .name("ParentSK")
+                .skGuid("SameGuid")
+                .skVersion("2.0")
+                .addProperty(SolutionKit.SK_PROP_TIMESTAMP_KEY,"testStamp")
+                .addProperty(SolutionKit.SK_PROP_DESC_KEY, "test")
+                .addProperty(SolutionKit.SK_PROP_IS_COLLECTION_KEY, "true")
+                .goid(new Goid(0, 1))
+                .build();
+        when(solutionKitsConfig.getParentSolutionKitLoaded()).thenReturn(parentSolutionKitLoaded);
+
+        // parent skar from DB (Different version)
+        SolutionKit parentSolutionKitFromDb = new SolutionKitBuilder()
+                .name("ParentSK")
+                .skGuid("SameGuid")
+                .skVersion("1.0")
+                .addProperty(SolutionKit.SK_PROP_TIMESTAMP_KEY,"testStamp")
+                .addProperty(SolutionKit.SK_PROP_DESC_KEY, "test")
+                .addProperty(SolutionKit.SK_PROP_IS_COLLECTION_KEY, "true")
+                .addProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, "IM1")
+                .goid(new Goid(0, 1))
+                .build();
+        when(solutionKitAdmin.get(parentSolutionKitFromDb.getSolutionKitGuid(),"IM1")).thenReturn(parentSolutionKitFromDb);
+
+        // skar of skar for the test
+        final int numberOfSolutionKits = 1;
+        final Set<SolutionKit> selectedSolutionKits = new HashSet<>(numberOfSolutionKits);
+        SolutionKit solutionKit1 = new SolutionKitBuilder()
+                .name("SK1")
+                .addProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, "IM1")
+                .build();
+        selectedSolutionKits.add(solutionKit1);
+        when(solutionKitsConfig.getSelectedSolutionKits()).thenReturn(selectedSolutionKits);
+        when(solutionKitsConfig.isUpgrade()).thenReturn(false);
+
+        // test install, should fail because the metadata for loaded + solution kit on db have different metadata
+        try {
+            solutionKitProcessor.testInstallOrUpgrade(new Functions.UnaryVoidThrows<Triple<SolutionKit, String, Boolean>, Throwable>() {
+                @Override
+                public void call(Triple<SolutionKit, String, Boolean> loaded) throws Throwable {
+                    //do nothing
+                }
+            });
+            fail("Exception should've been thrown");
+        } catch (SolutionKitConflictException e) {
+            assertEquals(e.getMessage(), "This parent solution kit with guid 'SameGuid' with instance modifier" +
+                    " 'IM1' already exists. To install it again, specify a unique instance modifier");
+        }
+    }
+
+    @Test
+    public void testInstallParentWithSameMetaDataSuccess() throws Throwable {
+        // test install a parent with different metadata than one that already exists in the database. Occurs when users
+        // want to install one child solution kit at a time. If the meta data is same, then proceed.
+
+        // parent skar loaded
+        SolutionKit parentSolutionKitLoaded = new SolutionKitBuilder()
+                .name("ParentSK")
+                .skGuid("SameGuid")
+                .skVersion("1.0")
+                .addProperty(SolutionKit.SK_PROP_TIMESTAMP_KEY,"testStamp")
+                .addProperty(SolutionKit.SK_PROP_DESC_KEY, "test")
+                .addProperty(SolutionKit.SK_PROP_IS_COLLECTION_KEY, "true")
+                .goid(new Goid(0, 1))
+                .build();
+        when(solutionKitsConfig.getParentSolutionKitLoaded()).thenReturn(parentSolutionKitLoaded);
+
+        // parent skar from DB (Different version)
+        SolutionKit parentSolutionKitFromDb = new SolutionKitBuilder()
+                .name("ParentSK")
+                .skGuid("SameGuid")
+                .skVersion("1.0")
+                .addProperty(SolutionKit.SK_PROP_TIMESTAMP_KEY,"testStamp")
+                .addProperty(SolutionKit.SK_PROP_DESC_KEY, "test")
+                .addProperty(SolutionKit.SK_PROP_IS_COLLECTION_KEY, "true")
+                .addProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, "IM1")
+                .goid(new Goid(0, 1))
+                .build();
+        when(solutionKitAdmin.get(parentSolutionKitFromDb.getSolutionKitGuid(),"IM1")).thenReturn(parentSolutionKitFromDb);
+
+        // skar of skar for the test
+        final int numberOfSolutionKits = 1;
+        final Set<SolutionKit> selectedSolutionKits = new HashSet<>(numberOfSolutionKits);
+        SolutionKit solutionKit1 = new SolutionKitBuilder()
+                .name("SK1")
+                .addProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, "IM1")
+                .build();
+        selectedSolutionKits.add(solutionKit1);
+        when(solutionKitsConfig.getSelectedSolutionKits()).thenReturn(selectedSolutionKits);
+        when(solutionKitsConfig.isUpgrade()).thenReturn(false);
+
+        // install or upgrade
+        final AtomicBoolean doTestInstallExecuted = new AtomicBoolean(false);
+        solutionKitProcessor.testInstallOrUpgrade(new Functions.UnaryVoidThrows<Triple<SolutionKit, String, Boolean>, Throwable>() {
+            @Override
+            public void call(Triple<SolutionKit, String, Boolean> loaded) throws Throwable {
+                doTestInstallExecuted.set(true);
+            }
+        });
+
+        assertTrue("Validation successful, new child can be installed under the same parent", doTestInstallExecuted.get());
+    }
+
+
     @Test
     public void installOrUpgrade() throws Exception {
         // solution kits for the test
