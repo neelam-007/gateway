@@ -1842,7 +1842,7 @@ ${versionfilecontent}
         <pack-mac jarfile="${build.dir}/managerapplet/lib/spring-orm-3.0.7.RELEASE.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/spring-tx-3.0.7.RELEASE.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/spring-web-3.0.7.RELEASE.jar"/>
-        <pack-mac jarfile="${build.dir}/managerapplet/lib/sslj-6.2.1.jar"/>
+        <pack-mac jarfile="${build.dir}/managerapplet/lib/sslj-6.2.2.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/stax-ex-1.2.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/streambuffer-0.8.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/validation-api-1.0.0.GA.jar"/>
