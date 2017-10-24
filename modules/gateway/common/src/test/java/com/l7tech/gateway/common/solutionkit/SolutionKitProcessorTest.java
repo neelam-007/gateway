@@ -111,7 +111,6 @@ public class SolutionKitProcessorTest {
                 .addProperty(SolutionKit.SK_PROP_FEATURE_SET_KEY,"testFeature")
                 .addProperty(SolutionKit.SK_PROP_ALLOW_ADDENDUM_KEY, "false")
                 .addProperty(SolutionKit.SK_PROP_CUSTOM_UI_KEY, "test.java")
-
                 .addProperty(SolutionKit.SK_PROP_CUSTOM_CALLBACK_KEY, "test.java")
                 .goid(new Goid(0, 1))
                 .build();
@@ -158,7 +157,7 @@ public class SolutionKitProcessorTest {
             assertEquals("Solution kit versions are different",
                     "Install failure: Install process attempts to overwrite an existing parent solution kit " +
                             "('SameGuid' with instance modifier 'IM1') with a new solution kit that has different properties. " +
-                            "To install again, specify a different instance modifier.",
+                            "Please install again with a different instance modifier.",
                     e.getMessage());
         }
     }
@@ -241,12 +240,8 @@ public class SolutionKitProcessorTest {
 
         solutionKitProcessor.installOrUpgrade();
 
-        // make sure setMappingTargetIdsFromResolvedIds() called
-        verify(solutionKitsConfig).setMappingTargetIdsFromResolvedIds(solutionKit1);
-        verify(solutionKitsConfig).setMappingTargetIdsFromResolvedIds(solutionKit2);
-
-        // make sure solutionKitAdmin.install() called
-        verify(solutionKitAdmin, times(numberOfSolutionKits)).install(any(SolutionKit.class), anyString(), anyBoolean());
+        // Make sure children are installed
+        verifyChildrenInstalled(numberOfSolutionKits, solutionKit1, solutionKit2);
 
         // test doAsyncInstall was executed (when provided)
         final AtomicBoolean doAsyncInstallExecuted = new AtomicBoolean(false);
@@ -356,10 +351,12 @@ public class SolutionKitProcessorTest {
         assertEquals(2, parentSKCaptor.getAllValues().size());
         assertEquals("test2", allParents.get(0).getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY));
         assertEquals("test1", allParents.get(1).getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY));
+
+        verifyChildrenInstalled(numberOfSolutionKits, solutionKit1, solutionKit2);
     }
 
     @Test
-    public void upgradeChildrenWithSameCurrentIMToSameIM() throws Exception {
+    public void upgradeChildrenWithSameIM() throws Exception {
         // parent skar for the test
         SolutionKit parentSolutionKit = new SolutionKitBuilder()
                 .name("ParentSK")
@@ -393,6 +390,7 @@ public class SolutionKitProcessorTest {
         ArgumentCaptor<SolutionKit> updateParentCaptor = ArgumentCaptor.forClass(SolutionKit.class);
         verify(solutionKitAdmin).update(updateParentCaptor.capture());
         assertEquals("same", updateParentCaptor.getValue().getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY));
+        verifyChildrenInstalled(numberOfSolutionKits, solutionKit1, solutionKit2);
     }
 
     @Test
@@ -565,5 +563,15 @@ public class SolutionKitProcessorTest {
         skarPayload.process();
 
         solutionKitProcessor = new SolutionKitProcessor(solutionKitsConfig, solutionKitAdmin);
+    }
+    
+    private void verifyChildrenInstalled(int numberOfSolutionKits, SolutionKit solutionKit1, SolutionKit solutionKit2) throws Exception {
+        // test children are installed
+        // make sure setMappingTargetIdsFromResolvedIds() called
+        verify(solutionKitsConfig).setMappingTargetIdsFromResolvedIds(solutionKit1);
+        verify(solutionKitsConfig).setMappingTargetIdsFromResolvedIds(solutionKit2);
+
+        // make sure solutionKitAdmin.install() called
+        verify(solutionKitAdmin, times(numberOfSolutionKits)).install(any(SolutionKit.class), anyString(), anyBoolean());
     }
 }

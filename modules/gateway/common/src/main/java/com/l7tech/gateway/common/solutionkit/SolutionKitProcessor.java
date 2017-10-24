@@ -138,7 +138,7 @@ public class SolutionKitProcessor {
                 return new Pair<>(true, null);
             } else {
                 return new Pair<>(false, "Install failure: Install process attempts to overwrite an existing parent solution kit ('" + parentGuid + "' with instance modifier '" +
-                        sourceIMDisplayName + "') with a new solution kit that has different properties. To install again, specify a different instance modifier.");
+                        sourceIMDisplayName + "') with a new solution kit that has different properties. Please install again with a different instance modifier.");
             }
         }
         return new Pair<>(true, null);
