@@ -1054,7 +1054,7 @@
                       <text value="Override System Defaults"/>
                     </properties>
                   </component>
-                  <grid id="dfd10" binding="connectionPoolingPanel" layout-manager="GridLayoutManager" row-count="6" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                  <grid id="dfd10" binding="connectionPoolingPanel" layout-manager="GridLayoutManager" row-count="3" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                     <margin top="0" left="0" bottom="0" right="0"/>
                     <constraints>
                       <grid row="1" column="0" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
@@ -1105,64 +1105,6 @@
                           </grid>
                         </constraints>
                         <properties/>
-                      </component>
-                      <component id="17c82" class="javax.swing.JLabel" binding="connectionMinIdleTimeLabel">
-                        <constraints>
-                          <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                        </constraints>
-                        <properties>
-                          <text value="Min Idle Time (ms):"/>
-                          <visible value="false"/>
-                        </properties>
-                      </component>
-                      <component id="8f851" class="javax.swing.JTextField" binding="connectionMinIdleTimeTextField">
-                        <constraints>
-                          <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
-                            <preferred-size width="150" height="-1"/>
-                          </grid>
-                        </constraints>
-                        <properties>
-                          <visible value="false"/>
-                        </properties>
-                      </component>
-                      <component id="fc325" class="javax.swing.JLabel" binding="connectionPoolEvictionIntervalLabel">
-                        <constraints>
-                          <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                        </constraints>
-                        <properties>
-                          <text value="Pool Eviction Interval (ms):"/>
-                          <visible value="false"/>
-                        </properties>
-                      </component>
-                      <component id="4d864" class="javax.swing.JTextField" binding="connectionPoolEvictionIntervalTextField">
-                        <constraints>
-                          <grid row="4" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
-                            <preferred-size width="150" height="-1"/>
-                          </grid>
-                        </constraints>
-                        <properties>
-                          <visible value="false"/>
-                        </properties>
-                      </component>
-                      <component id="e0619" class="javax.swing.JLabel" binding="connectionPoolEvictionBatchSizeLabel">
-                        <constraints>
-                          <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                        </constraints>
-                        <properties>
-                          <text value="Eviction Batch Size:"/>
-                          <visible value="false"/>
-                        </properties>
-                      </component>
-                      <component id="7707e" class="javax.swing.JSpinner" binding="connectionPoolEvictionBatchSizeSpinner">
-                        <constraints>
-                          <grid row="5" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
-                        </constraints>
-                        <properties>
-                          <visible value="false"/>
-                        </properties>
-                        <clientProperties>
-                          <html.disable class="java.lang.Boolean" value="false"/>
-                        </clientProperties>
                       </component>
                       <hspacer id="df63b">
                         <constraints>

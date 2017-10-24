@@ -21,7 +21,6 @@ import org.apache.commons.lang.StringUtils;
 
 import javax.naming.Context;
 import javax.swing.*;
-import javax.swing.border.TitledBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.table.TableModel;
@@ -156,12 +155,6 @@ public class JmsQueuePropertiesDialog extends JDialog {
     private JSpinner connectionMinIdleSpinner;
     private JLabel connectionMaxWaitLabel;
     private JTextField connectionMaxWaitTextField;
-    private JLabel connectionMinIdleTimeLabel;
-    private JTextField connectionMinIdleTimeTextField;
-    private JLabel connectionPoolEvictionIntervalLabel;
-    private JTextField connectionPoolEvictionIntervalTextField;
-    private JLabel connectionPoolEvictionBatchSizeLabel;
-    private JSpinner connectionPoolEvictionBatchSizeSpinner;
     private JPanel connectionPoolingPanel;
     private JCheckBox overrideSystemDefaultsCcheckBox;
     private JPanel sessionPoolingSettingPanel;
@@ -379,10 +372,6 @@ public class JmsQueuePropertiesDialog extends JDialog {
         connectionMinIdleSpinner.setModel((new SpinnerNumberModel((Number) safeNumber(() -> Integer.valueOf(getClusterPropertyValue(CLUSTER_PROP_CONNECTION_MAX_IDLE, String.valueOf(DEFAULT_CONNECTION_POOL_SIZE)))
                 ,DEFAULT_CONNECTION_POOL_SIZE), -1, 10000, 1)));
         inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(connectionMinIdleSpinner, connectionMinIdleLabel.getText()));
-
-        connectionPoolEvictionBatchSizeSpinner.setModel((new SpinnerNumberModel((Number) safeNumber(() -> Integer.valueOf(getClusterPropertyValue(CLUSTER_PROP_CONNECTION_POOL_EVICT_BATCH_SIZE, String.valueOf(DEFAULT_CONNECTION_POOL_SIZE)))
-                ,DEFAULT_CONNECTION_POOL_SIZE), 1, 10000, 1)));
-        /*inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(connectionPoolEvictionBatchSizeSpinner, connectionPoolEvictionBatchSizeLabel.getText()));*/
 
         sessionPoolSizeSpinner.setModel((new SpinnerNumberModel((Number) safeNumber(() -> Integer.valueOf(getClusterPropertyValue(CLUSTER_PROP_SESSION_POOL_SIZE, String.valueOf(JmsConnection.DEFAULT_SESSION_POOL_SIZE))), JmsConnection.DEFAULT_SESSION_POOL_SIZE), -1, 10000, 1)));
         inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(sessionPoolSizeSpinner,sessionPoolSizeLabel.getText()));
@@ -617,14 +606,8 @@ public class JmsQueuePropertiesDialog extends JDialog {
             public void actionPerformed(ActionEvent e) {
                 enableOrDisableConnectionPoolingSettings();
                 if(overrideSystemDefaultsCcheckBox.isSelected()) {
-                    if(StringUtils.isBlank(connectionMinIdleTimeTextField.getText())) {
-                        connectionMinIdleTimeTextField.setText(String.valueOf(TimeUnit.parse(getClusterPropertyValue(CLUSTER_PROP_CONNECTION_MIN_IDLE_TIME, String.valueOf(DEFAULT_CONNECTION_MAX_AGE)), TimeUnit.MILLIS)));
-                    }
                     if(StringUtils.isBlank(connectionMaxWaitTextField.getText())) {
-                        connectionMinIdleTimeTextField.setText(String.valueOf(TimeUnit.parse(getClusterPropertyValue(CLUSTER_PROP_CONNECTION_MAX_WAIT, String.valueOf(DEFAULT_CONNECTION_POOL_MAX_WAIT)), TimeUnit.MILLIS)));
-                    }
-                    if(StringUtils.isBlank(connectionPoolEvictionIntervalTextField.getText())) {
-                        connectionPoolEvictionIntervalTextField.setText(String.valueOf(TimeUnit.parse(getClusterPropertyValue(CLUSTER_PROP_CONNECTION_POOL_EVICT_INTERVAL, String.valueOf(DEFAULT_CONNECTION_POOL_EVICT_INTERVAL)), TimeUnit.MILLIS)));
+                        connectionMaxWaitTextField.setText(String.valueOf(TimeUnit.parse(getClusterPropertyValue(CLUSTER_PROP_CONNECTION_MAX_WAIT, String.valueOf(DEFAULT_CONNECTION_POOL_MAX_WAIT)), TimeUnit.MILLIS)));
                     }
                     if(StringUtils.isBlank(sessionPoolMaxWaitTextField.getText())) {
                         sessionPoolMaxWaitTextField.setText(String.valueOf(TimeUnit.parse(getClusterPropertyValue(CLUSTER_PROP_SESSION_MAX_WAIT, String.valueOf(JmsConnection.DEFAULT_SESSION_POOL_MAX_WAIT)), TimeUnit.MILLIS)));
@@ -951,11 +934,6 @@ public class JmsQueuePropertiesDialog extends JDialog {
                     properties.setProperty(PROP_CONNECTION_POOL_SIZE, connectionPoolSizeSpinner.getValue().toString());
                     properties.setProperty(PROP_CONNECTION_MAX_IDLE, connectionMinIdleSpinner.getValue().toString());
                     properties.setProperty(PROP_CONNECTION_POOL_MAX_WAIT, connectionMaxWaitTextField.getText());
-                    //TODO: remove properties
-                    properties.setProperty(PROP_CONNECTION_MIN_IDLE_TIMEOUT, connectionMinIdleTimeTextField.getText());
-                    properties.setProperty(PROP_CONNECTION_POOL_EVICT_INTERVAL, connectionPoolEvictionIntervalTextField.getText());
-                    properties.setProperty(PROP_CONNECTION_POOL_EVICT_BATCH_SIZE, connectionPoolEvictionBatchSizeSpinner.getValue().toString());
-                    //end TODO
                 } else {
                     // set session properties
                     properties.setProperty(JmsConnection.PROP_SESSION_POOL_SIZE, sessionPoolSizeSpinner.getValue().toString());
@@ -1185,9 +1163,6 @@ public class JmsQueuePropertiesDialog extends JDialog {
                 connectionPoolSizeSpinner.setValue(getConnectionPoolSize(props));
                 connectionMinIdleSpinner.setValue(getMaxConnectionIdle(props));
                 connectionMaxWaitTextField.setText(getConnectionPoolMaxWait(props).toString());
-                connectionMinIdleTimeTextField.setText(getConnectionPoolMinIdleTimeout(props).toString());
-                connectionPoolEvictionIntervalTextField.setText(getConnectionPoolEvictInterval(props).toString());
-                connectionPoolEvictionBatchSizeSpinner.setValue(getConnectionEvictBatchSize(props));
             }
             else {
                 // set session pool properties
@@ -1215,8 +1190,6 @@ public class JmsQueuePropertiesDialog extends JDialog {
             sessionPoolMaxWaitTextField.setText(String.valueOf(TimeUnit.parse(getClusterPropertyValue(CLUSTER_PROP_SESSION_MAX_WAIT,String.valueOf(JmsConnection.DEFAULT_SESSION_POOL_MAX_WAIT)),TimeUnit.MILLIS)));
             //set connection default values
             connectionMaxWaitTextField.setText(String.valueOf(TimeUnit.parse(getClusterPropertyValue(CLUSTER_PROP_CONNECTION_MAX_WAIT,String.valueOf(DEFAULT_CONNECTION_POOL_MAX_WAIT)),TimeUnit.MILLIS)));
-            //connectionMinIdleTimeTextField.setText(String.valueOf(TimeUnit.parse(getClusterPropertyValue(CLUSTER_PROP_CONNECTION_MIN_IDLE_TIME, String.valueOf(DEFAULT_CONNECTION_MAX_IDLE_TIME)),TimeUnit.MILLIS)));
-            //connectionPoolEvictionIntervalTextField.setText(String.valueOf(TimeUnit.parse(getClusterPropertyValue(CLUSTER_PROP_CONNECTION_POOL_EVICT_INTERVAL, String.valueOf(DEFAULT_CONNECTION_POOL_EVICT_INTERVAL)),TimeUnit.MILLIS)));
         }
 
         boolean associateQueue = ServiceComboBox.populateAndSelect(serviceNameCombo, isHardWired, hardWiredId);
@@ -1580,7 +1553,6 @@ public class JmsQueuePropertiesDialog extends JDialog {
     private void enableOrDisableConnectionPoolingSettings() {
         final boolean isOverrideSystemDefaults = overrideSystemDefaultsCcheckBox.isSelected();
         if(connectionPoolingRadioButton.isSelected()) {
-//            getBorder(poolingSettingsPanel).setTitle("Connection Pooling Settings");
             connectionPoolingPanel.setVisible(true);
             sessionPoolingSettingPanel.setVisible(false);
             connectionPoolSizeLabel.setEnabled(isOverrideSystemDefaults);
@@ -1590,21 +1562,12 @@ public class JmsQueuePropertiesDialog extends JDialog {
             connectionMaxWaitLabel.setEnabled(isOverrideSystemDefaults);
             connectionMaxWaitTextField.setEnabled(isOverrideSystemDefaults);
             connectionMaxWaitTextField.setText(String.valueOf(TimeUnit.parse(getClusterPropertyValue(CLUSTER_PROP_CONNECTION_MAX_WAIT,String.valueOf(DEFAULT_CONNECTION_POOL_MAX_WAIT)), TimeUnit.MILLIS)));
-            //TODO: remove those properties
-            connectionMinIdleTimeLabel.setEnabled(isOverrideSystemDefaults);
-            connectionMinIdleTimeTextField.setEnabled(isOverrideSystemDefaults);
-            connectionPoolEvictionIntervalLabel.setEnabled(isOverrideSystemDefaults);
-            connectionPoolEvictionIntervalTextField.setEnabled(isOverrideSystemDefaults);
-            connectionPoolEvictionBatchSizeLabel.setEnabled(isOverrideSystemDefaults);
-            connectionPoolEvictionBatchSizeSpinner.setEnabled(isOverrideSystemDefaults);
-            //end TODO
             sessionPoolSizeSpinner.setEnabled(false);
             maxIdleSessionSpinner.setEnabled(false);
             sessionPoolMaxWaitTextField.setEnabled(false);
             sessionPoolMaxWaitTextField.setText(String.valueOf(TimeUnit.parse(getClusterPropertyValue(CLUSTER_PROP_SESSION_MAX_WAIT, String.valueOf(JmsConnection.DEFAULT_SESSION_POOL_MAX_WAIT)), TimeUnit.MILLIS)));
         }
         else {
-//            getBorder(poolingSettingsPanel).setTitle("Session Pooling Settings");
             connectionPoolingPanel.setVisible(false);
             connectionPoolSizeSpinner.setEnabled(false);
             connectionMinIdleSpinner.setEnabled(false);
