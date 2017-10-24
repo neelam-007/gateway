@@ -41,15 +41,15 @@ import java.util.logging.Logger;
 public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncrementAssertion> {
     private static final Logger logger = Logger.getLogger(ServerGetIncrementAssertion.class.getName());
 
-    private static final String BULK_SYNC_SELECT = "SELECT a.UUID, concat(a.NAME,'-',o.NAME) as NAME, a.API_KEY, a.KEY_SECRET, " +
-            "coalesce (r.PREVIOUS_STATE,a.STATUS) as STATUS, a.ORGANIZATION_UUID, o.NAME as ORGANIZATION_NAME, " +
-            "a.OAUTH_CALLBACK_URL, a.OAUTH_SCOPE, a.OAUTH_TYPE, a.MAG_SCOPE, a.MAG_MASTER_KEY, " +
-            "ax.API_UUID, a.CREATED_BY, a.MODIFIED_BY, r.LATEST_REQ " +
-            "FROM APPLICATION a " +
-            "JOIN (SELECT NAME, UUID FROM ORGANIZATION GROUP BY NAME, UUID ) o on a.ORGANIZATION_UUID = o.UUID  " +
-            "JOIN (SELECT API_UUID, APPLICATION_UUID FROM APPLICATION_API_XREF GROUP BY API_UUID, APPLICATION_UUID) ax on ax.APPLICATION_UUID = a.UUID " +
-            "LEFT JOIN (select ENTITY_UUID, PREVIOUS_STATE, max(CREATE_TS) as LATEST_REQ FROM REQUEST GROUP BY ENTITY_UUID, PREVIOUS_STATE, CREATE_TS) r ON a.UUID = r.ENTITY_UUID " +
-            "WHERE a.API_KEY IS NOT NULL AND a.TENANT_ID='%s' AND a.STATUS IN ('ENABLED','DISABLED','EDIT_APPLICATION_PENDING_APPROVAL') ";
+    private static final String BULK_SYNC_SELECT = "SELECT a.UUID, concat(a.NAME,'-',o.NAME) as NAME, a.API_KEY, a.KEY_SECRET, \n" +
+            "            coalesce (r.PREVIOUS_STATE,a.STATUS) as STATUS, a.ORGANIZATION_UUID, o.NAME as ORGANIZATION_NAME, \n" +
+            "            a.OAUTH_CALLBACK_URL, a.OAUTH_SCOPE, a.OAUTH_TYPE, a.MAG_SCOPE, a.MAG_MASTER_KEY, \n" +
+            "            ax.API_UUID, a.CREATED_BY, a.MODIFIED_BY, r.LATEST_REQ \n" +
+            "            FROM APPLICATION a \n" +
+            "            JOIN ORGANIZATION o on a.ORGANIZATION_UUID = o.UUID \n" +
+            "            JOIN APPLICATION_API_XREF ax on ax.APPLICATION_UUID = a.UUID \n" +
+            "            LEFT JOIN (select ENTITY_UUID, PREVIOUS_STATE, max(CREATE_TS) as LATEST_REQ FROM REQUEST GROUP BY ENTITY_UUID, PREVIOUS_STATE, CREATE_TS) r ON a.UUID = r.ENTITY_UUID \n" +
+            "            WHERE a.API_KEY IS NOT NULL AND a.TENANT_ID='%s' AND a.STATUS IN ('ENABLED','DISABLED','EDIT_APPLICATION_PENDING_APPROVAL')";
 
     private static final String STATUS_ENABLED = "ENABLED";
     private static final String STATUS_ACTIVE = "active";
