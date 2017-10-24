@@ -28,9 +28,9 @@ public class PortalDeployerClient implements MqttCallback {
   private int connectionTimeout = 60;
   private int keepAliveInterval = 30;
   private boolean cleanSession = true;
+  private MessageProcessor messageProcessor;
 
-  public PortalDeployerClient(String mqttBrokerUri, String clientId, String topic, SSLSocketFactory sslSocketFactory) throws
-          PortalDeployerClientException {
+  public PortalDeployerClient(String mqttBrokerUri, String clientId, String topic, SSLSocketFactory sslSocketFactory) throws PortalDeployerClientException {
     this.sslSocketFactory = sslSocketFactory;
     this.mqttBrokerUri = mqttBrokerUri;
     this.clientId = clientId;
@@ -47,6 +47,7 @@ public class PortalDeployerClient implements MqttCallback {
       throw new PortalDeployerClientException(e.getMessage(), e);
     }
     mqttClient.setCallback(this);
+    messageProcessor = new MessageProcessor(this.sslSocketFactory);
   }
 
   public void stopClient() {
@@ -90,17 +91,28 @@ public class PortalDeployerClient implements MqttCallback {
   @Override
   public void connectionLost(Throwable cause) {
     logger.log(Level.WARNING, "Exception thrown in startMqttClientThread", cause);
+    if (!mqttClient.isConnected()) {
+      try {
+        Thread.sleep(30000);//wait 30 seconds then reconnect
+      } catch (InterruptedException ex) {
+        logger.log(Level.INFO, "Thread interrupted", ex);
+        Thread.currentThread().interrupt();
+      }
+      //TODO: who should handle re-connect failures & retries??? startClient should
+      this.startClient();
+    }
   }
 
   @Override
   public void messageArrived(String topic, MqttMessage message) throws Exception {
     logger.log(Level.INFO, String.format("Topic: %s, Message: %s", topic, new String(message.getPayload())));
-    mqttClient.publish(topic + "/received", new MqttMessage("message recieved".getBytes()));
+    messageProcessor.process(message);
+    //mqttClient.publish(topic + "/received", new MqttMessage("message recieved".getBytes()));
   }
 
   @Override
   public void deliveryComplete(IMqttDeliveryToken token) {
-    //logger.log(Level.INFO, String.format("Topic: %s, Message: %s", topic, new String(message.getPayload())));
+    //logger.log(Level.INFO, String.format("Topic: %s, Message: %s", topic, new String(token.toString())));
   }
 
   public String getMqttBrokerUri() {
@@ -129,7 +141,6 @@ public class PortalDeployerClient implements MqttCallback {
 
   @Override
   public String toString() {
-    return "PortalDeployerClient{" + "mqttBrokerUri='" + mqttBrokerUri + '\'' + ", clientId='" + clientId + '\'' + "," +
-            "" + " topic='" + topic + '\'' + '}';
+    return "PortalDeployerClient{" + "mqttBrokerUri='" + mqttBrokerUri + '\'' + ", clientId='" + clientId + '\'' + "," + "" + " topic='" + topic + '\'' + '}';
   }
 }
