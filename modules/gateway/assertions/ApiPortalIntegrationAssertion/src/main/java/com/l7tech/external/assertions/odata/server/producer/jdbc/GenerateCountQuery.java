@@ -48,10 +48,6 @@ public class GenerateCountQuery extends GenerateSqlQuery {
             int fromIndex = sqlStatement.sql.indexOf(" FROM " + table.tableName);
             sb.append(sqlStatement.sql.substring(fromIndex, sqlStatement.sql.length()));
         }
-        logger.info(">>>>>>>>>>>>" + sb.toString());
         return new SqlStatement(sb.toString(), sqlStatement.params);
-
     }
-
-
 }
