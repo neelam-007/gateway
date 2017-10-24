@@ -133,12 +133,12 @@ public class SolutionKitProcessor {
         if (parentSolutionKitOnDb != null) {
             //validate parent solution kit has same details
             if (SolutionKitUtils.hasSameMetaData(parentSKLoaded, parentSolutionKitOnDb)) {
-                logger.log(Level.WARNING, "Adding additional child solution kits onto parent solution kit with guid '" + parentGuid + "' with instance modifier '" +
+                logger.log(Level.FINE, "Adding additional child solution kits onto parent solution kit with guid '" + parentGuid + "' with instance modifier '" +
                         sourceIMDisplayName + "'.");
                 return new Pair<>(true, null);
             } else {
-                return new Pair<>(false, "This parent solution kit with guid '" + parentGuid + "' with instance modifier '" +
-                        sourceIMDisplayName + "' already exists. To install it again, specify a unique instance modifier");
+                return new Pair<>(false, "Install failure: Install process attempts to overwrite an existing parent solution kit ('" + parentGuid + "' with instance modifier '" +
+                        sourceIMDisplayName + "') with a new solution kit that has different properties. To install again, specify a different instance modifier.");
             }
         }
         return new Pair<>(true, null);

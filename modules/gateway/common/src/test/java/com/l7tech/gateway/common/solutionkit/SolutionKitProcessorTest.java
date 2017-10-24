@@ -101,25 +101,34 @@ public class SolutionKitProcessorTest {
         // want to install one child solution kit at a time. If the meta data is different then return error.
 
         // parent skar loaded
-        SolutionKit parentSolutionKitLoaded = new SolutionKitBuilder()
+        final SolutionKit parentSolutionKitLoaded = new SolutionKitBuilder()
                 .name("ParentSK")
                 .skGuid("SameGuid")
                 .skVersion("2.0")
                 .addProperty(SolutionKit.SK_PROP_TIMESTAMP_KEY,"testStamp")
                 .addProperty(SolutionKit.SK_PROP_DESC_KEY, "test")
                 .addProperty(SolutionKit.SK_PROP_IS_COLLECTION_KEY, "true")
+                .addProperty(SolutionKit.SK_PROP_FEATURE_SET_KEY,"testFeature")
+                .addProperty(SolutionKit.SK_PROP_ALLOW_ADDENDUM_KEY, "false")
+                .addProperty(SolutionKit.SK_PROP_CUSTOM_UI_KEY, "test.java")
+
+                .addProperty(SolutionKit.SK_PROP_CUSTOM_CALLBACK_KEY, "test.java")
                 .goid(new Goid(0, 1))
                 .build();
         when(solutionKitsConfig.getParentSolutionKitLoaded()).thenReturn(parentSolutionKitLoaded);
 
         // parent skar from DB (Different version)
-        SolutionKit parentSolutionKitFromDb = new SolutionKitBuilder()
+        final SolutionKit parentSolutionKitFromDb = new SolutionKitBuilder()
                 .name("ParentSK")
                 .skGuid("SameGuid")
                 .skVersion("1.0")
                 .addProperty(SolutionKit.SK_PROP_TIMESTAMP_KEY,"testStamp")
                 .addProperty(SolutionKit.SK_PROP_DESC_KEY, "test")
                 .addProperty(SolutionKit.SK_PROP_IS_COLLECTION_KEY, "true")
+                .addProperty(SolutionKit.SK_PROP_FEATURE_SET_KEY,"testFeature")
+                .addProperty(SolutionKit.SK_PROP_ALLOW_ADDENDUM_KEY, "false")
+                .addProperty(SolutionKit.SK_PROP_CUSTOM_CALLBACK_KEY, "test.java")
+                .addProperty(SolutionKit.SK_PROP_CUSTOM_UI_KEY, "test.java")
                 .addProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, "IM1")
                 .goid(new Goid(0, 1))
                 .build();
@@ -128,7 +137,7 @@ public class SolutionKitProcessorTest {
         // skar of skar for the test
         final int numberOfSolutionKits = 1;
         final Set<SolutionKit> selectedSolutionKits = new HashSet<>(numberOfSolutionKits);
-        SolutionKit solutionKit1 = new SolutionKitBuilder()
+        final SolutionKit solutionKit1 = new SolutionKitBuilder()
                 .name("SK1")
                 .addProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, "IM1")
                 .build();
@@ -146,8 +155,11 @@ public class SolutionKitProcessorTest {
             });
             fail("Exception should've been thrown");
         } catch (SolutionKitConflictException e) {
-            assertEquals(e.getMessage(), "This parent solution kit with guid 'SameGuid' with instance modifier" +
-                    " 'IM1' already exists. To install it again, specify a unique instance modifier");
+            assertEquals("Solution kit versions are different",
+                    "Install failure: Install process attempts to overwrite an existing parent solution kit " +
+                            "('SameGuid' with instance modifier 'IM1') with a new solution kit that has different properties. " +
+                            "To install again, specify a different instance modifier.",
+                    e.getMessage());
         }
     }
 
@@ -157,25 +169,33 @@ public class SolutionKitProcessorTest {
         // want to install one child solution kit at a time. If the meta data is same, then proceed.
 
         // parent skar loaded
-        SolutionKit parentSolutionKitLoaded = new SolutionKitBuilder()
+        final SolutionKit parentSolutionKitLoaded = new SolutionKitBuilder()
                 .name("ParentSK")
                 .skGuid("SameGuid")
                 .skVersion("1.0")
                 .addProperty(SolutionKit.SK_PROP_TIMESTAMP_KEY,"testStamp")
                 .addProperty(SolutionKit.SK_PROP_DESC_KEY, "test")
                 .addProperty(SolutionKit.SK_PROP_IS_COLLECTION_KEY, "true")
+                .addProperty(SolutionKit.SK_PROP_FEATURE_SET_KEY,"testFeature")
+                .addProperty(SolutionKit.SK_PROP_ALLOW_ADDENDUM_KEY, "false")
+                .addProperty(SolutionKit.SK_PROP_CUSTOM_CALLBACK_KEY, "test.java")
+                .addProperty(SolutionKit.SK_PROP_CUSTOM_UI_KEY, "test.java")
                 .goid(new Goid(0, 1))
                 .build();
         when(solutionKitsConfig.getParentSolutionKitLoaded()).thenReturn(parentSolutionKitLoaded);
 
         // parent skar from DB (Different version)
-        SolutionKit parentSolutionKitFromDb = new SolutionKitBuilder()
+        final SolutionKit parentSolutionKitFromDb = new SolutionKitBuilder()
                 .name("ParentSK")
                 .skGuid("SameGuid")
                 .skVersion("1.0")
                 .addProperty(SolutionKit.SK_PROP_TIMESTAMP_KEY,"testStamp")
                 .addProperty(SolutionKit.SK_PROP_DESC_KEY, "test")
                 .addProperty(SolutionKit.SK_PROP_IS_COLLECTION_KEY, "true")
+                .addProperty(SolutionKit.SK_PROP_FEATURE_SET_KEY,"testFeature")
+                .addProperty(SolutionKit.SK_PROP_ALLOW_ADDENDUM_KEY, "false")
+                .addProperty(SolutionKit.SK_PROP_CUSTOM_CALLBACK_KEY, "test.java")
+                .addProperty(SolutionKit.SK_PROP_CUSTOM_UI_KEY, "test.java")
                 .addProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, "IM1")
                 .goid(new Goid(0, 1))
                 .build();
@@ -184,7 +204,7 @@ public class SolutionKitProcessorTest {
         // skar of skar for the test
         final int numberOfSolutionKits = 1;
         final Set<SolutionKit> selectedSolutionKits = new HashSet<>(numberOfSolutionKits);
-        SolutionKit solutionKit1 = new SolutionKitBuilder()
+        final SolutionKit solutionKit1 = new SolutionKitBuilder()
                 .name("SK1")
                 .addProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, "IM1")
                 .build();

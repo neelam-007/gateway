@@ -182,13 +182,13 @@ public class ManageSolutionKitsDialog extends JDialog {
                             return;
                         }
 
-                        List<String> resultMsgs = new ArrayList<>();
+                        final List<String> resultMsgs = new ArrayList<>();
                         Pair<Boolean, String> result = new Pair<>(true, "");
-                        Set<Goid> possibleParentsToRemove = new HashSet<>();
+                        final Set<Goid> possibleParentsToRemove = new HashSet<>();
 
-                        for (SolutionKitHeader header : headers) {
+                        for (final SolutionKitHeader header : headers) {
                             try {
-                                Collection<SolutionKitHeader> children = solutionKitAdmin.findHeaders(header.getGoid());
+                                final Collection<SolutionKitHeader> children = solutionKitAdmin.findHeaders(header.getGoid());
                                 if (!children.isEmpty()) {
                                     for (SolutionKitHeader child : children) {
                                         result = uninstallSolutionKit(child.getName(), child.getGoid());
@@ -259,7 +259,6 @@ public class ManageSolutionKitsDialog extends JDialog {
                             DialogDisplayer.pack(errorMessageDialog);
                             DialogDisplayer.display(errorMessageDialog);
                         } else {
-                            //TODO: Confirmation dialog of success?
                             if (logger.getLevel() == Level.FINE) {
                                 logger.log(Level.FINE, "Solution kits uninstalled successfully!");
                             }
@@ -274,8 +273,8 @@ public class ManageSolutionKitsDialog extends JDialog {
      * After uninstall, if all the children of a parent are uninstalled successfully, remove the parent SK
      * @param possibleParentsToRemove Set of all possible parents to remove
      */
-    private void removeStrayParents(Set<Goid> possibleParentsToRemove) {
-        for (Goid parent : possibleParentsToRemove) {
+    private void removeStrayParents(final Set<Goid> possibleParentsToRemove) {
+        for (final Goid parent : possibleParentsToRemove) {
             try {
                 if (solutionKitAdmin.find(parent).isEmpty()) {
                     solutionKitAdmin.delete(parent);
@@ -283,7 +282,7 @@ public class ManageSolutionKitsDialog extends JDialog {
             } catch (FindException e) {
                 logger.log(Level.WARNING, "Problem occurred while finding a parent solution kit.");
             } catch (DeleteException e) {
-                logger.log(Level.WARNING, "Problem occurred while deleting a parent solution kit with no children.");
+                logger.log(Level.WARNING, "Problem occurred while deleting a parent solution kit with no child solution kits.");
 
             }
         }

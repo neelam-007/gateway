@@ -439,12 +439,16 @@ public final class SolutionKitUtils {
      * @return true if both solution kits have the same metadata
      */
     static boolean hasSameMetaData(@NotNull SolutionKit one, @NotNull SolutionKit two) {
-        return one.getProperty(SK_PROP_DESC_KEY).equals(two.getProperty(SK_PROP_DESC_KEY)) &&
-                one.getProperty(SK_PROP_IS_COLLECTION_KEY).equals(two.getProperty(SK_PROP_IS_COLLECTION_KEY)) &&
-                one.getProperty(SK_PROP_TIMESTAMP_KEY).equals(two.getProperty(SK_PROP_TIMESTAMP_KEY)) &&
-                one.getSolutionKitGuid().equals(two.getSolutionKitGuid()) &&
-                one.getName().equals(two.getName()) &&
-                one.getSolutionKitVersion().equals(two.getSolutionKitVersion());
+        return StringUtils.equals(one.getProperty(SK_PROP_DESC_KEY), two.getProperty(SK_PROP_DESC_KEY)) &&
+                StringUtils.equals(one.getProperty(SK_PROP_IS_COLLECTION_KEY), two.getProperty(SK_PROP_IS_COLLECTION_KEY)) &&
+                StringUtils.equals(one.getProperty(SK_PROP_TIMESTAMP_KEY), two.getProperty(SK_PROP_TIMESTAMP_KEY)) &&
+                StringUtils.equals(one.getProperty(SK_PROP_FEATURE_SET_KEY), two.getProperty(SK_PROP_FEATURE_SET_KEY)) &&
+                StringUtils.equals(one.getProperty(SK_PROP_ALLOW_ADDENDUM_KEY), two.getProperty(SK_PROP_ALLOW_ADDENDUM_KEY)) &&
+                StringUtils.equals(one.getProperty(SK_PROP_CUSTOM_CALLBACK_KEY), two.getProperty(SK_PROP_CUSTOM_CALLBACK_KEY)) &&
+                StringUtils.equals(one.getProperty(SK_PROP_CUSTOM_UI_KEY), two.getProperty(SK_PROP_CUSTOM_UI_KEY)) &&
+                StringUtils.equals(one.getSolutionKitGuid(), two.getSolutionKitGuid()) &&
+                StringUtils.equals(one.getName(), two.getName()) &&
+                StringUtils.equals(one.getSolutionKitVersion(), two.getSolutionKitVersion());
     }
 
     private SolutionKitUtils() {}
