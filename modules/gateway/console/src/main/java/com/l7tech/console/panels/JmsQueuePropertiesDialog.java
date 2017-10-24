@@ -48,7 +48,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
     public static final String PREFIX = "com.l7tech.server.jms.prop";
     public static final String PROP_CONNECTION_POOL_ENABLE = PREFIX + ".connection.pool.enable";
     public static final String PROP_CONNECTION_POOL_SIZE = PREFIX + ".connection.pool.size";
-    public static final String PROP_CONNECTION_MIN_IDLE = PREFIX + ".connection.min.idle";
+    public static final String PROP_CONNECTION_MAX_IDLE = PREFIX + ".connection.max.idle";
     public static final String PROP_CONNECTION_POOL_MAX_WAIT = PREFIX + ".connection.pool.max.wait";
     public static final String PROP_CONNECTION_MIN_IDLE_TIMEOUT = PREFIX + ".connection.pool.idle.timeout";
     public static final String PROP_CONNECTION_POOL_EVICT_INTERVAL = PREFIX + ".connection.pool.evict.interval";
@@ -59,6 +59,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
     public static final long DEFAULT_CONNECTION_MAX_AGE = 300000;
     public static final long DEFAULT_CONNECTION_MAX_IDLE_TIME = 30000;
     public static final String CLUSTER_PROP_CONNECTION_POOL_SIZE = "io.jmsConnectionPoolSize";
+    public static final String CLUSTER_PROP_CONNECTION_MAX_IDLE = "io.jmsConnectionMaxIdle";
     public static final String CLUSTER_PROP_CONNECTION_MAX_WAIT = "io.jmsConnectionMaxWait";
     public static final String CLUSTER_PROP_CONNECTION_POOL_EVICT_INTERVAL = "io.jmsConnectionTimeBetweenEviction";
     public static final String CLUSTER_PROP_CONNECTION_POOL_EVICT_BATCH_SIZE = "io.jmsConnectionEvictionBatchSize";
@@ -369,7 +370,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
                 , DEFAULT_CONNECTION_POOL_SIZE), 1, 10000, 1)));
         inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(connectionPoolSizeSpinner, connectionPoolSizeLabel.getText()));
 
-        connectionMinIdleSpinner.setModel((new SpinnerNumberModel((Number) safeNumber(() -> Integer.valueOf(getClusterPropertyValue(CLUSTER_PROP_CONNECTION_POOL_SIZE, String.valueOf(DEFAULT_CONNECTION_POOL_SIZE)))
+        connectionMinIdleSpinner.setModel((new SpinnerNumberModel((Number) safeNumber(() -> Integer.valueOf(getClusterPropertyValue(CLUSTER_PROP_CONNECTION_MAX_IDLE, String.valueOf(DEFAULT_CONNECTION_POOL_SIZE)))
                 ,DEFAULT_CONNECTION_POOL_SIZE), -1, 10000, 1)));
         inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(connectionMinIdleSpinner, connectionMinIdleLabel.getText()));
 
@@ -969,7 +970,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
                 if(overrideSystemDefaultsCcheckBox.isSelected()) {
                     // set connection properties
                     properties.setProperty(PROP_CONNECTION_POOL_SIZE, connectionPoolSizeSpinner.getValue().toString());
-                    properties.setProperty(PROP_CONNECTION_MIN_IDLE, connectionMinIdleSpinner.getValue().toString());
+                    properties.setProperty(PROP_CONNECTION_MAX_IDLE, connectionMinIdleSpinner.getValue().toString());
                     properties.setProperty(PROP_CONNECTION_MIN_IDLE_TIMEOUT, connectionMinIdleTimeTextField.getText());
                     properties.setProperty(PROP_CONNECTION_POOL_MAX_WAIT, connectionMaxWaitTextField.getText());
                     properties.setProperty(PROP_CONNECTION_POOL_EVICT_INTERVAL, connectionPoolEvictionIntervalTextField.getText());
@@ -1355,7 +1356,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
     }
 
     private Integer getMaxConnectionIdle(Properties props) {
-        String val = props.getProperty(PROP_CONNECTION_MIN_IDLE, getClusterPropertyValue(CLUSTER_PROP_CONNECTION_POOL_SIZE, String.valueOf(DEFAULT_CONNECTION_POOL_SIZE)));
+        String val = props.getProperty(PROP_CONNECTION_MAX_IDLE, getClusterPropertyValue(CLUSTER_PROP_CONNECTION_POOL_SIZE, String.valueOf(DEFAULT_CONNECTION_POOL_SIZE)));
         if(val == null ) return DEFAULT_CONNECTION_POOL_SIZE;
         try{
             return new Integer(val);

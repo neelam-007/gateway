@@ -33,15 +33,18 @@ public class CachedConnection {
     private final int connectionVersion;
     protected final GenericObjectPool<JmsBag> pool;
     private final JmsEndpointConfig endpointConfig;
+    private final JmsResourceManagerConfig cacheConfig;
     private final int sessionPoolMaxActive;
 
     protected CachedConnection( final JmsEndpointConfig cfg,
-                                final JmsBag bag) {
+                                final JmsBag bag,
+                                JmsResourceManagerConfig cacheConfig) {
         this.bag = bag;
         this.name = cfg.getJmsEndpointKey().toString();
         this.endpointVersion = cfg.getEndpoint().getVersion();
         this.connectionVersion = cfg.getConnection().getVersion();
         this.endpointConfig = cfg;
+        this.cacheConfig = cacheConfig;
         this.sessionPoolMaxActive = getSessionPoolSize();
         if(sessionPoolMaxActive != 0) {
             this.pool = new GenericObjectPool<JmsBag>(new PoolableObjectFactory<JmsBag>() {
@@ -140,7 +143,7 @@ public class CachedConnection {
             return -1;
         } else {
             return Integer.parseInt(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_SESSION_POOL_SIZE,
-                    String.valueOf(JmsConnection.DEFAULT_SESSION_POOL_SIZE)));
+                    String.valueOf(cacheConfig.getSessionPoolSize())));
         }
     }
 
@@ -149,7 +152,7 @@ public class CachedConnection {
             return -1;
         } else {
             return Integer.parseInt(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_MAX_SESSION_IDLE,
-                    String.valueOf(JmsConnection.DEFAULT_SESSION_POOL_SIZE)));
+                    String.valueOf(cacheConfig.getSessionMaxIdle())));
         }
     }
 
@@ -159,7 +162,7 @@ public class CachedConnection {
             return 0;
         } else {
             return Long.parseLong(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_SESSION_POOL_MAX_WAIT,
-                    String.valueOf(JmsConnection.DEFAULT_SESSION_POOL_MAX_WAIT)));
+                    String.valueOf(cacheConfig.getSessionMaxWait())));
         }
     }
 

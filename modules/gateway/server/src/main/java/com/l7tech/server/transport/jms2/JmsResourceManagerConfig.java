@@ -5,21 +5,31 @@ public class JmsResourceManagerConfig {
     private final long maximumIdleTime;
     private final long idleTime;
     private final int maximumSize;
-    private final int defaultPoolSize;
-    private final long defaultWait;
+    private final int connectionPoolSize;
+    private final int connectionMinIdle;
+    private final long connectionMaxWait;
     private final long timeBetweenEviction;
-    private final int defaultEvictionBatchSize;
+    private final int evictionBatchSize;
+    private final int sessionPoolSize;
+    private final int sessionMaxIdle;
+    private final long sessionMaxWait;
 
     public JmsResourceManagerConfig(final long maximumAge, final long maximumIdleTime, final long idleTime, final int maximumSize,
-                                    final int defaultPoolSize, final long defaultWait, final long timeBetweenEviction, final int defaultEvictionBatchSize) {
+                                    final int connectionPoolSize, final int connectionMinIdle,
+                                    final long connectionMaxWait, final long timeBetweenEviction, final int evictionBatchSize,
+                                    final int sessionPoolSize, final int sessionMaxIdle, final long sessionMaxWait) {
         this.maximumAge = maximumAge;
         this.maximumIdleTime = maximumIdleTime;
         this.idleTime = idleTime;
         this.maximumSize = maximumSize;
-        this.defaultPoolSize = defaultPoolSize;
-        this.defaultWait = defaultWait;
+        this.connectionPoolSize = connectionPoolSize;
+        this.connectionMinIdle = connectionMinIdle;
+        this.connectionMaxWait = connectionMaxWait;
         this.timeBetweenEviction = timeBetweenEviction;
-        this.defaultEvictionBatchSize = defaultEvictionBatchSize;
+        this.evictionBatchSize = evictionBatchSize;
+        this.sessionPoolSize = sessionPoolSize;
+        this.sessionMaxIdle = sessionMaxIdle;
+        this.sessionMaxWait = sessionMaxWait;
     }
 
     public long getMaximumAge() {
@@ -38,19 +48,35 @@ public class JmsResourceManagerConfig {
         return maximumSize;
     }
 
-    public int getDefaultPoolSize() {
-        return defaultPoolSize;
+    public int getConnectionPoolSize() {
+        return connectionPoolSize;
     }
 
-    public long getDefaultWait() {
-        return defaultWait;
+    public long getConnectionMaxWait() {
+        return connectionMaxWait;
     }
 
     public long getTimeBetweenEviction() {
         return timeBetweenEviction;
     }
 
-    public int getDefaultEvictionBatchSize() {
-        return defaultEvictionBatchSize;
+    public int getEvictionBatchSize() {
+        return evictionBatchSize;
+    }
+
+    public int getSessionPoolSize() {
+        return sessionPoolSize;
+    }
+
+    public int getSessionMaxIdle() {
+        return sessionMaxIdle;
+    }
+
+    public long getSessionMaxWait() {
+        return sessionMaxWait;
+    }
+
+    public int getConnectionMinIdle() {
+        return connectionMinIdle;
     }
 }

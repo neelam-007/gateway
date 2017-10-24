@@ -39,6 +39,8 @@ public class JmsResourceManagerTest {
     PooledConnection mockPooledConnection;
     @Mock
     JmsBag mockJmsBag;
+    @Mock
+    JmsResourceManagerConfig mockResourceManagerConfig;
 
     @Before
     public void setUp() throws Exception {
@@ -139,7 +141,7 @@ public class JmsResourceManagerTest {
         protected class CachedConnectionStub extends CachedConnection {
 
             protected CachedConnectionStub(JmsEndpointConfig cfg, JmsBag bag) {
-                super(cfg, bag);
+                super(cfg, bag, mockResourceManagerConfig);
                 this.pool.setFactory(new PoolableObjectFactory<JmsBag>()
                 {
                     @Override

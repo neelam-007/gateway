@@ -277,7 +277,7 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
     protected final ConcurrentHashMap<JmsEndpointConfig.JmsEndpointKey, PooledConnection> connectionHolder;
     private final Timer timer;
     private final TimerTask cleanupTask;
-    private final AtomicReference<JmsResourceManagerConfig> cacheConfigReference = new AtomicReference<JmsResourceManagerConfig>( new JmsResourceManagerConfig(0,0, 0,1,100, 5000, 300000, 1) );
+    private final AtomicReference<JmsResourceManagerConfig> cacheConfigReference = new AtomicReference<JmsResourceManagerConfig>( new JmsResourceManagerConfig(0L,0L, 0L,1,1, 1,5000L, 300000L, 1, 0, 0, 0L) );
     private final AtomicBoolean active = new AtomicBoolean(true);
 
     /**
@@ -325,19 +325,28 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
         final long idleTime = config.getTimeUnitProperty("ioJmsConnectionIdleTime", DEFAULT_CONNECTION_IDLE_TIME);
         final int maximumSize = config.getIntProperty( "ioJmsConnectionCacheSize", DEFAULT_CONNECTION_CACHE_SIZE );
         final int maximumPoolSize = config.getIntProperty("ioJmsConnectionPoolSize", JmsConnection.DEFAULT_CONNECTION_POOL_SIZE);
+        final int minimumConnectionIdle = config.getIntProperty("ioJmsConnectionMaxIdle", JmsConnection.DEFAULT_CONNECTION_POOL_SIZE);
         final long maximumWait = config.getTimeUnitProperty("ioJmsConnectionMaxWait", JmsConnection.DEFAULT_CONNECTION_POOL_MAX_WAIT);
         final long timeBetweenEvictions = config.getTimeUnitProperty("ioJmsConnectionTimeBetweenEviction", JmsConnection.DEFAULT_CONNECTION_POOL_EVICT_INTERVAL);
         final int evictionBatchSize = config.getIntProperty("ioJmsConnectionEvictionBatchSize", JmsConnection.DEFAULT_CONNECTION_POOL_SIZE);
+        final int sessionPoolSize = config.getIntProperty("ioJmsSessionPoolSize", JmsConnection.DEFAULT_SESSION_POOL_SIZE);
+        final int sessionMaxIdle = config.getIntProperty("ioJmsSessionMaxIdle", JmsConnection.DEFAULT_SESSION_POOL_SIZE);
+        final long sessionMaxWait = config.getTimeUnitProperty("ioJmsSessionMaxWait", JmsConnection.DEFAULT_SESSION_POOL_MAX_WAIT);
 
-        cacheConfigReference.set( new JmsResourceManagerConfig(
+        cacheConfigReference.set(
+                new JmsResourceManagerConfig(
                 rangeValidate(maximumAge, DEFAULT_CONNECTION_MAX_AGE, 0L, Long.MAX_VALUE, "JMS Connection Maximum Age" ),
                 rangeValidate(maximumIdleTime, DEFAULT_CONNECTION_MAX_IDLE, 0L, Long.MAX_VALUE, "JMS Connection Maximum Idle" ),
                 rangeValidate(idleTime, DEFAULT_CONNECTION_IDLE_TIME, 0L, Long.MAX_VALUE, "JMS Pool Soft Idle Timeout"),
                 rangeValidate(maximumSize, DEFAULT_CONNECTION_CACHE_SIZE, 0, Integer.MAX_VALUE, "JMS Connection Cache Size" ),
                 rangeValidate(maximumPoolSize, JmsConnection.DEFAULT_CONNECTION_POOL_SIZE, 1, 10000, "JMS Connection Pool Size" ),
+                rangeValidate(minimumConnectionIdle, JmsConnection.DEFAULT_CONNECTION_POOL_SIZE, 0, 10000, "JMS Connection Max Idle"),
                 rangeValidate(maximumWait, JmsConnection.DEFAULT_CONNECTION_POOL_MAX_WAIT, 0L, Long.MAX_VALUE, "JMS Connection Maximum Wait"),
                 rangeValidate(timeBetweenEvictions, JmsConnection.DEFAULT_CONNECTION_POOL_EVICT_INTERVAL, 0L, Long.MAX_VALUE, "JMS Connection Pool Time Between Eviction"),
-                rangeValidate(evictionBatchSize, JmsConnection.DEFAULT_CONNECTION_POOL_SIZE, 1, 10000, "JMS Connection Eviction Batch Size"))
+                rangeValidate(evictionBatchSize, JmsConnection.DEFAULT_CONNECTION_POOL_SIZE, 1, 10000, "JMS Connection Eviction Batch Size"),
+                rangeValidate(sessionPoolSize, JmsConnection.DEFAULT_SESSION_POOL_SIZE, -1, Integer.MAX_VALUE, "JMS Session Pool Size"),
+                rangeValidate(sessionMaxIdle, JmsConnection.DEFAULT_SESSION_POOL_SIZE, -1, Integer.MAX_VALUE, "JMS Session Max Idle"),
+                rangeValidate(sessionMaxWait, JmsConnection.DEFAULT_SESSION_POOL_MAX_WAIT, -1L, Long.MAX_VALUE, "JMS Session Max Wait"))
         );
     }
 

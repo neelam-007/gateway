@@ -16,6 +16,7 @@ import java.util.logging.Logger;
 public class PooledConnection {
     private static final Logger logger = Logger.getLogger(PooledConnection.class.getName());
 
+    private final JmsResourceManagerConfig cacheConfig;
     private final GenericObjectPool.Config config;
     private final GenericObjectPool<CachedConnection> pool;
     private final boolean isPooled;
@@ -27,10 +28,11 @@ public class PooledConnection {
 
     public PooledConnection(final JmsEndpointConfig endpointConfig, JmsResourceManagerConfig cacheConfig) throws  Exception{
         this.endpoint = endpointConfig;
+        this.cacheConfig = cacheConfig;
         //set pool config initial properties. They are used even if the pool size is 0
         config = new GenericObjectPool.Config();
         config.maxActive = Integer.parseInt(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_CONNECTION_POOL_SIZE,
-                String.valueOf(cacheConfig.getDefaultPoolSize())));
+                String.valueOf(cacheConfig.getConnectionPoolSize())));
         config.minEvictableIdleTimeMillis = Long.parseLong(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_CONNECTION_MAX_AGE,
                 String.valueOf(cacheConfig.getMaximumIdleTime())));
 
@@ -39,16 +41,16 @@ public class PooledConnection {
         if(isPooled) {
             //set other pool properties
             config.maxIdle = config.maxActive;
-            config.minIdle = Integer.parseInt(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_CONNECTION_MIN_IDLE,
-                    String.valueOf(cacheConfig.getDefaultPoolSize())));
+            config.minIdle = Integer.parseInt(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_CONNECTION_MAX_IDLE,
+                    String.valueOf(cacheConfig.getConnectionMinIdle())));
 
             config.maxWait = Long.parseLong(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_CONNECTION_POOL_MAX_WAIT,
-                    String.valueOf(cacheConfig.getDefaultWait())));
+                    String.valueOf(cacheConfig.getConnectionMaxWait())));
 
             config.timeBetweenEvictionRunsMillis = Long.parseLong(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_CONNECTION_POOL_EVICT_INTERVAL,
                     String.valueOf(cacheConfig.getTimeBetweenEviction())));
             config.numTestsPerEvictionRun = Integer.parseInt(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_CONNECTION_POOL_EVICT_BATCH_SIZE,
-                    String.valueOf(cacheConfig.getDefaultEvictionBatchSize())));
+                    String.valueOf(cacheConfig.getEvictionBatchSize())));
             config.whenExhaustedAction = GenericObjectPool.WHEN_EXHAUSTED_BLOCK;
 
             config.softMinEvictableIdleTimeMillis = Long.parseLong(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_CONNECTION_IDLE_TIMEOUT,
@@ -169,7 +171,7 @@ public class PooledConnection {
             newBag.getConnection().start();
 
             // create new cached connection wrapper
-            final CachedConnection newConn = new CachedConnection(endpoint, newBag);
+            final CachedConnection newConn = new CachedConnection(endpoint, newBag, cacheConfig);
             newConn.ref(); // referenced by caller
 
             logger.log(Level.FINE, "New JMS connection created ({0}), version {1}:{2}", new Object[] {
@@ -206,7 +208,7 @@ public class PooledConnection {
     }
 
     public boolean isIdleTimeoutExpired() {
-        return (isPooled ? isPoolEmpty() : true) && (System.currentTimeMillis() - getLastAccessTime().get() > config.minEvictableIdleTimeMillis && config.minEvictableIdleTimeMillis > 0);
+        return (!isPooled || isPoolEmpty()) && (System.currentTimeMillis() - getLastAccessTime().get() > config.minEvictableIdleTimeMillis && config.minEvictableIdleTimeMillis > 0);
     }
 
     public void debugPoolStatus() {
