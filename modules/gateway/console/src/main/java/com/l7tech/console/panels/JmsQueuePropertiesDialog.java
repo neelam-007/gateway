@@ -22,6 +22,8 @@ import org.apache.commons.lang.StringUtils;
 import javax.naming.Context;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
@@ -64,6 +66,9 @@ public class JmsQueuePropertiesDialog extends JDialog {
     public static final String CLUSTER_PROP_CONNECTION_POOL_EVICT_INTERVAL = "io.jmsConnectionTimeBetweenEviction";
     public static final String CLUSTER_PROP_CONNECTION_POOL_EVICT_BATCH_SIZE = "io.jmsConnectionEvictionBatchSize";
     public static final String CLUSTER_PROP_CONNECTION_MIN_IDLE_TIME = "io.jmsConnectionIdleTime";
+    public static final String CLUSTER_PROP_SESSION_POOL_SIZE = "io.jmsSessionPoolSize";
+    public static final String CLUSTER_PROP_SESSION_MAX_IDLE = "io.jmsSessionMaxIdle";
+    public static final String CLUSTER_PROP_SESSION_MAX_WAIT = "io.jmsSessionMaxWait";
 
     private JPanel contentPane;
     private JRadioButton outboundRadioButton;
@@ -157,11 +162,12 @@ public class JmsQueuePropertiesDialog extends JDialog {
     private JTextField connectionPoolEvictionIntervalTextField;
     private JLabel connectionPoolEvictionBatchSizeLabel;
     private JSpinner connectionPoolEvictionBatchSizeSpinner;
-    private JCheckBox enableConnectionPoolheckBox;
     private JPanel connectionPoolingPanel;
-    private JCheckBox advancedPoolingCheckBox;
     private JCheckBox overrideSystemDefaultsCcheckBox;
     private JPanel sessionPoolingSettingPanel;
+    private JPanel poolingSettingsPanel;
+    private JRadioButton sessionPoolingRadioButton;
+    private JRadioButton connectionPoolingRadioButton;
 
 
     private JmsConnection connection = null;
@@ -376,18 +382,18 @@ public class JmsQueuePropertiesDialog extends JDialog {
 
         connectionPoolEvictionBatchSizeSpinner.setModel((new SpinnerNumberModel((Number) safeNumber(() -> Integer.valueOf(getClusterPropertyValue(CLUSTER_PROP_CONNECTION_POOL_EVICT_BATCH_SIZE, String.valueOf(DEFAULT_CONNECTION_POOL_SIZE)))
                 ,DEFAULT_CONNECTION_POOL_SIZE), 1, 10000, 1)));
-        inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(connectionPoolEvictionBatchSizeSpinner, connectionPoolEvictionBatchSizeLabel.getText()));
+        /*inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(connectionPoolEvictionBatchSizeSpinner, connectionPoolEvictionBatchSizeLabel.getText()));*/
 
-        sessionPoolSizeSpinner.setModel((new SpinnerNumberModel((Number) JmsConnection.DEFAULT_SESSION_POOL_SIZE, -1, 10000, 1)));
+        sessionPoolSizeSpinner.setModel((new SpinnerNumberModel((Number) safeNumber(() -> Integer.valueOf(getClusterPropertyValue(CLUSTER_PROP_SESSION_POOL_SIZE, String.valueOf(JmsConnection.DEFAULT_SESSION_POOL_SIZE))), JmsConnection.DEFAULT_SESSION_POOL_SIZE), -1, 10000, 1)));
         inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(sessionPoolSizeSpinner,sessionPoolSizeLabel.getText()));
 
-        maxIdleSessionSpinner.setModel((new SpinnerNumberModel((Number) JmsConnection.DEFAULT_SESSION_POOL_SIZE, -1, 10000, 1)));
+        maxIdleSessionSpinner.setModel((new SpinnerNumberModel((Number) safeNumber(() -> Integer.valueOf(getClusterPropertyValue(CLUSTER_PROP_SESSION_MAX_IDLE, String.valueOf(JmsConnection.DEFAULT_SESSION_POOL_SIZE))), JmsConnection.DEFAULT_SESSION_POOL_SIZE), -1, 10000, 1)));
         inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(maxIdleSessionSpinner,maxSessionIdleLabel.getText()));
 
         inputValidator.addRule(new InputValidator.ComponentValidationRule(sessionPoolMaxWaitTextField) {
             @Override
             public String getValidationError() {
-                return inputValidator.buildTextFieldNumberRangeValidationRule(getBorderTitle(sessionPoolingSettingPanel) + Utilities.removeColonFromLabel(sessionPoolMaxWait),
+                return inputValidator.buildTextFieldNumberRangeValidationRule(Utilities.removeColonFromLabel(sessionPoolMaxWait),
                         sessionPoolMaxWaitTextField, -1L, Long.MAX_VALUE, false).getValidationError();
             }
         });
@@ -395,24 +401,8 @@ public class JmsQueuePropertiesDialog extends JDialog {
         inputValidator.addRule(new InputValidator.ComponentValidationRule(connectionMaxWaitTextField) {
             @Override
             public String getValidationError() {
-                return inputValidator.buildTextFieldNumberRangeValidationRule(getBorderTitle(connectionPoolingPanel) + Utilities.removeColonFromLabel(connectionMaxWaitLabel),
+                return inputValidator.buildTextFieldNumberRangeValidationRule(Utilities.removeColonFromLabel(connectionMaxWaitLabel),
                         connectionMaxWaitTextField, -1L, Long.MAX_VALUE, false).getValidationError();
-            }
-        });
-
-        inputValidator.addRule(new InputValidator.ComponentValidationRule(connectionMinIdleTimeTextField) {
-            @Override
-            public String getValidationError() {
-                return inputValidator.buildTextFieldNumberRangeValidationRule(connectionMinIdleTimeLabel.getText(),
-                        connectionMinIdleTimeTextField, -1L, Long.MAX_VALUE, false).getValidationError();
-            }
-        });
-
-        inputValidator.addRule(new InputValidator.ComponentValidationRule(connectionPoolEvictionIntervalTextField) {
-            @Override
-            public String getValidationError() {
-                return inputValidator.buildTextFieldNumberRangeValidationRule(connectionPoolEvictionIntervalLabel.getText(),
-                        connectionPoolEvictionIntervalTextField, -1, Long.MAX_VALUE, false).getValidationError();
             }
         });
 
@@ -608,9 +598,16 @@ public class JmsQueuePropertiesDialog extends JDialog {
             }
         });
 
-        enableConnectionPoolheckBox.addActionListener(new ActionListener() {
+        connectionPoolingRadioButton.addChangeListener(new ChangeListener() {
             @Override
-            public void actionPerformed(ActionEvent e) {
+            public void stateChanged(ChangeEvent e) {
+                enableOrDisableConnectionPoolingSettings();
+            }
+        });
+
+        sessionPoolingRadioButton.addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent e) {
                 enableOrDisableConnectionPoolingSettings();
             }
         });
@@ -629,6 +626,9 @@ public class JmsQueuePropertiesDialog extends JDialog {
                     if(StringUtils.isBlank(connectionPoolEvictionIntervalTextField.getText())) {
                         connectionPoolEvictionIntervalTextField.setText(String.valueOf(TimeUnit.parse(getClusterPropertyValue(CLUSTER_PROP_CONNECTION_POOL_EVICT_INTERVAL, String.valueOf(DEFAULT_CONNECTION_POOL_EVICT_INTERVAL)), TimeUnit.MILLIS)));
                     }
+                    if(StringUtils.isBlank(sessionPoolMaxWaitTextField.getText())) {
+                        sessionPoolMaxWaitTextField.setText(String.valueOf(TimeUnit.parse(getClusterPropertyValue(CLUSTER_PROP_SESSION_MAX_WAIT, String.valueOf(JmsConnection.DEFAULT_SESSION_POOL_MAX_WAIT)), TimeUnit.MILLIS)));
+                    }
                 }
             }
         });
@@ -645,32 +645,11 @@ public class JmsQueuePropertiesDialog extends JDialog {
         zoneControl.configure(Arrays.asList(EntityType.JMS_CONNECTION, EntityType.JMS_ENDPOINT), operation,
                 connection != null ? connection.getSecurityZone() : null);
 
-        advancedPoolingCheckBox.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                hideOrDisplayAdvancedPoolingOptions();
-            }
-        });
-
-        hideOrDisplayAdvancedPoolingOptions();
         pack();
         initializeView();
         enableOrDisableComponents();
         applyFormSecurity();
         Utilities.setEscKeyStrokeDisposes(this);
-    }
-
-    private void hideOrDisplayAdvancedPoolingOptions() {
-        connectionMinIdleLabel.setVisible(advancedPoolingCheckBox.isSelected());
-        connectionMinIdleSpinner.setVisible(advancedPoolingCheckBox.isSelected());
-        connectionMaxWaitLabel.setVisible(advancedPoolingCheckBox.isSelected());
-        connectionMaxWaitTextField.setVisible(advancedPoolingCheckBox.isSelected());
-        connectionMinIdleTimeLabel.setVisible(advancedPoolingCheckBox.isSelected());
-        connectionMinIdleTimeTextField.setVisible(advancedPoolingCheckBox.isSelected());
-        connectionPoolEvictionIntervalLabel.setVisible(advancedPoolingCheckBox.isSelected());
-        connectionPoolEvictionIntervalTextField.setVisible(advancedPoolingCheckBox.isSelected());
-        connectionPoolEvictionBatchSizeLabel.setVisible(advancedPoolingCheckBox.isSelected());
-        connectionPoolEvictionBatchSizeSpinner.setVisible(advancedPoolingCheckBox.isSelected());
     }
 
     private void loadContentTypesModel() {
@@ -965,22 +944,25 @@ public class JmsQueuePropertiesDialog extends JDialog {
             }
         }
         else {
-            properties.setProperty(JmsConnection.PROP_CONNECTION_POOL_ENABLE, Boolean.toString(enableConnectionPoolheckBox.isSelected()));
-            if(enableConnectionPoolheckBox.isSelected()) {
-                if(overrideSystemDefaultsCcheckBox.isSelected()) {
+            properties.setProperty(JmsConnection.PROP_CONNECTION_POOL_ENABLE, Boolean.toString(connectionPoolingRadioButton.isSelected()));
+            if(overrideSystemDefaultsCcheckBox.isSelected()) {
+                if (connectionPoolingRadioButton.isSelected()) {
                     // set connection properties
                     properties.setProperty(PROP_CONNECTION_POOL_SIZE, connectionPoolSizeSpinner.getValue().toString());
                     properties.setProperty(PROP_CONNECTION_MAX_IDLE, connectionMinIdleSpinner.getValue().toString());
-                    properties.setProperty(PROP_CONNECTION_MIN_IDLE_TIMEOUT, connectionMinIdleTimeTextField.getText());
                     properties.setProperty(PROP_CONNECTION_POOL_MAX_WAIT, connectionMaxWaitTextField.getText());
+                    //TODO: remove properties
+                    properties.setProperty(PROP_CONNECTION_MIN_IDLE_TIMEOUT, connectionMinIdleTimeTextField.getText());
                     properties.setProperty(PROP_CONNECTION_POOL_EVICT_INTERVAL, connectionPoolEvictionIntervalTextField.getText());
                     properties.setProperty(PROP_CONNECTION_POOL_EVICT_BATCH_SIZE, connectionPoolEvictionBatchSizeSpinner.getValue().toString());
+                    //end TODO
+                } else {
+                    // set session properties
+                    properties.setProperty(JmsConnection.PROP_SESSION_POOL_SIZE, sessionPoolSizeSpinner.getValue().toString());
+                    properties.setProperty(JmsConnection.PROP_MAX_SESSION_IDLE, maxIdleSessionSpinner.getValue().toString());
+                    properties.setProperty(JmsConnection.PROP_SESSION_POOL_MAX_WAIT, sessionPoolMaxWaitTextField.getText());
                 }
             }
-            // set session properties
-            properties.setProperty(JmsConnection.PROP_SESSION_POOL_SIZE, sessionPoolSizeSpinner.getValue().toString());
-            properties.setProperty(JmsConnection.PROP_MAX_SESSION_IDLE, maxIdleSessionSpinner.getValue().toString());
-            properties.setProperty(JmsConnection.PROP_SESSION_POOL_MAX_WAIT, sessionPoolMaxWaitTextField.getText());
         }
         conn.properties(properties);
         conn.setSecurityZone(zoneControl.getSelectedZone());
@@ -1196,7 +1178,8 @@ public class JmsQueuePropertiesDialog extends JDialog {
 
             // set connection pool properties
             boolean isConnectionPoolEnabled = isConnectionPoolEnabled(props);
-            enableConnectionPoolheckBox.setSelected(isConnectionPoolEnabled);
+            //need better setting to distinguish between connection pooling or session pooling
+            connectionPoolingRadioButton.setSelected(isConnectionPoolEnabled);
             if(isConnectionPoolEnabled) {
                 overrideSystemDefaultsCcheckBox.setSelected(props.containsKey(PROP_CONNECTION_POOL_SIZE));
                 connectionPoolSizeSpinner.setValue(getConnectionPoolSize(props));
@@ -1206,10 +1189,13 @@ public class JmsQueuePropertiesDialog extends JDialog {
                 connectionPoolEvictionIntervalTextField.setText(getConnectionPoolEvictInterval(props).toString());
                 connectionPoolEvictionBatchSizeSpinner.setValue(getConnectionEvictBatchSize(props));
             }
-            // set session pool properties
-            sessionPoolSizeSpinner.setValue(getSessionPoolSize(props));
-            maxIdleSessionSpinner.setValue(getMaxSessionIdle(props));
-            sessionPoolMaxWaitTextField.setText(getSessionPoolMaxWait(props).toString());
+            else {
+                // set session pool properties
+                overrideSystemDefaultsCcheckBox.setSelected(props.containsKey(JmsConnection.PROP_SESSION_POOL_SIZE));
+                sessionPoolSizeSpinner.setValue(getSessionPoolSize(props));
+                maxIdleSessionSpinner.setValue(getMaxSessionIdle(props));
+                sessionPoolMaxWaitTextField.setText(getSessionPoolMaxWait(props).toString());
+            }
         } else {
             // No connection is set
             qcfTextField.setText("");
@@ -1226,12 +1212,11 @@ public class JmsQueuePropertiesDialog extends JDialog {
             queuePasswordField.setText(null);
             enableOrDisableQueueCredentials();
             environmentPropertiesTableModel.setRows( Collections.<NameValuePair>emptyList() );
-            sessionPoolMaxWaitTextField.setText(String.valueOf(JmsConnection.DEFAULT_SESSION_POOL_MAX_WAIT));
+            sessionPoolMaxWaitTextField.setText(String.valueOf(TimeUnit.parse(getClusterPropertyValue(CLUSTER_PROP_SESSION_MAX_WAIT,String.valueOf(JmsConnection.DEFAULT_SESSION_POOL_MAX_WAIT)),TimeUnit.MILLIS)));
             //set connection default values
             connectionMaxWaitTextField.setText(String.valueOf(TimeUnit.parse(getClusterPropertyValue(CLUSTER_PROP_CONNECTION_MAX_WAIT,String.valueOf(DEFAULT_CONNECTION_POOL_MAX_WAIT)),TimeUnit.MILLIS)));
-            connectionMinIdleTimeTextField.setText(String.valueOf(TimeUnit.parse(getClusterPropertyValue(CLUSTER_PROP_CONNECTION_MIN_IDLE_TIME, String.valueOf(DEFAULT_CONNECTION_MAX_IDLE_TIME)),TimeUnit.MILLIS)));
-            connectionPoolEvictionIntervalTextField.setText(String.valueOf(TimeUnit.parse(getClusterPropertyValue(CLUSTER_PROP_CONNECTION_POOL_EVICT_INTERVAL, String.valueOf(DEFAULT_CONNECTION_POOL_EVICT_INTERVAL)),TimeUnit.MILLIS)));
-
+            //connectionMinIdleTimeTextField.setText(String.valueOf(TimeUnit.parse(getClusterPropertyValue(CLUSTER_PROP_CONNECTION_MIN_IDLE_TIME, String.valueOf(DEFAULT_CONNECTION_MAX_IDLE_TIME)),TimeUnit.MILLIS)));
+            //connectionPoolEvictionIntervalTextField.setText(String.valueOf(TimeUnit.parse(getClusterPropertyValue(CLUSTER_PROP_CONNECTION_POOL_EVICT_INTERVAL, String.valueOf(DEFAULT_CONNECTION_POOL_EVICT_INTERVAL)),TimeUnit.MILLIS)));
         }
 
         boolean associateQueue = ServiceComboBox.populateAndSelect(serviceNameCombo, isHardWired, hardWiredId);
@@ -1409,7 +1394,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
     }
 
     private Integer getSessionPoolSize(Properties props) {
-        String val = props.getProperty(JmsConnection.PROP_SESSION_POOL_SIZE, String.valueOf(JmsConnection.DEFAULT_SESSION_POOL_SIZE));
+        String val = props.getProperty(JmsConnection.PROP_SESSION_POOL_SIZE, getClusterPropertyValue(CLUSTER_PROP_SESSION_POOL_SIZE, String.valueOf(JmsConnection.DEFAULT_SESSION_POOL_SIZE)));
         if(val == null ) return JmsConnection.DEFAULT_SESSION_POOL_SIZE;
         try{
             return new Integer(val);
@@ -1419,7 +1404,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
     }
 
     private Integer getMaxSessionIdle(Properties props) {
-        String val = props.getProperty(JmsConnection.PROP_MAX_SESSION_IDLE, String.valueOf(JmsConnection.DEFAULT_SESSION_POOL_SIZE));
+        String val = props.getProperty(JmsConnection.PROP_MAX_SESSION_IDLE, getClusterPropertyValue(CLUSTER_PROP_SESSION_MAX_IDLE, String.valueOf(JmsConnection.DEFAULT_SESSION_POOL_SIZE)));
         if(val == null ) return JmsConnection.DEFAULT_SESSION_POOL_SIZE;
         try{
             return new Integer(val);
@@ -1429,7 +1414,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
     }
 
     private Long getSessionPoolMaxWait(Properties props) {
-        String val = props.getProperty(JmsConnection.PROP_SESSION_POOL_MAX_WAIT, String.valueOf(JmsConnection.DEFAULT_SESSION_POOL_MAX_WAIT));
+        String val = props.getProperty(JmsConnection.PROP_SESSION_POOL_MAX_WAIT, getClusterPropertyValue(CLUSTER_PROP_SESSION_MAX_WAIT, String.valueOf(JmsConnection.DEFAULT_SESSION_POOL_MAX_WAIT)));
         if(val == null ) return JmsConnection.DEFAULT_SESSION_POOL_MAX_WAIT;
         try{
             return new Long(val);
@@ -1593,21 +1578,45 @@ public class JmsQueuePropertiesDialog extends JDialog {
     }
 
     private void enableOrDisableConnectionPoolingSettings() {
-        overrideSystemDefaultsCcheckBox.setEnabled(enableConnectionPoolheckBox.isSelected());
-        advancedPoolingCheckBox.setEnabled(enableConnectionPoolheckBox.isSelected());
-        boolean enabled = enableConnectionPoolheckBox.isSelected() && overrideSystemDefaultsCcheckBox.isSelected();
-        connectionPoolSizeLabel.setEnabled(enabled);
-        connectionPoolSizeSpinner.setEnabled(enabled);
-        connectionMinIdleLabel.setEnabled(enabled);
-        connectionMinIdleSpinner.setEnabled(enabled);
-        connectionMaxWaitLabel.setEnabled(enabled);
-        connectionMaxWaitTextField.setEnabled(enabled);
-        connectionMinIdleTimeLabel.setEnabled(enabled);
-        connectionMinIdleTimeTextField.setEnabled(enabled);
-        connectionPoolEvictionIntervalLabel.setEnabled(enabled);
-        connectionPoolEvictionIntervalTextField.setEnabled(enabled);
-        connectionPoolEvictionBatchSizeLabel.setEnabled(enabled);
-        connectionPoolEvictionBatchSizeSpinner.setEnabled(enabled);
+        final boolean isOverrideSystemDefaults = overrideSystemDefaultsCcheckBox.isSelected();
+        if(connectionPoolingRadioButton.isSelected()) {
+//            getBorder(poolingSettingsPanel).setTitle("Connection Pooling Settings");
+            connectionPoolingPanel.setVisible(true);
+            sessionPoolingSettingPanel.setVisible(false);
+            connectionPoolSizeLabel.setEnabled(isOverrideSystemDefaults);
+            connectionPoolSizeSpinner.setEnabled(isOverrideSystemDefaults);
+            connectionMinIdleLabel.setEnabled(isOverrideSystemDefaults);
+            connectionMinIdleSpinner.setEnabled(isOverrideSystemDefaults);
+            connectionMaxWaitLabel.setEnabled(isOverrideSystemDefaults);
+            connectionMaxWaitTextField.setEnabled(isOverrideSystemDefaults);
+            connectionMaxWaitTextField.setText(String.valueOf(TimeUnit.parse(getClusterPropertyValue(CLUSTER_PROP_CONNECTION_MAX_WAIT,String.valueOf(DEFAULT_CONNECTION_POOL_MAX_WAIT)), TimeUnit.MILLIS)));
+            //TODO: remove those properties
+            connectionMinIdleTimeLabel.setEnabled(isOverrideSystemDefaults);
+            connectionMinIdleTimeTextField.setEnabled(isOverrideSystemDefaults);
+            connectionPoolEvictionIntervalLabel.setEnabled(isOverrideSystemDefaults);
+            connectionPoolEvictionIntervalTextField.setEnabled(isOverrideSystemDefaults);
+            connectionPoolEvictionBatchSizeLabel.setEnabled(isOverrideSystemDefaults);
+            connectionPoolEvictionBatchSizeSpinner.setEnabled(isOverrideSystemDefaults);
+            //end TODO
+            sessionPoolSizeSpinner.setEnabled(false);
+            maxIdleSessionSpinner.setEnabled(false);
+            sessionPoolMaxWaitTextField.setEnabled(false);
+            sessionPoolMaxWaitTextField.setText(String.valueOf(TimeUnit.parse(getClusterPropertyValue(CLUSTER_PROP_SESSION_MAX_WAIT, String.valueOf(JmsConnection.DEFAULT_SESSION_POOL_MAX_WAIT)), TimeUnit.MILLIS)));
+        }
+        else {
+//            getBorder(poolingSettingsPanel).setTitle("Session Pooling Settings");
+            connectionPoolingPanel.setVisible(false);
+            connectionPoolSizeSpinner.setEnabled(false);
+            connectionMinIdleSpinner.setEnabled(false);
+            connectionMaxWaitTextField.setEnabled(false);
+            sessionPoolingSettingPanel.setVisible(true);
+            sessionPoolSizeLabel.setEnabled(isOverrideSystemDefaults);
+            sessionPoolSizeSpinner.setEnabled(isOverrideSystemDefaults);
+            maxSessionIdleLabel.setEnabled(isOverrideSystemDefaults);
+            maxIdleSessionSpinner.setEnabled(isOverrideSystemDefaults);
+            sessionPoolMaxWait.setEnabled(isOverrideSystemDefaults);
+            sessionPoolMaxWaitTextField.setEnabled(isOverrideSystemDefaults);
+        }
     }
 
     private void applyFormSecurity() {
@@ -1830,15 +1839,15 @@ public class JmsQueuePropertiesDialog extends JDialog {
         return defaultValue;
     }
 
-    /**
+/*    *//**
      * gets title of the border from JPanel if the border is TitledBorder type
      * @param panel JPanel
      * @return String containing title
-     */
-    public static String getBorderTitle(JPanel panel) {
+     *//*
+    public static TitledBorder getBorder(JPanel panel) {
         if(panel != null && panel.getBorder() instanceof TitledBorder)
-            return ((TitledBorder)panel.getBorder()).getTitle() + " ";
+            return (TitledBorder)panel.getBorder();
         else
-            return "";
-    }
+            return null;
+    }*/
 }
