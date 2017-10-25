@@ -19,6 +19,7 @@ public class MessageProcessor {
   private SSLSocketFactory sslSocketFactory;
   private final ObjectMapper mapper;
   private RequestUtil requestUtil;
+  private VariablesConfig variablesConfig;
   public static String SOURCE_OPERATION_DEFAULT = "GET";
   public static String TARGET_OPERATION_DEFAULT = "PUT";
   public static String TARGET_LOCATION_DEFAULT = "https://localhost:8443/restman/1.0/bundle";
@@ -26,9 +27,15 @@ public class MessageProcessor {
   public static String CALLBACK_OPERATION_DEFAULT = "PUT";
   public static String CALLBACK_CONTENT_TYPE_DEFAULT = "application/json";
 
+  @Deprecated
   public MessageProcessor(SSLSocketFactory sslSocketFactory) {
+    this(sslSocketFactory, null);
+  }
+
+  public MessageProcessor(SSLSocketFactory sslSocketFactory, VariablesConfig variablesConfig) {
     this.sslSocketFactory = sslSocketFactory;
     mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+    this.variablesConfig = variablesConfig;
   }
 
   public RequestUtil getRequestUtil() {
@@ -58,7 +65,7 @@ public class MessageProcessor {
         for (Message message : messages.getMessages()) {
           boolean success = performAction(message);
           if (!success) {
-            logger.log(Level.INFO, "failed proessing messageId %s ", message.getMessageId());
+            logger.log(Level.INFO, String.format("failed processing messageId %s ", message.getMessageId()));
           }
         }
       } else {
@@ -77,6 +84,7 @@ public class MessageProcessor {
    * @return
    */
   public boolean performAction(Message message) {
+    boolean result = false;
     try {
       String sourceLocation = message.getSourceLocation();
       String sourceOperation = message.getSourceOperation();
@@ -116,20 +124,41 @@ public class MessageProcessor {
       if (isEmpty(callbackContentType)) {
         callbackContentType = CALLBACK_CONTENT_TYPE_DEFAULT;
       }
-      RequestResponse sourceResponse, targetResponse, callbackResponse;
+      sourceLocation = processVariablesConfig(sourceLocation);
+      targetLocation = processVariablesConfig(targetLocation);
+      callbackLocation = processVariablesConfig(callbackLocation);
+
+      RequestResponse sourceResponse = null, targetResponse = null, callbackResponse = null;
       //get payload from SOURCE
       if (sourceLocation.toLowerCase().startsWith("http")) {
         sourceResponse = getRequestUtil().processRequest(sourceLocation, null, null, null, null, sourceOperation, sslSocketFactory);
+        logger.log(Level.FINE, String.format("source response code %s", sourceResponse.getCode()));
+
+      } else {
+        logger.log(Level.FINE, "unsupported Location type");
+      }
+      if (sourceResponse != null) {
         targetResponse = getRequestUtil().processRequest(targetLocation, null, null, sourceResponse.getBody(), targetContentType, targetOperation, sslSocketFactory);
         callbackResponse = getRequestUtil().processRequest(callbackLocation, null, null, targetResponse.getBody(), callbackContentType, callbackOperation, sslSocketFactory);
-        logger.log(Level.FINE, "Callback response code %s " + callbackResponse.getCode());
-        logger.log(Level.FINE, "Callback response body %s " + callbackResponse.getBody());
+        logger.log(Level.FINE, String.format("target response code %s, callback response code %s, callback body %s", targetResponse.getCode(), callbackResponse.getCode(), callbackResponse.getBody()));
       }
 
     } catch (Exception e) {
       logger.log(Level.SEVERE, "There was performAction for message ", e);
     }
-    return true;
+    return result;
+  }
+
+  protected String processVariablesConfig(String value) {
+    if (!isEmpty(value) && variablesConfig != null) {
+      String tmp = value;
+      if (variablesConfig.getIngressHost() != null)
+        tmp = tmp.replace("{INGRESS_HOST}", variablesConfig.getIngressHost());
+      if (variablesConfig.getBrokerHost() != null)
+        tmp = tmp.replace("{BROKER_HOST}", variablesConfig.getBrokerHost());
+      return tmp;
+    }
+    return value;
   }
 
   private static boolean isEmpty(String value) {

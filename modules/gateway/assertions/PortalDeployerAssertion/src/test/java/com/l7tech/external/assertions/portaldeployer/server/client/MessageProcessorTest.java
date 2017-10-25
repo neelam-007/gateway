@@ -28,14 +28,16 @@ public class MessageProcessorTest {
 
   @Test
   public void testProcess() throws Exception {
-    MessageProcessor mp = new MessageProcessor(sslSocketFactory);
+    VariablesConfig config = new VariablesConfig();
+    config.setIngressHost("elih4");
+    MessageProcessor mp = new MessageProcessor(sslSocketFactory, config);
     mp.setRequestUtil(requestUtil);
     //build message
     ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
     Messages testMessages = new Messages();
     Message message1 = new Message();
-    String sourceUrl = "https://elih4:8443/source";
-    String callbackUrl = "https://elih4:8443/callback";
+    String sourceUrl = "https://{INGRESS_HOST}:8443/source";
+    String callbackUrl = "https://{INGRESS_HOST}:8443/callback";
     message1.setSourceLocation(sourceUrl);
     message1.setCallbackLocation(callbackUrl);
     List<Message> messageList = new ArrayList<>();
@@ -47,9 +49,9 @@ public class MessageProcessorTest {
     RequestResponse sourceResponse = new RequestResponse(200, "an awesome restman bundle");
     RequestResponse targetResponse = new RequestResponse(200, "a successfull operation");
     RequestResponse callbackResponse = new RequestResponse(200, "a callback response");
-    when(requestUtil.processRequest(eq(sourceUrl), any(), any(), any(), any(), eq(MessageProcessor.SOURCE_OPERATION_DEFAULT), eq(sslSocketFactory))).thenReturn(sourceResponse);
-    when(requestUtil.processRequest(eq(MessageProcessor.TARGET_LOCATION_DEFAULT), any(), any(), eq(sourceResponse.getBody()), eq(MessageProcessor.TARGET_CONTENT_TYPE_DEFAULT), eq(MessageProcessor.TARGET_OPERATION_DEFAULT), eq(sslSocketFactory))).thenReturn(targetResponse);
-    when(requestUtil.processRequest(eq(callbackUrl), any(), any(), eq(targetResponse.getBody()), eq(MessageProcessor.CALLBACK_CONTENT_TYPE_DEFAULT), eq(MessageProcessor.CALLBACK_OPERATION_DEFAULT), eq(sslSocketFactory))).thenReturn(callbackResponse);
+    when(requestUtil.processRequest(eq(mp.processVariablesConfig(sourceUrl)), any(), any(), any(), any(), eq(MessageProcessor.SOURCE_OPERATION_DEFAULT), eq(sslSocketFactory))).thenReturn(sourceResponse);
+    when(requestUtil.processRequest(eq(mp.processVariablesConfig(MessageProcessor.TARGET_LOCATION_DEFAULT)), any(), any(), eq(sourceResponse.getBody()), eq(MessageProcessor.TARGET_CONTENT_TYPE_DEFAULT), eq(MessageProcessor.TARGET_OPERATION_DEFAULT), eq(sslSocketFactory))).thenReturn(targetResponse);
+    when(requestUtil.processRequest(eq(mp.processVariablesConfig(callbackUrl)), any(), any(), eq(targetResponse.getBody()), eq(MessageProcessor.CALLBACK_CONTENT_TYPE_DEFAULT), eq(MessageProcessor.CALLBACK_OPERATION_DEFAULT), eq(sslSocketFactory))).thenReturn(callbackResponse);
 
     //process message
     mp.process(message);
@@ -57,4 +59,5 @@ public class MessageProcessorTest {
     verify(requestUtil, times(3)).processRequest(any(), any(), any(), any(), any(), any(), any());
 
   }
+
 }
