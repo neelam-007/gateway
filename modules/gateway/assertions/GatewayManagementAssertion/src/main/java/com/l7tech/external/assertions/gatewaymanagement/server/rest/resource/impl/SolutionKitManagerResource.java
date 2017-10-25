@@ -836,9 +836,9 @@ public class SolutionKitManagerResource {
      * Finalized the upgrade solution kit list based on selected instance modifier and solution kits user specified.
      * Also update the loaded solution kits based on the final selected solution kits.
      *
-     * @param solutionKitForUpgrade the soluiton kit specified by two parameters: id (i.e., guid) and instance modifier.
+     * @param solutionKitForUpgrade the solution kit specified by two parameters: id (i.e., guid) and instance modifier.
      * @param instanceModifier the instance modifier specified by user in instanceModifierParameter
-     * @param selectedGuidList the list of soluiton kits selected by user in solutionKitSelect parameters
+     * @param selectedGuidList the list of solution kits selected by user in solutionKitSelect parameters
      * @param solutionKitsConfig the solution kit information container
      * @throws UnsupportedEncodingException
      * @throws FindException
@@ -846,10 +846,11 @@ public class SolutionKitManagerResource {
      */
     void selectSolutionKitsForUpgrade(@NotNull final SolutionKit solutionKitForUpgrade,
                                               @Nullable final String instanceModifier,
-                                              @NotNull List<String> selectedGuidList,
+                                              @NotNull final List<String> selectedGuidList,
                                               @NotNull final SolutionKitsConfig solutionKitsConfig) throws UnsupportedEncodingException, FindException, SolutionKitManagerResourceException {
         final List<SolutionKit> solutionKitsToUpgrade = solutionKitsConfig.getSolutionKitsToUpgrade();
         final List<String> candidateGuidList = new ArrayList<>(solutionKitsToUpgrade.size());
+        final List<String> finalSelectedGuidList = new ArrayList<>();
 
         for (final SolutionKit solutionKit: solutionKitsToUpgrade) {
             candidateGuidList.add(solutionKit.getSolutionKitGuid());
@@ -858,6 +859,8 @@ public class SolutionKitManagerResource {
         // Update the upgrade list from SolutionKitConfig based on user's selection, a list of solutionKitSelect (i,e., selectedGuidList).
         // If some of children are selected, then the upgrade list should be shrunk.
         final boolean isParent = SolutionKitUtils.isParentSolutionKit(solutionKitForUpgrade);
+
+        // Case: Choose a parent and some child solution kits to upgrade
         if (isParent && !selectedGuidList.isEmpty()) {
             // First check whether selected solution kits are acceptable for upgrade.
             for (final String selectedGuid: selectedGuidList) {
@@ -881,8 +884,20 @@ public class SolutionKitManagerResource {
                     }
                 }
             }
-        } else { // Case: Choose either a parent with all children or a non-parent solution kit to upgrade
-            selectedGuidList = candidateGuidList;
+            // Everything is ok, then assign the final selection list, finalSelectedGuidList
+            finalSelectedGuidList.addAll(selectedGuidList);
+        }
+        // Case: Choose a parent with all children to upgrade
+        else if (isParent) {
+            finalSelectedGuidList.addAll(candidateGuidList);
+        }
+        // Case: Choose a child solution kit to upgrade
+        else if (candidateGuidList.size() == 2) {
+            finalSelectedGuidList.add(candidateGuidList.get(1)); // The first element in candidateGuidList is a parent GUID.
+        }
+        // Case: Choose a non-parent and non-child solution kit to upgrade
+        else {
+            finalSelectedGuidList.addAll(candidateGuidList); // In this case, candidateGuidList should have one element.
         }
 
         // Generate a selected and loaded solution kit list, based on user selection and the skar file uploaded.
@@ -895,7 +910,7 @@ public class SolutionKitManagerResource {
 
         // Use selected solution kits to update the loaded solution kits such as updating attributes.
         final String parentGuid = isParent? solutionKitForUpgrade.getSolutionKitGuid() : null;
-        for (final String selectedGuid: selectedGuidList) {
+        for (final String selectedGuid: finalSelectedGuidList) {
             // First skip checking on parent solution kit, since the loaded list never includes a parent.
             if (selectedGuid.equals(parentGuid)) continue;
 
@@ -1054,7 +1069,7 @@ public class SolutionKitManagerResource {
         // This value is used to verify whether all current and new instance modifiers are same.
         final String instanceModifier = imPairList.get(0).left;
 
-        // To comply with insatnce modifier parameter rule in 9.3, for each pair, the left value must be the same as the
+        // To comply with instance modifier parameter rule in 9.3, for each pair, the left value must be the same as the
         // right value.  That is, in pre-9.3, current instance modifier must be the same as the new instance modifier
         // (i.e., solution kit upgrade function doen't allow new instance modifier to update the current instance modifier
         // in 9.3+)  Otherewise, throw errors.
