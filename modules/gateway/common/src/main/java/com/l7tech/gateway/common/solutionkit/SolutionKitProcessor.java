@@ -6,7 +6,6 @@ import com.l7tech.policy.solutionkit.SolutionKitManagerCallback;
 import com.l7tech.policy.solutionkit.SolutionKitManagerContext;
 import com.l7tech.policy.solutionkit.SolutionKitManagerUi;
 import com.l7tech.util.*;
-import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.xml.sax.SAXException;
@@ -60,16 +59,10 @@ public class SolutionKitProcessor {
             // Update resolved mapping target IDs.
             solutionKitsConfig.setMappingTargetIdsFromResolvedIds(solutionKit);
 
-            if (isUpgrade) {
-                doTestInstall.call(getAsSolutionKitTriple(solutionKit));
-            } else {
-                final Pair<Boolean, String> result = validateSolutionKitForInstall(solutionKit, parentSolutionKitLoaded);
-                if (result.left) {
-                    doTestInstall.call(getAsSolutionKitTriple(solutionKit));
-                } else {
-                    throw new SolutionKitConflictException(result.right);
-                }
+            if (!isUpgrade) {
+                validateSolutionKitForInstall(solutionKit, parentSolutionKitLoaded);
             }
+            doTestInstall.call(getAsSolutionKitTriple(solutionKit));
         }
     }
 
@@ -82,31 +75,33 @@ public class SolutionKitProcessor {
      *
      * @param sourceSK: the solution kit to be validated
      * @param parentSKLoaded: the parent solution kit to be validated
-     * @return true if the solutionKit for install or upgrade is valid, false otherwise. String is the error message and is null for valid cases
-     * @throws BadRequestException Exception throw when there are exceptions in finding the solution kit.
+     * @throws SolutionKitException Exception thrown when there are exceptions in finding the solution kit or that when
+     * it already exists.
      */
-    private Pair<@NotNull Boolean, @Nullable String> validateSolutionKitForInstall(
+    private void validateSolutionKitForInstall(
             @NotNull final SolutionKit sourceSK,
-            @Nullable final SolutionKit parentSKLoaded) throws BadRequestException {
+            @Nullable final SolutionKit parentSKLoaded) throws SolutionKitException {
         final String sourceGuid = sourceSK.getSolutionKitGuid();
-        final String sourceIM = InstanceModifier.getInstanceModifier(sourceSK);
+        final String sourceIM = sourceSK.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY);
+        final String sourceIMDisplayName = InstanceModifier.getDisplayName(sourceIM);
 
         // Check install
         final SolutionKit solutionKitOnDB;
         try {
             solutionKitOnDB = solutionKitAdmin.get(sourceGuid, sourceIM);
         } catch (FindException e) {
-            throw new BadRequestException(ExceptionUtils.getMessage(e));
+            logger.log(Level.FINE, ExceptionUtils.getMessage(e));
+            throw new SolutionKitException("Internal error while retrieving Solution Kit with guid '" + sourceGuid + "' " +
+                    "with instance modifier '" + sourceIMDisplayName + "' from database.");
         }
 
         if (solutionKitOnDB != null) {
-            return new Pair<>(false, "This solution kit already exists. To install it again, specify a unique instance modifier");
+            throw new SolutionKitConflictException("This Solution Kit already exists. Please install again with a different instance modifier.");
         }
 
         if (parentSKLoaded != null) {
-            return validateParentSolutionKitOnInstall(parentSKLoaded, sourceIM);
+            validateParentSolutionKitOnInstall(parentSKLoaded, sourceIM);
         }
-        return new Pair<>(true, null);
     }
 
     /**
@@ -115,11 +110,11 @@ public class SolutionKitProcessor {
      * upgraded instead.
      * @param parentSKLoaded the parent solution kit to check
      * @param sourceIM the Child solution kit instance modifier
-     *  @return true if the parent guid for install is valid, false otherwise. String is the error message and is null for valid cases
-     * @throws BadRequestException Exception throw when there are exceptions in finding the solution kit.
+     * @throws SolutionKitException Exception thrown when there are exceptions in finding the solution kit or when
+     * it already exists.
      */
-    private Pair<@NotNull Boolean, @Nullable String> validateParentSolutionKitOnInstall(@NotNull final SolutionKit parentSKLoaded,
-                                                                                        @NotNull final String sourceIM) throws BadRequestException {
+    private void validateParentSolutionKitOnInstall(@NotNull final SolutionKit parentSKLoaded,
+                                                    @Nullable final String sourceIM) throws SolutionKitException {
         final String sourceIMDisplayName = InstanceModifier.getDisplayName(sourceIM);
         // Check install
         final SolutionKit parentSolutionKitOnDb;
@@ -127,21 +122,23 @@ public class SolutionKitProcessor {
         try {
             parentSolutionKitOnDb = solutionKitAdmin.get(parentGuid, sourceIM);
         } catch (FindException e) {
-            throw new BadRequestException(ExceptionUtils.getMessage(e));
+            logger.info(ExceptionUtils.getMessage(e));
+            throw new SolutionKitException("Internal error while retrieving Solution Kit with guid '" + parentGuid + "' " +
+                    "with instance modifier '" + sourceIMDisplayName + "' from database.");
         }
 
         if (parentSolutionKitOnDb != null) {
             //validate parent solution kit has same details
             if (SolutionKitUtils.hasSameMetaData(parentSKLoaded, parentSolutionKitOnDb)) {
-                logger.log(Level.FINE, "Adding additional child solution kits onto parent solution kit with guid '" + parentGuid + "' with instance modifier '" +
-                        sourceIMDisplayName + "'.");
-                return new Pair<>(true, null);
+                logger.log(Level.FINE, "Adding additional child Solution Kits onto parent Solution Kit with guid '"
+                        + parentGuid + "' with instance modifier '" + sourceIMDisplayName + "'.");
             } else {
-                return new Pair<>(false, "Install failure: Install process attempts to overwrite an existing parent solution kit ('" + parentGuid + "' with instance modifier '" +
-                        sourceIMDisplayName + "') with a new solution kit that has different properties. Please install again with a different instance modifier.");
+                throw new SolutionKitConflictException("<html>Install failure: Install process attempts to overwrite an " +
+                        "existing parent Solution Kit ('" + parentGuid + "' with instance modifier '" +
+                        sourceIMDisplayName + "')<br/> with a new Solution Kit that has different properties. " +
+                        "Please install again with a different instance modifier.</html>");
             }
         }
-        return new Pair<>(true, null);
     }
 
     /**
@@ -168,7 +165,7 @@ public class SolutionKitProcessor {
         // After processing the parent, process selected solution kits if applicable.
         for (SolutionKit solutionKit : solutionKitsConfig.getSelectedSolutionKits()) {
             if (parentSKFromLoad != null) {
-                final String solutionKitIM = InstanceModifier.getInstanceModifier(solutionKit);
+                final String solutionKitIM = solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY);
                 final Goid parentGoid;
                 //saveOrUpdate parent if the instance modifier has not been seen so far
                 if (!instanceModifierWithParentGoid.containsKey(solutionKitIM)) {

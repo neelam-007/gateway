@@ -283,7 +283,6 @@ public class ManageSolutionKitsDialog extends JDialog {
                 logger.log(Level.WARNING, "Problem occurred while finding a parent solution kit.");
             } catch (DeleteException e) {
                 logger.log(Level.WARNING, "Problem occurred while deleting a parent solution kit with no child solution kits.");
-
             }
         }
     }
