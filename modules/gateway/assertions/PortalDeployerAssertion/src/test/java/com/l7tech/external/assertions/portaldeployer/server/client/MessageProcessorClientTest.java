@@ -6,6 +6,7 @@ import com.l7tech.external.assertions.portaldeployer.server.ssl.SSLSocketFactory
 import java.util.ArrayList;
 import java.util.List;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
+import org.junit.Test;
 
 /**
  * A Test client to locally test MessageProcessor
@@ -13,6 +14,12 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
  * @author raqri01, 2017-10-24
  */
 public class MessageProcessorClientTest {
+
+  @Test
+  public void testSomething() throws Exception {
+
+  }
+
   public static void main(String args[]) throws Exception {
     SSLSocketFactoryProvider sfp = new SSLSocketFactoryProviderImpl(null, "");
     sfp.addHost("https://elih4:8443", "7layer");
