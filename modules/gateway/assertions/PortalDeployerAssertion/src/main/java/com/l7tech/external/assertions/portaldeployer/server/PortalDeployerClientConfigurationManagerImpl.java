@@ -59,7 +59,7 @@ public class PortalDeployerClientConfigurationManagerImpl implements PortalDeplo
     try {
       return clusterPropertyManager.getProperty(clusterProperty);
     } catch (FindException e) {
-      logger.log(Level.WARNING, String.format("Unable to find ClusterProperty [%s]", clusterProperty));
+      logger.log(Level.INFO, String.format("Unable to find ClusterProperty [%s]", clusterProperty));
     }
     return null;
   }
