@@ -44,7 +44,7 @@ public class SolutionKitProcessor {
     public void testInstallOrUpgrade(@NotNull final Functions.UnaryVoidThrows<Triple<SolutionKit, String, Boolean>, Throwable> doTestInstall) throws Throwable {
         final Collection<SolutionKit> selectedSolutionKits = solutionKitsConfig.getSelectedSolutionKits();
         final boolean isUpgrade = solutionKitsConfig.isUpgrade();
-        final SolutionKit parentSolutionKit = solutionKitsConfig.getParentSolutionKitLoaded();
+        final SolutionKit parentSolutionKitLoaded = solutionKitsConfig.getParentSolutionKitLoaded();
 
         for (final SolutionKit solutionKit: selectedSolutionKits) {
 
@@ -60,86 +60,70 @@ public class SolutionKitProcessor {
             // Update resolved mapping target IDs.
             solutionKitsConfig.setMappingTargetIdsFromResolvedIds(solutionKit);
 
-            final Pair<Boolean, String> result = validateSolutionKitForInstallOrUpgrade(solutionKit, parentSolutionKit, isUpgrade);
-            if (result.left) {
+            if (isUpgrade) {
                 doTestInstall.call(getAsSolutionKitTriple(solutionKit));
             } else {
-                throw new SolutionKitConflictException(result.right);
+                final Pair<Boolean, String> result = validateSolutionKitForInstall(solutionKit, parentSolutionKitLoaded);
+                if (result.left) {
+                    doTestInstall.call(getAsSolutionKitTriple(solutionKit));
+                } else {
+                    throw new SolutionKitConflictException(result.right);
+                }
             }
         }
     }
 
     /**
-     * Validate if a target solution kit is good for install or upgrade.
+     * Validate if a target solution kit is good for install.
      *
      * Install: if an existing solution kit is found and is the same as the target solution kit, fail the install.
      * This is the requirement from the note in the story SSG-10996, Upgrade Solution Kit.
      * - disable install if SK is already installed (upgrade only)
      *
-     * Upgrade: if the source solution kit uses an instance modifier that other existing solution kit has been used, fail upgrade.
-     *
      * @param sourceSK: the solution kit to be validated
-     * @param parentSK: the parent solution kit to be validated
-     * @param isUpgrade: indicate if the solution kit is to upgraded or install.  True for upgrade and false for install.
+     * @param parentSKLoaded: the parent solution kit to be validated
      * @return true if the solutionKit for install or upgrade is valid, false otherwise. String is the error message and is null for valid cases
      * @throws BadRequestException Exception throw when there are exceptions in finding the solution kit.
      */
-    private Pair<@NotNull Boolean, @Nullable String> validateSolutionKitForInstallOrUpgrade(
+    private Pair<@NotNull Boolean, @Nullable String> validateSolutionKitForInstall(
             @NotNull final SolutionKit sourceSK,
-            @Nullable final SolutionKit parentSK,
-            final boolean isUpgrade) throws BadRequestException {
-        final Goid sourceGoid = sourceSK.getGoid();
+            @Nullable final SolutionKit parentSKLoaded) throws BadRequestException {
         final String sourceGuid = sourceSK.getSolutionKitGuid();
+        final String sourceIM = InstanceModifier.getInstanceModifier(sourceSK);
 
-        String sourceIM = sourceSK.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY);
-        if (StringUtils.isBlank(sourceIM)) sourceIM = "";
-
-        final String sourceIMDisplayName = InstanceModifier.getDisplayName(sourceIM);
-
-        // Check upgrade
-        if (isUpgrade) {
-            try {
-                SolutionKit found = solutionKitAdmin.get(sourceGuid, sourceIM);
-                if (found != null && sourceGoid != null && !sourceGoid.equals(found.getGoid())) {
-                    //if the source solution kit uses an instance modifier that other existing solution kit has been used, fail upgrade.
-                    return new Pair<>(false, "Upgrade Failed: the solution kit '" + sourceSK.getName() + "' tried to use a same instance modifier '" + sourceIMDisplayName + "', which other existing solution kit already uses");
-                }
-            } catch (FindException e) {
-                throw new BadRequestException(ExceptionUtils.getMessage(e));
-            }
-            return new Pair<>(true, null);
-        } else {
-            // Check install
-            final SolutionKit solutionKitOnDB;
-            try {
-                solutionKitOnDB = solutionKitAdmin.get(sourceGuid, sourceIM);
-            } catch (FindException e) {
-                throw new BadRequestException(ExceptionUtils.getMessage(e));
-            }
-
-            if (solutionKitOnDB != null) {
-                return new Pair<>(false, "This solution kit already exists. To install it again, specify a unique instance modifier");
-            }
-
-            if (parentSK != null) {
-                return validateParentSolutionKitOnInstall(parentSK.getSolutionKitGuid(), sourceIM);
-            }
-            return new Pair<>(true, null);
+        // Check install
+        final SolutionKit solutionKitOnDB;
+        try {
+            solutionKitOnDB = solutionKitAdmin.get(sourceGuid, sourceIM);
+        } catch (FindException e) {
+            throw new BadRequestException(ExceptionUtils.getMessage(e));
         }
+
+        if (solutionKitOnDB != null) {
+            return new Pair<>(false, "This solution kit already exists. To install it again, specify a unique instance modifier");
+        }
+
+        if (parentSKLoaded != null) {
+            return validateParentSolutionKitOnInstall(parentSKLoaded, sourceIM);
+        }
+        return new Pair<>(true, null);
     }
 
     /**
-     * During solution kit install, verify that the parent with an IM of another child does not currently exist on the Gateway
-     * @param parentGuid The parent guid to check
+     * During solution kit install, verify that the parent with an IM of another child has the same metadata
+     * as the parent that is loaded for install, otherwise the loaded parent should be installed with a different IM, or
+     * upgraded instead.
+     * @param parentSKLoaded the parent solution kit to check
      * @param sourceIM the Child solution kit instance modifier
      *  @return true if the parent guid for install is valid, false otherwise. String is the error message and is null for valid cases
      * @throws BadRequestException Exception throw when there are exceptions in finding the solution kit.
      */
-    private Pair<@NotNull Boolean, @Nullable String> validateParentSolutionKitOnInstall(@NotNull final String parentGuid,
+    private Pair<@NotNull Boolean, @Nullable String> validateParentSolutionKitOnInstall(@NotNull final SolutionKit parentSKLoaded,
                                                                                         @NotNull final String sourceIM) throws BadRequestException {
         final String sourceIMDisplayName = InstanceModifier.getDisplayName(sourceIM);
         // Check install
         final SolutionKit parentSolutionKitOnDb;
+        final String parentGuid = parentSKLoaded.getSolutionKitGuid();
         try {
             parentSolutionKitOnDb = solutionKitAdmin.get(parentGuid, sourceIM);
         } catch (FindException e) {
@@ -147,8 +131,15 @@ public class SolutionKitProcessor {
         }
 
         if (parentSolutionKitOnDb != null) {
-            return new Pair<>(false,"This parent solution kit with guid '"+ parentGuid + "' with instance modifier '" +
-                    sourceIMDisplayName + "' already exists. To install it again, specify a unique instance modifier");
+            //validate parent solution kit has same details
+            if (SolutionKitUtils.hasSameMetaData(parentSKLoaded, parentSolutionKitOnDb)) {
+                logger.log(Level.FINE, "Adding additional child solution kits onto parent solution kit with guid '" + parentGuid + "' with instance modifier '" +
+                        sourceIMDisplayName + "'.");
+                return new Pair<>(true, null);
+            } else {
+                return new Pair<>(false, "Install failure: Install process attempts to overwrite an existing parent solution kit ('" + parentGuid + "' with instance modifier '" +
+                        sourceIMDisplayName + "') with a new solution kit that has different properties. Please install again with a different instance modifier.");
+            }
         }
         return new Pair<>(true, null);
     }
@@ -289,7 +280,7 @@ public class SolutionKitProcessor {
         // update if already installed
         if (solutionKitOnGateway != null) {
             goid = solutionKitOnGateway.getGoid();
-            solutionKitAdmin.update(SolutionKitUtils.copyParentSolutionKitWithIM(parentSolutionKit, solutionKitOnGateway, null));
+            solutionKitAdmin.update(SolutionKitUtils.copyParentSolutionKitWithIM(parentSolutionKit, solutionKitOnGateway, newInstanceModifier));
         }
         // save if new
         else {

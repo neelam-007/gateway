@@ -23,6 +23,7 @@ import org.w3c.dom.Element;
 
 import java.util.*;
 
+import static com.l7tech.gateway.common.solutionkit.SolutionKit.*;
 import static com.l7tech.util.DomUtils.findExactlyOneChildElementByName;
 import static com.l7tech.util.DomUtils.getTextValue;
 import static java.text.MessageFormat.format;
@@ -38,13 +39,13 @@ public final class SolutionKitUtils {
     public static final String SK_ELE_ID = "Id";
     public static final String SK_ELE_VERSION = "Version";
     public static final String SK_ELE_NAME = "Name";
-    public static final String SK_ELE_DESC = SolutionKit.SK_PROP_DESC_KEY;
-    public static final String SK_ELE_TIMESTAMP = SolutionKit.SK_PROP_TIMESTAMP_KEY;
-    public static final String SK_ELE_IS_COLLECTION = SolutionKit.SK_PROP_IS_COLLECTION_KEY;
-    public static final String SK_ELE_FEATURE_SET = SolutionKit.SK_PROP_FEATURE_SET_KEY;
+    public static final String SK_ELE_DESC = SK_PROP_DESC_KEY;
+    public static final String SK_ELE_TIMESTAMP = SK_PROP_TIMESTAMP_KEY;
+    public static final String SK_ELE_IS_COLLECTION = SK_PROP_IS_COLLECTION_KEY;
+    public static final String SK_ELE_FEATURE_SET = SK_PROP_FEATURE_SET_KEY;
     public static final String SK_ELE_CUSTOM_UI = "CustomUI";   // note the uppercase "I"
-    public static final String SK_ELE_CUSTOM_CALLBACK = SolutionKit.SK_PROP_CUSTOM_CALLBACK_KEY;
-    public static final String SK_ELE_ALLOW_ADDENDUM = SolutionKit.SK_PROP_ALLOW_ADDENDUM_KEY;
+    public static final String SK_ELE_CUSTOM_CALLBACK = SK_PROP_CUSTOM_CALLBACK_KEY;
+    public static final String SK_ELE_ALLOW_ADDENDUM = SK_PROP_ALLOW_ADDENDUM_KEY;
 
     //TODO when Dependencies is implemented
     // public static final String SK_ELE_DEPENDENCIES = "Dependencies";
@@ -263,38 +264,38 @@ public final class SolutionKitUtils {
         if (isEmpty(skDescription)) {
             throw new BadRequestException(format(requiredElementMessage, SK_NS_PREFIX, SK_ELE_DESC));
         }
-        solutionKit.setProperty(SolutionKit.SK_PROP_DESC_KEY, skDescription);
+        solutionKit.setProperty(SK_PROP_DESC_KEY, skDescription);
 
         final String skTimestamp = getTextValue(findExactlyOneChildElementByName(docEle, SK_NS, SK_ELE_TIMESTAMP));
         if (isEmpty(skTimestamp)) {
             throw new BadRequestException(format(requiredElementMessage, SK_NS_PREFIX, SK_ELE_TIMESTAMP));
         }
-        solutionKit.setProperty(SolutionKit.SK_PROP_TIMESTAMP_KEY, skTimestamp);
+        solutionKit.setProperty(SK_PROP_TIMESTAMP_KEY, skTimestamp);
 
         final String skIsCollection = getTextValue(findExactlyOneChildElementByName(docEle, SK_NS, SK_ELE_IS_COLLECTION));
         if (isEmpty(skIsCollection)) {
             throw new BadRequestException(format(requiredElementMessage, SK_NS_PREFIX, SK_ELE_IS_COLLECTION));
         }
-        solutionKit.setProperty(SolutionKit.SK_PROP_IS_COLLECTION_KEY, skIsCollection);
+        solutionKit.setProperty(SK_PROP_IS_COLLECTION_KEY, skIsCollection);
 
         final Element featureSet = DomUtils.findFirstChildElementByName(docEle, SK_NS, SK_ELE_FEATURE_SET);
         if (featureSet != null) {
-            solutionKit.setProperty(SolutionKit.SK_PROP_FEATURE_SET_KEY, DomUtils.getTextValue(featureSet));
+            solutionKit.setProperty(SK_PROP_FEATURE_SET_KEY, DomUtils.getTextValue(featureSet));
         }
 
         final Element customUiEle = DomUtils.findFirstChildElementByName(docEle, SK_NS, SK_ELE_CUSTOM_UI);
         if (customUiEle != null) {
-            solutionKit.setProperty(SolutionKit.SK_PROP_CUSTOM_UI_KEY, DomUtils.getTextValue(customUiEle));
+            solutionKit.setProperty(SK_PROP_CUSTOM_UI_KEY, DomUtils.getTextValue(customUiEle));
         }
 
         final Element customCallbackEle = DomUtils.findFirstChildElementByName(docEle, SK_NS, SK_ELE_CUSTOM_CALLBACK);
         if (customCallbackEle != null) {
-            solutionKit.setProperty(SolutionKit.SK_PROP_CUSTOM_CALLBACK_KEY, DomUtils.getTextValue(customCallbackEle));
+            solutionKit.setProperty(SK_PROP_CUSTOM_CALLBACK_KEY, DomUtils.getTextValue(customCallbackEle));
         }
 
         final Element allowAddendumEle = DomUtils.findFirstChildElementByName(docEle, SK_NS, SK_ELE_ALLOW_ADDENDUM);
         if (allowAddendumEle != null) {
-            solutionKit.setProperty(SolutionKit.SK_PROP_ALLOW_ADDENDUM_KEY, DomUtils.getTextValue(allowAddendumEle));
+            solutionKit.setProperty(SK_PROP_ALLOW_ADDENDUM_KEY, DomUtils.getTextValue(allowAddendumEle));
         }
 
         //TODO - Copying over of Dependencies element and its child elements
@@ -314,23 +315,23 @@ public final class SolutionKitUtils {
         DomUtils.createAndAppendElement(docEle, SK_ELE_ID).setTextContent(solutionKit.getSolutionKitGuid());
         DomUtils.createAndAppendElement(docEle, SK_ELE_VERSION).setTextContent(solutionKit.getSolutionKitVersion());
         DomUtils.createAndAppendElement(docEle, SK_ELE_NAME).setTextContent(solutionKit.getName());
-        DomUtils.createAndAppendElement(docEle, SK_ELE_DESC).setTextContent(solutionKit.getProperty(SolutionKit.SK_PROP_DESC_KEY));
-        DomUtils.createAndAppendElement(docEle, SK_ELE_TIMESTAMP).setTextContent(solutionKit.getProperty(SolutionKit.SK_PROP_TIMESTAMP_KEY));
-        DomUtils.createAndAppendElement(docEle, SK_ELE_IS_COLLECTION).setTextContent(solutionKit.getProperty(SolutionKit.SK_PROP_IS_COLLECTION_KEY));
+        DomUtils.createAndAppendElement(docEle, SK_ELE_DESC).setTextContent(solutionKit.getProperty(SK_PROP_DESC_KEY));
+        DomUtils.createAndAppendElement(docEle, SK_ELE_TIMESTAMP).setTextContent(solutionKit.getProperty(SK_PROP_TIMESTAMP_KEY));
+        DomUtils.createAndAppendElement(docEle, SK_ELE_IS_COLLECTION).setTextContent(solutionKit.getProperty(SK_PROP_IS_COLLECTION_KEY));
 
-        final String featureSet = solutionKit.getProperty(SolutionKit.SK_PROP_FEATURE_SET_KEY);
+        final String featureSet = solutionKit.getProperty(SK_PROP_FEATURE_SET_KEY);
         if (featureSet != null) {
             DomUtils.createAndAppendElement(docEle, SK_ELE_FEATURE_SET).setTextContent(featureSet);
         }
-        final String customCallback = solutionKit.getProperty(SolutionKit.SK_PROP_CUSTOM_CALLBACK_KEY);
+        final String customCallback = solutionKit.getProperty(SK_PROP_CUSTOM_CALLBACK_KEY);
         if (customCallback != null) {
             DomUtils.createAndAppendElement(docEle, SK_ELE_CUSTOM_CALLBACK).setTextContent(customCallback);
         }
-        final String customUi = solutionKit.getProperty(SolutionKit.SK_PROP_CUSTOM_UI_KEY);
+        final String customUi = solutionKit.getProperty(SK_PROP_CUSTOM_UI_KEY);
         if (customUi != null) {
             DomUtils.createAndAppendElement(docEle, SK_ELE_CUSTOM_UI).setTextContent(customUi);
         }
-        final String allowAddendum = solutionKit.getProperty(SolutionKit.SK_PROP_ALLOW_ADDENDUM_KEY);
+        final String allowAddendum = solutionKit.getProperty(SK_PROP_ALLOW_ADDENDUM_KEY);
         if (allowAddendum != null) {
             DomUtils.createAndAppendElement(docEle, SK_ELE_ALLOW_ADDENDUM).setTextContent(allowAddendum);
         }
@@ -348,7 +349,7 @@ public final class SolutionKitUtils {
 
         for (SolutionKit solutionKit: selectedSolutionKits) {
             String guid = solutionKit.getSolutionKitGuid();
-            String instanceModifier = solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY);
+            String instanceModifier = solutionKit.getProperty(SK_PROP_INSTANCE_MODIFIER_KEY);
             if (StringUtils.isEmpty(instanceModifier)) instanceModifier = "";
 
             Map<String, Integer> instanceModifierAmountMap = duplicateSKs.get(guid);
@@ -395,7 +396,7 @@ public final class SolutionKitUtils {
             if (instanceModifierSet == null) {
                 instanceModifierSet = new HashSet<>();
             }
-            instanceModifierSet.add(solutionKitToUpgrade.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY));
+            instanceModifierSet.add(solutionKitToUpgrade.getProperty(SK_PROP_INSTANCE_MODIFIER_KEY));
 
             guidInstanceModifierMapFromUpgrade.put(guid, instanceModifierSet);
         }
@@ -408,17 +409,18 @@ public final class SolutionKitUtils {
     }
 
     public static boolean isCollectionOfSkars(@NotNull final SolutionKit candidate) {
-        return Boolean.parseBoolean(candidate.getProperty(SolutionKit.SK_PROP_IS_COLLECTION_KEY));
+        return Boolean.parseBoolean(candidate.getProperty(SK_PROP_IS_COLLECTION_KEY));
     }
 
     /**
-     * Copy the contents of a parent solution kit object to make another parent solution kit object.
+     * Copy the metadata of a parent solution kit object to make another parent solution kit object.
+     * This is mainly used to create new instances of parent solution kits.
      * @param sourceSK The SolutionKit source to copy from
      * @param resultSK The solution kit to hold the result.
      * @param instanceModifier The new instance modifier to apply to the new parent solution kit
-     * @return solutionKit is the copied solution kit
+     * @return resultSK is the copied solution kit
      */
-    public static SolutionKit copyParentSolutionKitWithIM(@NotNull final SolutionKit sourceSK, @NotNull final SolutionKit resultSK, @Nullable final String instanceModifier) {
+    static SolutionKit copyParentSolutionKitWithIM(@NotNull final SolutionKit sourceSK, @NotNull final SolutionKit resultSK, @Nullable final String instanceModifier) {
         resultSK.setSolutionKitGuid(sourceSK.getSolutionKitGuid());
         resultSK.setSolutionKitVersion(sourceSK.getSolutionKitVersion());
         resultSK.setName(sourceSK.getName());
@@ -426,10 +428,27 @@ public final class SolutionKitUtils {
         resultSK.setLastUpdateTime(sourceSK.getLastUpdateTime());
         resultSK.setXmlProperties(sourceSK.getXmlProperties());
         resultSK.setInstallationXmlProperties(sourceSK.getInstallationXmlProperties());
-        if (!StringUtils.isBlank(instanceModifier)) {
-            resultSK.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, instanceModifier);
-        }
+        resultSK.setProperty(SK_PROP_INSTANCE_MODIFIER_KEY, instanceModifier);
         return resultSK;
+    }
+
+    /**
+     * Compares the required metadata between two solution kits.
+     * @param one first solution kit
+     * @param two second solution kit
+     * @return true if both solution kits have the same metadata
+     */
+    static boolean hasSameMetaData(@NotNull SolutionKit one, @NotNull SolutionKit two) {
+        return StringUtils.equals(one.getProperty(SK_PROP_DESC_KEY), two.getProperty(SK_PROP_DESC_KEY)) &&
+                StringUtils.equals(one.getProperty(SK_PROP_IS_COLLECTION_KEY), two.getProperty(SK_PROP_IS_COLLECTION_KEY)) &&
+                StringUtils.equals(one.getProperty(SK_PROP_TIMESTAMP_KEY), two.getProperty(SK_PROP_TIMESTAMP_KEY)) &&
+                StringUtils.equals(one.getProperty(SK_PROP_FEATURE_SET_KEY), two.getProperty(SK_PROP_FEATURE_SET_KEY)) &&
+                StringUtils.equals(one.getProperty(SK_PROP_ALLOW_ADDENDUM_KEY), two.getProperty(SK_PROP_ALLOW_ADDENDUM_KEY)) &&
+                StringUtils.equals(one.getProperty(SK_PROP_CUSTOM_CALLBACK_KEY), two.getProperty(SK_PROP_CUSTOM_CALLBACK_KEY)) &&
+                StringUtils.equals(one.getProperty(SK_PROP_CUSTOM_UI_KEY), two.getProperty(SK_PROP_CUSTOM_UI_KEY)) &&
+                StringUtils.equals(one.getSolutionKitGuid(), two.getSolutionKitGuid()) &&
+                StringUtils.equals(one.getName(), two.getName()) &&
+                StringUtils.equals(one.getSolutionKitVersion(), two.getSolutionKitVersion());
     }
 
     private SolutionKitUtils() {}

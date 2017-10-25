@@ -499,9 +499,15 @@ public class InstanceModifier {
         return null;
     }
 
+    /**
+     * Returns a string value of the instance modifier. This is used in cases where the instance
+     * modifier needs to be stored as a key in a map.
+     * @param solutionKit The solution kit to retrieve the instance modifier
+     * @return The string value of the instance modifier. Never null.
+     */
     @NotNull
     static String getInstanceModifier(@NotNull final SolutionKit solutionKit) {
         String solutionKitIM = solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY);
-        return solutionKitIM == null ? "" : solutionKitIM;
+        return StringUtils.isBlank(solutionKitIM) ? "" : solutionKitIM;
     }
 }
