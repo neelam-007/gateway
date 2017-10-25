@@ -191,7 +191,7 @@ public class PortalDeployerSslConfigurationManagerImpl implements PortalDeployer
     try {
       return userManager.findByLogin(portalmanUserLogin);
     } catch (FindException e) {
-      logger.log(Level.INFO, String.format("Unable to find portalman user [%s]."));
+      logger.log(Level.INFO, String.format("Unable to find portalman user [%s].", ExceptionUtils.getMessage(e)));
     }
     return null;
   }
