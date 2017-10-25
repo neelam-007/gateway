@@ -15,6 +15,7 @@
 				<dependency org="org.eclipse.paho" name="org.eclipse.paho.client.mqttv3" rev="1.1.0" force="true" conf="core"/>
         <dependency name="layer7-modular-assertions" rev="latest.integration"
                     conf="compile->compile;runtime->runtime;test->test"/>
+				<dependency org="org.mockito" name="mockito-core" rev="1.9.0" force="true" conf="test"/>
                 
 	</dependencies>
 </ivy-module>
