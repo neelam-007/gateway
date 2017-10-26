@@ -60,7 +60,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
     public static final long DEFAULT_CONNECTION_MAX_AGE = 300000;
     public static final long DEFAULT_CONNECTION_MAX_IDLE_TIME = 30000;
     public static final String CLUSTER_PROP_CONNECTION_POOL_SIZE = "io.jmsConnectionPoolSize";
-    public static final String CLUSTER_PROP_CONNECTION_MAX_IDLE = "io.jmsConnectionMaxIdle";
+    public static final String CLUSTER_PROP_CONNECTION_MAX_IDLE = "io.jmsConnectionMinIdle";
     public static final String CLUSTER_PROP_CONNECTION_MAX_WAIT = "io.jmsConnectionMaxWait";
     public static final String CLUSTER_PROP_CONNECTION_POOL_EVICT_INTERVAL = "io.jmsConnectionTimeBetweenEviction";
     public static final String CLUSTER_PROP_CONNECTION_POOL_EVICT_BATCH_SIZE = "io.jmsConnectionEvictionBatchSize";
@@ -370,7 +370,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
         inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(connectionPoolSizeSpinner, connectionPoolSizeLabel.getText()));
 
         connectionMinIdleSpinner.setModel((new SpinnerNumberModel((Number) safeNumber(() -> Integer.valueOf(getClusterPropertyValue(CLUSTER_PROP_CONNECTION_MAX_IDLE, String.valueOf(DEFAULT_CONNECTION_POOL_SIZE)))
-                ,DEFAULT_CONNECTION_POOL_SIZE), -1, 10000, 1)));
+                ,DEFAULT_CONNECTION_POOL_SIZE), 0, 10000, 1)));
         inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(connectionMinIdleSpinner, connectionMinIdleLabel.getText()));
 
         sessionPoolSizeSpinner.setModel((new SpinnerNumberModel((Number) safeNumber(() -> Integer.valueOf(getClusterPropertyValue(CLUSTER_PROP_SESSION_POOL_SIZE, String.valueOf(JmsConnection.DEFAULT_SESSION_POOL_SIZE))), JmsConnection.DEFAULT_SESSION_POOL_SIZE), -1, 10000, 1)));
@@ -1561,7 +1561,6 @@ public class JmsQueuePropertiesDialog extends JDialog {
             connectionMinIdleSpinner.setEnabled(isOverrideSystemDefaults);
             connectionMaxWaitLabel.setEnabled(isOverrideSystemDefaults);
             connectionMaxWaitTextField.setEnabled(isOverrideSystemDefaults);
-            connectionMaxWaitTextField.setText(String.valueOf(TimeUnit.parse(getClusterPropertyValue(CLUSTER_PROP_CONNECTION_MAX_WAIT,String.valueOf(DEFAULT_CONNECTION_POOL_MAX_WAIT)), TimeUnit.MILLIS)));
             sessionPoolSizeSpinner.setEnabled(false);
             maxIdleSessionSpinner.setEnabled(false);
             sessionPoolMaxWaitTextField.setEnabled(false);
@@ -1579,6 +1578,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
             maxIdleSessionSpinner.setEnabled(isOverrideSystemDefaults);
             sessionPoolMaxWait.setEnabled(isOverrideSystemDefaults);
             sessionPoolMaxWaitTextField.setEnabled(isOverrideSystemDefaults);
+            connectionMaxWaitTextField.setText(String.valueOf(TimeUnit.parse(getClusterPropertyValue(CLUSTER_PROP_CONNECTION_MAX_WAIT,String.valueOf(DEFAULT_CONNECTION_POOL_MAX_WAIT)), TimeUnit.MILLIS)));
         }
     }
 
