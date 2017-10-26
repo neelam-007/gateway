@@ -224,7 +224,7 @@ public class SolutionKitProcessor {
                         if (InstanceModifier.isSame(originalParentIM, newInstanceModifier)) {
                             // Update the parent solution kit attributes
                             parentGoid = parentSKFromDB.getGoid();
-                            solutionKitAdmin.update(SolutionKitUtils.copyParentSolutionKitWithIM(parentSKFromLoad, parentSKFromDB, originalParentIM));
+                            solutionKitAdmin.update(SolutionKitUtils.copyParentSolutionKit(parentSKFromLoad, parentSKFromDB));
                         } else {
                             //Restrict users from assigning different instance modifiers on upgrade
                             final String msg = "Unable to change the instance modifier on upgrade. Please install the Solution Kit and specify a unique instance modifier instead.";
@@ -277,11 +277,13 @@ public class SolutionKitProcessor {
         // update if already installed
         if (solutionKitOnGateway != null) {
             goid = solutionKitOnGateway.getGoid();
-            solutionKitAdmin.update(SolutionKitUtils.copyParentSolutionKitWithIM(parentSolutionKit, solutionKitOnGateway, newInstanceModifier));
+            solutionKitAdmin.update(SolutionKitUtils.copyParentSolutionKit(parentSolutionKit, solutionKitOnGateway));
         }
         // save if new
         else {
-            goid = solutionKitAdmin.save(SolutionKitUtils.copyParentSolutionKitWithIM(parentSolutionKit, new SolutionKit(), newInstanceModifier));
+            final SolutionKit solutionKitCopy = SolutionKitUtils.copyParentSolutionKit(parentSolutionKit, new SolutionKit());
+            solutionKitCopy.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, newInstanceModifier);
+            goid = solutionKitAdmin.save(solutionKitCopy);
         }
 
         return goid;
