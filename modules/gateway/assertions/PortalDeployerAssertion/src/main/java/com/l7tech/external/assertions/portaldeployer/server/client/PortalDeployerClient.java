@@ -38,6 +38,23 @@ public class PortalDeployerClient implements MqttCallback {
 
   public PortalDeployerClient(String mqttBrokerUri, String clientId, String topic, int connectionTimeout, int keepAliveInterval, SSLSocketFactory sslSocketFactory) throws
           PortalDeployerClientException {
+    initialize(mqttBrokerUri, clientId, topic, connectionTimeout, keepAliveInterval, sslSocketFactory);
+    try {
+      mqttClient = new MqttAsyncClient(this.mqttBrokerUri, this.clientId, this.mqttClientPersistence);
+    } catch (MqttException e) {
+      throw new PortalDeployerClientException(e.getMessage(), e);
+    }
+    mqttClient.setCallback(this);
+  }
+
+  // For testing
+  PortalDeployerClient(String mqttBrokerUri, String clientId, String topic, int connectionTimeout, int keepAliveInterval, SSLSocketFactory sslSocketFactory, MqttAsyncClient mqttAsyncClient) {
+    initialize(mqttBrokerUri, clientId, topic, connectionTimeout, keepAliveInterval, sslSocketFactory);
+    mqttClient = mqttAsyncClient;
+    mqttClient.setCallback(this);
+  }
+
+  private void initialize(String mqttBrokerUri, String clientId, String topic, int connectionTimeout, int keepAliveInterval, SSLSocketFactory sslSocketFactory) {
     logger.log(Level.INFO, String.format("mqttBrokerUri [%s], " + "clientId [%s], " + "topic [%s]", mqttBrokerUri, clientId, topic));
     this.sslSocketFactory = sslSocketFactory;
     this.mqttBrokerUri = mqttBrokerUri;
@@ -52,13 +69,6 @@ public class PortalDeployerClient implements MqttCallback {
     mqttConnectOptions.setKeepAliveInterval(this.keepAliveInterval);
     mqttConnectOptions.setCleanSession(false);
     mqttConnectOptions.setSocketFactory(this.sslSocketFactory);
-    try {
-      mqttClient = new MqttAsyncClient(this.mqttBrokerUri, this.clientId, this.mqttClientPersistence);
-    } catch (MqttException e) {
-      throw new PortalDeployerClientException(e.getMessage(), e);
-    }
-
-    mqttClient.setCallback(this);
   }
 
   public void start() throws PortalDeployerClientException {
