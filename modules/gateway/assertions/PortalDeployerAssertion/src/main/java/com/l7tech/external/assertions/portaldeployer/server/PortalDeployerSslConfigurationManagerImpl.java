@@ -83,7 +83,7 @@ public class PortalDeployerSslConfigurationManagerImpl implements PortalDeployer
       userManager = internalIdentityProvider.getUserManager();
     } catch (FindException e) {
       //TODO: figure out how to handle this properly, unsure of what exception to propogate to module
-      logger.log(Level.WARNING, String.format("Unable to look up internalIdentityProvider key: %s", ExceptionUtils
+      logger.log(Level.SEVERE, String.format("Unable to look up internalIdentityProvider key: %s", ExceptionUtils
               .getMessage(e)), e);
     }
     transactionManager = context.getBean("transactionManager", PlatformTransactionManager.class);
@@ -144,15 +144,9 @@ public class PortalDeployerSslConfigurationManagerImpl implements PortalDeployer
     User portalmanUser = findPortalmanUser(portalmanUserLogin);
     if (portalmanUser == null) {
       logger.log(Level.FINE, String.format("Creating portalman user [%s].", portalmanUserLogin));
-      portalmanUser = createNewUser(portalmanUserLogin);
+      portalmanUser = buildAndCreateNewUser(portalmanUserLogin);
     }
-    try {
-      if (clientCertManager.getUserCert(portalmanUser) == null) {
-        associateCertWithUser(portalmanCertificate, portalmanUser);
-      }
-    } catch (FindException e) {
-      associateCertWithUser(portalmanCertificate, portalmanUser);
-    }
+    associateCertWithUser(portalmanCertificate, portalmanUser);
     assignUserToAdminRole(portalmanUser);
   }
 
@@ -165,26 +159,36 @@ public class PortalDeployerSslConfigurationManagerImpl implements PortalDeployer
     try {
       Role role = roleManager.findByTag(Role.Tag.ADMIN);
       role.addAssignedUser(portalmanUser);
-      Boolean result = new TransactionTemplate(transactionManager).execute(new TransactionCallback<Boolean>() {
-        @Override
-        public Boolean doInTransaction(final TransactionStatus transactionStatus) {
-          try {
-            roleManager.update(role);
-            return true;
-          } catch (final ObjectModelException e) {
-            transactionStatus.setRollbackOnly();
-            logger.log(Level.WARNING, "Unable to save portalman user with admin role: " + ExceptionUtils.getMessage
-                    (e), e);
-          }
-          return false;
-        }
-      });
+      Boolean result = updateRoleWithAssignment(role);
       if (result == false) {
         logAndThrowException("Unable to save portalman user with admin role.", new UpdateException());
       }
     } catch (FindException e) {
       logAndThrowException(String.format("Unable to find admin role: %s", ExceptionUtils.getMessage(e)), e);
     }
+  }
+
+  /**
+   * Saves the role and returns true or false if the operation succeeds or not.
+   * @param role Role to save
+   * @return True or false if save operation completes.
+   */
+  private Boolean updateRoleWithAssignment(Role role) {
+    return new TransactionTemplate(transactionManager).execute(new TransactionCallback<Boolean>() {
+      @Override
+      public Boolean doInTransaction(final TransactionStatus transactionStatus) {
+        boolean roleUpdated = false;
+        try {
+          roleManager.update(role);
+          roleUpdated = true;
+        } catch (final ObjectModelException e) {
+          transactionStatus.setRollbackOnly();
+          logger.log(Level.WARNING, "Unable to save portalman user with admin role: " + ExceptionUtils.getMessage(e),
+                  e);
+        }
+        return roleUpdated;
+      }
+    });
   }
 
   private User findPortalmanUser(final String portalmanUserLogin) {
@@ -201,7 +205,7 @@ public class PortalDeployerSslConfigurationManagerImpl implements PortalDeployer
    * @return A user created with the login specified.
    * @throws PortalDeployerConfigurationException if any errors are encountered saving the user.
    */
-  private User createNewUser(String portalmanUserLogin) throws PortalDeployerConfigurationException {
+  private User buildAndCreateNewUser(String portalmanUserLogin) throws PortalDeployerConfigurationException {
     InternalUser newPortalmanUser = new InternalUser();
     newPortalmanUser.setLogin(portalmanUserLogin);
     newPortalmanUser.setProviderId(INTERNAL_IDENTITY_PROVIDER_GOID);
@@ -210,15 +214,17 @@ public class PortalDeployerSslConfigurationManagerImpl implements PortalDeployer
     //hashedPassword is required but will be replaced with certificate and unused
     newPortalmanUser.setHashedPassword(passwordHasher.hashPassword(UUID.randomUUID().toString().getBytes(Charsets
             .UTF8)));
+    createPortalmanUser(newPortalmanUser);
+    return newPortalmanUser;
+  }
+
+  private void createPortalmanUser(InternalUser newPortalmanUser) throws PortalDeployerConfigurationException {
     try {
       String id = userManager.save(newPortalmanUser, null);
       newPortalmanUser.setGoid(Goid.parseGoid(id));
-      return newPortalmanUser;
     } catch (SaveException e) {
       logAndThrowException(String.format("Unable to create portalman user: %s", ExceptionUtils.getMessage(e)), e);
     }
-    //shouldn't be hit
-    return null;
   }
 
   private void associateCertWithUser(X509Certificate portalmanCertificate, User portalmanUser) throws

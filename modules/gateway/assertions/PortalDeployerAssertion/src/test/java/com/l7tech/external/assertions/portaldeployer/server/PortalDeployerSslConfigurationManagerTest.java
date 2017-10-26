@@ -144,25 +144,6 @@ public class PortalDeployerSslConfigurationManagerTest {
     assertEquals(adminRole.getRoleAssignments().stream().findFirst().get().getId(), Goid.DEFAULT_GOID.toHexString());
   }
 
-  @Test
-  public void test_getSniEnabledSocketFactory_updatesPortalmanUserAsAdminWithCertificate_ifUserFoundWithCertificate() throws Exception {
-    Role adminRole = new Role();
-    when(ssgKeyStoreManager.lookupKeyByKeyAlias(eq(PortalDeployerSslConfigurationManagerImpl.PORTALMAN_KEY_ALILAS),
-            eq(PersistentEntity.DEFAULT_GOID))).thenReturn(portalmanKey);
-    when(clientCertManager.getUserCert(any(User.class))).thenReturn(mock(X509Certificate.class));
-    when(roleManager.findByTag(eq(Role.Tag.ADMIN))).thenReturn(adminRole);
-    when(userManager.findByLogin(eq(PORTALMAN_LOGIN))).thenReturn(mock(User.class));
-
-    verifySniSocketFactory(portalDeployerSslConfigurationManager.getSniEnabledSocketFactory("test"), "test");
-
-    //verify user not created if not found
-    verify(userManager, never()).save(any(User.class), eq(null));
-    //verify certificate found & role assignment
-    verify(clientCertManager, never()).recordNewUserCert(any(User.class), eq(portalmanKey.getCertificate()), eq(true));
-    verify(roleManager, times(1)).update(eq(adminRole));
-    assertEquals(adminRole.getRoleAssignments().stream().findFirst().get().getId(), Goid.DEFAULT_GOID.toHexString());
-  }
-
   @Test(expected = PortalDeployerConfigurationException.class)
   public void test_getSniEnabledSocketFactory_throwsException_ifPortalmanKeyNotFound() throws Exception {
     when(ssgKeyStoreManager.lookupKeyByKeyAlias(eq(PortalDeployerSslConfigurationManagerImpl.PORTALMAN_KEY_ALILAS),

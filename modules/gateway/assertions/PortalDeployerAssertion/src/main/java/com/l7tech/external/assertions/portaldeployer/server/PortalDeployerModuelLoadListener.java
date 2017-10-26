@@ -38,27 +38,16 @@ public class PortalDeployerModuelLoadListener implements ApplicationListener {
       instance = new PortalDeployerModuelLoadListener(context);
     }
 
+    //only try and start portal deployer if gateway is fully started
     GatewayState gatewayState = context.getBean("gatewayState", GatewayState.class);
     if (gatewayState.isReadyForMessages()) {
-      try {
-        if (Boolean.parseBoolean(clusterPropertyManager.getProperty(PD_ENABLED_CP))) {
-          instance.handleUpdateOfPortalDeployerEnabledClusterProperty(Boolean.TRUE.toString());
-        }
-      } catch (FindException e) {
-        logger.log(Level.INFO, "PortalDeployer not enabled during startup.");
-      }
+      checkIfPortalDeployerEnabled();
     } else {
       applicationEventProxy.addApplicationListener(new ApplicationListener() {
         @Override
         public void onApplicationEvent(ApplicationEvent event) {
           if (event instanceof ReadyForMessages) {
-            try {
-              if (Boolean.parseBoolean(clusterPropertyManager.getProperty(PD_ENABLED_CP))) {
-                instance.handleUpdateOfPortalDeployerEnabledClusterProperty(Boolean.TRUE.toString());
-              }
-            } catch (FindException e) {
-              logger.log(Level.INFO, "PortalDeployer not enabled during startup.");
-            }
+            checkIfPortalDeployerEnabled();
           }
         }
       });
@@ -94,7 +83,7 @@ public class PortalDeployerModuelLoadListener implements ApplicationListener {
         ClusterProperty clusterProperty = (ClusterProperty) ((Created) event).getEntity();
         logger.log(Level.FINE, String.format("PortalDeployer onApplicationEvent created ClusterProperty: %s",
                 clusterProperty.toString()));
-        //any other cluster property updates we care about?
+        //TODO: any other cluster property updates we care about?
         if (clusterProperty.getName().equalsIgnoreCase(PD_ENABLED_CP)) {
           handleUpdateOfPortalDeployerEnabledClusterProperty(clusterProperty.getValue());
         }
@@ -109,10 +98,20 @@ public class PortalDeployerModuelLoadListener implements ApplicationListener {
     }
   }
 
+  private static void checkIfPortalDeployerEnabled() {
+    try {
+      if (Boolean.parseBoolean(clusterPropertyManager.getProperty(PD_ENABLED_CP))) {
+        instance.handleUpdateOfPortalDeployerEnabledClusterProperty(Boolean.TRUE.toString());
+      }
+    } catch (FindException e) {
+      logger.log(Level.INFO, String.format("Cluster property [%s] not found, PortalDeployer not enabled during " +
+              "startup.", PD_ENABLED_CP));
+    }
+  }
+
   private void handleUpdateOfPortalDeployerEnabledClusterProperty(String newValue) {
     if (Boolean.FALSE.toString().equalsIgnoreCase(newValue)) {
       logger.log(Level.INFO, "Stopping Portal Deployer MQTT Client");
-
     } else if (Boolean.TRUE.toString().equalsIgnoreCase(newValue)) {
       logger.log(Level.INFO, "Starting Portal Deployer MQTT Client");
       enablePortalDeployerClient();
