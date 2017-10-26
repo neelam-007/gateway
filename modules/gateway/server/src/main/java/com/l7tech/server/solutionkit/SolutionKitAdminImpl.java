@@ -4,6 +4,7 @@ import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
 import com.l7tech.gateway.common.solutionkit.SolutionKitHeader;
+import com.l7tech.gateway.common.solutionkit.SolutionKitInfo;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.admin.AsyncAdminMethodsImpl;
@@ -13,6 +14,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.inject.Inject;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.TimerTask;
@@ -48,6 +50,11 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
         return getSolutionKitAdminHelper().testInstall(solutionKit, bundle, isUpgrade);
     }
 
+    @Override
+    public String testUpgrade(@NotNull SolutionKitInfo solutionKitInfo) throws Exception {
+        return getSolutionKitAdminHelper().testUpgrade(solutionKitInfo);
+    }
+
     @NotNull
     @Override
     public JobId<String> testInstallAsync(@NotNull final SolutionKit solutionKit, @NotNull final String bundle, final boolean isUpgrade) {
@@ -71,8 +78,34 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
 
     @NotNull
     @Override
+    public JobId<String> testUpgradeAsync(@NotNull final SolutionKitInfo solutionKitInfo) {
+        final FutureTask<String> task =
+                new FutureTask<>(AdminInfo.find(false).wrapCallable(new Callable<String>() {
+                    @Override
+                    public String call() throws Exception {
+                        return testUpgrade(solutionKitInfo);
+                    }
+                }));
+
+        Background.scheduleOneShot(new TimerTask() {
+            @Override
+            public void run() {
+                task.run();
+            }
+        }, 0L);
+
+        return registerJob(task, String.class);
+    }
+
+    @NotNull
+    @Override
     public Goid install(@NotNull final SolutionKit solutionKit, @NotNull final String bundle, final boolean isUpgrade) throws Exception {
         return getSolutionKitAdminHelper().install(solutionKit, bundle, isUpgrade);
+    }
+
+    @Override
+    public @NotNull ArrayList upgrade(@NotNull SolutionKitInfo solutionKitInfo) throws Exception {
+        return getSolutionKitAdminHelper().upgrade(solutionKitInfo);
     }
 
     @NotNull
@@ -94,6 +127,26 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
         }, 0L);
 
         return registerJob(task, Goid.class);
+    }
+
+    @Override
+    public @NotNull JobId<ArrayList> upgradeAsync(@NotNull SolutionKitInfo solutionKitInfo) {
+        final FutureTask<ArrayList> task =
+                new FutureTask<ArrayList>(AdminInfo.find(false).wrapCallable(new Callable<ArrayList>() {
+                    @Override
+                    public ArrayList<Goid> call() throws Exception {
+                        return upgrade(solutionKitInfo);
+                    }
+                }));
+
+        Background.scheduleOneShot(new TimerTask() {
+            @Override
+            public void run() {
+                task.run();
+            }
+        }, 0L);
+
+        return registerJob(task, ArrayList.class);
     }
 
     @NotNull

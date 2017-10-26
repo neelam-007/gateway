@@ -9,6 +9,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -55,6 +56,16 @@ public interface SolutionKitAdmin extends AsyncAdminMethods {
     public String testInstall(@NotNull final SolutionKit solutionKit, @NotNull final String bundle, final boolean isUpgrade) throws Exception;
 
     /**
+     * Test upgrade for the given bundles.
+     * @param solutionKitInfo the solution kit payload
+     * @return the resulting mapping XML
+     */
+    @NotNull
+    @Transactional(readOnly = true)
+    @Secured(stereotype = MethodStereotype.TEST_CONFIGURATION)
+    public String testUpgrade(@NotNull SolutionKitInfo solutionKitInfo) throws Exception;
+
+    /**
      * Test installation for the given bundle.
      *
      * @param solutionKit the solution kit to test
@@ -66,6 +77,18 @@ public interface SolutionKitAdmin extends AsyncAdminMethods {
     @Transactional(readOnly = true)
     @Secured(stereotype = MethodStereotype.TEST_CONFIGURATION)
     JobId<String> testInstallAsync(@NotNull SolutionKit solutionKit, @NotNull String bundle, boolean isUpgrade);
+
+    /**
+     * Test upgrade for the given bundle.
+     *
+     * @param solutionKitInfo The solution kit info containing install and delete bundles data,
+     *                       parent solution kit
+     * @return the resulting mapping XML
+     */
+    @NotNull
+    @Transactional(readOnly = true)
+    @Secured(stereotype = MethodStereotype.TEST_CONFIGURATION)
+    JobId<String> testUpgradeAsync(@NotNull SolutionKitInfo solutionKitInfo);
 
     /**
      * Install the given solution kit.
@@ -80,6 +103,17 @@ public interface SolutionKitAdmin extends AsyncAdminMethods {
     public Goid install(@NotNull final SolutionKit solutionKit, @NotNull final String bundle, final boolean isUpgrade) throws Exception;
 
     /**
+     * Upgrade the given solution kits.
+     *
+     * @param solutionKitInfo the solution kit information including delete bundles of old SKs,
+     *                       install bundles of new Sks, SKs metadata, parent SK
+     * @return the list of saved solution kit entity IDs
+     */
+    @NotNull
+    @Secured(stereotype = MethodStereotype.SAVE)
+    public ArrayList upgrade(@NotNull SolutionKitInfo solutionKitInfo) throws Exception;
+
+    /**
      * Install the given solution kit.
      *
      * @param solutionKit the solution kit to install
@@ -90,6 +124,17 @@ public interface SolutionKitAdmin extends AsyncAdminMethods {
     @NotNull
     @Secured(stereotype = MethodStereotype.SAVE)
     JobId<Goid> installAsync(@NotNull SolutionKit solutionKit, @NotNull String bundle, boolean isUpgrade);
+
+    /**
+     * Upgrade the given solution kits.
+     *
+     * @param solutionKitInfo the solution kit information including delete bundles of old SKs,
+     *                       install bundles of new Sks, SKs metadata, parent SK
+     * @return the saved solution kit entity ID
+     */
+    @NotNull
+    @Secured(stereotype = MethodStereotype.SAVE)
+    JobId<ArrayList> upgradeAsync(@NotNull SolutionKitInfo solutionKitInfo);
 
     /**
      * Uninstall solution kit identified by the given ID.

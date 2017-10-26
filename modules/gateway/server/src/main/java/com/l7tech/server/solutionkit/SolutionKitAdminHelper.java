@@ -1,6 +1,8 @@
 package com.l7tech.server.solutionkit;
 
-import com.l7tech.gateway.api.Mapping;
+import com.l7tech.common.io.XmlUtil;
+import com.l7tech.gateway.api.*;
+import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.solutionkit.*;
 import com.l7tech.identity.IdentityProviderConfig;
@@ -17,8 +19,11 @@ import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
+import javax.xml.transform.dom.DOMResult;
+import javax.xml.transform.stream.StreamSource;
 import java.io.IOException;
 import java.io.Serializable;
+import java.io.StringReader;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -81,6 +86,14 @@ public class SolutionKitAdminHelper implements SolutionKitAdmin {
         return solutionKitManager.importBundle(bundle, solutionKit, true);
     }
 
+    @NotNull
+    public String testUpgrade(@NotNull final SolutionKitInfo solutionKitInfo) throws Exception {
+        for (SolutionKit solutionKit : solutionKitInfo.getSolutionKitInstall().keySet()) {
+            checkFeatureEnabled(solutionKit);
+        }
+        return solutionKitManager.importBundles(solutionKitInfo, true);
+    }
+
     private void checkFeatureEnabled(@NotNull final SolutionKit solutionKit) throws SolutionKitException {
         final String featureSet = solutionKit.getProperty(SolutionKit.SK_PROP_FEATURE_SET_KEY);
         if (!StringUtils.isEmpty(featureSet) && !licenseManager.isFeatureEnabled(featureSet)) {
@@ -94,7 +107,13 @@ public class SolutionKitAdminHelper implements SolutionKitAdmin {
         throw new UnsupportedOperationException();
     }
 
+    @Override
+    public @NotNull JobId<String> testUpgradeAsync(@NotNull SolutionKitInfo solutionKitInfo) {
+        throw new UnsupportedOperationException();
+    }
+
     @NotNull
+    //TODO: update this to use multibundle import
     public Goid install(@NotNull final SolutionKit solutionKit, @NotNull final String bundle, final boolean isUpgrade) throws Exception {
         checkFeatureEnabled(solutionKit);
 
@@ -115,17 +134,65 @@ public class SolutionKitAdminHelper implements SolutionKitAdmin {
                     updateUninstallBundleBySettingTargetIds(uninstallBundle, resultMappings)
             );
         }
+        Goid solutionKitGoid = solutionKitManager.save(solutionKit);
+        updateEntityOwnershipDescriptors(resultMappings, solutionKit);
+        solutionKitManager.update(solutionKit);
+        return solutionKitGoid;
+    }
 
-        if (isUpgrade) {
-            updateEntityOwnershipDescriptors(resultMappings, solutionKit);
-            solutionKitManager.update(solutionKit);
-            return solutionKit.getGoid();
-        } else {
-            Goid solutionKitGoid = solutionKitManager.save(solutionKit);
-            updateEntityOwnershipDescriptors(resultMappings, solutionKit);
-            solutionKitManager.update(solutionKit);
-            return solutionKitGoid;
+    @Override
+    public @NotNull ArrayList upgrade(@NotNull SolutionKitInfo solutionKitInfo) throws Exception {
+        final Map<SolutionKit, String> solutionKitBundleMap = solutionKitInfo.getSolutionKitInstall();
+        final ArrayList<Goid> resultGoids = new ArrayList<>();
+        for (final SolutionKit solutionKit : solutionKitBundleMap.keySet()) {
+            checkFeatureEnabled(solutionKit);
         }
+        // Delete bundles and Install bundles provided by SolutionKitInfo.
+        final String resultMappings = solutionKitManager.importBundles(solutionKitInfo, false);
+        final ItemsList<Mappings> itemList = MarshallingUtils.unmarshal(ItemsList.class, new StreamSource(new StringReader(resultMappings)));
+        final List<Item<Mappings>> items = itemList.getContent();
+        final int totalDeleteBundles = solutionKitInfo.getSolutionKitDelete().size();
+
+        // check that result mappings and solutionkitpayload map + delete bundles are same size
+        if (totalDeleteBundles + solutionKitBundleMap.size() != items.size()){
+            throw new SolutionKitConflictException("Error in upgrade. Number of delete bundles and install bundles " +
+                    "should be the same as the number of items in result mappings.");
+        }
+
+        final List<String> installMappingResults = new ArrayList<>();
+        int installMappingIndex = totalDeleteBundles;
+        // extract the install mapping results
+        for (int i = installMappingIndex; i<items.size(); i++) {
+            DOMResult result = new DOMResult();
+            MarshallingUtils.marshal(items.get(i), result, false);
+            installMappingResults.add(XmlUtil.nodeToString(result.getNode()));
+        }
+
+        installMappingIndex = 0;
+        //Note: SkBundleEntry is the same order as the installMappingResults
+        for (final Map.Entry<SolutionKit, String> skBundleEntry : solutionKitInfo.getSolutionKitInstall().entrySet()) {
+            // get mappings with entity name added as a property
+            String installMappingResult = installMappingResults.get(installMappingIndex);
+            installMappingResult = getMappingsWithEntityNameAddedToProperties(skBundleEntry.getValue(), installMappingResult);
+
+            final SolutionKit solutionKit = skBundleEntry.getKey();
+            // Save solution kit entity.
+            solutionKit.setMappings(installMappingResult);
+
+            // Update the delete mapping probably due to new entities created or an instance modifier specified.
+            final String uninstallBundle = solutionKit.getUninstallBundle();
+            if (!StringUtils.isEmpty(uninstallBundle)) {
+                solutionKit.setUninstallBundle(
+                        // Set 'targetId' in the uninstall bundle.
+                        updateUninstallBundleBySettingTargetIds(uninstallBundle, installMappingResult)
+                );
+            }
+
+            updateEntityOwnershipDescriptors(installMappingResult, solutionKit);
+            solutionKitManager.update(solutionKit);
+            resultGoids.add(solutionKit.getGoid());
+        }
+        return resultGoids;
     }
 
     protected String getMappingsWithEntityNameAddedToProperties(@NotNull final String bundleStr, @NotNull final String resultMappingsStr) throws IOException, SAXException {
@@ -169,6 +236,11 @@ public class SolutionKitAdminHelper implements SolutionKitAdmin {
     @NotNull
     @Override
     public JobId<Goid> installAsync(@NotNull SolutionKit solutionKit, @NotNull String bundle, boolean isUpgrade) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public @NotNull JobId<ArrayList> upgradeAsync(@NotNull SolutionKitInfo solutionKitInfo) {
         throw new UnsupportedOperationException();
     }
 

@@ -2,22 +2,16 @@ package com.l7tech.server.spring.remoting.http;
 
 import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.security.signer.TrustedSignerCertsAdmin;
-import com.l7tech.gateway.common.solutionkit.SolutionKit;
-import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
-import com.l7tech.gateway.common.solutionkit.SolutionKitHeader;
+import com.l7tech.gateway.common.solutionkit.*;
 import com.l7tech.gateway.common.spring.remoting.http.SecureHttpInvokerServiceExporter;
 import com.l7tech.gateway.common.spring.remoting.http.SecureHttpInvokerServiceExporterStub;
 import com.l7tech.objectmodel.*;
-import com.l7tech.gateway.common.solutionkit.SolutionKitBuilder;
 import com.l7tech.test.BugId;
 import com.l7tech.util.*;
 import org.hamcrest.Matchers;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.mockito.internal.util.Primitives;
@@ -56,6 +50,7 @@ public class SecureHttpInvokerServiceExporterTest {
     // sample data
     private final String TEST_STRING = "test string";
     private final byte[] TEST_BYTES = "test bytes".getBytes(Charsets.UTF8);
+    private final ArrayList<Goid> TEST_ARRAY = new ArrayList<>();
 
     @Test
     public void testPermittedClassNames() throws Exception {
@@ -660,6 +655,7 @@ public class SecureHttpInvokerServiceExporterTest {
 
     static private final AsyncAdminMethods.JobId<String> TEST_STRING_JOB_ID = new AsyncAdminMethods.JobId<>("string".getBytes(Charsets.UTF8), String.class);
     static private final AsyncAdminMethods.JobId<Goid> TEST_GOID_JOB_ID = new AsyncAdminMethods.JobId<>("goid".getBytes(Charsets.UTF8), Goid.class);
+    static private final AsyncAdminMethods.JobId<ArrayList> TEST_ARRAYLIST_JOB_ID = new AsyncAdminMethods.JobId<>("arraylist".getBytes(Charsets.UTF8), ArrayList.class);
 
     private static class Primitive {
         private final Object value;
@@ -717,9 +713,21 @@ public class SecureHttpInvokerServiceExporterTest {
                         return TEST_STRING;
                     }
 
+                    @Override
+                    public @NotNull String testUpgrade(@NotNull SolutionKitInfo solutionKitPayload) throws Exception {
+                        methodCalled.set(true);
+                        return TEST_STRING;
+                    }
+
                     @NotNull
                     @Override
                     public JobId<String> testInstallAsync(@NotNull SolutionKit solutionKit, @NotNull String bundle, boolean isUpgrade) {
+                        methodCalled.set(true);
+                        return TEST_STRING_JOB_ID;
+                    }
+
+                    @Override
+                    public @NotNull JobId<String> testUpgradeAsync(@NotNull SolutionKitInfo solutionKitPayload) {
                         methodCalled.set(true);
                         return TEST_STRING_JOB_ID;
                     }
@@ -731,11 +739,23 @@ public class SecureHttpInvokerServiceExporterTest {
                         return Goid.DEFAULT_GOID;
                     }
 
+                    @Override
+                    public @NotNull ArrayList upgrade(@NotNull SolutionKitInfo solutionKitPayload) throws Exception {
+                        methodCalled.set(true);
+                        return TEST_ARRAY;
+                    }
+
                     @NotNull
                     @Override
                     public JobId<Goid> installAsync(@NotNull SolutionKit solutionKit, @NotNull String bundle, boolean isUpgrade) {
                         methodCalled.set(true);
                         return TEST_GOID_JOB_ID;
+                    }
+
+                    @Override
+                    public @NotNull JobId<ArrayList> upgradeAsync(@NotNull SolutionKitInfo solutionKitPayload) {
+                        methodCalled.set(true);
+                        return TEST_ARRAYLIST_JOB_ID;
                     }
 
                     @NotNull

@@ -1,10 +1,8 @@
 package com.l7tech.gateway.common.solutionkit;
 
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.gateway.api.CassandraConnectionMO;
-import com.l7tech.gateway.api.EncapsulatedAssertionMO;
-import com.l7tech.gateway.api.JDBCConnectionMO;
-import com.l7tech.gateway.api.StoredPasswordMO;
+import com.l7tech.gateway.api.*;
+import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.cassandra.CassandraConnection;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.security.password.SecurePassword;
@@ -21,6 +19,8 @@ import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import javax.xml.transform.dom.DOMResult;
+import java.io.IOException;
 import java.util.*;
 
 import static com.l7tech.gateway.common.solutionkit.SolutionKit.*;
@@ -337,6 +337,51 @@ public final class SolutionKitUtils {
         }
 
         return doc;
+    }
+
+    /**
+     * Method to generate a list of delete bundles containing the uninstall bundles of old solution kits.
+     * @param oldSks The selected installed solution kits that should be removed.
+     *               oldSks will either:
+     *              - contain a single solution kit for upgrade,
+     *              - or a collection of solution kits with the parent being the first item in the list
+     * @return the bundle list of uninstall bundles with the names of the solution kit
+     * @throws SolutionKitException
+     * @throws IOException
+     */
+    public static Map<SolutionKit, String> generateListOfDeleteBundles(@NotNull final List<SolutionKit> oldSks) throws SolutionKitException {
+        final Map<SolutionKit, String> solutionKitDelete = new TreeMap<>();
+        //The first item in the oldSks is the parent if a parent is selected for upgrade
+        for (final SolutionKit solutionKit : oldSks) {
+            //Skip the parent
+            if (!Boolean.valueOf(solutionKit.getProperty(SK_PROP_IS_COLLECTION_KEY))) {
+                // Since v9.3, a solution kit is only upgradable if it has an uninstall bundle
+                if (StringUtils.isNotBlank(solutionKit.getUninstallBundle())) {
+                    solutionKitDelete.put(solutionKit, solutionKit.getUninstallBundle());
+                } else {
+                    throw new SolutionKitException("The solution kit " + solutionKit.getName() + " with guid " + solutionKit.getId() + " cannot be upgraded.");
+                }
+            }
+        }
+        return solutionKitDelete;
+    }
+
+    /**
+     * Generate a string payload for solution kit installation/upgrade
+     * @param deleteBundles List of uninstall bundles of old solution kits
+     * @param installBundles List of install bundles of new solution kits
+     * @return the payload
+     * @throws IOException Exceptions in parsing bundleList
+     */
+    public static String generateBundleListPayload(final List<Bundle> deleteBundles, final List<Bundle> installBundles) throws IOException{
+        final BundleList bundleList = ManagedObjectFactory.createBundleList();
+        final List<Bundle> bundlesHolder = new ArrayList<>();
+        bundlesHolder.addAll(deleteBundles);
+        bundlesHolder.addAll(installBundles);
+        bundleList.setBundles(bundlesHolder);
+        final DOMResult result = new DOMResult();
+        MarshallingUtils.marshal(bundleList, result, false);
+        return XmlUtil.nodeToString(result.getNode());
     }
 
     /**

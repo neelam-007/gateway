@@ -40,18 +40,12 @@ public class SolutionKitProcessor {
      * @param doTestInstall test install callback
      * @throws Throwable
      */
-    public void testInstallOrUpgrade(@NotNull final Functions.UnaryVoidThrows<Triple<SolutionKit, String, Boolean>, Throwable> doTestInstall) throws Throwable {
+    //TODO: implement multibundle import for install
+    public void testInstall(@NotNull final Functions.UnaryVoidThrows<Triple<SolutionKit, String, Boolean>, Throwable> doTestInstall) throws Throwable {
         final Collection<SolutionKit> selectedSolutionKits = solutionKitsConfig.getSelectedSolutionKits();
-        final boolean isUpgrade = solutionKitsConfig.isUpgrade();
         final SolutionKit parentSolutionKitLoaded = solutionKitsConfig.getParentSolutionKitLoaded();
 
         for (final SolutionKit solutionKit: selectedSolutionKits) {
-
-            // Check if the solution kit is upgradable.  If the solution kit attempts for upgrade, but its skar does not
-            // contain UpgradeBundle.xml, then throw exception with warning
-            if (isUpgrade && !solutionKitsConfig.isUpgradeInfoProvided(solutionKit)) {
-                throw new BadRequestException("Solution kit '" + solutionKit.getName() + "' cannot be used for upgrade due to that its SKAR file does not include UpgradeBundle.xml.");
-            }
 
             // invoke custom callbacks
             invokeCustomCallback(solutionKit);
@@ -59,11 +53,40 @@ public class SolutionKitProcessor {
             // Update resolved mapping target IDs.
             solutionKitsConfig.setMappingTargetIdsFromResolvedIds(solutionKit);
 
-            if (!isUpgrade) {
-                validateSolutionKitForInstall(solutionKit, parentSolutionKitLoaded);
-            }
+            validateSolutionKitForInstall(solutionKit, parentSolutionKitLoaded);
             doTestInstall.call(getAsSolutionKitTriple(solutionKit));
         }
+    }
+
+    /**
+     * Test solution kit install or upgrade without committing the work.
+     * @param doTestInstall test install callback
+     * @throws Throwable
+     */
+    public void testUpgrade(@NotNull final Functions.UnaryVoidThrows<SolutionKitInfo, Throwable> doTestInstall) throws Throwable {
+        //selectedSolutionKits should be ordered because it is a treeset
+        final List<SolutionKit> selectedSolutionKits = new ArrayList<>(solutionKitsConfig.getSelectedSolutionKits());
+        final SolutionKitInfo solutionKitInfo = collectSolutionKitInformation(selectedSolutionKits);
+
+        for (final SolutionKit solutionKit: selectedSolutionKits) {
+            // invoke custom callbacks
+            invokeCustomCallback(solutionKit);
+
+            // Update resolved mapping target IDs.
+            solutionKitsConfig.setMappingTargetIdsFromResolvedIds(solutionKit);
+        }
+        doTestInstall.call(solutionKitInfo);
+    }
+
+    private SolutionKitInfo collectSolutionKitInformation(List<SolutionKit> selectedSolutionKits) throws SolutionKitException{
+        final boolean isUpgrade = solutionKitsConfig.isUpgrade();
+        final SolutionKit parentSolutionKit = solutionKitsConfig.getParentSolutionKitLoaded();
+        final Map<SolutionKit, String> solutionKitWithInstallBundle= new TreeMap<>();
+        for (final SolutionKit selectedSolutionKit : selectedSolutionKits) {
+            solutionKitWithInstallBundle.put(selectedSolutionKit, solutionKitsConfig.getBundleAsString(selectedSolutionKit));
+        }
+        final Map<SolutionKit, String> deleteBundles = isUpgrade ? SolutionKitUtils.generateListOfDeleteBundles(solutionKitsConfig.getSolutionKitsToUpgrade()) : null;
+        return new SolutionKitInfo(deleteBundles, solutionKitWithInstallBundle, parentSolutionKit, isUpgrade);
     }
 
     /**
@@ -142,20 +165,14 @@ public class SolutionKitProcessor {
     }
 
     /**
-     * Process solution kit install or upgrade.  Can optionally skip error and continue to the next solution kit.
-     * @throws Exception includes: SolutionKitException, FindException, UpdateException, SaveException
-     */
-    public void installOrUpgrade() throws Exception {
-        installOrUpgrade(null, null);
-    }
-    /**
-     * Process solution kit install or upgrade.  Can optionally skip error and continue to the next solution kit.
+     * Process solution kit install.  Can optionally skip error and continue to the next solution kit.
      * @param errorKitList Optional list to capture processing error instead of immediately throwing exception.
      * @param doAsyncInstall Optional callback to override admin install (e.g. override with AdminGuiUtils.doAsyncAdmin() for console UI)
      * @throws Exception includes: SolutionKitException, FindException, UpdateException, SaveException
      */
-    public void installOrUpgrade(@Nullable final List<Pair<String, SolutionKit>> errorKitList,
-                                 @Nullable final Functions.UnaryVoidThrows<Triple<SolutionKit, String, Boolean>, Exception> doAsyncInstall) throws Exception {
+    //TODO: update this method to use multibundle import
+    public void install(@Nullable final List<Pair<String, SolutionKit>> errorKitList,
+                        @Nullable final Functions.UnaryVoidThrows<Triple<SolutionKit, String, Boolean>, Exception> doAsyncInstall) throws Exception {
 
         // Check if the loaded skar is a collection of skars.  If so process parent solution kit first.
         final SolutionKit parentSKFromLoad = solutionKitsConfig.getParentSolutionKitLoaded(); // Note: The parent solution kit has a dummy default GOID.
@@ -164,20 +181,7 @@ public class SolutionKitProcessor {
         // install or upgrade skars
         // After processing the parent, process selected solution kits if applicable.
         for (SolutionKit solutionKit : solutionKitsConfig.getSelectedSolutionKits()) {
-            if (parentSKFromLoad != null) {
-                final String solutionKitIM = solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY);
-                final Goid parentGoid;
-                //saveOrUpdate parent if the instance modifier has not been seen so far
-                if (!instanceModifierWithParentGoid.containsKey(solutionKitIM)) {
-                    parentGoid = saveOrUpdateParentSolutionKit(parentSKFromLoad, solutionKitIM, errorKitList);
-                    instanceModifierWithParentGoid.put(solutionKitIM, parentGoid);
-                } else {
-                    //just retrieve the parent goid for an instance modifier
-                    parentGoid = instanceModifierWithParentGoid.get(solutionKitIM);
-                }
-                // If the solution kit is under a parent solution kit, then set its parent goid before it gets saved.
-                solutionKit.setParentGoid(parentGoid);
-            }
+            defineParentGoid(errorKitList, parentSKFromLoad, instanceModifierWithParentGoid, solutionKit);
 
             try {
                 // Update resolved mapping target IDs.
@@ -192,6 +196,61 @@ public class SolutionKitProcessor {
             } catch (Exception e) {
                 addToErrorListOrRethrowException(e, errorKitList, solutionKit);
             }
+        }
+    }
+
+    /**
+     * Process solution kit for upgrade.  Can optionally skip error and continue to the next solution kit.
+     * @param doAsyncUpgrade Optional callback to override admin upgrade (e.g. override with AdminGuiUtils.doAsyncAdmin() for console UI)
+     * @throws Exception includes: SolutionKitException, FindException, UpdateException, SaveException
+     */
+    public void upgrade(@Nullable final Functions.UnaryVoidThrows<SolutionKitInfo, Exception> doAsyncUpgrade) throws Exception {
+        //selectedSolutionKits should be ordered because it is a treeset
+        final List<SolutionKit> selectedSolutionKits = new ArrayList<>(solutionKitsConfig.getSelectedSolutionKits());
+
+        // Check if the loaded skar is a collection of skars.  If so process parent solution kit first.
+        final SolutionKit parentSKFromLoad = solutionKitsConfig.getParentSolutionKitLoaded(); // Note: The parent solution kit has a dummy default GOID.
+        final Map<String, Goid> instanceModifierWithParentGoid = new HashMap<>();
+
+        for (SolutionKit solutionKit : solutionKitsConfig.getSelectedSolutionKits()) {
+            defineParentGoid(null, parentSKFromLoad, instanceModifierWithParentGoid, solutionKit);
+
+            // Update resolved mapping target IDs.
+            solutionKitsConfig.setMappingTargetIdsFromResolvedIds(solutionKit);
+        }
+
+        final SolutionKitInfo solutionKitInfo = collectSolutionKitInformation(selectedSolutionKits);
+
+        //upgrade the bundles
+        if (doAsyncUpgrade == null) {
+            solutionKitAdmin.upgrade(solutionKitInfo);
+        } else {
+            doAsyncUpgrade.call(solutionKitInfo);
+        }
+    }
+
+    /**
+     *
+     * @param errorKitList The error kit list to accumulate install Gui errors. if null then caller is Restman or upgrade
+     * @param parentSKFromLoad Parent solution kit of sskar file
+     * @param instanceModifierWithParentGoid The map containing parents created/seen so far
+     * @param solutionKit solution kit in question
+     * @throws Exception
+     */
+    private void defineParentGoid(@Nullable List<Pair<String, SolutionKit>> errorKitList, SolutionKit parentSKFromLoad, Map<String, Goid> instanceModifierWithParentGoid, SolutionKit solutionKit) throws Exception {
+        if (parentSKFromLoad != null) {
+            final String solutionKitIM = solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY);
+            final Goid parentGoid;
+            //saveOrUpdate parent if the instance modifier has not been seen so far
+            if (!instanceModifierWithParentGoid.containsKey(solutionKitIM)) {
+                parentGoid = saveOrUpdateParentSolutionKit(parentSKFromLoad, solutionKitIM, errorKitList);
+                instanceModifierWithParentGoid.put(solutionKitIM, parentGoid);
+            } else {
+                //just retrieve the parent goid for an instance modifier
+                parentGoid = instanceModifierWithParentGoid.get(solutionKitIM);
+            }
+            // If the solution kit is under a parent solution kit, then set its parent goid before it gets saved.
+            solutionKit.setParentGoid(parentGoid);
         }
     }
 
@@ -322,6 +381,7 @@ public class SolutionKitProcessor {
                 customCallback.preMigrationBundleImport(skContext);
 
                 // copy back metadata from xml version
+                //TODO: this method should also copy instance modifier?
                 SolutionKitUtils.copyDocumentToSolutionKit(skContext.getSolutionKitMetadata(), solutionKit);
 
                 // set (possible) changes made to metadata and bundles (install/upgrade and uninstall)

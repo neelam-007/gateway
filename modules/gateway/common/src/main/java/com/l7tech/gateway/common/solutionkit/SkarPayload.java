@@ -22,6 +22,7 @@ import java.io.*;
 import java.net.URL;
 import java.util.Map;
 import java.util.UUID;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -80,7 +81,6 @@ public class SkarPayload extends SignerUtils.SignedZip.InnerPayload {
             final SolutionKit solutionKit = new SolutionKit();
             boolean hasRequiredSolutionKitFile = false, hasRequiredInstallBundleFile = false, foundChildSkar = false;
             final DOMSource installBundleSource = new DOMSource();
-            final DOMSource upgradeBundleSource = new DOMSource();
             SolutionKitCustomizationClassLoader classLoader = null;
 
             zis = new ZipInputStream(inputStream);
@@ -99,7 +99,7 @@ public class SkarPayload extends SignerUtils.SignedZip.InnerPayload {
                             loadInstallBundleXml(zis, installBundleSource);
                             break;
                         case SK_UPGRADE_BUNDLE_FILENAME:
-                            loadUpgradeBundleXml(zis, upgradeBundleSource);
+                            logger.log(Level.FINE, "Ignoring upgrade bundle.");
                             break;
                         case SK_DELETE_BUNDLE_FILENAME:
                             loadDeleteBundleXml(zis, solutionKit);
@@ -142,12 +142,8 @@ public class SkarPayload extends SignerUtils.SignedZip.InnerPayload {
             final Bundle installBundle = MarshallingUtils.unmarshal(Bundle.class, installBundleSource, true);
             Bundle bundle = installBundle;
 
-            if (upgradeBundleSource.getNode() != null) {
-                final Bundle upgradeBundle = MarshallingUtils.unmarshal(Bundle.class, upgradeBundleSource, true);
-                bundle = mergeBundle(solutionKit, installBundle, upgradeBundle);
-                solutionKitsConfig.setUpgradeInfoProvided(solutionKit, true);
-            } else {
-                solutionKitsConfig.setUpgradeInfoProvided(solutionKit, false);
+            if (solutionKitsConfig.isUpgrade()) {
+                bundle = updateInstallBundle(solutionKit, installBundle);
             }
 
             // copy existing entity ownership records to solutionKit (otherwise they will all be deleted)
@@ -199,20 +195,6 @@ public class SkarPayload extends SignerUtils.SignedZip.InnerPayload {
         installBundleSource.setNode(installBundleEle);
     }
 
-    // load matching upgrade bundle
-    private void loadUpgradeBundleXml(final ZipInputStream zis, final DOMSource upgradeBundleSource) throws IOException, SAXException, TooManyChildElementsException, MissingRequiredElementException, SolutionKitException {
-        final Document doc = XmlUtil.parse(new ByteArrayInputStream(IOUtils.slurpStream(zis)));
-        final Element upgradeBundleEle = doc.getDocumentElement();
-
-        // find upgrade mappings to replace install mappings with upgrade mappings
-        Element upgradeMappingEle = DomUtils.findFirstDescendantElement(upgradeBundleEle, null, BUNDLE_ELE_MAPPINGS);
-        if (upgradeMappingEle == null) {
-            throw new BadRequestException("Expected <" + BUNDLE_ELE_MAPPINGS + "> element in " + SK_UPGRADE_BUNDLE_FILENAME + ".");
-        }
-
-        upgradeBundleSource.setNode(upgradeBundleEle);
-    }
-
     // load uninstall bundle for later use
     private void loadDeleteBundleXml(final ZipInputStream zis, final SolutionKit solutionKit) throws IOException, SAXException, TooManyChildElementsException, MissingRequiredElementException, SolutionKitException {
         final Document doc = XmlUtil.parse(new ByteArrayInputStream(IOUtils.slurpStream(zis)));
@@ -221,28 +203,25 @@ public class SkarPayload extends SignerUtils.SignedZip.InnerPayload {
     }
 
     // merge bundles (if upgrade mappings exists, replace existing install mappings)
-    Bundle mergeBundle(final SolutionKit solutionKit, final Bundle installBundle, final Bundle upgradeBundle) {
+    private Bundle updateInstallBundle(final SolutionKit solutionKit, final Bundle installBundle) {
         final SolutionKit solutionKitToUpgrade = solutionKitsConfig.getSolutionKitToUpgrade(solutionKit.getSolutionKitGuid());
 
-        if (solutionKitToUpgrade != null && upgradeBundle.getMappings() != null) {
+        if (solutionKitToUpgrade != null && installBundle.getMappings() != null) {
             // set goid and version for upgrade
             solutionKit.setGoid(solutionKitToUpgrade.getGoid());
             solutionKit.setVersion(solutionKitToUpgrade.getVersion());
 
             // update previously resolved mapping target IDs
-            solutionKitsConfig.setMappingTargetIdsFromPreviouslyResolvedIds(solutionKitToUpgrade, upgradeBundle);
+            solutionKitsConfig.setMappingTargetIdsFromPreviouslyResolvedIds(solutionKitToUpgrade, installBundle);
 
-            //this code was modified to handle a collection of SKARs - since we can have collections, we need to have
-            //a Map of installMappings - each one identifiable by solutionKitGuid.  We're storing a handle to these initial installMappings
-            //so that in case an entity is deleted from the original install, we'll have a way of identifying the upgrade install against
-            //the original and warn the user
+//            //this code was modified to handle a collection of SKARs - since we can have collections, we need to have
+//            //a Map of installMappings - each one identifiable by solutionKitGuid.  We're storing a handle to these initial installMappings
+//            //so that in case an entity is deleted from the original install, we'll have a way of identifying the upgrade install against
+//            //the original and warn the user
             final Map<String, Mapping> installMappings = solutionKitsConfig.getInstallMappings(solutionKit.getSolutionKitGuid());
             for (Mapping installMapping : installBundle.getMappings()) {
                 installMappings.put(installMapping.getSrcId(), installMapping);
             }
-
-            // replace with upgrade mappings
-            installBundle.setMappings(upgradeBundle.getMappings());
         }
 
         return installBundle;

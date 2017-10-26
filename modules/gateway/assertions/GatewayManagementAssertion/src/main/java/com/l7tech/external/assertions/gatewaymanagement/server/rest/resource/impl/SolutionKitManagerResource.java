@@ -343,10 +343,16 @@ public class SolutionKitManagerResource {
             // Test all selected (child) solution kit(s) before actual installation.
             // This step is to prevent partial installation/upgrade
             final SolutionKitProcessor solutionKitProcessor = new SolutionKitProcessor(solutionKitsConfig, solutionKitAdminHelper);
-            testInstallOrUpgrade(solutionKitProcessor, solutionKitAdminHelper);
 
-            // install or upgrade
-            solutionKitProcessor.installOrUpgrade();
+            //install or upgrade
+            if (isUpgrade) {
+                //TODO: refactor logic above for upgrade cases
+                testUpgrade(solutionKitProcessor, solutionKitAdminHelper);
+                solutionKitProcessor.upgrade(null);
+            } else {
+                testInstall(solutionKitProcessor, solutionKitAdminHelper);
+                solutionKitProcessor.install(null,null);
+            }
 
         } catch (AddendumBundleHandler.AddendumBundleException e) {
             logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
@@ -380,18 +386,18 @@ public class SolutionKitManagerResource {
     private static final String TEST_BUNDLE_IMPORT_ERROR_MESSAGE_NO_NAME_GUID = "Test install/upgrade failed for solution kit: {0}";
 
     /**
-     * Attempt test install or upgrade (i.e. a dry run without committing) of the selected solution kits; handles potential conflicts.
+     * Attempt test install (i.e. a dry run without committing) of the selected solution kits; handles potential conflicts.
      *
      * @param solutionKitProcessor class containing the test install / upgrade logic
      * @param solutionKitAdminHelper the helper class used to call validating solution kit for install or upgrade
      * @throws SolutionKitManagerResourceException if an error happens during dry-run, holding the response.
      */
-    private void testInstallOrUpgrade(@NotNull final SolutionKitProcessor solutionKitProcessor,
-                                      @NotNull final SolutionKitAdminHelper solutionKitAdminHelper) throws SolutionKitManagerResourceException {
+    private void testInstall(@NotNull final SolutionKitProcessor solutionKitProcessor,
+                             @NotNull final SolutionKitAdminHelper solutionKitAdminHelper) throws SolutionKitManagerResourceException {
 
         final AtomicReference<SolutionKit> solutionKitReference = new AtomicReference<>();
         try {
-            solutionKitProcessor.testInstallOrUpgrade(new Functions.UnaryVoidThrows<Triple<SolutionKit, String, Boolean>, Throwable>() {
+            solutionKitProcessor.testInstall(new Functions.UnaryVoidThrows<Triple<SolutionKit, String, Boolean>, Throwable>() {
                 @Override
                 public void call(Triple<SolutionKit, String, Boolean> loaded) throws Throwable {
                     solutionKitReference.set(loaded.left);
@@ -424,6 +430,74 @@ public class SolutionKitManagerResource {
                                                     TEST_BUNDLE_IMPORT_ERROR_MESSAGE,
                                                     loaded.left.getName(),
                                                     loaded.left.getSolutionKitGuid(),
+                                                    lineSeparator() + mappingsStr + lineSeparator()
+                                            )
+                                    ).build()
+                            );
+                        }
+                    }
+                }
+
+            });
+        } catch (final ForbiddenException e) {
+            throw new SolutionKitManagerResourceException(status(FORBIDDEN).entity(getTestBundleImportErrorMessage(solutionKitReference.get(), e)).build(), e);
+        } catch (final BadRequestException e) {
+            throw new SolutionKitManagerResourceException(status(BAD_REQUEST).entity(getTestBundleImportErrorMessage(solutionKitReference.get(), e)).build(), e);
+        } catch (final SolutionKitConflictException e) {
+            throw new SolutionKitManagerResourceException(status(CONFLICT).entity(getTestBundleImportErrorMessage(solutionKitReference.get(), e)).build(), e);
+        } catch (final SolutionKitManagerResourceException e) {
+            throw e;
+        } catch (final Throwable e) {
+            throw new SolutionKitManagerResourceException(status(INTERNAL_SERVER_ERROR).entity(getTestBundleImportErrorMessage(solutionKitReference.get(), e)).build(), e);
+        }
+    }
+
+    /**
+     * Attempt test upgrade (i.e. a dry run without committing) of the selected solution kits; handles potential conflicts.
+     *
+     * @param solutionKitProcessor class containing the test install / upgrade logic
+     * @param solutionKitAdminHelper the helper class used to call validating solution kit for install or upgrade
+     * @throws SolutionKitManagerResourceException if an error happens during dry-run, holding the response.
+     */
+    private void testUpgrade(@NotNull final SolutionKitProcessor solutionKitProcessor,
+                             @NotNull final SolutionKitAdminHelper solutionKitAdminHelper) throws SolutionKitManagerResourceException {
+
+        final AtomicReference<SolutionKit> solutionKitReference = new AtomicReference<>();
+        try {
+            solutionKitProcessor.testUpgrade(new Functions.UnaryVoidThrows<SolutionKitInfo, Throwable>() {
+                @Override
+                public void call(SolutionKitInfo loaded) throws Throwable {
+                    final String mappingsStr = solutionKitAdminHelper.testUpgrade(loaded);
+                    final SolutionKit parentSK = loaded.getParentSolutionKit();
+                    //TODO: fix for single SK
+                    solutionKitReference.set(parentSK != null ? parentSK : loaded.getSolutionKitInstall().keySet().iterator().next());
+
+                    // no mappings; looks like there are no errors
+                    if (StringUtils.isNotBlank(mappingsStr)) {
+                        // create a RestmanMessage in order to parse error mappings
+                        final RestmanMessage message;
+                        try {
+                            message = new RestmanMessage(mappingsStr);
+                        } catch (final SAXException e) {
+                            throw new SolutionKitManagerResourceException(
+                                    status(INTERNAL_SERVER_ERROR).entity(
+                                            MessageFormat.format(
+                                                    TEST_BUNDLE_IMPORT_ERROR_MESSAGE,
+                                                    loaded.getParentSolutionKit().getName(),
+                                                    loaded.getParentSolutionKit().getSolutionKitGuid(),
+                                                    lineSeparator() + ExceptionUtils.getMessage(e) + lineSeparator()
+                                            )
+                                    ).build(),
+                                    e
+                            );
+                        }
+                        if (message.hasMappingErrorFromBundles()) {
+                            throw new SolutionKitManagerResourceException(
+                                    status(CONFLICT).entity(
+                                            MessageFormat.format(
+                                                    TEST_BUNDLE_IMPORT_ERROR_MESSAGE,
+                                                    loaded.getParentSolutionKit().getName(),
+                                                    loaded.getParentSolutionKit().getSolutionKitGuid(),
                                                     lineSeparator() + mappingsStr + lineSeparator()
                                             )
                                     ).build()

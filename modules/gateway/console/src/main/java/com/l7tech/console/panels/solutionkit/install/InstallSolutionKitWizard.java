@@ -78,43 +78,25 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
         }
 
         final  SolutionKitAdmin solutionKitAdmin = Registry.getDefault().getSolutionKitAdmin();
-        final List<Pair<String, SolutionKit>> errorKitList = new ArrayList<>();
-
         // install or upgrade
-        try {
-            final SolutionKitProcessor solutionKitProcessor = new SolutionKitProcessor(wizardInput, solutionKitAdmin);
-            solutionKitProcessor.installOrUpgrade(errorKitList, new Functions.UnaryVoidThrows<Triple<SolutionKit, String, Boolean>, Exception>() {
-
-                @Override
-                public void call(Triple<SolutionKit, String, Boolean> loaded) throws Exception {
-                    Either<String, Goid> result = AdminGuiUtils.doAsyncAdmin(
-                            solutionKitAdmin,
-                            InstallSolutionKitWizard.this.getOwner(),
-                            "Install Solution Kit",
-                            "The Gateway is installing solution kit: " + loaded.left.getName() + ".",
-                            solutionKitAdmin.installAsync(loaded.left, loaded.middle, loaded.right),
-                            false);
-
-                    if (result.isLeft()) {
-                        // Solution kit failed to install.
-                        String msg = result.left();
-                        logger.log(Level.WARNING, msg);
-                        errorKitList.add(new Pair<>(msg, loaded.left));
-                    }
-                }
-
-            });
-        } catch (Exception e) {
-            final String msg = "Unable to install solution kit: " + ExceptionUtils.getMessage(e);
-            logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
-            DialogDisplayer.showMessageDialog(this, msg, "Error", JOptionPane.ERROR_MESSAGE, null);
+        final SolutionKitProcessor solutionKitProcessor = new SolutionKitProcessor(wizardInput, solutionKitAdmin);
+        if (wizardInput.isUpgrade()) {
+            try {
+                upgrade(solutionKitAdmin, solutionKitProcessor);
+            } catch (Exception e) {
+                final String msg = "Unable to upgrade solution kit: " + ExceptionUtils.getMessage(e);
+                logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
+                DialogDisplayer.showMessageDialog(this, msg, "Error", JOptionPane.ERROR_MESSAGE, null);
+            }
+        } else {
+            try {
+                install(solutionKitAdmin, solutionKitProcessor);
+            } catch (Exception e) {
+                final String msg = "Unable to install solution kit: " + ExceptionUtils.getMessage(e);
+                logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
+                DialogDisplayer.showMessageDialog(this, msg, "Error", JOptionPane.ERROR_MESSAGE, null);
+            }
         }
-
-        // Display errors if applicable
-        if (! errorKitList.isEmpty()) {
-            displayErrorDialog(errorKitList);
-        }
-
         // Reload encapsulated assertions via Encapsulated Assertion Registry
         try {
             TopComponents.getInstance().getEncapsulatedAssertionRegistry().updateEncapsulatedAssertions();
@@ -125,6 +107,55 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
         // Finish installation no matter if successful or not
         super.finish(evt);
         wizardInput.clear();
+    }
+
+    private void install(SolutionKitAdmin solutionKitAdmin, SolutionKitProcessor solutionKitProcessor) throws Exception {
+        final List<Pair<String, SolutionKit>> errorKitList = new ArrayList<>();
+        solutionKitProcessor.install(errorKitList, new Functions.UnaryVoidThrows<Triple<SolutionKit, String, Boolean>, Exception>() {
+            @Override
+            public void call(Triple<SolutionKit, String, Boolean> loaded) throws Exception {
+                Either<String, Goid> result = AdminGuiUtils.doAsyncAdmin(
+                        solutionKitAdmin,
+                        InstallSolutionKitWizard.this.getOwner(),
+                        "Install Solution Kit",
+                        "The Gateway is installing solution kit: " + loaded.left.getName() + ".",
+                        solutionKitAdmin.installAsync(loaded.left, loaded.middle, loaded.right),
+                        false);
+
+                if (result.isLeft()) {
+                    // Solution kit failed to install.
+                    String msg = result.left();
+                    logger.log(Level.WARNING, msg);
+                    errorKitList.add(new Pair<>(msg, loaded.left));
+                }
+            }
+        });
+
+        // Display errors if applicable
+        if (!errorKitList.isEmpty()) {
+            displayErrorDialog(errorKitList);
+        }
+    }
+
+    private void upgrade(SolutionKitAdmin solutionKitAdmin, SolutionKitProcessor solutionKitProcessor) throws Exception {
+        solutionKitProcessor.upgrade(new Functions.UnaryVoidThrows<SolutionKitInfo, Exception>() {
+            @Override
+            public void call(SolutionKitInfo loaded) throws Exception {
+                Either<String, ArrayList> result = AdminGuiUtils.doAsyncAdmin(
+                        solutionKitAdmin,
+                        InstallSolutionKitWizard.this.getOwner(),
+                        "Upgrade Solution Kit",
+                        "Performing Upgrade. Please wait a moment.",
+                        solutionKitAdmin.upgradeAsync(loaded),
+                        false);
+
+                if (result.isLeft()) {
+                    // Solution kit failed to upgrade.
+                    String msg = result.left();
+                    logger.log(Level.WARNING, msg);
+                }
+            }
+        });
     }
 
     @SuppressWarnings("unused")

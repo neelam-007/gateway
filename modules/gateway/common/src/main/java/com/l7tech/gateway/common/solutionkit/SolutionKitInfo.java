@@ -1,10 +1,8 @@
 package com.l7tech.gateway.common.solutionkit;
 
 import com.l7tech.util.DeserializeSafe;
-import com.l7tech.util.Pair;
 
 import java.io.Serializable;
-import java.util.List;
 import java.util.Map;
 
 /**

@@ -176,14 +176,6 @@ public class SolutionKitsConfig {
         return customizations;
     }
 
-    public boolean isUpgradeInfoProvided(SolutionKit solutionKit) {
-        return upgradeInfoProvided.get(solutionKit);
-    }
-
-    public void setUpgradeInfoProvided(SolutionKit solutionKit, boolean upgradeInfo) {
-        upgradeInfoProvided.put(solutionKit, upgradeInfo);
-    }
-
     @NotNull
     public Map<String, Mapping> getInstallMappings(@NotNull String solutionKitGuid) {
         Map<String, Mapping> installMappings = installMappingsMap.get(solutionKitGuid);
