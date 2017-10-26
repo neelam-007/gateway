@@ -15,15 +15,26 @@ public class PortalDeployerClientManagerImpl implements PortalDeployerClientMana
   private PortalDeployerClient portalDeployerClient;
   private PortalDeployerClientConfigurationManager configurationManager;
   private PortalDeployerSslConfigurationManager sslConfigurationManager;
+  private PortalDeployerClientFactory portalDeployerClientFactory;
 
   PortalDeployerClientManagerImpl(final ApplicationContext context) {
-    configurationManager = new PortalDeployerClientConfigurationManagerImpl(context);
-    sslConfigurationManager = new PortalDeployerSslConfigurationManagerImpl(context);
+    this.configurationManager = new PortalDeployerClientConfigurationManagerImpl(context);
+    this.sslConfigurationManager = new PortalDeployerSslConfigurationManagerImpl(context);
+    this.portalDeployerClientFactory = new PortalDeployerClientFactory();
+  }
+
+  // Used for testing
+  PortalDeployerClientManagerImpl(PortalDeployerSslConfigurationManager portalDeployerSslConfigurationManager,
+                                  PortalDeployerClientConfigurationManager portalDeployerClientConfigurationManager,
+                                  PortalDeployerClientFactory portalDeployerClientFactory) {
+    this.configurationManager = portalDeployerClientConfigurationManager;
+    this.sslConfigurationManager = portalDeployerSslConfigurationManager;
+    this.portalDeployerClientFactory = portalDeployerClientFactory;
   }
 
   private synchronized PortalDeployerClient getClient() throws PortalDeployerConfigurationException, PortalDeployerClientException {
     if (portalDeployerClient == null) {
-      portalDeployerClient = new PortalDeployerClient(
+      portalDeployerClient = portalDeployerClientFactory.getClient(
           String.format("wss://%s/", configurationManager.getBrokerHost()),
           String.format("%s_%s_%s", configurationManager.getTenantId(), configurationManager.getTenantGatewayUuid(), "1"),
           String.format("%s/api/cmd/deploy/tenantGatewayUuid/%s", configurationManager.getTenantId(), configurationManager.getTenantGatewayUuid()),
