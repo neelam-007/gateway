@@ -13,7 +13,7 @@
         </rollback>
     </changeSet>
     <changeSet id="update_solution_kit_parents" author="gateway">
-        <comment>Iterate through the Solution Kit table and create a new Solution Kit parent for each unique instance</comment>
+        <comment>Iterate through the Solution Kit table and create a new Solution Kit parent for each unique instance modifier.</comment>
         <insert tableName="cluster_properties">
         <column name="goid" valueComputed="toGoid(0, -900303)"/>
         <column name="version" valueNumeric="0"/>

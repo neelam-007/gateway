@@ -5,10 +5,10 @@ import com.l7tech.objectmodel.*;
 
 import com.l7tech.server.solutionkit.SolutionKitManager;
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.*;
@@ -18,10 +18,10 @@ import java.util.logging.Logger;
 /**
  * This is an UpgradeTask that gets executed on Gateway startup when the proper cluster_properties record is inserted.
  * This program will update the data in the Solution Kit table so that there will be one Solution Kit record for each
- * parent Solution Kit (a Solution Kit which IsSollection==true) that has an unique instance modifier. The child Solution Kits
- * will be updated to point to the correct parent Solution Kit. If the Upgrade Task encounters an error, the NonfatalUpgradeException
- * is thrown and the upgrade will rollback. The gateway will continue with the startup.
- * <p>
+ * parent Solution Kit (a Solution Kit which IsCollection==true) that has an unique instance modifier. The child Solution Kits
+ * will be updated to point to the corresponding parent Solution Kit with matching Instance Modifier. If the Upgrade Task
+ * encounters an error, the NonfatalUpgradeException is thrown and the upgrade will rollback. The gateway will continue with the startup.
+ *
  * Created by chaja24 on 10/4/2017.
  */
 public class Upgrade9200To9300SolutionKits implements UpgradeTask {
@@ -49,16 +49,16 @@ public class Upgrade9200To9300SolutionKits implements UpgradeTask {
     }
 
     /**
-     * upgradeSolutionKitDatabaseTable - This is the main routine that updates the Solution Kit table records.
+     * This is the main routine that updates the Solution Kit table records.
      * If the upgrade fails, the NonfatalUpgradeException is thrown and the entire Solution Kit table record modifications
      * are reverted.
      *
-     * @param solutionKitManager
-     * @throws NonfatalUpgradeException
+     * @param solutionKitManager - the reference to the SolutionKitManager for querying & updating the Solution Kit database table.
+     * @throws NonfatalUpgradeException - occurs during any exception resulting from reading/writing from/to the SK database table.
      */
     private void upgradeSolutionKitDatabaseTable(final SolutionKitManager solutionKitManager) throws NonfatalUpgradeException {
 
-        final Set<Goid> parentSolutionKitHasNoInstanceModSet = new HashSet<>();
+        final Set<Goid> parentSKWithNoInstanceModSet = new HashSet<>();
         final Collection<SolutionKit> solutionKitCollection;
 
         try {
@@ -79,66 +79,69 @@ public class Upgrade9200To9300SolutionKits implements UpgradeTask {
         for (final SolutionKit solutionKit : solutionKitCollection) {
 
             final Goid parentGoid = solutionKit.getParentGoid();
-            final String solutionKitInstanceModifer = solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY);
+            final String solutionKitInstanceModifier = solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY);
 
             if (parentGoid == null) {
                 // This must be a parent (skar of skar) or a regular Solution Kit without a parent.
-                if ((StringUtils.isEmpty(solutionKitInstanceModifer)) && (Boolean.valueOf(solutionKit.getProperty(SolutionKit.SK_PROP_IS_COLLECTION_KEY)))) {
+                if ((StringUtils.isBlank(solutionKitInstanceModifier)) && (Boolean.valueOf(solutionKit.getProperty(SolutionKit.SK_PROP_IS_COLLECTION_KEY)))) {
                     // Add the Solution Kit which does not have an instance modifier and is a parent Solution Kit to
-                    // the parentSolutionKitHasNoInstanceModSet
-                    parentSolutionKitHasNoInstanceModSet.add(solutionKit.getGoid());
+                    // the parentSKWithNoInstanceModSet
+                    parentSKWithNoInstanceModSet.add(solutionKit.getGoid());
                 }
                 continue;
             }
 
             try {
-                // Process the child/regular Solution Kit
+                // Process the child Solution Kit
                 final SolutionKit parentSolutionKit = solutionKitManager.findByPrimaryKey(parentGoid);
                 if (parentSolutionKit == null) {
-                    logger.log(Level.WARNING, "Could not find parent Solution Kit for child Solution Kit:{0} with instance:{1}",
-                            new Object[]{solutionKit.getName(), solutionKitInstanceModifer});
+                    logger.log(Level.WARNING, "Could not find parent Solution Kit for child Solution Kit: {0} with instance: {1}." +
+                            "The parent Goid will be set to null and this Solution Kit will become a standalone.",
+                            new Object[]{solutionKit.getName(), solutionKitInstanceModifier});
+                    solutionKit.setParentGoid(Goid.DEFAULT_GOID);
+                    updateSolutionKit(transactionManager, solutionKitManager, solutionKit);
                     continue;
                 }
 
                 // check if the parent Solution Kit already exist for this instance.
                 final SolutionKit parentSolutionKitWithInstanceModifier =
-                        solutionKitManager.findBySolutionKitGuidAndIM(parentSolutionKit.getSolutionKitGuid(), solutionKitInstanceModifer);
+                        solutionKitManager.findBySolutionKitGuidAndIM(parentSolutionKit.getSolutionKitGuid(), solutionKitInstanceModifier);
 
                 if (parentSolutionKitWithInstanceModifier == null) {
                     // parent Solution Kit with matching instance modifier was not found.  Create new parent Solution Kit of for the instance.
+
+                    final SolutionKit newParentSK = cloneSolutionKit(parentSolutionKit);
+                    newParentSK.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, solutionKitInstanceModifier);
+
                     final Goid newParentGoid = createParentSolutionKit(transactionManager,
                             solutionKitManager,
-                            parentSolutionKit,
-                            solutionKitInstanceModifer);
+                            newParentSK);
                     // Update the child instance to point to the parent.
                     solutionKit.setParentGoid(newParentGoid);
                     updateSolutionKit(transactionManager, solutionKitManager, solutionKit);
 
-                } else {
-                    // parent Solution Kit with matching instance modifier was found.  Update the child to point to the
-                    // existing parent Solution Kit with matching instance modifier.
-                    if (!Goid.equals(parentGoid, parentSolutionKitWithInstanceModifier.getGoid())) {
+                } else if (!Goid.equals(parentGoid, parentSolutionKitWithInstanceModifier.getGoid())) {
+                        // parent Solution Kit with matching instance modifier was found. If the Solution Kit parent Goid
+                        // needs updating, update the child to point to the existing parent Solution Kit with matching instance modifier.
                         solutionKit.setParentGoid(parentSolutionKitWithInstanceModifier.getGoid());
                         updateSolutionKit(transactionManager, solutionKitManager, solutionKit);
-                    }
                 }
             } catch (Exception e) {
-                logger.log(Level.WARNING, "Exception caught while processing SolutionKit:{0} Instance: {1} Message:{2}",
+                logger.log(Level.WARNING, "Exception caught while processing SolutionKit: {0} Instance: {1} Message: {2}",
                         new Object[]{solutionKit.getName(), solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY), e.toString()});
                 throw new NonfatalUpgradeException();
             }
         }
 
-        removeParentSolutionKitsWithNoInstance(solutionKitManager, parentSolutionKitHasNoInstanceModSet);
+        removeParentSolutionKitsWithNoInstance(solutionKitManager, parentSKWithNoInstanceModSet);
     }
 
     /**
-     * removeParentSolutionKitsWithNoInstance - remove any parent Solution Kits with no instance modifiers if
-     * the parent has no children.
+     *  remove any parent Solution Kits with no instance modifiers if the parent has no children.
      *
-     * @param solutionKitManager
-     * @param parentSolutionKitHasNoInstanceModSet
-     * @throws NonfatalUpgradeException
+     * @param solutionKitManager - the reference to the SolutionKitManager for querying & updating the Solution Kit database table.
+     * @param parentSolutionKitHasNoInstanceModSet - a set of parent Solution Kits that have no instance modifiers.
+     * @throws NonfatalUpgradeException - occurs during any exception resulting from reading/writing from/to the SK database table.
      */
     private void removeParentSolutionKitsWithNoInstance(final SolutionKitManager solutionKitManager,
                                                         final Set<Goid> parentSolutionKitHasNoInstanceModSet) throws NonfatalUpgradeException {
@@ -148,7 +151,7 @@ public class Upgrade9200To9300SolutionKits implements UpgradeTask {
             try {
                 final Collection colChildSK = solutionKitManager.findAllChildrenByParentGoid(parentSKGoid);
 
-                if (colChildSK.size() == 0) {
+                if (colChildSK.isEmpty()) {
                     solutionKitManager.delete(parentSKGoid);
                     numDeleteParentSK++;
                 }
@@ -189,52 +192,38 @@ public class Upgrade9200To9300SolutionKits implements UpgradeTask {
         sk.setSolutionKitVersion(sourceSolutionKit.getSolutionKitVersion());
         sk.setUninstallBundle(sourceSolutionKit.getUninstallBundle());
         sk.setXmlProperties(sourceSolutionKit.getXmlProperties());
-        sk.setSolutionKitVersion(sourceSolutionKit.getSolutionKitVersion());
 
         return sk;
     }
 
-    //
 
     /**
-     * createParentSolutionKit - create a parent Solution Kit record. Provide a Solution Kit object. When the method is invoked,
+     * Create a parent Solution Kit record. Provide a Solution Kit object. When the method is invoked,
      * a Solution Kit record will be created in the database.  The Goid of the new record is returned.
      * The method is performed in a transaction and flushed so that other queries performed in this module
      * will see the new records in the database.
-     * @param transactionManager
-     * @param solutionKitManager
-     * @param existingParentSolutionKit
-     * @param instanceModifier
-     * @return Goid
+     * @param transactionManager - PlatformTransactionManager to enable the Solution Kit table record to be created and flushed
+     *                           so that other queries will see the new record.
+     * @param solutionKitManager - the reference to the SolutionKitManager for updating the Solution Kit database table.
+     * @return Goid - the Goid of the new Solution Kit.
      * @throws SaveException
-     * @throws NonfatalUpgradeException
+     * @throws NonfatalUpgradeException - occurs during any exception resulting from writing to the SK database table.
      */
     private Goid createParentSolutionKit(final PlatformTransactionManager transactionManager,
                                          final SolutionKitManager solutionKitManager,
-                                         final SolutionKit existingParentSolutionKit,
-                                         final String instanceModifier) throws SaveException, NonfatalUpgradeException {
-
-
-        if (existingParentSolutionKit == null) {
-            logger.log(Level.WARNING, "The existing Solution Kit should not be null.");
-            throw new NonfatalUpgradeException();
-        }
-
-        final SolutionKit newParentSK = cloneSolutionKit(existingParentSolutionKit);
-        newParentSK.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, instanceModifier);
-        // Should generate a new Solution Kit instance.
+                                         @NotNull final SolutionKit newParentSK) throws SaveException, NonfatalUpgradeException {
 
         final TransactionTemplate tt = new TransactionTemplate(transactionManager);
         tt.setReadOnly(false);
-        final Goid goid = (Goid) tt.execute((TransactionCallback) transactionStatus -> {
+        final Goid goid = tt.execute( transactionStatus -> {
             try {
                 final Goid newGoid = solutionKitManager.save(newParentSK);
                 transactionStatus.flush();
                 numNewParentSK++;
                 return newGoid;
             } catch (SaveException e) {
-                logger.log(Level.WARNING, "Exception caught while trying save new parent Solution Kit:{0} for instance:{1}",
-                        new Object[]{newParentSK.getName(), instanceModifier});
+                logger.log(Level.WARNING, "Exception caught while trying save new parent Solution Kit: {0} for instance: {1}",
+                        new Object[]{newParentSK.getName(), newParentSK.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY)});
                 return null;
             }
         });
@@ -251,10 +240,11 @@ public class Upgrade9200To9300SolutionKits implements UpgradeTask {
      * exists in the Solution Kit table. The Solution Kit provided to this method may have newer attribute values than what is stored
      * in the table.  When the method is invoked, the previous values in the database will be over written with the newer ones.
      * The update is done in a transaction which is immediately flushed so that other queries in this module will see the update.
-     * @param transactionManager
-     * @param solutionKitManager
-     * @param solutionKit
-     * @throws NonfatalUpgradeException
+     * @param transactionManager - PlatformTransactionManager to enable the Solution Kit table record to be created and flushed
+     *                           so that other queries will see the new record.
+     * @param solutionKitManager - the reference to the SolutionKitManager for updating the Solution Kit database table.
+     * @param solutionKit - the Solution Kit to record to the Solution Kit database table.
+     * @throws NonfatalUpgradeException - occurs during any exception resulting from writing to the SK database table.
      */
     private void updateSolutionKit(final PlatformTransactionManager transactionManager,
                                    final SolutionKitManager solutionKitManager,
@@ -262,7 +252,7 @@ public class Upgrade9200To9300SolutionKits implements UpgradeTask {
 
         final TransactionTemplate tt = new TransactionTemplate(transactionManager);
         tt.setReadOnly(false);
-        final boolean success = (boolean) tt.execute((TransactionCallback) transactionStatus -> {
+        final boolean success = tt.execute(transactionStatus -> {
             try {
                 solutionKitManager.update(solutionKit);
                 transactionStatus.flush();
@@ -277,6 +267,5 @@ public class Upgrade9200To9300SolutionKits implements UpgradeTask {
         if (!success) {
             throw new NonfatalUpgradeException();
         }
-
     }
 }
