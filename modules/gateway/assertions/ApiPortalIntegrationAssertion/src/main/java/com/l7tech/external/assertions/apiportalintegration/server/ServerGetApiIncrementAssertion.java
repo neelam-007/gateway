@@ -137,7 +137,7 @@ public class ServerGetApiIncrementAssertion extends AbstractServerAssertion<GetA
             "    a.PUBLISHED_BY_PORTAL AS PUBLISHED_BY_PORTAL,\n" +
             "    a.SSG_URL AS SSG_URL\n" +
             "FROM\n" +
-            "   API a LEFT JOIN API_TENANT_GATEWAY atg on atg.API_UUID = a.UUID\n" +
+            "   API a LEFT JOIN API_TENANT_GATEWAY atg on atg.API_UUID = a.UUID and atg.TENANT_ID = o.TENANT_ID \n" +
             "WHERE a.TENANT_ID = ? and atg.TENANT_GATEWAY_UUID = ?",
         CollectionUtils.list(tenantId, nodeId));
 
