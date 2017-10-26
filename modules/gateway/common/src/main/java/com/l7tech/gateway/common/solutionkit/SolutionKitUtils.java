@@ -417,10 +417,9 @@ public final class SolutionKitUtils {
      * This is mainly used to create new instances of parent solution kits.
      * @param sourceSK The SolutionKit source to copy from
      * @param resultSK The solution kit to hold the result.
-     * @param instanceModifier The new instance modifier to apply to the new parent solution kit
      * @return resultSK is the copied solution kit
      */
-    static SolutionKit copyParentSolutionKitWithIM(@NotNull final SolutionKit sourceSK, @NotNull final SolutionKit resultSK, @Nullable final String instanceModifier) {
+    public static SolutionKit copyParentSolutionKit(@NotNull final SolutionKit sourceSK, @NotNull final SolutionKit resultSK) {
         resultSK.setSolutionKitGuid(sourceSK.getSolutionKitGuid());
         resultSK.setSolutionKitVersion(sourceSK.getSolutionKitVersion());
         resultSK.setName(sourceSK.getName());
@@ -428,7 +427,6 @@ public final class SolutionKitUtils {
         resultSK.setLastUpdateTime(sourceSK.getLastUpdateTime());
         resultSK.setXmlProperties(sourceSK.getXmlProperties());
         resultSK.setInstallationXmlProperties(sourceSK.getInstallationXmlProperties());
-        resultSK.setProperty(SK_PROP_INSTANCE_MODIFIER_KEY, instanceModifier);
         return resultSK;
     }
 

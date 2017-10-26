@@ -1223,7 +1223,5 @@ public class SolutionKitAdminHelperTest {
         }
     }
 
-
-
     // TODO: add more SolutionKitAdminHelper tests here
 }

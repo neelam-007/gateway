@@ -53,10 +53,10 @@ public class SolutionKitProcessorTest {
         // solution kits for the test
         final int numberOfSolutionKits = 2;
         final Set<SolutionKit> selectedSolutionKits = new HashSet<>(numberOfSolutionKits);
-        SolutionKit solutionKit1 = new SolutionKitBuilder()
+        final SolutionKit solutionKit1 = new SolutionKitBuilder()
                 .name("SK1").build();
         selectedSolutionKits.add(solutionKit1);
-        SolutionKit solutionKit2 = new SolutionKitBuilder()
+        final SolutionKit solutionKit2 = new SolutionKitBuilder()
                 .name("SK2").build();
         selectedSolutionKits.add(solutionKit2);
         when(solutionKitsConfig.getSelectedSolutionKits()).thenReturn(selectedSolutionKits);
@@ -105,10 +105,10 @@ public class SolutionKitProcessorTest {
                 .name("ParentSK")
                 .skGuid("SameGuid")
                 .skVersion("2.0")
-                .addProperty(SolutionKit.SK_PROP_TIMESTAMP_KEY,"testStamp")
+                .addProperty(SolutionKit.SK_PROP_TIMESTAMP_KEY, "testStamp")
                 .addProperty(SolutionKit.SK_PROP_DESC_KEY, "test")
                 .addProperty(SolutionKit.SK_PROP_IS_COLLECTION_KEY, "true")
-                .addProperty(SolutionKit.SK_PROP_FEATURE_SET_KEY,"testFeature")
+                .addProperty(SolutionKit.SK_PROP_FEATURE_SET_KEY, "testFeature")
                 .addProperty(SolutionKit.SK_PROP_ALLOW_ADDENDUM_KEY, "false")
                 .addProperty(SolutionKit.SK_PROP_CUSTOM_UI_KEY, "test.java")
                 .addProperty(SolutionKit.SK_PROP_CUSTOM_CALLBACK_KEY, "test.java")
@@ -121,17 +121,17 @@ public class SolutionKitProcessorTest {
                 .name("ParentSK")
                 .skGuid("SameGuid")
                 .skVersion("1.0")
-                .addProperty(SolutionKit.SK_PROP_TIMESTAMP_KEY,"testStamp")
+                .addProperty(SolutionKit.SK_PROP_TIMESTAMP_KEY, "testStamp")
                 .addProperty(SolutionKit.SK_PROP_DESC_KEY, "test")
                 .addProperty(SolutionKit.SK_PROP_IS_COLLECTION_KEY, "true")
-                .addProperty(SolutionKit.SK_PROP_FEATURE_SET_KEY,"testFeature")
+                .addProperty(SolutionKit.SK_PROP_FEATURE_SET_KEY, "testFeature")
                 .addProperty(SolutionKit.SK_PROP_ALLOW_ADDENDUM_KEY, "false")
                 .addProperty(SolutionKit.SK_PROP_CUSTOM_CALLBACK_KEY, "test.java")
                 .addProperty(SolutionKit.SK_PROP_CUSTOM_UI_KEY, "test.java")
                 .addProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, "IM1")
                 .goid(new Goid(0, 1))
                 .build();
-        when(solutionKitAdmin.get(parentSolutionKitFromDb.getSolutionKitGuid(),"IM1")).thenReturn(parentSolutionKitFromDb);
+        when(solutionKitAdmin.get(parentSolutionKitFromDb.getSolutionKitGuid(), "IM1")).thenReturn(parentSolutionKitFromDb);
 
         // skar of skar for the test
         final int numberOfSolutionKits = 1;
@@ -155,9 +155,9 @@ public class SolutionKitProcessorTest {
             fail("Exception should've been thrown");
         } catch (SolutionKitConflictException e) {
             assertEquals("Solution kit versions are different",
-                    "Install failure: Install process attempts to overwrite an existing parent solution kit " +
-                            "('SameGuid' with instance modifier 'IM1') with a new solution kit that has different properties. " +
-                            "Please install again with a different instance modifier.",
+                    "<html>Install failure: Install process attempts to overwrite an existing parent Solution " +
+                            "Kit ('SameGuid' with instance modifier 'IM1')<br/> with a new Solution Kit that has " +
+                            "different properties. Please install again with a different instance modifier.</html>",
                     e.getMessage());
         }
     }
@@ -172,10 +172,10 @@ public class SolutionKitProcessorTest {
                 .name("ParentSK")
                 .skGuid("SameGuid")
                 .skVersion("1.0")
-                .addProperty(SolutionKit.SK_PROP_TIMESTAMP_KEY,"testStamp")
+                .addProperty(SolutionKit.SK_PROP_TIMESTAMP_KEY, "testStamp")
                 .addProperty(SolutionKit.SK_PROP_DESC_KEY, "test")
                 .addProperty(SolutionKit.SK_PROP_IS_COLLECTION_KEY, "true")
-                .addProperty(SolutionKit.SK_PROP_FEATURE_SET_KEY,"testFeature")
+                .addProperty(SolutionKit.SK_PROP_FEATURE_SET_KEY, "testFeature")
                 .addProperty(SolutionKit.SK_PROP_ALLOW_ADDENDUM_KEY, "false")
                 .addProperty(SolutionKit.SK_PROP_CUSTOM_CALLBACK_KEY, "test.java")
                 .addProperty(SolutionKit.SK_PROP_CUSTOM_UI_KEY, "test.java")
@@ -188,17 +188,17 @@ public class SolutionKitProcessorTest {
                 .name("ParentSK")
                 .skGuid("SameGuid")
                 .skVersion("1.0")
-                .addProperty(SolutionKit.SK_PROP_TIMESTAMP_KEY,"testStamp")
+                .addProperty(SolutionKit.SK_PROP_TIMESTAMP_KEY, "testStamp")
                 .addProperty(SolutionKit.SK_PROP_DESC_KEY, "test")
                 .addProperty(SolutionKit.SK_PROP_IS_COLLECTION_KEY, "true")
-                .addProperty(SolutionKit.SK_PROP_FEATURE_SET_KEY,"testFeature")
+                .addProperty(SolutionKit.SK_PROP_FEATURE_SET_KEY, "testFeature")
                 .addProperty(SolutionKit.SK_PROP_ALLOW_ADDENDUM_KEY, "false")
                 .addProperty(SolutionKit.SK_PROP_CUSTOM_CALLBACK_KEY, "test.java")
                 .addProperty(SolutionKit.SK_PROP_CUSTOM_UI_KEY, "test.java")
                 .addProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, "IM1")
                 .goid(new Goid(0, 1))
                 .build();
-        when(solutionKitAdmin.get(parentSolutionKitFromDb.getSolutionKitGuid(),"IM1")).thenReturn(parentSolutionKitFromDb);
+        when(solutionKitAdmin.get(parentSolutionKitFromDb.getSolutionKitGuid(), "IM1")).thenReturn(parentSolutionKitFromDb);
 
         // skar of skar for the test
         final int numberOfSolutionKits = 1;
@@ -229,10 +229,10 @@ public class SolutionKitProcessorTest {
         // solution kits for the test
         final int numberOfSolutionKits = 2;
         final Set<SolutionKit> selectedSolutionKits = new HashSet<>(numberOfSolutionKits);
-        SolutionKit solutionKit1 = new SolutionKitBuilder()
+        final SolutionKit solutionKit1 = new SolutionKitBuilder()
                 .name("SK1").build();
         selectedSolutionKits.add(solutionKit1);
-        SolutionKit solutionKit2 = new SolutionKitBuilder()
+        final SolutionKit solutionKit2 = new SolutionKitBuilder()
                 .name("SK2").build();
         selectedSolutionKits.add(solutionKit2);
 
@@ -275,7 +275,7 @@ public class SolutionKitProcessorTest {
     @Test
     public void installOrUpgradeWithParent() throws Exception {
         // parent skar for the test
-        SolutionKit parentSolutionKit = new SolutionKitBuilder()
+        final SolutionKit parentSolutionKit = new SolutionKitBuilder()
                 .name("ParentSK")
                 .skGuid("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz")
                 .goid(new Goid(0, 1))
@@ -285,12 +285,12 @@ public class SolutionKitProcessorTest {
         // skar of skar for the test
         final int numberOfSolutionKits = 2;
         final Set<SolutionKit> selectedSolutionKits = new HashSet<>(numberOfSolutionKits);
-        SolutionKit solutionKit1 = new SolutionKitBuilder()
+        final SolutionKit solutionKit1 = new SolutionKitBuilder()
                 .name("SK1")
                 .parent(parentSolutionKit)
                 .build();
         selectedSolutionKits.add(solutionKit1);
-        SolutionKit solutionKit2 = new SolutionKitBuilder()
+        final SolutionKit solutionKit2 = new SolutionKitBuilder()
                 .name("SK2")
                 .parent(parentSolutionKit)
                 .build();
@@ -299,12 +299,12 @@ public class SolutionKitProcessorTest {
 
         // test parent not yet saved on Gateway calls solutionKitAdmin.save()
         solutionKitProcessor.installOrUpgrade();
-        ArgumentCaptor<SolutionKit> parentSKCaptor = ArgumentCaptor.forClass(SolutionKit.class);
+        final ArgumentCaptor<SolutionKit> parentSKCaptor = ArgumentCaptor.forClass(SolutionKit.class);
         verify(solutionKitAdmin).save(parentSKCaptor.capture());
         assertEquals("ParentSK", parentSKCaptor.getValue().getName());
 
         // test parent already saved on Gateway calls solutionKitAdmin.update() - install code path
-        when(solutionKitAdmin.get(parentSolutionKit.getSolutionKitGuid(), "")).thenReturn(parentSolutionKit);
+        when(solutionKitAdmin.get(parentSolutionKit.getSolutionKitGuid(), null)).thenReturn(parentSolutionKit);
         solutionKitProcessor.installOrUpgrade();
         verify(solutionKitAdmin).update(parentSolutionKit);
 
@@ -318,7 +318,7 @@ public class SolutionKitProcessorTest {
     @Test
     public void installChildrenWithDifferentIM() throws Exception {
         // parent skar for the test
-        SolutionKit parentSolutionKit = new SolutionKitBuilder()
+        final SolutionKit parentSolutionKit = new SolutionKitBuilder()
                 .name("ParentSK")
                 .skGuid("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz")
                 .goid(new Goid(0, 1))
@@ -328,13 +328,13 @@ public class SolutionKitProcessorTest {
         // skar of skar for the test
         final int numberOfSolutionKits = 2;
         final Set<SolutionKit> selectedSolutionKits = new HashSet<>(numberOfSolutionKits);
-        SolutionKit solutionKit1 = new SolutionKitBuilder()
+        final SolutionKit solutionKit1 = new SolutionKitBuilder()
                 .name("SK1")
                 .parent(parentSolutionKit)
                 .addProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, "test1")
                 .build();
         selectedSolutionKits.add(solutionKit1);
-        SolutionKit solutionKit2 = new SolutionKitBuilder()
+        final SolutionKit solutionKit2 = new SolutionKitBuilder()
                 .name("SK2")
                 .parent(parentSolutionKit)
                 .addProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, "test2")
@@ -345,9 +345,9 @@ public class SolutionKitProcessorTest {
         //test: Install should make new parents
         solutionKitProcessor.installOrUpgrade();
         //verify that two different parents were saved, one for test1, the other for test2
-        ArgumentCaptor<SolutionKit> parentSKCaptor = ArgumentCaptor.forClass(SolutionKit.class);
+        final ArgumentCaptor<SolutionKit> parentSKCaptor = ArgumentCaptor.forClass(SolutionKit.class);
         verify(solutionKitAdmin, times(2)).save(parentSKCaptor.capture());
-        List<SolutionKit> allParents = parentSKCaptor.getAllValues();
+        final List<SolutionKit> allParents = parentSKCaptor.getAllValues();
         assertEquals(2, parentSKCaptor.getAllValues().size());
         assertEquals("test2", allParents.get(0).getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY));
         assertEquals("test1", allParents.get(1).getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY));
@@ -358,7 +358,7 @@ public class SolutionKitProcessorTest {
     @Test
     public void upgradeChildrenWithSameIM() throws Exception {
         // parent skar for the test
-        SolutionKit parentSolutionKit = new SolutionKitBuilder()
+        final SolutionKit parentSolutionKit = new SolutionKitBuilder()
                 .name("ParentSK")
                 .skGuid("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz")
                 .addProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, "same")
@@ -369,13 +369,13 @@ public class SolutionKitProcessorTest {
         // skar of skar for the test
         final int numberOfSolutionKits = 2;
         final Set<SolutionKit> selectedSolutionKits = new HashSet<>(numberOfSolutionKits);
-        SolutionKit solutionKit1 = new SolutionKitBuilder()
+        final SolutionKit solutionKit1 = new SolutionKitBuilder()
                 .name("SK1")
                 .parent(parentSolutionKit)
                 .addProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, "same")
                 .build();
         selectedSolutionKits.add(solutionKit1);
-        SolutionKit solutionKit2 = new SolutionKitBuilder()
+        final SolutionKit solutionKit2 = new SolutionKitBuilder()
                 .name("SK2")
                 .addProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, "same")
                 .build();
@@ -387,7 +387,7 @@ public class SolutionKitProcessorTest {
         when(solutionKitsConfig.getSolutionKitToUpgrade(parentSolutionKit.getSolutionKitGuid())).thenReturn(parentSolutionKit);
         solutionKitProcessor.installOrUpgrade();
         //verify instance modifier "same" is updated once
-        ArgumentCaptor<SolutionKit> updateParentCaptor = ArgumentCaptor.forClass(SolutionKit.class);
+        final ArgumentCaptor<SolutionKit> updateParentCaptor = ArgumentCaptor.forClass(SolutionKit.class);
         verify(solutionKitAdmin).update(updateParentCaptor.capture());
         assertEquals("same", updateParentCaptor.getValue().getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY));
         verifyChildrenInstalled(numberOfSolutionKits, solutionKit1, solutionKit2);
@@ -396,7 +396,7 @@ public class SolutionKitProcessorTest {
     @Test
     public void upgradeParentIMToDifferentIMError() throws Exception {
         // parent skar for the test
-        SolutionKit parentSolutionKit = new SolutionKitBuilder()
+        final SolutionKit parentSolutionKit = new SolutionKitBuilder()
                 .name("ParentSK")
                 .skGuid("zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz")
                 .addProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, "same")
@@ -407,7 +407,7 @@ public class SolutionKitProcessorTest {
         // skar of skar for the test
         final int numberOfSolutionKits = 1;
         final Set<SolutionKit> selectedSolutionKits = new HashSet<>(numberOfSolutionKits);
-        SolutionKit solutionKit1 = new SolutionKitBuilder()
+        final SolutionKit solutionKit1 = new SolutionKitBuilder()
                 .name("SK1")
                 .parent(parentSolutionKit)
                 .addProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, "different")
@@ -564,8 +564,10 @@ public class SolutionKitProcessorTest {
 
         solutionKitProcessor = new SolutionKitProcessor(solutionKitsConfig, solutionKitAdmin);
     }
-    
-    private void verifyChildrenInstalled(int numberOfSolutionKits, SolutionKit solutionKit1, SolutionKit solutionKit2) throws Exception {
+
+    private void verifyChildrenInstalled(final int numberOfSolutionKits,
+                                         final SolutionKit solutionKit1,
+                                         final SolutionKit solutionKit2) throws Exception {
         // test children are installed
         // make sure setMappingTargetIdsFromResolvedIds() called
         verify(solutionKitsConfig).setMappingTargetIdsFromResolvedIds(solutionKit1);
@@ -574,4 +576,5 @@ public class SolutionKitProcessorTest {
         // make sure solutionKitAdmin.install() called
         verify(solutionKitAdmin, times(numberOfSolutionKits)).install(any(SolutionKit.class), anyString(), anyBoolean());
     }
+
 }
