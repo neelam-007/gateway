@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.l7tech.external.assertions.portaldeployer.server.client.util.RequestResponse;
 import com.l7tech.external.assertions.portaldeployer.server.client.util.RequestUtil;
 import com.l7tech.external.assertions.portaldeployer.server.client.util.RequestUtilImpl;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.net.ssl.SSLSocketFactory;
@@ -134,16 +136,30 @@ public class MessageProcessor {
         sourceResponse = getRequestUtil().processRequest(sourceLocation, null, null, null, null, sourceOperation, sslSocketFactory);
         logger.log(Level.FINE, String.format("source response code %s", sourceResponse.getCode()));
 
+      } else if (sourceOperation.equals("base64")) {
+        byte[] decoded = Base64.getDecoder().decode(sourceLocation);
+        String payload = new String(decoded, StandardCharsets.UTF_8);
+        sourceResponse = new RequestResponse(200, payload);
       } else {
         logger.log(Level.FINE, "unsupported Location type");
       }
       if (sourceResponse != null) {
         targetResponse = getRequestUtil().processRequest(targetLocation, null, null, sourceResponse.getBody(), targetContentType, targetOperation, sslSocketFactory);
-        callbackResponse = getRequestUtil().processRequest(callbackLocation, null, null, targetResponse.getBody(), callbackContentType, callbackOperation, sslSocketFactory);
-        logger.log(Level.FINE, String.format("target response code %s, callback response code %s, callback body %s", targetResponse.getCode(), callbackResponse.getCode(), callbackResponse.getBody()));
+        CallbackDto callback = new CallbackDto();
+        callback.setLastTimeDeployed(System.currentTimeMillis());
+        callback.setMessage(targetResponse.getBody());
+        callback.setStatus(String.valueOf(targetResponse.getCode()));
+        String callbackBody = mapper.writeValueAsString(callback);
+        callbackResponse = getRequestUtil().processRequest(callbackLocation, null, null, callbackBody, callbackContentType, callbackOperation, sslSocketFactory);
+        if (callbackResponse != null && (callbackResponse.getCode() >= 200 && callbackResponse.getCode() < 300)) {
+          result = true;
+        }
+        logger.log(Level.FINE, String.format("target response code %s, callback response code %s, callback body %s", targetResponse.getCode(), callbackResponse != null ? callbackResponse.getCode() : "was null", callbackResponse != null ? callbackResponse.getBody() : "was null"));
       }
 
-    } catch (Exception e) {
+    } catch (Exception e)
+
+    {
       logger.log(Level.SEVERE, "There was performAction for message ", e);
     }
     return result;

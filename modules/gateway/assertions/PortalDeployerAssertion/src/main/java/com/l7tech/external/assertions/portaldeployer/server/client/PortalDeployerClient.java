@@ -1,6 +1,5 @@
 package com.l7tech.external.assertions.portaldeployer.server.client;
 
-import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.net.ssl.SSLSocketFactory;
@@ -73,34 +72,12 @@ public class PortalDeployerClient implements MqttCallback {
   }
 
   public void sendMessage(String message) {
-    if (mqttClient.isConnected()) {
-      try {
-        MqttMessage mqttMessage = new MqttMessage(("test" + new Random().nextInt()).getBytes());
-        mqttMessage.setQos(1);
-        mqttMessage.setRetained(false);
-        //mqttClient.publish("apim/d790dc77-fad8-11e6-9a60-0242ac11000f/deploy", mqttMessage);
-        mqttClient.publish("moo", mqttMessage);
-      } catch (MqttException e) {
-        logger.log(Level.SEVERE, "Exception thrown in startMqttClientThread", e);
-      }
-    } else {
-      logger.log(Level.WARNING, "Can't send message since client isn't connected");
-    }
+    //todo
   }
 
   @Override
   public void connectionLost(Throwable cause) {
-    logger.log(Level.WARNING, "Exception thrown in startMqttClientThread", cause);
-    if (!mqttClient.isConnected()) {
-      try {
-        Thread.sleep(30000);//wait 30 seconds then reconnect
-      } catch (InterruptedException ex) {
-        logger.log(Level.INFO, "Thread interrupted", ex);
-        Thread.currentThread().interrupt();
-      }
-      //TODO: who should handle re-connect failures & retries??? startClient should
-      this.startClient();
-    }
+    //todo
   }
 
   @Override

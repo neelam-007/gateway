@@ -17,7 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * A plain java.net implementation of RequestUtil to minimize 3rd party dependencys
+ * A plain java.net implementation of RequestUtil to minimize 3rd party dependencies
  *
  * @author rraquepo
  */
