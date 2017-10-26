@@ -113,25 +113,19 @@ public class PortalDeployerModuelLoadListener implements ApplicationListener {
 
   private void startManager() {
     logger.log(Level.INFO, "Starting Portal Deployer MQTT Client");
-    Thread t = new Thread(() -> {
-      try {
-        portalDeployerClientManager.start();
-      } catch (PortalDeployerClientException | PortalDeployerConfigurationException e) {
-        logger.log(Level.WARNING, "exception caught when starting portal deployer manager", e);
-      }
-    });
-    t.start();
+    try {
+      portalDeployerClientManager.start();
+    } catch (PortalDeployerClientException | PortalDeployerConfigurationException e) {
+      logger.log(Level.WARNING, "exception caught when starting portal deployer manager", e);
+    }
   }
 
   private void stopManager() {
     logger.log(Level.INFO, "Stopping Portal Deployer MQTT Client");
-    Thread t = new Thread(() -> {
-      try {
-        portalDeployerClientManager.stop();
-      } catch (PortalDeployerClientException | PortalDeployerConfigurationException e) {
-        logger.log(Level.WARNING, "exception caught when stopping portal deployer manager", e);
-      }
-    });
-    t.start();
+    try {
+      portalDeployerClientManager.stop();
+    } catch (PortalDeployerClientException | PortalDeployerConfigurationException e) {
+      logger.log(Level.WARNING, "exception caught when stopping portal deployer manager", e);
+    }
   }
 }
