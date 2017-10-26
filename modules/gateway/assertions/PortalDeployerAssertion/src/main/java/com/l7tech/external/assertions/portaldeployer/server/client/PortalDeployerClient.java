@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.portaldeployer.server.client;
 
+import com.l7tech.external.assertions.portaldeployer.ExponentialIntSupplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.net.ssl.SSLSocketFactory;
@@ -29,12 +30,14 @@ public class PortalDeployerClient implements MqttCallback {
   private int connectionTimeout;
   private int keepAliveInterval;
 
+  private ExponentialIntSupplier sleepIntervalSupplier;
+
   private int qosLevel = 1;
 
   // boolean used to stop client if it is stuck connecting to the broker
   private Boolean isRunning = false;
-  // How long to sleep in milliseconds
-  private int sleepIntervalOnReconnect = 30 * 1000;
+  // How long to sleep in seconds
+  private int sleepIntervalOnReconnect = 30;
 
   public PortalDeployerClient(String mqttBrokerUri, String clientId, String topic, int connectionTimeout, int keepAliveInterval, SSLSocketFactory sslSocketFactory) throws
           PortalDeployerClientException {
@@ -69,6 +72,11 @@ public class PortalDeployerClient implements MqttCallback {
     mqttConnectOptions.setKeepAliveInterval(this.keepAliveInterval);
     mqttConnectOptions.setCleanSession(false);
     mqttConnectOptions.setSocketFactory(this.sslSocketFactory);
+
+    // This will return increasingly larger sleep intervals,
+    // so a short connection blip will recover fast,
+    // but not hammer the server if it is a larger disconnect window
+    sleepIntervalSupplier = new ExponentialIntSupplier(0, sleepIntervalOnReconnect);
   }
 
   public void start() throws PortalDeployerClientException {
@@ -89,6 +97,8 @@ public class PortalDeployerClient implements MqttCallback {
     IMqttActionListener mqttActionListener = new IMqttActionListener() {
       @Override
       public void onSuccess(IMqttToken iMqttToken) {
+        // Successfully connected, reset the sleep interval supplier to start at 0 again
+        sleepIntervalSupplier.reset();
         logger.log(Level.INFO, String.format("Successfully connected to Broker: %s", mqttBrokerUri));
         try {
           logger.log(Level.INFO, String.format("Subscribing to Topic: %s", topic));
@@ -104,7 +114,7 @@ public class PortalDeployerClient implements MqttCallback {
         if(isRunning) {
           logger.log(Level.SEVERE, String.format("Failed connecting to Broker: %s", mqttBrokerUri), throwable);
           try {
-            Thread.sleep(sleepIntervalOnReconnect);
+            Thread.sleep(sleepIntervalSupplier.getAsInt());
           } catch (InterruptedException e) {
             logger.log(Level.WARNING, "thread interrupted", e);
             Thread.currentThread().interrupt();
@@ -164,7 +174,7 @@ public class PortalDeployerClient implements MqttCallback {
     logger.log(Level.WARNING, String.format("Connection to broker %s was lost", mqttBrokerUri), cause);
     if(isRunning) {
       try {
-        Thread.sleep(sleepIntervalOnReconnect);
+        Thread.sleep(sleepIntervalSupplier.getAsInt());
       } catch (InterruptedException e) {
         logger.log(Level.WARNING, "thread interrupted", e);
         Thread.currentThread().interrupt();
