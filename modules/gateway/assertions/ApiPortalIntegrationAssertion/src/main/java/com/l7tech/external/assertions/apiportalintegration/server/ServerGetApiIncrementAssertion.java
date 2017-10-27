@@ -130,15 +130,15 @@ public class ServerGetApiIncrementAssertion extends AbstractServerAssertion<GetA
   private List<ApiEntity> getApis(String nodeId, String tenantId) {
     Map<String, List> results = (Map<String, List>) queryJdbc(jdbcConnectionName.toString(),
            "SELECT \n" +
-            "    a.`UUID` AS `UUID`,\n" +
-            "    a.`NAME` AS `NAME`,\n" +
-            "    a.`PORTAL_STATUS` AS `PORTAL_STATUS`,\n" +
-            "    atg.`API_LOCATION_URL` AS `API_LOCATION_URL`,\n" +
-            "    a.`PUBLISHED_BY_PORTAL` AS `PUBLISHED_BY_PORTAL`,\n" +
-            "    a.`SSG_URL` AS `SSG_URL`\n" +
+            "    a.UUID AS UUID,\n" +
+            "    a.NAME AS NAME,\n" +
+            "    a.PORTAL_STATUS AS PORTAL_STATUS,\n" +
+            "    atg.API_LOCATION_URL AS API_LOCATION_URL,\n" +
+            "    a.PUBLISHED_BY_PORTAL AS PUBLISHED_BY_PORTAL,\n" +
+            "    a.SSG_URL AS SSG_URL\n" +
             "FROM\n" +
-            "   `API` a LEFT JOIN `API_TENANT_GATEWAY` atg on atg.`API_UUID` = a.`UUID`\n" +
-            "WHERE a.`TENANT_ID` = ? and atg.`TENANT_GATEWAY_UUID` = ?",
+            "   API a LEFT JOIN API_TENANT_GATEWAY atg on atg.API_UUID = a.UUID and atg.TENANT_ID = a.TENANT_ID \n" +
+            "WHERE a.TENANT_ID = ? and atg.TENANT_GATEWAY_UUID = ?",
         CollectionUtils.list(tenantId, nodeId));
 
     if (results.isEmpty()) {
@@ -191,11 +191,11 @@ public class ServerGetApiIncrementAssertion extends AbstractServerAssertion<GetA
   private void buildCustomFields(Map<String, ApiEntity> apiV2EntityMap, String apiUuids) {
     Map<String, List> results = (Map<String, List>) queryJdbc(jdbcConnectionName.toString(),
            "SELECT\n" +
-            "   `NAME`,\n" +
-            "   `ENTITY_UUID`,\n" +
-            "   `VALUE`\n" +
-            "FROM `CUSTOM_FIELD_VALUE_VIEW` \n" +
-            "WHERE `ENTITY_UUID` in (" + apiUuids + ")", Collections.EMPTY_LIST);
+            "   NAME,\n" +
+            "   ENTITY_UUID,\n" +
+            "   VALUE\n" +
+            "FROM CUSTOM_FIELD_VALUE_VIEW \n" +
+            "WHERE ENTITY_UUID in (" + apiUuids + ")", Collections.EMPTY_LIST);
 
     logger.log(Level.FINE, "Fetched " + results.size() + " Custom Fields from database");
 
@@ -224,12 +224,12 @@ public class ServerGetApiIncrementAssertion extends AbstractServerAssertion<GetA
 
     Map<String, List> results = (Map<String, List>) queryJdbc(jdbcConnectionName.toString(),
            "SELECT\n" +
-            "   `UUID`,\n" +
-            "   `API_UUID`,\n" +
-            "   `POLICY_ENTITY_UUID`\n" +
-            "FROM `API_POLICY_ENTITY_XREF` \n" +
-            "WHERE `API_UUID` in (" + apiUuids + ")" +
-               " ORDER BY `ORDINAL` ASC", Collections.EMPTY_LIST);
+            "   UUID,\n" +
+            "   API_UUID,\n" +
+            "   POLICY_ENTITY_UUID\n" +
+            "FROM API_POLICY_ENTITY_XREF \n" +
+            "WHERE API_UUID in (" + apiUuids + ")" +
+               " ORDER BY ORDINAL ASC", Collections.EMPTY_LIST);
 
     logger.log(Level.FINE, "Fetched " + results.size() + " Policy entities from database");
 
@@ -261,11 +261,11 @@ public class ServerGetApiIncrementAssertion extends AbstractServerAssertion<GetA
   private void buildPolicyTemplateArguments(Map<String, PolicyEntity> policyEntityMap, String apiUuids) {
     Map<String, List> results = (Map<String, List>) queryJdbc(jdbcConnectionName.toString(),
            "SELECT\n" +
-            "   `API_POLICY_ENTITY_XREF_UUID`,\n" +
-            "   `NAME`,\n" +
-            "   `VALUE`\n" +
-            "FROM `API_POLICY_TEMPLATE_XREF_VIEW`\n" +
-            "WHERE `API_UUID` in (" + apiUuids + ")", Collections.EMPTY_LIST);
+            "   API_POLICY_ENTITY_XREF_UUID,\n" +
+            "   NAME,\n" +
+            "   VALUE\n" +
+            "FROM API_POLICY_TEMPLATE_XREF_VIEW\n" +
+            "WHERE API_UUID in (" + apiUuids + ")", Collections.EMPTY_LIST);
 
     logger.log(Level.FINE, "Fetched " + results.size() + " Policy template Arguments from database");
 
