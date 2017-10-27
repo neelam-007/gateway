@@ -54,16 +54,45 @@ public class PortalDeployerClientManagerImplTest {
     )).thenReturn(portalDeployerClient);
   }
 
+  /**
+   * Test that a start manager call will start the client
+   * @throws Exception
+   */
   @Test
   public void start() throws Exception {
     portalDeployerClientManager.start();
     verify(portalDeployerClient, times(1)).start();
   }
 
+  /**
+   * Test that a stop manager call will stop the client
+   * @throws Exception
+   */
   @Test
   public void stop() throws Exception {
     portalDeployerClientManager.stop();
     verify(portalDeployerClient, times(1)).stop();
+  }
+
+  /**
+   * Test that a if you stop the manager and start it again, a new client is made
+   * @throws Exception
+   */
+  @Test
+  public void ensureNewClientInstantiatedAfterStop() throws Exception {
+    PortalDeployerClient portalDeployerClient2 = mock(PortalDeployerClient.class);
+    when(portalDeployerClientFactory.getClient(String.format(
+        "wss://%s/", mqttBrokerUri),
+        String.format("%s_%s_%s", tenantId, tenantGatewayUuid, 1),
+        String.format("%s/api/cmd/deploy/tenantGatewayUuid/%s", tenantId, tenantGatewayUuid),
+        60,
+        30,
+        sslSocketFactory
+    )).thenReturn(portalDeployerClient).thenReturn(portalDeployerClient2);
+    portalDeployerClientManager.stop();
+    portalDeployerClientManager.start();
+    verify(portalDeployerClient, times(1)).stop();
+    verify(portalDeployerClient2, times(1)).start();
   }
 
 }

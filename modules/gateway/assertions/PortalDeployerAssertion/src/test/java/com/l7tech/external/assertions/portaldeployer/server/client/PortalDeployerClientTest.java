@@ -11,7 +11,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.internal.util.reflection.Whitebox;
 import org.mockito.runners.MockitoJUnitRunner;
 
 /**
@@ -35,9 +34,12 @@ public class PortalDeployerClientTest {
   @Before
   public void beforePortalDeployerClientTest() throws Exception {
     portalDeployerClient = new PortalDeployerClient(mqttBrokerUri, clientId, topic, connectionTimeout, keepAliveInterval, sslSocketFactory, mqttAsyncClient);
-    Whitebox.setInternalState(portalDeployerClient, "sleepIntervalOnReconnect", 0);
   }
 
+  /**
+   * Test the start method will connect to the broker if isConnected is false
+   * @throws Exception
+   */
   @Test
   public void start() throws Exception {
     when(mqttAsyncClient.isConnected()).thenReturn(false);
@@ -45,6 +47,10 @@ public class PortalDeployerClientTest {
     verify(mqttAsyncClient, times(1)).connect(any(MqttConnectOptions.class), any(Object.class), any(IMqttActionListener.class));
   }
 
+  /**
+   * Test the stop method will disconnect from the broker if isConnected is true
+   * @throws Exception
+   */
   @Test
   public void stop() throws Exception {
     when(mqttAsyncClient.isConnected()).thenReturn(true);
@@ -52,6 +58,10 @@ public class PortalDeployerClientTest {
     verify(mqttAsyncClient, times(1)).disconnect(any(Object.class), any(IMqttActionListener.class));
   }
 
+  /**
+   * Test the start method will not connect to the broker if isConnected is true
+   * @throws Exception
+   */
   @Test
   public void start_alreadyConnected() throws Exception {
     when(mqttAsyncClient.isConnected()).thenReturn(true);
@@ -59,6 +69,10 @@ public class PortalDeployerClientTest {
     verify(mqttAsyncClient, times(0)).connect(any(MqttConnectOptions.class), any(Object.class), any(IMqttActionListener.class));
   }
 
+  /**
+   * Test the start method will not disconnect from the broker if isConnected is false
+   * @throws Exception
+   */
   @Test
   public void start_alreadyDisconnected() throws Exception {
     when(mqttAsyncClient.isConnected()).thenReturn(false);
@@ -66,45 +80,72 @@ public class PortalDeployerClientTest {
     verify(mqttAsyncClient, times(0)).disconnect(any(Object.class), any(IMqttActionListener.class));
   }
 
+  /**
+   * Test the connectionLost method will connect to the broker if the client is running
+   * @throws Exception
+   */
   @Test
   public void connectionLost_reconnect() throws Exception {
-    when(mqttAsyncClient.isConnected()).thenReturn(true);
-    // set state to RUNNING;
+    when(mqttAsyncClient.isConnected()).thenReturn(true).thenReturn(false);
+    // set isRunning to true;
     portalDeployerClient.start();
-    when(mqttAsyncClient.isConnected()).thenReturn(false);
     portalDeployerClient.connectionLost(new Throwable());
     verify(mqttAsyncClient, times(1)).connect(any(MqttConnectOptions.class), any(Object.class), any(IMqttActionListener.class));
   }
 
+  /**
+   * Test the connectionLost method will not connect to the broker if the client is not running
+   * @throws Exception
+   */
   @Test
   public void connectionLost_notRunningNoReconnect() throws Exception {
     portalDeployerClient.connectionLost(new Throwable());
     verify(mqttAsyncClient, times(0)).connect(any(MqttConnectOptions.class), any(Object.class), any(IMqttActionListener.class));
   }
 
+  /**
+   * Test the connect method will throw a PortalDeployerException if it fails to connect
+   * @throws Exception
+   */
   @Test(expected = PortalDeployerClientException.class)
   public void start_connectExceptionFailure() throws Exception {
     when(mqttAsyncClient.connect(any(MqttConnectOptions.class), any(Object.class), any(IMqttActionListener.class))).thenThrow(new MqttException(0));
     portalDeployerClient.start();
   }
 
+  /**
+   * Test the messageArrived method will do nothing besides log
+   * @throws Exception
+   */
   @Test
-  public void messageArrived() throws Exception {
+  public void messageArrived_Success() throws Exception {
     MqttMessage mockMqttMessage = mock(MqttMessage.class);
     when(mockMqttMessage.getPayload()).thenReturn("payload".getBytes());
     portalDeployerClient.messageArrived(null, mockMqttMessage);
   }
 
+  /**
+   * Test the deliveryComplete method will do nothing besides log
+   * @throws Exception
+   */
   @Test
-  public void deliveryComplete() throws Exception {
+  public void deliveryComplete_Success() throws Exception {
     portalDeployerClient.deliveryComplete(null);
   }
 
+  /**
+   * Test the toString method will do nothing besides log
+   * @throws Exception
+   */
   @Test
-  public void toString_test() throws Exception {
+  public void toString_Success() throws Exception {
     portalDeployerClient.toString();
   }
 
+  /**
+   * Test the connectionLost method will do nothing if a MqttException is thrown
+   * @throws Exception
+   */
   @Test
   public void connectionLost_connectException() throws Exception {
     when(mqttAsyncClient.connect(any(MqttConnectOptions.class), any(Object.class), any(IMqttActionListener.class))).thenThrow(new MqttException(401));
@@ -112,13 +153,22 @@ public class PortalDeployerClientTest {
     portalDeployerClient.connectionLost(new Throwable());
   }
 
+  /**
+   * Test the stop method will do nothing besides log if a MqttException is thrown
+   * @throws Exception
+   */
   @Test
-  public void connectionLost_disconnectException() throws Exception {
+  public void stop_disconnectException() throws Exception {
+    when(mqttAsyncClient.isConnected()).thenReturn(true);
     when(mqttAsyncClient.disconnect(any(Object.class), any(IMqttActionListener.class))).thenThrow(new MqttException(401));
     // only a log message is printed
     portalDeployerClient.stop();
   }
 
+  /**
+   * Test the connectCallback method will subscribe on success
+   * @throws Exception
+   */
   @Test
   public void connectCallback_Success() throws Exception {
     PortalDeployerClient.ConnectCallback connectCallback = portalDeployerClient.new ConnectCallback();
@@ -126,15 +176,37 @@ public class PortalDeployerClientTest {
     verify(mqttAsyncClient, times(1)).subscribe(matches(topic), any(Integer.class), any(Object.class), any(PortalDeployerClient.SubscribeCallback.class));
   }
 
+  /**
+   * Test the connectCallback onFailure method will do nothing if connect throws a PortalDeployerException
+   * @throws Exception
+   */
+  @Test
+  public void connectCallback_FailedReconnectException() throws Exception {
+    when(mqttAsyncClient.isConnected()).thenReturn(true);
+    portalDeployerClient.start();
+    when(mqttAsyncClient.connect(any(MqttConnectOptions.class), any(Object.class), any(IMqttActionListener.class))).thenThrow(new MqttException(0));
+    PortalDeployerClient.ConnectCallback connectCallback = portalDeployerClient.new ConnectCallback();
+    connectCallback.onFailure(null, new Throwable());
+  }
+
+  /**
+   * Test the connectCallback method will try and reconnect if it fails initially
+   * @throws Exception
+   */
   @Test
   public void connectCallback_FailureReconnect() throws Exception {
     when(mqttAsyncClient.isConnected()).thenReturn(true);
+    // set isRunning to true
     portalDeployerClient.start();
     PortalDeployerClient.ConnectCallback connectCallback = portalDeployerClient.new ConnectCallback();
     connectCallback.onFailure(null, new Throwable());
     verify(mqttAsyncClient, times(1)).connect(any(MqttConnectOptions.class), any(Object.class), any(IMqttActionListener.class));
   }
 
+  /**
+   * Test the connectCallback method will not reconnect if the client is not running if connect fails
+   * @throws Exception
+   */
   @Test
   public void connectCallback_FailureReconnectNotRunning() throws Exception {
     PortalDeployerClient.ConnectCallback connectCallback = portalDeployerClient.new ConnectCallback();
@@ -142,6 +214,22 @@ public class PortalDeployerClientTest {
     verify(mqttAsyncClient, times(0)).connect(any(MqttConnectOptions.class), any(Object.class), any(IMqttActionListener.class));
   }
 
+  /**
+   * Test the connectCallback method will do nothing if subscribe throws an exception
+   * @throws Exception
+   */
+  @Test
+  public void connectCallback_SuccessFailedToSubscribe() throws Exception {
+    PortalDeployerClient.ConnectCallback connectCallback = portalDeployerClient.new ConnectCallback();
+    when(mqttAsyncClient.subscribe(matches(topic), any(Integer.class), any(Object.class), any(PortalDeployerClient.SubscribeCallback.class))).thenThrow(new MqttException(500));
+    connectCallback.onSuccess(null);
+    verify(mqttAsyncClient, times(0)).connect(any(MqttConnectOptions.class), any(Object.class), any(IMqttActionListener.class));
+  }
+
+  /**
+   * Test the subscribeCallback method will do nothing on success besides log
+   * @throws Exception
+   */
   @Test
   public void subscribeCallback_Success() throws Exception {
     PortalDeployerClient.SubscribeCallback subscribeCallback = portalDeployerClient.new SubscribeCallback();
@@ -149,6 +237,10 @@ public class PortalDeployerClientTest {
     subscribeCallback.onSuccess(null);
   }
 
+  /**
+   * Test the subscribeCallback method will do nothing on failure besides log
+   * @throws Exception
+   */
   @Test
   public void subscribeCallback_Failure() throws Exception {
     PortalDeployerClient.SubscribeCallback subscribeCallback = portalDeployerClient.new SubscribeCallback();
@@ -156,6 +248,10 @@ public class PortalDeployerClientTest {
     subscribeCallback.onFailure(null, new Throwable());
   }
 
+  /**
+   * Test the disconnect method will do nothing on success besides log
+   * @throws Exception
+   */
   @Test
   public void disconnectCallback_Success() throws Exception {
     PortalDeployerClient.DisconnectCallback disconnectCallback = portalDeployerClient.new DisconnectCallback();
@@ -163,6 +259,10 @@ public class PortalDeployerClientTest {
     disconnectCallback.onSuccess(null);
   }
 
+  /**
+   * Test the disconnect method will do nothing on failure besides log
+   * @throws Exception
+   */
   @Test
   public void disconnectCallback_Failure() throws Exception {
     PortalDeployerClient.DisconnectCallback disconnectCallback = portalDeployerClient.new DisconnectCallback();

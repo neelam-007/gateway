@@ -94,10 +94,13 @@ public class PortalDeployerClient implements MqttCallback {
   }
 
   private void connect() throws PortalDeployerClientException {
-    try {
-      mqttClient.connect(mqttConnectOptions, null, new ConnectCallback());
-    } catch (MqttException e) {
-      throw new PortalDeployerClientException(e.getMessage(), e);
+    // Only attempt reconnect if client is still running
+    if(isRunning) {
+      try {
+        mqttClient.connect(mqttConnectOptions, null, new ConnectCallback());
+      } catch (MqttException e) {
+        throw new PortalDeployerClientException(e.getMessage(), e);
+      }
     }
   }
 
@@ -113,23 +116,20 @@ public class PortalDeployerClient implements MqttCallback {
     }
   }
 
+  private void reconnect() {
+    sleep(sleepIntervalSupplier.getAsInt());
+    logger.log(Level.INFO, String.format("Attempting to reconnect to broker %s after connection lost", mqttBrokerUri));
+    try {
+      connect();
+    } catch (PortalDeployerClientException e) {
+      logger.log(Level.SEVERE, "Failed to reconnect client after connection lost", e);
+    }
+  }
+
   @Override
   public void connectionLost(Throwable cause) {
     logger.log(Level.WARNING, String.format("Connection to broker %s was lost", mqttBrokerUri), cause);
-    if(isRunning) {
-      try {
-        Thread.sleep(sleepIntervalSupplier.getAsInt());
-      } catch (InterruptedException e) {
-        logger.log(Level.WARNING, "thread interrupted", e);
-        Thread.currentThread().interrupt();
-      }
-      logger.log(Level.INFO, String.format("Attempting to reconnect to broker %s after connection lost", mqttBrokerUri));
-      try {
-        connect();
-      } catch (PortalDeployerClientException e) {
-        logger.log(Level.SEVERE, "Failed to reconnect client after connection lost", e);
-      }
-    }
+    reconnect();
   }
 
   @Override
@@ -145,6 +145,15 @@ public class PortalDeployerClient implements MqttCallback {
   @Override
   public String toString() {
     return String.format("PortalDeployerClient{running='%s', mqttBrokerUri='%s', clientId='%s', topic='%s'}", isRunning, mqttBrokerUri, clientId, topic);
+  }
+
+  private void sleep(int interval) {
+    try {
+      Thread.sleep(interval);
+    } catch (InterruptedException e) {
+      logger.log(Level.WARNING, "thread interrupted", e);
+      Thread.currentThread().interrupt();
+    }
   }
 
   class SubscribeCallback implements IMqttActionListener {
@@ -176,21 +185,8 @@ public class PortalDeployerClient implements MqttCallback {
 
     @Override
     public void onFailure(IMqttToken iMqttToken, Throwable throwable) {
-      // Only attempt reconnect if client is still running
-      if(isRunning) {
-        logger.log(Level.SEVERE, String.format("Failed connecting to Broker: %s", mqttBrokerUri), throwable);
-        try {
-          Thread.sleep(sleepIntervalSupplier.getAsInt());
-        } catch (InterruptedException e) {
-          logger.log(Level.WARNING, "thread interrupted", e);
-          Thread.currentThread().interrupt();
-        }
-        try {
-          connect();
-        } catch (PortalDeployerClientException e) {
-          logger.log(Level.SEVERE, String.format("Failed connecting to Broker: %s", mqttBrokerUri), e);
-        }
-      }
+      logger.log(Level.SEVERE, String.format("Failed connecting to Broker: %s", mqttBrokerUri), throwable);
+      reconnect();
     }
   }
 
