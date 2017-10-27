@@ -109,7 +109,7 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
                         throw new JmsRuntimeException(e);
                     }
                     connectionHolder.put(key, pooledConnection);
-                    logger.log(Level.FINE, "Created new pooled conneciton " + pooledConnection.toString());
+                    logger.log(Level.FINE, "Created new pooled connection " + pooledConnection.toString());
                 }
             }
         }
