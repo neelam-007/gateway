@@ -29,7 +29,10 @@ public class PortalDeployerClient implements MqttCallback {
   private boolean cleanSession = true;
   private MessageProcessor messageProcessor;
 
-  public PortalDeployerClient(String mqttBrokerUri, String clientId, String topic, SSLSocketFactory sslSocketFactory) throws PortalDeployerClientException {
+
+  public PortalDeployerClient(String mqttBrokerUri, String clientId, String topic, int connectionTimeout, int keepAliveInterval, SSLSocketFactory sslSocketFactory) throws
+          PortalDeployerClientException {
+    logger.log(Level.INFO, String.format("mqttBrokerUri [%s], " + "clientId [%s], " + "topic [%s]", mqttBrokerUri, clientId, topic));
     this.sslSocketFactory = sslSocketFactory;
     this.mqttBrokerUri = mqttBrokerUri;
     this.clientId = clientId;
@@ -83,8 +86,8 @@ public class PortalDeployerClient implements MqttCallback {
   @Override
   public void messageArrived(String topic, MqttMessage message) throws Exception {
     logger.log(Level.INFO, String.format("Topic: %s, Message: %s", topic, new String(message.getPayload())));
-    messageProcessor.process(message);
     //mqttClient.publish(topic + "/received", new MqttMessage("message recieved".getBytes()));
+    //consume message, get bundle, post bundle, put postback
   }
 
   @Override
