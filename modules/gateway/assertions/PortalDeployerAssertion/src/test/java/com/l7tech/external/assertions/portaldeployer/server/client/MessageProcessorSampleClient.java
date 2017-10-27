@@ -13,7 +13,7 @@ import org.junit.Test;
  *
  * @author raqri01, 2017-10-24
  */
-public class MessageProcessorClientTest {
+public class MessageProcessorSampleClient {
 
   @Test
   public void testSomething() throws Exception {
