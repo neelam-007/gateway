@@ -30,14 +30,9 @@ public class MessageProcessor {
   public static String CALLBACK_OPERATION_DEFAULT = "PUT";
   public static String CALLBACK_CONTENT_TYPE_DEFAULT = "application/json";
 
-  @Deprecated
-  public MessageProcessor(SSLSocketFactory sslSocketFactory) {
-    this(sslSocketFactory, null);
-  }
-
   public MessageProcessor(SSLSocketFactory sslSocketFactory, PortalDeployerClientConfigurationManager configurationManager) {
     this.sslSocketFactory = sslSocketFactory;
-    mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+    mapper = new ObjectMapper();
     this.configurationManager = configurationManager;
   }
 
