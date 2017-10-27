@@ -1,7 +1,6 @@
 package com.l7tech.external.assertions.portaldeployer.server;
 
 import static com.l7tech.external.assertions.portaldeployer.server.PortalDeployerClientConfigurationManagerImpl.*;
-import com.l7tech.external.assertions.portaldeployer.server.client.PortalDeployerClient;
 import com.l7tech.external.assertions.portaldeployer.server.client.PortalDeployerClientException;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.objectmodel.FindException;
@@ -12,7 +11,6 @@ import com.l7tech.server.event.admin.Created;
 import com.l7tech.server.event.admin.Updated;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.util.ApplicationEventProxy;
-import com.l7tech.util.ExceptionUtils;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -58,17 +56,13 @@ public class PortalDeployerModuelLoadListener implements ApplicationListener {
   private static PortalDeployerModuelLoadListener instance = null;
   private static ClusterPropertyManager clusterPropertyManager;
   private static ApplicationEventProxy applicationEventProxy;
-
-  private PortalDeployerClient portalDeployerClient;
-  private PortalDeployerClientConfigurationManager configurationManager;
-  private PortalDeployerSslConfigurationManager sslConfigurationManager;
+  private final PortalDeployerClientManager portalDeployerClientManager;
 
   PortalDeployerModuelLoadListener(final ApplicationContext context) {
     clusterPropertyManager = context.getBean("clusterPropertyManager", ClusterPropertyManager.class);
     applicationEventProxy = context.getBean("applicationEventProxy", ApplicationEventProxy.class);
     applicationEventProxy.addApplicationListener(this);
-    configurationManager = new PortalDeployerClientConfigurationManagerImpl(context);
-    sslConfigurationManager = new PortalDeployerSslConfigurationManagerImpl(context);
+    portalDeployerClientManager = new PortalDeployerClientManagerImpl(context);
   }
 
   /**
@@ -111,27 +105,27 @@ public class PortalDeployerModuelLoadListener implements ApplicationListener {
 
   private void handleUpdateOfPortalDeployerEnabledClusterProperty(String newValue) {
     if (Boolean.FALSE.toString().equalsIgnoreCase(newValue)) {
-      logger.log(Level.INFO, "Stopping Portal Deployer MQTT Client");
+      stopManager();
     } else if (Boolean.TRUE.toString().equalsIgnoreCase(newValue)) {
-      logger.log(Level.INFO, "Starting Portal Deployer MQTT Client");
-      enablePortalDeployerClient();
+      startManager();
     }
   }
 
-  private void enablePortalDeployerClient() {
+  private void startManager() {
+    logger.log(Level.INFO, "Starting Portal Deployer MQTT Client");
     try {
-      //TODO: implement builder and fix client ids/topics to pull from somewhere
-      portalDeployerClient = new PortalDeployerClient(
-              String.format("wss://%s/", configurationManager.getBrokerHost()),
-              String.format("%s_%s_%s", configurationManager.getTenantId(), configurationManager.getTenantGatewayUuid(), "1"),
-              String.format("%s/api/cmd/deploy/tenantGatewayUuid/%s", configurationManager.getTenantId(), configurationManager.getTenantGatewayUuid()),
-              60,
-              30,
-              sslConfigurationManager.getSniEnabledSocketFactory(configurationManager.getBrokerHost()));
-      portalDeployerClient.startClient();
+      portalDeployerClientManager.start();
     } catch (PortalDeployerClientException | PortalDeployerConfigurationException e) {
-      //TODO: config exceptions should set a status indicating cluster property
-      logger.log(Level.WARNING, ExceptionUtils.getMessage(e), e);
+      logger.log(Level.WARNING, "exception caught when starting portal deployer manager", e);
+    }
+  }
+
+  private void stopManager() {
+    logger.log(Level.INFO, "Stopping Portal Deployer MQTT Client");
+    try {
+      portalDeployerClientManager.stop();
+    } catch (PortalDeployerClientException | PortalDeployerConfigurationException e) {
+      logger.log(Level.WARNING, "exception caught when stopping portal deployer manager", e);
     }
   }
 }

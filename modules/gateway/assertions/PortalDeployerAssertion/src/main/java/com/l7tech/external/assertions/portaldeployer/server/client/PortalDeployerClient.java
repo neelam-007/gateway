@@ -1,12 +1,14 @@
 package com.l7tech.external.assertions.portaldeployer.server.client;
 
-import java.util.Random;
+import com.l7tech.external.assertions.portaldeployer.ExponentialIntSupplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.net.ssl.SSLSocketFactory;
+import org.eclipse.paho.client.mqttv3.IMqttActionListener;
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
+import org.eclipse.paho.client.mqttv3.IMqttToken;
+import org.eclipse.paho.client.mqttv3.MqttAsyncClient;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
-import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttClientPersistence;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
@@ -19,119 +21,184 @@ import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 public class PortalDeployerClient implements MqttCallback {
   private static final Logger logger = Logger.getLogger(PortalDeployerClient.class.getName());
   private SSLSocketFactory sslSocketFactory;
-  private MqttClient mqttClient;
+  private MqttAsyncClient mqttClient;
   private MqttClientPersistence mqttClientPersistence;
   private MqttConnectOptions mqttConnectOptions;
   private String mqttBrokerUri;
   private String clientId;
   private String topic;
-  private int connectionTimeout = 60;
-  private int keepAliveInterval = 30;
-  private boolean cleanSession = true;
+  private int connectionTimeout;
+  private int keepAliveInterval;
+
+  private ExponentialIntSupplier sleepIntervalSupplier;
+
+  private int qosLevel = 1;
+
+  // boolean used to stop client if it is stuck connecting to the broker
+  private Boolean isRunning = false;
+  // How long to sleep in seconds
+  private int sleepIntervalOnReconnect = 30;
 
   public PortalDeployerClient(String mqttBrokerUri, String clientId, String topic, int connectionTimeout, int keepAliveInterval, SSLSocketFactory sslSocketFactory) throws
           PortalDeployerClientException {
-    logger.log(Level.INFO, String.format("mqttBrokerUri [%s], " + "clientId [%s], " + "topic [%s]", mqttBrokerUri, clientId, topic));
-    this.sslSocketFactory = sslSocketFactory;
-    this.mqttBrokerUri = mqttBrokerUri;
-    this.clientId = clientId;
-    this.topic = topic;
-    mqttClientPersistence = new MemoryPersistence();
-    mqttConnectOptions = new MqttConnectOptions();
-    mqttConnectOptions.setConnectionTimeout(this.connectionTimeout);
-    mqttConnectOptions.setKeepAliveInterval(this.keepAliveInterval);
-    mqttConnectOptions.setCleanSession(false);
-    mqttConnectOptions.setSocketFactory(this.sslSocketFactory);
+    initialize(mqttBrokerUri, clientId, topic, connectionTimeout, keepAliveInterval, sslSocketFactory);
     try {
-      mqttClient = new MqttClient(this.mqttBrokerUri, this.clientId, this.mqttClientPersistence);
+      mqttClient = new MqttAsyncClient(this.mqttBrokerUri, this.clientId, this.mqttClientPersistence);
     } catch (MqttException e) {
       throw new PortalDeployerClientException(e.getMessage(), e);
     }
     mqttClient.setCallback(this);
   }
 
-  public void stopClient() {
+  // For testing
+  PortalDeployerClient(String mqttBrokerUri, String clientId, String topic, int connectionTimeout, int keepAliveInterval, SSLSocketFactory sslSocketFactory, MqttAsyncClient mqttAsyncClient) {
+    initialize(mqttBrokerUri, clientId, topic, connectionTimeout, keepAliveInterval, sslSocketFactory);
+    mqttClient = mqttAsyncClient;
+    mqttClient.setCallback(this);
+  }
+
+  private void initialize(String mqttBrokerUri, String clientId, String topic, int connectionTimeout, int keepAliveInterval, SSLSocketFactory sslSocketFactory) {
+    logger.log(Level.INFO, String.format("mqttBrokerUri [%s], " + "clientId [%s], " + "topic [%s]", mqttBrokerUri, clientId, topic));
+    this.sslSocketFactory = sslSocketFactory;
+    this.mqttBrokerUri = mqttBrokerUri;
+    this.clientId = clientId;
+    this.topic = topic;
+    this.connectionTimeout = connectionTimeout;
+    this.keepAliveInterval = keepAliveInterval;
+
+    mqttClientPersistence = new MemoryPersistence();
+    mqttConnectOptions = new MqttConnectOptions();
+    mqttConnectOptions.setConnectionTimeout(this.connectionTimeout);
+    mqttConnectOptions.setKeepAliveInterval(this.keepAliveInterval);
+    mqttConnectOptions.setCleanSession(false);
+    mqttConnectOptions.setSocketFactory(this.sslSocketFactory);
+
+    // This will return increasingly larger sleep intervals,
+    // so a short connection blip will recover fast,
+    // but not hammer the server if it is a larger disconnect window
+    sleepIntervalSupplier = new ExponentialIntSupplier(0, sleepIntervalOnReconnect);
+  }
+
+  public void start() throws PortalDeployerClientException {
+    isRunning = true;
+    if(!mqttClient.isConnected()) {
+      connect();
+    }
+  }
+
+  public void stop() {
+    isRunning = false;
     if (mqttClient.isConnected()) {
+      disconnect();
+    }
+  }
+
+  private void connect() throws PortalDeployerClientException {
+    // Only attempt reconnect if client is still running
+    if(isRunning) {
       try {
-        mqttClient.disconnect();
-        logger.log(Level.INFO, String.format("Successfully disconnected from Broker: %s", mqttBrokerUri));
+        mqttClient.connect(mqttConnectOptions, null, new ConnectCallback());
       } catch (MqttException e) {
-        logger.log(Level.SEVERE, "Unable to disconnect client", e);
+        throw new PortalDeployerClientException(e.getMessage(), e);
       }
     }
   }
 
-  public void startClient() {
+  private void subscribe() throws MqttException {
+    mqttClient.subscribe(topic, qosLevel, null, new SubscribeCallback());
+  }
+
+  private void disconnect() {
     try {
-      mqttClient.connect(mqttConnectOptions);
-      logger.log(Level.INFO, String.format("Successfully connected to Broker: %s", mqttBrokerUri));
-      mqttClient.subscribe(topic, 1);
-      logger.log(Level.INFO, String.format("Subscribing to Topic: %s", topic));
+      mqttClient.disconnect(null, new DisconnectCallback());
     } catch (MqttException e) {
-      logger.log(Level.SEVERE, "Exception thrown in startMqttClientThread", e);
+      logger.log(Level.SEVERE, "Unable to disconnect client", e);
     }
   }
 
-  public void sendMessage(String message) {
-    if (mqttClient.isConnected()) {
-      try {
-        MqttMessage mqttMessage = new MqttMessage(("test" + new Random().nextInt()).getBytes());
-        mqttMessage.setQos(1);
-        mqttMessage.setRetained(false);
-        //mqttClient.publish("apim/d790dc77-fad8-11e6-9a60-0242ac11000f/deploy", mqttMessage);
-        mqttClient.publish("moo", mqttMessage);
-      } catch (MqttException e) {
-        logger.log(Level.SEVERE, "Exception thrown in startMqttClientThread", e);
-      }
-    } else {
-      logger.log(Level.WARNING, "Can't send message since client isn't connected");
+  private void reconnect() {
+    sleep(sleepIntervalSupplier.getAsInt());
+    logger.log(Level.INFO, String.format("Attempting to reconnect to broker %s after connection lost", mqttBrokerUri));
+    try {
+      connect();
+    } catch (PortalDeployerClientException e) {
+      logger.log(Level.SEVERE, "Failed to reconnect client after connection lost", e);
     }
   }
 
   @Override
   public void connectionLost(Throwable cause) {
-    logger.log(Level.WARNING, "Exception thrown in startMqttClientThread", cause);
+    logger.log(Level.WARNING, String.format("Connection to broker %s was lost", mqttBrokerUri), cause);
+    reconnect();
   }
 
   @Override
   public void messageArrived(String topic, MqttMessage message) throws Exception {
-    logger.log(Level.INFO, String.format("Topic: %s, Message: %s", topic, new String(message.getPayload())));
-    //mqttClient.publish(topic + "/received", new MqttMessage("message recieved".getBytes()));
-    //consume message, get bundle, post bundle, put postback
+    logger.log(Level.INFO, String.format("Message Arrived - Topic: %s, Message: %s", topic, new String(message.getPayload())));
   }
 
   @Override
   public void deliveryComplete(IMqttDeliveryToken token) {
-    //logger.log(Level.INFO, String.format("Topic: %s, Message: %s", topic, new String(message.getPayload())));
-  }
-
-  public String getMqttBrokerUri() {
-    return mqttBrokerUri;
-  }
-
-  public void setMqttBrokerUri(String mqttBrokerUri) {
-    this.mqttBrokerUri = mqttBrokerUri;
-  }
-
-  public String getClientId() {
-    return clientId;
-  }
-
-  public void setClientId(String clientId) {
-    this.clientId = clientId;
-  }
-
-  public String getTopic() {
-    return topic;
-  }
-
-  public void setTopic(String topic) {
-    this.topic = topic;
+    logger.log(Level.INFO, String.format("Delivery Complete - Topic: %s", topic));
   }
 
   @Override
   public String toString() {
-    return "PortalDeployerClient{" + "mqttBrokerUri='" + mqttBrokerUri + '\'' + ", clientId='" + clientId + '\'' + "," +
-            "" + " topic='" + topic + '\'' + '}';
+    return String.format("PortalDeployerClient{running='%s', mqttBrokerUri='%s', clientId='%s', topic='%s'}", isRunning, mqttBrokerUri, clientId, topic);
+  }
+
+  private void sleep(int interval) {
+    try {
+      Thread.sleep(interval);
+    } catch (InterruptedException e) {
+      logger.log(Level.WARNING, "thread interrupted", e);
+      Thread.currentThread().interrupt();
+    }
+  }
+
+  class SubscribeCallback implements IMqttActionListener {
+    @Override
+    public void onSuccess(IMqttToken iMqttToken) {
+      logger.log(Level.INFO, String.format("Successfully subscribed to topic: %s", topic));
+    }
+
+    @Override
+    public void onFailure(IMqttToken iMqttToken, Throwable throwable) {
+      // TODO(chemi11): Should we do anything on failure to subscribe? try and subscribe again?
+      logger.log(Level.SEVERE, String.format("Failed to subscribe to topic: %s", topic), throwable);
+    }
+  }
+
+  class ConnectCallback implements IMqttActionListener {
+    @Override
+    public void onSuccess(IMqttToken iMqttToken) {
+      // Successfully connected, reset the sleep interval supplier to start at 0 again
+      sleepIntervalSupplier.reset();
+      logger.log(Level.INFO, String.format("Successfully connected to Broker: %s", mqttBrokerUri));
+      try {
+        logger.log(Level.INFO, String.format("Subscribing to Topic: %s", topic));
+        subscribe();
+      } catch (MqttException e) {
+        logger.log(Level.SEVERE, String.format("Failed to subscribe to topic: %s", topic), e);
+      }
+    }
+
+    @Override
+    public void onFailure(IMqttToken iMqttToken, Throwable throwable) {
+      logger.log(Level.SEVERE, String.format("Failed connecting to Broker: %s", mqttBrokerUri), throwable);
+      reconnect();
+    }
+  }
+
+  class DisconnectCallback implements IMqttActionListener {
+    @Override
+    public void onSuccess(IMqttToken iMqttToken) {
+      logger.log(Level.INFO, String.format("Successfully disconnected from Broker: %s", mqttBrokerUri));
+    }
+
+    @Override
+    public void onFailure(IMqttToken iMqttToken, Throwable throwable) {
+      logger.log(Level.SEVERE, "Failure while disconnecting client", throwable);
+    }
   }
 }
