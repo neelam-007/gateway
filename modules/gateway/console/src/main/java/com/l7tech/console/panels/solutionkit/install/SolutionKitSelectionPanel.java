@@ -116,7 +116,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         if (StringUtils.isNotBlank(errorReport)) {
             DialogDisplayer.showMessageDialog(
                     this,
-                    "There are more than two selected solution kits having same GUID and Instance Modifier.\n" + errorReport,
+                    "There are more than two selected Solution Kits having same GUID and Instance Modifier.\n" + errorReport,
                     "Solution Kit Installation Warning",
                     JOptionPane.WARNING_MESSAGE,
                     null
@@ -140,7 +140,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
                             solutionKitAdmin,
                             SolutionKitSelectionPanel.this.getOwner(),
                             "Testing Solution Kit",
-                            "The Gateway is testing solution kit: " + loaded.left.getName() + ".",
+                            "The Gateway is testing Solution Kit: " + loaded.left.getName() + ".",
                             solutionKitAdmin.testInstallAsync(loaded.left, loaded.middle, loaded.right),
                             false);
 
@@ -300,6 +300,17 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
 
     private void initializeSolutionKitsLoaded() {
         solutionKitsLoaded = new TreeSet<>(settings.getLoadedSolutionKits().keySet());
+
+        // For upgrades, set the Instance Modifier to be the same as the selected one for upgrade.
+        if (settings.isUpgrade()) {
+            if (settings.getSolutionKitsToUpgrade().size() > 0) {
+                String instanceModifier = settings.getSolutionKitsToUpgrade().get(0).getProperty(SK_PROP_INSTANCE_MODIFIER_KEY);
+
+                for (SolutionKit sk : solutionKitsLoaded) {
+                    sk.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, instanceModifier);
+                }
+            }
+        }
     }
 
 
@@ -418,6 +429,24 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         if (!settings.isUpgrade()) {
             return true;
         } else if (settings.getSolutionKitsToUpgrade().size() > 0) {
+
+            // In upgrade scenario, handle the specific case where a single child Solution Kit was selected for upgrade.
+            final List<SolutionKit> solutionKitsToUpgradeList = settings.getSolutionKitsToUpgrade();
+            // Check if the solutionKitsToUpgradeList is size 2 which means it contains a parent and a child Solution Kit. All other
+            // scenarios should just return true.
+            if (solutionKitsToUpgradeList.size() == 2) {
+
+                final SolutionKit currentSkToEnableDisable = getSolutionKitAt(index);
+                // the last element contains the child Solution Kit.
+                final SolutionKit solutionKitToUpgrade = solutionKitsToUpgradeList.get(solutionKitsToUpgradeList.size() - 1);
+
+                // Check if the Solution Kit selected for upgrade matches the specified Solution Kit in the grid that should be enabled.
+                if (solutionKitToUpgrade.getSolutionKitGuid().equals(currentSkToEnableDisable.getSolutionKitGuid())) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
             return true;
         } else {
             final SolutionKit loadedSolutionKit = getSolutionKitAt(index);
