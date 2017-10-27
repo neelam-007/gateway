@@ -94,76 +94,20 @@ public class PortalDeployerClient implements MqttCallback {
   }
 
   private void connect() throws PortalDeployerClientException {
-    IMqttActionListener mqttActionListener = new IMqttActionListener() {
-      @Override
-      public void onSuccess(IMqttToken iMqttToken) {
-        // Successfully connected, reset the sleep interval supplier to start at 0 again
-        sleepIntervalSupplier.reset();
-        logger.log(Level.INFO, String.format("Successfully connected to Broker: %s", mqttBrokerUri));
-        try {
-          logger.log(Level.INFO, String.format("Subscribing to Topic: %s", topic));
-          subscribe();
-        } catch (MqttException e) {
-          logger.log(Level.SEVERE, String.format("Failed to subscribe to topic: %s", topic), e);
-        }
-      }
-
-      @Override
-      public void onFailure(IMqttToken iMqttToken, Throwable throwable) {
-        // Only attempt reconnect if client is still running
-        if(isRunning) {
-          logger.log(Level.SEVERE, String.format("Failed connecting to Broker: %s", mqttBrokerUri), throwable);
-          try {
-            Thread.sleep(sleepIntervalSupplier.getAsInt());
-          } catch (InterruptedException e) {
-            logger.log(Level.WARNING, "thread interrupted", e);
-            Thread.currentThread().interrupt();
-          }
-          try {
-            connect();
-          } catch (PortalDeployerClientException e) {
-            logger.log(Level.SEVERE, String.format("Failed connecting to Broker: %s", mqttBrokerUri), e);
-          }
-        }
-      }
-    };
     try {
-      mqttClient.connect(mqttConnectOptions, null, mqttActionListener);
+      mqttClient.connect(mqttConnectOptions, null, new ConnectCallback());
     } catch (MqttException e) {
       throw new PortalDeployerClientException(e.getMessage(), e);
     }
   }
 
   private void subscribe() throws MqttException {
-    IMqttActionListener mqttActionListener = new IMqttActionListener() {
-      @Override
-      public void onSuccess(IMqttToken iMqttToken) {
-        logger.log(Level.INFO, String.format("Successfully subscribed to topic: %s", topic));
-      }
-
-      @Override
-      public void onFailure(IMqttToken iMqttToken, Throwable throwable) {
-        // TODO(chemi11): Should we do anything on failure to subscribe? try and subscribe again?
-        logger.log(Level.SEVERE, String.format("Failed to subscribe to topic: %s", topic), throwable);
-      }
-    };
-    mqttClient.subscribe(topic, qosLevel, null, mqttActionListener);
+    mqttClient.subscribe(topic, qosLevel, null, new SubscribeCallback());
   }
 
   private void disconnect() {
-    IMqttActionListener actionListener = new IMqttActionListener() {
-      @Override
-      public void onSuccess(IMqttToken iMqttToken) {
-        logger.log(Level.INFO, String.format("Successfully disconnected from Broker: %s", mqttBrokerUri));
-      }
-
-      @Override
-      public void onFailure(IMqttToken iMqttToken, Throwable throwable) {
-        logger.log(Level.SEVERE, "Failure while disconnecting client", throwable);
-      }
-    };
     try {
-      mqttClient.disconnect(null, actionListener);
+      mqttClient.disconnect(null, new DisconnectCallback());
     } catch (MqttException e) {
       logger.log(Level.SEVERE, "Unable to disconnect client", e);
     }
@@ -201,5 +145,64 @@ public class PortalDeployerClient implements MqttCallback {
   @Override
   public String toString() {
     return String.format("PortalDeployerClient{running='%s', mqttBrokerUri='%s', clientId='%s', topic='%s'}", isRunning, mqttBrokerUri, clientId, topic);
+  }
+
+  class SubscribeCallback implements IMqttActionListener {
+    @Override
+    public void onSuccess(IMqttToken iMqttToken) {
+      logger.log(Level.INFO, String.format("Successfully subscribed to topic: %s", topic));
+    }
+
+    @Override
+    public void onFailure(IMqttToken iMqttToken, Throwable throwable) {
+      // TODO(chemi11): Should we do anything on failure to subscribe? try and subscribe again?
+      logger.log(Level.SEVERE, String.format("Failed to subscribe to topic: %s", topic), throwable);
+    }
+  }
+
+  class ConnectCallback implements IMqttActionListener {
+    @Override
+    public void onSuccess(IMqttToken iMqttToken) {
+      // Successfully connected, reset the sleep interval supplier to start at 0 again
+      sleepIntervalSupplier.reset();
+      logger.log(Level.INFO, String.format("Successfully connected to Broker: %s", mqttBrokerUri));
+      try {
+        logger.log(Level.INFO, String.format("Subscribing to Topic: %s", topic));
+        subscribe();
+      } catch (MqttException e) {
+        logger.log(Level.SEVERE, String.format("Failed to subscribe to topic: %s", topic), e);
+      }
+    }
+
+    @Override
+    public void onFailure(IMqttToken iMqttToken, Throwable throwable) {
+      // Only attempt reconnect if client is still running
+      if(isRunning) {
+        logger.log(Level.SEVERE, String.format("Failed connecting to Broker: %s", mqttBrokerUri), throwable);
+        try {
+          Thread.sleep(sleepIntervalSupplier.getAsInt());
+        } catch (InterruptedException e) {
+          logger.log(Level.WARNING, "thread interrupted", e);
+          Thread.currentThread().interrupt();
+        }
+        try {
+          connect();
+        } catch (PortalDeployerClientException e) {
+          logger.log(Level.SEVERE, String.format("Failed connecting to Broker: %s", mqttBrokerUri), e);
+        }
+      }
+    }
+  }
+
+  class DisconnectCallback implements IMqttActionListener {
+    @Override
+    public void onSuccess(IMqttToken iMqttToken) {
+      logger.log(Level.INFO, String.format("Successfully disconnected from Broker: %s", mqttBrokerUri));
+    }
+
+    @Override
+    public void onFailure(IMqttToken iMqttToken, Throwable throwable) {
+      logger.log(Level.SEVERE, "Failure while disconnecting client", throwable);
+    }
   }
 }
