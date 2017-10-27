@@ -8,6 +8,11 @@ package com.l7tech.external.assertions.portaldeployer.server.client;
 public class VariablesConfig {
   private String ingressHost;
   private String brokerHost;
+  private String topic;
+  private String targetLocation;//extended target location
+  private String callbackLocation;//extended target location
+  private String tenantId;
+  private String tenantGatewayUuid;
 
   public String getIngressHost() {
     return ingressHost;
@@ -23,5 +28,37 @@ public class VariablesConfig {
 
   public void setBrokerHost(String brokerHost) {
     this.brokerHost = brokerHost;
+  }
+
+  public String getTopic() {
+    return topic;
+  }
+
+  public void setTopic(String topic) {
+    this.topic = topic;
+  }
+
+  public String getTargetLocation() {
+    return targetLocation;
+  }
+
+  public void setTargetLocation(String targetLocation) {
+    this.targetLocation = targetLocation;
+  }
+
+  public String getTenantId() {
+    return tenantId;
+  }
+
+  public void setTenantId(String tenantId) {
+    this.tenantId = tenantId;
+  }
+
+  public String getTenantGatewayUuid() {
+    return tenantGatewayUuid;
+  }
+
+  public void setTenantGatewayUuid(String tenantGatewayUuid) {
+    this.tenantGatewayUuid = tenantGatewayUuid;
   }
 }

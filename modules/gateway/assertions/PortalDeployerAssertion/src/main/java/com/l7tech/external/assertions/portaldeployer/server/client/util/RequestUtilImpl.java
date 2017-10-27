@@ -3,6 +3,7 @@ package com.l7tech.external.assertions.portaldeployer.server.client.util;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
@@ -34,25 +35,8 @@ public class RequestUtilImpl implements RequestUtil {
 
   protected static RequestResponse process(final String urlstr, final List<NameValuePair> parameters, final List<NameValuePair> headers, String body, String contentType, String method, SSLSocketFactory sslSocketFactory) throws Exception {
     logger.debug("Process Request: " + method + " " + urlstr);
-    StringBuilder sb = new StringBuilder(urlstr);
-    if (parameters != null && parameters.size() > 0) {
-      for (NameValuePair param : parameters) {
-        if (sb.indexOf("?") >= 0) {
-          sb.append("&");
-        } else {
-          sb.append("?");
-        }
-        sb.append(URLEncoder.encode(param.getName(), UTF_8));
-        sb.append("=");
-        if (null != param.getValue()) {
-          sb.append(URLEncoder.encode(param.getValue(), UTF_8));
-        } else {
-          sb.append(param.getValue());
-        }
-      }
-    }
 
-    URL url = new URL(sb.toString());
+    URL url = new URL(buildUrlWithParams(urlstr, parameters));
     URLConnection conn = url.openConnection();
     if (sslSocketFactory != null) {
       ((HttpsURLConnection) conn).setSSLSocketFactory(sslSocketFactory);
@@ -107,5 +91,26 @@ public class RequestUtilImpl implements RequestUtil {
     RequestResponse response = new RequestResponse(responseCode, writer.toString());
     return response;
   }//end of processRequest
+
+  static String buildUrlWithParams(final String urlstr, final List<NameValuePair> parameters) throws UnsupportedEncodingException {
+    StringBuilder sb = new StringBuilder(urlstr);
+    if (parameters != null && parameters.size() > 0) {
+      for (NameValuePair param : parameters) {
+        if (sb.indexOf("?") >= 0) {
+          sb.append("&");
+        } else {
+          sb.append("?");
+        }
+        sb.append(URLEncoder.encode(param.getName(), UTF_8));
+        sb.append("=");
+        if (null != param.getValue()) {
+          sb.append(URLEncoder.encode(param.getValue(), UTF_8));
+        } else {
+          sb.append(param.getValue());
+        }
+      }
+    }
+    return sb.toString();
+  }
 
 }

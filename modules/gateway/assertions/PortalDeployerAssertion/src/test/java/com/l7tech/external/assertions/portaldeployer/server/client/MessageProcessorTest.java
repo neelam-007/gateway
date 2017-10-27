@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.logging.Logger;
 import javax.net.ssl.SSLSocketFactory;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -23,10 +24,16 @@ import org.mockito.runners.MockitoJUnitRunner;
 public class MessageProcessorTest {
   private static final Logger log = Logger.getLogger(MessageProcessorTest.class.getName());
 
+  private ObjectMapper mapper;
   @Mock
   SSLSocketFactory sslSocketFactory;
   @Mock
   RequestUtil requestUtil;
+
+  @Before
+  public void init() {
+    mapper = new ObjectMapper();
+  }
 
   @Test
   public void testProcess() throws Exception {
@@ -35,7 +42,7 @@ public class MessageProcessorTest {
     MessageProcessor mp = new MessageProcessor(sslSocketFactory, config);
     mp.setRequestUtil(requestUtil);
     //build message
-    ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+
     Messages testMessages = new Messages();
     Message message1 = new Message();
     String sourceUrl = "https://{INGRESS_HOST}:8443/source";
@@ -75,7 +82,6 @@ public class MessageProcessorTest {
     MessageProcessor mp = new MessageProcessor(sslSocketFactory, config);
     mp.setRequestUtil(requestUtil);
     //build message
-    ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
     Messages testMessages = new Messages();
     Message message1 = new Message();
     String sourceUrl = "https://{INGRESS_HOST}:8443/source";
@@ -142,7 +148,6 @@ public class MessageProcessorTest {
     //the message
     MqttMessage message = new MqttMessage(payload.getBytes());
     //mock events
-    RequestResponse sourceResponse = new RequestResponse(200, "");
     RequestResponse targetResponse = new RequestResponse(200, "<restman><result/></restman>");
     RequestResponse callbackResponse = new RequestResponse(200, "a callback response");
     when(requestUtil.processRequest(eq(mp.processVariablesConfig(MessageProcessor.TARGET_LOCATION_DEFAULT)), any(), any(), eq("<restman><body/></restman>"), eq(MessageProcessor.TARGET_CONTENT_TYPE_DEFAULT), eq(MessageProcessor.TARGET_OPERATION_DEFAULT), eq(sslSocketFactory))).thenReturn(targetResponse);
@@ -168,8 +173,6 @@ public class MessageProcessorTest {
 
   @Test
   public void testEmptyPayload() throws Exception {
-    ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-
     VariablesConfig config = new VariablesConfig();
     config.setIngressHost("elih4");
     MessageProcessor mp = new MessageProcessor(sslSocketFactory, config);
@@ -186,8 +189,6 @@ public class MessageProcessorTest {
 
   @Test
   public void testEmptyRequiredLocation() throws Exception {
-    ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-
     VariablesConfig config = new VariablesConfig();
     config.setIngressHost("elih4");
     MessageProcessor mp = new MessageProcessor(sslSocketFactory, config);

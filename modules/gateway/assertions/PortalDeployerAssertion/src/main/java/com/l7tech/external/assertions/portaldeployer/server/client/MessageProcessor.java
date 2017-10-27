@@ -36,7 +36,7 @@ public class MessageProcessor {
 
   public MessageProcessor(SSLSocketFactory sslSocketFactory, VariablesConfig variablesConfig) {
     this.sslSocketFactory = sslSocketFactory;
-    mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+    mapper = new ObjectMapper();
     this.variablesConfig = variablesConfig;
   }
 

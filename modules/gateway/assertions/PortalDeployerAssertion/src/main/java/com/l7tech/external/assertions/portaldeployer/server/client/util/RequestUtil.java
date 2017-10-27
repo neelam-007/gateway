@@ -8,5 +8,5 @@ import javax.net.ssl.SSLSocketFactory;
  * @author raqri01
  */
 public interface RequestUtil {
-  public RequestResponse processRequest(final String urlstr, final List<NameValuePair> parameters, final List<NameValuePair> headers, String body, String contentType, String method, SSLSocketFactory sslSocketFactory) throws Exception;
+  RequestResponse processRequest(final String urlstr, final List<NameValuePair> parameters, final List<NameValuePair> headers, String body, String contentType, String method, SSLSocketFactory sslSocketFactory) throws Exception;
 }
