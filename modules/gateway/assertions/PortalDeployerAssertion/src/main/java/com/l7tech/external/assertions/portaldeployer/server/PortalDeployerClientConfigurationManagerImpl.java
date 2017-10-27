@@ -16,6 +16,7 @@ public class PortalDeployerClientConfigurationManagerImpl implements PortalDeplo
   public static final String PD_TSSG_UUID_CP = "portal.config.node.id";
   public static final String PD_BROKER_PROTOCOL_CP = "portal.config.broker.protocol";
   public static final String PD_BROKER_HOST_CP = "portal.config.broker.host";
+  public static final String PD_APIM_HOST_CP = "portal.config.apim.host";
   //properties configured by this modass
   public static final String PD_ENABLED_CP = "portal.deployer.enabled";
   public static final String PD_BROKER_KEEP_ALIVE_CP = "portal.deployer.broker.keepalive";
@@ -31,6 +32,8 @@ public class PortalDeployerClientConfigurationManagerImpl implements PortalDeplo
   private String topic;
   private int keepAlive = 30;
   private boolean cleanSession = false;
+  private int connectTimeout = 60;
+  private int keepAliveInterval = 30;
 
 
   private ClusterPropertyManager clusterPropertyManager;
@@ -41,6 +44,10 @@ public class PortalDeployerClientConfigurationManagerImpl implements PortalDeplo
 
   public String getBrokerHost() {
     return getClusterProperty(PD_BROKER_HOST_CP);
+  }
+
+  public String getIngressHost() {
+    return getClusterProperty(PD_APIM_HOST_CP);
   }
 
   public String getTenantId() {
@@ -62,5 +69,13 @@ public class PortalDeployerClientConfigurationManagerImpl implements PortalDeplo
       logger.log(Level.INFO, String.format("Unable to find ClusterProperty [%s]", clusterProperty));
     }
     return null;
+  }
+
+  public int getConnectTimeout() {
+    return connectTimeout;
+  }
+
+  public int getKeepAliveInterval() {
+    return keepAliveInterval;
   }
 }

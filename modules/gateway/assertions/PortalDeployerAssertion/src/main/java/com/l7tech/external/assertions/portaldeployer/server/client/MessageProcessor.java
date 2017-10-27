@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.portaldeployer.server.client;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.l7tech.external.assertions.portaldeployer.server.PortalDeployerClientConfigurationManager;
 import com.l7tech.external.assertions.portaldeployer.server.client.util.RequestResponse;
 import com.l7tech.external.assertions.portaldeployer.server.client.util.RequestUtil;
 import com.l7tech.external.assertions.portaldeployer.server.client.util.RequestUtilImpl;
@@ -21,7 +22,7 @@ public class MessageProcessor {
   private SSLSocketFactory sslSocketFactory;
   private final ObjectMapper mapper;
   private RequestUtil requestUtil;
-  private VariablesConfig variablesConfig;
+  private PortalDeployerClientConfigurationManager configurationManager;
   public static String SOURCE_OPERATION_DEFAULT = "GET";
   public static String TARGET_OPERATION_DEFAULT = "PUT";
   public static String TARGET_LOCATION_DEFAULT = "https://localhost:8443/restman/1.0/bundle";
@@ -34,10 +35,10 @@ public class MessageProcessor {
     this(sslSocketFactory, null);
   }
 
-  public MessageProcessor(SSLSocketFactory sslSocketFactory, VariablesConfig variablesConfig) {
+  public MessageProcessor(SSLSocketFactory sslSocketFactory, PortalDeployerClientConfigurationManager configurationManager) {
     this.sslSocketFactory = sslSocketFactory;
-    mapper = new ObjectMapper();
-    this.variablesConfig = variablesConfig;
+    mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+    this.configurationManager = configurationManager;
   }
 
   public RequestUtil getRequestUtil() {
@@ -170,12 +171,12 @@ public class MessageProcessor {
   }
 
   protected String processVariablesConfig(String value) {
-    if (!isEmpty(value) && variablesConfig != null) {
+    if (!isEmpty(value) && configurationManager != null) {
       String tmp = value;
-      if (variablesConfig.getIngressHost() != null)
-        tmp = tmp.replace("{INGRESS_HOST}", variablesConfig.getIngressHost());
-      if (variablesConfig.getBrokerHost() != null)
-        tmp = tmp.replace("{BROKER_HOST}", variablesConfig.getBrokerHost());
+      if (configurationManager.getIngressHost() != null)
+        tmp = tmp.replace("{INGRESS_HOST}", configurationManager.getIngressHost());
+      if (configurationManager.getBrokerHost() != null)
+        tmp = tmp.replace("{BROKER_HOST}", configurationManager.getBrokerHost());
       return tmp;
     }
     return value;

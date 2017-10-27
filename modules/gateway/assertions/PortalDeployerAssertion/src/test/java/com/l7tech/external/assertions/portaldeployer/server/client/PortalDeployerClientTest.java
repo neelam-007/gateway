@@ -28,12 +28,14 @@ public class PortalDeployerClientTest {
   private SSLSocketFactory sslSocketFactory;
   @Mock
   private MqttAsyncClient mqttAsyncClient;
+  @Mock
+  private MessageProcessor messageProcessor;
 
   private PortalDeployerClient portalDeployerClient;
 
   @Before
   public void beforePortalDeployerClientTest() throws Exception {
-    portalDeployerClient = new PortalDeployerClient(mqttBrokerUri, clientId, topic, connectionTimeout, keepAliveInterval, sslSocketFactory, mqttAsyncClient);
+    portalDeployerClient = new PortalDeployerClient(mqttBrokerUri, clientId, topic, connectionTimeout, keepAliveInterval, sslSocketFactory, mqttAsyncClient, messageProcessor);
   }
 
   /**
@@ -114,14 +116,29 @@ public class PortalDeployerClientTest {
   }
 
   /**
-   * Test the messageArrived method will do nothing besides log
+   * Test the messageArrived method process the message successfully
    * @throws Exception
    */
   @Test
   public void messageArrived_Success() throws Exception {
     MqttMessage mockMqttMessage = mock(MqttMessage.class);
     when(mockMqttMessage.getPayload()).thenReturn("payload".getBytes());
+    when(messageProcessor.process(any(MqttMessage.class))).thenReturn(true);
     portalDeployerClient.messageArrived(null, mockMqttMessage);
+    verify(messageProcessor, times(1)).process(any(MqttMessage.class));
+  }
+
+  /**
+   * Test the messageArrived method will do nothing besides log
+   * @throws Exception
+   */
+  @Test
+  public void messageArrived_FailureToProcess() throws Exception {
+    MqttMessage mockMqttMessage = mock(MqttMessage.class);
+    when(mockMqttMessage.getPayload()).thenReturn("payload".getBytes());
+    when(messageProcessor.process(any(MqttMessage.class))).thenReturn(false);
+    portalDeployerClient.messageArrived(null, mockMqttMessage);
+    verify(messageProcessor, times(1)).process(any(MqttMessage.class));
   }
 
   /**

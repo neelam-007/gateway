@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.portaldeployer.server;
 
 import static org.mockito.Mockito.*;
+import com.l7tech.external.assertions.portaldeployer.server.client.MessageProcessor;
 import com.l7tech.external.assertions.portaldeployer.server.client.PortalDeployerClient;
 import javax.net.ssl.SSLSocketFactory;
 import org.junit.Before;
@@ -44,13 +45,10 @@ public class PortalDeployerClientManagerImplTest {
     when(portalDeployerClientConfigurationManager.getBrokerHost()).thenReturn(mqttBrokerUri);
     when(portalDeployerClientConfigurationManager.getTenantId()).thenReturn(tenantId);
     when(portalDeployerClientConfigurationManager.getTenantGatewayUuid()).thenReturn(tenantGatewayUuid);
-    when(portalDeployerClientFactory.getClient(String.format(
-        "wss://%s/", mqttBrokerUri),
-        String.format("%s_%s_%s", tenantId, tenantGatewayUuid, 1),
-        String.format("%s/api/cmd/deploy/tenantGatewayUuid/%s", tenantId, tenantGatewayUuid),
-        60,
-        30,
-        sslSocketFactory
+    when(portalDeployerClientFactory.getClient(
+        eq(portalDeployerClientConfigurationManager),
+        eq(sslSocketFactory),
+        any(MessageProcessor.class)
     )).thenReturn(portalDeployerClient);
   }
 
@@ -81,13 +79,10 @@ public class PortalDeployerClientManagerImplTest {
   @Test
   public void ensureNewClientInstantiatedAfterStop() throws Exception {
     PortalDeployerClient portalDeployerClient2 = mock(PortalDeployerClient.class);
-    when(portalDeployerClientFactory.getClient(String.format(
-        "wss://%s/", mqttBrokerUri),
-        String.format("%s_%s_%s", tenantId, tenantGatewayUuid, 1),
-        String.format("%s/api/cmd/deploy/tenantGatewayUuid/%s", tenantId, tenantGatewayUuid),
-        60,
-        30,
-        sslSocketFactory
+    when(portalDeployerClientFactory.getClient(
+        eq(portalDeployerClientConfigurationManager),
+        eq(sslSocketFactory),
+        any(MessageProcessor.class)
     )).thenReturn(portalDeployerClient).thenReturn(portalDeployerClient2);
     portalDeployerClientManager.stop();
     portalDeployerClientManager.start();
