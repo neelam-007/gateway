@@ -472,8 +472,16 @@ public class SolutionKitManagerResource {
                 public void call(SolutionKitInfo loaded) throws Throwable {
                     final String mappingsStr = solutionKitAdminHelper.testUpgrade(loaded);
                     final SolutionKit parentSK = loaded.getParentSolutionKit();
-                    //TODO: fix for single SK
-                    solutionKitReference.set(parentSK != null ? parentSK : loaded.getSolutionKitInstall().keySet().iterator().next());
+                    if (parentSK != null) {
+                        //Install/upgrading a collection of skars;
+                        solutionKitReference.set(parentSK);
+                    } else {
+                        //Install/upgrading a single skar;
+                        if (loaded.getSolutionKitInstall().keySet().size() != 1) {
+                            throw new SolutionKitConflictException("Expected a single Solution Kit for install or upgrade.");
+                        }
+                        solutionKitReference.set(loaded.getSolutionKitInstall().keySet().iterator().next());
+                    }
 
                     // no mappings; looks like there are no errors
                     if (StringUtils.isNotBlank(mappingsStr)) {
@@ -486,8 +494,8 @@ public class SolutionKitManagerResource {
                                     status(INTERNAL_SERVER_ERROR).entity(
                                             MessageFormat.format(
                                                     TEST_BUNDLE_IMPORT_ERROR_MESSAGE,
-                                                    loaded.getParentSolutionKit().getName(),
-                                                    loaded.getParentSolutionKit().getSolutionKitGuid(),
+                                                    solutionKitReference.get().getName(),
+                                                    solutionKitReference.get().getSolutionKitGuid(),
                                                     lineSeparator() + ExceptionUtils.getMessage(e) + lineSeparator()
                                             )
                                     ).build(),
@@ -499,8 +507,8 @@ public class SolutionKitManagerResource {
                                     status(CONFLICT).entity(
                                             MessageFormat.format(
                                                     TEST_BUNDLE_IMPORT_ERROR_MESSAGE,
-                                                    loaded.getParentSolutionKit().getName(),
-                                                    loaded.getParentSolutionKit().getSolutionKitGuid(),
+                                                    solutionKitReference.get().getName(),
+                                                    solutionKitReference.get().getSolutionKitGuid(),
                                                     lineSeparator() + mappingsStr + lineSeparator()
                                             )
                                     ).build()

@@ -1,5 +1,6 @@
 package com.l7tech.console.panels.solutionkit.install;
 
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.panels.Wizard;
 import com.l7tech.console.panels.WizardStepPanel;
@@ -8,10 +9,7 @@ import com.l7tech.console.panels.solutionkit.SolutionKitMappingsPanel;
 import com.l7tech.console.util.AdminGuiUtils;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.gateway.api.Bundle;
-import com.l7tech.gateway.api.Item;
-import com.l7tech.gateway.api.Mapping;
-import com.l7tech.gateway.api.Mappings;
+import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.solutionkit.*;
 import com.l7tech.gui.util.DialogDisplayer;
@@ -22,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
+import javax.xml.transform.dom.DOMResult;
 import javax.xml.transform.stream.StreamSource;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -133,11 +132,12 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
 
         // Display errors if applicable
         if (!errorKitList.isEmpty()) {
-            displayErrorDialog(errorKitList);
+            displayInstallErrorDialog(errorKitList);
         }
     }
 
     private void upgrade(SolutionKitAdmin solutionKitAdmin, SolutionKitProcessor solutionKitProcessor) throws Exception {
+        final List<Pair<Mappings, SolutionKit>> errorKitList = new ArrayList<>();
         solutionKitProcessor.upgrade(new Functions.UnaryVoidThrows<SolutionKitInfo, Exception>() {
             @Override
             public void call(SolutionKitInfo loaded) throws Exception {
@@ -150,12 +150,40 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
                         false);
 
                 if (result.isLeft()) {
+                    // Error was detected
+                    List<SolutionKit> solutionKits = new ArrayList<>();
+                    solutionKits.addAll(loaded.getSolutionKitDelete().keySet());
+                    solutionKits.addAll(loaded.getSolutionKitInstall().keySet());
                     // Solution kit failed to upgrade.
-                    String msg = result.left();
+                    final String msg = result.left();
                     logger.log(Level.WARNING, msg);
+                    //Convert string ItemsList
+                    final ItemsList<Mappings> itemList = MarshallingUtils.unmarshal(ItemsList.class, new StreamSource(new StringReader(msg)));
+                    final List<Item<Mappings>> items = itemList.getContent();
+
+                    if (items.size() != solutionKits.size()) {
+                        throw new SolutionKitConflictException("Result mappings size was not the same as Solution Kits size.");
+                    }
+
+                    for (int i = 0; i<items.size(); i++) {
+                        Mappings mappings = items.get(i).getContent();
+                        //Check if this set of solution kit mappings has mapping errors
+                        for (Mapping mapping : mappings.getMappings()) {
+                            if (mapping.getErrorType() != null) {
+                                errorKitList.add(new Pair<>(mappings, solutionKits.get(i)));
+                                break;
+                            }
+                        }
+                    }
                 }
             }
         });
+
+        // Display errors if applicable
+        if (!errorKitList.isEmpty()) {
+            displayUpgradeErrorDialog(errorKitList);
+        }
+
     }
 
     @SuppressWarnings("unused")
@@ -164,11 +192,71 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
     }
 
     /**
+     * Display an upgrade error dialog.
+     * If the specified msg is a bundle mapping xml (ie. response message from RESTMAN import bundle API), then
+     * display the mapping errors in a table format. Otherwise, display the msg string as-is.
+     */
+    private void displayUpgradeErrorDialog(@NotNull final List<Pair<Mappings, SolutionKit>> errorKitMatchList) {
+        final JTabbedPane errorTabbedPane = new JTabbedPane();
+        for (Pair<Mappings, SolutionKit> errorKit: errorKitMatchList) {
+            final Mappings mappings = errorKit.left;
+            final SolutionKit solutionKit = errorKit.right;
+            String msg = "";
+
+            try {
+                final DOMResult result = new DOMResult();
+                MarshallingUtils.marshal(mappings, result, true);
+                msg = XmlUtil.nodeToString(result.getNode());
+            } catch (IOException e) {
+                logger.fine("Problem marshalling the mappings for " + solutionKit.getName());
+            }
+
+            if (mappings != null) {
+                final List<Mapping> errorMappings = new ArrayList<>();
+                for (Mapping aMapping : mappings.getMappings()) {
+                    if (aMapping.getErrorType() != null) {
+                        errorMappings.add(aMapping);
+                    }
+                }
+                mappings.setMappings(errorMappings);
+
+                // need the solution kit bundle
+                final Bundle bundle = getWizardInput().getBundle(solutionKit);
+                // bundle is null for delete mapping errors
+                if (bundle == null) {
+                    errorTabbedPane.add(solutionKit.getName(), new JLabel(msg));
+                    continue;
+                }
+
+                final Map<String, String> resolvedEntityId = getWizardInput().getResolvedEntityIds(solutionKit.getSolutionKitGuid()).right;
+
+                final JPanel errorPanel = new JPanel();
+                final JLabel label = new JLabel("Failed to upgrade Solution Kit(s) due to following entity conflicts:");
+                final SolutionKitMappingsPanel solutionKitMappingsPanel = new SolutionKitMappingsPanel("Name");
+                solutionKitMappingsPanel.setPreferredSize(new Dimension(1000, 400));
+                solutionKitMappingsPanel.hideTargetIdColumn();
+                solutionKitMappingsPanel.setData(solutionKit, mappings, bundle, resolvedEntityId);
+
+                errorPanel.setLayout(new BorderLayout());
+                errorPanel.add(label, BorderLayout.NORTH);
+                errorPanel.add(solutionKitMappingsPanel, BorderLayout.CENTER);
+
+                errorTabbedPane.add(solutionKit.getName(), errorPanel);
+            } else {
+                errorTabbedPane.add(solutionKit.getName(), new JLabel(msg));
+            }
+        }
+
+        DialogDisplayer.showMessageDialog(this.getOwner(), errorTabbedPane, "Upgrade Solution Kit Error", JOptionPane.ERROR_MESSAGE, null);
+    }
+
+    /**
      * Display a error dialog.
      * If the specified msg is a bundle mapping xml (ie. response message from RESTMAN import bundle API), then
      * display the mapping errors in a table format. Otherwise, display the msg string as-is.
      */
-    private void displayErrorDialog(@NotNull final List<Pair<String, SolutionKit>> errorKitMatchList) {
+    //TODO: when install uses multi-bundle upgrade, probably use displayUpgradeErrorDialog
+    private void displayInstallErrorDialog(@NotNull final List<Pair<String, SolutionKit>> errorKitMatchList) {
         final JTabbedPane errorTabbedPane = new JTabbedPane();
 
         String msg;
