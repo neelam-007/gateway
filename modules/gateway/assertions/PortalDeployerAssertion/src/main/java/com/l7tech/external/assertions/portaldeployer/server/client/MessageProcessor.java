@@ -66,9 +66,8 @@ public class MessageProcessor {
       final Messages messages = mapper.readValue(payload, Messages.class);
       if (messages != null && messages.getMessages() != null && messages.getMessages().size() > 0) {
         for (Message message : messages.getMessages()) {
-          boolean success = performAction(message);
-          if (!success) {
-            logger.log(Level.INFO, String.format("failed processing messageId %s ", message.getMessageId()));
+          processed_successfully = performAction(message);
+          if (!processed_successfully) {
             //false if at least one failed
             processed_successfully = false;
           }
@@ -151,9 +150,8 @@ public class MessageProcessor {
       if (sourceResponse != null) {
         targetResponse = getRequestUtil().processRequest(targetLocation, null, null, sourceResponse.getBody(), targetContentType, targetOperation, sslSocketFactory);
         CallbackDto callback = new CallbackDto();
-        callback.setLastTimeDeployed(System.currentTimeMillis());
         callback.setMessage(targetResponse.getBody());
-        callback.setStatus(String.valueOf(targetResponse.getCode()));
+        callback.setStatus(String.valueOf(targetResponse.getCode() >= 400 ? "ERROR" : "DEPLOYED"));
         String callbackBody = mapper.writeValueAsString(callback);
         callbackResponse = getRequestUtil().processRequest(callbackLocation, null, null, callbackBody, callbackContentType, callbackOperation, sslSocketFactory);
         if (callbackResponse != null && (callbackResponse.getCode() >= 200 && callbackResponse.getCode() < 300)) {

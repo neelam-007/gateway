@@ -139,8 +139,9 @@ public class PortalDeployerClient implements MqttCallback {
     logger.log(Level.INFO, String.format("Message Arrived - ID: %s, Topic: %s", message.getId(), topic));
     if(this.messageProcessor.process(message)) {
       logger.log(Level.INFO, String.format("Successfully processed message %s", message.getId()));
+    } else {
+      logger.log(Level.INFO, String.format("Failed to process message %s", message.getId()));
     }
-    logger.log(Level.INFO, String.format("Failed to process message %s", message.getId()));
   }
 
   @Override
