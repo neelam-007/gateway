@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.portaldeployer.server.client;
 
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.l7tech.external.assertions.portaldeployer.server.client.util.RequestResponse;
@@ -49,7 +50,7 @@ public class MessageProcessorTest {
     callback.setLastTimeDeployed(1);
     callback.setMessage("a successfull operation");
     callback.setStatus("200");
-    String callbackBody = mapper.writeValueAsString(callback);
+    //String callbackBody = mapper.writeValueAsString(callback);
     //the message
     MqttMessage message = new MqttMessage(mqttMessagePayload.getBytes());
     //mock events
@@ -58,13 +59,53 @@ public class MessageProcessorTest {
     RequestResponse callbackResponse = new RequestResponse(200, "a callback response");
     when(requestUtil.processRequest(eq(mp.processVariablesConfig(sourceUrl)), any(), any(), any(), any(), eq(MessageProcessor.SOURCE_OPERATION_DEFAULT), eq(sslSocketFactory))).thenReturn(sourceResponse);
     when(requestUtil.processRequest(eq(mp.processVariablesConfig(MessageProcessor.TARGET_LOCATION_DEFAULT)), any(), any(), eq(sourceResponse.getBody()), eq(MessageProcessor.TARGET_CONTENT_TYPE_DEFAULT), eq(MessageProcessor.TARGET_OPERATION_DEFAULT), eq(sslSocketFactory))).thenReturn(targetResponse);
-    when(requestUtil.processRequest(eq(mp.processVariablesConfig(callbackUrl)), any(), any(), eq(callbackBody), eq(MessageProcessor.CALLBACK_CONTENT_TYPE_DEFAULT), eq(MessageProcessor.CALLBACK_OPERATION_DEFAULT), eq(sslSocketFactory))).thenReturn(callbackResponse);
+    when(requestUtil.processRequest(eq(mp.processVariablesConfig(callbackUrl)), any(), any(), contains("{\"status\":\"200\""), eq(MessageProcessor.CALLBACK_CONTENT_TYPE_DEFAULT), eq(MessageProcessor.CALLBACK_OPERATION_DEFAULT), eq(sslSocketFactory))).thenReturn(callbackResponse);
 
     //process message
-    mp.process(message);
+    boolean status = mp.process(message);
 
     verify(requestUtil, times(3)).processRequest(any(), any(), any(), any(), any(), any(), any());
+    assertTrue(status);
+  }
 
+  @Test
+  public void testProcessFailed() throws Exception {
+    VariablesConfig config = new VariablesConfig();
+    config.setIngressHost("elih4");
+    MessageProcessor mp = new MessageProcessor(sslSocketFactory, config);
+    mp.setRequestUtil(requestUtil);
+    //build message
+    ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+    Messages testMessages = new Messages();
+    Message message1 = new Message();
+    String sourceUrl = "https://{INGRESS_HOST}:8443/source";
+    String callbackUrl = "https://{INGRESS_HOST}:8443/callback";
+    message1.setSourceLocation(sourceUrl);
+    message1.setCallbackLocation(callbackUrl);
+    List<Message> messageList = new ArrayList<>();
+    messageList.add(message1);
+    testMessages.setMessages(messageList);
+    String mqttMessagePayload = mapper.writeValueAsString(testMessages);
+    CallbackDto callback = new CallbackDto();
+    callback.setLastTimeDeployed(1);
+    callback.setMessage("a successfull operation");
+    callback.setStatus("200");
+    //String callbackBody = mapper.writeValueAsString(callback);
+    //the message
+    MqttMessage message = new MqttMessage(mqttMessagePayload.getBytes());
+    //mock events
+    RequestResponse sourceResponse = new RequestResponse(200, "an awesome restman bundle");
+    RequestResponse targetResponse = new RequestResponse(200, "a successfull operation");
+    RequestResponse callbackResponse = new RequestResponse(500, "a callback response failure");
+    when(requestUtil.processRequest(eq(mp.processVariablesConfig(sourceUrl)), any(), any(), any(), any(), eq(MessageProcessor.SOURCE_OPERATION_DEFAULT), eq(sslSocketFactory))).thenReturn(sourceResponse);
+    when(requestUtil.processRequest(eq(mp.processVariablesConfig(MessageProcessor.TARGET_LOCATION_DEFAULT)), any(), any(), eq(sourceResponse.getBody()), eq(MessageProcessor.TARGET_CONTENT_TYPE_DEFAULT), eq(MessageProcessor.TARGET_OPERATION_DEFAULT), eq(sslSocketFactory))).thenReturn(targetResponse);
+    when(requestUtil.processRequest(eq(mp.processVariablesConfig(callbackUrl)), any(), any(), contains("{\"status\":\"200\""), eq(MessageProcessor.CALLBACK_CONTENT_TYPE_DEFAULT), eq(MessageProcessor.CALLBACK_OPERATION_DEFAULT), eq(sslSocketFactory))).thenReturn(callbackResponse);
+
+    //process message
+    boolean status = mp.process(message);
+
+    verify(requestUtil, times(3)).processRequest(any(), any(), any(), any(), any(), any(), any());
+    assertFalse(status);
   }
 
   @Test
@@ -84,8 +125,9 @@ public class MessageProcessorTest {
     when(requestUtil.processRequest(eq(mp.processVariablesConfig(MessageProcessor.TARGET_LOCATION_DEFAULT)), any(), any(), eq("<restman><body/></restman>"), eq(MessageProcessor.TARGET_CONTENT_TYPE_DEFAULT), eq(MessageProcessor.TARGET_OPERATION_DEFAULT), eq(sslSocketFactory))).thenReturn(targetResponse);
     when(requestUtil.processRequest(eq("https://elih4:8443/callback"), any(), any(), contains("{\"status\":\"200\""), eq(MessageProcessor.CALLBACK_CONTENT_TYPE_DEFAULT), eq(MessageProcessor.CALLBACK_OPERATION_DEFAULT), eq(sslSocketFactory))).thenReturn(callbackResponse);
     //process message
-    mp.process(message);
+    boolean status = mp.process(message);
     verify(requestUtil, times(3)).processRequest(any(), any(), any(), any(), any(), any(), any());
+    assertTrue(status);
   }
 
   @Test
@@ -106,8 +148,60 @@ public class MessageProcessorTest {
     when(requestUtil.processRequest(eq(mp.processVariablesConfig(MessageProcessor.TARGET_LOCATION_DEFAULT)), any(), any(), eq("<restman><body/></restman>"), eq(MessageProcessor.TARGET_CONTENT_TYPE_DEFAULT), eq(MessageProcessor.TARGET_OPERATION_DEFAULT), eq(sslSocketFactory))).thenReturn(targetResponse);
     when(requestUtil.processRequest(eq("https://elih4:8443/callback"), any(), any(), contains("{\"status\":\"200\""), eq(MessageProcessor.CALLBACK_CONTENT_TYPE_DEFAULT), eq(MessageProcessor.CALLBACK_OPERATION_DEFAULT), eq(sslSocketFactory))).thenReturn(callbackResponse);
     //process message
-    mp.process(message);
+    boolean status = mp.process(message);
     verify(requestUtil, times(2)).processRequest(any(), any(), any(), any(), any(), any(), any());
+    assertTrue(status);
+  }
+
+  @Test
+  public void testInvalidPayload() throws Exception {
+    String invalidPayload = "not a json! blah";
+    MqttMessage message = new MqttMessage(invalidPayload.getBytes());
+    VariablesConfig config = new VariablesConfig();
+    config.setIngressHost("elih4");
+    MessageProcessor mp = new MessageProcessor(sslSocketFactory, config);
+    mp.setRequestUtil(requestUtil);
+    boolean status = mp.process(message);
+    verify(requestUtil, never()).processRequest(any(), any(), any(), any(), any(), any(), any());
+    assertFalse(status);
+  }
+
+  @Test
+  public void testEmptyPayload() throws Exception {
+    ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+
+    VariablesConfig config = new VariablesConfig();
+    config.setIngressHost("elih4");
+    MessageProcessor mp = new MessageProcessor(sslSocketFactory, config);
+    mp.setRequestUtil(requestUtil);
+    Messages testMessages = new Messages();
+    List<Message> messageList = new ArrayList<>();
+    testMessages.setMessages(messageList);
+    String mqttMessagePayload = mapper.writeValueAsString(testMessages);
+    MqttMessage message = new MqttMessage(mqttMessagePayload.getBytes());
+    boolean status = mp.process(message);
+    verify(requestUtil, never()).processRequest(any(), any(), any(), any(), any(), any(), any());
+    assertFalse(status);
+  }
+
+  @Test
+  public void testEmptyRequiredLocation() throws Exception {
+    ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+
+    VariablesConfig config = new VariablesConfig();
+    config.setIngressHost("elih4");
+    MessageProcessor mp = new MessageProcessor(sslSocketFactory, config);
+    mp.setRequestUtil(requestUtil);
+    Messages testMessages = new Messages();
+    List<Message> messageList = new ArrayList<>();
+    Message message1 = new Message();
+    messageList.add(message1);
+    testMessages.setMessages(messageList);
+    String mqttMessagePayload = mapper.writeValueAsString(testMessages);
+    MqttMessage message = new MqttMessage(mqttMessagePayload.getBytes());
+    boolean status = mp.process(message);
+    verify(requestUtil, never()).processRequest(any(), any(), any(), any(), any(), any(), any());
+    assertFalse(status);
   }
 
 }

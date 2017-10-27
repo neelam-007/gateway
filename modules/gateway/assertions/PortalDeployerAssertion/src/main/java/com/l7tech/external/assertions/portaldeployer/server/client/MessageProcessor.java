@@ -58,23 +58,27 @@ public class MessageProcessor {
    * @return
    */
   public boolean process(MqttMessage mqttMessage) {
-    boolean processed_successfully = false;
+    boolean processed_successfully = true;
     try {
       byte[] payload = mqttMessage.getPayload();
       //validate as json by converting it
       final Messages messages = mapper.readValue(payload, Messages.class);
-      if (messages != null) {
+      if (messages != null && messages.getMessages() != null && messages.getMessages().size() > 0) {
         for (Message message : messages.getMessages()) {
           boolean success = performAction(message);
           if (!success) {
             logger.log(Level.INFO, String.format("failed processing messageId %s ", message.getMessageId()));
+            //false if at least one failed
+            processed_successfully = false;
           }
         }
       } else {
         logger.log(Level.INFO, "No message to process");
+        processed_successfully = false;
       }
     } catch (Exception e) {
       logger.log(Level.SEVERE, "There was en error processing messages", e);
+      processed_successfully = false;
     }
     return processed_successfully;
   }
@@ -132,11 +136,11 @@ public class MessageProcessor {
 
       RequestResponse sourceResponse = null, targetResponse = null, callbackResponse = null;
       //get payload from SOURCE
-      if (sourceLocation.toLowerCase().startsWith("http")) {
+      if (!isEmpty(sourceLocation) && sourceLocation.toLowerCase().startsWith("http")) {
         sourceResponse = getRequestUtil().processRequest(sourceLocation, null, null, null, null, sourceOperation, sslSocketFactory);
         logger.log(Level.FINE, String.format("source response code %s", sourceResponse.getCode()));
 
-      } else if (sourceOperation.equals("base64")) {
+      } else if (!isEmpty(sourceOperation) && sourceOperation.equals("base64")) {
         byte[] decoded = Base64.getDecoder().decode(sourceLocation);
         String payload = new String(decoded, StandardCharsets.UTF_8);
         sourceResponse = new RequestResponse(200, payload);
