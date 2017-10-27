@@ -204,11 +204,11 @@ public class PooledConnection {
     }
 
     public boolean isPoolActive() {
-        return isPooled ? pool.getNumActive() > 0 : false;
+        return isPooled && pool.getNumActive() > 0;
     }
 
     public boolean isIdleTimeoutExpired() {
-        return (!isPooled || isPoolEmpty()) && (System.currentTimeMillis() - getLastAccessTime().get() > config.minEvictableIdleTimeMillis && config.minEvictableIdleTimeMillis > 0);
+        return (!isPoolActive()) && (System.currentTimeMillis() - getLastAccessTime().get() > config.minEvictableIdleTimeMillis && config.minEvictableIdleTimeMillis > 0);
     }
 
     public void debugPoolStatus() {
