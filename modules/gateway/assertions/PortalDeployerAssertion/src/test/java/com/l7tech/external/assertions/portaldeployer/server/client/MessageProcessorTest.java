@@ -3,7 +3,6 @@ package com.l7tech.external.assertions.portaldeployer.server.client;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.l7tech.external.assertions.portaldeployer.server.PortalDeployerClientConfigurationManager;
 import com.l7tech.external.assertions.portaldeployer.server.client.util.RequestResponse;
 import com.l7tech.external.assertions.portaldeployer.server.client.util.RequestUtil;
 import java.util.ArrayList;
@@ -204,7 +203,5 @@ public class MessageProcessorTest {
     verify(requestUtil, never()).processRequest(any(), any(), any(), any(), any(), any(), any());
     assertFalse(status);
   }
-
-
 
 }
