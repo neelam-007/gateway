@@ -136,7 +136,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
             solutionKitProcessor.testInstall(new Functions.UnaryVoidThrows<Triple<SolutionKit, String, Boolean>, Throwable>() {
                 @Override
                 public void call(Triple<SolutionKit, String, Boolean> loaded) throws Throwable {
-                    final String  result = AdminGuiUtils.doAsyncAdminWithException(
+                    final String result = AdminGuiUtils.doAsyncAdminWithException(
                             solutionKitAdmin,
                             SolutionKitSelectionPanel.this.getOwner(),
                             "Testing Solution Kit",
@@ -195,11 +195,15 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
                     final ItemsList<Mappings> itemList = MarshallingUtils.unmarshal(ItemsList.class, new StreamSource(new StringReader(result)));
                     final List<Item<Mappings>> items = itemList.getContent();
                     final Iterator<SolutionKit> selectedIterator = solutionKitsSelected.iterator();
-                    final int totalDeleteBundles = SolutionKitUtils.generateListOfDeleteBundles(settings.getSolutionKitsToUpgrade()).size();
+                    final int totalDeleteBundles = loaded.getSolutionKitDelete().size();
 
                     // If the number of delete bundles and solution kits selected is not equal to the bundle result size, display error
                     if (totalDeleteBundles + solutionKitsSelected.size() != items.size()){
-                        DialogDisplayer.showMessageDialog(SolutionKitSelectionPanel.this, "Unexpected error: unable to get Solution Kit mappings.", "Install Solution Kit", JOptionPane.ERROR_MESSAGE, null);
+                        DialogDisplayer.showMessageDialog(SolutionKitSelectionPanel.this,
+                                "Unexpected error: unable to process Solution Kit mappings.",
+                                "Upgrade Solution Kit",
+                                JOptionPane.ERROR_MESSAGE,
+                                null);
                         success.set(false);
                     }
 
@@ -207,7 +211,11 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
                         Mappings mappings = items.get(i).getContent();
                         //Check no errors
                         if (null == mappings || null == mappings.getMappings()) {
-                            DialogDisplayer.showMessageDialog(SolutionKitSelectionPanel.this, "Unexpected error: unable to get Solution Kit mappings.", "Install Solution Kit", JOptionPane.ERROR_MESSAGE, null);
+                            DialogDisplayer.showMessageDialog(SolutionKitSelectionPanel.this,
+                                    "Unexpected error: unable to get Solution Kit mappings.",
+                                    "Upgrade Solution Kit",
+                                    JOptionPane.ERROR_MESSAGE,
+                                    null);
                             success.set(false);
                         }
                         //Put the install bundle results into testMappings

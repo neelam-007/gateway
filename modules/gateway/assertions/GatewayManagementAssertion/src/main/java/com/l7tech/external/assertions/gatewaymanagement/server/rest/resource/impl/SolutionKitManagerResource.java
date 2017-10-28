@@ -471,17 +471,7 @@ public class SolutionKitManagerResource {
                 @Override
                 public void call(SolutionKitInfo loaded) throws Throwable {
                     final String mappingsStr = solutionKitAdminHelper.testUpgrade(loaded);
-                    final SolutionKit parentSK = loaded.getParentSolutionKit();
-                    if (parentSK != null) {
-                        //Install/upgrading a collection of skars;
-                        solutionKitReference.set(parentSK);
-                    } else {
-                        //Install/upgrading a single skar;
-                        if (loaded.getSolutionKitInstall().keySet().size() != 1) {
-                            throw new SolutionKitConflictException("Expected a single Solution Kit for install or upgrade.");
-                        }
-                        solutionKitReference.set(loaded.getSolutionKitInstall().keySet().iterator().next());
-                    }
+                    solutionKitReference.set(SolutionKitUtils.solutionKitToDisplay(loaded.getSolutionKitInstall().keySet(), loaded.getParentSolutionKit()));
 
                     // no mappings; looks like there are no errors
                     if (StringUtils.isNotBlank(mappingsStr)) {

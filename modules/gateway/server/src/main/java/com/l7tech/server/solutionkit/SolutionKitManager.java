@@ -38,7 +38,7 @@ public interface SolutionKitManager extends EntityManager<SolutionKit, SolutionK
      *                        Also holds solution kits metadata
      * @param isTest true if this is a test installation, no changes will be persisted; false otherwise
      * @return the resulting mappings XML
-     * @throws Exception exceptions thrown from importbundles //TODO:
+     * @throws Exception A variety of exceptions from solution kits and restman
      */
     @NotNull
     String importBundles(@NotNull final SolutionKitInfo solutionKitInfo, final boolean isTest) throws Exception;

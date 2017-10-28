@@ -343,21 +343,23 @@ public final class SolutionKitUtils {
      * Method to generate a list of delete bundles containing the uninstall bundles of old solution kits.
      * @param oldSks The selected installed solution kits that should be removed.
      *               oldSks will either:
-     *              - contain a single solution kit for upgrade,
-     *              - or a collection of solution kits with the parent being the first item in the list
+     *              - be empty in the case of installs
+     *              - or contain a single non-parent solution kit for upgrade
+     *              - or contain a single solution kit and parent for upgrade.
+     *              - or contain a collection of solution kits with the parent being the first item in the list
      * @return the bundle list of uninstall bundles with the names of the solution kit
-     * @throws SolutionKitException
-     * @throws IOException
+     * @throws SolutionKitException Occurs when a solution kit cannot be upgraded
      */
     public static Map<SolutionKit, String> generateListOfDeleteBundles(@NotNull final List<SolutionKit> oldSks) throws SolutionKitException {
         final Map<SolutionKit, String> solutionKitDelete = new TreeMap<>();
         //The first item in the oldSks is the parent if a parent is selected for upgrade
         for (final SolutionKit solutionKit : oldSks) {
             //Skip the parent
-            if (!Boolean.valueOf(solutionKit.getProperty(SK_PROP_IS_COLLECTION_KEY))) {
+            if (!isParentSolutionKit(solutionKit)) {
                 // Since v9.3, a solution kit is only upgradable if it has an uninstall bundle
-                if (StringUtils.isNotBlank(solutionKit.getUninstallBundle())) {
-                    solutionKitDelete.put(solutionKit, solutionKit.getUninstallBundle());
+                final String uninstallBundle = solutionKit.getUninstallBundle();
+                if (StringUtils.isNotBlank(uninstallBundle)) {
+                    solutionKitDelete.put(solutionKit, uninstallBundle);
                 } else {
                     throw new SolutionKitException("The solution kit " + solutionKit.getName() + " with guid " + solutionKit.getId() + " cannot be upgraded.");
                 }
@@ -481,7 +483,7 @@ public final class SolutionKitUtils {
      * @param two second solution kit
      * @return true if both solution kits have the same metadata
      */
-    static boolean hasSameMetaData(@NotNull SolutionKit one, @NotNull SolutionKit two) {
+    public static boolean hasSameMetaData(@NotNull SolutionKit one, @NotNull SolutionKit two) {
         return StringUtils.equals(one.getProperty(SK_PROP_DESC_KEY), two.getProperty(SK_PROP_DESC_KEY)) &&
                 StringUtils.equals(one.getProperty(SK_PROP_IS_COLLECTION_KEY), two.getProperty(SK_PROP_IS_COLLECTION_KEY)) &&
                 StringUtils.equals(one.getProperty(SK_PROP_TIMESTAMP_KEY), two.getProperty(SK_PROP_TIMESTAMP_KEY)) &&
@@ -492,6 +494,47 @@ public final class SolutionKitUtils {
                 StringUtils.equals(one.getSolutionKitGuid(), two.getSolutionKitGuid()) &&
                 StringUtils.equals(one.getName(), two.getName()) &&
                 StringUtils.equals(one.getSolutionKitVersion(), two.getSolutionKitVersion());
+    }
+
+    /**
+     * Verify that two collections of solution kits share at least one guid. Typical use is to compare loadedSolutionKits and solutionKitsToUpgrade
+     * @param loadedSolutionKits Solution kits loaded from skar file
+     * @param solutionKitsToUpgrade Solution kits on database
+     * @return true if at least one guid from Solution Kits to upgrade and loaded have the same guids, o/w false
+     */
+    public static boolean doesShareGuid(Collection<SolutionKit> loadedSolutionKits, Collection<SolutionKit> solutionKitsToUpgrade) {
+        final Set<String> guids = new HashSet<>();
+        for (final SolutionKit solutionKit : loadedSolutionKits) {
+            guids.add(solutionKit.getSolutionKitGuid());
+        }
+
+        for (final SolutionKit solutionKit : solutionKitsToUpgrade) {
+            //if set doesn't change, we know at least one solution kit loaded and one solution kit upgrade share guid, so proceed
+            if (!guids.add(solutionKit.getSolutionKitGuid())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * For multibundle import, the solutionKit to display for versionComment or for errors will either be a parent, or an individual SK
+     * @param sksToInstall set of solution kits to install, should contain an individual SK
+     * @param parentSK parentSK to check if it should be displayed
+     * @return either a parent SK or an individual SK
+     * @throws SolutionKitConflictException If for some reason multiple solution kits are selected to install.
+     */
+    public static SolutionKit solutionKitToDisplay(Set<SolutionKit> sksToInstall, SolutionKit parentSK) throws SolutionKitConflictException {
+        if (parentSK != null) {
+            //Install/upgrading a collection of skars;
+            return parentSK;
+        } else {
+            //Install/upgrading a single skar;
+            if (sksToInstall.size() != 1) {
+                throw new SolutionKitConflictException("Expected a single Solution Kit for install or upgrade but found: " + sksToInstall.size() );
+            }
+            return sksToInstall.iterator().next();
+        }
     }
 
     private SolutionKitUtils() {}

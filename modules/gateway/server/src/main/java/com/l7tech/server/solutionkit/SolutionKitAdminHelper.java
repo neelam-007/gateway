@@ -155,8 +155,8 @@ public class SolutionKitAdminHelper implements SolutionKitAdmin {
 
         // check that result mappings and solutionkitpayload map + delete bundles are same size
         if (totalDeleteBundles + solutionKitBundleMap.size() != items.size()){
-            throw new SolutionKitConflictException("Error in upgrade. Number of delete bundles and install bundles " +
-                    "should be the same as the number of items in result mappings.");
+            throw new SolutionKitConflictException("Error in upgrade: Unable to process Solution Kit mappings: " +
+                    System.lineSeparator() + resultMappings);
         }
 
         final List<String> installMappingResults = new ArrayList<>();
@@ -191,6 +191,7 @@ public class SolutionKitAdminHelper implements SolutionKitAdmin {
             updateEntityOwnershipDescriptors(installMappingResult, solutionKit);
             solutionKitManager.update(solutionKit);
             resultGoids.add(solutionKit.getGoid());
+            installMappingIndex++;
         }
         return resultGoids;
     }

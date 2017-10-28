@@ -170,19 +170,17 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
         final Map<SolutionKit, String> solutionKitDelete = solutionKitInfo.getSolutionKitDelete();
         final Map<SolutionKit, String> solutionKitInstall = solutionKitInfo.getSolutionKitInstall();
         // set restman query parameters including test and versionComment
-        final SolutionKit parentSolutionKit = solutionKitInfo.getParentSolutionKit();
-        final SolutionKit solutionKitForRestMan;
-        if (parentSolutionKit != null) {
-            //Install/upgrading a collection of skars;
-            solutionKitForRestMan = parentSolutionKit;
-        } else {
-            //Install/upgrading a single skar;
-            if (solutionKitInstall.keySet().size() != 1) {
-                throw new SolutionKitConflictException("Expected a single Solution Kit for install or upgrade.");
-            }
-            solutionKitForRestMan = solutionKitInstall.keySet().iterator().next();
-        }
+        final SolutionKit solutionKitForRestMan = SolutionKitUtils.solutionKitToDisplay(solutionKitInfo.getSolutionKitInstall().keySet(), solutionKitInfo.getParentSolutionKit());
         try {
+            //Process delete bundles
+            final List<Bundle> processedDeleteBundles = new ArrayList<>();
+            for (Map.Entry<SolutionKit, String> skWithDelete : solutionKitDelete.entrySet()) {
+                final Bundle bundle = MarshallingUtils.unmarshal(Bundle.class, new StreamSource(new StringReader(skWithDelete.getValue())), true);
+                bundle.setName(skWithDelete.getKey().getName() + " Delete Bundle");
+                processedDeleteBundles.add(bundle);
+            }
+
+            //Process install bundles
             final List<Bundle> processedInstallBundles = new ArrayList<>();
             for (Map.Entry<SolutionKit, String> skWithInstall : solutionKitInstall.entrySet()) {
                 final String instanceModifier = skWithInstall.getKey().getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY);
@@ -197,13 +195,6 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
                 processedInstallBundles.add(bundle);
             }
 
-            final List<Bundle> processedDeleteBundles = new ArrayList<>();
-            for (Map.Entry<SolutionKit, String> skWithDelete : solutionKitDelete.entrySet()) {
-                final Bundle bundle = MarshallingUtils.unmarshal(Bundle.class, new StreamSource(new StringReader(skWithDelete.getValue())), true);
-                bundle.setName(skWithDelete.getKey().getName() + " Delete Bundle");
-                processedDeleteBundles.add(bundle);
-            }
-
             final String requestXml = SolutionKitUtils.generateBundleListPayload(processedDeleteBundles, processedInstallBundles);
 
             final PolicyEnforcementContext pec = restmanInvoker.getContext(requestXml);
@@ -211,7 +202,7 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
             pec.setVariable(VAR_RESTMAN_URI, URL_1_0_BUNDLE_BATCH  + getRestmanQueryParameters(solutionKitForRestMan, isTest));
 
             // Allow solution kit installation/upgrade to "punch through" read-only entities
-            Pair<AssertionStatus, RestmanMessage> result;
+            final Pair<AssertionStatus, RestmanMessage> result;
             try {
                 result = protectedEntityTracker.doWithEntityProtectionDisabled(getProtectedEntityTrackerCallable(restmanInvoker, pec, requestXml));
             } catch (GatewayManagementDocumentUtilities.AccessDeniedManagementResponse |

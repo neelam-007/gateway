@@ -1,6 +1,8 @@
 package com.l7tech.gateway.common.solutionkit;
 
 import com.l7tech.util.DeserializeSafe;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.Serializable;
 import java.util.Map;
@@ -11,34 +13,29 @@ import java.util.Map;
  */
 @DeserializeSafe
 public class SolutionKitInfo implements Serializable {
-    private Map<SolutionKit, String> solutionKitDelete;
-    private Map<SolutionKit, String> solutionKitInstall;
-    private SolutionKit parentSolutionKit;
-    private boolean isUpgrade;
+    private final Map<SolutionKit, String> solutionKitDelete;
+    private final Map<SolutionKit, String> solutionKitInstall;
+    private final SolutionKit parentSolutionKit;
 
-    public SolutionKitInfo(Map<SolutionKit, String> solutionKitDelete, Map<SolutionKit, String> solutionKitInstall, SolutionKit parentSolutionKit, boolean isUpgrade) {
+    public SolutionKitInfo(@NotNull final Map<SolutionKit, String> solutionKitDelete,
+                           @NotNull final Map<SolutionKit, String> solutionKitInstall,
+                           @Nullable final SolutionKit parentSolutionKit) {
         this.solutionKitDelete = solutionKitDelete;
         this.solutionKitInstall = solutionKitInstall;
         this.parentSolutionKit = parentSolutionKit;
-        this.isUpgrade = isUpgrade;
     }
 
+    @NotNull
     public Map<SolutionKit, String> getSolutionKitDelete() {
         return solutionKitDelete;
     }
 
+    @NotNull
     public Map<SolutionKit, String> getSolutionKitInstall() {
         return solutionKitInstall;
     }
 
-    public boolean isUpgrade() {
-        return isUpgrade;
-    }
-
-    public void setUpgrade(boolean upgrade) {
-        isUpgrade = upgrade;
-    }
-
+    @Nullable
     public SolutionKit getParentSolutionKit() {
         return parentSolutionKit;
     }

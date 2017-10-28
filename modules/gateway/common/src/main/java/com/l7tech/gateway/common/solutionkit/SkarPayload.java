@@ -41,7 +41,9 @@ public class SkarPayload extends SignerUtils.SignedZip.InnerPayload {
 
     private static final String BUNDLE_ELE_MAPPINGS = "Mappings";
 
-    /** Override {@link com.l7tech.gateway.common.security.signer.SignerUtils.SignedZip.InnerPayload#FACTORY} to avoid accidental usage. */
+    /**
+     * Override {@link com.l7tech.gateway.common.security.signer.SignerUtils.SignedZip.InnerPayload#FACTORY} to avoid accidental usage.
+     */
     @SuppressWarnings("UnusedDeclaration")
     @Nullable
     private static final InnerPayloadFactory<SkarPayload> FACTORY = null;
@@ -70,9 +72,9 @@ public class SkarPayload extends SignerUtils.SignedZip.InnerPayload {
     /**
      * Load and process the files inside the SKAR.
      *
-     * @param inputStream    SKAR file {@code InputStream}.  Required and cannot be {@code null}.
-     *                       Note: this MUST NOT just be the stream claimed by the sender, it must be freshly unwrapped
-     *                       after signature is successfully verified.
+     * @param inputStream SKAR file {@code InputStream}.  Required and cannot be {@code null}.
+     *                    Note: this MUST NOT just be the stream claimed by the sender, it must be freshly unwrapped
+     *                    after signature is successfully verified.
      * @throws SolutionKitException if an error happens while processing the specified SKAR file.
      */
     void load(@NotNull final InputStream inputStream) throws SolutionKitException {
@@ -99,7 +101,7 @@ public class SkarPayload extends SignerUtils.SignedZip.InnerPayload {
                             loadInstallBundleXml(zis, installBundleSource);
                             break;
                         case SK_UPGRADE_BUNDLE_FILENAME:
-                            logger.log(Level.FINE, "Ignoring upgrade bundle.");
+                            logger.log(Level.FINE, "Ignoring " + SK_UPGRADE_BUNDLE_FILENAME + ".");
                             break;
                         case SK_DELETE_BUNDLE_FILENAME:
                             loadDeleteBundleXml(zis, solutionKit);
@@ -156,7 +158,7 @@ public class SkarPayload extends SignerUtils.SignedZip.InnerPayload {
             solutionKitsConfig.getLoadedSolutionKits().put(solutionKit, bundle);
 
             setCustomizationInstances(solutionKit, classLoader);
-        } catch (SAXException| MissingRequiredElementException | TooManyChildElementsException e) {
+        } catch (SAXException | MissingRequiredElementException | TooManyChildElementsException e) {
             throw new BadRequestException("Error loading skar file: " + e.getMessage(), e);
         } catch (IOException e) {
             throw new SolutionKitException("Error loading skar file: " + e.getMessage(), e);
@@ -166,13 +168,13 @@ public class SkarPayload extends SignerUtils.SignedZip.InnerPayload {
     }
 
     private void validate(boolean isCollection, boolean hasRequiredSolutionKitFile, boolean hasRequiredInstallBundleFile, boolean foundLeafSkar) throws SolutionKitException {
-        if (! isCollection) {
+        if (!isCollection) {
             if (!hasRequiredSolutionKitFile) {
                 throw new BadRequestException("Missing required file " + SK_FILENAME);
             } else if (!hasRequiredInstallBundleFile) {
                 throw new BadRequestException("Missing required file " + SK_INSTALL_BUNDLE_FILENAME);
             }
-        } else if (! foundLeafSkar) {
+        } else if (!foundLeafSkar) {
             throw new BadRequestException("Missing nested SKARs in the SKAR file.");
         }
     }
@@ -202,26 +204,33 @@ public class SkarPayload extends SignerUtils.SignedZip.InnerPayload {
         solutionKit.setUninstallBundle(XmlUtil.nodeToString(uninstallBundleEle));
     }
 
-    // merge bundles (if upgrade mappings exists, replace existing install mappings)
-    private Bundle updateInstallBundle(final SolutionKit solutionKit, final Bundle installBundle) {
-        final SolutionKit solutionKitToUpgrade = solutionKitsConfig.getSolutionKitToUpgrade(solutionKit.getSolutionKitGuid());
+    /**
+     * Updates the loaded solution kit to set the Goid and version to be the same as the ones on the database. Also
+     * set the mapping target Ids to ones that were previously resolved if applicable.
+     *
+     * @param loadedSolutionKit The solution kit generated from SolutionKit.xml from the skar file.
+     * @param installBundle     The install bundle generated from InstallBundle.xml
+     * @return The updated install bundle
+     */
+    private Bundle updateInstallBundle(final SolutionKit loadedSolutionKit, final Bundle installBundle) {
+        final SolutionKit solutionKitToUpgrade = solutionKitsConfig.getSolutionKitToUpgrade(loadedSolutionKit.getSolutionKitGuid());
 
         if (solutionKitToUpgrade != null && installBundle.getMappings() != null) {
             // set goid and version for upgrade
-            solutionKit.setGoid(solutionKitToUpgrade.getGoid());
-            solutionKit.setVersion(solutionKitToUpgrade.getVersion());
+            loadedSolutionKit.setGoid(solutionKitToUpgrade.getGoid());
+            loadedSolutionKit.setVersion(solutionKitToUpgrade.getVersion());
+
+            //this code was modified to handle a collection of SKARs - since we can have collections, we need to have
+            //a Map of installMappings - each one identifiable by solutionKitGuid.  We're storing a handle to these initial installMappings
+            //so that in case an entity is deleted from the original install, we'll have a way of identifying the upgrade install against
+            //the original and warn the user
+            final Map<String, Mapping> installMappings = solutionKitsConfig.getInstallMappings(loadedSolutionKit.getSolutionKitGuid());
+            for (final Mapping installMapping : installBundle.getMappings()) {
+                installMappings.put(installMapping.getSrcId(), installMapping);
+            }
 
             // update previously resolved mapping target IDs
             solutionKitsConfig.setMappingTargetIdsFromPreviouslyResolvedIds(solutionKitToUpgrade, installBundle);
-
-//            //this code was modified to handle a collection of SKARs - since we can have collections, we need to have
-//            //a Map of installMappings - each one identifiable by solutionKitGuid.  We're storing a handle to these initial installMappings
-//            //so that in case an entity is deleted from the original install, we'll have a way of identifying the upgrade install against
-//            //the original and warn the user
-            final Map<String, Mapping> installMappings = solutionKitsConfig.getInstallMappings(solutionKit.getSolutionKitGuid());
-            for (Mapping installMapping : installBundle.getMappings()) {
-                installMappings.put(installMapping.getSrcId(), installMapping);
-            }
         }
 
         return installBundle;
@@ -243,7 +252,7 @@ public class SkarPayload extends SignerUtils.SignedZip.InnerPayload {
             entryOut.flush();
 
             classLoader = new SolutionKitCustomizationClassLoader(
-                    new URL[] {outFile.toURI().toURL()},
+                    new URL[]{outFile.toURI().toURL()},
                     Thread.currentThread().getContextClassLoader(),
                     outFile);
         } catch (IOException ioe) {
@@ -264,7 +273,7 @@ public class SkarPayload extends SignerUtils.SignedZip.InnerPayload {
                 final String uiClassName = solutionKit.getProperty(SolutionKit.SK_PROP_CUSTOM_UI_KEY);
                 if (!StringUtils.isEmpty(uiClassName)) {
                     final Class cls = classLoader.loadClass(uiClassName);
-                    customUi = ((SolutionKitManagerUi)cls.newInstance()).initialize();
+                    customUi = ((SolutionKitManagerUi) cls.newInstance()).initialize();
                 }
                 final String callbackClassName = solutionKit.getProperty(SolutionKit.SK_PROP_CUSTOM_CALLBACK_KEY);
                 if (!StringUtils.isEmpty(callbackClassName)) {

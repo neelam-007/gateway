@@ -25,8 +25,6 @@ import java.io.File;
 import java.io.IOException;
 import java.security.SignatureException;
 import java.text.MessageFormat;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -131,7 +129,9 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
 
         //Check that at least one SK from upgrade and loaded share the same guid
         if (solutionKitsConfig.isUpgrade()) {
-            if (!verifyGuidForUpgradeAndLoadedSKs()) {
+            if (!SolutionKitUtils.doesShareGuid(solutionKitsConfig.getLoadedSolutionKits().keySet(),
+                    solutionKitsConfig.getSolutionKitsToUpgrade())) {
+                solutionKitsConfig.clear(false);
                 DialogDisplayer.showMessageDialog(this,
                         "Unable to upgrade. No Solution Kits on database match that of the Solution Kit(s) on the .sskar file. Consider installing instead.",
                         "Solution Kit Upgrade Error",
@@ -142,21 +142,6 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
         }
 
         return true;
-    }
-
-    private boolean verifyGuidForUpgradeAndLoadedSKs() {
-        final Set<String> guids = new HashSet<>();
-        for (final SolutionKit solutionKit : solutionKitsConfig.getLoadedSolutionKits().keySet()) {
-            guids.add(solutionKit.getSolutionKitGuid());
-        }
-
-        for (final SolutionKit solutionKit : solutionKitsConfig.getSolutionKitsToUpgrade()) {
-            //if set doesn't change, we know at least one solution kit loaded and one solution kit upgrade share guid, so proceed
-            if (!guids.add(solutionKit.getSolutionKitGuid())) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private class ResolveSolutionKitLicenseDialog extends JDialog {

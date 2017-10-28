@@ -57,8 +57,9 @@ public interface SolutionKitAdmin extends AsyncAdminMethods {
 
     /**
      * Test upgrade for the given bundles.
-     * @param solutionKitInfo the solution kit payload
-     * @return the resulting mapping XML
+     * @param solutionKitInfo the solution kit information including delete bundles of old SKs,
+     *                       install bundles of new Sks, SKs metadata, parent SK
+     * @return the resulting mappings XML
      */
     @NotNull
     @Transactional(readOnly = true)
@@ -79,10 +80,10 @@ public interface SolutionKitAdmin extends AsyncAdminMethods {
     JobId<String> testInstallAsync(@NotNull SolutionKit solutionKit, @NotNull String bundle, boolean isUpgrade);
 
     /**
-     * Test upgrade for the given bundle.
+     * Test upgrade for the given bundles.
      *
-     * @param solutionKitInfo The solution kit info containing install and delete bundles data,
-     *                       parent solution kit
+     * @param solutionKitInfo the solution kit information including delete bundles of old SKs,
+     *                       install bundles of new Sks, SKs metadata, parent SK
      * @return the resulting mapping XML
      */
     @NotNull
