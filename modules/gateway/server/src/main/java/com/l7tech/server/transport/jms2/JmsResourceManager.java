@@ -325,7 +325,7 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
         final long idleTime = config.getTimeUnitProperty("ioJmsConnectionIdleTime", DEFAULT_CONNECTION_IDLE_TIME);
         final int maximumSize = config.getIntProperty( "ioJmsConnectionCacheSize", DEFAULT_CONNECTION_CACHE_SIZE );
         final int maximumPoolSize = config.getIntProperty("ioJmsConnectionPoolSize", JmsConnection.DEFAULT_CONNECTION_POOL_SIZE);
-        final int minimumConnectionIdle = config.getIntProperty("ioJmsConnectionMaxIdle", JmsConnection.DEFAULT_CONNECTION_POOL_SIZE);
+        final int minimumConnectionIdle = config.getIntProperty("ioJmsConnectionMinIdle", JmsConnection.DEFAULT_CONNECTION_POOL_SIZE);
         final long maximumWait = config.getTimeUnitProperty("ioJmsConnectionMaxWait", JmsConnection.DEFAULT_CONNECTION_POOL_MAX_WAIT);
         final long timeBetweenEvictions = config.getTimeUnitProperty("ioJmsConnectionTimeBetweenEviction", JmsConnection.DEFAULT_CONNECTION_POOL_EVICT_INTERVAL);
         final int evictionBatchSize = config.getIntProperty("ioJmsConnectionEvictionBatchSize", JmsConnection.DEFAULT_CONNECTION_POOL_SIZE);
@@ -340,7 +340,7 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
                 rangeValidate(idleTime, DEFAULT_CONNECTION_IDLE_TIME, 0L, Long.MAX_VALUE, "JMS Pool Soft Idle Timeout"),
                 rangeValidate(maximumSize, DEFAULT_CONNECTION_CACHE_SIZE, 0, Integer.MAX_VALUE, "JMS Connection Cache Size" ),
                 rangeValidate(maximumPoolSize, JmsConnection.DEFAULT_CONNECTION_POOL_SIZE, 1, 10000, "JMS Connection Pool Size" ),
-                rangeValidate(minimumConnectionIdle, JmsConnection.DEFAULT_CONNECTION_POOL_SIZE, 0, 10000, "JMS Connection Max Idle"),
+                rangeValidate(minimumConnectionIdle, JmsConnection.DEFAULT_CONNECTION_POOL_SIZE, 0, 10000, "JMS Connection Min Idle"),
                 rangeValidate(maximumWait, JmsConnection.DEFAULT_CONNECTION_POOL_MAX_WAIT, -1L, Long.MAX_VALUE, "JMS Connection Maximum Wait"),
                 rangeValidate(timeBetweenEvictions, JmsConnection.DEFAULT_CONNECTION_POOL_EVICT_INTERVAL, 0L, Long.MAX_VALUE, "JMS Connection Pool Time Between Eviction"),
                 rangeValidate(evictionBatchSize, JmsConnection.DEFAULT_CONNECTION_POOL_SIZE, 1, 10000, "JMS Connection Eviction Batch Size"),

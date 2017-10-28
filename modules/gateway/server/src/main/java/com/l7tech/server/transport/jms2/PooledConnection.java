@@ -41,7 +41,7 @@ public class PooledConnection {
         if(isPooled) {
             //set other pool properties
             config.maxIdle = config.maxActive;
-            config.minIdle = Integer.parseInt(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_CONNECTION_MAX_IDLE,
+            config.minIdle = Integer.parseInt(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_CONNECTION_MIN_IDLE,
                     String.valueOf(cacheConfig.getConnectionMinIdle())));
 
             config.maxWait = Long.parseLong(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_CONNECTION_POOL_MAX_WAIT,
