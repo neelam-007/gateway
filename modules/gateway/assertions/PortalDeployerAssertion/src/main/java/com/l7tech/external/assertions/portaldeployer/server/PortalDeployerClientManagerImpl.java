@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.portaldeployer.server;
 
+import com.l7tech.external.assertions.portaldeployer.server.client.MessageProcessor;
 import com.l7tech.external.assertions.portaldeployer.server.client.PortalDeployerClient;
 import com.l7tech.external.assertions.portaldeployer.server.client.PortalDeployerClientException;
 import org.springframework.context.ApplicationContext;
@@ -8,9 +9,6 @@ import org.springframework.context.ApplicationContext;
  * @author chemi11, 2017-10-24
  */
 public class PortalDeployerClientManagerImpl implements PortalDeployerClientManager {
-
-  private int connectTimeout = 60;
-  private int keepAliveInterval = 30;
 
   private PortalDeployerClient portalDeployerClient;
   private PortalDeployerClientConfigurationManager configurationManager;
@@ -35,13 +33,9 @@ public class PortalDeployerClientManagerImpl implements PortalDeployerClientMana
   private synchronized PortalDeployerClient getClient() throws PortalDeployerConfigurationException, PortalDeployerClientException {
     if (portalDeployerClient == null) {
       portalDeployerClient = portalDeployerClientFactory.getClient(
-          String.format("wss://%s/", configurationManager.getBrokerHost()),
-          String.format("%s_%s_%s", configurationManager.getTenantId(), configurationManager.getTenantGatewayUuid(), "1"),
-          String.format("%s/api/cmd/deploy/tenantGatewayUuid/%s", configurationManager.getTenantId(), configurationManager.getTenantGatewayUuid()),
-          // TODO(chemi11) update to use config manager
-          connectTimeout,
-          keepAliveInterval,
-          sslConfigurationManager.getSniEnabledSocketFactory(configurationManager.getBrokerHost())
+          configurationManager,
+          sslConfigurationManager.getSniEnabledSocketFactory(configurationManager.getBrokerHost()),
+          new MessageProcessor(sslConfigurationManager.getSniEnabledSocketFactory(configurationManager.getIngressHost()), configurationManager)
       );
     }
     return portalDeployerClient;

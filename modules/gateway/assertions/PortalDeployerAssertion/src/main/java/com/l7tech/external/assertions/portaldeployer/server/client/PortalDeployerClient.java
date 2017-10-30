@@ -29,6 +29,7 @@ public class PortalDeployerClient implements MqttCallback {
   private String topic;
   private int connectionTimeout;
   private int keepAliveInterval;
+  private MessageProcessor messageProcessor;
 
   private ExponentialIntSupplier sleepIntervalSupplier;
 
@@ -39,9 +40,9 @@ public class PortalDeployerClient implements MqttCallback {
   // How long to sleep in seconds
   private int sleepIntervalOnReconnect = 30;
 
-  public PortalDeployerClient(String mqttBrokerUri, String clientId, String topic, int connectionTimeout, int keepAliveInterval, SSLSocketFactory sslSocketFactory) throws
+  public PortalDeployerClient(String mqttBrokerUri, String clientId, String topic, int connectionTimeout, int keepAliveInterval, SSLSocketFactory sslSocketFactory, MessageProcessor messageProcessor) throws
           PortalDeployerClientException {
-    initialize(mqttBrokerUri, clientId, topic, connectionTimeout, keepAliveInterval, sslSocketFactory);
+    initialize(mqttBrokerUri, clientId, topic, connectionTimeout, keepAliveInterval, sslSocketFactory, messageProcessor);
     try {
       mqttClient = new MqttAsyncClient(this.mqttBrokerUri, this.clientId, this.mqttClientPersistence);
     } catch (MqttException e) {
@@ -51,13 +52,13 @@ public class PortalDeployerClient implements MqttCallback {
   }
 
   // For testing
-  PortalDeployerClient(String mqttBrokerUri, String clientId, String topic, int connectionTimeout, int keepAliveInterval, SSLSocketFactory sslSocketFactory, MqttAsyncClient mqttAsyncClient) {
-    initialize(mqttBrokerUri, clientId, topic, connectionTimeout, keepAliveInterval, sslSocketFactory);
+  PortalDeployerClient(String mqttBrokerUri, String clientId, String topic, int connectionTimeout, int keepAliveInterval, SSLSocketFactory sslSocketFactory, MqttAsyncClient mqttAsyncClient, MessageProcessor messageProcessor) {
+    initialize(mqttBrokerUri, clientId, topic, connectionTimeout, keepAliveInterval, sslSocketFactory, messageProcessor);
     mqttClient = mqttAsyncClient;
     mqttClient.setCallback(this);
   }
 
-  private void initialize(String mqttBrokerUri, String clientId, String topic, int connectionTimeout, int keepAliveInterval, SSLSocketFactory sslSocketFactory) {
+  private void initialize(String mqttBrokerUri, String clientId, String topic, int connectionTimeout, int keepAliveInterval, SSLSocketFactory sslSocketFactory, MessageProcessor messageProcessor) {
     logger.log(Level.INFO, String.format("mqttBrokerUri [%s], " + "clientId [%s], " + "topic [%s]", mqttBrokerUri, clientId, topic));
     this.sslSocketFactory = sslSocketFactory;
     this.mqttBrokerUri = mqttBrokerUri;
@@ -65,6 +66,7 @@ public class PortalDeployerClient implements MqttCallback {
     this.topic = topic;
     this.connectionTimeout = connectionTimeout;
     this.keepAliveInterval = keepAliveInterval;
+    this.messageProcessor = messageProcessor;
 
     mqttClientPersistence = new MemoryPersistence();
     mqttConnectOptions = new MqttConnectOptions();
@@ -134,7 +136,12 @@ public class PortalDeployerClient implements MqttCallback {
 
   @Override
   public void messageArrived(String topic, MqttMessage message) throws Exception {
-    logger.log(Level.INFO, String.format("Message Arrived - Topic: %s, Message: %s", topic, new String(message.getPayload())));
+    logger.log(Level.INFO, String.format("Message Arrived - ID: %s, Topic: %s", message.getId(), topic));
+    if(this.messageProcessor.process(message)) {
+      logger.log(Level.INFO, String.format("Successfully processed message %s", message.getId()));
+    } else {
+      logger.log(Level.INFO, String.format("Failed to process message %s", message.getId()));
+    }
   }
 
   @Override

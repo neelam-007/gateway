@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.portaldeployer.server;
 
+import com.l7tech.external.assertions.portaldeployer.server.client.MessageProcessor;
 import com.l7tech.external.assertions.portaldeployer.server.client.PortalDeployerClient;
 import com.l7tech.external.assertions.portaldeployer.server.client.PortalDeployerClientException;
 import javax.net.ssl.SSLSocketFactory;
@@ -9,12 +10,16 @@ import javax.net.ssl.SSLSocketFactory;
  */
 public class PortalDeployerClientFactory {
 
-  public PortalDeployerClient getClient(String mqttBrokerUri,
-                                        String clientId,
-                                        String topic,
-                                        int connectionTimeout,
-                                        int keepAliveInterval,
-                                        SSLSocketFactory sslSocketFactory) throws PortalDeployerClientException {
-    return new PortalDeployerClient(mqttBrokerUri, clientId, topic, connectionTimeout, keepAliveInterval, sslSocketFactory);
+  public PortalDeployerClient getClient(PortalDeployerClientConfigurationManager configurationManager, SSLSocketFactory sslSocketFactory, MessageProcessor messageProcessor) throws PortalDeployerClientException {
+    return new PortalDeployerClient(
+        String.format("wss://%s/", configurationManager.getBrokerHost()),
+        String.format("%s_%s_%s", configurationManager.getTenantId(), configurationManager.getTenantGatewayUuid(), "1"),
+        String.format("%s/api/cmd/deploy/tenantGatewayUuid/%s", configurationManager.getTenantId(), configurationManager.getTenantGatewayUuid()),
+        // TODO(chemi11) update to use config manager
+        configurationManager.getConnectTimeout(),
+        configurationManager.getKeepAliveInterval(),
+        sslSocketFactory,
+        messageProcessor
+    );
   }
 }

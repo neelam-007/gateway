@@ -7,9 +7,15 @@ public interface PortalDeployerClientConfigurationManager {
 
   String getBrokerHost();
 
+  String getIngressHost();
+
   String getTenantId();
 
   String getTenantGatewayUuid();
 
   boolean isPortalDeployerEnabled();
+
+  int getConnectTimeout();
+
+  int getKeepAliveInterval();
 }
