@@ -436,30 +436,18 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
     private boolean isEditableOrEnabledAt(final int index) {
         if (!settings.isUpgrade()) {
             return true;
-        } else if (settings.getSolutionKitsToUpgrade().size() > 0) {
 
-            // In upgrade scenario, handle the specific case where a single child Solution Kit was selected for upgrade.
-            final List<SolutionKit> solutionKitsToUpgradeList = settings.getSolutionKitsToUpgrade();
-            // Check if the solutionKitsToUpgradeList is size 2 which means it contains a parent and a child Solution Kit. All other
-            // scenarios should just return true.
-            if (solutionKitsToUpgradeList.size() == 2) {
+        // Check if the solutionKitsToUpgrade is size 2 which means it contains a parent and a child Solution Kit. All other
+        // scenarios should just return true.
+        } else if (settings.getSolutionKitsToUpgrade().size() == 2) {
 
-                final SolutionKit currentSkToEnableDisable = getSolutionKitAt(index);
-                // the last element contains the child Solution Kit.
-                final SolutionKit solutionKitToUpgrade = solutionKitsToUpgradeList.get(solutionKitsToUpgradeList.size() - 1);
-
-                // Check if the Solution Kit selected for upgrade matches the specified Solution Kit in the grid that should be enabled.
-                if (solutionKitToUpgrade.getSolutionKitGuid().equals(currentSkToEnableDisable.getSolutionKitGuid())) {
-                    return true;
-                } else {
-                    return false;
-                }
-            }
+            final SolutionKit currentSkToEnableDisable = getSolutionKitAt(index);
+            return (currentSkToEnableDisable != null &&
+                    // Check if the Solution Kit selected for upgrade matches the specified Solution Kit in the grid that should be enabled.
+                    settings.getSolutionKitToUpgrade(currentSkToEnableDisable.getSolutionKitGuid()) != null);
+        }
+        else {
             return true;
-        } else {
-            final SolutionKit loadedSolutionKit = getSolutionKitAt(index);
-            return (loadedSolutionKit != null &&
-                    settings.getSolutionKitToUpgrade(loadedSolutionKit.getSolutionKitGuid()) != null);
         }
     }
 
