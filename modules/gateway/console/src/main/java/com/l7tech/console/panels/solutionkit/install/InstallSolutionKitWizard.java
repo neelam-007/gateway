@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * Wizard for installing solution kits.
@@ -152,9 +153,9 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
      */
     private void upgrade(SolutionKitAdmin solutionKitAdmin, SolutionKitProcessor solutionKitProcessor) throws Exception {
         final List<Pair<Mappings, SolutionKit>> mappingsSolutionKits = new ArrayList<>();
-        solutionKitProcessor.upgrade(new Functions.UnaryVoidThrows<SolutionKitInfo, Exception>() {
+        solutionKitProcessor.upgrade(new Functions.UnaryThrows<List<Pair<Mappings,SolutionKit>>, SolutionKitInfo, Exception>() {
             @Override
-            public void call(final SolutionKitInfo loaded) throws Exception {
+            public List<Pair<Mappings, SolutionKit>> call(final SolutionKitInfo loaded) throws Exception {
                 final Either<String, ArrayList> result = AdminGuiUtils.doAsyncAdmin(
                         solutionKitAdmin,
                         InstallSolutionKitWizard.this.getOwner(),
@@ -184,6 +185,7 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
                         mappingsSolutionKits.add(new Pair<>(items.get(i).getContent(), solutionKits.get(i)));
                     }
                 }
+                return mappingsSolutionKits;
             }
         });
 
@@ -214,7 +216,9 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
             String msg = "Unable to find mapping conflict error. Please check logs for more details.";
 
             if (mappings != null) {
-                final List<Mapping> errorMappings = getMappingsErrors(mappings);
+                final List<Mapping> errorMappings = mappings.getMappings().stream()
+                        .filter(mapping -> mapping.getErrorType() != null)
+                        .collect(Collectors.toList());
 
                 //Continue if no errors for this solution kit, continue with other solution kits
                 if (errorMappings.isEmpty()) continue;
@@ -261,26 +265,10 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
     }
 
     /**
-     * Find all mapping errors in a mappings object.
-     *
-     * @param mappings The mappings object to search for errors
-     * @return A list of all the errorMappings.
-     */
-    @NotNull
-    private List<Mapping> getMappingsErrors(final @NotNull Mappings mappings) {
-        final List<Mapping> errorMappings = new ArrayList<>();
-        for (Mapping aMapping : mappings.getMappings()) {
-            if (aMapping.getErrorType() != null) {
-                errorMappings.add(aMapping);
-            }
-        }
-        return errorMappings;
-    }
-
-    /**
      * Display a error dialog.
      * If the specified msg is a bundle mapping xml (ie. response message from RESTMAN import bundle API), then
      * display the mapping errors in a table format. Otherwise, display the msg string as-is.
+     * @param errorKitMatchList The list of mappings with solution kit entity mapping errors
      */
     //TODO: when install uses multi-bundle upgrade, probably use displayUpgradeErrorDialog
     private void displayInstallErrorDialog(@NotNull final List<Pair<String, SolutionKit>> errorKitMatchList) {
@@ -301,7 +289,9 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
             }
 
             if (mappings != null) {
-                final List<Mapping> errorMappings = getMappingsErrors(mappings);
+                final List<Mapping> errorMappings = mappings.getMappings().stream()
+                        .filter(mapping -> mapping.getErrorType() != null)
+                        .collect(Collectors.toList());
                 mappings.setMappings(errorMappings);
 
                 // need the solution kit bundle

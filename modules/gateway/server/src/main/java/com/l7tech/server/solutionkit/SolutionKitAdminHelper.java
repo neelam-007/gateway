@@ -149,18 +149,25 @@ public class SolutionKitAdminHelper implements SolutionKitAdmin {
         }
         // Delete bundles and Install bundles provided by SolutionKitInfo.
         final String resultMappings = solutionKitManager.importBundles(solutionKitInfo, false);
+
+        //Continue with no errors from solutionKitManager.importBundles
         final ItemsList<Mappings> itemList = MarshallingUtils.unmarshal(ItemsList.class, new StreamSource(new StringReader(resultMappings)));
         final List<Item<Mappings>> items = itemList.getContent();
-        final int totalDeleteBundles = solutionKitInfo.getSolutionKitDelete().size();
+        final Map<SolutionKit, String> deleteBundles = solutionKitInfo.getSolutionKitDelete();
 
-        // check that result mappings and solutionkitpayload map + delete bundles are same size
-        if (totalDeleteBundles + solutionKitBundleMap.size() != items.size()){
+        // sanity check that result mappings and solutionkitpayload map + delete bundles are same size
+        if (deleteBundles.size() + solutionKitBundleMap.size() != items.size()){
             throw new SolutionKitConflictException("Error in upgrade: Unable to process Solution Kit mappings: " +
                     System.lineSeparator() + resultMappings);
         }
 
+        //Delete old solution kit entities
+        for (final SolutionKit solutionKit : deleteBundles.keySet()) {
+            solutionKitManager.delete(solutionKit.getGoid());
+        }
+
         final List<String> installMappingResults = new ArrayList<>();
-        int installMappingIndex = totalDeleteBundles;
+        int installMappingIndex = deleteBundles.size();
         // extract the install mapping results
         for (int i = installMappingIndex; i<items.size(); i++) {
             DOMResult result = new DOMResult();

@@ -348,13 +348,9 @@ public class SolutionKitManagerResource {
             // pass in form fields as input parameters to customizations
             setCustomizationKeyValues(solutionKitsConfig.getCustomizations(), formDataMultiPart);
 
-            // Test all selected (child) solution kit(s) before actual installation.
-            // This step is to prevent partial installation/upgrade
             final SolutionKitProcessor solutionKitProcessor = new SolutionKitProcessor(solutionKitsConfig, solutionKitAdminHelper);
 
-            //install or upgrade
             if (isUpgrade) {
-                //TODO: refactor logic above for upgrade cases
                 testUpgrade(solutionKitProcessor);
                 solutionKitProcessor.upgrade(null);
             } else {
