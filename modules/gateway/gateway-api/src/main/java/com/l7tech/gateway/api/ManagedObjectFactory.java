@@ -17,6 +17,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.StringReader;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.List;
@@ -125,9 +127,24 @@ public class ManagedObjectFactory {
     public static CertificateData createCertificateData( final X509Certificate certificate ) throws FactoryException {
         CertificateData data = createCertificateData();
         if ( certificate != null ) {
-            data.setIssuerName( certificate.getIssuerX500Principal().getName( X500Principal.RFC2253, ValidationUtils.getOidKeywordMap() ) );
+            String issuerName = certificate.getIssuerX500Principal().getName(X500Principal.RFC2253, ValidationUtils.getOidKeywordMap());
+            String subjectName = certificate.getSubjectX500Principal().getName();
+
+            /*DE296015 : Migration failed due to whitespace in certificate common name.
+                This is character encoding conversion problem.
+                While reading the certificate content as bytes white spaces are replacing with BS (\b - backspace),
+                this is a invalid XML character for SAX parser because all valid UTF8 characters are not valid XML characters.
+                So replacing backspaces with URLEncoding character i.e %08
+             */
+            try {
+                issuerName = URLEncoder.encode(issuerName, "UTF-8");
+                subjectName = URLEncoder.encode(subjectName, "UTF-8");
+            } catch (UnsupportedEncodingException ee) {
+                throw new FactoryException( "Error encoding the certificate ISSUER/SUBJECT name.", ee );
+            }
             data.setSerialNumber( certificate.getSerialNumber() );
-            data.setSubjectName( certificate.getSubjectX500Principal().getName() );
+            data.setIssuerName(issuerName);
+            data.setSubjectName(subjectName);
             try {
                 data.setEncoded( certificate.getEncoded() );
             } catch ( CertificateEncodingException e ) {
