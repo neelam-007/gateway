@@ -20,11 +20,7 @@ public class GenerateCountQuery extends GenerateSqlQuery {
     public SqlStatement generate(JdbcMetadataMapping mapping, EdmEntitySet entitySet, QueryInfo queryInfo, BoolCommonExpression filter, String databaseTypeName, boolean isInlineCount) {
         JdbcTable table = mapping.getMappedTable(entitySet);
         logger.fine("databaseTypeName=" + databaseTypeName + ",isInlineCount=" + isInlineCount);
-        if (isInlineCount && databaseTypeName != null && databaseTypeName.indexOf("mysql") >= 0) {
-            logger.info(SELECT_COUNT_MYSQL);
-            List<SqlStatement.SqlParameter> params = new ArrayList<SqlStatement.SqlParameter>();
-            return new SqlStatement(SELECT_COUNT_MYSQL, ImmutableList.copyOf(params));
-        }
+
         SqlStatement sqlStatement = super.generate(mapping, entitySet, queryInfo, filter, databaseTypeName);
         StringBuffer sb = new StringBuffer(SELECT_COUNT);
 
