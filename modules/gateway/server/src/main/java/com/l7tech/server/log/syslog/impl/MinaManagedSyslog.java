@@ -17,6 +17,7 @@ import org.apache.mina.transport.socket.nio.NioSocketConnector;
 import org.apache.mina.transport.vmpipe.VmPipeConnector;
 import org.apache.mina.util.ExceptionMonitor;
 
+import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.channels.UnresolvedAddressException;
 import java.util.*;
@@ -395,6 +396,7 @@ public class MinaManagedSyslog extends ManagedSyslog {
                     Thread.sleep(getAndIncReconnectSleep());
                 }
                 reconnect.set(true);
+                refreshAddress();
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
             }
@@ -549,10 +551,11 @@ public class MinaManagedSyslog extends ManagedSyslog {
                 while( run.get() ) {
                     try {
                         if ( reconnect.get() ) {
-                            if (isSSL)
+                            if (isSSL) {
                                 connectSSL();
-                            else
+                            } else {
                                 connect();
+                            }
                             initialWrite = true;
                         }
 
@@ -702,6 +705,19 @@ public class MinaManagedSyslog extends ManagedSyslog {
          */
         private SocketAddress getAddress() {
             return addressList[syslogIndex];
+        }
+
+        /**
+         * Get the updated current SocketAddress that the sender is connected to.
+         * Required in the scenario where IP Address of Sys Log server keeps on changing.
+         * Instead of connection failure, it helps to retry connecting to Sys Log server with
+         * updated IP.
+         * @return the currently referenced SocketAddress
+         */
+        private void refreshAddress() {
+            InetSocketAddress oldAddress = (InetSocketAddress) getAddress();
+            addressList[syslogIndex] = new InetSocketAddress(oldAddress.getHostName(), oldAddress.getPort());
+            senderString = null;
         }
 
         /**
