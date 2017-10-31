@@ -552,7 +552,8 @@ public class SiteMinderHighLevelAgent {
 
         if ( ( serverTimeSeconds - lastSessionTime ) >= idleTimeOut ){ //IdleTimeOut Check
             validSession = false;
-            logger.log( Level.WARNING, "Session validation failed, Reason: IdleTimeOut reached" );
+            logger.log( Level.FINEST, "Session validation failed, Reason: IdleTimeOut reached" );
+
         } else if ( ( serverTimeSeconds - sessionStartTime ) >= maxTimeOut ){ //MaxTimeOut Check
             validSession = false;
             logger.log( Level.FINEST, "Session validation failed, Reason: MaxTimeOut reached" );
