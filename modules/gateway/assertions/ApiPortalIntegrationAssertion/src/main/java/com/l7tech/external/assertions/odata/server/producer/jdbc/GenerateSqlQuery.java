@@ -49,14 +49,9 @@ public class GenerateSqlQuery {
 
     public SqlStatement generate(JdbcMetadataMapping mapping, EdmEntitySet entitySet, QueryInfo queryInfo, BoolCommonExpression filter, String databaseTypeName) {
         JdbcTable table = mapping.getMappedTable(entitySet);
-        final String SELECT_STRING_TO_USE, SELECT_ALL_STRING_TO_USE;
-        if (databaseTypeName != null && databaseTypeName.indexOf("mysql") >= 0) {
-            SELECT_STRING_TO_USE = SELECT_MYSQL;
-            SELECT_ALL_STRING_TO_USE = SELECT_ALL_MYSQL;
-        } else {
-            SELECT_STRING_TO_USE = SELECT;
-            SELECT_ALL_STRING_TO_USE = SELECT_ALL;
-        }
+        final String SELECT_STRING_TO_USE = SELECT;
+        final String SELECT_ALL_STRING_TO_USE = SELECT_ALL;
+
         StringBuilder sb = new StringBuilder(FROM_MARKER);
         List<SqlParameter> params = new ArrayList<SqlParameter>();
         final List<OrderByExpression> orderByList = queryInfo == null ? null : queryInfo.orderBy;
@@ -172,11 +167,8 @@ public class GenerateSqlQuery {
             }
         } else {
             if ("CUSTOM".equalsIgnoreCase(table.tableType)) {
-                if (databaseTypeName.indexOf("mysql") >= 0) {
-                    sb.replace(0, FROM_MARKER.length(), table.customQuery.toUpperCase().replaceAll("SELECT ", SELECT_MYSQL));
-                } else {
-                    sb.replace(0, FROM_MARKER.length(), table.customQuery);
-                }
+                sb.replace(0, FROM_MARKER.length(), table.customQuery);
+
             } else {
                 select.append(SELECT_ALL_STRING_TO_USE);
             }
@@ -234,7 +226,7 @@ public class GenerateSqlQuery {
             select.replace(fromMarkerIndex, fromMarkerIndex + FROM_MARKER.length(), " FROM " + table.tableName + " ");
         }
 
-        logger.log(Level.FINE ,select.toString());
+        logger.log(Level.INFO, select.toString());
         return new SqlStatement(select.toString(), ImmutableList.copyOf(params), maxRows);
     }
 
