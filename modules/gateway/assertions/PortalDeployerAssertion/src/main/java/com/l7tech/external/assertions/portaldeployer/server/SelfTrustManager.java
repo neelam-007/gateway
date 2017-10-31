@@ -1,7 +1,6 @@
 package com.l7tech.external.assertions.portaldeployer.server;
 
 import com.l7tech.common.io.CertUtils;
-import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
 import com.l7tech.security.cert.CertVerifier;
 import com.l7tech.security.cert.KeyUsageException;
 import com.l7tech.server.DefaultKey;
@@ -38,7 +37,7 @@ public class SelfTrustManager implements X509TrustManager {
       throw new KeyUsageException(e);
     } catch (CertUtils.CertificateUntrustedException e) {
       log.warning(e.getMessage()); // JSSE won't log it for us
-      throw new ServerCertificateUntrustedException(e); 
+      throw new CertificateException(e);
     } catch (CertificateException e) {
       log.warning(e.getMessage()); // JSSE won't log it for us
       throw e;
