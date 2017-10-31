@@ -2,6 +2,7 @@ package com.l7tech.common.mime;
 
 import com.l7tech.common.io.UncheckedIOException;
 import com.l7tech.util.*;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -162,6 +163,14 @@ public class ContentTypeHeader extends MimeHeader {
             return ret;
         }
         return new ContentTypeHeader("application", "x-invalid-content-type", false, Collections.<String, String>emptyMap(), contentTypeHeaderValue);
+    }
+
+    public static ContentTypeHeader create(@NotNull final String contentTypeHeaderValue, final String charsetValue) {
+        if (StringUtils.isEmpty(charsetValue) || contentTypeHeaderValue.toLowerCase().contains(CHARSET + "=")) {
+            return create(contentTypeHeaderValue);
+        } else {
+            return create(String.format("%s;%s=%s", contentTypeHeaderValue, CHARSET, charsetValue));
+        }
     }
 
     private static ContentTypeHeader quickParse(String contentTypeHeaderValue) {
