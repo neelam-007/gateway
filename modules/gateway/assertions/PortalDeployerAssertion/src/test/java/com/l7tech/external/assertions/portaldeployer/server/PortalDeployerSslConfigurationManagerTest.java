@@ -4,6 +4,7 @@ import static com.l7tech.external.assertions.portaldeployer.server.PortalDeploye
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.anyBoolean;
 import static org.mockito.Mockito.*;
 import com.l7tech.common.password.PasswordHasher;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
@@ -19,6 +20,7 @@ import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.security.cert.TestCertificateGenerator;
+import com.l7tech.server.DefaultKey;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.security.rbac.RoleManager;
@@ -28,6 +30,7 @@ import java.security.KeyStoreException;
 import java.security.PrivateKey;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
+import javax.net.ssl.KeyManager;
 import javax.net.ssl.SNIHostName;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
@@ -72,6 +75,12 @@ public class PortalDeployerSslConfigurationManagerTest {
   private PlatformTransactionManager transactionManager;
   @Mock
   private IdentityProviderFactory identityProviderFactory;
+  @Mock
+  private DefaultKey defaultKey;
+  @Mock
+  private SsgKeyEntry sslInfo;
+  @Mock
+  private X509Certificate x509Certificate;
 
   private PortalDeployerSslConfigurationManager portalDeployerSslConfigurationManager;
   private SsgKeyEntry portalmanKey;
@@ -89,6 +98,7 @@ public class PortalDeployerSslConfigurationManagerTest {
     when(identityProviderFactory.getProvider(any(Goid.class))).thenReturn(internalIdentityProvider);
     when(internalIdentityProvider.getUserManager()).thenReturn(userManager);
     when(context.getBean("transactionManager", PlatformTransactionManager.class)).thenReturn(transactionManager);
+    when(context.getBean("defaultKey", DefaultKey.class)).thenReturn(defaultKey);
     Pair<X509Certificate, PrivateKey> keyCertPair = new TestCertificateGenerator().subject("CN=" + PORTALMAN_LOGIN).generateWithKey();
     X509Certificate cert = keyCertPair.getKey();
     PrivateKey key = keyCertPair.getValue();
@@ -102,18 +112,19 @@ public class PortalDeployerSslConfigurationManagerTest {
 
   @Test
   public void test_getSniEnabledSocketFactory_createsPortalmanUserAsAdminWithCertificate_ifUserNotFound() throws Exception {
-    when(ssgKeyStoreManager.lookupKeyByKeyAlias(eq(PortalDeployerSslConfigurationManagerImpl.PORTALMAN_KEY_ALILAS),
-            eq(PersistentEntity.DEFAULT_GOID))).thenReturn(portalmanKey);
+    when(ssgKeyStoreManager.lookupKeyByKeyAlias(eq(PortalDeployerSslConfigurationManagerImpl.PORTALMAN_KEY_ALILAS), eq(PersistentEntity.DEFAULT_GOID))).thenReturn(portalmanKey);
     when(roleManager.findByTag(eq(Role.Tag.ADMIN))).thenReturn(adminRole);
     when(passwordHasher.hashPassword(any(byte[].class))).thenReturn("hashpassword");
     when(userManager.findByLogin(eq(PORTALMAN_LOGIN))).thenThrow(FindException.class);
+    when(defaultKey.getSslInfo()).thenReturn(sslInfo);
+    when(sslInfo.getCertificate()).thenReturn(x509Certificate);
     ArgumentCaptor<User> userArgumentCaptor = ArgumentCaptor.forClass(User.class);
     when(userManager.save(userArgumentCaptor.capture(), eq(null))).thenReturn(Goid.DEFAULT_GOID.toHexString());
 
     verifySniSocketFactory(portalDeployerSslConfigurationManager.getSniEnabledSocketFactory("test"), "test");
 
     //verify created user
-    InternalUser createdUser = (InternalUser)userArgumentCaptor.getValue();
+    InternalUser createdUser = (InternalUser) userArgumentCaptor.getValue();
     assertEquals(createdUser.getLogin(), PORTALMAN_LOGIN);
     assertEquals(createdUser.getHashedPassword(), "hashpassword");
     assertEquals(createdUser.getExpiration(), -1L);
@@ -128,11 +139,12 @@ public class PortalDeployerSslConfigurationManagerTest {
   @Test
   public void test_getSniEnabledSocketFactory_updatesPortalmanUserAsAdminWithCertificate_ifUserFoundWithNoCertificate() throws Exception {
     Role adminRole = new Role();
-    when(ssgKeyStoreManager.lookupKeyByKeyAlias(eq(PortalDeployerSslConfigurationManagerImpl.PORTALMAN_KEY_ALILAS),
-            eq(PersistentEntity.DEFAULT_GOID))).thenReturn(portalmanKey);
+    when(ssgKeyStoreManager.lookupKeyByKeyAlias(eq(PortalDeployerSslConfigurationManagerImpl.PORTALMAN_KEY_ALILAS), eq(PersistentEntity.DEFAULT_GOID))).thenReturn(portalmanKey);
     when(clientCertManager.getUserCert(any(User.class))).thenReturn(null);
     when(roleManager.findByTag(eq(Role.Tag.ADMIN))).thenReturn(adminRole);
     when(userManager.findByLogin(eq(PORTALMAN_LOGIN))).thenReturn(mock(User.class));
+    when(defaultKey.getSslInfo()).thenReturn(sslInfo);
+    when(sslInfo.getCertificate()).thenReturn(x509Certificate);
 
     verifySniSocketFactory(portalDeployerSslConfigurationManager.getSniEnabledSocketFactory("test"), "test");
 
@@ -146,24 +158,21 @@ public class PortalDeployerSslConfigurationManagerTest {
 
   @Test(expected = PortalDeployerConfigurationException.class)
   public void test_getSniEnabledSocketFactory_throwsException_ifPortalmanKeyNotFound() throws Exception {
-    when(ssgKeyStoreManager.lookupKeyByKeyAlias(eq(PortalDeployerSslConfigurationManagerImpl.PORTALMAN_KEY_ALILAS),
-            eq(PersistentEntity.DEFAULT_GOID))).thenThrow(FindException.class);
+    when(ssgKeyStoreManager.lookupKeyByKeyAlias(eq(PortalDeployerSslConfigurationManagerImpl.PORTALMAN_KEY_ALILAS), eq(PersistentEntity.DEFAULT_GOID))).thenThrow(FindException.class);
 
     portalDeployerSslConfigurationManager.getSniEnabledSocketFactory("test");
   }
 
   @Test(expected = PortalDeployerConfigurationException.class)
   public void test_getSniEnabledSocketFactory_throwsException_ifPortalmanKeyNotRetrievable() throws Exception {
-    when(ssgKeyStoreManager.lookupKeyByKeyAlias(eq(PortalDeployerSslConfigurationManagerImpl.PORTALMAN_KEY_ALILAS),
-            eq(PersistentEntity.DEFAULT_GOID))).thenThrow(KeyStoreException.class);
+    when(ssgKeyStoreManager.lookupKeyByKeyAlias(eq(PortalDeployerSslConfigurationManagerImpl.PORTALMAN_KEY_ALILAS), eq(PersistentEntity.DEFAULT_GOID))).thenThrow(KeyStoreException.class);
 
     portalDeployerSslConfigurationManager.getSniEnabledSocketFactory("test");
   }
 
   @Test(expected = PortalDeployerConfigurationException.class)
   public void test_getSniEnabledSocketFactory_throwsException_ifUserCreationFails() throws Exception {
-    when(ssgKeyStoreManager.lookupKeyByKeyAlias(eq(PortalDeployerSslConfigurationManagerImpl.PORTALMAN_KEY_ALILAS),
-            eq(PersistentEntity.DEFAULT_GOID))).thenReturn(portalmanKey);
+    when(ssgKeyStoreManager.lookupKeyByKeyAlias(eq(PortalDeployerSslConfigurationManagerImpl.PORTALMAN_KEY_ALILAS), eq(PersistentEntity.DEFAULT_GOID))).thenReturn(portalmanKey);
     when(userManager.findByLogin(eq(PORTALMAN_LOGIN))).thenThrow(FindException.class);
     when(userManager.save(any(User.class), eq(null))).thenThrow(SaveException.class);
 
@@ -172,8 +181,7 @@ public class PortalDeployerSslConfigurationManagerTest {
 
   @Test(expected = PortalDeployerConfigurationException.class)
   public void test_getSniEnabledSocketFactory_throwsException_ifUserRoleUpdateFails() throws Exception {
-    when(ssgKeyStoreManager.lookupKeyByKeyAlias(eq(PortalDeployerSslConfigurationManagerImpl.PORTALMAN_KEY_ALILAS),
-            eq(PersistentEntity.DEFAULT_GOID))).thenReturn(portalmanKey);
+    when(ssgKeyStoreManager.lookupKeyByKeyAlias(eq(PortalDeployerSslConfigurationManagerImpl.PORTALMAN_KEY_ALILAS), eq(PersistentEntity.DEFAULT_GOID))).thenReturn(portalmanKey);
     when(roleManager.findByTag(eq(Role.Tag.ADMIN))).thenReturn(adminRole);
     when(userManager.findByLogin(eq(PORTALMAN_LOGIN))).thenReturn(mock(User.class));
     when(transactionManager.getTransaction(any(TransactionDefinition.class))).thenReturn(mock(TransactionStatus.class));
@@ -184,8 +192,7 @@ public class PortalDeployerSslConfigurationManagerTest {
 
   @Test(expected = PortalDeployerConfigurationException.class)
   public void test_getSniEnabledSocketFactory_throwsException_ifUserCertificateUpdateFails() throws Exception {
-    when(ssgKeyStoreManager.lookupKeyByKeyAlias(eq(PortalDeployerSslConfigurationManagerImpl.PORTALMAN_KEY_ALILAS),
-            eq(PersistentEntity.DEFAULT_GOID))).thenReturn(portalmanKey);
+    when(ssgKeyStoreManager.lookupKeyByKeyAlias(eq(PortalDeployerSslConfigurationManagerImpl.PORTALMAN_KEY_ALILAS), eq(PersistentEntity.DEFAULT_GOID))).thenReturn(portalmanKey);
     when(userManager.findByLogin(eq(PORTALMAN_LOGIN))).thenReturn(mock(User.class));
     doThrow(UpdateException.class).when(clientCertManager).recordNewUserCert(any(User.class), any(Certificate.class), anyBoolean());
 
