@@ -195,8 +195,11 @@ public class MessageProcessor {
             result = false;
           }
         }
-
-        logger.log(Level.FINE, String.format("target response code %s, callback response code %s, callback body %s", targetResponse.getCode(), callbackResponse != null ? callbackResponse.getCode() : "was null", callbackResponse != null ? callbackResponse.getBody() : "was null"));
+        Level callbackResponseLogLevel = Level.FINE;
+        if (callbackResponse == null || callbackResponse.getCode() >= 400) {
+          callbackResponseLogLevel = Level.INFO;
+        }
+        logger.log(callbackResponseLogLevel, String.format("target response code %s, callback response code %s, callback body %s", targetResponse.getCode(), callbackResponse != null ? callbackResponse.getCode() : "was null", callbackResponse != null ? callbackResponse.getBody() : "was null"));
       }
 
     } catch (Exception e) {

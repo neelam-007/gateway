@@ -32,15 +32,8 @@ public class SelfTrustManager implements X509TrustManager {
   public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
     try {
       CertVerifier.verifyCertificateChain(x509Certificates, certificate);
-    } catch (KeyUsageException e) {
+    } catch (Exception e) {
       log.warning(e.getMessage()); // JSSE won't log it for us
-      throw new KeyUsageException(e);
-    } catch (CertUtils.CertificateUntrustedException e) {
-      log.warning(e.getMessage()); // JSSE won't log it for us
-      throw new CertificateException(e);
-    } catch (CertificateException e) {
-      log.warning(e.getMessage()); // JSSE won't log it for us
-      throw e;
     }
   }
 
