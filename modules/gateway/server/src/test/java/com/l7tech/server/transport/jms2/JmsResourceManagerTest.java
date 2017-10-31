@@ -15,11 +15,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 import javax.jms.JMSException;
 import javax.naming.NamingException;
 
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.Properties;
-import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.anyString;
@@ -134,11 +130,11 @@ public class JmsResourceManagerTest {
             this.conn = cc;
         }
 
-        protected CachedConnection getPooledConnection(JmsEndpointConfig endpoint) throws JmsRuntimeException {
+        protected JmsSessionHolder getSessionHolder(JmsEndpointConfig endpoint) throws JmsRuntimeException {
             return conn.borrowConnection();
         }
 
-        protected class CachedConnectionStub extends CachedConnection {
+        protected class CachedConnectionStub extends JmsSessionHolder {
 
             protected CachedConnectionStub(JmsEndpointConfig cfg, JmsBag bag) {
                 super(cfg, bag, mockResourceManagerConfig);

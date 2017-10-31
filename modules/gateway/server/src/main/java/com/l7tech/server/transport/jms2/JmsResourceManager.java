@@ -50,7 +50,7 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
     public JmsResourceManager( final String name,
                                final Config config ) {
         this.config = config;
-        this.connectionHolder = new ConcurrentHashMap<JmsEndpointConfig.JmsEndpointKey, PooledConnection>();
+        this.connectionHolder = new ConcurrentHashMap<JmsEndpointConfig.JmsEndpointKey, CachedConnection>();
         this.timer = new ManagedTimer("JmsResourceManager-CacheCleanup-" + name);
         this.cleanupTask = new CacheCleanupTask(connectionHolder, cacheConfigReference );
         timer.schedule( cleanupTask, 17371, CACHE_CLEAN_INTERVAL );
@@ -69,19 +69,19 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
                                     final JmsResourceCallback callback ) throws NamingException, JMSException, JmsRuntimeException {
         if ( !active.get() ) throw new JmsRuntimeException("JMS resource manager is stopped.");
 
-        CachedConnection cachedConnection = null;
+        JmsSessionHolder sessionHolder = null;
         try {
-            cachedConnection = getPooledConnection(endpoint);
-            cachedConnection.doWithJmsResources( callback );
+            sessionHolder = getSessionHolder(endpoint);
+            sessionHolder.doWithJmsResources( callback );
         } catch ( JMSException e ) {
-            evict( connectionHolder, endpoint.getJmsEndpointKey(), cachedConnection );
+            evict( connectionHolder, endpoint.getJmsEndpointKey(), sessionHolder );
             throw e;
         } finally {
             try {
-                returnConnection(endpoint, cachedConnection);
+                returnSessionHolder(endpoint, sessionHolder);
             } catch (JmsRuntimeException e) {
                 //not much we can do. log it
-                logger.log(Level.WARNING, "Unable to return cached connection " + cachedConnection.toString());
+                logger.log(Level.WARNING, "Unable to return cached connection " + sessionHolder.toString());
             }
         }
     }
@@ -95,33 +95,40 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
      * @throws JmsRuntimeException If an error occurs creating the resources
      */
 
-    protected CachedConnection getPooledConnection(JmsEndpointConfig endpoint) throws JmsRuntimeException {
+    protected JmsSessionHolder getSessionHolder(JmsEndpointConfig endpoint) throws JmsRuntimeException {
         final JmsEndpointConfig.JmsEndpointKey key = endpoint.getJmsEndpointKey();
-        PooledConnection pooledConnection = connectionHolder.get(key);
-        if(pooledConnection == null) {
+        CachedConnection conn = connectionHolder.get(key);
+        if(conn == null) {
             //create pool of connections and add it to the connection holder
             synchronized (key.toString().intern()) {
-                pooledConnection = connectionHolder.get(key);
-                if (pooledConnection == null)  {
+                conn = connectionHolder.get(key);
+                if (conn == null)  {
                     try {
-                        pooledConnection = new PooledConnection(endpoint, cacheConfigReference.get());
+                        if(!endpoint.getEndpoint().isMessageSource()
+                                && Boolean.valueOf(endpoint.getConnection().properties().getProperty(JmsConnection.PROP_CONNECTION_POOL_ENABLE, Boolean.FALSE.toString()))) {
+                            conn = new PooledConnection(endpoint, cacheConfigReference.get());
+                        }
+                        else {
+                            conn = new SingleConnection(endpoint, cacheConfigReference.get());
+                        }
                     } catch ( Exception e ) {
                         throw new JmsRuntimeException(e);
                     }
-                    connectionHolder.put(key, pooledConnection);
-                    logger.log(Level.FINE, "Created new pooled connection " + pooledConnection.toString());
+                    connectionHolder.put(key, conn);
+                    logger.log(Level.FINE, "Created new CachedConnection " + conn.toString());
                 }
             }
         }
-        return pooledConnection.borrowConnection();
+        return conn.borrowConnection();
     }
 
-    protected void returnConnection(JmsEndpointConfig endpoint, CachedConnection connection) throws JmsRuntimeException{
+
+    protected void returnSessionHolder(JmsEndpointConfig endpoint, JmsSessionHolder connection) throws JmsRuntimeException{
         try {
             final JmsEndpointConfig.JmsEndpointKey key = endpoint.getJmsEndpointKey();
-            PooledConnection pooledConnection = connectionHolder.get(key);
-            if(pooledConnection != null) {
-                pooledConnection.returnConnection(connection);
+            CachedConnection conn = connectionHolder.get(key);
+            if(conn != null) {
+                conn.returnConnection(connection);
             }
             else {
                 logger.log(Level.WARNING, "JMS Connection with the key " + key.toString() + " does not exist.");
@@ -142,8 +149,8 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
      * @throws JmsRuntimeException If error occur when getting the connection or getting the JmsBag
      */
     public JmsBag borrowJmsBag(final JmsEndpointConfig endpointConfig) throws NamingException, JmsRuntimeException {
-        CachedConnection connection = getPooledConnection(endpointConfig);
-        return connection.borrowJmsBag();
+        JmsSessionHolder sessionHolder = getSessionHolder(endpointConfig);
+        return sessionHolder.borrowJmsBag();
     }
 
     /**
@@ -152,10 +159,10 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
      * @throws JmsRuntimeException If error occur when returning the JmsBag
      */
     public void returnJmsBag(JmsBag bag) throws JmsRuntimeException {
-        CachedConnection cachedConnection = (CachedConnection) bag.getBagOwner();
-        if (cachedConnection != null) {
-            cachedConnection.returnJmsBag(bag);
-            cachedConnection.unRef();
+        JmsSessionHolder sessionHolder = (JmsSessionHolder) bag.getBagOwner();
+        if (sessionHolder != null) {
+            sessionHolder.returnJmsBag(bag);
+            sessionHolder.unRef();
         }
     }
 
@@ -166,9 +173,9 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
      * @throws JmsRuntimeException If error when touching the Cached Connection.
      */
     public void touch(final JmsBag bag) throws JmsRuntimeException {
-        CachedConnection cachedConnection = (CachedConnection) bag.getBagOwner();
-        if (cachedConnection != null) {
-            cachedConnection.touch();
+        JmsSessionHolder sessionHolder = (JmsSessionHolder) bag.getBagOwner();
+        if (sessionHolder != null) {
+            sessionHolder.touch();
         }
 
     }
@@ -186,10 +193,9 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
     public void invalidate( final JmsEndpointConfig endpoint ) {
         if ( active.get() ) {
             final JmsEndpointConfig.JmsEndpointKey key = endpoint.getJmsEndpointKey();
-            final PooledConnection cachedConnectionPool = connectionHolder.remove(key);
-            if ( cachedConnectionPool != null ) {
-                cachedConnectionPool.close();
-                //evict( connectionHolder, key, cachedConnection );
+            final CachedConnection conn = connectionHolder.remove(key);
+            if (  conn != null ) {
+                conn.close();
             }
         }
     }
@@ -274,7 +280,7 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
 
     // need to store one connection per endpoint
     private final Config config;
-    protected final ConcurrentHashMap<JmsEndpointConfig.JmsEndpointKey, PooledConnection> connectionHolder;
+    protected final ConcurrentHashMap<JmsEndpointConfig.JmsEndpointKey, CachedConnection> connectionHolder;
     private final Timer timer;
     private final TimerTask cleanupTask;
     private final AtomicReference<JmsResourceManagerConfig> cacheConfigReference = new AtomicReference<JmsResourceManagerConfig>( new JmsResourceManagerConfig(0L,0L, 0L,1,1, 1,5000L, 300000L, 1, 0, 0, 0L) );
@@ -287,9 +293,9 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
         logger.info( "Shutting down JMS Connection cache." );
 
         timer.cancel();
-        Collection<PooledConnection> poolList = connectionHolder.values();
+        Collection<CachedConnection> poolList = connectionHolder.values();
 
-        for ( PooledConnection pooledConnection : poolList ) {
+        for ( CachedConnection pooledConnection : poolList ) {
             pooledConnection.close();
         }
 
@@ -298,14 +304,14 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
 
 
 
-    private static void evict( final ConcurrentHashMap<JmsEndpointConfig.JmsEndpointKey, PooledConnection> connectionHolder,
+    private static void evict( final ConcurrentHashMap<JmsEndpointConfig.JmsEndpointKey, CachedConnection> connectionHolder,
                                final JmsEndpointConfig.JmsEndpointKey key,
-                               final CachedConnection connection ) {
+                               final JmsSessionHolder connection ) {
         try {
-            PooledConnection pool = connectionHolder.get(key);
-            if(pool != null) {
-                pool.invalidate(connection);
-                if(pool.isPoolEmpty()) {
+            CachedConnection conn = connectionHolder.get(key);
+            if(conn != null) {
+                conn.invalidate(connection);
+                if(!conn.isDisconnected()) {
                     connectionHolder.remove(key);// remove closed entry
                 }
             }
@@ -382,10 +388,10 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
      * removed first.</p>
      */
     private static final class CacheCleanupTask extends TimerTask {
-        private final ConcurrentHashMap<JmsEndpointConfig.JmsEndpointKey, PooledConnection> connectionHolder;
+        private final ConcurrentHashMap<JmsEndpointConfig.JmsEndpointKey, CachedConnection> connectionHolder;
         private final AtomicReference<JmsResourceManagerConfig> cacheConfigReference;
 
-        private CacheCleanupTask(final ConcurrentHashMap<JmsEndpointConfig.JmsEndpointKey, PooledConnection> connectionHolder,
+        private CacheCleanupTask(final ConcurrentHashMap<JmsEndpointConfig.JmsEndpointKey, CachedConnection> connectionHolder,
                                  final AtomicReference<JmsResourceManagerConfig> cacheConfigReference) {
             this.connectionHolder = connectionHolder;
             this.cacheConfigReference = cacheConfigReference;
@@ -397,27 +403,27 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
             final JmsResourceManagerConfig cacheConfig = cacheConfigReference.get();
             final long timeNow = System.currentTimeMillis();
             final int overSize = connectionHolder.size() - cacheConfig.getMaximumSize();
-            final Set<Map.Entry<JmsEndpointConfig.JmsEndpointKey, PooledConnection>> evictionCandidates =
-                    new TreeSet<Map.Entry<JmsEndpointConfig.JmsEndpointKey, PooledConnection>>(
-                            new Comparator<Map.Entry<JmsEndpointConfig.JmsEndpointKey, PooledConnection>>() {
+            final Set<Map.Entry<JmsEndpointConfig.JmsEndpointKey, CachedConnection>> evictionCandidates =
+                    new TreeSet<Map.Entry<JmsEndpointConfig.JmsEndpointKey, CachedConnection>>(
+                            new Comparator<Map.Entry<JmsEndpointConfig.JmsEndpointKey, CachedConnection>>() {
                                 @Override
-                                public int compare(final Map.Entry<JmsEndpointConfig.JmsEndpointKey, PooledConnection> e1,
-                                                   final Map.Entry<JmsEndpointConfig.JmsEndpointKey, PooledConnection> e2) {
+                                public int compare(final Map.Entry<JmsEndpointConfig.JmsEndpointKey, CachedConnection> e1,
+                                                   final Map.Entry<JmsEndpointConfig.JmsEndpointKey, CachedConnection> e2) {
                                     return Long.valueOf(e1.getValue().getCreatedTime()).compareTo(e2.getValue().getCreatedTime());
                                 }
                             }
                     );
 
             for (final JmsEndpointConfig.JmsEndpointKey key : connectionHolder.keySet()) {
-                PooledConnection evictionCandidate = connectionHolder.get(key);
+                CachedConnection evictionCandidate = connectionHolder.get(key);
                 logger.log(Level.FINE, "Check eviction candidate " + evictionCandidate.toString());
                 if(logger.isLoggable(Level.FINE)) {
-                    evictionCandidate.debugPoolStatus();
+                    evictionCandidate.debugStatus();
                 }
                 if (evictionCandidate.getEndpointConfig().isEvictOnExpired()) { //do not evict inbound jms connections
                     if ( (timeNow-evictionCandidate.getCreatedTime()) > cacheConfig.getMaximumAge() && cacheConfig.getMaximumAge() > 0 ) {
                         logger.log(Level.FINE, "Maximum age expired for " + evictionCandidate.toString());
-                        if(!evictionCandidate.isPoolActive()) {
+                        if(!evictionCandidate.isActive()) {
                             logger.log(Level.FINE, "Remove unused JMS connection "  + evictionCandidate.toString());
                             evictionCandidate.close();
                             connectionHolder.remove(key);
@@ -435,12 +441,12 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
                 }
 
                 // evict oldest first to reduce cache size
-                final Iterator<Map.Entry<JmsEndpointConfig.JmsEndpointKey, PooledConnection>> evictionIterator = evictionCandidates.iterator();
+                final Iterator<Map.Entry<JmsEndpointConfig.JmsEndpointKey, CachedConnection>> evictionIterator = evictionCandidates.iterator();
                 for (int i = 0; i < overSize && evictionIterator.hasNext(); i++) {
-                    final Map.Entry<JmsEndpointConfig.JmsEndpointKey, PooledConnection> cachedConnectionEntry =
+                    final Map.Entry<JmsEndpointConfig.JmsEndpointKey, CachedConnection> cachedConnectionEntry =
                             evictionIterator.next();
-                    PooledConnection connection = cachedConnectionEntry.getValue();
-                    if(connection.isPoolEmpty()) {
+                    CachedConnection connection = cachedConnectionEntry.getValue();
+                    if(!connection.isDisconnected()) {
                         logger.log(Level.FINE, "Remove unused JMS connection "  + connection.toString());
                         connection.close();
                         connectionHolder.remove(cachedConnectionEntry.getKey(), cachedConnectionEntry.getValue());
