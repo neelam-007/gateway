@@ -191,7 +191,7 @@ public class MessageProcessor {
         result = true;
         for (String clocation : callbackLocations) {
           callbackResponse = getRequestUtil().processRequest(clocation, null, null, callbackBody, callbackContentType, callbackOperation, sslSocketFactory);
-          if (callbackResponse != null && callbackResponse.getCode() >= 400) {
+          if (callbackResponse == null || (callbackResponse != null && callbackResponse.getCode() >= 400)) {
             result = false;
           }
         }
