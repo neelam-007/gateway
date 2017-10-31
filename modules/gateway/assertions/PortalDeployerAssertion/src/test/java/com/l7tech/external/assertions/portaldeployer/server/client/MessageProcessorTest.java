@@ -66,7 +66,47 @@ public class MessageProcessorTest {
     RequestResponse callbackResponse = new RequestResponse(200, "a callback response");
     when(requestUtil.processRequest(eq(mp.processVariablesConfig(sourceUrl)), any(), any(), any(), any(), eq(MessageProcessor.SOURCE_OPERATION_DEFAULT), eq(sslSocketFactory))).thenReturn(sourceResponse);
     when(requestUtil.processRequest(eq(mp.processVariablesConfig(MessageProcessor.TARGET_LOCATION_DEFAULT)), any(), any(), eq(sourceResponse.getBody()), eq(MessageProcessor.TARGET_CONTENT_TYPE_DEFAULT), eq(MessageProcessor.TARGET_OPERATION_DEFAULT), eq(sslSocketFactory))).thenReturn(targetResponse);
-    when(requestUtil.processRequest(eq(mp.processVariablesConfig(callbackUrl)), any(), any(), contains("{\"status\":\"DEPLOYED\""), eq(MessageProcessor.CALLBACK_CONTENT_TYPE_DEFAULT), eq(MessageProcessor.CALLBACK_OPERATION_DEFAULT), eq(sslSocketFactory))).thenReturn(callbackResponse);
+    when(requestUtil.processRequest(eq(mp.processVariablesConfig(callbackUrl)), any(), any(), eq("{\"status\":\"DEPLOYED\",\"message\":\"[{\\\"status\\\":\\\"DEPLOYED\\\",\\\"message\\\":\\\"a successfull operation\\\",\\\"targetLocation\\\":\\\"https://localhost:8443/restman/1.0/bundle\\\"}]\"}"), eq(MessageProcessor.CALLBACK_CONTENT_TYPE_DEFAULT), eq(MessageProcessor.CALLBACK_OPERATION_DEFAULT), eq(sslSocketFactory))).thenReturn(callbackResponse);
+
+    //process message
+    boolean status = mp.process(message);
+
+    verify(requestUtil, times(3)).processRequest(any(), any(), any(), any(), any(), any(), any());
+    assertTrue(status);
+  }
+
+  @Test
+  public void testProcessCustomSuccessString() throws Exception {
+    TestConfig config = new TestConfig();
+    config.setIngressHost("elih4");
+    MessageProcessor mp = new MessageProcessor(sslSocketFactory, config);
+    mp.setRequestUtil(requestUtil);
+    //build message
+
+    Messages testMessages = new Messages();
+    Message message1 = new Message();
+    String sourceUrl = "https://{INGRESS_HOST}:8443/source";
+    String callbackUrl = "https://{INGRESS_HOST}:8443/callback";
+    message1.setSourceLocation(sourceUrl);
+    message1.setCallbackLocation(callbackUrl);
+    message1.setSuccessStatus("PENDING_DELETE");
+    List<Message> messageList = new ArrayList<>();
+    messageList.add(message1);
+    testMessages.setMessages(messageList);
+    String mqttMessagePayload = mapper.writeValueAsString(testMessages);
+    CallbackDto callback = new CallbackDto();
+    callback.setMessage("a successfull operation");
+    callback.setStatus("200");
+    //String callbackBody = mapper.writeValueAsString(callback);
+    //the message
+    MqttMessage message = new MqttMessage(mqttMessagePayload.getBytes());
+    //mock events
+    RequestResponse sourceResponse = new RequestResponse(200, "an awesome restman bundle");
+    RequestResponse targetResponse = new RequestResponse(200, "a successfull operation");
+    RequestResponse callbackResponse = new RequestResponse(200, "a callback response");
+    when(requestUtil.processRequest(eq(mp.processVariablesConfig(sourceUrl)), any(), any(), any(), any(), eq(MessageProcessor.SOURCE_OPERATION_DEFAULT), eq(sslSocketFactory))).thenReturn(sourceResponse);
+    when(requestUtil.processRequest(eq(mp.processVariablesConfig(MessageProcessor.TARGET_LOCATION_DEFAULT)), any(), any(), eq(sourceResponse.getBody()), eq(MessageProcessor.TARGET_CONTENT_TYPE_DEFAULT), eq(MessageProcessor.TARGET_OPERATION_DEFAULT), eq(sslSocketFactory))).thenReturn(targetResponse);
+    when(requestUtil.processRequest(eq(mp.processVariablesConfig(callbackUrl)), any(), any(), eq("{\"status\":\"DEPLOYED\",\"message\":\"[{\\\"status\\\":\\\"PENDING_DELETE\\\",\\\"message\\\":\\\"a successfull operation\\\",\\\"targetLocation\\\":\\\"https://localhost:8443/restman/1.0/bundle\\\"}]\"}"), eq(MessageProcessor.CALLBACK_CONTENT_TYPE_DEFAULT), eq(MessageProcessor.CALLBACK_OPERATION_DEFAULT), eq(sslSocketFactory))).thenReturn(callbackResponse);
 
     //process message
     boolean status = mp.process(message);
@@ -202,6 +242,16 @@ public class MessageProcessorTest {
     boolean status = mp.process(message);
     verify(requestUtil, never()).processRequest(any(), any(), any(), any(), any(), any(), any());
     assertFalse(status);
+  }
+
+  @Test
+  public void testOverrideMultipleTargetHost() throws Exception {
+
+  }
+
+  @Test
+  public void testOverrideMultipleCallbackHost() throws Exception {
+
   }
 
 }
