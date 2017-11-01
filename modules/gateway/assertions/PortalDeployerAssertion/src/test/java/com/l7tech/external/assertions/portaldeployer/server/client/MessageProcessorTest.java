@@ -48,7 +48,7 @@ public class MessageProcessorTest {
     String sourceUrl = "https://{INGRESS_HOST}:8443/source";
     String callbackUrl = "https://{INGRESS_HOST}:8443/callback";
     message1.setSourceLocation(sourceUrl);
-    message1.setCallbackLocation(callbackUrl);
+    message1.setSuccessCallbackLocation(callbackUrl);
     List<Message> messageList = new ArrayList<>();
     messageList.add(message1);
     testMessages.setMessages(messageList);
@@ -88,7 +88,7 @@ public class MessageProcessorTest {
     String sourceUrl = "https://{INGRESS_HOST}:8443/source";
     String callbackUrl = "https://{INGRESS_HOST}:8443/callback";
     message1.setSourceLocation(sourceUrl);
-    message1.setCallbackLocation(callbackUrl);
+    message1.setSuccessCallbackLocation(callbackUrl);
     message1.setSuccessStatus("PENDING_DELETE");
     List<Message> messageList = new ArrayList<>();
     messageList.add(message1);
@@ -127,7 +127,7 @@ public class MessageProcessorTest {
     String sourceUrl = "https://{INGRESS_HOST}:8443/source";
     String callbackUrl = "https://{INGRESS_HOST}:8443/callback";
     message1.setSourceLocation(sourceUrl);
-    message1.setCallbackLocation(callbackUrl);
+    message1.setSuccessCallbackLocation(callbackUrl);
     List<Message> messageList = new ArrayList<>();
     messageList.add(message1);
     testMessages.setMessages(messageList);
@@ -161,7 +161,7 @@ public class MessageProcessorTest {
     String sourceUrl = "https://{INGRESS_HOST}:8443/source";
     String callbackUrl = "https://{INGRESS_HOST}:8443/callback";
     message1.setSourceLocation(sourceUrl);
-    message1.setCallbackLocation(callbackUrl);
+    message1.setSuccessCallbackLocation(callbackUrl);
     message1.setErrorStatus("FAILED_OPERATION");
     List<Message> messageList = new ArrayList<>();
     messageList.add(message1);

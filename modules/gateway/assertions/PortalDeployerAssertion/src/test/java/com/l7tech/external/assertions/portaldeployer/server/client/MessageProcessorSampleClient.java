@@ -34,7 +34,7 @@ public class MessageProcessorSampleClient {
     message1.setMessageId("test-123");
     message1.setSourceLocation("https://{INGRESS_HOST}:8443/source");
     message1.setTargetLocation("https://{INGRESS_HOST}:8443/target");
-    message1.setCallbackLocation("https://{INGRESS_HOST}:8443/callback");
+    message1.setSuccessCallbackLocation("https://{INGRESS_HOST}:8443/callback");
     List<Message> messageList = new ArrayList<>();
     messageList.add(message1);
     testMessages.setMessages(messageList);

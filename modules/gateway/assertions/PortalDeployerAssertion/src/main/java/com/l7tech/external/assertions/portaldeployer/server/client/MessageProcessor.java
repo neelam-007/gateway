@@ -89,121 +89,154 @@ public class MessageProcessor {
    * @return
    */
   public boolean performAction(Message message) {
-    boolean result = false;
+    RequestResponse sourceResponse;
     try {
-      String sourceLocation = message.getSourceLocation();
-      String sourceOperation = message.getSourceOperation();
-      String targetLocation = message.getTargetLocation();
-      String targetOperation = message.getTargetOperation();
-      String targetContentType = message.getTargetContentType();
-      String callbackLocation = message.getCallbackLocation();
-      String callbackOperation = message.getCallbackOperation();
-      String callbackContentType = message.getCallbackContentType();
-      String errorStatus = message.getErrorStatus();
-      String successStatus = message.getSuccessStatus();
-      //perform validation
-      StringBuffer errorMessages = new StringBuffer();
-      if (isEmpty(sourceLocation)) {
-        errorMessages.append("sourceLocation is empty.");
-      }
-      if (isEmpty(callbackLocation)) {
-        errorMessages.append("callbackLocation is empty.");
-      }
-      if (errorMessages.length() > 0) {
-        logger.log(Level.INFO, "Error(s): " + errorMessages.toString());
-      }
-      //process config overrides
-      String configTargetLocation = configurationManager.getTargetLocation(message.getEntity());
-      String configCallbackLocation = configurationManager.getCallbackLocation(message.getEntity());
-      if (!isEmpty(configTargetLocation)) {
-        targetLocation = configTargetLocation;
-      }
-      if (!isEmpty(configCallbackLocation)) {
-        callbackLocation = configCallbackLocation;
-      }
-      //process defaults
-      if (isEmpty(sourceOperation)) {
-        sourceOperation = SOURCE_OPERATION_DEFAULT;
-      }
-      if (isEmpty(targetLocation)) {
-        targetLocation = TARGET_LOCATION_DEFAULT;
-      }
-      if (isEmpty(targetContentType)) {
-        targetContentType = TARGET_CONTENT_TYPE_DEFAULT;
-      }
-      if (isEmpty(targetOperation)) {
-        targetOperation = TARGET_OPERATION_DEFAULT;
-      }
-      if (isEmpty(callbackOperation)) {
-        callbackOperation = CALLBACK_OPERATION_DEFAULT;
-      }
-      if (isEmpty(callbackContentType)) {
-        callbackContentType = CALLBACK_CONTENT_TYPE_DEFAULT;
-      }
-      if (isEmpty(errorStatus)) {
-        errorStatus = ERROR_DEFAULT;
-      }
-      if (isEmpty(successStatus)) {
-        successStatus = SUCCESS_DEFAULT;
-      }
-      sourceLocation = processVariablesConfig(sourceLocation);
-      targetLocation = processVariablesConfig(targetLocation);
-      callbackLocation = processVariablesConfig(callbackLocation);
+      // validate message and set defaults
+      Message validatedMessage = validateAndSetDefaults(message);
 
-      RequestResponse sourceResponse = null, targetResponse = null, callbackResponse = null;
       //get payload from SOURCE
-      if (!isEmpty(sourceLocation) && sourceLocation.toLowerCase().startsWith("http")) {
-        sourceResponse = getRequestUtil().processRequest(sourceLocation, null, null, null, null, sourceOperation, sslSocketFactory);
-        logger.log(Level.FINE, String.format("source response code %s", sourceResponse.getCode()));
-
-      } else if (!isEmpty(sourceOperation) && sourceOperation.equalsIgnoreCase("base64")) {
-        byte[] decoded = Base64.getDecoder().decode(sourceLocation);
-        String payload = new String(decoded, StandardCharsets.UTF_8);
-        sourceResponse = new RequestResponse(200, payload);
-      } else if (!isEmpty(sourceOperation) && sourceOperation.equalsIgnoreCase("noop")) {//no operation
-        sourceResponse = new RequestResponse(200, "");
-      } else {
-        logger.log(Level.FINE, "unsupported Location type");
-      }
-      if (sourceResponse != null) {
-        String[] targetLocations = targetLocation.split(",");
-        boolean overall_status = true; //false when at least one fails
-        List<CallbackDetailedDto> callbacks = new ArrayList();
-        for (String tlocation : targetLocations) {
-          targetResponse = getRequestUtil().processRequest(tlocation, null, null, sourceResponse.getBody(), targetContentType, targetOperation, sslSocketFactory);
-          CallbackDetailedDto callbackDetail = new CallbackDetailedDto();
-          callbackDetail.setTargetLocation(tlocation);
-          callbackDetail.setMessage(targetResponse.getBody());
-          if (targetResponse.getCode() >= 400) {
-            overall_status = false;
-            callbackDetail.setStatus(errorStatus);
-          } else {
-            callbackDetail.setStatus(successStatus);
-          }
-          callbacks.add(callbackDetail);
-        }
-        CallbackDto finalCallback = new CallbackDto();
-        finalCallback.setStatus(!overall_status ? errorStatus : successStatus);
-        finalCallback.setMessage(mapper.writeValueAsString(callbacks));
-        String callbackBody = mapper.writeValueAsString(finalCallback);
-
-        String[] callbackLocations = callbackLocation.split(",");
-        result = true;
-        for (String clocation : callbackLocations) {
-          callbackResponse = getRequestUtil().processRequest(clocation, null, null, callbackBody, callbackContentType, callbackOperation, sslSocketFactory);
-          if (callbackResponse == null || (callbackResponse != null && callbackResponse.getCode() >= 400)) {
-            result = false;
-          }
-        }
-        Level callbackResponseLogLevel = Level.FINE;
-        if (callbackResponse == null || callbackResponse.getCode() >= 400) {
-          callbackResponseLogLevel = Level.INFO;
-        }
-        logger.log(callbackResponseLogLevel, String.format("target response code %s, callback response code %s, callback body %s", targetResponse.getCode(), callbackResponse != null ? callbackResponse.getCode() : "was null", callbackResponse != null ? callbackResponse.getBody() : "was null"));
+      sourceResponse = performSourceRequest(validatedMessage);
+      if (sourceResponse == null)  {
+        logger.log(Level.WARNING, "unable to get source location");
+        return false;
       }
 
+      // process target location requests
+      List<CallbackDetailedDto> targetRequestResults = performTargetRequests(validatedMessage, sourceResponse);
+
+      // perform callback requests
+      return performCallbackRequests(validatedMessage, targetRequestResults);
     } catch (Exception e) {
       logger.log(Level.SEVERE, "There was performAction for message ", e);
+    }
+    return false;
+  }
+
+  private Message validateAndSetDefaults(Message message) {
+    //perform validation
+    StringBuilder errorMessages = new StringBuilder();
+    if (isEmpty(message.getSourceLocation())) {
+      errorMessages.append("message.getSourceLocation() is empty.");
+    }
+    if (isEmpty(message.getSuccessCallbackLocation())) {
+      errorMessages.append("successCallbackLocation is empty.");
+    }
+    if (errorMessages.length() > 0) {
+      logger.log(Level.INFO, "Error(s): " + errorMessages.toString());
+    }
+    //process config overrides
+    String configTargetLocation = configurationManager.getTargetLocation(message.getEntity());
+    String configCallbackLocation = configurationManager.getCallbackLocation(message.getEntity());
+    if (!isEmpty(configTargetLocation)) {
+      message.setTargetLocation(configTargetLocation);
+    }
+    if (!isEmpty(configCallbackLocation)) {
+      message.setSuccessCallbackLocation(configCallbackLocation);
+    }
+
+    // defaults
+    if (isEmpty(message.getSourceOperation())) {
+      message.setSourceOperation(SOURCE_OPERATION_DEFAULT);
+    }
+    if (isEmpty(message.getTargetLocation())) {
+      message.setTargetLocation(TARGET_LOCATION_DEFAULT);
+    }
+    if (isEmpty(message.getTargetContentType())) {
+      message.setTargetContentType(TARGET_CONTENT_TYPE_DEFAULT);
+    }
+    if (isEmpty(message.getTargetOperation())) {
+      message.setTargetOperation(TARGET_OPERATION_DEFAULT);
+    }
+    if (isEmpty(message.getSuccessCallbackOperation())) {
+      message.setSuccessCallbackOperation(CALLBACK_OPERATION_DEFAULT);
+    }
+    if (isEmpty(message.getSuccessCallbackContentType())) {
+      message.setSuccessCallbackContentType(CALLBACK_CONTENT_TYPE_DEFAULT);
+    }
+    if (isEmpty(message.getErrorCallbackLocation())) {
+      message.setErrorCallbackLocation(message.getSuccessCallbackLocation());
+    }
+    if (isEmpty(message.getErrorCallbackOperation())) {
+      message.setErrorCallbackOperation(CALLBACK_OPERATION_DEFAULT);
+    }
+    if (isEmpty(message.getErrorCallbackContentType())) {
+      message.setErrorCallbackContentType(CALLBACK_CONTENT_TYPE_DEFAULT);
+    }
+    if (isEmpty(message.getErrorStatus())) {
+      message.setErrorStatus(ERROR_DEFAULT);
+    }
+    if (isEmpty(message.getSuccessStatus())) {
+      message.setSuccessStatus(SUCCESS_DEFAULT);
+    }
+    message.setSourceLocation(processVariablesConfig(message.getSourceLocation()));
+    message.setTargetLocation(processVariablesConfig(message.getTargetLocation()));
+    message.setSuccessCallbackLocation(processVariablesConfig(message.getSuccessCallbackLocation()));
+    message.setErrorCallbackLocation(processVariablesConfig(message.getErrorCallbackLocation()));
+    return message;
+  }
+
+  private RequestResponse performSourceRequest(Message message) throws Exception {
+    RequestResponse resp = null;
+    if (!isEmpty(message.getSourceLocation()) && message.getSourceLocation().toLowerCase().startsWith("http")) {
+      resp = getRequestUtil().processRequest(message.getSourceLocation(), null, null, null, null, message.getSourceOperation(), sslSocketFactory);
+      logger.log(Level.FINE, String.format("source response code %s", resp.getCode()));
+    } else if (!isEmpty(message.getSourceOperation()) && message.getSourceOperation().equalsIgnoreCase("base64")) {
+      byte[] decoded = Base64.getDecoder().decode(message.getSourceLocation());
+      String payload = new String(decoded, StandardCharsets.UTF_8);
+      resp = new RequestResponse(200, payload);
+    } else if (!isEmpty(message.getSourceOperation()) && message.getSourceOperation().equalsIgnoreCase("noop")) {//no operation
+      resp = new RequestResponse(200, "");
+    } else {
+      logger.log(Level.FINE, "unsupported Location type");
+    }
+    return resp;
+  }
+
+  private List<CallbackDetailedDto> performTargetRequests(Message message, RequestResponse sourceResponse) throws Exception {
+    ArrayList<CallbackDetailedDto> callbacks = new ArrayList<>();
+    String[] targetLocations = message.getTargetLocation().split(",");
+    for (String tlocation : targetLocations) {
+      RequestResponse resp = getRequestUtil().processRequest(tlocation, null, null, sourceResponse.getBody(), message.getTargetContentType(), message.getTargetOperation(), sslSocketFactory);
+      CallbackDetailedDto callbackDetail = new CallbackDetailedDto();
+      callbackDetail.setTargetLocation(tlocation);
+      callbackDetail.setMessage(resp.getBody());
+      callbackDetail.setStatus(resp.getCode() < 400 ? message.getSuccessStatus() : message.getErrorStatus());
+      if(resp.getCode() >= 400) {
+        logger.log(Level.INFO, String.format("target request failed with response code %s, body %s", resp.getCode(), resp.getBody()));
+      }
+      callbacks.add(callbackDetail);
+    }
+    return callbacks;
+  }
+
+  private boolean performCallbackRequests(Message message, List<CallbackDetailedDto> targetRequestResults) throws Exception {
+    String[] callbackLocations;
+    String contentType;
+    String operation;
+    boolean success = targetRequestResults.stream().allMatch(c -> c.getStatus().equals(message.getSuccessStatus()));
+
+    if(success) {
+      callbackLocations = message.getSuccessCallbackLocation().split(",");
+      contentType = message.getSuccessCallbackContentType();
+      operation = message.getSuccessCallbackOperation();
+    } else {
+      callbackLocations = message.getErrorCallbackLocation().split(",");
+      contentType = message.getErrorCallbackContentType();
+      operation = message.getErrorCallbackOperation();
+    }
+    // prepare callback request body
+    CallbackDto finalCallback = new CallbackDto();
+    finalCallback.setStatus(success ? message.getSuccessStatus() : message.getSuccessStatus());
+    finalCallback.setMessage(mapper.writeValueAsString(targetRequestResults));
+    String body = mapper.writeValueAsString(finalCallback);
+
+    boolean result = true;
+    for (String clocation : callbackLocations) {
+      RequestResponse resp = getRequestUtil().processRequest(clocation, null, null, body, contentType, operation, sslSocketFactory);
+      if (resp.getCode() >= 400) {
+        logger.log(Level.INFO, String.format("callback request failed with response code %s, body %s", resp.getCode(), resp.getBody()));
+        result = false;
+      }
     }
     return result;
   }
