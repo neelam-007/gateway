@@ -58,7 +58,7 @@ public class PortalDeployerAssertion extends Assertion implements UsesVariables 
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "set:modularAssertions");
 
         meta.put( AssertionMetadata.MODULE_LOAD_LISTENER_CLASSNAME,
-                "com.l7tech.external.assertions.portaldeployer.server.PortalDeployerModuelLoadListener");
+                "com.l7tech.external.assertions.portaldeployer.server.PortalDeployerModuleLoadListener");
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;

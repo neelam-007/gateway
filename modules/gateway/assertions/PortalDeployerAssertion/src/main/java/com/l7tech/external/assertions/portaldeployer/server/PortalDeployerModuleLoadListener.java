@@ -33,8 +33,8 @@ import org.springframework.transaction.support.TransactionTemplate;
  * when the Portal Deployer modass is unloaded during events such as gateway shutdown, modass unloading (deletion of
  * assertion, loading of new assertion).
  */
-public class PortalDeployerModuelLoadListener implements ApplicationListener {
-  private static final Logger logger = Logger.getLogger(PortalDeployerModuelLoadListener.class.getName());
+public class PortalDeployerModuleLoadListener implements ApplicationListener {
+  private static final Logger logger = Logger.getLogger(PortalDeployerModuleLoadListener.class.getName());
   static final String PD_STATUS_CP = "portal.deployer.status";
 
   /**
@@ -45,7 +45,7 @@ public class PortalDeployerModuelLoadListener implements ApplicationListener {
   public static synchronized void onModuleLoaded(@NotNull ApplicationContext context) {
     logger.log(Level.FINE, "PortalDeployer onModuleLoaded executing");
     if (instance == null) {
-      instance = new PortalDeployerModuelLoadListener(context,
+      instance = new PortalDeployerModuleLoadListener(context,
               PortalDeployerClientManagerImpl.getInstance(context),
               Executors.newSingleThreadExecutor());
     }
@@ -69,7 +69,7 @@ public class PortalDeployerModuelLoadListener implements ApplicationListener {
     }
   }
 
-  private static PortalDeployerModuelLoadListener instance = null;
+  private static PortalDeployerModuleLoadListener instance = null;
   private ClusterPropertyManager clusterPropertyManager;
   private ApplicationEventProxy applicationEventProxy;
   private PortalDeployerClientManager portalDeployerClientManager;
@@ -79,7 +79,7 @@ public class PortalDeployerModuelLoadListener implements ApplicationListener {
 
   protected enum PortalDeployerStatus {STARTED, STOPPED, START_FAILED, STOP_FAILED}
 
-  PortalDeployerModuelLoadListener(final ApplicationContext context,
+  PortalDeployerModuleLoadListener(final ApplicationContext context,
                                    final PortalDeployerClientManager portalDeployerClientManager,
                                    final ExecutorService executorService) {
     clusterPropertyManager = context.getBean("clusterPropertyManager", ClusterPropertyManager.class);
