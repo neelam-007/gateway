@@ -1,6 +1,6 @@
 package com.l7tech.external.assertions.portaldeployer.server;
 
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.cluster.ClusterPropertyManager;
@@ -70,5 +70,37 @@ public class PortalDeployerClientConfigurationManagerTest {
 
     verify(clusterPropertyManager, times(1)).
             getProperty(eq(PortalDeployerClientConfigurationManagerImpl.PD_ENABLED_CP));
+  }
+
+  @Test
+  public void test_getTargetLocation() throws Exception {
+    portalDeployerClientConfigurationManager.getTargetLocation(null);
+
+    verify(clusterPropertyManager, times(1)).
+            getProperty(eq(PortalDeployerClientConfigurationManagerImpl.PD_DEPLOY_TARGET_LOCATION));
+  }
+
+  @Test
+  public void test_getCallbackLocation() throws Exception {
+    portalDeployerClientConfigurationManager.getCallbackLocation(null);
+
+    verify(clusterPropertyManager, times(1)).
+            getProperty(eq(PortalDeployerClientConfigurationManagerImpl.PD_DEPLOY_CALLBACK_LOCATION));
+  }
+
+  @Test
+  public void test_getTargetLocationWithEntity() throws Exception {
+    portalDeployerClientConfigurationManager.getTargetLocation("API");
+
+    verify(clusterPropertyManager, times(1)).
+            getProperty(eq(PortalDeployerClientConfigurationManagerImpl.PD_DEPLOY_TARGET_LOCATION + ".api"));
+  }
+
+  @Test
+  public void test_getCallbackLocationWithEntity() throws Exception {
+    portalDeployerClientConfigurationManager.getCallbackLocation("API");
+
+    verify(clusterPropertyManager, times(1)).
+            getProperty(eq(PortalDeployerClientConfigurationManagerImpl.PD_DEPLOY_CALLBACK_LOCATION + ".api"));
   }
 }

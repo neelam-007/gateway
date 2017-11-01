@@ -22,7 +22,7 @@ public class MessageProcessorSampleClient {
 
   public static void main(String args[]) throws Exception {
     SSLSocketFactoryProvider sfp = new SSLSocketFactoryProviderImpl(null, "");
-    sfp.addHost("https://elih4:8443", "7layer");
+    sfp.addHost("https://enroll-portal-deployer.app.dev1.w2.saasqa.ca.com", null);
     //MessageProcessor
     TestConfig config = new TestConfig();
     config.setIngressHost("elih4");

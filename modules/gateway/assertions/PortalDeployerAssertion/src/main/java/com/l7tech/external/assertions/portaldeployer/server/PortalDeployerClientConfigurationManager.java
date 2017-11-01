@@ -18,4 +18,8 @@ public interface PortalDeployerClientConfigurationManager {
   int getConnectTimeout();
 
   int getKeepAliveInterval();
+
+  String getTargetLocation(String entity);
+
+  String getCallbackLocation(String entity);
 }

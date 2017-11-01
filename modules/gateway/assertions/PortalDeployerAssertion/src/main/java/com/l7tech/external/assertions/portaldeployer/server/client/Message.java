@@ -16,6 +16,8 @@ public class Message {
   private String callbackOperation;
   private String callbackContentType;
   private String messageId;
+  private String successStatus;
+  private String errorStatus;
 
   public String getEntity() {
     return entity;
@@ -111,5 +113,21 @@ public class Message {
 
   public void setMessageId(String messageId) {
     this.messageId = messageId;
+  }
+
+  public String getSuccessStatus() {
+    return successStatus;
+  }
+
+  public void setSuccessStatus(String successStatus) {
+    this.successStatus = successStatus;
+  }
+
+  public String getErrorStatus() {
+    return errorStatus;
+  }
+
+  public void setErrorStatus(String errorStatus) {
+    this.errorStatus = errorStatus;
   }
 }

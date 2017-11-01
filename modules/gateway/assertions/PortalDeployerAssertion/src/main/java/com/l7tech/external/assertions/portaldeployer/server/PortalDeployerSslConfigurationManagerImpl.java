@@ -18,12 +18,14 @@ import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.security.prov.JceProvider;
+import com.l7tech.server.DefaultKey;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.transport.http.SslClientTrustManager;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.ExceptionUtils;
+import java.io.IOException;
 import java.net.Socket;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
@@ -70,6 +72,7 @@ public class PortalDeployerSslConfigurationManagerImpl implements PortalDeployer
   private UserManager userManager;
   private PlatformTransactionManager transactionManager;
   private SSLContext sslContext;
+  private DefaultKey defaultKey;
 
   public PortalDeployerSslConfigurationManagerImpl(ApplicationContext context) {
     ssgKeyStoreManager = context.getBean("ssgKeyStoreManager", SsgKeyStoreManager.class);
@@ -77,14 +80,13 @@ public class PortalDeployerSslConfigurationManagerImpl implements PortalDeployer
     passwordHasher = context.getBean("passwordHasher", PasswordHasher.class);
     clientCertManager = context.getBean("clientCertManager", ClientCertManager.class);
     roleManager = context.getBean("roleManager", RoleManager.class);
+    defaultKey = context.getBean("defaultKey", DefaultKey.class);
     try {
-      internalIdentityProvider = context.getBean("identityProviderFactory", IdentityProviderFactory.class)
-              .getProvider(INTERNAL_IDENTITY_PROVIDER_GOID);
+      internalIdentityProvider = context.getBean("identityProviderFactory", IdentityProviderFactory.class).getProvider(INTERNAL_IDENTITY_PROVIDER_GOID);
       userManager = internalIdentityProvider.getUserManager();
     } catch (FindException e) {
       //TODO: figure out how to handle this properly, unsure of what exception to propogate to module
-      logger.log(Level.SEVERE, String.format("Unable to look up internalIdentityProvider key: %s", ExceptionUtils
-              .getMessage(e)), e);
+      logger.log(Level.SEVERE, String.format("Unable to look up internalIdentityProvider key: %s", ExceptionUtils.getMessage(e)), e);
     }
     transactionManager = context.getBean("transactionManager", PlatformTransactionManager.class);
   }
@@ -107,28 +109,28 @@ public class PortalDeployerSslConfigurationManagerImpl implements PortalDeployer
 
   /**
    * Initializes the SSL dependencies for the Portal Deployer which are:
-   *  1. The portalman key created during enrollment
-   *  2. An administrator user that is associated with the portalman key's certificate used for mutual-auth with Restman
-   *  3. An SSL Context using the portalman key and the Gateway's trust manager to allow for authenticated out-bound
-   *  communication with the Portal.
+   * 1. The portalman key created during enrollment
+   * 2. An administrator user that is associated with the portalman key's certificate used for mutual-auth with Restman
+   * 3. An SSL Context using the portalman key and the Gateway's trust manager to allow for authenticated out-bound
+   * communication with the Portal.
+   *
    * @throws PortalDeployerConfigurationException if any over the above dependencies cannot be initialized
    */
   private void initSslDependencies() throws PortalDeployerConfigurationException {
     try {
       portalmanKey = ssgKeyStoreManager.lookupKeyByKeyAlias(PORTALMAN_KEY_ALILAS, PersistentEntity.DEFAULT_GOID);
       initPortalmanUser(portalmanKey.getCertificate());
-      portalmanKeyManager = new SingleCertX509KeyManager(portalmanKey.getCertificateChain(), portalmanKey.getPrivate
-              (), portalmanKey.getAlias());
+      portalmanKeyManager = new SingleCertX509KeyManager(portalmanKey.getCertificateChain(), portalmanKey.getPrivate(), portalmanKey.getAlias());
       sslContext = SSLContext.getInstance(TLSV1_2);
-      sslContext.init(new KeyManager[]{portalmanKeyManager}, new TrustManager[]{trustManager}, JceProvider
-              .getInstance().getSecureRandom());
+      sslContext.init(new KeyManager[]{portalmanKeyManager}, new TrustManager[]{new SelfTrustManager(defaultKey), trustManager}, JceProvider.getInstance().getSecureRandom());
     } catch (FindException e) {
       logAndThrowException(String.format("Unable to find portalman key: %s", ExceptionUtils.getMessage(e)), e);
     } catch (KeyStoreException e) {
       logAndThrowException(String.format("Unable to look up portalman key: %s", ExceptionUtils.getMessage(e)), e);
     } catch (KeyManagementException | UnrecoverableKeyException | NoSuchAlgorithmException e) {
-      logAndThrowException(String.format("Unable to initialize portalman SSL depdencies: %s", ExceptionUtils
-              .getMessage(e)), e);
+      logAndThrowException(String.format("Unable to initialize portalman SSL depdencies: %s", ExceptionUtils.getMessage(e)), e);
+    } catch (IOException e) {
+      logAndThrowException(String.format("Unable to trust default key : %s", ExceptionUtils.getMessage(e)), e);
     }
   }
 
@@ -136,6 +138,7 @@ public class PortalDeployerSslConfigurationManagerImpl implements PortalDeployer
    * Creates an administrator user to associate with the provided certificate in the Gateway's Internal Identity
    * Provider. The user will be created using the cn of the certificate and it will be associated with the created user
    * for mutual-auth calls via Restman.
+   *
    * @param portalmanCertificate the certificate used to create the user.
    * @throws PortalDeployerConfigurationException if any errors are encountered creating the user.
    */
@@ -152,6 +155,7 @@ public class PortalDeployerSslConfigurationManagerImpl implements PortalDeployer
 
   /**
    * Assigns the specified user to the admin role.
+   *
    * @param portalmanUser The user to assign to the admin role.
    * @throws PortalDeployerConfigurationException if any errors are encountered assigning the user to admin.
    */
@@ -170,6 +174,7 @@ public class PortalDeployerSslConfigurationManagerImpl implements PortalDeployer
 
   /**
    * Saves the role and returns true or false if the operation succeeds or not.
+   *
    * @param role Role to save
    * @return True or false if save operation completes.
    */
@@ -183,8 +188,7 @@ public class PortalDeployerSslConfigurationManagerImpl implements PortalDeployer
           roleUpdated = true;
         } catch (final ObjectModelException e) {
           transactionStatus.setRollbackOnly();
-          logger.log(Level.WARNING, "Unable to save portalman user with admin role: " + ExceptionUtils.getMessage(e),
-                  e);
+          logger.log(Level.WARNING, "Unable to save portalman user with admin role: " + ExceptionUtils.getMessage(e), e);
         }
         return roleUpdated;
       }
@@ -202,6 +206,7 @@ public class PortalDeployerSslConfigurationManagerImpl implements PortalDeployer
 
   /**
    * Creates a new user using the login specified with a random hashed password.
+   *
    * @return A user created with the login specified.
    * @throws PortalDeployerConfigurationException if any errors are encountered saving the user.
    */
@@ -212,8 +217,7 @@ public class PortalDeployerSslConfigurationManagerImpl implements PortalDeployer
     newPortalmanUser.setEnabled(true);
     newPortalmanUser.setExpiration(-1L);
     //hashedPassword is required but will be replaced with certificate and unused
-    newPortalmanUser.setHashedPassword(passwordHasher.hashPassword(UUID.randomUUID().toString().getBytes(Charsets
-            .UTF8)));
+    newPortalmanUser.setHashedPassword(passwordHasher.hashPassword(UUID.randomUUID().toString().getBytes(Charsets.UTF8)));
     createPortalmanUser(newPortalmanUser);
     return newPortalmanUser;
   }
@@ -227,13 +231,11 @@ public class PortalDeployerSslConfigurationManagerImpl implements PortalDeployer
     }
   }
 
-  private void associateCertWithUser(X509Certificate portalmanCertificate, User portalmanUser) throws
-          PortalDeployerConfigurationException {
+  private void associateCertWithUser(X509Certificate portalmanCertificate, User portalmanUser) throws PortalDeployerConfigurationException {
     try {
       clientCertManager.recordNewUserCert(portalmanUser, portalmanCertificate, true);
     } catch (UpdateException ue) {
-      logAndThrowException(String.format("Unable to record new cert for portalman user: %s", ExceptionUtils
-              .getMessage(ue)), ue);
+      logAndThrowException(String.format("Unable to record new cert for portalman user: %s", ExceptionUtils.getMessage(ue)), ue);
     }
   }
 
