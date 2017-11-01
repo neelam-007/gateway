@@ -30,8 +30,38 @@ public class TestConfig implements PortalDeployerClientConfigurationManager {
   }
 
   @Override
+  public String getIngressPort() {
+    return "443";
+  }
+
+  @Override
   public String getIngressHost() {
     return ingressHost;
+  }
+
+  @Override
+  public String getBrokerPort() {
+    return "443";
+  }
+
+  @Override
+  public String getBrokerProtocol() {
+    return "wss";
+  }
+
+  @Override
+  public int getBrokerKeepAlive() {
+    return 0;
+  }
+
+  @Override
+  public int getBrokerConnectionTimeout() {
+    return 0;
+  }
+
+  @Override
+  public boolean getBrokerCleanSession() {
+    return false;
   }
 
   @Override
@@ -57,15 +87,5 @@ public class TestConfig implements PortalDeployerClientConfigurationManager {
   @Override
   public boolean isPortalDeployerEnabled() {
     return false;
-  }
-
-  @Override
-  public int getConnectTimeout() {
-    return 0;
-  }
-
-  @Override
-  public int getKeepAliveInterval() {
-    return 0;
   }
 }

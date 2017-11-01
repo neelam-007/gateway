@@ -5,21 +5,17 @@ package com.l7tech.external.assertions.portaldeployer.server;
  */
 public interface PortalDeployerClientConfigurationManager {
 
-  String getBrokerHost();
-
+  String getIngressPort();
   String getIngressHost();
-
+  String getBrokerPort();
+  String getBrokerProtocol();
+  int getBrokerKeepAlive();
+  int getBrokerConnectionTimeout();
+  boolean getBrokerCleanSession();
+  String getBrokerHost();
   String getTenantId();
-
   String getTenantGatewayUuid();
-
   boolean isPortalDeployerEnabled();
-
-  int getConnectTimeout();
-
-  int getKeepAliveInterval();
-
   String getTargetLocation(String entity);
-
   String getCallbackLocation(String entity);
 }
