@@ -1478,6 +1478,8 @@
         <constructor-arg ref="clusterInfoManager"/>
         <constructor-arg ref="serviceCache"/>
         <constructor-arg ref="serviceUsageManager"/>
+        <constructor-arg ref="clusterMaster"/>
+        <constructor-arg ref="serverConfig"/>
         <property name="sessionFactory" ref="sessionFactory"/>
     </bean>
 

@@ -12,6 +12,7 @@ import java.util.*;
  * @author Jamie Williams - wilja33 - jamie.williams2@ca.com
  */
 public class CompositeLicense implements Serializable {
+    private static final long serialVersionUID = 1697427224100469052L;
     private final Set<String> enabledFeatures;
     private final Map<Long, FeatureLicense> validFeatureLicenses;
     private final Map<Long, FeatureLicense> invalidFeatureLicenses; // unsigned, untrusted, or wrong product/version

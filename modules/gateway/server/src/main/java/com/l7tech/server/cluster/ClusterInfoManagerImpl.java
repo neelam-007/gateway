@@ -151,6 +151,26 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
     }
 
     @Override
+    @Transactional
+    public void removeStaleNodes(final long statusTimeStamp) {
+        try {
+            // Cannot use a lambda here since tis is loaded by spring.
+            //noinspection Convert2Lambda
+            getHibernateTemplate().execute(new HibernateCallback() {
+                @Override
+                public Object doInHibernate(Session session) throws HibernateException, SQLException {
+                    // The garbage collection query deletes all ClusterNodeInfo entities (rows from cluster_info) that were last updated more than `statusTimeStamp` ago
+                    session.createQuery(HQL_DELETE_ALL_OLDER_THAN).setLong("statusTimeStamp", statusTimeStamp).executeUpdate();
+                    return null;
+                }
+            });
+        } catch (Exception e) {
+            String msg = "error cleaning cluster statuses";
+            logger.log(Level.WARNING, msg, e);
+        }
+    }
+
+    @Override
     public String renameNode(String nodeid, String newnodename) throws UpdateException {
         ClusterNodeInfo node = getNodeStatusFromDB(nodeid);
         if (node == null) {
@@ -269,6 +289,7 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
     private static final String TABLE_NAME = "cluster_info";
     private static final String NODEID_COLUMN_NAME = "nodeIdentifier";
     private static final String NAME_COLUMN_NAME = "name";
+    private static final String STATUS_TIME_STAMP_COLUMN_NAME = "lastUpdateTimeStamp";
 
     private static Pattern ifconfigAddr4Pattern = Pattern.compile(".*inet addr:(\\d+\\.\\d+\\.\\d+\\.\\d+).*", Pattern.DOTALL);
     private static Pattern ifconfigAddr6Pattern = Pattern.compile(".*inet6 addr: ([^/]+)/\\d+ Scope:(Global|Site|Compat)", Pattern.DOTALL);
@@ -290,6 +311,10 @@ public class ClusterInfoManagerImpl extends HibernateDaoSupport implements Clust
     private static final String HQL_DELETE_BY_ID =
             "delete from " + ClusterNodeInfo.class.getName() + " as " + TABLE_NAME +
                     " where " + TABLE_NAME + "." + NODEID_COLUMN_NAME + " = :nodeid";
+
+    private static final String HQL_DELETE_ALL_OLDER_THAN =
+            "delete from " + ClusterNodeInfo.class.getName() + " as " + TABLE_NAME +
+                    " where " + TABLE_NAME + "." + STATUS_TIME_STAMP_COLUMN_NAME + " < :statusTimeStamp";
 
     private static final Logger logger = Logger.getLogger(ClusterInfoManagerImpl.class.getName());
     private static final long rememberedBootTime = System.currentTimeMillis();
