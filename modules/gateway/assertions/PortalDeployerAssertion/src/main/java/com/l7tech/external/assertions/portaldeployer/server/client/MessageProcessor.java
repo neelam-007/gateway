@@ -246,8 +246,12 @@ public class MessageProcessor {
       String tmp = value;
       if (configurationManager.getIngressHost() != null)
         tmp = tmp.replace("{INGRESS_HOST}", configurationManager.getIngressHost());
+      if (configurationManager.getIngressPort() != null)
+        tmp = tmp.replace("{INGRESS_PORT}", configurationManager.getIngressPort());
       if (configurationManager.getBrokerHost() != null)
         tmp = tmp.replace("{BROKER_HOST}", configurationManager.getBrokerHost());
+      if (configurationManager.getBrokerPort() != null)
+        tmp = tmp.replace("{BROKER_PORT}", configurationManager.getBrokerPort());
       return tmp;
     }
     return value;
