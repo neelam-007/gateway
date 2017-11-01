@@ -1,8 +1,6 @@
 package com.l7tech.external.assertions.portaldeployer.server;
 
-import com.l7tech.common.io.CertUtils;
 import com.l7tech.security.cert.CertVerifier;
-import com.l7tech.security.cert.KeyUsageException;
 import com.l7tech.server.DefaultKey;
 import java.io.IOException;
 import java.security.cert.CertificateException;
