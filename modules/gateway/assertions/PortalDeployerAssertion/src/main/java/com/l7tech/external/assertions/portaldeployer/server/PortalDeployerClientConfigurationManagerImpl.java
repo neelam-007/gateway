@@ -11,38 +11,89 @@ import org.springframework.context.ApplicationContext;
  */
 public class PortalDeployerClientConfigurationManagerImpl implements PortalDeployerClientConfigurationManager {
   private static final Logger logger = Logger.getLogger(PortalDeployerClientConfigurationManagerImpl.class.getName());
+
+  static final int PD_BROKER_KEEP_ALIVE_DEFAULT = 30;
+  static final int PD_BROKER_CONNECTION_TIMEOUT_DEFAULT = 60;
+  static final boolean PD_BROKER_CLEAN_SESSION_DEFAULT = false;
+  static final String PD_BROKER_PROTOCOL_DEFAULT = "wss";
+
   //properties coming from enrollment bundle
-  public static final String PD_TENANT_ID_CP = "portal.config.name";
-  public static final String PD_TSSG_UUID_CP = "portal.config.node.id";
-  public static final String PD_BROKER_PROTOCOL_CP = "portal.config.broker.protocol";
-  public static final String PD_BROKER_HOST_CP = "portal.config.broker.host";
-  public static final String PD_APIM_HOST_CP = "portal.config.apim.host";
+  static final String PD_TENANT_ID_CP = "portal.config.name";
+  static final String PD_TSSG_UUID_CP = "portal.config.node.id";
+  static final String PD_BROKER_HOST_CP = "portal.config.broker.host";
+  static final String PD_BROKER_PORT_CP = "portal.config.broker.port";
+  static final String PD_APIM_HOST_CP = "portal.config.apim.host";
+  static final String PD_APIM_PORT_CP = "portal.config.apim.port";
   //properties configured by this modass
-  public static final String PD_ENABLED_CP = "portal.deployer.enabled";
-  public static final String PD_BROKER_KEEP_ALIVE_CP = "portal.deployer.broker.keepalive";
-  public static final String PD_BROKER_CLEAN_SESSION_CP = "portal.deployer.broker.cleansession";
-  public static final String PD_TOPIC_CP = "portal.deployer.topic";
+  static final String PD_ENABLED_CP = "portal.deployer.enabled";
+  static final String PD_BROKER_PROTOCOL_CP = "portal.config.broker.protocol";
+  static final String PD_BROKER_KEEP_ALIVE_CP = "portal.deployer.broker.keepalive";
+  static final String PD_BROKER_CLEAN_SESSION_CP = "portal.deployer.broker.cleansession";
+  static final String PD_BROKER_CONNECTION_TIMEOUT_CP = "portal.deployer.broker.connectiontimeout";
+  static final String PD_TOPIC_CP = "portal.deployer.topic";
   //extendable property for MessageProcessor
   public static final String PD_DEPLOY_TARGET_LOCATION = "portal.deploy.target.location";//supports comma delimited host
   public static final String PD_DEPLOY_CALLBACK_LOCATION = "portal.deploy.callback.location";//supports comma delimited host
   public static final String PD_USE_GATEWAY_TRUST_MANAGER_FOR_TARGET = "portal.deploy.use.trust.manager.for.target";
-  private String brokerHost;
-  private String tenantId;
-  private String tenantGatewayUuid;
-  private boolean portalDeployerEnabled = false;
-  //TODO: define as cluster properties that default to values
-  private String mqttProtocol;
-  private String clientId;
-  private String topic;
-  private int keepAlive = 30;
-  private boolean cleanSession = false;
-  private int connectTimeout = 60;
-  private int keepAliveInterval = 30;
 
   private ClusterPropertyManager clusterPropertyManager;
 
   public PortalDeployerClientConfigurationManagerImpl(ApplicationContext context) {
     this.clusterPropertyManager = context.getBean("clusterPropertyManager", ClusterPropertyManager.class);
+  }
+
+  /**
+   * Defaults to wss if unspecified.
+   */
+  public String getBrokerProtocol() {
+    String protocol = getClusterProperty(PD_BROKER_PROTOCOL_CP);
+    if(protocol == null) {
+      protocol = PD_BROKER_PROTOCOL_DEFAULT;
+    }
+    return protocol;
+  }
+
+  /**
+   * Defaults to 30 if unspecified.
+   */
+  public int getBrokerKeepAlive() {
+    int keepAlive = PD_BROKER_KEEP_ALIVE_DEFAULT;
+    try{
+      keepAlive = Integer.parseInt(getClusterProperty(PD_BROKER_KEEP_ALIVE_CP));
+    } catch(NumberFormatException e) {
+      logger.log(Level.INFO, String.format("Invalid keep alive value for ClusterProperty [%s]",
+              PD_BROKER_KEEP_ALIVE_CP));
+    }
+    return keepAlive;
+  }
+
+  /**
+   * Defaults to 30 if unspecified.
+   */
+  public int getBrokerConnectionTimeout() {
+    int keepAlive = PD_BROKER_CONNECTION_TIMEOUT_DEFAULT;
+    try{
+      keepAlive = Integer.parseInt(getClusterProperty(PD_BROKER_CONNECTION_TIMEOUT_CP));
+    } catch(NumberFormatException e) {
+      logger.log(Level.INFO, String.format("Invalid keep alive value for ClusterProperty [%s]",
+              PD_BROKER_CONNECTION_TIMEOUT_CP));
+    }
+    return keepAlive;
+  }
+
+  /**
+   * Defaults to false if unspecified.
+   */
+  public boolean getBrokerCleanSession() {
+    String cleanSession = getClusterProperty(PD_BROKER_CLEAN_SESSION_CP);
+    if(cleanSession == null) {
+      return PD_BROKER_CLEAN_SESSION_DEFAULT;
+    }
+    return Boolean.parseBoolean(cleanSession);
+  }
+
+  public String getBrokerPort() {
+    return getClusterProperty(PD_BROKER_PORT_CP);
   }
 
   public String getBrokerHost() {
@@ -51,6 +102,10 @@ public class PortalDeployerClientConfigurationManagerImpl implements PortalDeplo
 
   public String getIngressHost() {
     return getClusterProperty(PD_APIM_HOST_CP);
+  }
+
+  public String getIngressPort() {
+    return getClusterProperty(PD_APIM_PORT_CP);
   }
 
   public String getTenantId() {
@@ -86,13 +141,5 @@ public class PortalDeployerClientConfigurationManagerImpl implements PortalDeplo
       logger.log(Level.INFO, String.format("Unable to find ClusterProperty [%s]", clusterProperty));
     }
     return null;
-  }
-
-  public int getConnectTimeout() {
-    return connectTimeout;
-  }
-
-  public int getKeepAliveInterval() {
-    return keepAliveInterval;
   }
 }

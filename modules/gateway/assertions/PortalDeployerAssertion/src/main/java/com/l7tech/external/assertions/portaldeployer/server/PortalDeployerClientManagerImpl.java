@@ -10,12 +10,21 @@ import org.springframework.context.ApplicationContext;
  */
 public class PortalDeployerClientManagerImpl implements PortalDeployerClientManager {
 
+  private static PortalDeployerClientManagerImpl instance;
+
   private PortalDeployerClient portalDeployerClient;
   private PortalDeployerClientConfigurationManager configurationManager;
   private PortalDeployerSslConfigurationManager sslConfigurationManager;
   private PortalDeployerClientFactory portalDeployerClientFactory;
 
-  PortalDeployerClientManagerImpl(final ApplicationContext context) {
+  public static synchronized PortalDeployerClientManager getInstance(final ApplicationContext context) {
+    if(instance == null) {
+      instance = new PortalDeployerClientManagerImpl(context);
+    }
+    return instance;
+  }
+
+  private PortalDeployerClientManagerImpl(final ApplicationContext context) {
     this.configurationManager = new PortalDeployerClientConfigurationManagerImpl(context);
     this.sslConfigurationManager = new PortalDeployerSslConfigurationManagerImpl(context);
     this.portalDeployerClientFactory = new PortalDeployerClientFactory();
@@ -47,7 +56,9 @@ public class PortalDeployerClientManagerImpl implements PortalDeployerClientMana
   }
 
   public void stop() throws PortalDeployerClientException, PortalDeployerConfigurationException {
-    getClient().stop();
-    portalDeployerClient = null;
+    if(portalDeployerClient != null) {
+      getClient().stop();
+      portalDeployerClient = null;
+    }
   }
 }

@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.portaldeployer.server;
 
+import static com.l7tech.external.assertions.portaldeployer.server.PortalDeployerClientConfigurationManagerImpl.*;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 import com.l7tech.objectmodel.FindException;
@@ -27,6 +28,30 @@ public class PortalDeployerClientConfigurationManagerTest {
     when(context.getBean("clusterPropertyManager", ClusterPropertyManager.class)).thenReturn(clusterPropertyManager);
 
     portalDeployerClientConfigurationManager = new PortalDeployerClientConfigurationManagerImpl(context);
+  }
+
+  @Test
+  public void whenBrokerTimeoutInvalid_returnDefaultValue() throws FindException {
+    when(clusterPropertyManager.getProperty(PD_BROKER_CONNECTION_TIMEOUT_CP)).thenReturn("abc");
+    assertEquals(portalDeployerClientConfigurationManager.getBrokerConnectionTimeout(), PD_BROKER_CONNECTION_TIMEOUT_DEFAULT);
+  }
+
+  @Test
+  public void whenBrokerKeepAliveInvalid_returnDefaultValue() throws FindException {
+    when(clusterPropertyManager.getProperty(PD_BROKER_KEEP_ALIVE_CP)).thenReturn("abc");
+    assertEquals(portalDeployerClientConfigurationManager.getBrokerKeepAlive(), PD_BROKER_KEEP_ALIVE_DEFAULT);
+  }
+
+  @Test
+  public void whenCleanSessionInvalid_returnDefaultValue() throws FindException {
+    when(clusterPropertyManager.getProperty(PD_BROKER_CLEAN_SESSION_CP)).thenReturn("abc");
+    assertEquals(portalDeployerClientConfigurationManager.getBrokerCleanSession(), PD_BROKER_CLEAN_SESSION_DEFAULT);
+  }
+
+  @Test
+  public void whenBrokerProtocolNull_returnDefaultValue() throws FindException {
+    when(clusterPropertyManager.getProperty(PD_BROKER_PROTOCOL_CP)).thenReturn(null);
+    assertEquals(portalDeployerClientConfigurationManager.getBrokerProtocol(), PD_BROKER_PROTOCOL_DEFAULT);
   }
 
   @Test

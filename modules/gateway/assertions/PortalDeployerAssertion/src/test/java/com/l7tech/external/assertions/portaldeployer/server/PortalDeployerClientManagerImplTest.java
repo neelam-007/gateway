@@ -68,8 +68,19 @@ public class PortalDeployerClientManagerImplTest {
    */
   @Test
   public void stop() throws Exception {
+    portalDeployerClientManager.start();
     portalDeployerClientManager.stop();
     verify(portalDeployerClient, times(1)).stop();
+  }
+
+  /**
+   * Test that a stop manager call will not stop the client if it isn't started.
+   * @throws Exception
+   */
+  @Test
+  public void stopNotCalledIfNotStarted() throws Exception {
+    portalDeployerClientManager.stop();
+    verify(portalDeployerClient, never()).stop();
   }
 
   /**
@@ -84,6 +95,7 @@ public class PortalDeployerClientManagerImplTest {
         eq(sslSocketFactory),
         any(MessageProcessor.class)
     )).thenReturn(portalDeployerClient).thenReturn(portalDeployerClient2);
+    portalDeployerClientManager.start();
     portalDeployerClientManager.stop();
     portalDeployerClientManager.start();
     verify(portalDeployerClient, times(1)).stop();
