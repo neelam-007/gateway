@@ -1628,6 +1628,7 @@
         <constructor-arg index="2" ref="serviceDocumentManager"/>
         <constructor-arg index="3" ref="policyVersionManager"/>
         <constructor-arg index="4" ref="serviceTemplateManager"/>
+        <constructor-arg index="5" ref="clusterMaster"/>
     </bean>
 
     <bean id="migrationBundleBootstrapService" class="com.l7tech.server.service.MigrationBundleBootstrapService">
@@ -1647,7 +1648,7 @@
         <property name="targetMethod" value="thisNodeId"/>
     </bean>
 
-    <bean id="clusterMaster" class="com.l7tech.server.cluster.ClusterMaster">
+    <bean id="clusterMaster" class="com.l7tech.server.cluster.ClusterMasterImpl">
         <constructor-arg index="0" ref="transactionManager"/>
         <constructor-arg index="1" ref="hibernateDataSource"/>
         <constructor-arg index="2" ref="serverConfig"/>

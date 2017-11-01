@@ -272,7 +272,10 @@
         <constructor-arg index="2" ref="serviceDocumentManager"/>
         <constructor-arg index="3" ref="policyVersionManager"/>
         <constructor-arg index="4" ref="serviceTemplateManager"/>
+        <constructor-arg index="5" ref="clusterMaster"/>
     </bean>
+
+    <bean id="clusterMaster" class="com.l7tech.server.cluster.ClusterMasterStub"/>
 
     <bean id="serviceTemplateManager" class="com.l7tech.server.service.ServiceTemplateManagerImpl"/>
 
