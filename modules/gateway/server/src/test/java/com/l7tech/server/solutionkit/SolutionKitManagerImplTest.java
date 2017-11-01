@@ -1,9 +1,6 @@
 package com.l7tech.server.solutionkit;
 
-import com.l7tech.gateway.common.solutionkit.EntityOwnershipDescriptor;
-import com.l7tech.gateway.common.solutionkit.SolutionKit;
-import com.l7tech.gateway.common.solutionkit.SolutionKitException;
-import com.l7tech.gateway.common.solutionkit.SolutionKitHeader;
+import com.l7tech.gateway.common.solutionkit.*;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -28,10 +25,13 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.when;
@@ -55,13 +55,69 @@ public class SolutionKitManagerImplTest {
     @Mock
     private SolutionKit metadata;
 
+    private SolutionKitImportInfo solutionKitInfo;
+    private Path multiBundleDelete1;
+    private Path multiBundleDelete2;
+    private Path multiBundleInstall1;
+    private Path multiBundleInstall2;
+
     @Before
-    public void setupSolutionKitManager() {
+    public void setupSolutionKitManager() throws Exception{
         // importBundle() requires the following
         solutionKitManager.setRestmanInvoker(restmanInvoker);
         solutionKitManager.setProtectedEntityTracker(protectedEntityTracker);
         solutionKitManager.setProtectedEntityTrackerCallable(callable);
         when(restmanInvoker.getContext(REQUEST)).thenReturn(pec);
+
+        multiBundleDelete1 = Paths.get(SolutionKitManagerImplTest.class.getResource("multibundlekit1/DeleteBundle.xml").toURI());
+        multiBundleDelete2 = Paths.get(SolutionKitManagerImplTest.class.getResource("multibundlekit2/DeleteBundle.xml").toURI());
+        multiBundleInstall1 = Paths.get(SolutionKitManagerImplTest.class.getResource("multibundlekit1/InstallBundle.xml").toURI());
+        multiBundleInstall2 = Paths.get(SolutionKitManagerImplTest.class.getResource("multibundlekit2/InstallBundle.xml").toURI());
+
+        createSolutionKitInfo();
+    }
+
+    private void createSolutionKitInfo() throws IOException {
+        final String deleteBundle1 = Files.lines(multiBundleDelete1).collect(Collectors.joining(""));
+        final SolutionKit parentSK = new SolutionKitBuilder()
+                .name("Parent")
+                .skGuid("parent_guid")
+                .skVersion("1")
+                .mappings("")
+                .build();
+
+        final SolutionKit solutionKitdelete1 = new SolutionKitBuilder()
+                .name("SKD1")
+                .skVersion("1")
+                .skGuid("guid_d1")
+                .uninstallBundle(deleteBundle1)
+                .build();
+
+        final String deleteBundle2 = Files.lines(multiBundleDelete2).collect(Collectors.joining(""));
+        final SolutionKit solutionKitdelete2 = new SolutionKitBuilder()
+                .name("SKD2")
+                .skVersion("1")
+                .skGuid("guid_d2")
+                .uninstallBundle(deleteBundle2)
+                .build();
+
+        final SolutionKit solutionKitinstall1 = new SolutionKitBuilder()
+                .name("SKI2")
+                .skVersion("1")
+                .skGuid("guid_i1")
+                .build();
+
+        final SolutionKit solutionKitinstall2 = new SolutionKitBuilder()
+                .name("SKI2")
+                .skVersion("1")
+                .skGuid("guid_i2")
+                .build();
+
+        final Map<SolutionKit, String> solutionKitsToInstallMap = new TreeMap<>();
+        solutionKitsToInstallMap.put(solutionKitinstall1, Files.lines(multiBundleInstall1)
+                .collect(Collectors.joining("")));
+        solutionKitsToInstallMap.put(solutionKitinstall2, Files.lines(multiBundleInstall2)
+                .collect(Collectors.joining("")));
     }
 
     @Test
@@ -85,6 +141,12 @@ public class SolutionKitManagerImplTest {
         when(protectedEntityTracker.doWithEntityProtectionDisabled(callable)).thenReturn(restmanResponse);
 
         Assert.assertEquals(response, solutionKitManager.importBundle(REQUEST, metadata, false));
+    }
+
+    @Test
+    public void importMultiBundleSuccess() throws Exception {
+
+
     }
 
     @Test
@@ -197,6 +259,7 @@ public class SolutionKitManagerImplTest {
             assertThat(e, CoreMatchers.instanceOf(GatewayManagementDocumentUtilities.UnexpectedManagementResponse.class));
         }
     }
+    //TODO import bundles test
 
     @Test
     public void findBySolutionKitGuidAndIMSuccess() throws Exception{

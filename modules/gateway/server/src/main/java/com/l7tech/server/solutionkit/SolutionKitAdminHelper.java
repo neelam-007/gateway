@@ -87,11 +87,11 @@ public class SolutionKitAdminHelper implements SolutionKitAdmin {
     }
 
     @NotNull
-    public String testUpgrade(@NotNull final SolutionKitInfo solutionKitInfo) throws Exception {
-        for (SolutionKit solutionKit : solutionKitInfo.getSolutionKitInstall().keySet()) {
+    public String testUpgrade(@NotNull final SolutionKitImportInfo solutionKitImportInfo) throws Exception {
+        for (SolutionKit solutionKit : solutionKitImportInfo.getSolutionKitsToInstall().keySet()) {
             checkFeatureEnabled(solutionKit);
         }
-        return solutionKitManager.importBundles(solutionKitInfo, true);
+        return solutionKitManager.importBundles(solutionKitImportInfo, true);
     }
 
     private void checkFeatureEnabled(@NotNull final SolutionKit solutionKit) throws SolutionKitException {
@@ -108,7 +108,7 @@ public class SolutionKitAdminHelper implements SolutionKitAdmin {
     }
 
     @Override
-    public @NotNull JobId<String> testUpgradeAsync(@NotNull SolutionKitInfo solutionKitInfo) {
+    public @NotNull JobId<String> testUpgradeAsync(@NotNull SolutionKitImportInfo solutionKitImportInfo) {
         throw new UnsupportedOperationException();
     }
 
@@ -140,29 +140,39 @@ public class SolutionKitAdminHelper implements SolutionKitAdmin {
         return solutionKitGoid;
     }
 
+    /**
+     * Upgrade the solution kits using import bundles. If there are any errors from importbundles, upgrade will not proceed.
+     *
+     * If result from importbundles is successful, then start
+     * @param solutionKitImportInfo the solution kit information including delete bundles of old SKs,
+     *                       install bundles of new Sks, SKs metadata, parent SK
+     * @return
+     * @throws Exception from solutionKitManager.importBundles, marshallingExceptions, updateException, SolutionKitConflictException
+     */
     @Override
-    public @NotNull ArrayList upgrade(@NotNull SolutionKitInfo solutionKitInfo) throws Exception {
-        final Map<SolutionKit, String> solutionKitBundleMap = solutionKitInfo.getSolutionKitInstall();
+    public @NotNull ArrayList upgrade(@NotNull SolutionKitImportInfo solutionKitImportInfo) throws Exception {
+        final Map<SolutionKit, String> solutionKitBundleMap = solutionKitImportInfo.getSolutionKitsToInstall();
         final ArrayList<Goid> resultGoids = new ArrayList<>();
         for (final SolutionKit solutionKit : solutionKitBundleMap.keySet()) {
             checkFeatureEnabled(solutionKit);
         }
-        // Delete bundles and Install bundles provided by SolutionKitInfo.
-        final String resultMappings = solutionKitManager.importBundles(solutionKitInfo, false);
+        // Delete bundles and Install bundles provided by SolutionKitImportInfo.
+        final String resultMappings = solutionKitManager.importBundles(solutionKitImportInfo, false);
 
         //Continue with no errors from solutionKitManager.importBundles
         final ItemsList<Mappings> itemList = MarshallingUtils.unmarshal(ItemsList.class, new StreamSource(new StringReader(resultMappings)));
         final List<Item<Mappings>> items = itemList.getContent();
-        final Map<SolutionKit, String> deleteBundles = solutionKitInfo.getSolutionKitDelete();
+        final List<SolutionKit> deleteBundles = solutionKitImportInfo.getSolutionKitsToDelete();
+        final int totalBundlesExpected = deleteBundles.size() + solutionKitBundleMap.size();
 
         // sanity check that result mappings and solutionkitpayload map + delete bundles are same size
-        if (deleteBundles.size() + solutionKitBundleMap.size() != items.size()){
-            throw new SolutionKitConflictException("Error in upgrade: Unable to process Solution Kit mappings: " +
+        if (totalBundlesExpected != items.size()){
+            throw new SolutionKitConflictException("Error: Expected " + totalBundlesExpected + "bundles, but found " + items.size() + "bundles." +
                     System.lineSeparator() + resultMappings);
         }
 
         //Delete old solution kit entities
-        for (final SolutionKit solutionKit : deleteBundles.keySet()) {
+        for (final SolutionKit solutionKit : deleteBundles) {
             solutionKitManager.delete(solutionKit.getGoid());
         }
 
@@ -177,7 +187,7 @@ public class SolutionKitAdminHelper implements SolutionKitAdmin {
 
         installMappingIndex = 0;
         //Note: SkBundleEntry is the same order as the installMappingResults
-        for (final Map.Entry<SolutionKit, String> skBundleEntry : solutionKitInfo.getSolutionKitInstall().entrySet()) {
+        for (final Map.Entry<SolutionKit, String> skBundleEntry : solutionKitBundleMap.entrySet()) {
             // get mappings with entity name added as a property
             String installMappingResult = installMappingResults.get(installMappingIndex);
             installMappingResult = getMappingsWithEntityNameAddedToProperties(skBundleEntry.getValue(), installMappingResult);
@@ -195,9 +205,10 @@ public class SolutionKitAdminHelper implements SolutionKitAdmin {
                 );
             }
 
+            final Goid solutionKitGoid = solutionKitManager.save(solutionKit);
             updateEntityOwnershipDescriptors(installMappingResult, solutionKit);
             solutionKitManager.update(solutionKit);
-            resultGoids.add(solutionKit.getGoid());
+            resultGoids.add(solutionKitGoid);
             installMappingIndex++;
         }
         return resultGoids;
@@ -248,7 +259,7 @@ public class SolutionKitAdminHelper implements SolutionKitAdmin {
     }
 
     @Override
-    public @NotNull JobId<ArrayList> upgradeAsync(@NotNull SolutionKitInfo solutionKitInfo) {
+    public @NotNull JobId<ArrayList> upgradeAsync(@NotNull SolutionKitImportInfo solutionKitImportInfo) {
         throw new UnsupportedOperationException();
     }
 

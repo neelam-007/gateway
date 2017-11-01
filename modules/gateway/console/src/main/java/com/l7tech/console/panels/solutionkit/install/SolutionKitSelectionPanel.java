@@ -127,6 +127,10 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         return settings.isUpgrade()? testUpgrade() : testInstall();
     }
 
+    /**
+     * Dry run for the install. Saves some test mappings from the dry run used to resolution of Solution Kit entities.
+     * @return true if testInstall was successful
+     */
     private boolean testInstall() {
         final AtomicBoolean success = new AtomicBoolean(false);
         String errorMessage;
@@ -175,15 +179,19 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         return success.get();
     }
 
+    /**
+     * Dry run for upgrade. Saves the test mappings from the dry upgrade for Solution Kit entity resolution.
+     * @return true if testUpgrade was successful
+     */
     private boolean testUpgrade() {
         final AtomicBoolean success = new AtomicBoolean(false);
         String errorMessage;
         try {
             settings.setSelectedSolutionKits(solutionKitsSelected);
             final SolutionKitProcessor solutionKitProcessor = new SolutionKitProcessor(settings, solutionKitAdmin);
-            solutionKitProcessor.testUpgrade(new Functions.UnaryVoidThrows<SolutionKitInfo, Throwable>() {
+            solutionKitProcessor.testUpgrade(new Functions.UnaryVoidThrows<SolutionKitImportInfo, Throwable>() {
                 @Override
-                public void call(SolutionKitInfo loaded) throws Throwable {
+                public void call(SolutionKitImportInfo loaded) throws Throwable {
                     final String result = AdminGuiUtils.doAsyncAdminWithException(
                             solutionKitAdmin,
                             SolutionKitSelectionPanel.this.getOwner(),
@@ -195,12 +203,15 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
                     final ItemsList<Mappings> itemList = MarshallingUtils.unmarshal(ItemsList.class, new StreamSource(new StringReader(result)));
                     final List<Item<Mappings>> items = itemList.getContent();
                     final Iterator<SolutionKit> selectedIterator = solutionKitsSelected.iterator();
-                    final int totalDeleteBundles = loaded.getSolutionKitDelete().size();
+                    final int totalDeleteBundles = loaded.getSolutionKitsToDelete().size();
+                    final int totalBundlesExpected = totalDeleteBundles + solutionKitsSelected.size();
 
                     // If the number of delete bundles and solution kits selected is not equal to the bundle result size, display error
-                    if (totalDeleteBundles + solutionKitsSelected.size() != items.size()){
+                    if (totalBundlesExpected != items.size()){
+                        logger.warning("Error: Expected " + totalBundlesExpected + "bundles, but found " + items.size() + "bundles."
+                                + System.lineSeparator() + result);
                         DialogDisplayer.showMessageDialog(SolutionKitSelectionPanel.this,
-                                "Unexpected error: unable to process Solution Kit mappings.",
+                                "Error: " + totalBundlesExpected + "bundles, but found " + items.size() + "bundles. Please refer to logs for details.",
                                 "Upgrade Solution Kit",
                                 JOptionPane.ERROR_MESSAGE,
                                 null);
@@ -226,16 +237,14 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
                 }
             });
             success.set(true);
-        } catch (InvocationTargetException | IOException e) {
+        } catch (InvocationTargetException | IOException | InterruptedException e) {
             testMappings.clear();
             errorMessage = ExceptionUtils.getMessage(e);
             logger.log(Level.WARNING, errorMessage, ExceptionUtils.getDebugException(e));
-        } catch (InterruptedException e) {
-            testMappings.clear();
         } catch (SolutionKitException t) {  //for expected and foreseeable errors, display to the user for correction
             errorMessage = ExceptionUtils.getMessage(t);
             logger.log(Level.WARNING, errorMessage);
-            DialogDisplayer.showMessageDialog(this, errorMessage, "Solution Kit Install Error", JOptionPane.ERROR_MESSAGE, null);
+            DialogDisplayer.showMessageDialog(this, errorMessage, "Solution Kit Upgrade Error", JOptionPane.ERROR_MESSAGE, null);
         } catch (Throwable t) { //for unexpected, unhandled exceptions, show the standard BIG ERROR dialog
             ErrorMessageDialog errorMessageDialog = new ErrorMessageDialog(SolutionKitSelectionPanel.this.getOwner(), "Solution Kit Manager has encountered an unexpected error", t);
             Utilities.centerOnParentWindow(errorMessageDialog);

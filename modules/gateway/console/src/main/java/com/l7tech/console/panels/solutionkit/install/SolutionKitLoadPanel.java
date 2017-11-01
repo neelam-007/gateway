@@ -133,7 +133,7 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
                     solutionKitsConfig.getSolutionKitsToUpgrade())) {
                 solutionKitsConfig.clear(false);
                 DialogDisplayer.showMessageDialog(this,
-                        "Unable to upgrade. No Solution Kits on database match that of the Solution Kit(s) on the .sskar file. Consider installing instead.",
+                        "Unable to upgrade. No Solution Kits in the database match the Solution Kit(s) in the .sskar file. Consider installing instead.",
                         "Solution Kit Upgrade Error",
                         JOptionPane.ERROR_MESSAGE,
                         null);

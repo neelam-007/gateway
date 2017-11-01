@@ -69,6 +69,9 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
             "</wsp:All>" +
             "</wsp:Policy>";
 
+    private final String DELETE_BUNDLE = "Delete Bundle";
+    private final String INSTALL_BUNDLE = "Install Bundle";
+
     private final String HQL_FIND_BY_SOLUTION_KIT_GUID = "FROM " + getTableName() + " IN CLASS " + getImpClass().getName() + " WHERE " + getTableName() + ".solutionKitGuid = ?";
     private final String HQL_FIND_BY_PARENT_GOID = "FROM " + getTableName() + " IN CLASS " + getImpClass().getName() + " WHERE " + getTableName() + ".parentGoid = ?";
 
@@ -164,34 +167,35 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
     @NotNull
     @Override
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    public String importBundles(@NotNull SolutionKitInfo solutionKitInfo,
+    public String importBundles(@NotNull SolutionKitImportInfo solutionKitImportInfo,
                                 boolean isTest) throws Exception {
         final RestmanInvoker restmanInvoker = getRestmanInvoker();
-        final Map<SolutionKit, String> solutionKitDelete = solutionKitInfo.getSolutionKitDelete();
-        final Map<SolutionKit, String> solutionKitInstall = solutionKitInfo.getSolutionKitInstall();
+        final List<SolutionKit> solutionKitsToDelete = solutionKitImportInfo.getSolutionKitsToDelete();
+        final Map<SolutionKit, String> solutionKitsToInstallMap = solutionKitImportInfo.getSolutionKitsToInstall();
         // set restman query parameters including test and versionComment
-        final SolutionKit solutionKitForRestMan = SolutionKitUtils.solutionKitToDisplay(solutionKitInfo.getSolutionKitInstall().keySet(), solutionKitInfo.getParentSolutionKit());
+        final SolutionKit solutionKitForRestMan = SolutionKitUtils.solutionKitToDisplayForUpgrade(solutionKitsToInstallMap.keySet(), solutionKitImportInfo.getParentSolutionKit());
         try {
             //Process delete bundles
             final List<Bundle> processedDeleteBundles = new ArrayList<>();
-            for (Map.Entry<SolutionKit, String> skWithDelete : solutionKitDelete.entrySet()) {
-                final Bundle bundle = MarshallingUtils.unmarshal(Bundle.class, new StreamSource(new StringReader(skWithDelete.getValue())), true);
-                bundle.setName(skWithDelete.getKey().getName() + " Delete Bundle");
+            for (final SolutionKit solutionKit : solutionKitsToDelete) {
+                final Bundle bundle = MarshallingUtils.unmarshal(Bundle.class, new StreamSource(new StringReader(solutionKit.getUninstallBundle())), true);
+                bundle.setName(solutionKit.getName() + " " + DELETE_BUNDLE);
                 processedDeleteBundles.add(bundle);
             }
 
             //Process install bundles
             final List<Bundle> processedInstallBundles = new ArrayList<>();
-            for (Map.Entry<SolutionKit, String> skWithInstall : solutionKitInstall.entrySet()) {
+            for (Map.Entry<SolutionKit, String> skWithInstall : solutionKitsToInstallMap.entrySet()) {
                 final String instanceModifier = skWithInstall.getKey().getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY);
                 String bundleXml = skWithInstall.getValue();
                 if (InstanceModifier.isValidVersionModifier(instanceModifier)) {
+                    logger.fine("Applied instance modifier (" + instanceModifier + ") modifications for " + skWithInstall.getKey().getName());
                     final RestmanMessage requestMessage = new RestmanMessage(bundleXml);
                     new InstanceModifier(requestMessage.getBundleReferenceItems(), requestMessage.getMappings(), instanceModifier).apply();
                     bundleXml = requestMessage.getAsString();
                 }
                 final Bundle bundle = MarshallingUtils.unmarshal(Bundle.class, new StreamSource(new StringReader(bundleXml)), true);
-                bundle.setName(skWithInstall.getKey().getName() + " Install Bundle");
+                bundle.setName(skWithInstall.getKey().getName() + " " + INSTALL_BUNDLE);
                 processedInstallBundles.add(bundle);
             }
 

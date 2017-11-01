@@ -463,11 +463,11 @@ public class SolutionKitManagerResource {
 
         final AtomicReference<SolutionKit> solutionKitReference = new AtomicReference<>();
         try {
-            solutionKitProcessor.testUpgrade(new Functions.UnaryVoidThrows<SolutionKitInfo, Throwable>() {
+            solutionKitProcessor.testUpgrade(new Functions.UnaryVoidThrows<SolutionKitImportInfo, Throwable>() {
                 @Override
-                public void call(SolutionKitInfo loaded) throws Throwable {
+                public void call(SolutionKitImportInfo loaded) throws Throwable {
                     final String mappingsStr = solutionKitAdminHelper.testUpgrade(loaded);
-                    solutionKitReference.set(SolutionKitUtils.solutionKitToDisplay(loaded.getSolutionKitInstall().keySet(), loaded.getParentSolutionKit()));
+                    solutionKitReference.set(SolutionKitUtils.solutionKitToDisplayForUpgrade(loaded.getSolutionKitsToInstall().keySet(), loaded.getParentSolutionKit()));
 
                     // no mappings; looks like there are no errors
                     if (StringUtils.isNotBlank(mappingsStr)) {

@@ -347,11 +347,12 @@ public final class SolutionKitUtils {
      *              - or contain a single non-parent solution kit for upgrade
      *              - or contain a single solution kit and parent for upgrade.
      *              - or contain a collection of solution kits with the parent being the first item in the list
-     * @return the bundle list of uninstall bundles with the names of the solution kit
+     *               *Note: SK without a delete bundle is not allowed and an exception will be thrown
+     * @return the bundle list solution kits with uninstall bundles
      * @throws SolutionKitException Occurs when a solution kit cannot be upgraded
      */
-    public static Map<SolutionKit, String> generateListOfDeleteBundles(@NotNull final List<SolutionKit> oldSks) throws SolutionKitException {
-        final Map<SolutionKit, String> solutionKitDelete = new TreeMap<>();
+    static List<SolutionKit> generateListOfDeleteBundles(@NotNull final List<SolutionKit> oldSks) throws SolutionKitException {
+        final List<SolutionKit> solutionKitsToDelete = new ArrayList<>();
         //The first item in the oldSks is the parent if a parent is selected for upgrade
         for (final SolutionKit solutionKit : oldSks) {
             //Skip the parent
@@ -359,13 +360,13 @@ public final class SolutionKitUtils {
                 // Since v9.3, a solution kit is only upgradable if it has an uninstall bundle
                 final String uninstallBundle = solutionKit.getUninstallBundle();
                 if (StringUtils.isNotBlank(uninstallBundle)) {
-                    solutionKitDelete.put(solutionKit, uninstallBundle);
+                    solutionKitsToDelete.add(solutionKit);
                 } else {
                     throw new SolutionKitException("The solution kit " + solutionKit.getName() + " with guid " + solutionKit.getId() + " cannot be upgraded.");
                 }
             }
         }
-        return solutionKitDelete;
+        return solutionKitsToDelete;
     }
 
     /**
@@ -518,20 +519,21 @@ public final class SolutionKitUtils {
     }
 
     /**
-     * For multibundle import, the solutionKit to display for versionComment or for errors will either be a parent, or an individual SK
+     * For multibundle import, the solutionKit to display for restman or for errors will either be a parent
+     * SK, or an individual SK
      * @param sksToInstall set of solution kits to install, should contain an individual SK
      * @param parentSK parentSK to check if it should be displayed
      * @return either a parent SK or an individual SK
      * @throws SolutionKitConflictException If for some reason multiple solution kits are selected to install.
      */
-    public static SolutionKit solutionKitToDisplay(Set<SolutionKit> sksToInstall, SolutionKit parentSK) throws SolutionKitConflictException {
+    public static SolutionKit solutionKitToDisplayForUpgrade(Set<SolutionKit> sksToInstall, SolutionKit parentSK) throws SolutionKitConflictException {
         if (parentSK != null) {
             //Install/upgrading a collection of skars;
             return parentSK;
         } else {
             //Install/upgrading a single skar;
             if (sksToInstall.size() != 1) {
-                throw new SolutionKitConflictException("Expected a single Solution Kit for install or upgrade but found: " + sksToInstall.size() );
+                throw new SolutionKitConflictException("Expected a single Solution Kit for upgrade but found: " + sksToInstall.size() );
             }
             return sksToInstall.iterator().next();
         }

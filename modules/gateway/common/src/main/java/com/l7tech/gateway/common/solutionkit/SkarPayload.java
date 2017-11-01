@@ -101,6 +101,8 @@ public class SkarPayload extends SignerUtils.SignedZip.InnerPayload {
                             loadInstallBundleXml(zis, installBundleSource);
                             break;
                         case SK_UPGRADE_BUNDLE_FILENAME:
+                            //Since v9.3, Solution kit upgrades no longer require an upgrade bundle,
+                            // since the upgrade process uses uninstall of old solution kits and install of new solution kits
                             logger.log(Level.FINE, "Ignoring " + SK_UPGRADE_BUNDLE_FILENAME + ".");
                             break;
                         case SK_DELETE_BUNDLE_FILENAME:
@@ -149,11 +151,13 @@ public class SkarPayload extends SignerUtils.SignedZip.InnerPayload {
             }
 
             // copy existing entity ownership records to solutionKit (otherwise they will all be deleted)
-            final SolutionKit solutionKitToUpgrade = solutionKitsConfig.getSolutionKitToUpgrade(solutionKit.getSolutionKitGuid());
-
-            if (solutionKitToUpgrade != null) {
-                solutionKit.setEntityOwnershipDescriptors(solutionKitToUpgrade.getEntityOwnershipDescriptors());
-            }
+            //TODO: since the old solution kits are deleted, we don't need to set the EntityOwnershipDescriptors since
+            // they will be removed when the solution kit entity is removed, might need to see what tests need fixing
+//            final SolutionKit solutionKitToUpgrade = solutionKitsConfig.getSolutionKitToUpgrade(solutionKit.getSolutionKitGuid());
+//
+//            if (solutionKitToUpgrade != null) {
+//                solutionKit.setEntityOwnershipDescriptors(solutionKitToUpgrade.getEntityOwnershipDescriptors());
+//            }
 
             solutionKitsConfig.getLoadedSolutionKits().put(solutionKit, bundle);
 
@@ -212,7 +216,7 @@ public class SkarPayload extends SignerUtils.SignedZip.InnerPayload {
      * @param installBundle     The install bundle generated from InstallBundle.xml
      * @return The updated install bundle
      */
-    private Bundle updateInstallBundle(final SolutionKit loadedSolutionKit, final Bundle installBundle) {
+    Bundle updateInstallBundle(final SolutionKit loadedSolutionKit, final Bundle installBundle) {
         final SolutionKit solutionKitToUpgrade = solutionKitsConfig.getSolutionKitToUpgrade(loadedSolutionKit.getSolutionKitGuid());
 
         if (solutionKitToUpgrade != null && installBundle.getMappings() != null) {

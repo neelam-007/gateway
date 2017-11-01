@@ -714,7 +714,7 @@ public class SecureHttpInvokerServiceExporterTest {
                     }
 
                     @Override
-                    public @NotNull String testUpgrade(@NotNull SolutionKitInfo solutionKitPayload) throws Exception {
+                    public @NotNull String testUpgrade(@NotNull SolutionKitImportInfo solutionKitImportInfo) throws Exception {
                         methodCalled.set(true);
                         return TEST_STRING;
                     }
@@ -727,7 +727,7 @@ public class SecureHttpInvokerServiceExporterTest {
                     }
 
                     @Override
-                    public @NotNull JobId<String> testUpgradeAsync(@NotNull SolutionKitInfo solutionKitPayload) {
+                    public @NotNull JobId<String> testUpgradeAsync(@NotNull SolutionKitImportInfo solutionKitImportInfo) {
                         methodCalled.set(true);
                         return TEST_STRING_JOB_ID;
                     }
@@ -740,7 +740,7 @@ public class SecureHttpInvokerServiceExporterTest {
                     }
 
                     @Override
-                    public @NotNull ArrayList upgrade(@NotNull SolutionKitInfo solutionKitPayload) throws Exception {
+                    public @NotNull ArrayList upgrade(@NotNull SolutionKitImportInfo solutionKitImportInfo) throws Exception {
                         methodCalled.set(true);
                         return TEST_ARRAY;
                     }
@@ -753,7 +753,7 @@ public class SecureHttpInvokerServiceExporterTest {
                     }
 
                     @Override
-                    public @NotNull JobId<ArrayList> upgradeAsync(@NotNull SolutionKitInfo solutionKitPayload) {
+                    public @NotNull JobId<ArrayList> upgradeAsync(@NotNull SolutionKitImportInfo solutionKitImportInfo) {
                         methodCalled.set(true);
                         return TEST_ARRAYLIST_JOB_ID;
                     }

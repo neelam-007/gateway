@@ -64,7 +64,7 @@ public interface SolutionKitAdmin extends AsyncAdminMethods {
     @NotNull
     @Transactional(readOnly = true)
     @Secured(stereotype = MethodStereotype.TEST_CONFIGURATION)
-    public String testUpgrade(@NotNull SolutionKitInfo solutionKitInfo) throws Exception;
+    public String testUpgrade(@NotNull SolutionKitImportInfo solutionKitImportInfo) throws Exception;
 
     /**
      * Test installation for the given bundle.
@@ -72,7 +72,7 @@ public interface SolutionKitAdmin extends AsyncAdminMethods {
      * @param solutionKit the solution kit to test
      * @param bundle the bundle XML to test
      * @param isUpgrade indicate if the solution kit is to be upgraded or installed.
-     * @return the resulting mapping XML
+     * @return the resulting mapping XML via AsyncAdminMethods
      */
     @NotNull
     @Transactional(readOnly = true)
@@ -82,14 +82,14 @@ public interface SolutionKitAdmin extends AsyncAdminMethods {
     /**
      * Test upgrade for the given bundles.
      *
-     * @param solutionKitInfo the solution kit information including delete bundles of old SKs,
+     * @param solutionKitImportInfo the solution kit information including delete bundles of old SKs,
      *                       install bundles of new Sks, SKs metadata, parent SK
-     * @return the resulting mapping XML
+     * @return the resulting mapping XML via AsyncAdminMethods
      */
     @NotNull
     @Transactional(readOnly = true)
     @Secured(stereotype = MethodStereotype.TEST_CONFIGURATION)
-    JobId<String> testUpgradeAsync(@NotNull SolutionKitInfo solutionKitInfo);
+    JobId<String> testUpgradeAsync(@NotNull SolutionKitImportInfo solutionKitImportInfo);
 
     /**
      * Install the given solution kit.
@@ -106,13 +106,13 @@ public interface SolutionKitAdmin extends AsyncAdminMethods {
     /**
      * Upgrade the given solution kits.
      *
-     * @param solutionKitInfo the solution kit information including delete bundles of old SKs,
+     * @param solutionKitImportInfo the solution kit information including delete bundles of old SKs,
      *                       install bundles of new Sks, SKs metadata, parent SK
      * @return the list of saved solution kit entity IDs
      */
     @NotNull
     @Secured(stereotype = MethodStereotype.SAVE)
-    public ArrayList upgrade(@NotNull SolutionKitInfo solutionKitInfo) throws Exception;
+    public ArrayList upgrade(@NotNull SolutionKitImportInfo solutionKitImportInfo) throws Exception;
 
     /**
      * Install the given solution kit.
@@ -120,7 +120,7 @@ public interface SolutionKitAdmin extends AsyncAdminMethods {
      * @param solutionKit the solution kit to install
      * @param bundle the bundle XML to install
      * @param isUpgrade true if this is a upgrade install; false for new first time install
-     * @return the saved solution kit entity ID
+     * @return the saved solution kit entity ID via AsyncAdminMethod
      */
     @NotNull
     @Secured(stereotype = MethodStereotype.SAVE)
@@ -129,13 +129,13 @@ public interface SolutionKitAdmin extends AsyncAdminMethods {
     /**
      * Upgrade the given solution kits.
      *
-     * @param solutionKitInfo the solution kit information including delete bundles of old SKs,
+     * @param solutionKitImportInfo the solution kit information including delete bundles of old SKs,
      *                       install bundles of new Sks, SKs metadata, parent SK
-     * @return the saved solution kit entity ID
+     * @return the saved solution kit entity IDs via AsyncAdminMethod
      */
     @NotNull
     @Secured(stereotype = MethodStereotype.SAVE)
-    JobId<ArrayList> upgradeAsync(@NotNull SolutionKitInfo solutionKitInfo);
+    JobId<ArrayList> upgradeAsync(@NotNull SolutionKitImportInfo solutionKitImportInfo);
 
     /**
      * Uninstall solution kit identified by the given ID.

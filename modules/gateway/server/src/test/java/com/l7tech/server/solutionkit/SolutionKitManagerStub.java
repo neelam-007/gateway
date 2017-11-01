@@ -2,7 +2,7 @@ package com.l7tech.server.solutionkit;
 
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gateway.common.solutionkit.SolutionKitHeader;
-import com.l7tech.gateway.common.solutionkit.SolutionKitInfo;
+import com.l7tech.gateway.common.solutionkit.SolutionKitImportInfo;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.UpdateException;
@@ -32,7 +32,7 @@ public class SolutionKitManagerStub extends EntityManagerStub<SolutionKit, Solut
 
     @Override
     @NotNull
-    public String importBundles(@NotNull SolutionKitInfo solutionKitInfo, boolean isTest) throws Exception {
+    public String importBundles(@NotNull SolutionKitImportInfo SolutionKitImportInfo, boolean isTest) throws Exception {
         return "";
     }
 

@@ -4,7 +4,7 @@ import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
 import com.l7tech.gateway.common.solutionkit.SolutionKitHeader;
-import com.l7tech.gateway.common.solutionkit.SolutionKitInfo;
+import com.l7tech.gateway.common.solutionkit.SolutionKitImportInfo;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.admin.AsyncAdminMethodsImpl;
@@ -51,8 +51,8 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
     }
 
     @Override
-    public String testUpgrade(@NotNull SolutionKitInfo solutionKitInfo) throws Exception {
-        return getSolutionKitAdminHelper().testUpgrade(solutionKitInfo);
+    public String testUpgrade(@NotNull SolutionKitImportInfo solutionKitImportInfo) throws Exception {
+        return getSolutionKitAdminHelper().testUpgrade(solutionKitImportInfo);
     }
 
     @NotNull
@@ -78,12 +78,12 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
 
     @NotNull
     @Override
-    public JobId<String> testUpgradeAsync(@NotNull final SolutionKitInfo solutionKitInfo) {
+    public JobId<String> testUpgradeAsync(@NotNull final SolutionKitImportInfo solutionKitImportInfo) {
         final FutureTask<String> task =
                 new FutureTask<>(AdminInfo.find(false).wrapCallable(new Callable<String>() {
                     @Override
                     public String call() throws Exception {
-                        return testUpgrade(solutionKitInfo);
+                        return testUpgrade(solutionKitImportInfo);
                     }
                 }));
 
@@ -104,8 +104,8 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
     }
 
     @Override
-    public @NotNull ArrayList upgrade(@NotNull SolutionKitInfo solutionKitInfo) throws Exception {
-        return getSolutionKitAdminHelper().upgrade(solutionKitInfo);
+    public @NotNull ArrayList upgrade(@NotNull SolutionKitImportInfo solutionKitImportInfo) throws Exception {
+        return getSolutionKitAdminHelper().upgrade(solutionKitImportInfo);
     }
 
     @NotNull
@@ -130,12 +130,12 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
     }
 
     @Override
-    public @NotNull JobId<ArrayList> upgradeAsync(@NotNull SolutionKitInfo solutionKitInfo) {
+    public @NotNull JobId<ArrayList> upgradeAsync(@NotNull SolutionKitImportInfo solutionKitImportInfo) {
         final FutureTask<ArrayList> task =
                 new FutureTask<ArrayList>(AdminInfo.find(false).wrapCallable(new Callable<ArrayList>() {
                     @Override
                     public ArrayList<Goid> call() throws Exception {
-                        return upgrade(solutionKitInfo);
+                        return upgrade(solutionKitImportInfo);
                     }
                 }));
 

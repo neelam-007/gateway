@@ -146,16 +146,18 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
 
     /**
      * Perform the upgrade of the solution kit(s).
+     * If there is a problem in the upgrade process, collect all the mapping results,
+     * otherwise mapping results don't need to be collected and proceed to finish.
      *
      * @param solutionKitAdmin     The async admin interface
      * @param solutionKitProcessor The processing logic class
      * @throws Exception exceptions from the upgrade process. Can be a wide range of SolutionKitExceptions and IO exceptions
      */
     private void upgrade(SolutionKitAdmin solutionKitAdmin, SolutionKitProcessor solutionKitProcessor) throws Exception {
-        final List<Pair<Mappings, SolutionKit>> mappingsSolutionKits = new ArrayList<>();
-        solutionKitProcessor.upgrade(new Functions.UnaryThrows<List<Pair<Mappings,SolutionKit>>, SolutionKitInfo, Exception>() {
+        final List<Pair<Mappings, SolutionKit>> mappingsResultForSolutionKit = new ArrayList<>();
+        solutionKitProcessor.upgrade(new Functions.UnaryThrows<List<Pair<Mappings,SolutionKit>>, SolutionKitImportInfo, Exception>() {
             @Override
-            public List<Pair<Mappings, SolutionKit>> call(final SolutionKitInfo loaded) throws Exception {
+            public List<Pair<Mappings, SolutionKit>> call(final SolutionKitImportInfo loaded) throws Exception {
                 final Either<String, ArrayList> result = AdminGuiUtils.doAsyncAdmin(
                         solutionKitAdmin,
                         InstallSolutionKitWizard.this.getOwner(),
@@ -167,31 +169,39 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
                 if (result.isLeft()) {
                     // Error was detected
                     final List<SolutionKit> solutionKits = new ArrayList<>();
-                    solutionKits.addAll(loaded.getSolutionKitDelete().keySet());
-                    solutionKits.addAll(loaded.getSolutionKitInstall().keySet());
+                    solutionKits.addAll(loaded.getSolutionKitsToDelete());
+                    solutionKits.addAll(loaded.getSolutionKitsToInstall().keySet());
                     // Solution kit failed to upgrade.
                     final String msg = result.left();
                     logger.log(Level.WARNING, msg);
                     //Convert string ItemsList
-                    final ItemsList itemList = MarshallingUtils.unmarshal(ItemsList.class, new StreamSource(new StringReader(msg)));
-                    final List<Item<Mappings>> items = itemList.getContent();
+                    try {
+                        //If msg is a result of mapping errors, we can process it here
+                        final ItemsList itemList = MarshallingUtils.unmarshal(ItemsList.class, new StreamSource(new StringReader(msg)));
+                        final List<Item<Mappings>> skMappingsItems = itemList.getContent();
+                        final int totalBundlesExpected = solutionKits.size();
 
-                    if (items.size() != solutionKits.size()) {
-                        throw new SolutionKitConflictException("Result mappings size was not the same as Solution Kits size.");
-                    }
+                        if (totalBundlesExpected != skMappingsItems.size()) {
+                            logger.warning("Error: Expected " + totalBundlesExpected + "bundles, but found " + skMappingsItems.size() + "bundles." + System.lineSeparator() + result);
+                            throw new SolutionKitConflictException("Error: Expected " + totalBundlesExpected + "bundles, but found " + skMappingsItems.size() + "bundles. Please check logs for more details");
+                        }
 
-                    for (int i = 0; i < items.size(); i++) {
-                        //Add mappings with Sks
-                        mappingsSolutionKits.add(new Pair<>(items.get(i).getContent(), solutionKits.get(i)));
+                        for (int i = 0; i < skMappingsItems.size(); i++) {
+                            //Add mappings with Sks
+                            mappingsResultForSolutionKit.add(new Pair<>(skMappingsItems.get(i).getContent(), solutionKits.get(i)));
+                        }
+                    } catch (IOException e) {
+                        //Occurs when msg is not because of mapping errors but from some other exception
+                        throw new SolutionKitConflictException("Problem processing Solution Kits for upgrade. Please check logs for more details.");
                     }
                 }
-                return mappingsSolutionKits;
+                return mappingsResultForSolutionKit;
             }
         });
 
-        // Display errors if applicable
-        if (!mappingsSolutionKits.isEmpty()) {
-            displayUpgradeErrorDialog(mappingsSolutionKits);
+        // MappingResults only collected if error occurs
+        if (!mappingsResultForSolutionKit.isEmpty()) {
+            searchForMappingErrorsAndDisplay(mappingsResultForSolutionKit);
         }
 
     }
@@ -203,14 +213,15 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
 
     /**
      * Display an upgrade error dialog.
+     * Searches through the mappingsResultForSolutionKits list for mapping errors and displays them
      * If the specified msg is a bundle mapping xml (ie. response message from RESTMAN import bundles API), then
      * display the mapping errors in a table format. Otherwise, display the msg string as-is.
      *
-     * @param mappingsSolutionKits The list of solution kits and their result mappings from RESTMAN.
+     * @param mappingsResultsForSolutionKits The list of solution kits and their result mappings from RESTMAN.
      */
-    private void displayUpgradeErrorDialog(@NotNull final List<Pair<Mappings, SolutionKit>> mappingsSolutionKits) {
+    private void searchForMappingErrorsAndDisplay(@NotNull final List<Pair<Mappings, SolutionKit>> mappingsResultsForSolutionKits) {
         final JTabbedPane errorTabbedPane = new JTabbedPane();
-        for (Pair<Mappings, SolutionKit> mappingsSolutionKit : mappingsSolutionKits) {
+        for (Pair<Mappings, SolutionKit> mappingsSolutionKit : mappingsResultsForSolutionKits) {
             final Mappings mappings = mappingsSolutionKit.left;
             final SolutionKit solutionKit = mappingsSolutionKit.right;
             String msg = "Unable to find mapping conflict error. Please check logs for more details.";
@@ -230,7 +241,7 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
                     MarshallingUtils.marshal(mappings, result, false);
                     msg = XmlUtil.nodeToString(result.getNode());
                 } catch (IOException e) {
-                    logger.fine("Problem marshalling the mappings for " + solutionKit.getName());
+                    logger.warning("Problem marshalling the mappings for " + solutionKit.getName());
                 }
 
                 // need the solution kit bundle
@@ -270,7 +281,7 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
      * display the mapping errors in a table format. Otherwise, display the msg string as-is.
      * @param errorKitMatchList The list of mappings with solution kit entity mapping errors
      */
-    //TODO: when install uses multi-bundle upgrade, probably use displayUpgradeErrorDialog
+    //TODO: when install uses multi-bundle upgrade, probably use searchForMappingErrorsAndDisplay
     private void displayInstallErrorDialog(@NotNull final List<Pair<String, SolutionKit>> errorKitMatchList) {
         final JTabbedPane errorTabbedPane = new JTabbedPane();
 
