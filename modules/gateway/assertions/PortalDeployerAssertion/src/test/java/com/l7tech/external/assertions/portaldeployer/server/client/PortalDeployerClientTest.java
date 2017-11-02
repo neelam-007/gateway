@@ -57,7 +57,7 @@ public class PortalDeployerClientTest {
   public void stop() throws Exception {
     when(mqttAsyncClient.isConnected()).thenReturn(true);
     portalDeployerClient.stop();
-    verify(mqttAsyncClient, times(1)).disconnect(any(Object.class), any(IMqttActionListener.class));
+    verify(mqttAsyncClient, times(1)).disconnectForcibly(1000, 1000);
   }
 
   /**
@@ -263,27 +263,5 @@ public class PortalDeployerClientTest {
     PortalDeployerClient.SubscribeCallback subscribeCallback = portalDeployerClient.new SubscribeCallback();
     // all it does is log
     subscribeCallback.onFailure(null, new Throwable());
-  }
-
-  /**
-   * Test the disconnect method will do nothing on success besides log
-   * @throws Exception
-   */
-  @Test
-  public void disconnectCallback_Success() throws Exception {
-    PortalDeployerClient.DisconnectCallback disconnectCallback = portalDeployerClient.new DisconnectCallback();
-    // all it does is log
-    disconnectCallback.onSuccess(null);
-  }
-
-  /**
-   * Test the disconnect method will do nothing on failure besides log
-   * @throws Exception
-   */
-  @Test
-  public void disconnectCallback_Failure() throws Exception {
-    PortalDeployerClient.DisconnectCallback disconnectCallback = portalDeployerClient.new DisconnectCallback();
-    // all it does is log
-    disconnectCallback.onFailure(null, new Throwable());
   }
 }

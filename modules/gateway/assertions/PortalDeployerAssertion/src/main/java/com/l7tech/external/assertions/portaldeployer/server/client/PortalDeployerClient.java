@@ -111,20 +111,27 @@ public class PortalDeployerClient implements MqttCallback {
   }
 
   private void disconnect() {
+    // Always force disconnect, as this the other way spawns a
+    // background thread, where if something goes wrong will continue
+    // running for a long time
+    logger.log(Level.SEVERE, "Unable to disconnect client, attempting to forcibly disconnect from server");
     try {
-      mqttClient.disconnect(null, new DisconnectCallback());
-    } catch (MqttException e) {
-      logger.log(Level.SEVERE, "Unable to disconnect client", e);
+      mqttClient.disconnectForcibly(1000, 1000);
+      logger.log(Level.INFO, "force disconnect from server was successful");
+    } catch (MqttException e2) {
+      logger.log(Level.SEVERE, "unable to forcibly disconnect from server", e2);
     }
   }
 
   private void reconnect() {
-    sleep(sleepIntervalSupplier.getAsInt());
-    logger.log(Level.INFO, String.format("Attempting to reconnect to broker %s after connection lost", mqttBrokerUri));
-    try {
-      connect();
-    } catch (PortalDeployerClientException e) {
-      logger.log(Level.SEVERE, "Failed to reconnect client after connection lost", e);
+    if(isRunning) {
+      sleep(sleepIntervalSupplier.getAsInt());
+      logger.log(Level.INFO, String.format("Attempting to reconnect to broker %s after connection lost", mqttBrokerUri));
+      try {
+        connect();
+      } catch (PortalDeployerClientException e) {
+        logger.log(Level.SEVERE, "Failed to reconnect client after connection lost", e);
+      }
     }
   }
 
@@ -194,18 +201,6 @@ public class PortalDeployerClient implements MqttCallback {
     public void onFailure(IMqttToken iMqttToken, Throwable throwable) {
       logger.log(Level.SEVERE, String.format("Failed connecting to Broker: %s", mqttBrokerUri), throwable);
       reconnect();
-    }
-  }
-
-  class DisconnectCallback implements IMqttActionListener {
-    @Override
-    public void onSuccess(IMqttToken iMqttToken) {
-      logger.log(Level.INFO, String.format("Successfully disconnected from Broker: %s", mqttBrokerUri));
-    }
-
-    @Override
-    public void onFailure(IMqttToken iMqttToken, Throwable throwable) {
-      logger.log(Level.SEVERE, "Failure while disconnecting client", throwable);
     }
   }
 }
