@@ -30,6 +30,11 @@ public class TestConfig implements PortalDeployerClientConfigurationManager {
   }
 
   @Override
+  public String getUniqueClientId() {
+    return "1";
+  }
+
+  @Override
   public String getIngressPort() {
     return "443";
   }

@@ -5,6 +5,7 @@ package com.l7tech.external.assertions.portaldeployer.server;
  */
 public interface PortalDeployerClientConfigurationManager {
 
+  String getUniqueClientId();
   String getIngressPort();
   String getIngressHost();
   String getBrokerPort();
