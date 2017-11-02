@@ -351,7 +351,7 @@ public final class SolutionKitUtils {
      * @return the bundle list solution kits with uninstall bundles
      * @throws SolutionKitException Occurs when a solution kit cannot be upgraded
      */
-    static List<SolutionKit> generateListOfDeleteBundles(@NotNull final List<SolutionKit> oldSks) throws SolutionKitException {
+    public static List<SolutionKit> generateListOfDeleteBundles(@NotNull final List<SolutionKit> oldSks) throws SolutionKitException {
         final List<SolutionKit> solutionKitsToDelete = new ArrayList<>();
         //The first item in the oldSks is the parent if a parent is selected for upgrade
         for (final SolutionKit solutionKit : oldSks) {

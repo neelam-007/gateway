@@ -5,6 +5,7 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Triple;
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 
 import java.util.*;
@@ -39,7 +40,13 @@ public class SolutionKitBuilder {
      * Default constructor
      */
     public SolutionKitBuilder() {
-        this(new SolutionKit());
+        this(new SolutionKit() {
+            @Override
+            //Make a simple compare function for unit tests
+            public int compareTo(@NotNull SolutionKit o) {
+                return String.CASE_INSENSITIVE_ORDER.compare(getName(), o.getName());
+            }
+        });
     }
 
     /**

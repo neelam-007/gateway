@@ -1,11 +1,22 @@
 package com.l7tech.console.panels.solutionkit;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.gateway.api.Bundle;
+import com.l7tech.gateway.api.BundleBuilder;
+import com.l7tech.gateway.common.solutionkit.SolutionKitBuilder;
+import com.l7tech.gateway.common.solutionkit.SolutionKitException;
 import com.l7tech.gateway.common.solutionkit.SolutionKitUtils;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import org.junit.Assert;
 import org.junit.Test;
 import org.w3c.dom.Document;
+
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test utility methods
@@ -48,5 +59,78 @@ public class SolutionKitUtilsTest {
         SolutionKit copy = new SolutionKit();
         SolutionKitUtils.copyDocumentToSolutionKit(doc, copy);
         Assert.assertEquals(original, copy);
+    }
+
+    @Test
+    public void generateListOfDeleteBundlesSuccess() throws Exception {
+        final SolutionKit solutionKitWithUninstallBundle1 = new SolutionKitBuilder()
+                .name("Solution Kit with Uninstall bundle1")
+                .skVersion("1")
+                .skGuid("guid1")
+                .uninstallBundle("test bundle1")
+                .build();
+
+        final SolutionKit solutionKitWithUninstallBundle2 = new SolutionKitBuilder()
+                .name("Solution Kit with Uninstall bundle2")
+                .skVersion("1")
+                .skGuid("guid2")
+                .uninstallBundle("test bundle2")
+                .build();
+
+        final SolutionKit parentSK = new SolutionKitBuilder()
+                .name("parentSK")
+                .skVersion("1")
+                .addProperty(SolutionKit.SK_PROP_IS_COLLECTION_KEY, "true")
+                .skGuid("parent_guid")
+                .build();
+
+        final List<SolutionKit> result = SolutionKitUtils.generateListOfDeleteBundles(Arrays.asList(solutionKitWithUninstallBundle1, solutionKitWithUninstallBundle2, parentSK));
+        assertTrue("Only child solution kits added", result.size()==2);
+        assertTrue("child 1 is in result", result.contains(solutionKitWithUninstallBundle1));
+        assertTrue("child 2 is in result", result.contains(solutionKitWithUninstallBundle2));
+    }
+
+    @Test (expected = SolutionKitException.class)
+    public void generateListOfDeleteBundlesError() throws Exception {
+        //This is the bad solution kit
+        final SolutionKit solutionKitWithOutUninstallBundle1 = new SolutionKitBuilder()
+                .name("Solution Kit with Uninstall bundle1")
+                .skVersion("1")
+                .skGuid("guid1")
+                .build();
+
+        final SolutionKit solutionKitWithUninstallBundle2 = new SolutionKitBuilder()
+                .name("Solution Kit with Uninstall bundle2")
+                .skVersion("1")
+                .skGuid("guid2")
+                .uninstallBundle("test bundle2")
+                .build();
+
+        final SolutionKit parentSK = new SolutionKitBuilder()
+                .name("parentSK")
+                .skVersion("1")
+                .addProperty(SolutionKit.SK_PROP_IS_COLLECTION_KEY, "true")
+                .skGuid("parent_guid")
+                .build();
+
+        SolutionKitUtils.generateListOfDeleteBundles(Arrays.asList(solutionKitWithOutUninstallBundle1, solutionKitWithUninstallBundle2, parentSK));
+    }
+
+    @Test
+    public void generateBundleListPayloadSuccess() throws IOException {
+        final Bundle deleteBundle = new BundleBuilder()
+                .name("Delete bundle")
+                .build();
+
+        final Bundle installBundle = new BundleBuilder()
+                .name("Install bundle")
+                .build();
+
+        final String result = SolutionKitUtils.generateBundleListPayload(Collections.singletonList(deleteBundle),
+                Collections.singletonList(installBundle));
+        assertTrue("Contains the delete bundle",
+                result.contains("<l7:Bundle><l7:name>Delete bundle</l7:name><l7:References/><l7:Mappings/></l7:Bundle>"));
+        assertTrue("Contains the install bundle",
+                result.contains("<l7:Bundle><l7:name>Install bundle</l7:name><l7:References/><l7:Mappings/></l7:Bundle>"));
     }
 }

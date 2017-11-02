@@ -1,7 +1,5 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl;
 
-import com.l7tech.external.assertions.gatewaymanagement.server.BundleBuilder;
-import com.l7tech.external.assertions.gatewaymanagement.server.MappingBuilder;
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.APIUtilityLocator;
 import com.l7tech.gateway.api.*;
@@ -194,7 +192,7 @@ public class BundleTransformerTest {
         when(serviceTransformer.convertFromMO(any(ServiceMO.class), eq(false), eq(null))).thenReturn(new EntityContainer<>(service));
         when(aliasTransformer.convertFromMO(any(ServiceAliasMO.class), eq(false), eq(null))).thenReturn(new EntityContainer<>(alias));
 
-        final EntityBundle result = bundleTransformer.convertFromMO(new BundleBuilder().addServiceAlias(service, alias).build(), null);
+        final EntityBundle result = bundleTransformer.convertFromMO(new BundleBuilder().addServiceAlias(service.getName(), service.getId(), alias.getId()).build(), null);
         final Map<Goid, EntityMappingInstructions> instructionsMap = instructionsToMap(result.getMappingInstructions());
         assertEquals(2, instructionsMap.size());
         assertEquals("test alias", instructionsMap.get(aliasId).getSourceEntityHeader().getName());

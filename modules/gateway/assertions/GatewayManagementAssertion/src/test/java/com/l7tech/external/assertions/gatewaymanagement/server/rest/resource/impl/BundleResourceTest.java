@@ -1,6 +1,5 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.impl;
 
-import com.l7tech.external.assertions.gatewaymanagement.server.MappingBuilder;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.BundleExporter;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.BundleImporter;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.RbacAccessService;
