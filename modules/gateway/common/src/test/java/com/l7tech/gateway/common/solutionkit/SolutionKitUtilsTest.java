@@ -2,7 +2,7 @@ package com.l7tech.gateway.common.solutionkit;
 
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.api.Bundle;
-import com.l7tech.gateway.api.BundleBuilder;
+import com.l7tech.gateway.common.BundleBuilder;
 import org.junit.Assert;
 import org.junit.Test;
 import org.w3c.dom.Document;

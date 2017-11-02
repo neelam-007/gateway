@@ -3,6 +3,8 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.transformer
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.APIUtilityLocator;
 import com.l7tech.gateway.api.*;
+import com.l7tech.gateway.common.BundleBuilder;
+import com.l7tech.gateway.common.MappingBuilder;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.PublishedServiceAlias;
 import com.l7tech.objectmodel.EntityHeader;

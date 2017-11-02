@@ -1,5 +1,6 @@
-package com.l7tech.gateway.api;
+package com.l7tech.gateway.common;
 
+import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.ManagedObjectReference;
 import java.util.ArrayList;
 import java.util.List;

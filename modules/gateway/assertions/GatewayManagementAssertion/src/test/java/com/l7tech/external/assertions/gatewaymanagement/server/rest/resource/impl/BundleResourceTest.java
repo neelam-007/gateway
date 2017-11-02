@@ -6,6 +6,7 @@ import com.l7tech.external.assertions.gatewaymanagement.server.rest.RbacAccessSe
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.exceptions.InvalidArgumentException;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.BundleTransformer;
 import com.l7tech.gateway.api.*;
+import com.l7tech.gateway.common.MappingBuilder;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;

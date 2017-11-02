@@ -1,5 +1,7 @@
-package com.l7tech.gateway.api;
+package com.l7tech.gateway.common;
 
+import com.l7tech.gateway.api.ManagedObjectFactory;
+import com.l7tech.gateway.api.Mapping;
 import org.jetbrains.annotations.NotNull;
 
 /**
