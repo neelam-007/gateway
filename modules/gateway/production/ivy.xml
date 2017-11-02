@@ -69,6 +69,7 @@
         <dependency name="MqNativeAssertion" rev="latest.integration" conf="module"/>
         <dependency name="GenerateSecurityHashAssertion" rev="latest.integration" conf="module"/>
         <dependency name="EvaluateJsonPathExpressionAssertion" rev="latest.integration" conf="module"/>
+		<dependency name="EvaluateJsonPathExpressionV2Assertion" rev="latest.integration" conf="module"/>
         <dependency name="LookupDynamicContextVariablesAssertion" rev="latest.integration" conf="module"/>
         <dependency name="NtlmAuthenticationAssertion" rev="latest.integration" conf="module"/>
         <dependency name="KerberosAuthenticationAssertion" rev="latest.integration" conf="module"/>

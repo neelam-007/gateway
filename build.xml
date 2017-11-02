@@ -3753,6 +3753,7 @@ ${versionfilecontent}
                 <include name="runtime/modules/assertions/**/EchoRoutingAssertion-*.aar"/>
                 <include name="runtime/modules/assertions/**/EncodeDecodeAssertion-*.aar"/>
                 <include name="runtime/modules/assertions/**/EvaluateJsonPathExpressionAssertion-*.aar"/>
+                <include name="runtime/modules/assertions/**/EvaluateJsonPathExpressionV2Assertion-*.aar"/>
                 <include name="runtime/modules/assertions/**/GatewayManagementAssertion-*.aar"/>
                 <include name="runtime/modules/assertions/**/GenerateOAuthSignatureBaseStringAssertion-*.aar"/>
                 <include name="runtime/modules/assertions/**/GenerateSecurityHashAssertion-*.aar"/>

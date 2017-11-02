@@ -756,6 +756,10 @@ public class GatewayFeatureSets {
                 fsr("set:EvaluateJsonPathExpressionAssertion:Assertions", "The necessary assertions to enable the Evaluate Json Path Expression functionality",
                         mass("assertion:EvaluateJsonPathExpression"));
 
+        GatewayFeatureSet evaluateJsonPathExpressionV2 =
+                fsr("set:EvaluateJsonPathExpressionV2Assertion:Assertions", "The necessary assertions to enable the Evaluate Json Path Expression V2 functionality",
+                        mass("assertion:EvaluateJsonPathExpressionV2"));
+
         GatewayFeatureSet lookupDynamicContextVariables = fsr("set:LookupDynamicContextVariablesAssertion:Assertions",
                 "The necessary assertions to enable the Look Up Dynamic Context Variables functionality",
                 mass("assertion:LookupDynamicContextVariables"));
@@ -988,6 +992,7 @@ public class GatewayFeatureSets {
             fs(esmAssertions),
             fs(generateSecurityHashAssertion),
             fs(evaluateJsonPathExpression),
+            fs(evaluateJsonPathExpressionV2),
             fs(lookupDynamicContextVariables),
             fs(generateOAuthSignatureBaseString),
             fs(splitJoinAssertions),
@@ -1011,6 +1016,7 @@ public class GatewayFeatureSets {
             fs(uddiNotificationAssertions),
             fs(esmAssertions),
             fs(evaluateJsonPathExpression),
+            fs(evaluateJsonPathExpressionV2),
             fs(lookupDynamicContextVariables),
             fs(generateOAuthSignatureBaseString),
             fs(splitJoinAssertions),
@@ -1047,6 +1053,7 @@ public class GatewayFeatureSets {
             fs(samlpInboundAssertions),
             fs(generateSecurityHashAssertion),
             fs(evaluateJsonPathExpression),
+            fs(evaluateJsonPathExpressionV2),
             fs(lookupDynamicContextVariables),
             fs(generateOAuthSignatureBaseString),
             fs(ntlmAuthenticationAssertion),
@@ -1125,6 +1132,7 @@ public class GatewayFeatureSets {
             fs(jsonTransformationAssertion),
             fs(generateSecurityHashAssertion),
             fs(evaluateJsonPathExpression),
+            fs(evaluateJsonPathExpressionV2),
             fs(lookupDynamicContextVariables),
             fs(generateOAuthSignatureBaseString),
             fs(ntlmAuthenticationAssertion),
@@ -1211,6 +1219,7 @@ public class GatewayFeatureSets {
             fs(uiFw),
             fs(generateSecurityHashAssertion),
             fs(evaluateJsonPathExpression),
+            fs(evaluateJsonPathExpressionV2),
             fs(lookupDynamicContextVariables),
             fs(generateOAuthSignatureBaseString),
             fs(ntlmAuthenticationAssertion),

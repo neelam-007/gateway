@@ -1205,7 +1205,7 @@ public class AssertionMessages extends Messages {
     public static final Messages.M EVALUATE_JSON_PATH_INVALID_EXPRESSION     = m(9646, Level.WARNING, "Invalid JSON Path expression: ''{0}''");
     public static final Messages.M EVALUATE_JSON_PATH_INVALID_EVALUATOR     = m(9647, Level.WARNING, "Invalid evaluator: ''{0}''");
     public static final Messages.M EVALUATE_JSON_PATH_ERROR     = m(9648, Level.WARNING, "Error occurred evaluating JSON Path: ''{0}''");
-    public static final Messages.M EVALUATE_JSON_PATH_NOT_FOUND     = m(9649, Level.WARNING, "Could not find any matching result; assertion therefore fails; Expression is ''{0}''.");
+    public static final Messages.M EVALUATE_JSON_PATH_NOT_FOUND     = m(9649, Level.INFO, "Could not find any matching result; assertion therefore fails; Expression is ''{0}''.");
 
     public static final Messages.M LOOKUP_DYNAMIC_VARIABLE_NOT_FOUND     = m(9655, Level.INFO, "Context variable ''{0}'' is not found.");
     public static final Messages.M LOOKUP_DYNAMIC_VARIABLE_MISSING_SOURCE     = m(9656, Level.WARNING, "Source variable is not set.");
