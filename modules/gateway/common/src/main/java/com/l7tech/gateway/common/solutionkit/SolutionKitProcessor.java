@@ -65,6 +65,9 @@ public class SolutionKitProcessor {
         final List<SolutionKit> selectedSolutionKits = new ArrayList<>(solutionKitsConfig.getSelectedSolutionKits());
         final SolutionKitImportInfo solutionKitImportInfo = collectSolutionKitInformation(selectedSolutionKits);
 
+        final SolutionKit uploadedParentSolutionKit = solutionKitsConfig.getParentSolutionKitLoaded(); // Note: The parent solution kit has a dummy default GOID.
+        validateUploadedParentSKOnUpgrade(uploadedParentSolutionKit);
+
         for (final SolutionKit solutionKit: selectedSolutionKits) {
             invokeCustomCallback(solutionKit);
             // Update resolved mapping target IDs.
@@ -72,6 +75,21 @@ public class SolutionKitProcessor {
         }
         doTestUpgrade.call(solutionKitImportInfo);
     }
+
+    private void validateUploadedParentSKOnUpgrade(SolutionKit uploadedParentSolutionKit) throws SolutionKitException {
+
+        if (uploadedParentSolutionKit == null) {
+            // this validation only cares about parent Solution Kits.  Since this one is not, just return.
+            return;
+        }
+
+        // Check if the uploaded parent Solution Kit matches the one that is already installed and has been selected for upgrade.
+        final SolutionKit matchedInstalledSolutionKit = solutionKitsConfig.getSolutionKitToUpgrade(uploadedParentSolutionKit.getSolutionKitGuid());
+        if (matchedInstalledSolutionKit == null) {
+            throw new SolutionKitException("Cannot upgrade because the parent Solution Kits involved in the upgrade do not match.");
+        }
+    }
+
 
     /**
      * Gathers solution kit information to send to the SolutionKitManager so that it can import bundles.
@@ -232,7 +250,7 @@ public class SolutionKitProcessor {
         if (isCollection) {
             parentSKFromDB = solutionKitsConfig.getSolutionKitToUpgrade(parentSKFromLoad.getSolutionKitGuid());
             if (parentSKFromDB == null) {
-                throw new SolutionKitException("Cannot upgrade because parent solution kit not found.");
+                throw new SolutionKitException("Cannot upgrade because the parent Solution Kits involved in the upgrade do not match.");
             }
         } else {
             parentSKFromDB = null;
