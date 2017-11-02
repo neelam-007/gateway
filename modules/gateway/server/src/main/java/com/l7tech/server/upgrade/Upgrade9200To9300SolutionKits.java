@@ -20,7 +20,7 @@ import java.util.logging.Logger;
  * parent Solution Kit (a Solution Kit which IsCollection==true) that has an unique instance modifier. The child Solution Kits
  * will be updated to point to the corresponding parent Solution Kit with matching Instance Modifier. If the Upgrade Task
  * encounters an error, the NonfatalUpgradeException is thrown and the upgrade will rollback. The gateway will continue with the startup.
- *
+ * <p>
  * Created by chaja24 on 10/4/2017.
  */
 public class Upgrade9200To9300SolutionKits implements UpgradeTask {
@@ -93,7 +93,7 @@ public class Upgrade9200To9300SolutionKits implements UpgradeTask {
                 // Process the child Solution Kit
                 final SolutionKit parentSolutionKit = solutionKitManager.findByPrimaryKey(parentGoid);
                 if (parentSolutionKit == null) {
-                    logger.log(Level.WARNING, "Could not find parent Solution Kit for child Solution Kit: {0} with instance: {1}." +
+                    logger.log(Level.WARNING, "Could not find parent Solution Kit for child Solution Kit: {0}, with instance: {1}." +
                                     "The parent Goid will be set to null and this Solution Kit will become a standalone.",
                             new Object[]{solutionKit.getName(), solutionKitInstanceModifier});
                     solutionKit.setParentGoid(null);
@@ -123,8 +123,8 @@ public class Upgrade9200To9300SolutionKits implements UpgradeTask {
                     solutionKit.setParentGoid(parentSolutionKitWithInstanceModifier.getGoid());
                     updateSolutionKit(transactionManager, solutionKitManager, solutionKit);
                 }
-            } catch (Exception e) {
-                String msg = String.format("Exception caught while processing SolutionKit: %s Instance: %s Message: %s",
+            } catch (FindException e) {
+                final String msg = String.format("Exception caught while processing Solution Kit: %s, Instance: %s Message: %s",
                         solutionKit.getName(), solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY), e.toString());
                 throw new NonfatalUpgradeException(msg);
             }
@@ -151,8 +151,8 @@ public class Upgrade9200To9300SolutionKits implements UpgradeTask {
                     solutionKitManager.delete(parentSKGoid);
                     numDeleteParentSK++;
                 }
-            } catch (Exception e) {
-                String msg = String.format("Exception caught while trying to delete parent Solution Kit with Goid: %s", parentSKGoid.toString());
+            } catch (FindException | DeleteException e) {
+                final String msg = String.format("Exception caught while trying to delete parent Solution Kit with Goid: %s", parentSKGoid.toString());
                 throw new NonfatalUpgradeException(msg);
             }
         }
@@ -203,12 +203,11 @@ public class Upgrade9200To9300SolutionKits implements UpgradeTask {
      *                           so that other queries will see the new record.
      * @param solutionKitManager - the reference to the SolutionKitManager for updating the Solution Kit database table.
      * @return Goid - the Goid of the new Solution Kit.
-     * @throws SaveException
      * @throws NonfatalUpgradeException - occurs during any exception resulting from writing to the SK database table.
      */
     private Goid createParentSolutionKit(final PlatformTransactionManager transactionManager,
                                          final SolutionKitManager solutionKitManager,
-                                         @NotNull final SolutionKit newParentSK) throws SaveException, NonfatalUpgradeException {
+                                         @NotNull final SolutionKit newParentSK) throws NonfatalUpgradeException {
 
         final Goid newGoid;
         try {
@@ -216,7 +215,7 @@ public class Upgrade9200To9300SolutionKits implements UpgradeTask {
             transactionManager.getTransaction(null).flush();
             numNewParentSK++;
         } catch (SaveException e) {
-            String msg = String.format("Exception caught while trying save new parent Solution Kit: %s for instance: %s",
+            final String msg = String.format("Exception caught while trying save new parent Solution Kit: %s, with instance modifier: %s",
                     newParentSK.getName(), newParentSK.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY));
             throw new NonfatalUpgradeException(msg);
         }
@@ -245,7 +244,7 @@ public class Upgrade9200To9300SolutionKits implements UpgradeTask {
             solutionKitManager.update(solutionKit);
             transactionManager.getTransaction(null).flush();
         } catch (UpdateException ioe) {
-            String msg = String.format("Exception caught while trying to update Solution Kit: %s for instance: %s",
+            final String msg = String.format("Exception caught while trying to update Solution Kit: %s, with instance modifier: %s",
                     solutionKit.getName(), solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY));
             throw new NonfatalUpgradeException(msg);
         }
