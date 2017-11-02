@@ -30,7 +30,7 @@ public class SingleConnection implements CachedConnection {
     @Override
     public JmsSessionHolder borrowConnection() throws JmsRuntimeException {
         synchronized (singleConnection) {
-            singleConnection.touch();
+            touch();
             singleConnection.ref();
             return singleConnection;
         }

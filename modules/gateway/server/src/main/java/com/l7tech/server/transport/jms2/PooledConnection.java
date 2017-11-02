@@ -77,9 +77,12 @@ public class PooledConnection implements CachedConnection {
     }
 
     @Override
-    public JmsSessionHolder borrowConnection() throws JmsRuntimeException {
+    public synchronized JmsSessionHolder borrowConnection() throws JmsRuntimeException {
         try {
-            return pool.borrowObject();
+            JmsSessionHolder sessionHolder =  pool.borrowObject();
+            if(sessionHolder == null) throw new Exception("Unable to borrow");
+            touch();
+            return sessionHolder;
         } catch ( Exception e ) {
             throw new JmsRuntimeException(e);
         }
@@ -103,6 +106,7 @@ public class PooledConnection implements CachedConnection {
     public void close() {
         try {
             pool.close();
+            logger.log(Level.FINE, "Closed pool " + endpoint.getDisplayName());
         } catch (Exception e) {
             logger.log(Level.FINE, "Unable to close the pool: ", e);
         }
@@ -150,6 +154,7 @@ public class PooledConnection implements CachedConnection {
     @Override
     public void invalidate(JmsSessionHolder connection) throws Exception {
         pool.invalidateObject(connection);
+        logger.log(Level.FINE, "Invalidated object " + connection.getName());
     }
 
     @Override

@@ -81,7 +81,7 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
                 returnSessionHolder(endpoint, sessionHolder);
             } catch (JmsRuntimeException e) {
                 //not much we can do. log it
-                logger.log(Level.WARNING, "Unable to return cached connection " + sessionHolder.toString());
+                logger.log(Level.WARNING, "Unable to return cached connection " + sessionHolder);
             }
         }
     }
@@ -316,7 +316,7 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
                 }
             }
             else {
-                logger.log(Level.WARNING, "JMS connection with key" + key.toString() + " does not exist.");
+                logger.log(Level.WARNING, "Unable to evict. JMS connection with key" + key.toString() + " does not exist.");
             }
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Unable to close connection " + key.toString());

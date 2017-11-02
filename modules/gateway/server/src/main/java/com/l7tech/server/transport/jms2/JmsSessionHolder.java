@@ -301,6 +301,7 @@ public class JmsSessionHolder {
         bag.close();
         //reset referenceCount
         referenceCount.set(0);
+        logger.log(Level.FINE, "Closed connection " + name);
     }
 
     public int refCount() {
@@ -315,5 +316,11 @@ public class JmsSessionHolder {
         return lastAccessTime;
     }
 
-
+    @Override
+    public String toString() {
+        return String.format(
+                "JMS connection (%s), version %s:%s",
+                 name, connectionVersion, endpointVersion
+        );
+    }
 }
