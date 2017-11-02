@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.portaldeployer.server;
 
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.server.cluster.ClusterInfoManager;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -37,9 +38,18 @@ public class PortalDeployerClientConfigurationManagerImpl implements PortalDeplo
   public static final String PD_DEPLOY_ERROR_CALLBACK_LOCATION = "portal.deploy.error.callback.location";//supports comma delimited host
 
   private ClusterPropertyManager clusterPropertyManager;
+  private ClusterInfoManager clusterInfoManager;
 
   public PortalDeployerClientConfigurationManagerImpl(ApplicationContext context) {
     this.clusterPropertyManager = context.getBean("clusterPropertyManager", ClusterPropertyManager.class);
+    this.clusterInfoManager = context.getBean("clusterInfoManager", ClusterInfoManager.class);
+  }
+
+  /**
+   * The id to uniquely identify this instance of Portal Deployer if tenant ID and tenant Gateway UUID are not enough.
+   */
+  public String getUniqueClientId() {
+    return clusterInfoManager.thisNodeId();
   }
 
   /**
