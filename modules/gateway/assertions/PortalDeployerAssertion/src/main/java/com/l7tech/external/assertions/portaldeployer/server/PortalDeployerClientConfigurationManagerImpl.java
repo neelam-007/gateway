@@ -33,8 +33,8 @@ public class PortalDeployerClientConfigurationManagerImpl implements PortalDeplo
   static final String PD_TOPIC_CP = "portal.deployer.topic";
   //extendable property for MessageProcessor
   public static final String PD_DEPLOY_TARGET_LOCATION = "portal.deploy.target.location";//supports comma delimited host
-  public static final String PD_DEPLOY_CALLBACK_LOCATION = "portal.deploy.callback.location";//supports comma delimited host
-  public static final String PD_USE_GATEWAY_TRUST_MANAGER_FOR_TARGET = "portal.deploy.use.trust.manager.for.target";
+  public static final String PD_DEPLOY_SUCCESS_CALLBACK_LOCATION = "portal.deploy.success.callback.location";//supports comma delimited host
+  public static final String PD_DEPLOY_ERROR_CALLBACK_LOCATION = "portal.deploy.error.callback.location";//supports comma delimited host
 
   private ClusterPropertyManager clusterPropertyManager;
 
@@ -47,7 +47,7 @@ public class PortalDeployerClientConfigurationManagerImpl implements PortalDeplo
    */
   public String getBrokerProtocol() {
     String protocol = getClusterProperty(PD_BROKER_PROTOCOL_CP);
-    if(protocol == null) {
+    if (protocol == null) {
       protocol = PD_BROKER_PROTOCOL_DEFAULT;
     }
     return protocol;
@@ -58,11 +58,10 @@ public class PortalDeployerClientConfigurationManagerImpl implements PortalDeplo
    */
   public int getBrokerKeepAlive() {
     int keepAlive = PD_BROKER_KEEP_ALIVE_DEFAULT;
-    try{
+    try {
       keepAlive = Integer.parseInt(getClusterProperty(PD_BROKER_KEEP_ALIVE_CP));
-    } catch(NumberFormatException e) {
-      logger.log(Level.INFO, String.format("Invalid keep alive value for ClusterProperty [%s]",
-              PD_BROKER_KEEP_ALIVE_CP));
+    } catch (NumberFormatException e) {
+      logger.log(Level.INFO, String.format("Invalid keep alive value for ClusterProperty [%s]", PD_BROKER_KEEP_ALIVE_CP));
     }
     return keepAlive;
   }
@@ -72,11 +71,10 @@ public class PortalDeployerClientConfigurationManagerImpl implements PortalDeplo
    */
   public int getBrokerConnectionTimeout() {
     int keepAlive = PD_BROKER_CONNECTION_TIMEOUT_DEFAULT;
-    try{
+    try {
       keepAlive = Integer.parseInt(getClusterProperty(PD_BROKER_CONNECTION_TIMEOUT_CP));
-    } catch(NumberFormatException e) {
-      logger.log(Level.INFO, String.format("Invalid keep alive value for ClusterProperty [%s]",
-              PD_BROKER_CONNECTION_TIMEOUT_CP));
+    } catch (NumberFormatException e) {
+      logger.log(Level.INFO, String.format("Invalid keep alive value for ClusterProperty [%s]", PD_BROKER_CONNECTION_TIMEOUT_CP));
     }
     return keepAlive;
   }
@@ -86,7 +84,7 @@ public class PortalDeployerClientConfigurationManagerImpl implements PortalDeplo
    */
   public boolean getBrokerCleanSession() {
     String cleanSession = getClusterProperty(PD_BROKER_CLEAN_SESSION_CP);
-    if(cleanSession == null) {
+    if (cleanSession == null) {
       return PD_BROKER_CLEAN_SESSION_DEFAULT;
     }
     return Boolean.parseBoolean(cleanSession);
@@ -123,11 +121,18 @@ public class PortalDeployerClientConfigurationManagerImpl implements PortalDeplo
       return getClusterProperty(PD_DEPLOY_TARGET_LOCATION);
   }
 
-  public String getCallbackLocation(String entity) {
+  public String getSuccessCallbackLocation(String entity) {
     if (entity != null && entity.trim().length() > 0)
-      return getClusterProperty(PD_DEPLOY_CALLBACK_LOCATION + "." + entity.trim().toLowerCase());
+      return getClusterProperty(PD_DEPLOY_SUCCESS_CALLBACK_LOCATION + "." + entity.trim().toLowerCase());
     else
-      return getClusterProperty(PD_DEPLOY_CALLBACK_LOCATION);
+      return getClusterProperty(PD_DEPLOY_SUCCESS_CALLBACK_LOCATION);
+  }
+
+  public String getErrorCallbackLocation(String entity) {
+    if (entity != null && entity.trim().length() > 0)
+      return getClusterProperty(PD_DEPLOY_ERROR_CALLBACK_LOCATION + "." + entity.trim().toLowerCase());
+    else
+      return getClusterProperty(PD_DEPLOY_ERROR_CALLBACK_LOCATION);
   }
 
   public boolean isPortalDeployerEnabled() {

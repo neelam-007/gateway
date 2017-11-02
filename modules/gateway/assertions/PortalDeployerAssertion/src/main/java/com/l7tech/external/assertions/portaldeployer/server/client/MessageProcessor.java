@@ -96,7 +96,7 @@ public class MessageProcessor {
 
       //get payload from SOURCE
       sourceResponse = performSourceRequest(validatedMessage);
-      if (sourceResponse == null)  {
+      if (sourceResponse == null) {
         logger.log(Level.WARNING, "unable to get source location");
         return false;
       }
@@ -126,12 +126,16 @@ public class MessageProcessor {
     }
     //process config overrides
     String configTargetLocation = configurationManager.getTargetLocation(message.getEntity());
-    String configCallbackLocation = configurationManager.getCallbackLocation(message.getEntity());
+    String configSuccessCallbackLocation = configurationManager.getSuccessCallbackLocation(message.getEntity());
+    String configErrorCallbackLocation = configurationManager.getErrorCallbackLocation(message.getEntity());
     if (!isEmpty(configTargetLocation)) {
       message.setTargetLocation(configTargetLocation);
     }
-    if (!isEmpty(configCallbackLocation)) {
-      message.setSuccessCallbackLocation(configCallbackLocation);
+    if (!isEmpty(configSuccessCallbackLocation)) {
+      message.setSuccessCallbackLocation(configSuccessCallbackLocation);
+    }
+    if (!isEmpty(configErrorCallbackLocation)) {
+      message.setErrorCallbackLocation(configErrorCallbackLocation);
     }
 
     // defaults
@@ -168,10 +172,20 @@ public class MessageProcessor {
     if (isEmpty(message.getSuccessStatus())) {
       message.setSuccessStatus(SUCCESS_DEFAULT);
     }
-    message.setSourceLocation(processVariablesConfig(message.getSourceLocation()));
-    message.setTargetLocation(processVariablesConfig(message.getTargetLocation()));
-    message.setSuccessCallbackLocation(processVariablesConfig(message.getSuccessCallbackLocation()));
-    message.setErrorCallbackLocation(processVariablesConfig(message.getErrorCallbackLocation()));
+    //error callback defaults to success callback when not defined
+    if (isEmpty(message.getErrorCallbackLocation())) {
+      message.setErrorCallbackLocation(message.getSuccessCallbackLocation());
+    }
+    if (isEmpty(message.getErrorCallbackOperation())) {
+      message.setErrorCallbackOperation(message.getErrorCallbackOperation());
+    }
+    if (isEmpty(message.getErrorCallbackContentType())) {
+      message.setErrorCallbackContentType(message.getErrorCallbackContentType());
+    }
+    message.setSourceLocation(processVariablesConfig(message.getSourceLocation(), message));
+    message.setTargetLocation(processVariablesConfig(message.getTargetLocation(), message));
+    message.setSuccessCallbackLocation(processVariablesConfig(message.getSuccessCallbackLocation(), message));
+    message.setErrorCallbackLocation(processVariablesConfig(message.getErrorCallbackLocation(), message));
     return message;
   }
 
@@ -201,7 +215,7 @@ public class MessageProcessor {
       callbackDetail.setTargetLocation(tlocation);
       callbackDetail.setMessage(resp.getBody());
       callbackDetail.setStatus(resp.getCode() < 400 ? message.getSuccessStatus() : message.getErrorStatus());
-      if(resp.getCode() >= 400) {
+      if (resp.getCode() >= 400) {
         logger.log(Level.INFO, String.format("target request failed with response code %s, body %s", resp.getCode(), resp.getBody()));
       }
       callbacks.add(callbackDetail);
@@ -215,7 +229,7 @@ public class MessageProcessor {
     String operation;
     boolean success = targetRequestResults.stream().allMatch(c -> c.getStatus().equals(message.getSuccessStatus()));
 
-    if(success) {
+    if (success) {
       callbackLocations = message.getSuccessCallbackLocation().split(",");
       contentType = message.getSuccessCallbackContentType();
       operation = message.getSuccessCallbackOperation();
@@ -226,7 +240,7 @@ public class MessageProcessor {
     }
     // prepare callback request body
     CallbackDto finalCallback = new CallbackDto();
-    finalCallback.setStatus(success ? message.getSuccessStatus() : message.getSuccessStatus());
+    finalCallback.setStatus(success ? message.getSuccessStatus() : message.getErrorStatus());
     finalCallback.setMessage(mapper.writeValueAsString(targetRequestResults));
     String body = mapper.writeValueAsString(finalCallback);
 
@@ -241,7 +255,7 @@ public class MessageProcessor {
     return result;
   }
 
-  protected String processVariablesConfig(String value) {
+  protected String processVariablesConfig(String value, Message message) {
     if (!isEmpty(value) && configurationManager != null) {
       String tmp = value;
       if (configurationManager.getIngressHost() != null)
@@ -252,6 +266,17 @@ public class MessageProcessor {
         tmp = tmp.replace("{BROKER_HOST}", configurationManager.getBrokerHost());
       if (configurationManager.getBrokerPort() != null)
         tmp = tmp.replace("{BROKER_PORT}", configurationManager.getBrokerPort());
+      if (configurationManager.getTenantId() != null)
+        tmp = tmp.replace("{TENANT_ID}", configurationManager.getTenantId());
+      if (configurationManager.getTenantId() != null)
+        tmp = tmp.replace("{TENANT_GATEWAY_UUID}", configurationManager.getTenantGatewayUuid());
+      if (message != null && !isEmpty(message.getMessageId()))
+        tmp = tmp.replace("{MESSAGE_ID}", message.getMessageId());
+      if (message != null && !isEmpty(message.getEntity()))
+        tmp = tmp.replace("{ENTITY}", message.getEntity());
+      if (message != null && !isEmpty(message.getIdentifier()))
+        tmp = tmp.replace("{IDENTIFIER}", message.getIdentifier());
+
       return tmp;
     }
     return value;

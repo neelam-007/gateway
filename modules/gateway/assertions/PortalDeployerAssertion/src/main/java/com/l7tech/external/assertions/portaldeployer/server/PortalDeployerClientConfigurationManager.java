@@ -17,5 +17,6 @@ public interface PortalDeployerClientConfigurationManager {
   String getTenantGatewayUuid();
   boolean isPortalDeployerEnabled();
   String getTargetLocation(String entity);
-  String getCallbackLocation(String entity);
+  String getSuccessCallbackLocation(String entity);
+  String getErrorCallbackLocation(String entity);
 }
