@@ -1,12 +1,15 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl;
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.RbacAccessService;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.exceptions.InsufficientPermissionsException;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.APIResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.AuditConfigurationTransformer;
 import com.l7tech.gateway.api.AuditConfigurationMO;
 import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.Mapping;
 import com.l7tech.gateway.common.audit.AuditConfiguration;
+import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
@@ -29,6 +32,10 @@ public class AuditConfigurationAPIResourceFactory implements APIResourceFactory<
     @Inject
     private AuditConfigurationManager auditConfigurationManager;
 
+    @Inject
+    protected RbacAccessService rbacAccessService;
+
+
     @Override
     public String createResource(@NotNull AuditConfigurationMO resource) throws ResourceFactory.InvalidResourceException {
         throw new UnsupportedOperationException();
@@ -42,6 +49,7 @@ public class AuditConfigurationAPIResourceFactory implements APIResourceFactory<
     @Override
     public void updateResource(@NotNull String id, @NotNull AuditConfigurationMO resource) throws ResourceFactory.ResourceFactoryException {
         try {
+            rbacAccessService.validatePermitted(EntityType.CLUSTER_PROPERTY, OperationType.UPDATE);
             auditConfigurationManager.update(transformer.convertFromMO(resource, null).getEntity());
         } catch (UpdateException e) {
             throw new ResourceFactory.ResourceAccessException("Unable to update entity.", e);
@@ -53,6 +61,7 @@ public class AuditConfigurationAPIResourceFactory implements APIResourceFactory<
     @Override
     public AuditConfigurationMO getResource(@NotNull String id) throws ResourceFactory.ResourceNotFoundException {
         try {
+            rbacAccessService.validatePermitted(EntityType.CLUSTER_PROPERTY, OperationType.READ);
             AuditConfiguration entity = auditConfigurationManager.findByPrimaryKey(Goid.parseGoid(id));
             if (entity == null) {
                 throw new ResourceFactory.ResourceNotFoundException("Resource not found " + id);
@@ -72,7 +81,7 @@ public class AuditConfigurationAPIResourceFactory implements APIResourceFactory<
     public List<AuditConfigurationMO> listResources(@Nullable String sortKey, @Nullable Boolean ascending, @Nullable Map<String, List<Object>> filters) {
         try {
             return CollectionUtils.list(getResource(AuditConfiguration.ENTITY_ID.toString()));
-        } catch (ResourceFactory.ResourceNotFoundException e) {
+        } catch (ResourceFactory.ResourceNotFoundException | InsufficientPermissionsException e) {
             return CollectionUtils.list();
         }
     }

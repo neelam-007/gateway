@@ -28,7 +28,14 @@ public class LogSinkAdminImpl implements LogSinkAdmin {
     @Override
     public Goid saveSinkConfiguration(SinkConfiguration sinkConfiguration) throws SaveException, UpdateException {
         if ( sinkConfiguration.isUnsaved() ) {
-            return sinkManager.save(sinkConfiguration);
+            Goid goid = sinkManager.save(sinkConfiguration);
+            sinkConfiguration.setGoid(goid);
+            try{
+                sinkManager.createRoles(sinkConfiguration);
+            } catch (SaveException e) {
+                throw new SaveException("Error creating Role for log sink.", e);
+            }
+            return goid;
         } else {
             sinkManager.update(sinkConfiguration);
             return sinkConfiguration.getGoid();

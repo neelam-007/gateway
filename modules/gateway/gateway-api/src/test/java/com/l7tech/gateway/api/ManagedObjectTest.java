@@ -29,6 +29,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.math.BigInteger;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -758,9 +759,9 @@ public class ManagedObjectTest {
         assertNotNull("certificate data", roundTripped.getCertificateData());
         assertEquals("revocationCheckingPolicyId", "3", roundTripped.getRevocationCheckingPolicyId());
 
-        assertEquals("certificate issuer name", "CN=OASIS Interop Test CA,O=OASIS", roundTripped.getCertificateData().getIssuerName());
+        assertEquals("certificate issuer name", URLEncoder.encode("CN=OASIS Interop Test CA,O=OASIS", "UTF-8"), roundTripped.getCertificateData().getIssuerName());
         assertEquals("certificate serial number", new BigInteger( "127901500862700997089151460209364726264" ), roundTripped.getCertificateData().getSerialNumber());
-        assertEquals("certificate subject name", "CN=Bob,OU=OASIS Interop Test Cert,O=OASIS", roundTripped.getCertificateData().getSubjectName());
+        assertEquals("certificate subject name", URLEncoder.encode("CN=Bob,OU=OASIS Interop Test Cert,O=OASIS", "UTF-8"), roundTripped.getCertificateData().getSubjectName());
         assertArrayEquals("certificate encoded", HexUtils.decodeBase64( CERT_BOB_PEM, true ), roundTripped.getCertificateData().getEncoded());
     }
 

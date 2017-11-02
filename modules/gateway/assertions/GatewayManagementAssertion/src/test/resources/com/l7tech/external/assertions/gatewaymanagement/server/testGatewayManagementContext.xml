@@ -330,6 +330,7 @@
                 <ref bean="scheduledTaskManager"/>
                 <ref bean="workQueueEntityManager"/>
                 <ref bean="policyBackedServiceManager"/>
+                <ref bean="sinkManager"/>
             </list>
         </constructor-arg>
     </bean>
@@ -337,6 +338,8 @@
         <constructor-arg index="0" value="password"/>
     </bean>
 
+    <bean id="sinkManager" class="com.l7tech.server.log.SinkManagerStub"/>
+    
     <bean id="workQueueEntityManager" class="com.l7tech.server.workqueue.WorkQueueEntityManagerStub"/>
 
     <bean id="scheduledTaskManager" class="com.l7tech.server.task.ScheduledTaskManagerStub"/>

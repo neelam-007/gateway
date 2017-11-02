@@ -82,7 +82,7 @@
         <constructor-arg index="1" ref="clusterPropertyManager"/>
     </bean>
 
-    <!-- service cache -->
+  <!-- service cache -->
     <bean id="serviceCache" class="com.l7tech.server.service.ServiceCacheStub" depends-on="wsdlStrategyServiceDocumentsInitializer">
         <constructor-arg index="0" ref="policyCache"/>
         <constructor-arg index="1"><null/></constructor-arg>
@@ -272,7 +272,10 @@
         <constructor-arg index="2" ref="serviceDocumentManager"/>
         <constructor-arg index="3" ref="policyVersionManager"/>
         <constructor-arg index="4" ref="serviceTemplateManager"/>
+        <constructor-arg index="5" ref="clusterMaster"/>
     </bean>
+
+    <bean id="clusterMaster" class="com.l7tech.server.cluster.ClusterMasterStub"/>
 
     <bean id="serviceTemplateManager" class="com.l7tech.server.service.ServiceTemplateManagerImpl"/>
 
@@ -739,6 +742,10 @@
                     <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.POLICY_BACKED_SERVICE"/></key>
                     <bean class="com.l7tech.server.search.processors.PolicyBackedServiceDependencyProcessor"/>
                 </entry>
+              <entry>
+                <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.LOG_SINK"/></key>
+                <bean class="com.l7tech.server.search.processors.LogSinkDependencyProcessor"/>
+              </entry>
             </map>
         </constructor-arg>
     </bean>

@@ -204,7 +204,7 @@ public class ServerIncrementPostBackAssertion extends AbstractServerAssertion<In
      */
     private void appEntityInsert(String jdbcConnectionName, String nodeId, String addEntityId, long syncTime, String log, String tenantId) throws PolicyAssertionException {
         List<Object> params = Lists.<Object>newArrayList(nodeId, BigInteger.valueOf(syncTime), log, addEntityId,tenantId);
-        Object result = queryJdbc(jdbcConnectionName, "INSERT INTO APPLICATION_TENANT_GATEWAY (UUID, TENANT_GATEWAY_UUID , SYNC_TIME, SYNC_LOG , APPLICATION_UUID, TENANT_ID ) VALUES  ( UUID() , ?, ? , ?, ?, ?)", params);
+        Object result = queryJdbc(jdbcConnectionName, "INSERT INTO APPLICATION_TENANT_GATEWAY (UUID, TENANT_GATEWAY_UUID , SYNC_TIME, SYNC_LOG , APPLICATION_UUID, TENANT_ID ) VALUES  ( generate_uuid() , ?, ? , ?, ?, ?)", params);
         if (!(result instanceof Integer) || ((Integer) result).intValue() != 1) {
             throw new PolicyAssertionException(assertion, String.format("Failed to insert sync status of entity (%s) of node(%s) to  APPLICATION_TENANT_GATEWAY.  ", addEntityId, nodeId));
         }
@@ -268,7 +268,7 @@ public class ServerIncrementPostBackAssertion extends AbstractServerAssertion<In
         Object results;
         String updateSql = String.format("UPDATE %s SET  SYNC_TIME=? , SYNC_LOG=? WHERE TENANT_GATEWAY_UUID=? AND %s=? AND TENANT_ID = '%s'", tableName, uuidColumnName, tenantId);
         String insertSql = String.format(
-                "INSERT INTO %s (UUID, TENANT_GATEWAY_UUID , SYNC_LOG ,SYNC_TIME, %s  ,TENANT_ID) VALUES  ( UUID() , ?, ? ,?, ? ,?)", tableName, uuidColumnName);
+                "INSERT INTO %s (UUID, TENANT_GATEWAY_UUID , SYNC_LOG ,SYNC_TIME, %s  ,TENANT_ID) VALUES  ( generate_uuid() , ?, ? ,?, ? ,?)", tableName, uuidColumnName);
 
         for (Map<String, String> m : errors) {
             id = m.get(ERROR_ENTITY_ID_LABEL);

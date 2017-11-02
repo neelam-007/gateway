@@ -250,7 +250,6 @@ public class SinkManagerImpl
     public Goid save(SinkConfiguration entity) throws SaveException {
         Goid goid =  super.save(entity);
         entity.setGoid(goid);
-        createRoles(entity);
         return goid;
     }
 

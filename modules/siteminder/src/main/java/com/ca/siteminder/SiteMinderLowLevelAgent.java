@@ -3,6 +3,7 @@ package com.ca.siteminder;
 import com.ca.siteminder.util.SiteMinderUtil;
 import com.l7tech.util.ConfigFactory;
 import netegrity.siteminder.javaagent.*;
+import org.apache.commons.lang.StringUtils;
 
 import java.util.*;
 import java.util.logging.Level;
@@ -96,7 +97,7 @@ public class SiteMinderLowLevelAgent {
 
             if (retCode == AgentAPI.SUCCESS) {
                 //TODO: check if the management info is correct and if we need to put it into the cluster property
-                ManagementContextDef mgtCtxDef = new ManagementContextDef(ManagementContextDef.MANAGEMENT_SET_AGENT_INFO, "Product=sdk,Platform=WinNT/Solaris,Version=12.5,Update=0,Label=160");
+                ManagementContextDef mgtCtxDef = new ManagementContextDef(ManagementContextDef.MANAGEMENT_SET_AGENT_INFO, "Product=sdk,Platform=WinNT/Solaris,Version=12.52,Update=0,Label=160");
                 AttributeList attrList = new AttributeList();
                 agentApi.doManagement(mgtCtxDef, attrList);
                 mgtCtxDef = new ManagementContextDef(ManagementContextDef.MANAGEMENT_GET_AGENT_COMMANDS, "");//TODO: why do we call create management context for the second time? is it really necessary?
@@ -181,8 +182,12 @@ public class SiteMinderLowLevelAgent {
         attrList.addAttribute(AgentAPI.ATTR_USERNAME, 0, 0, null, userCreds.name != null? userCreds.name.getBytes() : new byte[0]);
         attrList.addAttribute(AgentAPI.ATTR_CLIENTIP, 0,  0, null, clientIP != null? clientIP.getBytes() : new byte[0]);
 
-        storeAttributes(attributes, attrList);
+        final String ssoZoneName = context.getSsoZoneName();
+        if (StringUtils.isNotBlank(ssoZoneName)) {
+            attrList.addAttribute(AgentAPI.ATTR_SSOZONE, 0, 0, null, ssoZoneName.getBytes());
+        }
 
+        storeAttributes(attributes, attrList);
 
         if (retCode != AgentAPI.YES) {
             logger.log(Level.FINE, "CA Single Sign-On authorization attempt: User: '" + userCreds.name + "' Resource: '" + SiteMinderUtil.safeNull(resCtxDef.resource) + "' Access Mode: '" + SiteMinderUtil.safeNull(resCtxDef.action) + "'");
@@ -717,6 +722,9 @@ public class SiteMinderLowLevelAgent {
                     break;
                 case SiteMinderAgentConstants.ATTR_DENIED_REDIRECT_CODE:
                     attributes.add(chopNullFromValueAndCreateAttribute(attr, SiteMinderAgentConstants.ATTR_DENIED_REDIRECT_NAME));
+                    break;
+                case AgentAPI.ATTR_SSOZONE:
+                    attributes.add(chopNullFromValueAndCreateAttribute(attr, SiteMinderAgentConstants.ATTR_SSOZONE));
                     break;
                 default:
                     attributes.add(new SiteMinderContext.Attribute("ATTR_" + Integer.toString(attr.id), attr.value, attr.flags, attr.id, attr.oid, attr.ttl, SiteMinderUtil.safeByteArrayCopy(attr.value)));

@@ -13,6 +13,8 @@ import java.io.Serializable;
  * @author Steve Jones
  */
 public class ClusterPropertyDescriptor implements Serializable {
+    
+    private static final long serialVersionUID = -108249536716982916L;
 
     //- PUBLIC
 

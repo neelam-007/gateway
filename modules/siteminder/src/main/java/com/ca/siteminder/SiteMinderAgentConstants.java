@@ -33,6 +33,7 @@ public interface SiteMinderAgentConstants {
     public static final String ATTR_ONACCEPTREDIRECT = "ATTR_ONACCEPTREDIRECT";
     public static final String ATTR_HTTP_COOKIE_VALUE = "ATTR_HTTP_COOKIE_VALUE";
     public static final String ATTR_DENIED_REDIRECT_NAME = "ATTR_227";
+    public static final String ATTR_SSOZONE = "ATTR_SSOZONE";
 
     public static final int SM_AGENT_API_INVALID_SESSIONID = -57;
     public static final int ATTR_CURRENTAGENTTIME = 153; //Added as the AgentAPI list of constants do not include the ATTR_CURRENTSERVERTIME;

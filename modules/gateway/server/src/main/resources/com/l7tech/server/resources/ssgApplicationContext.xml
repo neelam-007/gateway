@@ -1478,6 +1478,8 @@
         <constructor-arg ref="clusterInfoManager"/>
         <constructor-arg ref="serviceCache"/>
         <constructor-arg ref="serviceUsageManager"/>
+        <constructor-arg ref="clusterMaster"/>
+        <constructor-arg ref="serverConfig"/>
         <property name="sessionFactory" ref="sessionFactory"/>
     </bean>
 
@@ -1626,6 +1628,7 @@
         <constructor-arg index="2" ref="serviceDocumentManager"/>
         <constructor-arg index="3" ref="policyVersionManager"/>
         <constructor-arg index="4" ref="serviceTemplateManager"/>
+        <constructor-arg index="5" ref="clusterMaster"/>
     </bean>
 
     <bean id="migrationBundleBootstrapService" class="com.l7tech.server.service.MigrationBundleBootstrapService">
@@ -1645,7 +1648,7 @@
         <property name="targetMethod" value="thisNodeId"/>
     </bean>
 
-    <bean id="clusterMaster" class="com.l7tech.server.cluster.ClusterMaster">
+    <bean id="clusterMaster" class="com.l7tech.server.cluster.ClusterMasterImpl">
         <constructor-arg index="0" ref="transactionManager"/>
         <constructor-arg index="1" ref="hibernateDataSource"/>
         <constructor-arg index="2" ref="serverConfig"/>
@@ -2585,6 +2588,10 @@
                 <entry>
                     <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.POLICY_BACKED_SERVICE"/></key>
                     <bean class="com.l7tech.server.search.processors.PolicyBackedServiceDependencyProcessor"/>
+                </entry>
+                <entry>
+                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.LOG_SINK"/></key>
+                    <bean class="com.l7tech.server.search.processors.LogSinkDependencyProcessor"/>
                 </entry>
             </util:map>
         </constructor-arg>

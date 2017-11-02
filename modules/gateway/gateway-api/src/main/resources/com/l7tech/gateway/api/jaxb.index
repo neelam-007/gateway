@@ -61,6 +61,7 @@ FirewallRuleMO
 SampleMessageMO
 ScheduledTaskMO
 WorkQueueMO
+LogSinkMO
 ServerModuleFileMO
 PolicyBackedServiceMO
 SolutionKitMO

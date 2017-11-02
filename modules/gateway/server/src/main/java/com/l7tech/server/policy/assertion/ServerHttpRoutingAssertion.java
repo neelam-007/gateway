@@ -1032,7 +1032,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 }
             }
             final String ctype = HttpHeaderUtil.searchHeaderValue(routedResponse.getHeaders(), HttpConstants.HEADER_CONTENT_TYPE, ConfigFactory.getProperty("ioHttpHeaderSearchRule"));
-            ContentTypeHeader outerContentType = ctype != null ? ContentTypeHeader.create(ctype) : null;
+            ContentTypeHeader outerContentType = ctype != null ? ContentTypeHeader.create(ctype, ConfigFactory.getProperty("ioHttpDefaultContentTypeCharset")) : null;
             boolean passthroughSoapFault = false;
             if (assertion.isPassThroughSoapFaults() && status == HttpConstants.STATUS_SERVER_ERROR &&
                 context.getService() != null && context.getService().isSoap() &&

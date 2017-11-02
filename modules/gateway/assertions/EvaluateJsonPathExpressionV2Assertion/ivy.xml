@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="1.0">
+	<info organisation="com.l7tech"
+		module="EvaluateJsonPathExpressionV2Assertion"
+        status="integration"
+	>
+	</info>
+	<configurations>
+        <include file="../assertion-ivyconfiguration.xml"/>
+	</configurations>
+	<publications>
+		<artifact name="EvaluateJsonPathExpressionV2Assertion" type="aar" ext="aar" conf="master"/>
+		<artifact name="EvaluateJsonPathExpressionV2Assertion" type="pom" ext="pom" conf="pom"/>
+	</publications>
+	<dependencies>
+        <dependency org="com.jayway" name="json-path" rev="2.2.0" force="true" conf="core"/>
+        <dependency org="net.minidev" name="json-smart" rev="2.2.1" force="true" conf="core"/>
+		<dependency org="net.minidev" name="accessors-smart" rev="1.1" force="true" conf="core"/>
+        <dependency name="layer7-modular-assertions" rev="latest.integration"
+                    conf="compile->compile;runtime->runtime;test->test"/>
+                
+	</dependencies>
+</ivy-module>

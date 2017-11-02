@@ -168,4 +168,17 @@ public class ContentTypeHeaderTest {
         out.write( MimeHeader.CRLF );
         return out.toByteArray();
     }
+
+    /*
+        Test to give the charset in content type if response does not have charset
+     */
+    @Test
+    @BugId( "DE294968" )
+    public void testNoCharsetInHeader() throws Exception {
+        //If response does not have charset in content type user can give choice of charset as a second parameter
+        assertEquals("UTF-8", ContentTypeHeader.create("application/xml", "UTF-8").getEncoding().toString() );
+        assertEquals("ISO-8859-1", ContentTypeHeader.create("application/json", "ISO-8859-1").getEncoding().toString() );
+        //If response contains a charset in content type, no change in content type header
+        assertEquals("UTF-8", ContentTypeHeader.create("application/xml; charset=UTF-8", "ISO-8859-1").getEncoding().toString() );
+    }
 }

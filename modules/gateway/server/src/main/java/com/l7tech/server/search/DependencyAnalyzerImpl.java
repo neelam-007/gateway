@@ -4,6 +4,7 @@ import com.l7tech.gateway.common.audit.AuditConfiguration;
 import com.l7tech.gateway.common.cassandra.CassandraConnection;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
+import com.l7tech.gateway.common.log.SinkConfiguration;
 import com.l7tech.gateway.common.module.ServerModuleFile;
 import com.l7tech.gateway.common.resources.HttpConfiguration;
 import com.l7tech.gateway.common.resources.ResourceEntry;
@@ -112,6 +113,7 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
             ResourceEntry.class,
             ScheduledTask.class,
             WorkQueue.class,
+            SinkConfiguration.class,
             ServerModuleFile.class,
             SolutionKit.class,
             AuditConfiguration.class

@@ -8,6 +8,7 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.server.transport.firewall.SsgFirewallRuleManager;
+import com.l7tech.util.SyspropUtil;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
@@ -146,8 +147,12 @@ public class FirewallRuleAPIResourceFactory extends EntityManagerAPIResourceFact
     }
 
     public boolean isHardware()throws WebApplicationException {
-        // TODO is there some cleaner way to do this?
-        final File applianceDir = new File("/opt/SecureSpan/Appliance");
-        return (applianceDir.exists() && applianceDir.isDirectory());
+        if(SyspropUtil.getBoolean("com.l7tech.server.performFirewallRuleRestmanApplianceCheck", true)) {
+            // TODO is there some cleaner way to do this?
+            final File applianceDir = new File("/opt/SecureSpan/Appliance");
+            return (applianceDir.exists() && applianceDir.isDirectory());
+        } else {
+            return true;
+        }
     }
 }
