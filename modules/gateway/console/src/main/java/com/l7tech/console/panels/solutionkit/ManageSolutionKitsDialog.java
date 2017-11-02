@@ -9,6 +9,7 @@ import com.l7tech.gateway.common.solutionkit.*;
 import com.l7tech.gui.ErrorMessageDialog;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
+import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.Either;
@@ -181,12 +182,13 @@ public class ManageSolutionKitsDialog extends JDialog {
                             return;
                         }
 
-                        List<String> resultMsgs = new ArrayList<>();
+                        final List<String> resultMsgs = new ArrayList<>();
                         Pair<Boolean, String> result = new Pair<>(true, "");
+                        final Set<Goid> possibleParentsToRemove = new HashSet<>();
 
-                        for (SolutionKitHeader header : headers) {
+                        for (final SolutionKitHeader header : headers) {
                             try {
-                                Collection<SolutionKitHeader> children = solutionKitAdmin.findHeaders(header.getGoid());
+                                final Collection<SolutionKitHeader> children = solutionKitAdmin.findHeaders(header.getGoid());
                                 if (!children.isEmpty()) {
                                     for (SolutionKitHeader child : children) {
                                         result = uninstallSolutionKit(child.getName(), child.getGoid());
@@ -217,6 +219,10 @@ public class ManageSolutionKitsDialog extends JDialog {
                                             resultMsgs.add("- " + header.getName() +
                                                     (!StringUtils.isBlank(header.getInstanceModifier()) ? " (Instance Modifier: '" + header.getInstanceModifier()+"')" :
                                                     " (no Instance Modifier)") + "<br/> ");
+                                            final Goid parentGoid = header.getParentGoid();
+                                            if (parentGoid != null) {
+                                                possibleParentsToRemove.add(parentGoid);
+                                            }
                                         }
                                     }
                                 }
@@ -252,11 +258,33 @@ public class ManageSolutionKitsDialog extends JDialog {
                             Utilities.centerOnParentWindow(errorMessageDialog);
                             DialogDisplayer.pack(errorMessageDialog);
                             DialogDisplayer.display(errorMessageDialog);
+                        } else {
+                            if (logger.getLevel() == Level.FINE) {
+                                logger.log(Level.FINE, "Solution kits uninstalled successfully!");
+                            }
+                            removeStrayParents(possibleParentsToRemove);
                         }
-
                         refreshSolutionKitsTable();
                     }
                 });
+    }
+
+    /**
+     * After uninstall, if all the children of a parent are uninstalled successfully, remove the parent SK
+     * @param possibleParentsToRemove Set of all possible parents to remove
+     */
+    private void removeStrayParents(final Set<Goid> possibleParentsToRemove) {
+        for (final Goid parent : possibleParentsToRemove) {
+            try {
+                if (solutionKitAdmin.find(parent).isEmpty()) {
+                    solutionKitAdmin.delete(parent);
+                }
+            } catch (FindException e) {
+                logger.log(Level.WARNING, "Problem occurred while finding a parent solution kit.");
+            } catch (DeleteException e) {
+                logger.log(Level.WARNING, "Problem occurred while deleting a parent solution kit with no child solution kits.");
+            }
+        }
     }
 
     private Pair<Boolean, String> uninstallSolutionKit(@NotNull final String skName, @NotNull final Goid skGoid) throws InvocationTargetException, InterruptedException {

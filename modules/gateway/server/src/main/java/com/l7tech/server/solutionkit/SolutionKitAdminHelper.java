@@ -78,8 +78,6 @@ public class SolutionKitAdminHelper implements SolutionKitAdmin {
     @NotNull
     public String testInstall(@NotNull final SolutionKit solutionKit, @NotNull final String bundle, final boolean isUpgrade) throws Exception {
         checkFeatureEnabled(solutionKit);
-        validateSolutionKitForInstallOrUpgrade(solutionKit, isUpgrade);
-
         return solutionKitManager.importBundle(bundle, solutionKit, true);
     }
 
@@ -274,65 +272,6 @@ public class SolutionKitAdminHelper implements SolutionKitAdmin {
         throw new UnsupportedOperationException();
     }
 
-    /**
-     * Validate if a target solution kit is good for install or upgrade.
-     *
-     * Install: if an existing solution kit is found as same as the target solution kit, fail install.
-     * This is the requirement from the note in the story SSG-10996, Upgrade Solution Kit.
-     * - disable install if SK is already installed (upgrade only)
-     *
-     * Upgrade: if the source solution kit uses an instance modifier that other existing solution kit has been used, fail upgrade.
-     *
-     * @param sourceSK: the solution kit to be validated
-     * @param isUpgrade: indicate if the solution kit is to upgraded or install.  True for upgrade and false for install.
-     * @return true if validation is passed; Otherwise false returns.
-     * @throws BadRequestException: any errors or rule violation will throw BadRequestException
-     */
-    public boolean validateSolutionKitForInstallOrUpgrade(@NotNull final SolutionKit sourceSK, final boolean isUpgrade) throws BadRequestException, SolutionKitConflictException {  // TODO (TL refactor) can move?
-        final Goid sourceGoid = sourceSK.getGoid();
-        final String sourceGuid = sourceSK.getSolutionKitGuid();
-
-        String sourceIM = sourceSK.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY);
-        if (StringUtils.isBlank(sourceIM)) sourceIM = "";
-
-        final String sourceIMDisplayName = InstanceModifier.getDisplayName(sourceIM);
-
-        // Check upgrade
-        if (isUpgrade) {
-            try {
-                SolutionKit found = solutionKitManager.findBySolutionKitGuidAndIM(sourceGuid, sourceIM);
-                if (found != null && sourceGoid != null && !sourceGoid.equals(found.getGoid())) {
-                    //if the source solution kit uses an instance modifier that other existing solution kit has been used, fail upgrade.
-                    throw new SolutionKitConflictException("Upgrade Failed: the solution kit '" + sourceSK.getName() + "' tired to use a same instance modifier '" + sourceIMDisplayName + "', which other existing solution kit already uses");
-                }
-            } catch (FindException e) {
-                throw new BadRequestException(ExceptionUtils.getMessage(e));
-            }
-
-            return true;
-        }
-
-        // Check install
-        final List<SolutionKit> solutionKitsOnDB;
-        try {
-            solutionKitsOnDB = solutionKitManager.findBySolutionKitGuid(sourceGuid);
-        } catch (FindException e) {
-            throw new BadRequestException(ExceptionUtils.getMessage(e));
-        }
-
-        String instanceModifier;
-        for (SolutionKit solutionKit: solutionKitsOnDB) {
-            instanceModifier = solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY);
-            if (StringUtils.isBlank(instanceModifier)) instanceModifier = "";
-
-            if (sourceIM.equals(instanceModifier)) {
-                throw new SolutionKitConflictException("This solution kit already exists. To install it again, specify a unique instance modifier");
-            }
-        }
-
-        return true;
-    }
-
     @Override
     public <OUT extends Serializable> String getJobStatus(JobId<OUT> jobId) {
         throw new UnsupportedOperationException();
@@ -495,6 +434,11 @@ public class SolutionKitAdminHelper implements SolutionKitAdmin {
 
     public SolutionKit get(@NotNull Goid goid) throws FindException {
         return solutionKitManager.findByPrimaryKey(goid);
+    }
+
+    @Override
+    public SolutionKit get(@NotNull String guid, @Nullable String instanceModifier) throws FindException {
+        return solutionKitManager.findBySolutionKitGuidAndIM(guid, instanceModifier);
     }
 
     @NotNull

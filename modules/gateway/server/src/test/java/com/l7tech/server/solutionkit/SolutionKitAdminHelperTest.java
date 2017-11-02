@@ -4,6 +4,7 @@ import com.l7tech.gateway.api.Mapping;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.solutionkit.EntityOwnershipDescriptor;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
+import com.l7tech.gateway.common.solutionkit.SolutionKitBuilder;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;

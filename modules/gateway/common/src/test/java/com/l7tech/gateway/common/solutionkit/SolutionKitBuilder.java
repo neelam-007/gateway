@@ -1,7 +1,5 @@
-package com.l7tech.server.solutionkit;
+package com.l7tech.gateway.common.solutionkit;
 
-import com.l7tech.gateway.common.solutionkit.EntityOwnershipDescriptor;
-import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.CollectionUtils;

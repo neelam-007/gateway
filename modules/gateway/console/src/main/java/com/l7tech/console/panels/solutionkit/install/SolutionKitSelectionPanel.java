@@ -45,7 +45,7 @@ import static com.l7tech.gateway.common.solutionkit.SolutionKit.*;
 public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfig>  {
     private static final Logger logger = Logger.getLogger(SolutionKitSelectionPanel.class.getName());
     private static final String STEP_LABEL = "Select Solution Kit";
-    private static final String STEP_DESC = "Use the checkbox(es) to select the solution kit(s) to install.  Optionally highlight the solution kit row(s) to perform a button action.  For example to enable the Set Instance Modifier button.";
+    private static final String STEP_DESC = "Use the checkbox(es) to select the solution kit(s) to install or upgrade.  Optionally highlight the solution kit row(s) to perform a button action.";
     private final String[] tableColumnNames = {"", "Name", "Version", "Instance Modifier", "Description"};
 
     private JPanel mainPanel;
@@ -389,11 +389,8 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
     private void enableDisableInstanceModifierButton() {
         boolean enabled = false;
         final int selectedRows[] = solutionKitsTable.getSelectedRows();
-        int row;
-
-        for (int selectedRow : selectedRows) {
-            row = selectedRow;
-            if (isEditableOrEnabledAt(row)) {
+        for (final int selectedRow : selectedRows) {
+            if (isEditableOrEnabledAt(selectedRow)) {
                 enabled = true;
             } else {
                 enabled = false;
@@ -401,42 +398,47 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
             }
         }
 
-        // The button is enabled if at least one solution kit is selected and it must be available for install or upgrade.
+        // The button is enabled if at least one solution kit is selected and it must be available for install.
         instanceModifierButton.setEnabled(enabled);
     }
 
     private void initializeInstanceModifierButton() {
-        ActionListener[] actionListeners = instanceModifierButton.getActionListeners();
-        for (ActionListener actionListener: actionListeners) instanceModifierButton.removeActionListener(actionListener);
+        if (settings.isUpgrade()) {
+            instanceModifierButton.setVisible(false);
+        } else {
+            ActionListener[] actionListeners = instanceModifierButton.getActionListeners();
+            for (ActionListener actionListener : actionListeners)
+                instanceModifierButton.removeActionListener(actionListener);
 
-        // Instance modifier button only modifies the solution kits in highlighted rows
-        instanceModifierButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                final int[] selectedRows = solutionKitsTable.getSelectedRows();
-                if (selectedRows.length == 0) return;
+            // Instance modifier button only modifies the solution kits in highlighted rows
+            instanceModifierButton.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    final int[] selectedRows = solutionKitsTable.getSelectedRows();
+                    if (selectedRows.length == 0) return;
 
-                final List<SolutionKit> toBeModified = new ArrayList<>(selectedRows.length);
-                final SolutionKit[] solutionKitsLoadedArray = solutionKitsLoaded.toArray(new SolutionKit[solutionKitsLoaded.size()]);
-                for (int row : selectedRows) {
-                    toBeModified.add(solutionKitsLoadedArray[row]);
-                }
-
-                final SolutionKitInstanceModifierDialog instanceModifierDialog = new SolutionKitInstanceModifierDialog(
-                    TopComponents.getInstance().getTopParent(), toBeModified, settings
-                );
-                instanceModifierDialog.pack();
-                Utilities.centerOnParentWindow(instanceModifierDialog);
-                DialogDisplayer.display(instanceModifierDialog, new Runnable() {
-                    @Override
-                    public void run() {
-                        initializeSolutionKitsTable();
+                    final List<SolutionKit> toBeModified = new ArrayList<>(selectedRows.length);
+                    final SolutionKit[] solutionKitsLoadedArray = solutionKitsLoaded.toArray(new SolutionKit[solutionKitsLoaded.size()]);
+                    for (int row : selectedRows) {
+                        toBeModified.add(solutionKitsLoadedArray[row]);
                     }
-                });
-            }
-        });
 
-        enableDisableInstanceModifierButton();
+                    final SolutionKitInstanceModifierDialog instanceModifierDialog = new SolutionKitInstanceModifierDialog(
+                            TopComponents.getInstance().getTopParent(), toBeModified, settings
+                    );
+                    instanceModifierDialog.pack();
+                    Utilities.centerOnParentWindow(instanceModifierDialog);
+                    DialogDisplayer.display(instanceModifierDialog, new Runnable() {
+                        @Override
+                        public void run() {
+                            initializeSolutionKitsTable();
+                        }
+                    });
+                }
+            });
+
+            enableDisableInstanceModifierButton();
+        }
     }
 
     private void onManageLicenses() {

@@ -153,6 +153,11 @@ public class SolutionKitAdminImpl extends AsyncAdminMethodsImpl implements Solut
         return getSolutionKitAdminHelper().get(goid);
     }
 
+    @Override
+    public SolutionKit get(@NotNull String guid, @Nullable String instanceModifier) throws FindException {
+        return getSolutionKitAdminHelper().get(guid, instanceModifier);
+    }
+
     @NotNull
     @Override
     public Goid save(@NotNull SolutionKit solutionKit) throws SaveException {

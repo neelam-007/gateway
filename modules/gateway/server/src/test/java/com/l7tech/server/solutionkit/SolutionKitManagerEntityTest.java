@@ -3,6 +3,7 @@ package com.l7tech.server.solutionkit;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.solutionkit.EntityOwnershipDescriptor;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
+import com.l7tech.gateway.common.solutionkit.SolutionKitBuilder;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.EntityHeaderRef;
 import com.l7tech.objectmodel.EntityType;
