@@ -107,10 +107,10 @@ public class PortalDeployerClientConfigurationManagerTest {
 
   @Test
   public void test_getCallbackLocation() throws Exception {
-    portalDeployerClientConfigurationManager.getCallbackLocation(null);
+    portalDeployerClientConfigurationManager.getSuccessCallbackLocation(null);
 
     verify(clusterPropertyManager, times(1)).
-            getProperty(eq(PortalDeployerClientConfigurationManagerImpl.PD_DEPLOY_CALLBACK_LOCATION));
+            getProperty(eq(PortalDeployerClientConfigurationManagerImpl.PD_DEPLOY_SUCCESS_CALLBACK_LOCATION));
   }
 
   @Test
@@ -123,9 +123,9 @@ public class PortalDeployerClientConfigurationManagerTest {
 
   @Test
   public void test_getCallbackLocationWithEntity() throws Exception {
-    portalDeployerClientConfigurationManager.getCallbackLocation("API");
+    portalDeployerClientConfigurationManager.getErrorCallbackLocation("API");
 
     verify(clusterPropertyManager, times(1)).
-            getProperty(eq(PortalDeployerClientConfigurationManagerImpl.PD_DEPLOY_CALLBACK_LOCATION + ".api"));
+            getProperty(eq(PortalDeployerClientConfigurationManagerImpl.PD_DEPLOY_ERROR_CALLBACK_LOCATION + ".api"));
   }
 }

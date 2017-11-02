@@ -12,9 +12,12 @@ public class Message {
   private String targetLocation;
   private String targetOperation;
   private String targetContentType;
-  private String callbackLocation;
-  private String callbackOperation;
-  private String callbackContentType;
+  private String successCallbackLocation;
+  private String successCallbackOperation;
+  private String successCallbackContentType;
+  private String errorCallbackLocation;
+  private String errorCallbackOperation;
+  private String errorCallbackContentType;
   private String messageId;
   private String successStatus;
   private String errorStatus;
@@ -83,28 +86,52 @@ public class Message {
     this.targetContentType = targetContentType;
   }
 
-  public String getCallbackLocation() {
-    return callbackLocation;
+  public String getSuccessCallbackLocation() {
+    return successCallbackLocation;
   }
 
-  public void setCallbackLocation(String callbackLocation) {
-    this.callbackLocation = callbackLocation;
+  public void setSuccessCallbackLocation(String successCallbackLocation) {
+    this.successCallbackLocation = successCallbackLocation;
   }
 
-  public String getCallbackOperation() {
-    return callbackOperation;
+  public String getSuccessCallbackOperation() {
+    return successCallbackOperation;
   }
 
-  public void setCallbackOperation(String callbackOperation) {
-    this.callbackOperation = callbackOperation;
+  public void setSuccessCallbackOperation(String successCallbackOperation) {
+    this.successCallbackOperation = successCallbackOperation;
   }
 
-  public String getCallbackContentType() {
-    return callbackContentType;
+  public String getSuccessCallbackContentType() {
+    return successCallbackContentType;
   }
 
-  public void setCallbackContentType(String callbackContentType) {
-    this.callbackContentType = callbackContentType;
+  public void setSuccessCallbackContentType(String successCallbackContentType) {
+    this.successCallbackContentType = successCallbackContentType;
+  }
+
+  public String getErrorCallbackLocation() {
+    return errorCallbackLocation;
+  }
+
+  public void setErrorCallbackLocation(String errorCallbackLocation) {
+    this.errorCallbackLocation = errorCallbackLocation;
+  }
+
+  public String getErrorCallbackOperation() {
+    return errorCallbackOperation;
+  }
+
+  public void setErrorCallbackOperation(String errorCallbackOperation) {
+    this.errorCallbackOperation = errorCallbackOperation;
+  }
+
+  public String getErrorCallbackContentType() {
+    return errorCallbackContentType;
+  }
+
+  public void setErrorCallbackContentType(String errorCallbackContentType) {
+    this.errorCallbackContentType = errorCallbackContentType;
   }
 
   public String getMessageId() {

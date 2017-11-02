@@ -9,19 +9,29 @@ import java.util.Map;
  */
 public class TestConfig implements PortalDeployerClientConfigurationManager {
   private String ingressHost;
+  private String ingressPort = "443";
   private Map<String, String> targetLocations = new HashMap();
-  private Map<String, String> callbackLocations = new HashMap();
+  private Map<String, String> successCallbackLocations = new HashMap();
+  private Map<String, String> errorCallbackLocations = new HashMap();
 
   public void setIngressHost(String ingressHost) {
     this.ingressHost = ingressHost;
+  }
+
+  public void setIngressPort(String ingressPort) {
+    this.ingressPort = ingressPort;
   }
 
   public void setTargetLocation(String entity, String targetLocation) {
     targetLocations.put(entity, targetLocation);
   }
 
-  public void setCallbackLocation(String entity, String callbackLocation) {
-    callbackLocations.put(entity, callbackLocation);
+  public void setSuccessCallbackLocation(String entity, String callbackLocation) {
+    successCallbackLocations.put(entity, callbackLocation);
+  }
+
+  public void setErrorCallbackLocation(String entity, String callbackLocation) {
+    errorCallbackLocations.put(entity, callbackLocation);
   }
 
   @Override
@@ -36,7 +46,7 @@ public class TestConfig implements PortalDeployerClientConfigurationManager {
 
   @Override
   public String getIngressPort() {
-    return "443";
+    return ingressPort;
   }
 
   @Override
@@ -85,8 +95,13 @@ public class TestConfig implements PortalDeployerClientConfigurationManager {
   }
 
   @Override
-  public String getCallbackLocation(String entity) {
-    return callbackLocations.get(entity);
+  public String getSuccessCallbackLocation(String entity) {
+    return successCallbackLocations.get(entity);
+  }
+
+  @Override
+  public String getErrorCallbackLocation(String entity) {
+    return errorCallbackLocations.get(entity);
   }
 
   @Override
