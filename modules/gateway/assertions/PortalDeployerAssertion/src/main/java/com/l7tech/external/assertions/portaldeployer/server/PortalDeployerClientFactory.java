@@ -22,7 +22,7 @@ public class PortalDeployerClientFactory {
         String.format("%s_%s_%s",
                 configurationManager.getTenantId(),
                 configurationManager.getTenantGatewayUuid(),
-                "1"),
+                configurationManager.getUniqueClientId()),
         String.format("%s/api/cmd/deploy/tenantGatewayUuid/%s",
                 configurationManager.getTenantId(),
                 configurationManager.getTenantGatewayUuid()),
