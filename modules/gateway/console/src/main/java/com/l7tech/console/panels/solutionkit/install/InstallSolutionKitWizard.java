@@ -44,7 +44,7 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
     public static InstallSolutionKitWizard getInstance(@NotNull ManageSolutionKitsDialog parent, @Nullable SolutionKit solutionKitToUpgrade) throws FindException {
         final SolutionKitResolveMappingErrorsPanel third = new SolutionKitResolveMappingErrorsPanel();
 
-        final SolutionKitSelectionPanel second = new SolutionKitSelectionPanel();
+        final SolutionKitSelectionPanel second = new SolutionKitSelectionPanel(solutionKitToUpgrade);
         second.setNextPanel(third);
 
         final SolutionKitLoadPanel first = new SolutionKitLoadPanel();

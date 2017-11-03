@@ -62,10 +62,12 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
     private final Map<SolutionKit, Mappings> testMappings = new HashMap<>();
     private Set<SolutionKit> solutionKitsLoaded = new TreeSet<>();
     private Set<SolutionKit> solutionKitsSelected = new TreeSet<>();
+    private SolutionKit solutionKitToUpgrade;
 
-    public SolutionKitSelectionPanel() {
+    public SolutionKitSelectionPanel(SolutionKit solutionKitToUpgrade) {
         super(null);
         solutionKitAdmin = Registry.getDefault().getSolutionKitAdmin();
+        this.solutionKitToUpgrade = solutionKitToUpgrade;
         initialize();
     }
 
@@ -445,18 +447,18 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
     private boolean isEditableOrEnabledAt(final int index) {
         if (!settings.isUpgrade()) {
             return true;
-
-        // Check if the solutionKitsToUpgrade is size 2 which means it contains a parent and a child Solution Kit. All other
-        // scenarios should just return true.
-        } else if (settings.getSolutionKitsToUpgrade().size() == 2) {
-
-            final SolutionKit currentSkToEnableDisable = getSolutionKitAt(index);
-            return (currentSkToEnableDisable != null &&
-                    // Check if the Solution Kit selected for upgrade matches the specified Solution Kit in the grid that should be enabled.
-                    settings.getSolutionKitToUpgrade(currentSkToEnableDisable.getSolutionKitGuid()) != null);
-        }
-        else {
-            return true;
+        } else {
+            // upgrade scenario.
+            if (solutionKitToUpgrade.getParentGoid() == null) {
+                // a parent Solution Kit was selected. Show them all.
+                return true;
+            } else {
+                // a child Solution Kit was selected.
+                final SolutionKit currentSkToEnableDisable = getSolutionKitAt(index);
+                return (currentSkToEnableDisable != null &&
+                        // Show the child only if the GUID matches the one already installed.
+                        settings.getSolutionKitToUpgrade(currentSkToEnableDisable.getSolutionKitGuid()) != null);
+            }
         }
     }
 
