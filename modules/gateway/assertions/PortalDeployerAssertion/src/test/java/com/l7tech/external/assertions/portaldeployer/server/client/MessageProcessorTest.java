@@ -82,7 +82,7 @@ public class MessageProcessorTest {
     String callbackUrl = "https://{INGRESS_HOST}:8443/callback";
     message1.setSourceLocation(sourceUrl);
     message1.setSuccessCallbackLocation(callbackUrl);
-    message1.setSuccessStatus("PENDING_DELETE");
+    message1.setSuccessCallbackStatus("PENDING_DELETE");
     List<Message> messageList = new ArrayList<>();
     messageList.add(message1);
     testMessages.setMessages(messageList);
@@ -151,7 +151,7 @@ public class MessageProcessorTest {
     String callbackUrl = "https://{INGRESS_HOST}:8443/callback";
     message1.setSourceLocation(sourceUrl);
     message1.setSuccessCallbackLocation(callbackUrl);
-    message1.setErrorStatus("FAILED_OPERATION");
+    message1.setErrorCallbackStatus("FAILED_OPERATION");
     List<Message> messageList = new ArrayList<>();
     messageList.add(message1);
     testMessages.setMessages(messageList);
@@ -363,7 +363,7 @@ public class MessageProcessorTest {
     message1.setEntity("API");
     message1.setSourceLocation(sourceUrl);
     message1.setSuccessCallbackLocation(callbackUrl);
-    message1.setErrorStatus("HAS_ERROR");
+    message1.setErrorCallbackStatus("HAS_ERROR");
     List<Message> messageList = new ArrayList<>();
     messageList.add(message1);
     testMessages.setMessages(messageList);

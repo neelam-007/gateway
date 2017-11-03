@@ -19,8 +19,8 @@ public class Message {
   private String errorCallbackOperation;
   private String errorCallbackContentType;
   private String messageId;
-  private String successStatus;
-  private String errorStatus;
+  private String successCallbackStatus;
+  private String errorCallbackStatus;
 
   public String getEntity() {
     return entity;
@@ -142,19 +142,19 @@ public class Message {
     this.messageId = messageId;
   }
 
-  public String getSuccessStatus() {
-    return successStatus;
+  public String getSuccessCallbackStatus() {
+    return successCallbackStatus;
   }
 
-  public void setSuccessStatus(String successStatus) {
-    this.successStatus = successStatus;
+  public void setSuccessCallbackStatus(String successCallbackStatus) {
+    this.successCallbackStatus = successCallbackStatus;
   }
 
-  public String getErrorStatus() {
-    return errorStatus;
+  public String getErrorCallbackStatus() {
+    return errorCallbackStatus;
   }
 
-  public void setErrorStatus(String errorStatus) {
-    this.errorStatus = errorStatus;
+  public void setErrorCallbackStatus(String errorCallbackStatus) {
+    this.errorCallbackStatus = errorCallbackStatus;
   }
 }

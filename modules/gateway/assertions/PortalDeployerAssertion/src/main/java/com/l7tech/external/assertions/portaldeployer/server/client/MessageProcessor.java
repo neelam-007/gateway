@@ -166,11 +166,11 @@ public class MessageProcessor {
     if (isEmpty(message.getErrorCallbackContentType())) {
       message.setErrorCallbackContentType(CALLBACK_CONTENT_TYPE_DEFAULT);
     }
-    if (isEmpty(message.getErrorStatus())) {
-      message.setErrorStatus(ERROR_DEFAULT);
+    if (isEmpty(message.getErrorCallbackStatus())) {
+      message.setErrorCallbackStatus(ERROR_DEFAULT);
     }
-    if (isEmpty(message.getSuccessStatus())) {
-      message.setSuccessStatus(SUCCESS_DEFAULT);
+    if (isEmpty(message.getSuccessCallbackStatus())) {
+      message.setSuccessCallbackStatus(SUCCESS_DEFAULT);
     }
     //error callback defaults to success callback when not defined
     if (isEmpty(message.getErrorCallbackLocation())) {
@@ -214,7 +214,7 @@ public class MessageProcessor {
       CallbackDetailedDto callbackDetail = new CallbackDetailedDto();
       callbackDetail.setTargetLocation(tlocation);
       callbackDetail.setMessage(resp.getBody());
-      callbackDetail.setStatus(resp.getCode() < 400 ? message.getSuccessStatus() : message.getErrorStatus());
+      callbackDetail.setStatus(resp.getCode() < 400 ? message.getSuccessCallbackStatus() : message.getErrorCallbackStatus());
       if (resp.getCode() >= 400) {
         logger.log(Level.INFO, String.format("target request failed with response code %s, body %s", resp.getCode(), resp.getBody()));
       }
@@ -227,7 +227,7 @@ public class MessageProcessor {
     String[] callbackLocations;
     String contentType;
     String operation;
-    boolean success = targetRequestResults.stream().allMatch(c -> c.getStatus().equals(message.getSuccessStatus()));
+    boolean success = targetRequestResults.stream().allMatch(c -> c.getStatus().equals(message.getSuccessCallbackStatus()));
 
     if (success) {
       callbackLocations = message.getSuccessCallbackLocation().split(",");
@@ -240,7 +240,7 @@ public class MessageProcessor {
     }
     // prepare callback request body
     CallbackDto finalCallback = new CallbackDto();
-    finalCallback.setStatus(success ? message.getSuccessStatus() : message.getErrorStatus());
+    finalCallback.setStatus(success ? message.getSuccessCallbackStatus() : message.getErrorCallbackStatus());
     finalCallback.setMessage(mapper.writeValueAsString(targetRequestResults));
     String body = mapper.writeValueAsString(finalCallback);
 
