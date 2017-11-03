@@ -23,7 +23,7 @@ public class PortalDeployerClientFactory {
                 configurationManager.getTenantId(),
                 configurationManager.getTenantGatewayUuid(),
                 configurationManager.getUniqueClientId()),
-        String.format("%s/api/command/deploy/tenantGatewayUuid/%s",
+        String.format("%s/api/command/+/tenantGatewayUuid/%s",
                 configurationManager.getTenantId(),
                 configurationManager.getTenantGatewayUuid()),
         configurationManager.getBrokerConnectionTimeout(),
