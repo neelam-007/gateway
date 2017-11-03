@@ -66,16 +66,13 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
      * @throws JmsRuntimeException If an error occurs creating the resources
      */
     public void doWithJmsResources( final JmsEndpointConfig endpoint,
-                                    final JmsResourceCallback callback ) throws NamingException, JMSException, JmsRuntimeException {
+                                    final JmsResourceCallback callback ) throws NamingException, JMSException, JmsRuntimeException, NoSuchElementException {
         if ( !active.get() ) throw new JmsRuntimeException("JMS resource manager is stopped.");
 
         JmsSessionHolder sessionHolder = null;
         try {
             sessionHolder = getSessionHolder(endpoint);
             sessionHolder.doWithJmsResources( callback );
-        } catch ( JMSException e ) {
-            evict( connectionHolder, endpoint.getJmsEndpointKey(), sessionHolder );
-            throw e;
         } finally {
             try {
                 returnSessionHolder(endpoint, sessionHolder);
@@ -190,12 +187,16 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
      *
      * @param endpoint The configuration for the connection.
      */
-    public void invalidate( final JmsEndpointConfig endpoint ) {
+    public synchronized void invalidate( final JmsEndpointConfig endpoint ) {
         if ( active.get() ) {
             final JmsEndpointConfig.JmsEndpointKey key = endpoint.getJmsEndpointKey();
-            final CachedConnection conn = connectionHolder.remove(key);
-            if (  conn != null ) {
-                conn.close();
+            final CachedConnection conn = connectionHolder.get(key);
+            if(conn != null) {
+                if (!conn.isActive()) {
+                    logger.log(Level.FINE, "Removing CachedConnection with key " + key);
+                    conn.close();
+                    connectionHolder.remove(key);
+                }
             }
         }
     }
@@ -300,27 +301,6 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
         }
 
         connectionHolder.clear();
-    }
-
-
-
-    private static void evict( final ConcurrentHashMap<JmsEndpointConfig.JmsEndpointKey, CachedConnection> connectionHolder,
-                               final JmsEndpointConfig.JmsEndpointKey key,
-                               final JmsSessionHolder connection ) {
-        try {
-            CachedConnection conn = connectionHolder.get(key);
-            if(conn != null) {
-                conn.invalidate(connection);
-                if(!conn.isDisconnected()) {
-                    connectionHolder.remove(key);// remove closed entry
-                }
-            }
-            else {
-                logger.log(Level.WARNING, "Unable to evict. JMS connection with key" + key.toString() + " does not exist.");
-            }
-        } catch (Exception e) {
-            logger.log(Level.SEVERE, "Unable to close connection " + key.toString());
-        }
     }
 
     private void updateConfig() {

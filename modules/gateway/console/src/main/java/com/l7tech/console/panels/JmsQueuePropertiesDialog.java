@@ -361,7 +361,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
                 , DEFAULT_CONNECTION_POOL_SIZE), 1, 10000, 1)));
         inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(connectionPoolSizeSpinner, connectionPoolSizeLabel.getText()));
 
-        connectionMinIdleSpinner.setModel((new SpinnerNumberModel((Number) safeNumber(() -> Integer.valueOf(getClusterPropertyValue(CLUSTER_PROP_CONNECTION_MIN_IDLE, String.valueOf(DEFAULT_CONNECTION_POOL_SIZE)))
+        connectionMinIdleSpinner.setModel((new SpinnerNumberModel((Number) safeNumber(() -> Integer.valueOf(getClusterPropertyValue(CLUSTER_PROP_CONNECTION_MIN_IDLE, String.valueOf(DEFAULT_CONNECTION_POOL_MIN_IDLE)))
                 ,DEFAULT_CONNECTION_POOL_MIN_IDLE), 0, 10000, 1)));
         inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(connectionMinIdleSpinner, connectionMinIdleLabel.getText()));
 

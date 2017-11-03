@@ -97,7 +97,7 @@ public class SingleConnection implements CachedConnection {
 
     @Override
     public void debugStatus() {
-        logger.log(Level.FINE, "Active: " + singleConnection.refCount());
+        logger.log(Level.FINE, "Active: " + singleConnection.refCount() + " references ");
     }
 
     @Override

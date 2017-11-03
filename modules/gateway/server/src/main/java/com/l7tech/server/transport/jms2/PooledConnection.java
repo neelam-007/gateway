@@ -8,6 +8,7 @@ import org.apache.commons.pool.PoolableObjectFactory;
 import org.apache.commons.pool.impl.GenericObjectPool;
 
 import javax.naming.NamingException;
+import java.util.NoSuchElementException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
@@ -25,6 +26,7 @@ public class PooledConnection implements CachedConnection {
     private AtomicLong lastAccessTime = new AtomicLong(createdTime);
 
     public PooledConnection(final JmsEndpointConfig endpointConfig, JmsResourceManagerConfig cacheConfig) throws  Exception{
+        logger.log(Level.FINE, "Creating new PooledConnection object...");
         this.endpoint = endpointConfig;
         this.cacheConfig = cacheConfig;
         //set pool config initial properties. They are used even if the pool size is 0
@@ -79,11 +81,18 @@ public class PooledConnection implements CachedConnection {
     @Override
     public synchronized JmsSessionHolder borrowConnection() throws JmsRuntimeException {
         try {
-            JmsSessionHolder sessionHolder =  pool.borrowObject();
-            if(sessionHolder == null) throw new Exception("Unable to borrow");
             touch();
+            JmsSessionHolder sessionHolder = pool.borrowObject();
+            if (sessionHolder == null) {
+                logger.log(Level.FINE, "Unable to borrow JmsSessionHolder from the pool!");
+                throw new NoSuchElementException("Unable to borrow");
+            }
             return sessionHolder;
+        } catch (NoSuchElementException nse) {
+            logger.log(Level.FINE, "Max Wait expired!");
+            throw nse;
         } catch ( Exception e ) {
+            logger.log(Level.FINEST, "Unable to borrow connection", e);
             throw new JmsRuntimeException(e);
         }
     }
@@ -93,6 +102,7 @@ public class PooledConnection implements CachedConnection {
         try {
             pool.returnObject(connection);
         } catch (Exception e) {
+            logger.log(Level.FINEST, "Unable to return connection", e);
             throw new JmsRuntimeException(e);
         }
     }
@@ -106,7 +116,6 @@ public class PooledConnection implements CachedConnection {
     public void close() {
         try {
             pool.close();
-            logger.log(Level.FINE, "Closed pool " + endpoint.getDisplayName());
         } catch (Exception e) {
             logger.log(Level.FINE, "Unable to close the pool: ", e);
         }
@@ -153,9 +162,9 @@ public class PooledConnection implements CachedConnection {
 
     @Override
     public void invalidate(JmsSessionHolder connection) throws Exception {
-        pool.invalidateObject(connection);
-        logger.log(Level.FINE, "Invalidated object " + connection.getName());
-    }
+        if(connection != null)
+            pool.invalidateObject(connection);
+     }
 
     @Override
     public boolean isDisconnected() {

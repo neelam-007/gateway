@@ -29,7 +29,6 @@ import com.l7tech.server.transport.jms2.JmsEndpointConfig;
 import com.l7tech.server.transport.jms2.JmsResourceManager;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.util.*;
-import com.mchange.v1.util.DebugUtils;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
@@ -41,12 +40,7 @@ import javax.naming.CommunicationException;
 import javax.naming.NamingException;
 import java.io.IOException;
 import java.lang.IllegalStateException;
-import java.util.Collection;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -172,10 +166,24 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
             while ( true ) {
                 final JmsRoutingCallback jrc = new JmsRoutingCallback(context, cfg, inboundDestinationHolder);
                 try {
-                    jmsResourceManager.doWithJmsResources( cfg, jrc );
+                    jmsResourceManager.doWithJmsResources(cfg, jrc);
                     jrc.doException();
                     break; // no error
+                } catch(NoSuchElementException pe) {
+                    if ( jrc.isMessageSent() ) {
+                        throw pe;
+                    }
+
+                    if (++oopses < maxOopses) {
+                        logAndAudit(AssertionMessages.JMS_ROUTING_CANT_CONNECT_RETRYING, new String[] {String.valueOf(oopses), String.valueOf(retryDelay)}, getDebugException( pe ));
+                        sleep( retryDelay );
+                    } else {
+                        logAndAudit(AssertionMessages.JMS_ROUTING_CANT_CONNECT_NOMORETRIES, String.valueOf(maxOopses));
+                        // Catcher will log/audit the stack trace
+                        return AssertionStatus.FAILED;
+                    }
                 } catch (JmsRuntimeException jre) {
+                    logger.log(Level.FINE, "JmsRuntimeException thrown", jre);
                     if ( jrc.isMessageSent() ) {
                         throw jre.getCause() != null ? jre.getCause() : jre;
                     }
@@ -190,6 +198,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                         throw jre.getCause() != null ? jre.getCause() : jre;
                     }
                 } catch (JMSException e) {
+                    logger.log(Level.FINE, "JMSException thrown", e);
                     if ( jrc.isMessageSent()) {
                         throw e;
                     }
@@ -213,6 +222,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                         throw e;
                     }
                 } catch (NamingException nex) {
+                    logger.log(Level.FINE, "NamingException thrown", nex);
                     if ( jrc.isMessageSent() ) {
                         throw nex; // this is an error, there should be no possibility of a NamingException after message send
                     }
