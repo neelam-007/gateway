@@ -925,70 +925,43 @@ public class SolutionKitManagerResource {
             candidateGuidList.add(solutionKit.getSolutionKitGuid());
         }
 
-        // Update the upgrade list from SolutionKitConfig based on user's selection, a list of solutionKitSelect (i,e., selectedGuidList).
-        // If some of children are selected, then the upgrade list should be shrunk.
+        // Generate a selected and loaded solution kit list, based on user selection and the skar file uploaded.
+        final Map<String, SolutionKit> loadedSolutionKitMap = new HashMap<>(); // A map to keep references of GUID and uploaded SolutionKit
+        for (final SolutionKit loadedSolutionKit : solutionKitsConfig.getLoadedSolutionKits().keySet()) {
+            loadedSolutionKitMap.put(loadedSolutionKit.getSolutionKitGuid(), loadedSolutionKit);
+        }
+
         final boolean isParent = SolutionKitUtils.isParentSolutionKit(solutionKitForUpgrade);
 
         // Case: Choose a parent and some child solution kits to upgrade
         if (isParent && !selectedGuidList.isEmpty()) {
-            // First check whether selected solution kits are acceptable for upgrade.
-            for (final String selectedGuid: selectedGuidList) {
-                if (! candidateGuidList.contains(selectedGuid)) {
-                    throw new SolutionKitManagerResourceException(status(NOT_ACCEPTABLE).entity("The solution kit (GUID='"
-                        + selectedGuid + "', Instance Modifier='" + InstanceModifier.getDisplayName(instanceModifier) + "') " +
-                        "is not a child solution kit of '" + solutionKitForUpgrade.getName() + "' and cannot be selected " +
-                        "for upgrade." + lineSeparator()).build());
-                }
-            }
-            // Update the upgrade list, "solutionKitsToUpgrade" based on selectedGuidList.
-            if (selectedGuidList.size() < candidateGuidList.size()) {
-                final Iterator<SolutionKit> iterator = solutionKitsToUpgrade.iterator();
-                while (iterator.hasNext()) {
-                    // Do not remove the parent from the upgrade list, b/c when selectedGuidList is generated, parent is not put into selectedGuidList.
-                    final SolutionKit candidate = iterator.next();
-                    if (SolutionKitUtils.isParentSolutionKit(candidate)) continue;
-
-                    if (! selectedGuidList.contains(candidate.getSolutionKitGuid())) {
-                        iterator.remove(); // Remove the candidate b/c it is not selected by user.
-                    }
-                }
-            }
-            // Everything is ok, then assign the final selection list, finalSelectedGuidList
             finalSelectedGuidList.addAll(selectedGuidList);
         }
         // Case: Choose a parent with all children to upgrade
         else if (isParent) {
-            finalSelectedGuidList.addAll(candidateGuidList);
+            // All loaded SK list will be a selected list.
+            finalSelectedGuidList.addAll(loadedSolutionKitMap.keySet());
         }
         // Case: Choose a child solution kit to upgrade
         else if (candidateGuidList.size() == 2) {
-            finalSelectedGuidList.add(candidateGuidList.get(1)); // The first element in candidateGuidList is a parent GUID.
+            finalSelectedGuidList.add(candidateGuidList.get(1)); // b/c the first element in the upgrade candidate list is a parent.
         }
         // Case: Choose a non-parent and non-child solution kit to upgrade
         else {
             finalSelectedGuidList.addAll(candidateGuidList); // In this case, candidateGuidList should have one element.
         }
 
-        // Generate a selected and loaded solution kit list, based on user selection and the skar file uploaded.
-        final Map<String, SolutionKit> loadedSolutionKitMap = new HashMap<>(); // A map to keep references of GUID and uploaded SolutionKit
-        for (final SolutionKit loadedSolutionKit : solutionKitsConfig.getLoadedSolutionKits().keySet()) {
-            loadedSolutionKitMap.put(loadedSolutionKit.getSolutionKitGuid(), loadedSolutionKit);
-        }
+        // Use selected solution kits to update the loaded solution kits with new attributes such as instance modifier and custom context.
         final Set<SolutionKit> selectedLoadedSolutionKits = new TreeSet<>();
         final Set<String> loadedGuidSet = loadedSolutionKitMap.keySet();
-
-        // Use selected solution kits to update the loaded solution kits with new attributes such as instance modifier and custom context.
-        final String parentGuid = isParent? solutionKitForUpgrade.getSolutionKitGuid() : null;
         for (final String selectedGuid: finalSelectedGuidList) {
-            // First skip checking on parent solution kit, since the loaded list never includes a parent.
-            if (selectedGuid.equals(parentGuid)) continue;
-
             // If any solution kit from the uploaded skar couldn't be found to match the selected solution kit for upgrade, throw exception.
             if (! loadedGuidSet.contains(selectedGuid)) {
                 throw new SolutionKitManagerResourceException(status(NOT_FOUND).entity("There isn't any solution kit in " +
                     "the uploaded skar to match a selected solution kit (GUID='" + selectedGuid + "', Instance " +
                     "Modifier='" + InstanceModifier.getDisplayName(instanceModifier) + "')" + lineSeparator()).build());
             }
+
             final SolutionKit loadedSK = loadedSolutionKitMap.get(selectedGuid);
             loadedSK.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, instanceModifier);
             InstanceModifier.setCustomContext(solutionKitsConfig, loadedSK);

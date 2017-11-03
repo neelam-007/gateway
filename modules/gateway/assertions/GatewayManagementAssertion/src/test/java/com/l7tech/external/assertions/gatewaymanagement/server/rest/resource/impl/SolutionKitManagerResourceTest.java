@@ -1385,38 +1385,11 @@ public class SolutionKitManagerResourceTest {
     public void selectSolutionKitsForUpgradeFail() throws Exception {
         initializeSolutionKits();
 
-        /////////////////////////////////////////////////////////
-        // Selected SK is not in the upgrade candidate SK list //
-        /////////////////////////////////////////////////////////
-
-        // Select a fake solution kit for upgrade
-        final List<String> selectedGuidList = new ArrayList<>();
-        selectedGuidList.add("A_FAKE_GUID");
-
-        final List<SolutionKit> upgradeList = new ArrayList<>(solutionKitList.size());
-        for (final SolutionKit sk: solutionKitList) upgradeList.add(sk);
-
-        when(solutionKitsConfig.getSolutionKitsToUpgrade()).thenReturn(upgradeList);
-
-        try {
-            solutionKitResource.setSelectedSolutionKitsForUpgrade(solutionKitList.get(0), "im1", selectedGuidList, solutionKitsConfig);
-            fail("SolutionKitManagerResourceException should be thrown since the selected soluition kit is not in the candidate list.");
-        } catch (SolutionKitManagerResource.SolutionKitManagerResourceException e) {
-            final Response response = e.getResponse();
-            assertNotNull(response);
-            assertTrue("Checking response status", response.getStatus() == Response.Status.NOT_ACCEPTABLE.getStatusCode());
-            assertEquals(
-                "Checking response message",
-                "The solution kit (GUID='A_FAKE_GUID', Instance Modifier='im1') is not a child solution kit of 'parent' and cannot be selected for upgrade." + System.lineSeparator(),
-                response.getEntity()
-            );
-        }
-
         //////////////////////////////////////////////
         // Selected SK is not in the loaded SK list //
         //////////////////////////////////////////////
 
-        selectedGuidList.clear();
+        final List<String> selectedGuidList = new ArrayList<>();
         selectedGuidList.add(solutionKitList.get(1).getSolutionKitGuid());
         selectedGuidList.add(solutionKitList.get(2).getSolutionKitGuid());
         selectedGuidList.add(solutionKitList.get(3).getSolutionKitGuid());
@@ -1426,7 +1399,7 @@ public class SolutionKitManagerResourceTest {
         loadedSolutionKits.put(createLoadedSolutionKit(solutionKitList.get(1)), null);
         loadedSolutionKits.put(createLoadedSolutionKit(solutionKitList.get(2)), null);
 
-        upgradeList.clear();
+        final List<SolutionKit> upgradeList = new ArrayList<>(solutionKitList.size());
         for (final SolutionKit sk: solutionKitList) upgradeList.add(sk);
 
         when(solutionKitsConfig.getSolutionKitsToUpgrade()).thenReturn(upgradeList);

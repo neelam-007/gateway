@@ -63,7 +63,6 @@ public class SolutionKitProcessor {
     public void testUpgrade(@NotNull final Functions.UnaryVoidThrows<SolutionKitImportInfo, Throwable> doTestUpgrade) throws Throwable {
         //selectedSolutionKits should be ordered because it is a treeset
         final List<SolutionKit> selectedSolutionKits = new ArrayList<>(solutionKitsConfig.getSelectedSolutionKits());
-        final SolutionKitImportInfo solutionKitImportInfo = collectSolutionKitInformation(selectedSolutionKits);
 
         final SolutionKit uploadedParentSolutionKit = solutionKitsConfig.getParentSolutionKitLoaded(); // Note: The parent solution kit has a dummy default GOID.
         validateUploadedParentSKOnUpgrade(uploadedParentSolutionKit);
@@ -73,6 +72,9 @@ public class SolutionKitProcessor {
             // Update resolved mapping target IDs.
             solutionKitsConfig.setMappingTargetIdsFromResolvedIds(solutionKit);
         }
+
+        // After resolve targetId for mapping in Bundle, then collect import information
+        final SolutionKitImportInfo solutionKitImportInfo = collectSolutionKitInformation(selectedSolutionKits);
         doTestUpgrade.call(solutionKitImportInfo);
     }
 
