@@ -103,10 +103,10 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
                     try {
                         if(!endpoint.getEndpoint().isMessageSource()
                                 && Boolean.valueOf(endpoint.getConnection().properties().getProperty(JmsConnection.PROP_CONNECTION_POOL_ENABLE, Boolean.FALSE.toString()))) {
-                            conn = new PooledConnection(endpoint, cacheConfigReference.get());
+                            conn = new PooledConnection(endpoint, getAndValidateConnectionPoolClusterProperties());
                         }
                         else {
-                            conn = new SingleConnection(endpoint, cacheConfigReference.get());
+                            conn = new SingleConnection(endpoint, getAndValidateSessionPoolClusterProperties());
                         }
                     } catch ( Exception e ) {
                         throw new JmsRuntimeException(e);
@@ -303,36 +303,63 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
         connectionHolder.clear();
     }
 
-    private void updateConfig() {
-        logger.config( "(Re)loading cache configuration." );
-
-        final long maximumAge = config.getTimeUnitProperty( "ioJmsConnectionCacheMaxAge", DEFAULT_CONNECTION_MAX_AGE );
+    public JmsResourceManagerConfig getAndValidateConnectionPoolClusterProperties() {
         final long maximumIdleTime = config.getTimeUnitProperty( "ioJmsConnectionCacheMaxIdleTime", DEFAULT_CONNECTION_MAX_IDLE );
         final long idleTime = config.getTimeUnitProperty("ioJmsConnectionIdleTime", DEFAULT_CONNECTION_IDLE_TIME);
-        final int maximumSize = config.getIntProperty( "ioJmsConnectionCacheSize", DEFAULT_CONNECTION_CACHE_SIZE );
         final int maximumPoolSize = config.getIntProperty("ioJmsConnectionPoolSize", JmsConnection.DEFAULT_CONNECTION_POOL_SIZE);
         final int minimumConnectionIdle = config.getIntProperty("ioJmsConnectionMinIdle", JmsConnection.DEFAULT_CONNECTION_POOL_SIZE);
         final long maximumWait = config.getTimeUnitProperty("ioJmsConnectionMaxWait", JmsConnection.DEFAULT_CONNECTION_POOL_MAX_WAIT);
         final long timeBetweenEvictions = config.getTimeUnitProperty("ioJmsConnectionTimeBetweenEviction", JmsConnection.DEFAULT_CONNECTION_POOL_EVICT_INTERVAL);
         final int evictionBatchSize = config.getIntProperty("ioJmsConnectionEvictionBatchSize", JmsConnection.DEFAULT_CONNECTION_POOL_SIZE);
-        final int sessionPoolSize = config.getIntProperty("ioJmsSessionPoolSize", JmsConnection.DEFAULT_SESSION_POOL_SIZE);
-        final int sessionMaxIdle = config.getIntProperty("ioJmsSessionMaxIdle", JmsConnection.DEFAULT_SESSION_POOL_SIZE);
-        final long sessionMaxWait = config.getTimeUnitProperty("ioJmsSessionMaxWait", JmsConnection.DEFAULT_SESSION_POOL_MAX_WAIT);
 
-        cacheConfigReference.set(
-                new JmsResourceManagerConfig(
-                rangeValidate(maximumAge, DEFAULT_CONNECTION_MAX_AGE, 0L, Long.MAX_VALUE, "JMS Connection Maximum Age" ),
-                rangeValidate(maximumIdleTime, DEFAULT_CONNECTION_MAX_IDLE, 0L, Long.MAX_VALUE, "JMS Connection Maximum Idle" ),
+        return new JmsResourceManagerConfig(
+                0L,
+                rangeValidate(maximumIdleTime, DEFAULT_CONNECTION_MAX_IDLE, 0L, Long.MAX_VALUE, "JMS Connection Maximum Idle"),
                 rangeValidate(idleTime, DEFAULT_CONNECTION_IDLE_TIME, 0L, Long.MAX_VALUE, "JMS Pool Soft Idle Timeout"),
-                rangeValidate(maximumSize, DEFAULT_CONNECTION_CACHE_SIZE, 0, Integer.MAX_VALUE, "JMS Connection Cache Size" ),
-                rangeValidate(maximumPoolSize, JmsConnection.DEFAULT_CONNECTION_POOL_SIZE, 1, 10000, "JMS Connection Pool Size" ),
+                0,
+                rangeValidate(maximumPoolSize, JmsConnection.DEFAULT_CONNECTION_POOL_SIZE, 1, 10000, "JMS Connection Pool Size"),
                 rangeValidate(minimumConnectionIdle, JmsConnection.DEFAULT_CONNECTION_POOL_SIZE, 0, 10000, "JMS Connection Min Idle"),
                 rangeValidate(maximumWait, JmsConnection.DEFAULT_CONNECTION_POOL_MAX_WAIT, -1L, Long.MAX_VALUE, "JMS Connection Maximum Wait"),
                 rangeValidate(timeBetweenEvictions, JmsConnection.DEFAULT_CONNECTION_POOL_EVICT_INTERVAL, 0L, Long.MAX_VALUE, "JMS Connection Pool Time Between Eviction"),
                 rangeValidate(evictionBatchSize, JmsConnection.DEFAULT_CONNECTION_POOL_SIZE, 1, 10000, "JMS Connection Eviction Batch Size"),
+                0,
+                0,
+                0L);
+    }
+
+    public JmsResourceManagerConfig getAndValidateSessionPoolClusterProperties() {
+        final long maximumIdleTime = config.getTimeUnitProperty( "ioJmsConnectionCacheMaxIdleTime", DEFAULT_CONNECTION_MAX_IDLE );
+        final int sessionPoolSize = config.getIntProperty("ioJmsSessionPoolSize", JmsConnection.DEFAULT_SESSION_POOL_SIZE);
+        final int sessionMaxIdle = config.getIntProperty("ioJmsSessionMaxIdle", JmsConnection.DEFAULT_SESSION_POOL_SIZE);
+        final long sessionMaxWait = config.getTimeUnitProperty("ioJmsSessionMaxWait", JmsConnection.DEFAULT_SESSION_POOL_MAX_WAIT);
+        return new JmsResourceManagerConfig(
+                0L,
+                rangeValidate(maximumIdleTime, DEFAULT_CONNECTION_MAX_IDLE, 0L, Long.MAX_VALUE, "JMS Connection Maximum Idle"),
+                0L,
+                0,
+                0,
+                0,
+                0L,
+                0L,
+                0,
                 rangeValidate(sessionPoolSize, JmsConnection.DEFAULT_SESSION_POOL_SIZE, -1, Integer.MAX_VALUE, "JMS Session Pool Size"),
                 rangeValidate(sessionMaxIdle, JmsConnection.DEFAULT_SESSION_POOL_SIZE, -1, Integer.MAX_VALUE, "JMS Session Max Idle"),
-                rangeValidate(sessionMaxWait, JmsConnection.DEFAULT_SESSION_POOL_MAX_WAIT, -1L, Long.MAX_VALUE, "JMS Session Max Wait"))
+                rangeValidate(sessionMaxWait, JmsConnection.DEFAULT_SESSION_POOL_MAX_WAIT, -1L, Long.MAX_VALUE, "JMS Session Max Wait"));
+    }
+
+
+    private void updateConfig() {
+        logger.config( "(Re)loading cache configuration." );
+
+        final long maximumAge = config.getTimeUnitProperty( "ioJmsConnectionCacheMaxAge", DEFAULT_CONNECTION_MAX_AGE );
+        final long maximumIdleTime = config.getTimeUnitProperty( "ioJmsConnectionCacheMaxIdleTime", DEFAULT_CONNECTION_MAX_IDLE );
+        final int maximumSize = config.getIntProperty( "ioJmsConnectionCacheSize", DEFAULT_CONNECTION_CACHE_SIZE );
+
+        cacheConfigReference.set(
+                new JmsResourceManagerConfig(
+                        rangeValidate(maximumAge, DEFAULT_CONNECTION_MAX_AGE, 0L, Long.MAX_VALUE, "JMS Connection Maximum Age"),
+                        rangeValidate(maximumIdleTime, DEFAULT_CONNECTION_MAX_IDLE, 0L, Long.MAX_VALUE, "JMS Connection Maximum Idle"),
+                        rangeValidate(maximumSize, DEFAULT_CONNECTION_CACHE_SIZE, 0, Integer.MAX_VALUE, "JMS Connection Cache Size"))
         );
     }
 

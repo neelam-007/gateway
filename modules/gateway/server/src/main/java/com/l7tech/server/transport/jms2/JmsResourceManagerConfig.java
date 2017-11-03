@@ -32,6 +32,10 @@ public class JmsResourceManagerConfig {
         this.sessionMaxWait = sessionMaxWait;
     }
 
+    public JmsResourceManagerConfig(final long maximumAge, final long maximumIdleTime, final int maximumSize) {
+        this(maximumAge, maximumIdleTime, 0, maximumSize, 0, 0, 0L, 0L, 0, 0, 0, 0L);
+    }
+
     public long getMaximumAge() {
         return maximumAge;
     }
