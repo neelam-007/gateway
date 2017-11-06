@@ -14,6 +14,7 @@ import com.l7tech.gui.util.*;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.Functions.Unary;
+import com.l7tech.util.ThreadPool;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -269,36 +270,59 @@ public class LogChooserWindow extends JFrame implements LogonListener {
     }
 
     private void loadLogs() {
+        final ClusterNodeInfo[] nodeInfos;
+        final Collection<SinkConfiguration> sinkConfigs;
         try {
             ClusterStatusAdmin clusterAdmin = getClusterAdmin();
             if (!flags.canReadSome() || clusterAdmin == null) {
                 // Not connected to Gateway, or no permission to read cluster status
-                logTableModel.setRows( Collections.<LogTableRow>emptyList() );
+                logTableModel.setRows(Collections.emptyList());
                 return;
             }
-            final ClusterNodeInfo[] nodeInfos = clusterAdmin.getClusterStatus();
-            final Collection<SinkConfiguration> sinkConfigs = Registry.getDefault().getLogSinkAdmin().findAllSinkConfigurations();
-            final List<LogTableRow> rows = new ArrayList<LogTableRow>();
-            for ( final ClusterNodeInfo nodeInfo : nodeInfos ){
-                for( final SinkConfiguration sinkConfig: sinkConfigs ){
-                    try{
-                        // try to get log files
-                        final Collection<LogFileInfo> files = Registry.getDefault().getLogSinkAdmin().findAllFilesForSinkByNode(nodeInfo.getNodeIdentifier(),sinkConfig.getGoid());
-                        rows.addAll( map( files, new Unary<LogTableRow, LogFileInfo>() {
-                            @Override
-                            public LogTableRow call( final LogFileInfo logFileInfo ) {
-                                return new LogTableRow(nodeInfo, sinkConfig, logFileInfo);
-                            }
-                        } ) );
-                    }catch(PermissionDeniedException e){
+            nodeInfos = clusterAdmin.getClusterStatus();
+            sinkConfigs = Registry.getDefault().getLogSinkAdmin().findAllSinkConfigurations();
+        } catch (FindException e) {
+            ErrorManager.getDefault().notify(Level.WARNING, e, "Error loading log listing");
+            return;
+        }
+        final List<LogTableRow> rows = new ArrayList<>();
+        if (!(nodeInfos.length == 0 || sinkConfigs.isEmpty())) {
+            final ThreadPool logGrabberPool = new ThreadPool("logGrabberPool", 1, nodeInfos.length * sinkConfigs.size(), (r, executor) -> {
+                if (!executor.isShutdown()) {
+                    try {
+                        executor.getQueue().put(r);
+                    } catch (InterruptedException e) {
                         // ignore
                     }
                 }
+            });
+            logGrabberPool.start();
+            try {
+                for (final ClusterNodeInfo nodeInfo : nodeInfos) {
+                    for (final SinkConfiguration sinkConfig : sinkConfigs) {
+                        logGrabberPool.submitTask(() -> {
+                            try {
+                                // try to get log files
+                                final Collection<LogFileInfo> files = Registry.getDefault().getLogSinkAdmin().findAllFilesForSinkByNode(nodeInfo.getNodeIdentifier(), sinkConfig.getGoid());
+                                rows.addAll(map(files, new Unary<LogTableRow, LogFileInfo>() {
+                                    @Override
+                                    public LogTableRow call(final LogFileInfo logFileInfo) {
+                                        return new LogTableRow(nodeInfo, sinkConfig, logFileInfo);
+                                    }
+                                }));
+                            } catch (PermissionDeniedException | FindException e) {
+                                // ignore
+                            }
+                        });
+                    }
+                }
+            } catch (ThreadPool.ThreadPoolShutDownException e) {
+                ErrorManager.getDefault().notify(Level.WARNING, e, "Error loading log listing");
+            } finally {
+                logGrabberPool.shutdown();
             }
-            logTableModel.setRows( rows );
-        } catch (FindException e) {
-            ErrorManager.getDefault().notify( Level.WARNING, e, "Error loading log listing" );
         }
+        logTableModel.setRows(rows);
     }
 
     /**
