@@ -901,7 +901,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
 
         //create/save dependent entities
         final EntityMappingInstructions.TargetMapping targetMapping = mapping.getTargetMapping();
-        beforeCreateOrUpdateEntities(entityContainer, existingEntity, (targetMapping != null && EntityMappingInstructions.TargetMapping.Type.ID.equals(targetMapping.getType())) ? id : null, resourceMapping);
+        beforeCreateOrUpdateEntities(entityContainer, existingEntity, (targetMapping != null && EntityMappingInstructions.TargetMapping.Type.ID.equals(targetMapping.getType())) ? id : null, resourceMapping, mapping);
 
         //if it is a mapping by name and the mapped name is set it should be preserved here. Or if the mapped GUID is set it should be preserved.
         if (targetMapping != null && targetMapping.getTargetID() != null) {
@@ -1126,7 +1126,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                     final User user = userManager.reify(userBean);
                                     if(user instanceof InternalUser && existingEntity instanceof InternalUser){
                                         ((InternalUser) user).setPasswordChangesHistory(((InternalUser) existingEntity).getPasswordChangesHistory());
-                                        passwordEnforcerManager.setUserPasswordPolicyAttributes((InternalUser)user, true);
+                                        passwordEnforcerManager.setUserPasswordPolicyAttributes((InternalUser)user, false);
                                     }
                                     if (user instanceof PersistentEntity && existingEntity instanceof PersistentEntity) {
                                         //need to set the version to the existing user version so it can update properly
@@ -1253,7 +1253,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
      * @param replacementMap  The replacement map is a map of EntityHeaders to replace.
      * @throws ObjectModelException
      */
-    private void beforeCreateOrUpdateEntities(@NotNull final EntityContainer entityContainer, @Nullable final Entity existingEntity, @Nullable final String targetId, @NotNull final Map<EntityHeader, EntityHeader> replacementMap) throws ObjectModelException, CannotReplaceDependenciesException {
+    private void beforeCreateOrUpdateEntities(@NotNull final EntityContainer entityContainer, @Nullable final Entity existingEntity, @Nullable final String targetId, @NotNull final Map<EntityHeader, EntityHeader> replacementMap, EntityMappingInstructions entityMappingInstructions) throws ObjectModelException, CannotReplaceDependenciesException {
         final Entity entity = entityContainer.getEntity();
 
         if (entityContainer instanceof JmsContainer) {
@@ -1435,17 +1435,22 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
         //if this is a user and the existing entity exists then preserve the existing entity login
         if(entity instanceof UserBean && existingEntity != null ) {
             if(existingEntity instanceof User){
-                ((UserBean) entity).setLogin(((User) existingEntity).getLogin());
-                if(existingEntity instanceof InternalUser) {
-                    //for internal users the name and login should match
-                    ((UserBean) entity).setName(((User) existingEntity).getName());
+                if (!Boolean.parseBoolean(entityMappingInstructions.getExtraMappingProperty("allowLoginChange"))) {
+                    ((UserBean) entity).setLogin(((User) existingEntity).getLogin());
+                    if (existingEntity instanceof InternalUser) {
+                        //for internal users the name and login should match
+                        ((UserBean) entity).setName(((User) existingEntity).getName());
+                    }
+                } else {
+                    if(!((UserBean) entity).getName().equals(((UserBean) entity).getLogin()))
+                        throw new IllegalStateException("An internal user name must match its login");
                 }
             } else {
                 //this should never happen
                 throw new IllegalStateException("A User entity was mapped to an entity that is not User: " + existingEntity.getClass());
             }
         }
-    }
+     }
 
     /**
      * This performs any necessary action after the entities have been updated.
