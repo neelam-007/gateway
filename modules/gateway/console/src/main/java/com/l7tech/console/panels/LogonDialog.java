@@ -3,15 +3,11 @@ package com.l7tech.console.panels;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.action.ChangePasswordAction;
 import com.l7tech.console.logging.ErrorManager;
-import com.l7tech.console.security.AuthenticationProvider;
-import com.l7tech.console.security.InvalidHostCertificateException;
-import com.l7tech.console.security.InvalidHostNameException;
-import com.l7tech.console.security.SecurityProvider;
+import com.l7tech.console.security.*;
 import com.l7tech.console.util.History;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SsmPreferences;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.security.VersionException;
 import com.l7tech.gateway.common.admin.AdminLogin;
 import com.l7tech.gui.FilterDocument;
 import com.l7tech.gui.TrustCertificateDialog;
@@ -755,6 +751,18 @@ public class LogonDialog extends JDialog {
                         ((MainWindow)parentFrame).enableOrDisableConnectionComponents(true);
                 }
             });
+            //check if policy manager and gateway versions are different. If they are, show a warning.
+            final Version gatewayVersion = GatewayInfoHolder.getInstance().getGatewayVersion();
+            final Version policyManagerVersion = PolicyManagerBuildInfo.getInstance().getPolicyManagerVersion();
+            if (gatewayVersion != null && !policyManagerVersion.equals(gatewayVersion)) {
+                final String msg = MessageFormat.format(resources.getString("logon.version.unsupported"), policyManagerVersion.toString(), gatewayVersion.toString());
+                SwingUtilities.invokeLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        JOptionPane.showMessageDialog(TopComponents.getInstance().getTopParent(), msg, "Warning", JOptionPane.ERROR_MESSAGE);
+                    }
+                });
+            }
         } catch (Exception e) {
             parentContainer.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
             if (progressDialog != null) progressDialog.dispose();

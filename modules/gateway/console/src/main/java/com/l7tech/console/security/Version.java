@@ -43,4 +43,24 @@ public class Version {
     public String toString() {
         return version;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Version version = (Version) o;
+
+        if (major != version.major) return false;
+        if (minor != version.minor) return false;
+        return subMinor == version.subMinor;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = major;
+        result = 31 * result + minor;
+        result = 31 * result + subMinor;
+        return result;
+    }
 }
