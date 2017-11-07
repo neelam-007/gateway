@@ -311,7 +311,6 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
         final long maximumWait = config.getTimeUnitProperty("ioJmsConnectionMaxWait", JmsConnection.DEFAULT_CONNECTION_POOL_MAX_WAIT);
         final long timeBetweenEvictions = config.getTimeUnitProperty("ioJmsConnectionTimeBetweenEviction", JmsConnection.DEFAULT_CONNECTION_POOL_EVICT_INTERVAL);
         final int evictionBatchSize = config.getIntProperty("ioJmsConnectionEvictionBatchSize", JmsConnection.DEFAULT_CONNECTION_POOL_SIZE);
-        final long sessionMaxWait = config.getTimeUnitProperty("ioJmsSessionMaxWait", JmsConnection.DEFAULT_SESSION_POOL_MAX_WAIT);
 
         return new JmsResourceManagerConfig(
                 0L,
@@ -323,9 +322,9 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
                 rangeValidate(maximumWait, JmsConnection.DEFAULT_CONNECTION_POOL_MAX_WAIT, -1L, Long.MAX_VALUE, "JMS Connection Maximum Wait"),
                 rangeValidate(timeBetweenEvictions, JmsConnection.DEFAULT_CONNECTION_POOL_EVICT_INTERVAL, 0L, Long.MAX_VALUE, "JMS Connection Pool Time Between Eviction"),
                 rangeValidate(evictionBatchSize, JmsConnection.DEFAULT_CONNECTION_POOL_SIZE, 1, 10000, "JMS Connection Eviction Batch Size"),
-                8,
-                8,
-                rangeValidate(sessionMaxWait, JmsConnection.DEFAULT_SESSION_POOL_MAX_WAIT, -1L, Long.MAX_VALUE, "JMS Session Max Wait"));
+                0,
+                0,
+                0L);
     }
 
     public JmsResourceManagerConfig getAndValidateSessionPoolClusterProperties() {

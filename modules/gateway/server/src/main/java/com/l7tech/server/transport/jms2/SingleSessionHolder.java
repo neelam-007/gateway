@@ -32,7 +32,12 @@ public class SingleSessionHolder extends SessionHolderBase {
 
     @Override
     public void close() {
+        logger.log(
+                Level.FINE,
+                "Closing JMS connection ({0}), version {1}:{2}",
+                new Object[]{
+                        name, connectionVersion, endpointVersion
+                });
         singleSession.close();
-        logger.log(Level.FINE, "Session closed");
     }
 }
