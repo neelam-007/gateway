@@ -5,9 +5,9 @@ import com.l7tech.server.transport.jms.JmsRuntimeException;
 import java.util.concurrent.atomic.AtomicLong;
 
 public interface CachedConnection {
-    JmsSessionHolder borrowConnection() throws JmsRuntimeException;
+    SessionHolder borrowConnection() throws JmsRuntimeException;
 
-    void returnConnection(JmsSessionHolder connection) throws JmsRuntimeException;
+    void returnConnection(SessionHolder connection) throws JmsRuntimeException;
 
     JmsEndpointConfig getEndpointConfig();
 
@@ -19,7 +19,7 @@ public interface CachedConnection {
 
     AtomicLong getLastAccessTime();
 
-    void invalidate(JmsSessionHolder connection) throws Exception;
+    void invalidate(SessionHolder connection) throws Exception;
 
     boolean isDisconnected();
 

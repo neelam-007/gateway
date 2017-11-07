@@ -19,7 +19,7 @@ public class PooledConnection implements CachedConnection {
 
     private final JmsResourceManagerConfig cacheConfig;
     private final GenericObjectPool.Config config;
-    private final GenericObjectPool<JmsSessionHolder> pool;
+    private final GenericObjectPool<SessionHolder> pool;
     private final AtomicInteger referenceCount = new AtomicInteger(0);
     private final JmsEndpointConfig endpoint;
     private final long createdTime = System.currentTimeMillis();
@@ -51,40 +51,40 @@ public class PooledConnection implements CachedConnection {
 
         config.softMinEvictableIdleTimeMillis = Long.parseLong(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_CONNECTION_IDLE_TIMEOUT,
                 String.valueOf(cacheConfig.getIdleTime())));
-        pool = new GenericObjectPool<>(new PoolableObjectFactory<JmsSessionHolder>() {
+        pool = new GenericObjectPool<>(new PoolableObjectFactory<SessionHolder>() {
             @Override
-            public JmsSessionHolder makeObject() throws Exception {
+            public SessionHolder makeObject() throws Exception {
                 return newConnection(endpoint);
             }
 
             @Override
-            public void destroyObject(JmsSessionHolder connection) throws Exception {
+            public void destroyObject(SessionHolder connection) throws Exception {
                 connection.unRef();
             }
 
             @Override
-            public boolean validateObject(JmsSessionHolder connection) {
+            public boolean validateObject(SessionHolder connection) {
                 return true;
             }
 
             @Override
-            public void activateObject(JmsSessionHolder connection) throws Exception {
+            public void activateObject(SessionHolder connection) throws Exception {
             }
 
             @Override
-            public void passivateObject(JmsSessionHolder connection) throws Exception {
+            public void passivateObject(SessionHolder connection) throws Exception {
 
             }
         }, config);
     }
 
     @Override
-    public synchronized JmsSessionHolder borrowConnection() throws JmsRuntimeException {
+    public synchronized SessionHolder borrowConnection() throws JmsRuntimeException {
         try {
             touch();
-            JmsSessionHolder sessionHolder = pool.borrowObject();
+            SessionHolder sessionHolder = pool.borrowObject();
             if (sessionHolder == null) {
-                logger.log(Level.FINE, "Unable to borrow JmsSessionHolder from the pool!");
+                logger.log(Level.FINE, "Unable to borrow JMS session from the connection pool!");
                 throw new NoSuchElementException("Unable to borrow");
             }
             return sessionHolder;
@@ -98,7 +98,7 @@ public class PooledConnection implements CachedConnection {
     }
 
     @Override
-    public void returnConnection(JmsSessionHolder connection) throws JmsRuntimeException {
+    public void returnConnection(SessionHolder connection) throws JmsRuntimeException {
         try {
             pool.returnObject(connection);
         } catch (Exception e) {
@@ -136,7 +136,7 @@ public class PooledConnection implements CachedConnection {
             return lastAccessTime;
     }
 
-    private JmsSessionHolder newConnection(final JmsEndpointConfig endpoint ) throws NamingException, JmsRuntimeException {
+    private SingleSessionHolder newConnection(final JmsEndpointConfig endpoint ) throws NamingException, JmsRuntimeException {
         final JmsEndpointConfig.JmsEndpointKey key = endpoint.getJmsEndpointKey();
 
         try {
@@ -145,7 +145,7 @@ public class PooledConnection implements CachedConnection {
             newBag.getConnection().start();
 
             // create new cached connection wrapper
-            final JmsSessionHolder newConn = new JmsSessionHolder(endpoint, newBag, cacheConfig);
+            final SingleSessionHolder newConn = new SingleSessionHolder(endpoint, newBag);
             newConn.ref(); // referenced by caller
 
             logger.log(Level.FINE, "New JMS connection created ({0}), version {1}:{2}", new Object[] {
@@ -161,7 +161,7 @@ public class PooledConnection implements CachedConnection {
     }
 
     @Override
-    public void invalidate(JmsSessionHolder connection) throws Exception {
+    public void invalidate(SessionHolder connection) throws Exception {
         if(connection != null)
             pool.invalidateObject(connection);
      }

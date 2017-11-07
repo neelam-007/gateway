@@ -69,7 +69,7 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
                                     final JmsResourceCallback callback ) throws NamingException, JMSException, JmsRuntimeException, NoSuchElementException {
         if ( !active.get() ) throw new JmsRuntimeException("JMS resource manager is stopped.");
 
-        JmsSessionHolder sessionHolder = null;
+        SessionHolder sessionHolder = null;
         try {
             sessionHolder = getSessionHolder(endpoint);
             sessionHolder.doWithJmsResources( callback );
@@ -92,7 +92,7 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
      * @throws JmsRuntimeException If an error occurs creating the resources
      */
 
-    protected JmsSessionHolder getSessionHolder(JmsEndpointConfig endpoint) throws JmsRuntimeException {
+    protected SessionHolder getSessionHolder(JmsEndpointConfig endpoint) throws JmsRuntimeException {
         final JmsEndpointConfig.JmsEndpointKey key = endpoint.getJmsEndpointKey();
         CachedConnection conn = connectionHolder.get(key);
         if(conn == null) {
@@ -120,7 +120,7 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
     }
 
 
-    protected void returnSessionHolder(JmsEndpointConfig endpoint, JmsSessionHolder connection) throws JmsRuntimeException{
+    protected void returnSessionHolder(JmsEndpointConfig endpoint, SessionHolder connection) throws JmsRuntimeException{
         try {
             final JmsEndpointConfig.JmsEndpointKey key = endpoint.getJmsEndpointKey();
             CachedConnection conn = connectionHolder.get(key);
@@ -146,7 +146,7 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
      * @throws JmsRuntimeException If error occur when getting the connection or getting the JmsBag
      */
     public JmsBag borrowJmsBag(final JmsEndpointConfig endpointConfig) throws NamingException, JmsRuntimeException {
-        JmsSessionHolder sessionHolder = getSessionHolder(endpointConfig);
+        SessionHolder sessionHolder = getSessionHolder(endpointConfig);
         return sessionHolder.borrowJmsBag();
     }
 
@@ -156,7 +156,7 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
      * @throws JmsRuntimeException If error occur when returning the JmsBag
      */
     public void returnJmsBag(JmsBag bag) throws JmsRuntimeException {
-        JmsSessionHolder sessionHolder = (JmsSessionHolder) bag.getBagOwner();
+        SessionHolder sessionHolder = (SessionHolder) bag.getBagOwner();
         if (sessionHolder != null) {
             sessionHolder.returnJmsBag(bag);
             sessionHolder.unRef();
@@ -170,7 +170,7 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
      * @throws JmsRuntimeException If error when touching the Cached Connection.
      */
     public void touch(final JmsBag bag) throws JmsRuntimeException {
-        JmsSessionHolder sessionHolder = (JmsSessionHolder) bag.getBagOwner();
+        SessionHolder sessionHolder = (SessionHolder)bag.getBagOwner();
         if (sessionHolder != null) {
             sessionHolder.touch();
         }
@@ -311,6 +311,7 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
         final long maximumWait = config.getTimeUnitProperty("ioJmsConnectionMaxWait", JmsConnection.DEFAULT_CONNECTION_POOL_MAX_WAIT);
         final long timeBetweenEvictions = config.getTimeUnitProperty("ioJmsConnectionTimeBetweenEviction", JmsConnection.DEFAULT_CONNECTION_POOL_EVICT_INTERVAL);
         final int evictionBatchSize = config.getIntProperty("ioJmsConnectionEvictionBatchSize", JmsConnection.DEFAULT_CONNECTION_POOL_SIZE);
+        final long sessionMaxWait = config.getTimeUnitProperty("ioJmsSessionMaxWait", JmsConnection.DEFAULT_SESSION_POOL_MAX_WAIT);
 
         return new JmsResourceManagerConfig(
                 0L,
@@ -322,9 +323,9 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
                 rangeValidate(maximumWait, JmsConnection.DEFAULT_CONNECTION_POOL_MAX_WAIT, -1L, Long.MAX_VALUE, "JMS Connection Maximum Wait"),
                 rangeValidate(timeBetweenEvictions, JmsConnection.DEFAULT_CONNECTION_POOL_EVICT_INTERVAL, 0L, Long.MAX_VALUE, "JMS Connection Pool Time Between Eviction"),
                 rangeValidate(evictionBatchSize, JmsConnection.DEFAULT_CONNECTION_POOL_SIZE, 1, 10000, "JMS Connection Eviction Batch Size"),
-                0,
-                0,
-                0L);
+                8,
+                8,
+                rangeValidate(sessionMaxWait, JmsConnection.DEFAULT_SESSION_POOL_MAX_WAIT, -1L, Long.MAX_VALUE, "JMS Session Max Wait"));
     }
 
     public JmsResourceManagerConfig getAndValidateSessionPoolClusterProperties() {

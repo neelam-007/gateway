@@ -130,11 +130,11 @@ public class JmsResourceManagerTest {
             this.conn = cc;
         }
 
-        protected JmsSessionHolder getSessionHolder(JmsEndpointConfig endpoint) throws JmsRuntimeException {
+        protected SessionHolder getSessionHolder(JmsEndpointConfig endpoint) throws JmsRuntimeException {
             return conn.borrowConnection();
         }
 
-        protected class CachedConnectionStub extends JmsSessionHolder {
+        protected class CachedConnectionStub extends PooledSessionHolder {
 
             protected CachedConnectionStub(JmsEndpointConfig cfg, JmsBag bag) {
                 super(cfg, bag, mockResourceManagerConfig);
