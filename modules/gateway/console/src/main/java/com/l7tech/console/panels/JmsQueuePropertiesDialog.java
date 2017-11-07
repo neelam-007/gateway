@@ -582,6 +582,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
         connectionPoolingRadioButton.addChangeListener(new ChangeListener() {
             @Override
             public void stateChanged(ChangeEvent e) {
+                overrideSystemDefaultsCcheckBox.setSelected(false);
                 enableOrDisableConnectionPoolingSettings();
             }
         });
@@ -589,6 +590,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
         sessionPoolingRadioButton.addChangeListener(new ChangeListener() {
             @Override
             public void stateChanged(ChangeEvent e) {
+                overrideSystemDefaultsCcheckBox.setSelected(false);
                 enableOrDisableConnectionPoolingSettings();
             }
         });
