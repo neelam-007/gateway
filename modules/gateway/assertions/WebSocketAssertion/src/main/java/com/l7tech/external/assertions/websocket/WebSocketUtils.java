@@ -114,12 +114,14 @@ public class WebSocketUtils {
             target.setOutboundClientAuthentication(source.isOutboundClientAuthentication());
             target.setOutboundMaxIdleTime(source.getOutboundMaxIdleTime());
             target.setOutboundPolicyOID(source.getOutboundPolicyOID());
+            target.setOutboundConnectionPolicyId(source.getOutboundConnectionPolicyId());
             target.setOutboundPrivateKeyAlias(source.getOutboundPrivateKeyAlias());
             target.setOutboundPrivateKeyId(source.getInboundPrivateKeyId());
             target.setOutboundSsl(source.isOutboundSsl());
             target.setOutboundUrl(source.getOutboundUrl());
 
             target.setDescription(source.getDescription());
+            target.setOutboundOnly(source.isOutboundOnly());
             target.setEnabled(source.isEnabled());
             target.setName("Copy of " + source.getName());
         } catch (InvalidRangeException e) {

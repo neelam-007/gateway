@@ -40,13 +40,15 @@ public class WebSocketConnectionEntity extends GenericEntity {
 
     //Connection Fields
     private Goid connectionPolicyGOID;
- 
+    private boolean outboundOnly;
+
 
     //Outbound Fields
     private String outboundUrl;
     private int outboundMaxIdleTime;
     // Updated in 8.0 for GOIDs
     private Goid outboundPolicyOID;
+    private Goid outboundConnectionPolicyId;
     private boolean outboundSsl;
     private Goid outboundPrivateKeyId;
     private String outboundPrivateKeyAlias;
@@ -115,6 +117,14 @@ public class WebSocketConnectionEntity extends GenericEntity {
     }
     public void setOutboundPolicyOID(Goid outboundPolicyOID) {
         this.outboundPolicyOID = outboundPolicyOID;
+    }
+
+    public Goid getOutboundConnectionPolicyId() {
+        return outboundConnectionPolicyId;
+    }
+
+    public void setOutboundConnectionPolicyId(final Goid outboundConnectionPolicyId) {
+        this.outboundConnectionPolicyId = outboundConnectionPolicyId;
     }
 
     public int getInboundListenPort() {
@@ -198,10 +208,7 @@ public class WebSocketConnectionEntity extends GenericEntity {
         this.inboundClientAuth = inboundClientAuth;
     }
 
-    public void setInboundListenPort(int inboundListenPort) throws InvalidRangeException {
-        if (inboundListenPort < WebSocketConstants.MIN_LISTEN_PORT || inboundListenPort > WebSocketConstants.MAX_LISTEN_PORT) {
-            throw new InvalidRangeException("Listening port must be in the range " + WebSocketConstants.MIN_LISTEN_PORT + " : " + WebSocketConstants.MAX_LISTEN_PORT);
-        }
+    public void setInboundListenPort(int inboundListenPort) {
         this.inboundListenPort = inboundListenPort;
     }
 
@@ -267,5 +274,11 @@ public class WebSocketConnectionEntity extends GenericEntity {
         this.outboundCipherSuites = outboundCipherSuites;
     }
 
+    public boolean isOutboundOnly() {
+        return outboundOnly;
+    }
 
+    public void setOutboundOnly(boolean outboundOnly) {
+        this.outboundOnly = outboundOnly;
+    }
 }
