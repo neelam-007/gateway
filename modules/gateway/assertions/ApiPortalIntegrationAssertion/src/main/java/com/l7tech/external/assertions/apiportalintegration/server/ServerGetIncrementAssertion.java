@@ -41,15 +41,29 @@ import java.util.logging.Logger;
 public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncrementAssertion> {
     private static final Logger logger = Logger.getLogger(ServerGetIncrementAssertion.class.getName());
 
-    private static final String BULK_SYNC_SELECT = "SELECT a.UUID, concat(a.NAME,'-',o.NAME) as NAME, a.API_KEY, a.KEY_SECRET, \n" +
-            "            coalesce (r.PREVIOUS_STATE,a.STATUS) as STATUS, a.ORGANIZATION_UUID, o.NAME as ORGANIZATION_NAME, \n" +
-            "            a.OAUTH_CALLBACK_URL, a.OAUTH_SCOPE, a.OAUTH_TYPE, a.MAG_SCOPE, a.MAG_MASTER_KEY, \n" +
-            "            ax.API_UUID, a.CREATED_BY, a.MODIFIED_BY, r.LATEST_REQ \n" +
-            "            FROM APPLICATION a \n" +
-            "            JOIN ORGANIZATION o on a.ORGANIZATION_UUID = o.UUID \n" +
-            "            JOIN APPLICATION_API_XREF ax on ax.APPLICATION_UUID = a.UUID \n" +
-            "            LEFT JOIN (select ENTITY_UUID, PREVIOUS_STATE, max(CREATE_TS) as LATEST_REQ FROM REQUEST GROUP BY ENTITY_UUID, PREVIOUS_STATE, CREATE_TS) r ON a.UUID = r.ENTITY_UUID \n" +
-            "            WHERE a.API_KEY IS NOT NULL AND a.TENANT_ID='%s' AND a.STATUS IN ('ENABLED','DISABLED','EDIT_APPLICATION_PENDING_APPROVAL')";
+    // Query to get all APIs added directly to the application and indirectly added through API groups
+    private static final String BULK_SYNC_SELECT =
+            "            SELECT a3.UUID, concat(a3.NAME,'-',o.NAME) as NAME, a3.API_KEY, a3.KEY_SECRET, \n" +
+            "                   coalesce (r.PREVIOUS_STATE, a3.STATUS) as STATUS, a3.ORGANIZATION_UUID, o.NAME as ORGANIZATION_NAME, \n" +
+            "                   a3.OAUTH_CALLBACK_URL, a3.OAUTH_SCOPE, a3.OAUTH_TYPE, a3.MAG_SCOPE, a3.MAG_MASTER_KEY, \n" +
+            "                   a3.API_UUID, a3.CREATED_BY, a3.MODIFIED_BY, r.LATEST_REQ \n" +
+            "            FROM (SELECT a.UUID, a.NAME, a.API_KEY, a.KEY_SECFRET, a.STATUS, a.ORGANIZATION_UUID, \n" +
+            "                         a.OAUTH_CALLBACK_URL, a.OAUTH_SCOPE, a.OAUTH_TYPE, a.MAG_SCOPE, a.MAG_MASTER_KEY, \n" +
+            "                         ax.API_UUID, a.CREATED_BY, a.MODIFIED_BY, a.TENANT_ID \n" +
+            "                  FROM APPLICATION a \n" +
+            "                  JOIN APPLICATION_API_XREF ax on ax.APPLICATION_UUID = a.UUID \n" +
+            "                  UNION \n" +
+            "                  SELECT a2.UUID, a2.NAME, a2.API_KEY, a2.KEY_SECRET, a2.STATUS, a2.ORGANIZATION_UUID, \n" +
+            "                         a2.OAUTH_CALLBACK_URL, a2.OAUTH_SCOPE, a2.OAUTH_TYPE, a2.MAG_SCOPE, a2.MAG_MASTER_KEY, \n" +
+            "                         agax.API_UUID, a2.CREATED_BY, a2.MODIFIED_BY, a2.TENANT_ID \n" +
+            "                  FROM APPLICATION_API_GROUP_XREF aagx \n" +
+            "                  JOIN APPLICATION a2 ON a2.UUID = aagx.APPLICATION_UUID \n" +
+            "                  JOIN  API_GROUP_API_XREF agax ON agax.API_GROUP_UUID = aagx.API_GROUP_UUID \n" +
+            "                  JOIN ORGANIZATION_API_VIEW oav ON oav.UUID = agax.API_UUID \n" +
+            "                  WHERE (oav.ACCESS_STATUS = 'PUBLIC' OR (oav.ACCESS_STATUS = 'PRIVATE' AND oav.ORGANIZATION_UUID = a2.ORGANIZATION_UUID))) a3 \n" +
+            "            JOIN ORGANIZATION o on a3.ORGANIZATION_UUID = o.UUID \n" +
+            "            LEFT JOIN (select ENTITY_UUID, PREVIOUS_STATE, max(CREATE_TS) as LATEST_REQ FROM REQUEST GROUP BY ENTITY_UUID, PREVIOUS_STATE, CREATE_TS) r ON a3.UUID = r.ENTITY_UUID \n" +
+            "            WHERE a3.API_KEY IS NOT NULL AND a3.TENANT_ID='%s' AND a3.STATUS IN ('ENABLED', 'DISABLED', 'EDIT_APPLICATION_PENDING_APPROVAL')";
 
     private static final String STATUS_ENABLED = "ENABLED";
     private static final String STATUS_ACTIVE = "active";
@@ -157,10 +171,12 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
             }
 
             // get new or updated or last sync error apps
-            results = (Map<String, List>) queryJdbc(connName,
-                    ServerIncrementalSyncCommon.getSyncUpdatedAppEntities(Lists.newArrayList("a.UUID", "concat(a.NAME,'-',o.NAME) as NAME", "a.API_KEY", "a.KEY_SECRET", "coalesce (r.PREVIOUS_STATE,a.STATUS) as STATUS", "a.ORGANIZATION_UUID", "o.NAME as ORGANIZATION_NAME",
-                            "a.OAUTH_CALLBACK_URL", "a.OAUTH_SCOPE", "a.OAUTH_TYPE", "a.MAG_SCOPE", "a.MAG_MASTER_KEY", "ax.API_UUID", "a.CREATED_BY", "a.MODIFIED_BY"), tenantId),
-                        CollectionUtils.list(since, incrementStart, since, incrementStart, since, incrementStart, nodeId));
+            results = (Map<String, List>) queryJdbc(
+                    connName,
+                    ServerIncrementalSyncCommon.getSyncUpdatedAppEntities(
+                            Lists.newArrayList("a3.UUID", "concat(a3.NAME, '-', o.NAME) as NAME", "a3.API_KEY", "a3.KEY_SECRET", "coalesce(r.PREVIOUS_STATE, a3.STATUS) as STATUS", "a3.ORGANIZATION_UUID", "o.NAME as ORGANIZATION_NAME", "a3.OAUTH_CALLBACK_URL", "a3.OAUTH_SCOPE", "a3.OAUTH_TYPE", "a3.MAG_SCOPE", "a3.MAG_MASTER_KEY", "a3.API_UUID", "a3.CREATED_BY", "a3.MODIFIED_BY"),
+                            tenantId),
+                    CollectionUtils.list(since, incrementStart, since, incrementStart, since, incrementStart, since, incrementStart, nodeId));
         } else {
             appJsonObj.setBulkSync(ServerIncrementalSyncCommon.BULK_SYNC_TRUE);
             // bulk, get everything
