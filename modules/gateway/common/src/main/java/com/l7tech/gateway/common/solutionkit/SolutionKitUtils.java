@@ -47,6 +47,11 @@ public final class SolutionKitUtils {
     public static final String SK_ELE_CUSTOM_CALLBACK = SK_PROP_CUSTOM_CALLBACK_KEY;
     public static final String SK_ELE_ALLOW_ADDENDUM = SK_PROP_ALLOW_ADDENDUM_KEY;
 
+    private static final String MSG_UNABLE_UPGRADE_PARENT_GUIDS_MISMATCH = "Unable to upgrade: The parent Solution Kits " +
+        "involved in the upgrade do not have the matched GUID. Consider installing instead.";
+    private static final String MSG_UNABLE_UPGRADE_SK_GUIDS_MISMATCH = "Unable to upgrade: The Solution Kits involved " +
+        "in the upgrade do not have the matched GUID. Consider installing instead.";
+
     //TODO when Dependencies is implemented
     // public static final String SK_ELE_DEPENDENCIES = "Dependencies";
 
@@ -498,24 +503,72 @@ public final class SolutionKitUtils {
     }
 
     /**
-     * Verify that two collections of solution kits share at least one guid. Typical use is to compare loadedSolutionKits and solutionKitsToUpgrade
-     * @param loadedSolutionKits Solution kits loaded from skar file
-     * @param solutionKitsToUpgrade Solution kits on database
-     * @return true if at least one guid from Solution Kits to upgrade and loaded have the same guids, o/w false
+     * Check whether upgrade is eligible based on given upgrade information.
+     * Please see more details about all implemented cases related to checking GUID match.
+     *
+     * @param solutionKitsConfig provide upgrade information.
+     * @throws SolutionKitException thrown if any violation of upgrade is found.
      */
-    public static boolean doesShareGuid(Collection<SolutionKit> loadedSolutionKits, Collection<SolutionKit> solutionKitsToUpgrade) {
-        final Set<String> guids = new HashSet<>();
-        for (final SolutionKit solutionKit : loadedSolutionKits) {
-            guids.add(solutionKit.getSolutionKitGuid());
+    public static void checkUpgradeEligibility(@NotNull final SolutionKitsConfig solutionKitsConfig) throws SolutionKitException {
+        final List<SolutionKit> solutionKitsToUpgrade = solutionKitsConfig.getSolutionKitsToUpgrade();
+        final Set<SolutionKit> loadedSolutionKits = solutionKitsConfig.getLoadedSolutionKits().keySet();
+
+        // After the below two conditions are passed, two lists are guaranteed as not empty.
+        if (solutionKitsToUpgrade.isEmpty()) {
+            throw new IllegalArgumentException("Unable to upgrade: The number of solution kits selected for upgrade " +
+                "must be greater than or equal to one.");
+        }
+        if (loadedSolutionKits.isEmpty()) {
+            throw new IllegalArgumentException("Unable to upgrade: The number of loaded solution kits from a skar " +
+                "must be greater than or equal to one.");
         }
 
-        for (final SolutionKit solutionKit : solutionKitsToUpgrade) {
-            //if set doesn't change, we know at least one solution kit loaded and one solution kit upgrade share guid, so proceed
-            if (!guids.add(solutionKit.getSolutionKitGuid())) {
-                return true;
+        final SolutionKit parentToUpgrade = solutionKitsToUpgrade.size() > 1? solutionKitsToUpgrade.get(0) : null;
+        final SolutionKit parentLoaded = solutionKitsConfig.getParentSolutionKitLoaded();
+
+        // Case: selecting a parent and loading a regular skar, but their GUIDs are not matched.
+        final boolean parentSelectedForUpgrade = solutionKitsConfig.isParentSelectedForUpgrade();
+        if (parentSelectedForUpgrade && parentLoaded == null &&
+            !parentToUpgrade.getSolutionKitGuid().equals(loadedSolutionKits.toArray(new SolutionKit[]{})[0].getSolutionKitGuid())) {
+            throw new SolutionKitException(MSG_UNABLE_UPGRADE_SK_GUIDS_MISMATCH);
+        }
+
+        // Case: selecting a standalone and loading a skar of skars, but their GUIDs are not matched.
+        final boolean standaloneSelection = (!parentSelectedForUpgrade) && (solutionKitsToUpgrade.size() == 1);
+        if (standaloneSelection && parentLoaded != null &&
+            !solutionKitsToUpgrade.get(0).getSolutionKitGuid().equals(parentLoaded.getSolutionKitGuid())) {
+            throw new SolutionKitException(MSG_UNABLE_UPGRADE_SK_GUIDS_MISMATCH);
+        }
+
+        // Case: selecting either a parent or a child and loading a skar of skars, but parent GUIDs are not matched.
+        if (parentToUpgrade != null && parentLoaded != null && // "parentToUpgrade != null" could be from either selecting a parent or a child.
+            !parentToUpgrade.getSolutionKitGuid().equals(parentLoaded.getSolutionKitGuid())) {
+            throw new SolutionKitException(MSG_UNABLE_UPGRADE_PARENT_GUIDS_MISMATCH);
+        }
+
+        // Case: selecting a child and loading a skar of skars, but child GUIDs are not matched.
+        final boolean childSelection = (!parentSelectedForUpgrade) && (solutionKitsToUpgrade.size() == 2);
+        if (childSelection && parentLoaded != null) {
+            final String childGuid = solutionKitsToUpgrade.get(1).getSolutionKitGuid();
+
+            boolean matched = false;
+            for (final SolutionKit solutionKit: loadedSolutionKits) {
+                if (solutionKit.getSolutionKitGuid().equals(childGuid)) {
+                    matched = true;
+                    break;
+                }
+            }
+            if (!matched) {
+                throw new SolutionKitException(MSG_UNABLE_UPGRADE_SK_GUIDS_MISMATCH);
             }
         }
-        return false;
+
+        // Case: selecting either a child or a standalone and loading a regular skar, but their GUIDs are not matched.
+        final SolutionKit skForUpgrade = childSelection? solutionKitsToUpgrade.get(1) : solutionKitsToUpgrade.get(0);
+        if (!parentSelectedForUpgrade && parentLoaded == null &&
+            !skForUpgrade.getSolutionKitGuid().equals(loadedSolutionKits.toArray(new SolutionKit[]{})[0].getSolutionKitGuid())) {
+            throw new SolutionKitException(MSG_UNABLE_UPGRADE_SK_GUIDS_MISMATCH);
+        }
     }
 
     /**

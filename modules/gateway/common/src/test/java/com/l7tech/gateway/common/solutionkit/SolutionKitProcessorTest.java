@@ -368,7 +368,7 @@ public class SolutionKitProcessorTest {
         // test parent solution kit was updated once
         when(solutionKitsConfig.isUpgrade()).thenReturn(true);
         when(solutionKitsConfig.getSolutionKitToUpgrade(parentSolutionKit.getSolutionKitGuid())).thenReturn(parentSolutionKit);
-        doReturn(null).when(solutionKitProcessor).collectSolutionKitInformation(anyListOf(SolutionKit.class));
+        doReturn(null).when(solutionKitProcessor).collectSolutionKitInformation(anySetOf(SolutionKit.class));
 
         solutionKitProcessor.upgrade(null);
 

@@ -26,6 +26,7 @@ import java.util.logging.Logger;
  *  POJO to store user inputs for InstallSolutionKitWizard.
  */
 public class SolutionKitsConfig {
+    public static final String MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE = "SK_AllowMappingOverride";
     private static final Logger logger = Logger.getLogger(SolutionKitsConfig.class.getName());
 
     private Map<SolutionKit, Bundle> loaded = new HashMap<>();
@@ -42,9 +43,7 @@ public class SolutionKitsConfig {
     // using SolutionKit.sk_guid as the map key prevents changes to solution kit from losing reference to the original map value (e.g. SolutionKit.hashcode() changes)
     private Map<String, Pair<SolutionKit, SolutionKitCustomization>> customizations = new HashMap<>();
 
-    private Map<SolutionKit, Boolean> upgradeInfoProvided = new HashMap<>();
-
-    public static final String MAPPING_PROPERTY_NAME_SK_ALLOW_MAPPING_OVERRIDE = "SK_AllowMappingOverride";
+    private boolean parentSelectedForUpgrade;
 
     @Nullable
     private SolutionKit parentSolutionKitLoaded;
@@ -169,6 +168,16 @@ public class SolutionKitsConfig {
 
     public boolean isUpgrade() {
         return solutionKitsToUpgrade.size() > 0;
+    }
+
+    public boolean isParentSelectedForUpgrade() {
+        return parentSelectedForUpgrade;
+    }
+
+    public void setParentSelectedForUpgrade(@Nullable final SolutionKit solutionKitForUpgrade) {
+        if (solutionKitForUpgrade != null) {
+            parentSelectedForUpgrade = SolutionKitUtils.isParentSolutionKit(solutionKitForUpgrade);
+        }
     }
 
     @NotNull

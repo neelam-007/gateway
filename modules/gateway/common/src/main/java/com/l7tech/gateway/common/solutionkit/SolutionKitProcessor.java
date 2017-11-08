@@ -62,10 +62,7 @@ public class SolutionKitProcessor {
      */
     public void testUpgrade(@NotNull final Functions.UnaryVoidThrows<SolutionKitImportInfo, Throwable> doTestUpgrade) throws Throwable {
         //selectedSolutionKits should be ordered because it is a treeset
-        final List<SolutionKit> selectedSolutionKits = new ArrayList<>(solutionKitsConfig.getSelectedSolutionKits());
-
-        final SolutionKit uploadedParentSolutionKit = solutionKitsConfig.getParentSolutionKitLoaded(); // Note: The parent solution kit has a dummy default GOID.
-        validateUploadedParentSKOnUpgrade(uploadedParentSolutionKit);
+        final Set<SolutionKit> selectedSolutionKits = solutionKitsConfig.getSelectedSolutionKits();
 
         for (final SolutionKit solutionKit: selectedSolutionKits) {
             invokeCustomCallback(solutionKit);
@@ -78,28 +75,13 @@ public class SolutionKitProcessor {
         doTestUpgrade.call(solutionKitImportInfo);
     }
 
-    private void validateUploadedParentSKOnUpgrade(SolutionKit uploadedParentSolutionKit) throws SolutionKitException {
-
-        if (uploadedParentSolutionKit == null) {
-            // this validation only cares about parent Solution Kits.  Since this one is not, just return.
-            return;
-        }
-
-        // Check if the uploaded parent Solution Kit matches the one that is already installed and has been selected for upgrade.
-        final SolutionKit matchedInstalledSolutionKit = solutionKitsConfig.getSolutionKitToUpgrade(uploadedParentSolutionKit.getSolutionKitGuid());
-        if (matchedInstalledSolutionKit == null) {
-            throw new SolutionKitException("Cannot upgrade because the parent Solution Kits involved in the upgrade do not match.");
-        }
-    }
-
-
     /**
      * Gathers solution kit information to send to the SolutionKitManager so that it can import bundles.
      * @param selectedSolutionKits The list of solution kits selected for install
      * @return solutionKitImportInfo containing delete bundles + SK metadata, install bundles + SK metadata, parent SK
      * @throws SolutionKitException Exception thrown by SolutionKitUtils.generateListOfDeleteBundles
      */
-    SolutionKitImportInfo collectSolutionKitInformation(List<SolutionKit> selectedSolutionKits) throws SolutionKitException{
+    SolutionKitImportInfo collectSolutionKitInformation(@NotNull final Set<SolutionKit> selectedSolutionKits) throws SolutionKitException{
         final SolutionKit parentSolutionKit = solutionKitsConfig.getParentSolutionKitLoaded();
         final Map<SolutionKit, String> solutionKitsToInstall= new TreeMap<>();
         for (final SolutionKit selectedSolutionKit : selectedSolutionKits) {
@@ -243,7 +225,7 @@ public class SolutionKitProcessor {
      */
     public void upgrade(@Nullable final Functions.UnaryThrows<List<Pair<Mappings, SolutionKit>>, SolutionKitImportInfo, Exception> doAsyncUpgrade) throws Exception {
         //selectedSolutionKits should be ordered because it is a treeset
-        final List<SolutionKit> selectedSolutionKits = new ArrayList<>(solutionKitsConfig.getSelectedSolutionKits());
+        final Set<SolutionKit> selectedSolutionKits = solutionKitsConfig.getSelectedSolutionKits();
 
         // Check if the loaded skar is a collection of skars.  If so process parent solution kit first.
         final SolutionKit parentSKFromLoad = solutionKitsConfig.getParentSolutionKitLoaded(); // Note: The parent solution kit has a dummy default GOID.
@@ -252,6 +234,8 @@ public class SolutionKitProcessor {
         if (isCollection) {
             parentSKFromDB = solutionKitsConfig.getSolutionKitToUpgrade(parentSKFromLoad.getSolutionKitGuid());
             if (parentSKFromDB == null) {
+                // Should not happen here, b/c UI and Headless have already checked upgrade eligibility.  But it is not
+                // harmful to keep this check in case the upgrade method is called after checking upgrade eligibility is skipped.
                 throw new SolutionKitException("Cannot upgrade because the parent Solution Kits involved in the upgrade do not match.");
             }
         } else {

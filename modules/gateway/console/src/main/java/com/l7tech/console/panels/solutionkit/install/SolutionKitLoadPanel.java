@@ -127,16 +127,13 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
             }
         }
 
-        //Check that at least one SK from upgrade and loaded share the same guid
+        //Check solution kit upgrade eligibility.  If any errors found, display error dialog.
         if (solutionKitsConfig.isUpgrade()) {
-            if (!SolutionKitUtils.doesShareGuid(solutionKitsConfig.getLoadedSolutionKits().keySet(),
-                    solutionKitsConfig.getSolutionKitsToUpgrade())) {
+            try {
+                SolutionKitUtils.checkUpgradeEligibility(solutionKitsConfig);
+            } catch (SolutionKitException e) {
                 solutionKitsConfig.clear(false);
-                DialogDisplayer.showMessageDialog(this,
-                        "Unable to upgrade. No Solution Kits in the database match the Solution Kit(s) in the .sskar file. Consider installing instead.",
-                        "Solution Kit Upgrade Error",
-                        JOptionPane.ERROR_MESSAGE,
-                        null);
+                DialogDisplayer.showMessageDialog(this, e.getMessage(), "Solution Kit Upgrade Error", JOptionPane.ERROR_MESSAGE, null);
                 return false;
             }
         }

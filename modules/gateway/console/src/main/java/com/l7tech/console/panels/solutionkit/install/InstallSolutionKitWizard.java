@@ -52,6 +52,7 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
 
         final SolutionKitAdmin solutionKitAdmin = Registry.getDefault().getSolutionKitAdmin();
         SolutionKitsConfig solutionKitsConfig = new SolutionKitsConfig();
+        solutionKitsConfig.setParentSelectedForUpgrade(solutionKitToUpgrade);
         solutionKitsConfig.setSolutionKitsToUpgrade(solutionKitAdmin.getSolutionKitsToUpgrade(solutionKitToUpgrade));
 
         return new InstallSolutionKitWizard(parent, first, solutionKitsConfig);
