@@ -553,11 +553,11 @@ public final class SolutionKitUtils {
 
         // After the below two conditions are passed, two lists are guaranteed as not empty.
         if (solutionKitsToUpgrade.isEmpty()) {
-            throw new SolutionKitException("Unable to upgrade: The number of solution kits selected for upgrade " +
+            throw new SolutionKitException("Unable to upgrade: The number of Solution Kits selected for upgrade " +
                 "must be greater than or equal to one.");
         }
         if (loadedSolutionKits.isEmpty()) {
-            throw new SolutionKitException("Unable to upgrade: The number of loaded solution kits from a skar " +
+            throw new SolutionKitException("Unable to upgrade: The number of loaded Solution Kits from a skar " +
                 "must be greater than or equal to one.");
         }
 

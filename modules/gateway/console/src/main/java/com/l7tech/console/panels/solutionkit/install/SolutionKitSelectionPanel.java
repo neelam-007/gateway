@@ -202,6 +202,7 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
                             solutionKitAdmin.testUpgradeAsync(loaded),
                             false);
 
+                    success.set(true);
                     final ItemsList<Mappings> itemList = MarshallingUtils.unmarshal(ItemsList.class, new StreamSource(new StringReader(result)));
                     final List<Item<Mappings>> items = itemList.getContent();
                     final Iterator<SolutionKit> selectedIterator = solutionKitsSelected.iterator();
@@ -220,7 +221,8 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
                         success.set(false);
                     }
 
-                    for (int i = 0; i<items.size(); i++) {
+                    //Save the install bundle mappings onto test mappings
+                    for (int i = totalDeleteBundles; i<items.size(); i++) {
                         Mappings mappings = items.get(i).getContent();
                         //Check no errors
                         if (null == mappings || null == mappings.getMappings()) {
@@ -232,13 +234,10 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
                             success.set(false);
                         }
                         //Put the install bundle results into testMappings
-                        if (i >= totalDeleteBundles) {
-                            testMappings.put(selectedIterator.next(), mappings);
-                        }
+                        testMappings.put(selectedIterator.next(), mappings);
                     }
                 }
             });
-            success.set(true);
         } catch (InvocationTargetException | IOException | InterruptedException e) {
             testMappings.clear();
             errorMessage = ExceptionUtils.getMessage(e);
