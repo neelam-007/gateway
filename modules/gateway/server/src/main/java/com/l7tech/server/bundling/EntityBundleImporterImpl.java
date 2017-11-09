@@ -1442,8 +1442,12 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                         ((UserBean) entity).setName(((User) existingEntity).getName());
                     }
                 } else {
-                    if(!((UserBean) entity).getName().equals(((UserBean) entity).getLogin()))
+                    if( ((UserBean) entity).getName() == null ){
+                        // set name to be same as login for backwards compatibility
+                        ((UserBean) entity).setName(((UserBean) entity).getLogin());
+                    } else if (!((UserBean) entity).getName().equals(((UserBean) entity).getLogin())) {
                         throw new IllegalStateException("An internal user name must match its login");
+                    }
                 }
             } else {
                 //this should never happen
