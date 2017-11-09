@@ -535,7 +535,7 @@ public final class SolutionKitUtils {
         for (int i = indexToStartChecking; i < size; i++) {
             final SolutionKit solutionKit = solutionKitsToUpgrade.get(i);
             if (StringUtils.isBlank(solutionKit.getUninstallBundle())) {
-                throw new SolutionKitException("The selected Solution Kit '" + solutionKit.getName() + "' (GUID: '" + solutionKit.getId() + "') is not eligible for upgrade because it does not contain an uninstall bundle.");
+                throw new SolutionKitException("The selected Solution Kit '" + solutionKit.getName() + "' (GUID: '" + solutionKit.getSolutionKitGuid() + "') is not eligible for upgrade because it does not contain an uninstall bundle.");
             }
         }
     }
