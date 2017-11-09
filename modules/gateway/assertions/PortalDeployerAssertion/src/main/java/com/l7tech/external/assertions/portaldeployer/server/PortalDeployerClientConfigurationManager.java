@@ -8,6 +8,7 @@ public interface PortalDeployerClientConfigurationManager {
   String getUniqueClientId();
   String getIngressPort();
   String getIngressHost();
+  String getPortalDeployerTopic();
   String getBrokerPort();
   String getBrokerProtocol();
   int getBrokerKeepAlive();

@@ -55,6 +55,11 @@ public class TestConfig implements PortalDeployerClientConfigurationManager {
   }
 
   @Override
+  public String getPortalDeployerTopic() {
+    return "apim/topic";
+  }
+
+  @Override
   public String getBrokerPort() {
     return "443";
   }

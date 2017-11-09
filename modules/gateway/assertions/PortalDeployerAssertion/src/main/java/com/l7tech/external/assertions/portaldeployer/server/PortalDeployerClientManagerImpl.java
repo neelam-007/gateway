@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.portaldeployer.server;
 
 import com.l7tech.external.assertions.portaldeployer.server.client.MessageProcessor;
 import com.l7tech.external.assertions.portaldeployer.server.client.PortalDeployerClient;
+import com.l7tech.external.assertions.portaldeployer.server.client.PortalDeployerClientBuilder;
 import com.l7tech.external.assertions.portaldeployer.server.client.PortalDeployerClientException;
 import org.springframework.context.ApplicationContext;
 
@@ -27,7 +28,7 @@ public class PortalDeployerClientManagerImpl implements PortalDeployerClientMana
   private PortalDeployerClientManagerImpl(final ApplicationContext context) {
     this.configurationManager = new PortalDeployerClientConfigurationManagerImpl(context);
     this.sslConfigurationManager = new PortalDeployerSslConfigurationManagerImpl(context);
-    this.portalDeployerClientFactory = new PortalDeployerClientFactory();
+    this.portalDeployerClientFactory = new PortalDeployerClientFactory(new PortalDeployerClientBuilder());
   }
 
   // Used for testing
@@ -51,7 +52,6 @@ public class PortalDeployerClientManagerImpl implements PortalDeployerClientMana
   }
 
   public void start() throws PortalDeployerClientException, PortalDeployerConfigurationException {
-    //TODO: implement builder and fix client ids/topics to pull from somewhere
     getClient().start();
   }
 

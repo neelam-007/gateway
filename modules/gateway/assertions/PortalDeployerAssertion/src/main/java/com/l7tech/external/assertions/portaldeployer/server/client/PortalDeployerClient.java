@@ -29,6 +29,7 @@ public class PortalDeployerClient implements MqttCallback {
   private String topic;
   private int connectionTimeout;
   private int keepAliveInterval;
+  private boolean isCleanSession;
   private MessageProcessor messageProcessor;
 
   private ExponentialIntSupplier sleepIntervalSupplier;
@@ -40,9 +41,16 @@ public class PortalDeployerClient implements MqttCallback {
   // How long to sleep in seconds
   private int sleepIntervalOnReconnect = 30;
 
-  public PortalDeployerClient(String mqttBrokerUri, String clientId, String topic, int connectionTimeout, int keepAliveInterval, SSLSocketFactory sslSocketFactory, MessageProcessor messageProcessor) throws
-          PortalDeployerClientException {
-    initialize(mqttBrokerUri, clientId, topic, connectionTimeout, keepAliveInterval, sslSocketFactory, messageProcessor);
+  public PortalDeployerClient(String mqttBrokerUri,
+                              String clientId,
+                              String topic,
+                              int connectionTimeout,
+                              int keepAliveInterval,
+                              boolean isCleanSession,
+                              SSLSocketFactory sslSocketFactory,
+                              MessageProcessor messageProcessor)
+          throws PortalDeployerClientException {
+    initialize(mqttBrokerUri, clientId, topic, connectionTimeout, keepAliveInterval, isCleanSession, sslSocketFactory, messageProcessor);
     try {
       mqttClient = new MqttAsyncClient(this.mqttBrokerUri, this.clientId, this.mqttClientPersistence);
     } catch (MqttException e) {
@@ -52,13 +60,28 @@ public class PortalDeployerClient implements MqttCallback {
   }
 
   // For testing
-  PortalDeployerClient(String mqttBrokerUri, String clientId, String topic, int connectionTimeout, int keepAliveInterval, SSLSocketFactory sslSocketFactory, MqttAsyncClient mqttAsyncClient, MessageProcessor messageProcessor) {
-    initialize(mqttBrokerUri, clientId, topic, connectionTimeout, keepAliveInterval, sslSocketFactory, messageProcessor);
+  PortalDeployerClient(String mqttBrokerUri,
+                       String clientId,
+                       String topic,
+                       int connectionTimeout,
+                       int keepAliveInterval,
+                       boolean isCleanSession,
+                       SSLSocketFactory sslSocketFactory,
+                       MqttAsyncClient mqttAsyncClient,
+                       MessageProcessor messageProcessor) {
+    initialize(mqttBrokerUri, clientId, topic, connectionTimeout, keepAliveInterval, isCleanSession, sslSocketFactory, messageProcessor);
     mqttClient = mqttAsyncClient;
     mqttClient.setCallback(this);
   }
 
-  private void initialize(String mqttBrokerUri, String clientId, String topic, int connectionTimeout, int keepAliveInterval, SSLSocketFactory sslSocketFactory, MessageProcessor messageProcessor) {
+  private void initialize(String mqttBrokerUri,
+                          String clientId,
+                          String topic,
+                          int connectionTimeout,
+                          int keepAliveInterval,
+                          boolean isCleanSession,
+                          SSLSocketFactory sslSocketFactory,
+                          MessageProcessor messageProcessor) {
     logger.log(Level.INFO, String.format("mqttBrokerUri [%s], " + "clientId [%s], " + "topic [%s]", mqttBrokerUri, clientId, topic));
     this.sslSocketFactory = sslSocketFactory;
     this.mqttBrokerUri = mqttBrokerUri;
@@ -66,13 +89,14 @@ public class PortalDeployerClient implements MqttCallback {
     this.topic = topic;
     this.connectionTimeout = connectionTimeout;
     this.keepAliveInterval = keepAliveInterval;
+    this.isCleanSession = isCleanSession;
     this.messageProcessor = messageProcessor;
 
     mqttClientPersistence = new MemoryPersistence();
     mqttConnectOptions = new MqttConnectOptions();
     mqttConnectOptions.setConnectionTimeout(this.connectionTimeout);
     mqttConnectOptions.setKeepAliveInterval(this.keepAliveInterval);
-    mqttConnectOptions.setCleanSession(false);
+    mqttConnectOptions.setCleanSession(this.isCleanSession);
     mqttConnectOptions.setSocketFactory(this.sslSocketFactory);
 
     // This will return increasingly larger sleep intervals,

@@ -24,6 +24,7 @@ public class PortalDeployerClientTest {
   private String topic = "topic";
   private int connectionTimeout = 30;
   private int keepAliveInterval = 60;
+  private boolean isCleanSession = false;
   @Mock
   private SSLSocketFactory sslSocketFactory;
   @Mock
@@ -35,7 +36,7 @@ public class PortalDeployerClientTest {
 
   @Before
   public void beforePortalDeployerClientTest() throws Exception {
-    portalDeployerClient = new PortalDeployerClient(mqttBrokerUri, clientId, topic, connectionTimeout, keepAliveInterval, sslSocketFactory, mqttAsyncClient, messageProcessor);
+    portalDeployerClient = new PortalDeployerClient(mqttBrokerUri, clientId, topic, connectionTimeout, keepAliveInterval, isCleanSession, sslSocketFactory, mqttAsyncClient, messageProcessor);
   }
 
   /**

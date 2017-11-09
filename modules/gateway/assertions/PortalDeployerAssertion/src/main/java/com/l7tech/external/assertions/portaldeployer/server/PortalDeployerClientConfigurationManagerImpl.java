@@ -13,6 +13,7 @@ import org.springframework.context.ApplicationContext;
 public class PortalDeployerClientConfigurationManagerImpl implements PortalDeployerClientConfigurationManager {
   private static final Logger logger = Logger.getLogger(PortalDeployerClientConfigurationManagerImpl.class.getName());
 
+  static final String PD_TOPIC_DEFAULT = "%s/api/command/+/tenantGatewayUuid/%s";
   static final int PD_BROKER_KEEP_ALIVE_DEFAULT = 30;
   static final int PD_BROKER_CONNECTION_TIMEOUT_DEFAULT = 60;
   static final boolean PD_BROKER_CLEAN_SESSION_DEFAULT = false;
@@ -43,6 +44,18 @@ public class PortalDeployerClientConfigurationManagerImpl implements PortalDeplo
   public PortalDeployerClientConfigurationManagerImpl(ApplicationContext context) {
     this.clusterPropertyManager = context.getBean("clusterPropertyManager", ClusterPropertyManager.class);
     this.clusterInfoManager = context.getBean("clusterInfoManager", ClusterInfoManager.class);
+  }
+
+  /**
+   * Defaults to '%s/api/command/+/tenantGatewayUuid/%s' if unspecified where the first and last argument should be the
+   * tenant ID and tenantGatewayUuid.
+   */
+  public String getPortalDeployerTopic() {
+    String topic = getClusterProperty(PD_TOPIC_CP);
+    if (topic == null) {
+      topic = PD_TOPIC_DEFAULT;
+    }
+    return topic;
   }
 
   /**
