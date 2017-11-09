@@ -503,23 +503,61 @@ public final class SolutionKitUtils {
     }
 
     /**
-     * Check whether upgrade is eligible based on given upgrade information.
+     * Check whether upgrade is eligible by verifying the selection solution kit has an uninstall bundle or not.
+     *
+     * @param solutionKitsConfig containing all upgrade information.
+     * @throws SolutionKitException thrown if no uninstall bundle exists and some internal errors happen.
+     */
+    public static void checkUninstallBundleExistenceForUpgrade(@NotNull final SolutionKitsConfig solutionKitsConfig) throws SolutionKitException {
+        if (! solutionKitsConfig.isUpgrade()) return;
+
+        final boolean parentSelectedForUpgrade = solutionKitsConfig.isParentSelectedForUpgrade();
+        final List<SolutionKit> solutionKitsToUpgrade = solutionKitsConfig.getSolutionKitsToUpgrade();
+
+        if (solutionKitsToUpgrade.isEmpty()) {
+            throw new SolutionKitException("Unable to upgrade: The number of solution kits selected for upgrade " +
+                "must be greater than or equal to one.");
+        }
+
+        List<SolutionKit> candidates = new ArrayList<>();
+        final int size = solutionKitsToUpgrade.size();
+        int indexToStartChecking;
+        if (parentSelectedForUpgrade) { // parent sk selection
+            indexToStartChecking = 1;
+        } else if (size == 2) { // child sk selection
+            indexToStartChecking = 1;
+        } else if (size == 1) { // standalone sk selection
+            indexToStartChecking = 0;
+        } else {
+            throw new SolutionKitException("Unable to upgrade: Incorrect number of Solution Kits for upgrade.");
+        }
+
+        for (int i = indexToStartChecking; i < size; i++) {
+            final SolutionKit solutionKit = solutionKitsToUpgrade.get(i);
+            if (StringUtils.isBlank(solutionKit.getUninstallBundle())) {
+                throw new SolutionKitException("The selected Solution Kit '" + solutionKit.getName() + "' (GUID: '" + solutionKit.getId() + "') is not eligible for upgrade because it does not contain an uninstall bundle.");
+            }
+        }
+    }
+
+    /**
+     * Check whether upgrade is eligible by matching solution kits' GUIDs from the database and the uploaded skar.
      * Please see more details about all implemented cases related to checking GUID match.
      *
      * @param solutionKitsConfig provide upgrade information.
      * @throws SolutionKitException thrown if any violation of upgrade is found.
      */
-    public static void checkUpgradeEligibility(@NotNull final SolutionKitsConfig solutionKitsConfig) throws SolutionKitException {
+    public static void checkGuidsMatchForUpgrade(@NotNull final SolutionKitsConfig solutionKitsConfig) throws SolutionKitException {
         final List<SolutionKit> solutionKitsToUpgrade = solutionKitsConfig.getSolutionKitsToUpgrade();
         final Set<SolutionKit> loadedSolutionKits = solutionKitsConfig.getLoadedSolutionKits().keySet();
 
         // After the below two conditions are passed, two lists are guaranteed as not empty.
         if (solutionKitsToUpgrade.isEmpty()) {
-            throw new IllegalArgumentException("Unable to upgrade: The number of solution kits selected for upgrade " +
+            throw new SolutionKitException("Unable to upgrade: The number of solution kits selected for upgrade " +
                 "must be greater than or equal to one.");
         }
         if (loadedSolutionKits.isEmpty()) {
-            throw new IllegalArgumentException("Unable to upgrade: The number of loaded solution kits from a skar " +
+            throw new SolutionKitException("Unable to upgrade: The number of loaded solution kits from a skar " +
                 "must be greater than or equal to one.");
         }
 

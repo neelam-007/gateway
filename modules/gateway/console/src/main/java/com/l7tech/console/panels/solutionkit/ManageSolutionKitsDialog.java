@@ -156,10 +156,10 @@ public class ManageSolutionKitsDialog extends JDialog {
                     refreshSolutionKitsTable();
                 }
             });
-        } catch (FindException e) {
+        } catch (final Exception e) {
             final String msg = "Unable to install solution kit: " + ExceptionUtils.getMessage(e);
             logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
-            DialogDisplayer.showMessageDialog(this, msg, "Error", JOptionPane.ERROR_MESSAGE, null);
+            DialogDisplayer.showMessageDialog(this, msg, "Solution Kit Install Error", JOptionPane.ERROR_MESSAGE, null);
         }
     }
 
@@ -328,10 +328,10 @@ public class ManageSolutionKitsDialog extends JDialog {
                         refreshSolutionKitsTable();
                     }
                 });
-            } catch (FindException e) {
-                final String msg = "Unable to upgrade solution kit: " + ExceptionUtils.getMessage(e);
+            } catch (final Exception e) {
+                final String msg = ExceptionUtils.getMessage(e);
                 logger.log(Level.WARNING, msg, ExceptionUtils.getDebugException(e));
-                DialogDisplayer.showMessageDialog(this, msg, "Error", JOptionPane.ERROR_MESSAGE, null);
+                DialogDisplayer.showMessageDialog(this, msg, "Solution Kit Upgrade Error", JOptionPane.ERROR_MESSAGE, null);
             }
         }
     }

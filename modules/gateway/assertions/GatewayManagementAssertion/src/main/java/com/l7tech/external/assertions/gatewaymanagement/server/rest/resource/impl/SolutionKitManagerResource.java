@@ -298,9 +298,13 @@ public class SolutionKitManagerResource {
                     );
                 }
 
-                // Set an upgrade candidate list in solutionKitsConfig.  This list will be used in setPreviouslyResolvedIds() and SkarPayload.process().
                 solutionKitsConfig.setParentSelectedForUpgrade(foundByGuidAndIM);
+
+                // Set an upgrade candidate list in solutionKitsConfig.  This list will be used in setPreviouslyResolvedIds() and SkarPayload.process().
                 solutionKitsConfig.setSolutionKitsToUpgrade(solutionKitAdminHelper.getSolutionKitsToUpgrade(foundByGuidAndIM));
+
+                // Check whether selected solution kits have uninstall bundle or not.
+                SolutionKitUtils.checkUninstallBundleExistenceForUpgrade(solutionKitsConfig);
 
                 // Find previously installed IDs to resolve.
                 solutionKitsConfig.setPreviouslyResolvedIds();
@@ -320,7 +324,7 @@ public class SolutionKitManagerResource {
             // Handle user selection and set selected solution kits for install or upgrade in solutionKitsConfig
             if (isUpgrade) {
                 // For upgrade, before handling user selection, check upgrade eligibility, depending on parent selection or child selection
-                SolutionKitUtils.checkUpgradeEligibility(solutionKitsConfig);
+                SolutionKitUtils.checkGuidsMatchForUpgrade(solutionKitsConfig);
                 setSelectedSolutionKitsForUpgrade(foundByGuidAndIM, instanceModifierForUpgrade, selectedGuidList, solutionKitsConfig);
             } else {
                 setSelectedSolutionKitsForInstall(solutionKitsConfig, instanceModifierParameter, solutionKitSelects, failOnExist);

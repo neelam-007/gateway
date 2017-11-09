@@ -41,7 +41,7 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
     private static final Logger logger = Logger.getLogger(InstallSolutionKitWizard.class.getName());
     private static final String WIZARD_TITLE = "Solution Kit Installation Wizard";
 
-    public static InstallSolutionKitWizard getInstance(@NotNull ManageSolutionKitsDialog parent, @Nullable SolutionKit solutionKitToUpgrade) throws FindException {
+    public static InstallSolutionKitWizard getInstance(@NotNull ManageSolutionKitsDialog parent, @Nullable SolutionKit solutionKitToUpgrade) throws FindException, SolutionKitException {
         final SolutionKitResolveMappingErrorsPanel third = new SolutionKitResolveMappingErrorsPanel();
 
         final SolutionKitSelectionPanel second = new SolutionKitSelectionPanel(solutionKitToUpgrade);
@@ -55,10 +55,13 @@ public class InstallSolutionKitWizard extends Wizard<SolutionKitsConfig> {
         solutionKitsConfig.setParentSelectedForUpgrade(solutionKitToUpgrade);
         solutionKitsConfig.setSolutionKitsToUpgrade(solutionKitAdmin.getSolutionKitsToUpgrade(solutionKitToUpgrade));
 
+        // Check whether selected solution kits have uninstall bundle or not.
+        SolutionKitUtils.checkUninstallBundleExistenceForUpgrade(solutionKitsConfig);
+
         return new InstallSolutionKitWizard(parent, first, solutionKitsConfig);
     }
 
-    public static InstallSolutionKitWizard getInstance(@NotNull ManageSolutionKitsDialog parent) throws FindException {
+    public static InstallSolutionKitWizard getInstance(@NotNull ManageSolutionKitsDialog parent) throws FindException, SolutionKitException {
         return getInstance(parent, null);
     }
 
