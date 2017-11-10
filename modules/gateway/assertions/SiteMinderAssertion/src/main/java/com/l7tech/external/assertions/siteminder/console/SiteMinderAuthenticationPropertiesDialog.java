@@ -38,6 +38,9 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
     private JTextField ssoZoneNameTextField;
     private JRadioButton noSsoTokenRadioButton;
     private final InputValidator inputValidator;
+    private JCheckBox jsonWebTokenCheckBox;
+    private JTextField namedJsonWebToken;
+    private JLabel jsonWebTokenLabel;
 
     public SiteMinderAuthenticationPropertiesDialog(final Frame owner, final SiteMinderAuthenticateAssertion assertion) {
         super(SiteMinderAuthenticateAssertion.class, owner, assertion, true);
@@ -71,10 +74,12 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
         createSsoTokenRadioButton.setSelected(true);
         cookieVariablePanel.setAllowDynamicStatusLabelVisibility(true);
 
-        Utilities.enableGrayOnDisabled(usernameLabel,namedUser,certificateNameLabel,namedCertificate);
+        jsonWebTokenCheckBox.addActionListener(buttonSwitchListener);
+        Utilities.enableGrayOnDisabled(usernameLabel,namedUser,certificateNameLabel,namedCertificate,namedJsonWebToken);
 
         inputValidator.constrainTextFieldToBeNonEmpty("Username", namedUser, null);
         inputValidator.constrainTextFieldToBeNonEmpty("Certificate CN or DN", namedCertificate, null);
+        inputValidator.constrainTextFieldToBeNonEmpty("JSON Web Token", namedJsonWebToken,null);
 
         inputValidator.addRule(new InputValidator.ValidationRule() {
             @Override
@@ -109,8 +114,22 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
             public String getValidationError() {
                 if ( specifyCredentialsRadioButton.isSelected()
                        && ! usernameAndPasswordCheckBox.isSelected()
-                       && ! x509CertificateCheckBox.isSelected()) {
-                    return "At least one of Username or X.509 Certificate must be selected when using Specified Credentials.";
+                        && ! x509CertificateCheckBox.isSelected()
+                        && !jsonWebTokenCheckBox.isSelected()) {
+                    return "At least one of Username, X.509 Certificate, or JWT must be selected when using Specified Credentials.";
+                }
+
+                return null;
+            }
+        });
+
+        inputValidator.addRule(new InputValidator.ValidationRule() {
+            @Override
+            public String getValidationError() {
+                if (specifyCredentialsRadioButton.isSelected()
+                        && jsonWebTokenCheckBox.isSelected()
+                        && (x509CertificateCheckBox.isSelected() || usernameAndPasswordCheckBox.isSelected())) {
+                    return "JWT cannot be selected in combination with any other authentication types when using Specified Credentials.";
                 }
 
                 return null;
@@ -131,6 +150,12 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
         namedUser.setEnabled(specifyCredentialsRadioButton.isSelected() && usernameAndPasswordCheckBox.isSelected());
         certificateNameLabel.setEnabled(specifyCredentialsRadioButton.isSelected() && x509CertificateCheckBox.isSelected());
         namedCertificate.setEnabled(specifyCredentialsRadioButton.isSelected() && x509CertificateCheckBox.isSelected());
+
+        // JWT can only be selected if we are specifying credentials
+        jsonWebTokenCheckBox.setEnabled(specifyCredentialsRadioButton.isSelected());
+        jsonWebTokenLabel.setEnabled(specifyCredentialsRadioButton.isSelected() && jsonWebTokenCheckBox.isSelected());
+        namedJsonWebToken.setEnabled(specifyCredentialsRadioButton.isSelected() && jsonWebTokenCheckBox.isSelected());
+
         ssoZoneNameTextField.setEnabled(createSsoTokenRadioButton.isSelected());
 
         if (packNeeded) {
@@ -161,6 +186,9 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
         x509CertificateCheckBox.setSelected(assertion.isSendX509CertificateCredential());
         namedUser.setText(assertion.getNamedUser());
         namedCertificate.setText(assertion.getNamedCertificate());
+
+        jsonWebTokenCheckBox.setSelected(assertion.isSendJWT());
+        namedJsonWebToken.setText(assertion.getNamedJsonWebToken());
 
         // Use SSO Token from the context variable option takes the precedence over Create SSO Token.
         if (!assertion.isUseSMCookie()) {
@@ -201,6 +229,8 @@ public class SiteMinderAuthenticationPropertiesDialog extends AssertionPropertie
         assertion.setSendX509CertificateCredential(x509CertificateCheckBox.isSelected());
         assertion.setNamedUser(namedUser.getText().trim());
         assertion.setNamedCertificate(namedCertificate.getText().trim());
+        assertion.setSendJWT(jsonWebTokenCheckBox.isSelected());
+        assertion.setNamedJsonWebToken(namedJsonWebToken.getText().trim());
         assertion.setCreateSsoToken(createSsoTokenRadioButton.isSelected());
         assertion.setSsoZoneName(ssoZoneNameTextField.getText().trim());
         //set user credentials
