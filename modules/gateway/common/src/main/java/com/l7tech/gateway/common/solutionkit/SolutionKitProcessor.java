@@ -226,6 +226,7 @@ public class SolutionKitProcessor {
     public void upgrade(@Nullable final Functions.UnaryThrows<List<Pair<Mappings, SolutionKit>>, SolutionKitImportInfo, Exception> doAsyncUpgrade) throws Exception {
         //selectedSolutionKits should be ordered because it is a treeset
         final Set<SolutionKit> selectedSolutionKits = solutionKitsConfig.getSelectedSolutionKits();
+        final List<SolutionKit> solutionKitsToUpgrade = solutionKitsConfig.getSolutionKitsToUpgrade();
 
         // Check if the loaded skar is a collection of skars.  If so process parent solution kit first.
         final SolutionKit parentSKFromLoad = solutionKitsConfig.getParentSolutionKitLoaded(); // Note: The parent solution kit has a dummy default GOID.
@@ -238,10 +239,12 @@ public class SolutionKitProcessor {
                 // harmful to keep this check in case the upgrade method is called after checking upgrade eligibility is skipped.
                 throw new SolutionKitException("Cannot upgrade because the parent Solution Kits involved in the upgrade do not match.");
             }
+        } else if (solutionKitsToUpgrade.size() == 2) {
+            // Case: selecting a child and loading a regular skar (i.e., not a skar of skars).
+            parentSKFromDB = solutionKitsToUpgrade.get(0);
         } else {
             parentSKFromDB = null;
         }
-
 
         for (final SolutionKit solutionKit : solutionKitsConfig.getSelectedSolutionKits()) {
             if (isCollection) {
@@ -251,6 +254,8 @@ public class SolutionKitProcessor {
                         parentSKFromDB
                 );
                 solutionKit.setParentGoid(parentGoid);
+            } else if (solutionKitsToUpgrade.size() == 2) {
+                solutionKit.setParentGoid(parentSKFromDB.getGoid());
             }
             // Update resolved mapping target IDs.
             solutionKitsConfig.setMappingTargetIdsFromResolvedIds(solutionKit);
