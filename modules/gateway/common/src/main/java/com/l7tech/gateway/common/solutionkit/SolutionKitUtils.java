@@ -50,7 +50,7 @@ public final class SolutionKitUtils {
     private static final String MSG_UNABLE_UPGRADE_PARENT_GUIDS_MISMATCH = "Unable to upgrade: The parent Solution Kits " +
         "involved in the upgrade do not have matching GUIDs. Consider installing instead.";
     private static final String MSG_UNABLE_UPGRADE_SK_GUIDS_MISMATCH = "Unable to upgrade: The Solution Kits involved " +
-        "in the upgrade do not have the matching GUIDs. Consider installing instead.";
+        "in the upgrade do not have matching GUIDs. Consider installing instead.";
 
     //TODO when Dependencies is implemented
     // public static final String SK_ELE_DEPENDENCIES = "Dependencies";
