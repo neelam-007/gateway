@@ -1074,13 +1074,17 @@
                         <constraints>
                           <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
                         </constraints>
-                        <properties/>
+                        <properties>
+                          <toolTipText value="Maximum pool size for the JMS connection (between 1-1000)."/>
+                        </properties>
                       </component>
                       <component id="2b32d" class="javax.swing.JSpinner" binding="connectionMinIdleSpinner">
                         <constraints>
                           <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
                         </constraints>
-                        <properties/>
+                        <properties>
+                          <toolTipText value="Minimum number of idle JMS connections that must stay in the pool."/>
+                        </properties>
                       </component>
                       <component id="5762c" class="javax.swing.JLabel" binding="connectionMinIdleLabel">
                         <constraints>
@@ -1104,7 +1108,9 @@
                             <preferred-size width="150" height="-1"/>
                           </grid>
                         </constraints>
-                        <properties/>
+                        <properties>
+                          <toolTipText value="Maximum time Gateway waits to acquire a JMS connection."/>
+                        </properties>
                       </component>
                       <hspacer id="df63b">
                         <constraints>
@@ -1133,7 +1139,9 @@
                         <constraints>
                           <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
                         </constraints>
-                        <properties/>
+                        <properties>
+                          <toolTipText value="Maximum number of sessions for the session pool. Enter '0' (zero) to create and close sessions are they are used. Enter a negative value for unlimited sessions (not recommended)."/>
+                        </properties>
                       </component>
                       <component id="5f1a0" class="javax.swing.JLabel" binding="sessionPoolMaxWait">
                         <constraints>
@@ -1149,7 +1157,9 @@
                             <preferred-size width="150" height="-1"/>
                           </grid>
                         </constraints>
-                        <properties/>
+                        <properties>
+                          <toolTipText value="Maximum amount of time to wait for an idle session once the connection pool is exhausted."/>
+                        </properties>
                       </component>
                       <hspacer id="326f0">
                         <constraints>
@@ -1173,7 +1183,9 @@
                         <constraints>
                           <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
                         </constraints>
-                        <properties/>
+                        <properties>
+                          <toolTipText value="Maximum number of sessions that can be idle in a session pool. Enter a negative value for no limit."/>
+                        </properties>
                       </component>
                       <hspacer id="17fb7">
                         <constraints>
