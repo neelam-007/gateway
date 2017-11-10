@@ -48,9 +48,9 @@ public final class SolutionKitUtils {
     public static final String SK_ELE_ALLOW_ADDENDUM = SK_PROP_ALLOW_ADDENDUM_KEY;
 
     private static final String MSG_UNABLE_UPGRADE_PARENT_GUIDS_MISMATCH = "Unable to upgrade: The parent Solution Kits " +
-        "involved in the upgrade do not have the matched GUID. Consider installing instead.";
+        "involved in the upgrade do not have matching GUIDs. Consider installing instead.";
     private static final String MSG_UNABLE_UPGRADE_SK_GUIDS_MISMATCH = "Unable to upgrade: The Solution Kits involved " +
-        "in the upgrade do not have the matched GUID. Consider installing instead.";
+        "in the upgrade do not have the matching GUIDs. Consider installing instead.";
 
     //TODO when Dependencies is implemented
     // public static final String SK_ELE_DEPENDENCIES = "Dependencies";
