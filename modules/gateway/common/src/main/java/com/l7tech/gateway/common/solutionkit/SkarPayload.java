@@ -151,13 +151,11 @@ public class SkarPayload extends SignerUtils.SignedZip.InnerPayload {
             }
 
             // copy existing entity ownership records to solutionKit (otherwise they will all be deleted)
-            //TODO: since the old solution kits are deleted, we don't need to set the EntityOwnershipDescriptors since
             // they will be removed when the solution kit entity is removed, might need to see what tests need fixing
-//            final SolutionKit solutionKitToUpgrade = solutionKitsConfig.getSolutionKitToUpgrade(solutionKit.getSolutionKitGuid());
-//
-//            if (solutionKitToUpgrade != null) {
-//                solutionKit.setEntityOwnershipDescriptors(solutionKitToUpgrade.getEntityOwnershipDescriptors());
-//            }
+            final SolutionKit solutionKitToUpgrade = solutionKitsConfig.getSolutionKitToUpgrade(solutionKit.getSolutionKitGuid());
+            if (solutionKitToUpgrade != null) {
+                solutionKit.setEntityOwnershipDescriptors(solutionKitToUpgrade.getEntityOwnershipDescriptors());
+            }
 
             solutionKitsConfig.getLoadedSolutionKits().put(solutionKit, bundle);
 

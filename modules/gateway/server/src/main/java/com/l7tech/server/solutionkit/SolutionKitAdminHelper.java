@@ -162,8 +162,8 @@ public class SolutionKitAdminHelper implements SolutionKitAdmin {
         //Continue with no errors from solutionKitManager.importBundles
         final ItemsList<Mappings> itemList = MarshallingUtils.unmarshal(ItemsList.class, new StreamSource(new StringReader(resultMappings)));
         final List<Item<Mappings>> items = itemList.getContent();
-        final List<SolutionKit> deleteBundles = solutionKitImportInfo.getSolutionKitsToDelete();
-        final int totalBundlesExpected = deleteBundles.size() + solutionKitBundleMap.size();
+        final List<SolutionKit> deleteSolutionKits = solutionKitImportInfo.getSolutionKitsToDelete();
+        final int totalBundlesExpected = deleteSolutionKits.size() + solutionKitBundleMap.size();
 
         // sanity check that result mappings and solutionkitpayload map + delete bundles are same size
         if (totalBundlesExpected != items.size()){
@@ -171,13 +171,14 @@ public class SolutionKitAdminHelper implements SolutionKitAdmin {
                     System.lineSeparator() + resultMappings);
         }
 
-        //Delete old solution kit entities
-        for (final SolutionKit solutionKit : deleteBundles) {
-            solutionKitManager.delete(solutionKit.getGoid());
+        final Map<String, SolutionKit> oldSKGuidAndSolutionKits = new HashMap<>();
+        //Keep track of old guids + their solution kits
+        for (final SolutionKit solutionKit : deleteSolutionKits) {
+            oldSKGuidAndSolutionKits.put(solutionKit.getSolutionKitGuid(), solutionKit);
         }
 
         final List<String> installMappingResults = new ArrayList<>();
-        int installMappingIndex = deleteBundles.size();
+        int installMappingIndex = deleteSolutionKits.size();
         // extract the install mapping results
         for (int i = installMappingIndex; i<items.size(); i++) {
             DOMResult result = new DOMResult();
@@ -205,12 +206,31 @@ public class SolutionKitAdminHelper implements SolutionKitAdmin {
                 );
             }
 
-            final Goid solutionKitGoid = solutionKitManager.save(solutionKit);
+            final Goid solutionKitGoid;
+            final Set<String> oldSolutionKitGuids = oldSKGuidAndSolutionKits.keySet();
+            final String solutionKitGuid = solutionKit.getSolutionKitGuid();
+            if (oldSolutionKitGuids.contains(solutionKitGuid)) {
+                //Solution kit on db, matches a new one on install, so update
+                //Get the goid from the database
+                final SolutionKit oldSolutionKit = oldSKGuidAndSolutionKits.get(solutionKitGuid);
+                solutionKitGoid = oldSolutionKit.getGoid();
+                //Don't delete the updated solution kit
+                deleteSolutionKits.remove(oldSolutionKit);
+            } else {
+                solutionKitGoid = solutionKitManager.save(solutionKit);
+            }
+
             updateEntityOwnershipDescriptors(installMappingResult, solutionKit);
             solutionKitManager.update(solutionKit);
             resultGoids.add(solutionKitGoid);
             installMappingIndex++;
         }
+
+        //For every other solution kit that was not updated, delete it
+        for (final SolutionKit solutionKit : deleteSolutionKits) {
+            solutionKitManager.delete(solutionKit);
+        }
+
         return resultGoids;
     }
 
