@@ -38,8 +38,9 @@ class GatewayBootUtil {
     static final String COMPONENT_RESOURCE_RUNTIME_NAME_SUFFIX = "RuntimeContext.xml";
     static final String COMPONENT_RESOURCE_ADMIN_NAME_PREFIX = "com/l7tech/server/resources/";
     static final String COMPONENT_RESOURCE_ADMIN_NAME_SUFFIX = "AdminContext.xml";
+
     static final Set<String> DEFAULT_COMPONENTS = new LinkedHashSet<>(Arrays.asList(
-            "uddi"
+            "uddi", "databaseReplicationMonitor", "processController"
     ));
 
     /**

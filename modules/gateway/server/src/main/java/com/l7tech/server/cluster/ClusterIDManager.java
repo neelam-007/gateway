@@ -374,7 +374,7 @@ public class ClusterIDManager extends HibernateDaoSupport {
         }
 
         if (nodePropertiesLoader.isDiskless()) {
-            logger.log(Level.WARNING, "Node property '" + "' is not defined.");
+            logger.log(Level.WARNING, "Node property '" + propertyName +"' is not defined.");
         } else {
             // not found and not diskless config mode - consult node.properties file
             String configDirectory = ConfigFactory.getProperty(SYSPROP_CONFIG_HOME);
