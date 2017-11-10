@@ -153,8 +153,8 @@ public class PooledConnection implements CachedConnection {
             final SingleSessionHolder newConn = new SingleSessionHolder(endpoint, newBag);
             newConn.ref(); // referenced by caller
 
-            logger.log(Level.FINE, "New JMS connection created ({0}), version {1}:{2}", new Object[] {
-                    newConn.getName(), newConn.getConnectionVersion(), newConn.getEndpointVersion()
+            logger.log(Level.FINE, "New JMS connection created ({0}), {1}", new Object[] {
+                    endpoint.getDisplayName(), newConn.getObjectReferenceName()
             });
 
             return newConn;
