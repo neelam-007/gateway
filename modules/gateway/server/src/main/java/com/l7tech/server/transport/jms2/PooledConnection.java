@@ -100,7 +100,12 @@ public class PooledConnection implements CachedConnection {
     @Override
     public void returnConnection(SessionHolder connection) throws JmsRuntimeException {
         try {
-            pool.returnObject(connection);
+            if(connection != null) {
+                pool.returnObject(connection);
+            }
+            else {
+                logger.log(Level.FINE, "SessionHolder is null!");
+            }
         } catch (Exception e) {
             logger.log(Level.FINEST, "Unable to return connection", e);
             throw new JmsRuntimeException(e);
