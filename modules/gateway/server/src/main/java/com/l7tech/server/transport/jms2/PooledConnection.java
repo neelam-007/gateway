@@ -183,11 +183,11 @@ public class PooledConnection implements CachedConnection {
 
     @Override
     public void debugStatus() {
-        logger.log(Level.FINE, "Active: " + pool.getNumActive() + " Idle: " + pool.getNumIdle() + " " + endpoint.getJmsEndpointKey());
+        logger.log(Level.FINE, "Active: " + pool.getNumActive() + " Idle: " + pool.getNumIdle() + " " + endpoint.getDisplayName());
     }
 
     @Override
     public String toString() {
-        return this.getClass().getSimpleName() + " : " + endpoint.getJmsEndpointKey();
+        return this.getClass().getSimpleName() + " : " + endpoint.getDisplayName();
     }
 }

@@ -89,12 +89,12 @@ public class SingleConnection implements CachedConnection {
 
     @Override
     public void debugStatus() {
-        logger.log(Level.FINE, "Active: " + singleConnection.refCount() + " references " + endpoint.getJmsEndpointKey());
+        logger.log(Level.FINE, "Active: " + singleConnection.refCount() + " references " + endpoint.getDisplayName());
     }
 
     @Override
     public String toString() {
-        return this.getClass().getSimpleName() + " : " + endpoint.getJmsEndpointKey();
+        return this.getClass().getSimpleName() + " : " + endpoint.getDisplayName();
     }
 
     private PooledSessionHolder newConnection(final JmsEndpointConfig endpoint ) throws NamingException, JmsRuntimeException {
