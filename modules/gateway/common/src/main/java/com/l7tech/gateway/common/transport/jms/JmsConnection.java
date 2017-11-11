@@ -93,6 +93,7 @@ public class JmsConnection extends ZoneableNamedEntityImp implements UsesPrivate
     public static final String PROP_CONNECTION_POOL_EVICT_INTERVAL = PREFIX + ".connection.pool.evict.interval";
     public static final String PROP_CONNECTION_POOL_EVICT_BATCH_SIZE = PREFIX + ".connection.pool.evict.batch.size";
     public static final int DEFAULT_CONNECTION_POOL_SIZE = 1;
+    public static final int DEFAULT_CONNECTION_POOL_MIN_IDLE = 0;
     public static final long DEFAULT_CONNECTION_POOL_MAX_WAIT = 5000;
     public static final long DEFAULT_CONNECTION_POOL_EVICT_INTERVAL = 10000;
     public static final long DEFAULT_CONNECTION_MAX_AGE = 300000;

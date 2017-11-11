@@ -307,7 +307,7 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
         final long maximumIdleTime = config.getTimeUnitProperty( "ioJmsConnectionCacheMaxIdleTime", DEFAULT_CONNECTION_MAX_IDLE );
         final long idleTime = config.getTimeUnitProperty("ioJmsConnectionIdleTime", DEFAULT_CONNECTION_IDLE_TIME);
         final int maximumPoolSize = config.getIntProperty("ioJmsConnectionPoolSize", JmsConnection.DEFAULT_CONNECTION_POOL_SIZE);
-        final int minimumConnectionIdle = config.getIntProperty("ioJmsConnectionMinIdle", JmsConnection.DEFAULT_CONNECTION_POOL_SIZE);
+        final int minimumConnectionIdle = config.getIntProperty("ioJmsConnectionMinIdle", JmsConnection.DEFAULT_CONNECTION_POOL_MIN_IDLE);
         final long maximumWait = config.getTimeUnitProperty("ioJmsConnectionMaxWait", JmsConnection.DEFAULT_CONNECTION_POOL_MAX_WAIT);
         final long timeBetweenEvictions = config.getTimeUnitProperty("ioJmsConnectionTimeBetweenEviction", JmsConnection.DEFAULT_CONNECTION_POOL_EVICT_INTERVAL);
         final int evictionBatchSize = config.getIntProperty("ioJmsConnectionEvictionBatchSize", JmsConnection.DEFAULT_CONNECTION_POOL_SIZE);
