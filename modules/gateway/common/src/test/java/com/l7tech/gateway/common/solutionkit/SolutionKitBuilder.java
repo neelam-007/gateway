@@ -5,6 +5,7 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Triple;
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 
 import java.util.*;

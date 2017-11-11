@@ -4,8 +4,8 @@ import static junit.framework.Assert.assertNotNull;
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 import static org.mockito.Mockito.*;
-import com.l7tech.external.assertions.gatewaymanagement.server.BundleBuilder;
-import com.l7tech.external.assertions.gatewaymanagement.server.MappingBuilder;
+import com.l7tech.gateway.common.BundleBuilder;
+import com.l7tech.gateway.common.MappingBuilder;
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.APIUtilityLocator;
 import com.l7tech.gateway.api.Bundle;
@@ -14,6 +14,7 @@ import com.l7tech.gateway.api.ManagedObjectFactory;
 import com.l7tech.gateway.api.Mapping;
 import com.l7tech.gateway.api.ServiceAliasMO;
 import com.l7tech.gateway.api.ServiceMO;
+
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.PublishedServiceAlias;
 import com.l7tech.objectmodel.EntityHeader;
@@ -197,7 +198,7 @@ public class BundleTransformerTest {
         when(serviceTransformer.convertFromMO(any(ServiceMO.class), eq(false), eq(null))).thenReturn(new EntityContainer<>(service));
         when(aliasTransformer.convertFromMO(any(ServiceAliasMO.class), eq(false), eq(null))).thenReturn(new EntityContainer<>(alias));
 
-        final EntityBundle result = bundleTransformer.convertFromMO(new BundleBuilder().addServiceAlias(service, alias).build(), null);
+        final EntityBundle result = bundleTransformer.convertFromMO(new BundleBuilder().addServiceAlias(service.getName(), service.getId(), alias.getId()).build(), null);
         final Map<Goid, EntityMappingInstructions> instructionsMap = instructionsToMap(result.getMappingInstructions());
         assertEquals(2, instructionsMap.size());
         assertEquals("test alias", instructionsMap.get(aliasId).getSourceEntityHeader().getName());
@@ -216,7 +217,7 @@ public class BundleTransformerTest {
         when(serviceTransformer.convertFromMO(any(ServiceMO.class), eq(false), eq(null))).thenReturn(new EntityContainer<>(service));
         when(aliasTransformer.convertFromMO(any(ServiceAliasMO.class), eq(false), eq(null))).thenReturn(new EntityContainer<>(alias));
 
-        Bundle bundle = new BundleBuilder().addServiceAlias(service, alias).build();
+        Bundle bundle = new BundleBuilder().addServiceAlias(service.getName(), service.getId(), alias.getId()).build();
         bundle.getMappings().get(1).addProperty("otherProp","value");
 
         final EntityBundle result = bundleTransformer.convertFromMO(bundle, null);

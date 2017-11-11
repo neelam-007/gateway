@@ -247,8 +247,24 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
             public List<List<EntityMappingResult>> doInTransaction(final TransactionStatus transactionStatus) {
                 final List<List<EntityMappingResult>> mappingRtnList = new ArrayList<>();
 
+                // Keep track of policies deleted among multiple uninstall bundles
+                final Set<Goid> deletedPolicyIds = new HashSet<>();
+
                 for (final EntityBundle bundle: bundles) {
-                    mappingRtnList.add(doImportBundle(transactionStatus, bundle, test, activate, versionComment));
+                    mappingRtnList.add(doImportBundle(bundle, test, activate, versionComment, deletedPolicyIds));
+                    transactionStatus.flush();
+                }
+
+                // When importing all bundle is finished, check if it is for test or any errors occur.  If so, rollback.
+                if (test) {
+                    transactionStatus.setRollbackOnly();
+                } else {
+                    for (final List<EntityMappingResult> mappingsRtn: mappingRtnList) {
+                        if (containsErrors(mappingsRtn)) {
+                            transactionStatus.setRollbackOnly();
+                            break;
+                        }
+                    }
                 }
 
                 return mappingRtnList;
@@ -262,17 +278,21 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
      * import nothing is committed and all changes that were made are rolled back.  No matter whether each bundle is imported
      * successfully or failed to import, one list of EntityMappingResults is generated for the bundle imported.
      *
-     * @param transactionStatus The parent transaction status shared by all other bundles imported.
      * @param bundle         The bundle to import
      * @param test           if true the bundles import will be performed but rolled back afterwards and the results of
      *                       the import will be returned. If false the bundles import will be committed it if is
      *                       successful.
      * @param activate       True to activate the updated services and policies.
      * @param versionComment The comment to set for updated/created services and policies
+     * @param deletedPolicyIds Keeps track of policies deleted among multiple uninstall bundles
      * @return A list of EntityMappingResult objects for the bundle imported
      */
     @NotNull
-    private List<EntityMappingResult> doImportBundle(@NotNull final TransactionStatus transactionStatus, @NotNull final EntityBundle bundle, final boolean test, final boolean activate, @Nullable final String versionComment) {
+    private List<EntityMappingResult> doImportBundle(@NotNull final EntityBundle bundle,
+                                                     final boolean test,
+                                                     final boolean activate,
+                                                     @Nullable final String versionComment,
+                                                     @NotNull final Set<Goid> deletedPolicyIds) {
         // Perform each bundle import within a same transaction so that it can be rolled back if there is an error importing the bundle, or this is a test import.
         logger.log(Level.FINEST, "Importing Bundle. # Mappings: " + bundle.getMappingInstructions().size());
         //This is the list of mappings to return.
@@ -281,9 +301,8 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
         final Map<EntityHeader, EntityHeader> resourceMapping = new HashMap<>(bundle.getMappingInstructions().size());
         //loop through each mapping instruction to perform the action.
         final Map<EntityHeader,Callable<String>> cachedPrivateKeyOperations = new HashMap<EntityHeader,Callable<String>>();
-        //keeps track of policies deleted so far
-        final Set<Goid> deletedPolicyIds = new HashSet<>();
         int progressCounter = 1;
+
         for (final EntityMappingInstructions mapping : bundle.getMappingInstructions()) {
             logger.log(Level.FINEST, "Processing mapping " + progressCounter++ + " of " + bundle.getMappingInstructions().size() + ". Mapping: " + mapping.getSourceEntityHeader().toStringVerbose());
 
@@ -299,8 +318,9 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                     //Use the existing entity
                     if (mapping.shouldFailOnExisting() && !EntityMappingInstructions.MappingAction.Ignore.equals(mapping.getMappingAction())) {
                         mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), new TargetExistsException(mapping, "Fail on existing specified and target exists."));
-                        //rollback the transaction
-                        transactionStatus.setRollbackOnly();
+                        // Add this result and continue next mapping
+                        mappingsRtn.add(mappingResult);
+                       continue;
                     } else {
                         switch (mapping.getMappingAction()) {
                             case NewOrExisting: {
@@ -325,7 +345,9 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                         );
                                     }
                                     mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), new TargetReadOnlyException(mapping, "Not possible to update"));
-                                    transactionStatus.setRollbackOnly();
+                                    // Add this result and continue next mapping
+                                    mappingsRtn.add(mappingResult);
+                                    continue;
                                 } else {
                                     //update the existing entity
                                     final EntityHeader targetEntityHeader = createOrUpdateResource(entity, existingEntity.getId(), mapping, resourceMapping, existingEntity, activate, versionComment, false, cachedPrivateKeyOperations);
@@ -354,7 +376,9 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                         );
                                     }
                                     mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), new TargetReadOnlyException(mapping, "Not possible to delete"));
-                                    transactionStatus.setRollbackOnly();
+                                    // Add this result and continue next mapping
+                                    mappingsRtn.add(mappingResult);
+                                    continue;
                                 } else {
                                     final EntityHeader targetEntityHeader = deleteEntity(existingEntity, mapping, cachedPrivateKeyOperations, deletedPolicyIds);
                                     mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), targetEntityHeader, EntityMappingResult.MappingAction.Deleted);
@@ -367,8 +391,9 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                 } else {
                     if (mapping.shouldFailOnNew() && !EntityMappingInstructions.MappingAction.Ignore.equals(mapping.getMappingAction())) {
                         mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), new TargetNotFoundException(mapping, "Fail on new specified and could not locate existing target"));
-                        //rollback the transaction
-                        transactionStatus.setRollbackOnly();
+                        // Add this result and continue next mapping
+                        mappingsRtn.add(mappingResult);
+                        continue;
                     } else {
                         switch (mapping.getMappingAction()) {
                             case NewOrExisting:
@@ -390,8 +415,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                     id = null;
                                 }
 
-                                final EntityHeader targetEntityHeader = createOrUpdateResource(entity,
-                                    id,
+                                final EntityHeader targetEntityHeader = createOrUpdateResource(entity, id,
                                     mapping, resourceMapping, null, activate, versionComment, false, cachedPrivateKeyOperations);
                                 mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), targetEntityHeader, EntityMappingResult.MappingAction.CreatedNew);
                                 break;
@@ -409,8 +433,8 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                 }
                 mappingsRtn.add(mappingResult);
             } catch (Throwable e) {
+                // Add this result and continue next mapping
                 mappingsRtn.add(new EntityMappingResult(mapping.getSourceEntityHeader(), e));
-                transactionStatus.setRollbackOnly();
             }
         }
 
@@ -460,11 +484,6 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                     return null;
                 }
             });
-        }
-
-
-        if (test || containsErrors(mappingsRtn)) {
-            transactionStatus.setRollbackOnly();
         }
 
         return mappingsRtn;

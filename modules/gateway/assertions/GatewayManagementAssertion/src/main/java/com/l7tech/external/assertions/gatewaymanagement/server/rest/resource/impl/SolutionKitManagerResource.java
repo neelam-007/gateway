@@ -298,8 +298,13 @@ public class SolutionKitManagerResource {
                     );
                 }
 
+                solutionKitsConfig.setParentSelectedForUpgrade(foundByGuidAndIM);
+
                 // Set an upgrade candidate list in solutionKitsConfig.  This list will be used in setPreviouslyResolvedIds() and SkarPayload.process().
                 solutionKitsConfig.setSolutionKitsToUpgrade(solutionKitAdminHelper.getSolutionKitsToUpgrade(foundByGuidAndIM));
+
+                // Check whether selected solution kits have uninstall bundle or not.
+                SolutionKitUtils.checkUninstallBundleExistenceForUpgrade(solutionKitsConfig);
 
                 // Find previously installed IDs to resolve.
                 solutionKitsConfig.setPreviouslyResolvedIds();
@@ -318,6 +323,8 @@ public class SolutionKitManagerResource {
 
             // Handle user selection and set selected solution kits for install or upgrade in solutionKitsConfig
             if (isUpgrade) {
+                // For upgrade, before handling user selection, check upgrade eligibility, depending on parent selection or child selection
+                SolutionKitUtils.checkGuidsMatchForUpgrade(solutionKitsConfig);
                 setSelectedSolutionKitsForUpgrade(foundByGuidAndIM, instanceModifierForUpgrade, selectedGuidList, solutionKitsConfig);
             } else {
                 setSelectedSolutionKitsForInstall(solutionKitsConfig, instanceModifierParameter, solutionKitSelects, failOnExist);
@@ -348,13 +355,15 @@ public class SolutionKitManagerResource {
             // pass in form fields as input parameters to customizations
             setCustomizationKeyValues(solutionKitsConfig.getCustomizations(), formDataMultiPart);
 
-            // Test all selected (child) solution kit(s) before actual installation.
-            // This step is to prevent partial installation/upgrade
             final SolutionKitProcessor solutionKitProcessor = new SolutionKitProcessor(solutionKitsConfig, solutionKitAdminHelper);
-            testInstallOrUpgrade(solutionKitProcessor);
 
-            // install or upgrade
-            solutionKitProcessor.installOrUpgrade();
+            if (isUpgrade) {
+                testUpgrade(solutionKitProcessor);
+                solutionKitProcessor.upgrade(null);
+            } else {
+                testInstall(solutionKitProcessor);
+                solutionKitProcessor.install(null,null);
+            }
 
         } catch (AddendumBundleHandler.AddendumBundleException e) {
             logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
@@ -388,16 +397,15 @@ public class SolutionKitManagerResource {
     private static final String TEST_BUNDLE_IMPORT_ERROR_MESSAGE_NO_NAME_GUID = "Test install/upgrade failed for solution kit: {0}";
 
     /**
-     * Attempt test install or upgrade (i.e. a dry run without committing) of the selected solution kits; handles potential conflicts.
+     * Attempt test install (i.e. a dry run without committing) of the selected solution kits; handles potential conflicts.
      *
      * @param solutionKitProcessor class containing the test install / upgrade logic
      * @throws SolutionKitManagerResourceException if an error happens during dry-run, holding the response.
      */
-    private void testInstallOrUpgrade(@NotNull final SolutionKitProcessor solutionKitProcessor) throws SolutionKitManagerResourceException {
-
+    private void testInstall(@NotNull final SolutionKitProcessor solutionKitProcessor) throws SolutionKitManagerResourceException {
         final AtomicReference<SolutionKit> solutionKitReference = new AtomicReference<>();
         try {
-            solutionKitProcessor.testInstallOrUpgrade(new Functions.UnaryVoidThrows<Triple<SolutionKit, String, Boolean>, Throwable>() {
+            solutionKitProcessor.testInstall(new Functions.UnaryVoidThrows<Triple<SolutionKit, String, Boolean>, Throwable>() {
                 @Override
                 public void call(Triple<SolutionKit, String, Boolean> loaded) throws Throwable {
                     solutionKitReference.set(loaded.left);
@@ -430,6 +438,70 @@ public class SolutionKitManagerResource {
                                                     TEST_BUNDLE_IMPORT_ERROR_MESSAGE,
                                                     loaded.left.getName(),
                                                     loaded.left.getSolutionKitGuid(),
+                                                    lineSeparator() + mappingsStr + lineSeparator()
+                                            )
+                                    ).build()
+                            );
+                        }
+                    }
+                }
+
+            });
+        } catch (final ForbiddenException e) {
+            throw new SolutionKitManagerResourceException(status(FORBIDDEN).entity(getTestBundleImportErrorMessage(solutionKitReference.get(), e)).build(), e);
+        } catch (final BadRequestException e) {
+            throw new SolutionKitManagerResourceException(status(BAD_REQUEST).entity(getTestBundleImportErrorMessage(solutionKitReference.get(), e)).build(), e);
+        } catch (final SolutionKitConflictException e) {
+            throw new SolutionKitManagerResourceException(status(CONFLICT).entity(getTestBundleImportErrorMessage(solutionKitReference.get(), e)).build(), e);
+        } catch (final SolutionKitManagerResourceException e) {
+            throw e;
+        } catch (final Throwable e) {
+            throw new SolutionKitManagerResourceException(status(INTERNAL_SERVER_ERROR).entity(getTestBundleImportErrorMessage(solutionKitReference.get(), e)).build(), e);
+        }
+    }
+
+    /**
+     * Attempt test upgrade (i.e. a dry run without committing) of the selected solution kits; handles potential conflicts.
+     *
+     * @param solutionKitProcessor class containing the test install / upgrade logic
+     * @throws SolutionKitManagerResourceException if an error happens during dry-run, holding the response.
+     */
+    private void testUpgrade(@NotNull final SolutionKitProcessor solutionKitProcessor) throws SolutionKitManagerResourceException {
+
+        final AtomicReference<SolutionKit> solutionKitReference = new AtomicReference<>();
+        try {
+            solutionKitProcessor.testUpgrade(new Functions.UnaryVoidThrows<SolutionKitImportInfo, Throwable>() {
+                @Override
+                public void call(SolutionKitImportInfo loaded) throws Throwable {
+                    final String mappingsStr = solutionKitAdminHelper.testUpgrade(loaded);
+                    solutionKitReference.set(SolutionKitUtils.solutionKitToDisplayForUpgrade(loaded.getSolutionKitsToInstall().keySet(), loaded.getParentSolutionKit()));
+
+                    // no mappings; looks like there are no errors
+                    if (StringUtils.isNotBlank(mappingsStr)) {
+                        // create a RestmanMessage in order to parse error mappings
+                        final RestmanMessage message;
+                        try {
+                            message = new RestmanMessage(mappingsStr);
+                        } catch (final SAXException e) {
+                            throw new SolutionKitManagerResourceException(
+                                    status(INTERNAL_SERVER_ERROR).entity(
+                                            MessageFormat.format(
+                                                    TEST_BUNDLE_IMPORT_ERROR_MESSAGE,
+                                                    solutionKitReference.get().getName(),
+                                                    solutionKitReference.get().getSolutionKitGuid(),
+                                                    lineSeparator() + ExceptionUtils.getMessage(e) + lineSeparator()
+                                            )
+                                    ).build(),
+                                    e
+                            );
+                        }
+                        if (message.hasMappingErrorFromBundles()) {
+                            throw new SolutionKitManagerResourceException(
+                                    status(CONFLICT).entity(
+                                            MessageFormat.format(
+                                                    TEST_BUNDLE_IMPORT_ERROR_MESSAGE,
+                                                    solutionKitReference.get().getName(),
+                                                    solutionKitReference.get().getSolutionKitGuid(),
                                                     lineSeparator() + mappingsStr + lineSeparator()
                                             )
                                     ).build()
@@ -860,70 +932,43 @@ public class SolutionKitManagerResource {
             candidateGuidList.add(solutionKit.getSolutionKitGuid());
         }
 
-        // Update the upgrade list from SolutionKitConfig based on user's selection, a list of solutionKitSelect (i,e., selectedGuidList).
-        // If some of children are selected, then the upgrade list should be shrunk.
+        // Generate a selected and loaded solution kit list, based on user selection and the skar file uploaded.
+        final Map<String, SolutionKit> loadedSolutionKitMap = new HashMap<>(); // A map to keep references of GUID and uploaded SolutionKit
+        for (final SolutionKit loadedSolutionKit : solutionKitsConfig.getLoadedSolutionKits().keySet()) {
+            loadedSolutionKitMap.put(loadedSolutionKit.getSolutionKitGuid(), loadedSolutionKit);
+        }
+
         final boolean isParent = SolutionKitUtils.isParentSolutionKit(solutionKitForUpgrade);
 
         // Case: Choose a parent and some child solution kits to upgrade
         if (isParent && !selectedGuidList.isEmpty()) {
-            // First check whether selected solution kits are acceptable for upgrade.
-            for (final String selectedGuid: selectedGuidList) {
-                if (! candidateGuidList.contains(selectedGuid)) {
-                    throw new SolutionKitManagerResourceException(status(NOT_ACCEPTABLE).entity("The solution kit (GUID='"
-                        + selectedGuid + "', Instance Modifier='" + InstanceModifier.getDisplayName(instanceModifier) + "') " +
-                        "is not a child solution kit of '" + solutionKitForUpgrade.getName() + "' and cannot be selected " +
-                        "for upgrade." + lineSeparator()).build());
-                }
-            }
-            // Update the upgrade list, "solutionKitsToUpgrade" based on selectedGuidList.
-            if (selectedGuidList.size() < candidateGuidList.size()) {
-                final Iterator<SolutionKit> iterator = solutionKitsToUpgrade.iterator();
-                while (iterator.hasNext()) {
-                    // Do not remove the parent from the upgrade list, b/c when selectedGuidList is generated, parent is not put into selectedGuidList.
-                    final SolutionKit candidate = iterator.next();
-                    if (SolutionKitUtils.isParentSolutionKit(candidate)) continue;
-
-                    if (! selectedGuidList.contains(candidate.getSolutionKitGuid())) {
-                        iterator.remove(); // Remove the candidate b/c it is not selected by user.
-                    }
-                }
-            }
-            // Everything is ok, then assign the final selection list, finalSelectedGuidList
             finalSelectedGuidList.addAll(selectedGuidList);
         }
         // Case: Choose a parent with all children to upgrade
         else if (isParent) {
-            finalSelectedGuidList.addAll(candidateGuidList);
+            // All loaded SK list will be a selected list.
+            finalSelectedGuidList.addAll(loadedSolutionKitMap.keySet());
         }
         // Case: Choose a child solution kit to upgrade
         else if (candidateGuidList.size() == 2) {
-            finalSelectedGuidList.add(candidateGuidList.get(1)); // The first element in candidateGuidList is a parent GUID.
+            finalSelectedGuidList.add(candidateGuidList.get(1)); // b/c the first element in the upgrade candidate list is a parent.
         }
         // Case: Choose a non-parent and non-child solution kit to upgrade
         else {
             finalSelectedGuidList.addAll(candidateGuidList); // In this case, candidateGuidList should have one element.
         }
 
-        // Generate a selected and loaded solution kit list, based on user selection and the skar file uploaded.
-        final Map<String, SolutionKit> loadedSolutionKitMap = new HashMap<>(); // A map to keep references of GUID and uploaded SolutionKit
-        for (final SolutionKit loadedSolutionKit : solutionKitsConfig.getLoadedSolutionKits().keySet()) {
-            loadedSolutionKitMap.put(loadedSolutionKit.getSolutionKitGuid(), loadedSolutionKit);
-        }
+        // Use selected solution kits to update the loaded solution kits with new attributes such as instance modifier and custom context.
         final Set<SolutionKit> selectedLoadedSolutionKits = new TreeSet<>();
         final Set<String> loadedGuidSet = loadedSolutionKitMap.keySet();
-
-        // Use selected solution kits to update the loaded solution kits with new attributes such as instance modifier and custom context.
-        final String parentGuid = isParent? solutionKitForUpgrade.getSolutionKitGuid() : null;
         for (final String selectedGuid: finalSelectedGuidList) {
-            // First skip checking on parent solution kit, since the loaded list never includes a parent.
-            if (selectedGuid.equals(parentGuid)) continue;
-
             // If any solution kit from the uploaded skar couldn't be found to match the selected solution kit for upgrade, throw exception.
             if (! loadedGuidSet.contains(selectedGuid)) {
                 throw new SolutionKitManagerResourceException(status(NOT_FOUND).entity("There isn't any solution kit in " +
                     "the uploaded skar to match a selected solution kit (GUID='" + selectedGuid + "', Instance " +
                     "Modifier='" + InstanceModifier.getDisplayName(instanceModifier) + "')" + lineSeparator()).build());
             }
+
             final SolutionKit loadedSK = loadedSolutionKitMap.get(selectedGuid);
             loadedSK.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, instanceModifier);
             InstanceModifier.setCustomContext(solutionKitsConfig, loadedSK);

@@ -176,44 +176,7 @@ public class SkarPayloadTest {
     }
 
     @Test
-    public void mergeBundleEmptyUpgradeMappings() throws Exception {
-        final SolutionKit solutionKit = new SolutionKit();
-        solutionKit.setSolutionKitGuid("1f87436b-7ca5-41c8-9418-21d7a7848853");
-
-        final SolutionKitsConfig solutionKitsConfig = new SolutionKitsConfig();
-        final SkarPayload skarPayload = new UnsignedSkarPayloadStub(solutionKitsConfig, Mockito.mock(InputStream.class));
-
-        // setup install bundle
-        final Bundle installBundle = createBundle(
-                "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n" +
-                    "<l7:Bundle xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
-                    "    <l7:References/>\n" +   // references not used for this test
-                    "    <l7:Mappings>\n" +
-                    "        <l7:Mapping action=\"NewOrExisting\" srcId=\"f1649a0664f1ebb6235ac238a6f71b0c\" srcUri=\"https://tluong-pc.l7tech.local:8443/restman/1.0/folders/f1649a0664f1ebb6235ac238a6f71b0c\" type=\"FOLDER\"/>\n" +
-                    "        <l7:Mapping action=\"AlwaysCreateNew\" srcId=\"f1649a0664f1ebb6235ac238a6f71b61\" srcUri=\"https://tluong-pc.l7tech.local:8443/restman/1.0/policies/f1649a0664f1ebb6235ac238a6f71b61\" type=\"POLICY\"/>\n" +
-                    "        <l7:Mapping action=\"AlwaysCreateNew\" srcId=\"f1649a0664f1ebb6235ac238a6f71b89\" srcUri=\"https://tluong-pc.l7tech.local:8443/restman/1.0/encapsulatedAssertions/f1649a0664f1ebb6235ac238a6f71b89\" type=\"ENCAPSULATED_ASSERTION\"/>\n" +
-                    "    </l7:Mappings>\n" +
-                    "</l7:Bundle>");
-
-        // setup upgrade bundle; empty mappings
-        final Bundle upgradeBundle = createBundle(
-                "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n" +
-                "<l7:Bundle xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
-                "    <l7:References/>\n" +   // references not used for this test
-                "    <l7:Mappings/>\n" +   // empty mappings
-                "</l7:Bundle>");
-
-        final Bundle mergedBundle = skarPayload.mergeBundle(solutionKit, installBundle, upgradeBundle);
-
-        // expect a merged original bundle (i.e. same as merged bundle)
-        assertEquals(installBundle, mergedBundle);
-
-        // expect original 3 mappings
-        assertEquals(3, mergedBundle.getMappings().size());
-    }
-
-    @Test
-    public void mergeBundleChangedUpgradeMappings() throws Exception {
+    public void updateInstallBundleChangedUpgradeMappings() throws Exception {
         final SolutionKit solutionKit = new SolutionKit();
         solutionKit.setSolutionKitGuid("1f87436b-7ca5-41c8-9418-21d7a7848853");
 
@@ -238,28 +201,7 @@ public class SkarPayloadTest {
                 "    </l7:Mappings>\n" +
                 "</l7:Bundle>");
 
-        // setup upgrade bundle
-        final Bundle upgradeBundle = createBundle(
-                "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n" +
-                "<l7:Bundle xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
-                "    <l7:References/>\n" +   // references not used for this test
-                "    <l7:Mappings>\n" +
-                "        <l7:Mapping action=\"NewOrExisting\" srcId=\"f1649a0664f1ebb6235ac238a6f71b0c\" srcUri=\"https://tluong-pc.l7tech.local:8443/restman/1.0/folders/f1649a0664f1ebb6235ac238a6f71b0c\" type=\"FOLDER\"/>\n" +
-                "        <l7:Mapping action=\"NewOrUpdate\" srcId=\"f1649a0664f1ebb6235ac238a6f71b61\" srcUri=\"https://tluong-pc.l7tech.local:8443/restman/1.0/policies/f1649a0664f1ebb6235ac238a6f71b61\" type=\"POLICY\"/>\n" +
-                "    </l7:Mappings>\n" +
-                "</l7:Bundle>");
-
-        final Bundle mergedBundle = skarPayload.mergeBundle(solutionKit, installBundle, upgradeBundle);
-
-        // expect a merged original bundle (i.e. same as merged bundle)
-        assertEquals(installBundle, mergedBundle);
-        assertEquals(installBundle.getMappings(), upgradeBundle.getMappings());
-
-        // expect the 2 upgrade mappings are not AlwaysCreateNew
-        assertEquals(2, mergedBundle.getMappings().size());
-        for (Mapping mapping : mergedBundle.getMappings()) {
-            assertNotEquals(Mapping.Action.AlwaysCreateNew, mapping.getAction());
-        }
+        skarPayload.updateInstallBundle(solutionKit, installBundle);
 
         //expect the original Solution Kit's goid and version has been updated
         assertEquals(solutionKit.getGoid(), solutionKitToUpgrade.getGoid());
@@ -267,7 +209,7 @@ public class SkarPayloadTest {
     }
 
     @Test
-    public void mergeBundleDifferentSolutionKitGuid() throws Exception {
+    public void updateInstallBundleDifferentSolutionKitGuid() throws Exception {
         final SolutionKit solutionKit = new SolutionKit();
         solutionKit.setSolutionKitGuid("1f87436b-7ca5-41c8-9418-21d7a7848853");
 
@@ -293,22 +235,7 @@ public class SkarPayloadTest {
                         "    </l7:Mappings>\n" +
                         "</l7:Bundle>");
 
-        // setup upgrade bundle
-        final Bundle upgradeBundle = createBundle(
-                "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n" +
-                        "<l7:Bundle xmlns:l7=\"http://ns.l7tech.com/2010/04/gateway-management\">\n" +
-                        "    <l7:References/>\n" +   // references not used for this test
-                        "    <l7:Mappings>\n" +
-                        "        <l7:Mapping action=\"NewOrExisting\" srcId=\"f1649a0664f1ebb6235ac238a6f71b0c\" srcUri=\"https://tluong-pc.l7tech.local:8443/restman/1.0/folders/f1649a0664f1ebb6235ac238a6f71b0c\" type=\"FOLDER\"/>\n" +
-                        "        <l7:Mapping action=\"NewOrUpdate\" srcId=\"f1649a0664f1ebb6235ac238a6f71b61\" srcUri=\"https://tluong-pc.l7tech.local:8443/restman/1.0/policies/f1649a0664f1ebb6235ac238a6f71b61\" type=\"POLICY\"/>\n" +
-                        "    </l7:Mappings>\n" +
-                        "</l7:Bundle>");
-
-        final Bundle mergedBundle = skarPayload.mergeBundle(solutionKit, installBundle, upgradeBundle);
-
-        // expect the install and merged bundle to be different
-        assertEquals(installBundle, mergedBundle);
-        assertNotEquals(installBundle.getMappings(), upgradeBundle.getMappings());
+        final Bundle mergedBundle = skarPayload.updateInstallBundle(solutionKit, installBundle);
 
         // expect the install bundle is unchanged, and all the mappings are still AlwaysCreateNew
         assertEquals(3, mergedBundle.getMappings().size());

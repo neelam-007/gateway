@@ -48,8 +48,7 @@ public class SolutionKitProcessorTest {
     }
 
     @Test
-    public void testInstallOrUpgrade() throws Throwable {
-
+    public void testInstall() throws Throwable {
         // solution kits for the test
         final int numberOfSolutionKits = 2;
         final Set<SolutionKit> selectedSolutionKits = new HashSet<>(numberOfSolutionKits);
@@ -61,9 +60,9 @@ public class SolutionKitProcessorTest {
         selectedSolutionKits.add(solutionKit2);
         when(solutionKitsConfig.getSelectedSolutionKits()).thenReturn(selectedSolutionKits);
 
-        // install or upgrade
+        // install
         final AtomicBoolean doTestInstallExecuted = new AtomicBoolean(false);
-        solutionKitProcessor.testInstallOrUpgrade(new Functions.UnaryVoidThrows<Triple<SolutionKit, String, Boolean>, Throwable>() {
+        solutionKitProcessor.testInstall(new Functions.UnaryVoidThrows<Triple<SolutionKit, String, Boolean>, Throwable>() {
             @Override
             public void call(Triple<SolutionKit, String, Boolean> loaded) throws Throwable {
                 doTestInstallExecuted.set(true);
@@ -78,22 +77,7 @@ public class SolutionKitProcessorTest {
 
         // make sure setMappingTargetIdsFromResolvedIds called
         verify(solutionKitsConfig, times(numberOfSolutionKits)).setMappingTargetIdsFromResolvedIds(any(SolutionKit.class));
-
-        // fail with BadRequestException
-        when(solutionKitsConfig.isUpgrade()).thenReturn(true);
-        try {
-            solutionKitProcessor.testInstallOrUpgrade(new Functions.UnaryVoidThrows<Triple<SolutionKit, String, Boolean>, Throwable>() {
-                @Override
-                public void call(Triple<SolutionKit, String, Boolean> loaded) throws Throwable {
-                    // do nothing
-                }
-            });
-            fail("Expected upgrade with no provided upgrade information to fail with BadRequestException.");
-        } catch (BadRequestException e) {
-            assertThat(e.getMessage(), CoreMatchers.endsWith("cannot be used for upgrade due to that its SKAR file does not include UpgradeBundle.xml."));
-        }
     }
-
 
     @Test
     public void testInstallParentWithDifferentMetadataError() throws Throwable {
@@ -146,7 +130,7 @@ public class SolutionKitProcessorTest {
 
         // test install, should fail because the metadata for loaded + solution kit on db have different metadata
         try {
-            solutionKitProcessor.testInstallOrUpgrade(new Functions.UnaryVoidThrows<Triple<SolutionKit, String, Boolean>, Throwable>() {
+            solutionKitProcessor.testInstall(new Functions.UnaryVoidThrows<Triple<SolutionKit, String, Boolean>, Throwable>() {
                 @Override
                 public void call(Triple<SolutionKit, String, Boolean> loaded) throws Throwable {
                     //do nothing
@@ -213,7 +197,7 @@ public class SolutionKitProcessorTest {
 
         // install or upgrade
         final AtomicBoolean doTestInstallExecuted = new AtomicBoolean(false);
-        solutionKitProcessor.testInstallOrUpgrade(new Functions.UnaryVoidThrows<Triple<SolutionKit, String, Boolean>, Throwable>() {
+        solutionKitProcessor.testInstall(new Functions.UnaryVoidThrows<Triple<SolutionKit, String, Boolean>, Throwable>() {
             @Override
             public void call(Triple<SolutionKit, String, Boolean> loaded) throws Throwable {
                 doTestInstallExecuted.set(true);
@@ -223,9 +207,8 @@ public class SolutionKitProcessorTest {
         assertTrue("Validation successful, new child can be installed under the same parent", doTestInstallExecuted.get());
     }
 
-
     @Test
-    public void installOrUpgrade() throws Exception {
+    public void install() throws Exception {
         // solution kits for the test
         final int numberOfSolutionKits = 2;
         final Set<SolutionKit> selectedSolutionKits = new HashSet<>(numberOfSolutionKits);
@@ -238,25 +221,28 @@ public class SolutionKitProcessorTest {
 
         when(solutionKitsConfig.getSelectedSolutionKits()).thenReturn(selectedSolutionKits);
 
-        solutionKitProcessor.installOrUpgrade();
+        solutionKitProcessor.install(null, null);
 
         // Make sure children are installed
-        verifyChildrenInstalled(numberOfSolutionKits, solutionKit1, solutionKit2);
+        verifyChildrenInstalled(solutionKit1, solutionKit2);
+
+        // make sure solutionKitAdmin.install() called
+        verify(solutionKitAdmin, times(numberOfSolutionKits)).install(any(SolutionKit.class), anyString(), anyBoolean());
 
         // test doAsyncInstall was executed (when provided)
         final AtomicBoolean doAsyncInstallExecuted = new AtomicBoolean(false);
-        solutionKitProcessor.installOrUpgrade(null, new Functions.UnaryVoidThrows<Triple<SolutionKit, String, Boolean>, Exception>() {
+        solutionKitProcessor.install(null, new Functions.UnaryVoidThrows<Triple<SolutionKit, String, Boolean>, Exception>() {
             @Override
             public void call(Triple<SolutionKit, String, Boolean> loaded) throws Exception {
                 doAsyncInstallExecuted.set(true);
             }
         });
-        assertTrue("Expected installOrUpgrade() to have executed the doAsyncInstall code.", doAsyncInstallExecuted.get());
+        assertTrue("Expected install() to have executed the doAsyncInstall code.", doAsyncInstallExecuted.get());
 
         // test solutionKitAdmin.install() throws exception
         when(solutionKitAdmin.install(any(SolutionKit.class), anyString(), anyBoolean())).thenThrow(new Exception());
         try {
-            solutionKitProcessor.installOrUpgrade();
+            solutionKitProcessor.install(null, null);
             fail("Expected installOrUpgrade(...) to throw Exception.");
         } catch (Exception e) {
             // do nothing, expected
@@ -265,7 +251,7 @@ public class SolutionKitProcessorTest {
         // test exceptions can be returned as an error list (when provided)
         final List<Pair<String, SolutionKit>> errorKitList = new ArrayList<>(2);
         try {
-            solutionKitProcessor.installOrUpgrade(errorKitList, null);
+            solutionKitProcessor.install(errorKitList, null);
             assertEquals(2, errorKitList.size());
         } catch (Exception e) {
             fail("Expected exceptions from installOrUpgrade(...) can be returned as an error list.");
@@ -273,7 +259,7 @@ public class SolutionKitProcessorTest {
     }
 
     @Test
-    public void installOrUpgradeWithParent() throws Exception {
+    public void installWithParent() throws Exception {
         // parent skar for the test
         final SolutionKit parentSolutionKit = new SolutionKitBuilder()
                 .name("ParentSK")
@@ -298,21 +284,15 @@ public class SolutionKitProcessorTest {
         when(solutionKitsConfig.getSelectedSolutionKits()).thenReturn(selectedSolutionKits);
 
         // test parent not yet saved on Gateway calls solutionKitAdmin.save()
-        solutionKitProcessor.installOrUpgrade();
+        solutionKitProcessor.install(null, null);
         final ArgumentCaptor<SolutionKit> parentSKCaptor = ArgumentCaptor.forClass(SolutionKit.class);
         verify(solutionKitAdmin).save(parentSKCaptor.capture());
         assertEquals("ParentSK", parentSKCaptor.getValue().getName());
 
         // test parent already saved on Gateway calls solutionKitAdmin.update() - install code path
         when(solutionKitAdmin.get(parentSolutionKit.getSolutionKitGuid(), null)).thenReturn(parentSolutionKit);
-        solutionKitProcessor.installOrUpgrade();
+        solutionKitProcessor.install(null, null);
         verify(solutionKitAdmin).update(parentSolutionKit);
-
-        // test parent already saved on Gateway calls solutionKitAdmin.update() - upgrade code path
-        when(solutionKitsConfig.isUpgrade()).thenReturn(true);
-        when(solutionKitsConfig.getSolutionKitToUpgrade(parentSolutionKit.getSolutionKitGuid())).thenReturn(parentSolutionKit);
-        solutionKitProcessor.installOrUpgrade();
-        verify(solutionKitAdmin, times(2)).update(parentSolutionKit);
     }
 
     @Test
@@ -343,7 +323,7 @@ public class SolutionKitProcessorTest {
         when(solutionKitsConfig.getSelectedSolutionKits()).thenReturn(selectedSolutionKits);
 
         //test: Install should make new parents
-        solutionKitProcessor.installOrUpgrade();
+        solutionKitProcessor.install(null, null);
         //verify that two different parents were saved, one for test1, the other for test2
         final ArgumentCaptor<SolutionKit> parentSKCaptor = ArgumentCaptor.forClass(SolutionKit.class);
         verify(solutionKitAdmin, times(2)).save(parentSKCaptor.capture());
@@ -352,7 +332,9 @@ public class SolutionKitProcessorTest {
         assertEquals("test2", allParents.get(0).getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY));
         assertEquals("test1", allParents.get(1).getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY));
 
-        verifyChildrenInstalled(numberOfSolutionKits, solutionKit1, solutionKit2);
+        verifyChildrenInstalled(solutionKit1, solutionKit2);
+        // make sure solutionKitAdmin.install() called
+        verify(solutionKitAdmin, times(numberOfSolutionKits)).install(any(SolutionKit.class), anyString(), anyBoolean());
     }
 
     @Test
@@ -371,12 +353,13 @@ public class SolutionKitProcessorTest {
         final Set<SolutionKit> selectedSolutionKits = new HashSet<>(numberOfSolutionKits);
         final SolutionKit solutionKit1 = new SolutionKitBuilder()
                 .name("SK1")
-                .parent(parentSolutionKit)
+                .skVersion("1")
                 .addProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, "same")
                 .build();
         selectedSolutionKits.add(solutionKit1);
         final SolutionKit solutionKit2 = new SolutionKitBuilder()
                 .name("SK2")
+                .skVersion("1")
                 .addProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, "same")
                 .build();
         selectedSolutionKits.add(solutionKit2);
@@ -385,12 +368,15 @@ public class SolutionKitProcessorTest {
         // test parent solution kit was updated once
         when(solutionKitsConfig.isUpgrade()).thenReturn(true);
         when(solutionKitsConfig.getSolutionKitToUpgrade(parentSolutionKit.getSolutionKitGuid())).thenReturn(parentSolutionKit);
-        solutionKitProcessor.installOrUpgrade();
+        doReturn(null).when(solutionKitProcessor).collectSolutionKitInformation(anySetOf(SolutionKit.class));
+
+        solutionKitProcessor.upgrade(null);
+
         //verify instance modifier "same" is updated once
         final ArgumentCaptor<SolutionKit> updateParentCaptor = ArgumentCaptor.forClass(SolutionKit.class);
         verify(solutionKitAdmin).update(updateParentCaptor.capture());
         assertEquals("same", updateParentCaptor.getValue().getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY));
-        verifyChildrenInstalled(numberOfSolutionKits, solutionKit1, solutionKit2);
+        verifyChildrenInstalled(solutionKit1, solutionKit2);
     }
 
     @Test
@@ -418,7 +404,7 @@ public class SolutionKitProcessorTest {
         when(solutionKitsConfig.getSolutionKitToUpgrade(parentSolutionKit.getSolutionKitGuid())).thenReturn(parentSolutionKit);
 
         try {
-            solutionKitProcessor.installOrUpgrade();
+            solutionKitProcessor.upgrade(null);
             fail("Exception should've been thrown");
         } catch (SolutionKitException e) {
             assertEquals(e.getMessage(), "Unable to change the instance modifier on upgrade. Please install the Solution Kit and specify a unique instance modifier instead.");
@@ -565,16 +551,12 @@ public class SolutionKitProcessorTest {
         solutionKitProcessor = new SolutionKitProcessor(solutionKitsConfig, solutionKitAdmin);
     }
 
-    private void verifyChildrenInstalled(final int numberOfSolutionKits,
-                                         final SolutionKit solutionKit1,
+    private void verifyChildrenInstalled(final SolutionKit solutionKit1,
                                          final SolutionKit solutionKit2) throws Exception {
         // test children are installed
         // make sure setMappingTargetIdsFromResolvedIds() called
         verify(solutionKitsConfig).setMappingTargetIdsFromResolvedIds(solutionKit1);
         verify(solutionKitsConfig).setMappingTargetIdsFromResolvedIds(solutionKit2);
-
-        // make sure solutionKitAdmin.install() called
-        verify(solutionKitAdmin, times(numberOfSolutionKits)).install(any(SolutionKit.class), anyString(), anyBoolean());
     }
 
 }

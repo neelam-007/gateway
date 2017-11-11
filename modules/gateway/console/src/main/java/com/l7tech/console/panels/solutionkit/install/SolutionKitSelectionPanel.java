@@ -7,6 +7,7 @@ import com.l7tech.console.util.ConsoleLicenseManager;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.api.Item;
+import com.l7tech.gateway.api.ItemsList;
 import com.l7tech.gateway.api.Mappings;
 import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.solutionkit.*;
@@ -61,11 +62,12 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
     private final Map<SolutionKit, Mappings> testMappings = new HashMap<>();
     private Set<SolutionKit> solutionKitsLoaded = new TreeSet<>();
     private Set<SolutionKit> solutionKitsSelected = new TreeSet<>();
-    private Map<String, Set<String>> guidAndInstanceModifierMapFromUpgrade = new HashMap<>();
+    private SolutionKit solutionKitToUpgrade;
 
-    public SolutionKitSelectionPanel() {
+    public SolutionKitSelectionPanel(SolutionKit solutionKitToUpgrade) {
         super(null);
         solutionKitAdmin = Registry.getDefault().getSolutionKitAdmin();
+        this.solutionKitToUpgrade = solutionKitToUpgrade;
         initialize();
     }
 
@@ -115,34 +117,36 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         final String errorReport = SolutionKitUtils.haveDuplicateSelectedSolutionKits(solutionKitsSelected);
         if (StringUtils.isNotBlank(errorReport)) {
             DialogDisplayer.showMessageDialog(
-                this,
-                "There are more than two selected solution kits having same GUID and Instance Modifier.\n" + errorReport,
-                "Solution Kit Installation Warning",
-                JOptionPane.WARNING_MESSAGE,
-                null
+                    this,
+                    "There are more than two selected Solution Kits having same GUID and Instance Modifier.\n" + errorReport,
+                    "Solution Kit Installation Warning",
+                    JOptionPane.WARNING_MESSAGE,
+                    null
             );
 
             return false;
         }
-
-        return testInstall();
+        return settings.isUpgrade()? testUpgrade() : testInstall();
     }
 
+    /**
+     * Dry run for the install. Saves some test mappings from the dry run used to resolution of Solution Kit entities.
+     * @return true if testInstall was successful
+     */
     private boolean testInstall() {
         final AtomicBoolean success = new AtomicBoolean(false);
         String errorMessage;
         try {
             settings.setSelectedSolutionKits(solutionKitsSelected);
             final SolutionKitProcessor solutionKitProcessor = new SolutionKitProcessor(settings, solutionKitAdmin);
-            solutionKitProcessor.testInstallOrUpgrade(new Functions.UnaryVoidThrows<Triple<SolutionKit, String, Boolean>, Throwable>() {
-
+            solutionKitProcessor.testInstall(new Functions.UnaryVoidThrows<Triple<SolutionKit, String, Boolean>, Throwable>() {
                 @Override
                 public void call(Triple<SolutionKit, String, Boolean> loaded) throws Throwable {
-                    final String  result = AdminGuiUtils.doAsyncAdminWithException(
+                    final String result = AdminGuiUtils.doAsyncAdminWithException(
                             solutionKitAdmin,
                             SolutionKitSelectionPanel.this.getOwner(),
                             "Testing Solution Kit",
-                            "The Gateway is testing solution kit: " + loaded.left.getName() + ".",
+                            "The Gateway is testing Solution Kit: " + loaded.left.getName() + ".",
                             solutionKitAdmin.testInstallAsync(loaded.left, loaded.middle, loaded.right),
                             false);
 
@@ -174,6 +178,80 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
             DialogDisplayer.display(errorMessageDialog);
         }
 
+        return success.get();
+    }
+
+    /**
+     * Dry run for upgrade. Saves the test mappings from the dry upgrade for Solution Kit entity resolution.
+     * @return true if testUpgrade was successful
+     */
+    private boolean testUpgrade() {
+        final AtomicBoolean success = new AtomicBoolean(false);
+        String errorMessage;
+        try {
+            settings.setSelectedSolutionKits(solutionKitsSelected);
+            final SolutionKitProcessor solutionKitProcessor = new SolutionKitProcessor(settings, solutionKitAdmin);
+            solutionKitProcessor.testUpgrade(new Functions.UnaryVoidThrows<SolutionKitImportInfo, Throwable>() {
+                @Override
+                public void call(SolutionKitImportInfo loaded) throws Throwable {
+                    final String result = AdminGuiUtils.doAsyncAdminWithException(
+                            solutionKitAdmin,
+                            SolutionKitSelectionPanel.this.getOwner(),
+                            "Testing Solution Kit",
+                            "Testing Upgrade. Please wait a moment.",
+                            solutionKitAdmin.testUpgradeAsync(loaded),
+                            false);
+
+                    success.set(true);
+                    final ItemsList<Mappings> itemList = MarshallingUtils.unmarshal(ItemsList.class, new StreamSource(new StringReader(result)));
+                    final List<Item<Mappings>> items = itemList.getContent();
+                    final Iterator<SolutionKit> selectedIterator = solutionKitsSelected.iterator();
+                    final int totalDeleteBundles = loaded.getSolutionKitsToDelete().size();
+                    final int totalBundlesExpected = totalDeleteBundles + solutionKitsSelected.size();
+
+                    // If the number of delete bundles and solution kits selected is not equal to the bundle result size, display error
+                    if (totalBundlesExpected != items.size()){
+                        logger.warning("Error: Expected " + totalBundlesExpected + "bundles, but found " + items.size() + "bundles."
+                                + System.lineSeparator() + result);
+                        DialogDisplayer.showMessageDialog(SolutionKitSelectionPanel.this,
+                                "Error: " + totalBundlesExpected + "bundles, but found " + items.size() + "bundles. Please refer to logs for details.",
+                                "Upgrade Solution Kit",
+                                JOptionPane.ERROR_MESSAGE,
+                                null);
+                        success.set(false);
+                    }
+
+                    //Save the install bundle mappings onto test mappings
+                    for (int i = totalDeleteBundles; i<items.size(); i++) {
+                        Mappings mappings = items.get(i).getContent();
+                        //Check no errors
+                        if (null == mappings || null == mappings.getMappings()) {
+                            DialogDisplayer.showMessageDialog(SolutionKitSelectionPanel.this,
+                                    "Unexpected error: unable to get Solution Kit mappings.",
+                                    "Upgrade Solution Kit",
+                                    JOptionPane.ERROR_MESSAGE,
+                                    null);
+                            success.set(false);
+                        }
+                        //Put the install bundle results into testMappings
+                        testMappings.put(selectedIterator.next(), mappings);
+                    }
+                }
+            });
+        } catch (InvocationTargetException | IOException | InterruptedException e) {
+            testMappings.clear();
+            errorMessage = ExceptionUtils.getMessage(e);
+            logger.log(Level.WARNING, errorMessage, ExceptionUtils.getDebugException(e));
+        } catch (SolutionKitException t) {  //for expected and foreseeable errors, display to the user for correction
+            errorMessage = ExceptionUtils.getMessage(t);
+            logger.log(Level.WARNING, errorMessage);
+            DialogDisplayer.showMessageDialog(this, errorMessage, "Solution Kit Upgrade Error", JOptionPane.ERROR_MESSAGE, null);
+        } catch (Throwable t) { //for unexpected, unhandled exceptions, show the standard BIG ERROR dialog
+            ErrorMessageDialog errorMessageDialog = new ErrorMessageDialog(SolutionKitSelectionPanel.this.getOwner(), "Solution Kit Manager has encountered an unexpected error", t);
+            Utilities.centerOnParentWindow(errorMessageDialog);
+            DialogDisplayer.pack(errorMessageDialog);
+            DialogDisplayer.display(errorMessageDialog);
+        }
         return success.get();
     }
 
@@ -241,32 +319,18 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
     private void initializeSolutionKitsLoaded() {
         solutionKitsLoaded = new TreeSet<>(settings.getLoadedSolutionKits().keySet());
 
-        // The next update is only applied to Upgrade, not for Install
-        if (! settings.isUpgrade()) return;
+        // For upgrades, set the Instance Modifier to be the same as the selected one for upgrade.
+        if (settings.isUpgrade()) {
+            if (settings.getSolutionKitsToUpgrade().size() > 0) {
+                String instanceModifier = settings.getSolutionKitsToUpgrade().get(0).getProperty(SK_PROP_INSTANCE_MODIFIER_KEY);
 
-        guidAndInstanceModifierMapFromUpgrade = SolutionKitUtils.getGuidAndInstanceModifierMapFromUpgrade(settings.getSolutionKitsToUpgrade());
-
-        final Set<String> guids = guidAndInstanceModifierMapFromUpgrade.keySet();
-        final StringBuilder errorSB = new StringBuilder();
-        String guid;
-        Set<String> instanceModifierSet;
-
-        for (SolutionKit loadedSK: solutionKitsLoaded) {
-            guid = loadedSK.getSolutionKitGuid();
-            if (guids.contains(guid)) {
-                instanceModifierSet = guidAndInstanceModifierMapFromUpgrade.get(guid);
-                if (instanceModifierSet.size() > 1) {
-                    errorSB.append("Selecting '").append(loadedSK.getName()).append("'").append(" for upgrade will be disabled, since there are two or more solution kit instances using it to upgrade.\n");
-                } else if (instanceModifierSet.size() == 1) {
-                    loadedSK.setProperty(SK_PROP_INSTANCE_MODIFIER_KEY, instanceModifierSet.toArray(new String[instanceModifierSet.size()])[0]);
+                for (SolutionKit sk : solutionKitsLoaded) {
+                    sk.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, instanceModifier);
                 }
             }
         }
-
-        if (errorSB.length() > 0) {
-            DialogDisplayer.showMessageDialog(this,errorSB.toString(), "Solution Kit Upgrade Warning", JOptionPane.WARNING_MESSAGE, null);
-        }
     }
+
 
     private void initializeSolutionKitsTable() {
         DefaultTableModel solutionKitsModel = new DefaultTableModel(populateData(), tableColumnNames) {
@@ -351,11 +415,11 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
 
         for (SolutionKit solutionKit: solutionKitsLoaded) {
             data[rowIdx++] = new Object[] {
-                solutionKitsSelected.contains(solutionKit)? Boolean.TRUE : Boolean.FALSE,
-                getSolutionKitDisplayName(solutionKit),
-                solutionKit.getSolutionKitVersion(),
-                solutionKit.getProperty(SK_PROP_INSTANCE_MODIFIER_KEY),
-                solutionKit.getProperty(SK_PROP_DESC_KEY)
+                    solutionKitsSelected.contains(solutionKit)? Boolean.TRUE : Boolean.FALSE,
+                    getSolutionKitDisplayName(solutionKit),
+                    solutionKit.getSolutionKitVersion(),
+                    solutionKit.getProperty(SK_PROP_INSTANCE_MODIFIER_KEY),
+                    solutionKit.getProperty(SK_PROP_DESC_KEY)
             };
         }
 
@@ -371,15 +435,30 @@ public class SolutionKitSelectionPanel extends WizardStepPanel<SolutionKitsConfi
         }
     }
 
+    /**
+     * A solution kit assigned to an index is true on 3 cases:
+     * 1. Always true on install
+     * 2. Always true when parent selected for upgrade
+     * 3. True only if the non-parent solution kit to upgrade matches the loaded guid.
+     * @param index the index in which a solution kit resides
+     * @return whether or not the cell with index is editable
+     */
     private boolean isEditableOrEnabledAt(final int index) {
-        final SolutionKit loadedSolutionKit = getSolutionKitAt(index);
-        final Set<String> instanceModifierSet = guidAndInstanceModifierMapFromUpgrade.get(loadedSolutionKit.getSolutionKitGuid());
-
-        return
-            // Case 1: Always true for Install
-            (!settings.isUpgrade()) ||
-            // Case 2: Upgrade
-            (instanceModifierSet != null && instanceModifierSet.size() == 1);
+        if (!settings.isUpgrade()) {
+            return true;
+        } else {
+            // upgrade scenario.
+            if (solutionKitToUpgrade.getParentGoid() == null) {
+                // a parent Solution Kit was selected. Show them all.
+                return true;
+            } else {
+                // a child Solution Kit was selected.
+                final SolutionKit currentSkToEnableDisable = getSolutionKitAt(index);
+                return (currentSkToEnableDisable != null &&
+                        // Show the child only if the GUID matches the one already installed.
+                        settings.getSolutionKitToUpgrade(currentSkToEnableDisable.getSolutionKitGuid()) != null);
+            }
+        }
     }
 
     private SolutionKit getSolutionKitAt(final int index) {

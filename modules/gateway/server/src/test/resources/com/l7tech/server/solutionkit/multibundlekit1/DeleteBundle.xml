@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!--
+      Uninstall bundle
+-->
+<l7:Bundle xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management">
+    <l7:Mappings>
+        <l7:Mapping action="Delete" srcId="12acd9006a6f7d2ea9b992f3882e98c2" srcUri="http://localhost:8080/restman/1.0/folders/12acd9006a6f7d2ea9b992f3882e98c2" type="FOLDER"/>
+        <l7:Mapping action="Delete" srcId="12acd9006a6f7d2ea9b992f3882e9904" srcUri="http://localhost:8080/restman/1.0/folders/12acd9006a6f7d2ea9b992f3882e9904" type="FOLDER"/>
+        <l7:Mapping action="Delete" srcId="12acd9006a6f7d2ea9b992f3882e9945" srcUri="http://localhost:8080/restman/1.0/folders/12acd9006a6f7d2ea9b992f3882e9945" type="FOLDER"/>
+    </l7:Mappings>
+</l7:Bundle>
