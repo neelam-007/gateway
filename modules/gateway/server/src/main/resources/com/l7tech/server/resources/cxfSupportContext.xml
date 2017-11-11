@@ -18,16 +18,6 @@
         <property name="bus" ref="cxf"/>
     </bean>
 
-    <!-- Process Controller -->
-    <jaxws:endpoint id="processControllerNodeApiEndpoint" implementor="#processControllerNodeApiImpl"
-                    address="/processControllerNodeApi" depends-on="processControllerNodeApiImpl">
-        <jaxws:inInterceptors>
-            <ref bean="streamValidationInterceptor"/>
-            <ref bean="xmlValidationInterceptor"/>
-        </jaxws:inInterceptors>
-    </jaxws:endpoint>
-
-
     <bean id="streamValidationInterceptor" class="com.l7tech.server.admin.ws.StreamValidationInterceptor"/>
     <bean id="xmlValidationInterceptor" class="com.l7tech.server.admin.ws.XMLValidationInterceptor"/>
 

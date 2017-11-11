@@ -4,6 +4,8 @@ import com.l7tech.objectmodel.EntityHeader;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Properties;
+
 /**
  * This is a mapping instruction to tell the {@link com.l7tech.server.bundling.EntityBundleImporter} how to properly
  * import an entity
@@ -32,6 +34,11 @@ public class EntityMappingInstructions {
      */
     @Nullable
     private final TargetMapping targetMapping;
+    /**
+     * Any other mapping properties for this mapping instruction
+     */
+    @NotNull
+    private final Properties extraMappingProperties;
 
     public enum MappingAction {
         NewOrUpdate, NewOrExisting, AlwaysCreateNew, Ignore, Delete
@@ -98,11 +105,31 @@ public class EntityMappingInstructions {
      * @param failOnExisting     If this is true the import will fail if there is an existing entity.
      */
     public EntityMappingInstructions(@NotNull final EntityHeader sourceEntityHeader, @Nullable final TargetMapping targetMapping, @NotNull final MappingAction mappingAction, final boolean failOnNew, final boolean failOnExisting) {
+        this(sourceEntityHeader, targetMapping, mappingAction, failOnNew, failOnExisting, new Properties());
+    }
+
+    /**
+     * Creates new mapping instructions.
+     *
+     * @param sourceEntityHeader     The source entity header. This must have an id specified and reference an entity with
+     *                               the same id in an {@link com.l7tech.server.bundling.EntityBundle}. Must not be null
+     * @param targetMapping          The target mapping. If this is null mapping will be done using the entity id. If it is
+     *                               not null mapping will be done using the {@link com.l7tech.server.bundling.EntityMappingInstructions.TargetMapping}
+     *                               type and id.
+     * @param mappingAction          The mapping action to take. This tells the {@link com.l7tech.server.bundling.EntityBundleImporter}
+     *                               how to behave if there is an existing entity in the gateway.
+     * @param failOnNew              If true this will fail the import if there isn't an existing entity to map the source
+     *                               entity to.
+     * @param failOnExisting         If this is true the import will fail if there is an existing entity.
+     * @param extraMappingProperties These are extra mapping instructions that could be applied
+     */
+    public EntityMappingInstructions(@NotNull final EntityHeader sourceEntityHeader, @Nullable final TargetMapping targetMapping, @NotNull final MappingAction mappingAction, final boolean failOnNew, final boolean failOnExisting, @NotNull final Properties extraMappingProperties) {
         this.sourceEntityHeader = sourceEntityHeader;
         this.targetMapping = targetMapping;
         this.mappingAction = mappingAction;
         this.failOnNew = failOnNew;
         this.failOnExisting = failOnExisting;
+        this.extraMappingProperties = extraMappingProperties;
     }
 
     /**
@@ -142,6 +169,26 @@ public class EntityMappingInstructions {
      */
     public boolean shouldFailOnExisting() {
         return failOnExisting;
+    }
+
+    /**
+     * Returns an extra mapping property on this property.
+     *
+     * @param property The property name
+     * @return mapping property
+     */
+    public String getExtraMappingProperty(String property) {
+        return extraMappingProperties.getProperty(property);
+    }
+
+    /**
+     * Returns an extra mapping properties
+     *
+     * @return mapping properties
+     */
+    @NotNull
+    public Properties getExtraMappings() {
+        return extraMappingProperties;
     }
 
     @Override

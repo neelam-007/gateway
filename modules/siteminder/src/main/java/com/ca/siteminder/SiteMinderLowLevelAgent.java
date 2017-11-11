@@ -854,6 +854,10 @@ public class SiteMinderLowLevelAgent {
             if((credentials & AgentAPI.CRED_BASIC) == AgentAPI.CRED_BASIC ){
                 authSchemes.add(SiteMinderContext.AuthenticationScheme.BASIC);
             }
+            //TODO: replace the hard coded value with Agent constant once the siteminder patch is available
+            if ((credentials & 0x40000) == 0x40000) {
+                authSchemes.add(SiteMinderContext.AuthenticationScheme.JWT);
+            }
             if((credentials & AgentAPI.CRED_X509CERT_ISSUERDN) == AgentAPI.CRED_X509CERT_ISSUERDN) {
                 authSchemes.add(SiteMinderContext.AuthenticationScheme.X509CERTISSUEDN);
             }

@@ -25,6 +25,7 @@ import com.l7tech.server.search.objects.DependencySearchResults;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
+import java.util.Properties;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -321,6 +322,10 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
                 mapping.addProperty(MAP_TO, entityMappingInstructions.getTargetMapping().getTargetID());
             }
         }
+        
+        for(String propertyNames : entityMappingInstructions.getExtraMappings().stringPropertyNames()) {
+            mapping.addProperty(propertyNames, entityMappingInstructions.getExtraMappingProperty(propertyNames));
+        }
         return mapping;
     }
 
@@ -429,9 +434,17 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
         } else {
             targetMapping = null;
         }
+
+        final Properties extraMappingProperties = new Properties();
+        if(mapping.getProperties() != null) {
+            for (String key : mapping.getProperties().keySet()) {
+                extraMappingProperties.setProperty(key, mapping.getProperties().get(key).toString());
+            }
+        }
+
         final Boolean isFailOnExisting = mapping.getProperty(FAIL_ON_EXISTING);
         final Boolean isFailOnNew = mapping.getProperty(FAIL_ON_NEW);
-        return new EntityMappingInstructions(sourceHeader, targetMapping, convertMappingAction(mapping.getAction()), isFailOnNew != null ? isFailOnNew : false, isFailOnExisting != null ? isFailOnExisting : false);
+        return new EntityMappingInstructions(sourceHeader, targetMapping, convertMappingAction(mapping.getAction()), isFailOnNew != null ? isFailOnNew : false, isFailOnExisting != null ? isFailOnExisting : false, extraMappingProperties);
     }
 
     private boolean matchesMapBy(@NotNull final Mapping mappingToCheck, @NotNull final String mapByToMatch) {

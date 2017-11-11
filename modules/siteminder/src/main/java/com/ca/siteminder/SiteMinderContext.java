@@ -16,7 +16,7 @@ public class SiteMinderContext {
 
 
     public enum AuthenticationScheme {
-        NONE, ALLOWSAVE, BASIC, FORM, DIGEST, METADATA, NTCHALLENGE, SAML, SSL, X509CERT, X509CERTISSUEDN, X509CERTUSERDN, XMLDOC, XMLDSIG, XKMS, XMLWSSEC;
+        NONE, ALLOWSAVE, BASIC, FORM, DIGEST, METADATA, NTCHALLENGE, SAML, SSL, X509CERT, X509CERTISSUEDN, X509CERTUSERDN, XMLDOC, XMLDSIG, XKMS, XMLWSSEC, JWT;
 
         public static AuthenticationScheme findValue(String s) {
            for(AuthenticationScheme val : values()) {

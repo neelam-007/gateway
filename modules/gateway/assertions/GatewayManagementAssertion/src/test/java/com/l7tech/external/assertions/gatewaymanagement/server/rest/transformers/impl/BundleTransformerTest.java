@@ -1,10 +1,20 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl;
 
-import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.APIUtilityLocator;
-import com.l7tech.gateway.api.*;
+import static junit.framework.Assert.assertNotNull;
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertTrue;
+import static org.mockito.Mockito.*;
 import com.l7tech.gateway.common.BundleBuilder;
 import com.l7tech.gateway.common.MappingBuilder;
+import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.APIUtilityLocator;
+import com.l7tech.gateway.api.Bundle;
+import com.l7tech.gateway.api.BundleList;
+import com.l7tech.gateway.api.ManagedObjectFactory;
+import com.l7tech.gateway.api.Mapping;
+import com.l7tech.gateway.api.ServiceAliasMO;
+import com.l7tech.gateway.api.ServiceMO;
+
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.PublishedServiceAlias;
 import com.l7tech.objectmodel.EntityHeader;
@@ -14,6 +24,10 @@ import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.server.bundling.EntityBundle;
 import com.l7tech.server.bundling.EntityContainer;
 import com.l7tech.server.bundling.EntityMappingInstructions;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
@@ -21,16 +35,6 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
-
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import static junit.framework.Assert.assertNotNull;
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertTrue;
-import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class BundleTransformerTest {
@@ -198,6 +202,28 @@ public class BundleTransformerTest {
         final Map<Goid, EntityMappingInstructions> instructionsMap = instructionsToMap(result.getMappingInstructions());
         assertEquals(2, instructionsMap.size());
         assertEquals("test alias", instructionsMap.get(aliasId).getSourceEntityHeader().getName());
+    }
+
+    @Test
+    public void convertMappingsExtraProperties() throws Exception {
+        final Goid serviceId = new Goid(0, 1);
+        final String serviceName = "test";
+        final PublishedService service = new PublishedService();
+        service.setGoid(new Goid(serviceId));
+        service.setName(serviceName);
+        final Goid aliasId = new Goid(1, 1);
+        final PublishedServiceAlias alias = new PublishedServiceAlias(service, new Folder("aliases", new Folder("root", null)));
+        alias.setGoid(aliasId);
+        when(serviceTransformer.convertFromMO(any(ServiceMO.class), eq(false), eq(null))).thenReturn(new EntityContainer<>(service));
+        when(aliasTransformer.convertFromMO(any(ServiceAliasMO.class), eq(false), eq(null))).thenReturn(new EntityContainer<>(alias));
+
+        Bundle bundle = new BundleBuilder().addServiceAlias(service.getName(), service.getId(), alias.getId()).build();
+        bundle.getMappings().get(1).addProperty("otherProp","value");
+
+        final EntityBundle result = bundleTransformer.convertFromMO(bundle, null);
+        final Map<Goid, EntityMappingInstructions> instructionsMap = instructionsToMap(result.getMappingInstructions());
+        assertEquals(2, instructionsMap.size());
+        assertTrue(result.getMappingInstructions().get(1).getExtraMappings().containsKey("otherProp"));
     }
 
     private Map<Goid, EntityMappingInstructions> instructionsToMap(final List<EntityMappingInstructions> instructions) {

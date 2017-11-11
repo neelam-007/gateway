@@ -233,7 +233,7 @@ public class EntityBundleImporterImplTest {
 
         Mockito.verify(passwordEnforcerManager, Mockito.never()).setUserPasswordPolicyAttributes(Mockito.any(InternalUser.class), Mockito.anyBoolean());
         importer.importBundle(new EntityBundle(entities, mappingInstructions, Collections.<DependencySearchResults>emptyList()), false, false, null);
-        Mockito.verify(passwordEnforcerManager, Mockito.times(1)).setUserPasswordPolicyAttributes(iu, true);
+        Mockito.verify(passwordEnforcerManager, Mockito.times(1)).setUserPasswordPolicyAttributes(iu, false);
     }
 
     @Test

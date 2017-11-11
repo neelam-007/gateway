@@ -21,6 +21,7 @@ import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.service.FirewallRulesManager;
 import com.l7tech.server.transport.TransportAdminHelper;
 import com.l7tech.server.util.ApplicationEventProxy;
+import com.l7tech.util.Background;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.TimeUnit;
 import org.eclipse.jetty.server.HttpConfiguration;
@@ -36,9 +37,7 @@ import org.springframework.context.ApplicationListener;
 
 import javax.net.ssl.TrustManager;
 import java.security.SecureRandom;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.logging.Level;
@@ -68,6 +67,50 @@ public class WebSocketLoadListener {
     private static ApplicationListener applicationListener;
 
     private static boolean isStarted = false;
+
+    /**
+     * For outbound only connections, reconnect to WebSocket server if it's not connected.
+     */
+    private final static TimerTask reconnectTask = new TimerTask() {
+        @Override
+        public void run() {
+            if (!isStarted) {
+                return;
+            }
+
+            Collection<WebSocketConnectionEntity> entities;
+            try {
+                entities = gem.getEntityManager(WebSocketConnectionEntity.class).findAll();
+            } catch (FindException e) {
+                logger.log(Level.WARNING,
+                        "Failed to retrieve WebSocket connection entities: " + ExceptionUtils.getMessageWithCause(e),
+                        ExceptionUtils.getDebugException(e));
+                return;
+            }
+
+            for (WebSocketConnectionEntity entity : entities) {
+                if (!entity.isEnabled() || !entity.isOutboundOnly()) {
+                    // Skip.
+                    continue;
+                }
+
+                try {
+                    // For outbound only connections, the handler ID is the entity ID.
+                    final WebSocketOutboundHandler outboundHandler = WebSocketConnectionManager.getInstance().getOutboundHandler(entity.getId());
+                    if (outboundHandler != null && !outboundHandler.existsInSocketMap(entity.getId())) {
+                        logger.log(Level.INFO,
+                                "Reconnecting WebSocket outbound handler ''{0}'' to WebSocket server.",
+                                new String[]{ entity.getId() });
+                        start(entity, true);
+                    }
+                } catch (WebSocketConnectionManagerException e) {
+                    logger.log(Level.WARNING,
+                            "Failed to retrieve WebSocket outbound handler ''" + entity.getId() + "'': " +  ExceptionUtils.getMessageWithCause(e),
+                            ExceptionUtils.getDebugException(e));
+                }
+            }
+        }
+    };
 
     @SuppressWarnings({"UnusedDeclaration"})
     public static synchronized void onModuleLoaded(final ApplicationContext context) {
@@ -138,7 +181,7 @@ public class WebSocketLoadListener {
                         }
                     }
                 } else if (event instanceof LicenseEvent) {
-                    if (hasValidWebSocketLicense() && !isStarted) {
+                    if (hasValidWebSocketLicense() && !isStarted && gatewayState.isReadyForMessages()) {
                         init(context); // call init() because context can be destroyed when license removed.
                         loadPropAndStartServer();
                     } else if (!hasValidWebSocketLicense()) {
@@ -195,6 +238,21 @@ public class WebSocketLoadListener {
             return defaultValue;
         }
     }
+    private static boolean getProp(String key, boolean defaultValue) {
+        boolean prop;
+        try {
+            String clusterProp =  clusterPropertyManager.getProperty(key) ;
+            if (clusterProp == null || "".equals(clusterProp)) {
+                prop = defaultValue;
+            } else {
+                prop = Boolean.parseBoolean( clusterProp );
+            }
+        } catch(FindException e){
+            logger.log(Level.INFO, "Cluster property : " + key + " doesn't exist setting default");
+            prop = defaultValue;
+        }
+        return prop;
+    }
 
     private static void loadProps() {
         WebSocketConstants.setClusterProperty(WebSocketConstants.CONNECT_TIMEOUT_KEY, getTimeProp(WebSocketConstants.CONNECT_TIMEOUT_KEY, WebSocketConstants.CONNECT_TIMEOUT));
@@ -209,6 +267,8 @@ public class WebSocketLoadListener {
         WebSocketConstants.setClusterProperty(WebSocketConstants.MAX_INBOUND_THREADS_KEY, getIntegerProp(WebSocketConstants.MAX_INBOUND_THREADS_KEY, WebSocketConstants.MAX_INBOUND_THREADS));
         WebSocketConstants.setClusterProperty(WebSocketConstants.MIN_INBOUND_THREADS_KEY, getIntegerProp(WebSocketConstants.MIN_INBOUND_THREADS_KEY, WebSocketConstants.MIN_INBOUND_THREADS));
         WebSocketConstants.setClusterProperty(WebSocketConstants.ACCEPT_QUEUE_SIZE_KEY, getIntegerProp(WebSocketConstants.ACCEPT_QUEUE_SIZE_KEY, WebSocketConstants.ACCEPT_QUEUE_SIZE));
+        WebSocketConstants.setClusterProperty(WebSocketConstants.OUTBOUND_ONLY_CONNECTION_RECONNECT_INTERVAL_KEY, getIntegerProp(WebSocketConstants.OUTBOUND_ONLY_CONNECTION_RECONNECT_INTERVAL_KEY, WebSocketConstants.OUTBOUND_ONLY_CONNECTION_RECONNECT_INTERVAL));
+        WebSocketConstants.setClusterProperty(WebSocketConstants.INBOUND_COPY_UPGRADE_REQUEST_SUBPROTOCOL_HEADER_KEY, getProp(WebSocketConstants.INBOUND_COPY_UPGRADE_REQUEST_SUBPROTOCOL_HEADER_KEY, WebSocketConstants.INBOUND_COPY_UPGRADE_REQUEST_SUBPROTOCOL_HEADER));
     }
 
     @SuppressWarnings({"UnusedDeclaration"})
@@ -239,12 +299,19 @@ public class WebSocketLoadListener {
         } catch (WebSocketConnectionManagerException e) {
             logger.log(Level.WARNING, "Failed to initialize WebSocket Connection Manager ", e);
         }
+
+        Background.scheduleRepeated(
+            reconnectTask,
+            WebSocketConstants.getClusterProperty(WebSocketConstants.OUTBOUND_ONLY_CONNECTION_RECONNECT_INTERVAL_KEY),
+            WebSocketConstants.getClusterProperty(WebSocketConstants.OUTBOUND_ONLY_CONNECTION_RECONNECT_INTERVAL_KEY));
     }
 
     /**
      * Stop Embedding Jetty server when WEB Application is stopped.
      */
     private static void contextDestroyed() {
+        Background.cancel(reconnectTask);
+
         Set<WebSocketConnectionEntity> connections = servers.keySet();
 
         for (WebSocketConnectionEntity connection : connections) {
@@ -297,58 +364,73 @@ public class WebSocketLoadListener {
 
                 try {
 
-                    if (connectionEntity.isInboundSsl()) {
+                    if(!connectionEntity.isOutboundOnly()) {
 
-                        SslContextFactory sslContextFactory = WebSocketConnectionManager.getInstance().getInboundSslCtxFactory(connectionEntity);
+                        if (connectionEntity.isInboundSsl()) {
 
-                        HttpConnectionFactory httpConnectionFactory = new HttpConnectionFactory(new HttpConfiguration());
-                        ServerConnector sslConnector = new ServerConnector(server, sslContextFactory, httpConnectionFactory);
-                        sslConnector.setPort(connectionEntity.getInboundListenPort());
-                        sslConnector.setAcceptQueueSize(WebSocketConstants.getClusterProperty(WebSocketConstants.ACCEPT_QUEUE_SIZE_KEY));
-                        server.addConnector(sslConnector);
+                            SslContextFactory sslContextFactory = WebSocketConnectionManager.getInstance().getInboundSslCtxFactory(connectionEntity);
 
-                    } else {
-                        ServerConnector connector = new ServerConnector(server);
-                        connector.setPort(connectionEntity.getInboundListenPort());
-                        connector.setAcceptQueueSize(WebSocketConstants.getClusterProperty(WebSocketConstants.ACCEPT_QUEUE_SIZE_KEY));
-                        server.addConnector(connector);
+                            HttpConnectionFactory httpConnectionFactory = new HttpConnectionFactory(new HttpConfiguration());
+                            ServerConnector sslConnector = new ServerConnector(server, sslContextFactory, httpConnectionFactory);
+                            sslConnector.setPort(connectionEntity.getInboundListenPort());
+                            sslConnector.setAcceptQueueSize(WebSocketConstants.getClusterProperty(WebSocketConstants.ACCEPT_QUEUE_SIZE_KEY));
+                            server.addConnector(sslConnector);
+
+                        } else {
+                            ServerConnector connector = new ServerConnector(server);
+                            connector.setPort(connectionEntity.getInboundListenPort());
+                            connector.setAcceptQueueSize(WebSocketConstants.getClusterProperty(WebSocketConstants.ACCEPT_QUEUE_SIZE_KEY));
+                            server.addConnector(connector);
+                        }
+
+                        WebSocketInboundHandler webSocketInboundHandler = new WebSocketInboundHandler(messageProcessor, connectionEntity, auditFactory);
+                        server.setHandler(webSocketInboundHandler);
+
+                        //Register Inbound Handler
+                        WebSocketConnectionManager.getInstance().registerInboundHandler(connectionEntity.getId(), webSocketInboundHandler);
                     }
-
-                    WebSocketInboundHandler webSocketInboundHandler = new WebSocketInboundHandler(messageProcessor, connectionEntity, auditFactory);
-                    server.setHandler(webSocketInboundHandler);
-
-                    //Register Inbound Handler
-                    WebSocketConnectionManager.getInstance().registerInboundHandler(connectionEntity.getId(), webSocketInboundHandler);
 
                     if (!connectionEntity.isLoopback()) {
                         //Register outbound Handler
                         WebSocketOutboundHandler webSocketOutboundHandler = new WebSocketOutboundHandler(messageProcessor, connectionEntity);
                         WebSocketConnectionManager.getInstance().registerOutboundHandler(connectionEntity.getId(), webSocketOutboundHandler);
+
+                        if(connectionEntity.isOutboundOnly()){
+                            WebSocketMessage webSocketMessage = new WebSocketMessage("");
+                            webSocketMessage.setOrigin("gw");
+                            webSocketMessage.setProtocol("gw");
+                            webSocketMessage.setId(connectionEntity.getId());
+                            webSocketMessage.setClientId("gw");
+                            MockHttpServletRequest mockHttpServletRequest = new MockHttpServletRequest();
+                            webSocketOutboundHandler.createConnection(connectionEntity.getOutboundUrl(), connectionEntity.getId(), webSocketMessage, mockHttpServletRequest);
+                        }
                     }
 
-                    server.start();
-                    if (logger.isLoggable(Level.FINEST)) {
-                        logger.log(Level.FINEST, server.dump());
+                    if (!connectionEntity.isOutboundOnly() ) {
+                        server.start();
+                        if (logger.isLoggable(Level.FINEST)) {
+                            logger.log(Level.FINEST, server.dump());
+                        }
+
+                        StringBuilder statement = new StringBuilder();
+                        if (connectionEntity.isInboundSsl()) {
+                            statement.append("Starting WSS listener ");
+                        } else {
+                            statement.append("Starting WS listener ");
+                        }
+                        statement.append("on port ").append(connectionEntity.getInboundListenPort());
+
+                        logger.log(Level.INFO, "Checking firewall state for port " + connectionEntity.getInboundListenPort() + " with connection state " + connectionEntity.getRemovePortFlag() + "," + forceFirewall);
+                        //open the firewall for inbound port
+                        if (connectionEntity.getRemovePortFlag() || forceFirewall) {
+                            logger.log(Level.INFO, "Adding firewall rules for port " + connectionEntity.getInboundListenPort());
+                            fwManager.openPort(connectionEntity.getId(), connectionEntity.getInboundListenPort());
+                        }
+
+                        logger.log(Level.INFO, statement.toString());
+
+                        servers.put(connectionEntity, server);
                     }
-
-                    StringBuilder statement = new StringBuilder();
-                    if (connectionEntity.isInboundSsl()) {
-                        statement.append("Starting WSS listener ");
-                    } else {
-                        statement.append("Starting WS listener ");
-                    }
-                    statement.append("on port ").append(connectionEntity.getInboundListenPort());
-
-                    logger.log(Level.INFO, "Checking firewall state for port " + connectionEntity.getInboundListenPort() + " with connection state " + connectionEntity.getRemovePortFlag() + "," + forceFirewall);
-                    //open the firewall for inbound port
-                    if (connectionEntity.getRemovePortFlag() || forceFirewall) {
-                        logger.log(Level.INFO, "Adding firewall rules for port " + connectionEntity.getInboundListenPort());
-                        fwManager.openPort(connectionEntity.getId(), connectionEntity.getInboundListenPort());
-                    }
-
-                    logger.log(Level.INFO, statement.toString());
-
-                    servers.put(connectionEntity, server);
 
                 } catch (Throwable e) {
                     logger.log(Level.WARNING, "Failed to start the WebSockets Server " + connectionEntity.getId(), e);
@@ -386,6 +468,15 @@ public class WebSocketLoadListener {
                     //Do nothing connection manager is already removed.
                     logger.log(Level.WARNING, "Caught exception when deregistering Inbound/Outbound handler " + ExceptionUtils.getMessage(e) + "'.", ExceptionUtils.getDebugException(e));
                 }
+            }
+        } else {
+            //Deregister outbound handlers
+            logger.log(Level.WARNING, "Deregistering outbound handler : " + connectionEntity.getId());
+            try {
+                WebSocketConnectionManager.getInstance().deregisterOutboundHandler(connectionEntity.getId());
+            } catch (WebSocketConnectionManagerException e) {
+                //Do nothing connection manager is already removed.
+                logger.log(Level.WARNING, "Caught exception when deregistering Outbound handler " + ExceptionUtils.getMessage(e) + "'.", ExceptionUtils.getDebugException(e));
             }
         }
     }

@@ -206,7 +206,7 @@ public class SecurityProviderImpl extends SecurityProvider
      */
     Pair<Version, Version> validateVersionCompatibility(@NotNull final String gatewayVersionString, @NotNull final String minimumPolicyManagerVersionRequiredString, @NotNull final PolicyManagerBuildInfo policyManagerBuildInfo) throws VersionException {
         // TODO: This is needed to support the 9.2.00 gateway. Once the minimum gateway version is raised above 9.2.00 remove this check.
-        final String revisedMinimumPolicyManagerVersionRequired = "20060228".equals(minimumPolicyManagerVersionRequiredString) ? "1.0.00" : minimumPolicyManagerVersionRequiredString;
+        final String revisedMinimumPolicyManagerVersionRequired = "20060228".equals(minimumPolicyManagerVersionRequiredString) ? "9.3.00" : minimumPolicyManagerVersionRequiredString;
 
         @NotNull final Version gatewayVersion = new Version(gatewayVersionString);
         @NotNull final Version minimumPolicyManagerVersionRequired = new Version(revisedMinimumPolicyManagerVersionRequired);

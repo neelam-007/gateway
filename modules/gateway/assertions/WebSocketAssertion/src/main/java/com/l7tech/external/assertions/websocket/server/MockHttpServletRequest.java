@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.websocket.server;
 
+import com.l7tech.common.http.HttpMethod;
 import javax.servlet.*;
 import javax.servlet.http.*;
 import java.io.BufferedReader;
@@ -46,6 +47,14 @@ public class MockHttpServletRequest implements HttpServletRequest {
     private String protocol;
     private String scheme;
     private Locale preferredLocale;
+
+    public MockHttpServletRequest() {
+        // Set defaults for none nullable fields.
+        cookies = new Cookie[]{};
+        method = HttpMethod.GET.name();
+        requestURI = "";
+        requestURL = new StringBuffer();
+    }
 
     public MockHttpServletRequest(HttpServletRequest request) {
         populateHeaders(request);
