@@ -40,13 +40,7 @@ public class SolutionKitBuilder {
      * Default constructor
      */
     public SolutionKitBuilder() {
-        this(new SolutionKit() {
-            @Override
-            //Make a simple compare function for unit tests
-            public int compareTo(@NotNull SolutionKit o) {
-                return String.CASE_INSENSITIVE_ORDER.compare(getName(), o.getName());
-            }
-        });
+        this(new SolutionKit());
     }
 
     /**

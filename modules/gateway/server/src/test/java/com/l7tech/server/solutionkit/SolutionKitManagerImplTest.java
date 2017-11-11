@@ -210,7 +210,7 @@ public class SolutionKitManagerImplTest {
                 .skGuid("guid_i2")
                 .build();
 
-        final Map<SolutionKit, String> solutionKitsToInstallMap = new TreeMap<>();
+        final Map<SolutionKit, String> solutionKitsToInstallMap = new HashMap<>();
         solutionKitsToInstallMap.put(solutionKitinstall1, Files.lines(multiBundleInstall1)
                 .collect(Collectors.joining("")));
         solutionKitsToInstallMap.put(solutionKitinstall2, Files.lines(multiBundleInstall2)
