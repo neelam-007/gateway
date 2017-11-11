@@ -34,14 +34,12 @@ public class SolutionKitProcessor {
 
     // TODO (TL refactor) license check?
 
-    // TODO (TL refactor) getSolutionKitsToUpgrade() ?
-
     /**
      * Test solution kit install without committing the work.
      * @param doTestInstall test install callback
      * @throws Throwable SolutionKitException, ForbiddenException
      */
-    //TODO: implement multibundle import for install
+    //TODO: implement multi-bundle import for install in future
     public void testInstall(@NotNull final Functions.UnaryVoidThrows<Triple<SolutionKit, String, Boolean>, Throwable> doTestInstall) throws Throwable{
         final Collection<SolutionKit> selectedSolutionKits = solutionKitsConfig.getSelectedSolutionKits();
         final SolutionKit parentSolutionKitLoaded = solutionKitsConfig.getParentSolutionKitLoaded();
@@ -183,7 +181,7 @@ public class SolutionKitProcessor {
      * @param doAsyncInstall Optional callback to override admin install (e.g. override with AdminGuiUtils.doAsyncAdmin() for console UI)
      * @throws Exception includes: SolutionKitException, FindException, UpdateException, SaveException
      */
-    //TODO: update this method to use multibundle import
+    //TODO: update this method to use multi-bundle import in future
     public void install(@Nullable final List<Pair<String, SolutionKit>> errorKitList,
                         @Nullable final Functions.UnaryVoidThrows<Triple<SolutionKit, String, Boolean>, Exception> doAsyncInstall) throws Exception {
 

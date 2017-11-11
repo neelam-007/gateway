@@ -113,7 +113,7 @@ public class SolutionKitAdminHelper implements SolutionKitAdmin {
     }
 
     @NotNull
-    //TODO: update this to use multibundle import
+    //TODO: update this to use multi-bundle import in future
     public Goid install(@NotNull final SolutionKit solutionKit, @NotNull final String bundle, final boolean isUpgrade) throws Exception {
         checkFeatureEnabled(solutionKit);
 
