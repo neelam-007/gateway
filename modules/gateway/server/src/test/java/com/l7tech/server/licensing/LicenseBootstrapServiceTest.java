@@ -16,6 +16,7 @@ import java.net.URL;
 import java.util.zip.GZIPOutputStream;
 
 import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertTrue;
 
 public class LicenseBootstrapServiceTest {
 
@@ -31,6 +32,7 @@ public class LicenseBootstrapServiceTest {
     public void after() throws Exception {
         SyspropUtil.clearProperty("com.l7tech.bootstrap.folder.license");
         SyspropUtil.clearProperty("com.l7tech.bootstrap.env.license.enable");
+        SyspropUtil.clearProperty("com.l7tech.bootstrap.license.require");
         FileUtils.deleteDir(tmpDir);
     }
 
@@ -98,5 +100,30 @@ public class LicenseBootstrapServiceTest {
         BootstrapLicenseService service = new BootstrapLicenseService(docManager);
         service.onApplicationEvent(new Initialized(this, Component.GATEWAY, "Test"));
         assertEquals(2, docManager.findAll().size());
+    }
+
+
+    @Test
+    public void TestRequireLicense() throws Exception{
+
+        // Enable load from env var
+        SyspropUtil.setProperty( "com.l7tech.bootstrap.license.require", "true" );
+
+        LicenseDocumentManager docManager = new LicenseDocumentManagerStub();
+        BootstrapLicenseService service = new BootstrapLicenseService(docManager);
+        try {
+            service.onApplicationEvent(new Initialized(this, Component.GATEWAY, "Test"));
+            assertTrue("Should not get here.", false);
+        }catch( IllegalStateException e){
+            assertEquals("No license loaded. Exiting.", e.getMessage());
+        }
+    }
+
+    @Test
+    public void TestNoLicense() throws Exception{
+        LicenseDocumentManager docManager = new LicenseDocumentManagerStub();
+        BootstrapLicenseService service = new BootstrapLicenseService(docManager);
+        service.onApplicationEvent(new Initialized(this, Component.GATEWAY, "Test"));
+        assertEquals(0, docManager.findAll().size());
     }
 }
