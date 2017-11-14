@@ -267,14 +267,14 @@ public class PortalDeployerClientTest {
   }
 
   /**
-   * Test the disconnect method will do nothing on success besides log
+   * Test the disconnect method calls close.
    * @throws Exception
    */
   @Test
   public void disconnectCallback_Success() throws Exception {
     PortalDeployerClient.DisconnectCallback disconnectCallback = portalDeployerClient.new DisconnectCallback();
-    // all it does is log
     disconnectCallback.onSuccess(null);
+    verify(mqttAsyncClient, times(1)).close();
   }
 
   /**
