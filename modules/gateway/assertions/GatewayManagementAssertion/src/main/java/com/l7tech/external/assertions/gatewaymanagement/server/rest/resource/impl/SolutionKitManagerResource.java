@@ -324,7 +324,12 @@ public class SolutionKitManagerResource {
             // Handle user selection and set selected solution kits for install or upgrade in solutionKitsConfig
             if (isUpgrade) {
                 // For upgrade, before handling user selection, check upgrade eligibility, depending on parent selection or child selection
-                SolutionKitUtils.checkGuidsMatchForUpgrade(solutionKitsConfig);
+                try {
+                    SolutionKitUtils.checkGuidsMatchForUpgrade(solutionKitsConfig);
+                } catch (final SolutionKitException e) {
+                    return Response.status(NOT_ACCEPTABLE).entity(e.getMessage()).build();
+                }
+
                 setSelectedSolutionKitsForUpgrade(foundByGuidAndIM, instanceModifierForUpgrade, selectedGuidList, solutionKitsConfig);
             } else {
                 setSelectedSolutionKitsForInstall(solutionKitsConfig, instanceModifierParameter, solutionKitSelects, failOnExist);
