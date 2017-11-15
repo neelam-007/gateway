@@ -1,5 +1,6 @@
 package com.l7tech.policy.solutionkit;
 
+import com.sun.istack.internal.NotNull;
 import org.w3c.dom.Document;
 
 import java.util.HashMap;
@@ -57,8 +58,10 @@ public class SolutionKitManagerContext {
         this.solutionKitMetadata = solutionKitMetadata;
     }
 
+    @NotNull
     public String getInstanceModifier() {
-        return instanceModifier;
+        //DE328895: Don't return null instance modifiers to customCallbacks
+        return instanceModifier == null ? "" : instanceModifier;
     }
 
     public void setInstanceModifier(String instanceModifier) {
