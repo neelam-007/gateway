@@ -368,7 +368,9 @@ public class SolutionKitProcessor {
         // update if already installed
         if (solutionKitOnGateway != null) {
             goid = solutionKitOnGateway.getGoid();
-            solutionKitAdmin.update(SolutionKitUtils.copyParentSolutionKit(parentSolutionKit, solutionKitOnGateway));
+            SolutionKitUtils.copyParentSolutionKit(parentSolutionKit, solutionKitOnGateway);
+            solutionKitOnGateway.setProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY, newInstanceModifier);
+            solutionKitAdmin.update(solutionKitOnGateway);
         }
         // save if new
         else {

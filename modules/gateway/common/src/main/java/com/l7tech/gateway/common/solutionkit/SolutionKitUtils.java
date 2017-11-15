@@ -467,6 +467,10 @@ public final class SolutionKitUtils {
 
     /**
      * Copy the metadata of a parent solution kit object to make another parent solution kit object.
+     *
+     * Be careful when using a loaded solutions kit from a .sskar file as the sourceSK because they have the default instance modifier,
+     * which will overwrite the instance modifier in the resultSK.
+     *
      * This is mainly used to create new instances of parent solution kits.
      * @param sourceSK The SolutionKit source to copy from
      * @param resultSK The solution kit to hold the result.
