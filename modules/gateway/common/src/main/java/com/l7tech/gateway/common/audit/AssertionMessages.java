@@ -576,6 +576,7 @@ public class AssertionMessages extends Messages {
     public static final M JMS_ROUTING_ERROR_SENDING_MESSAGE = m(6033, Level.WARNING, "Unable to send JMS message to destination ''{0}'' : {1}.");
     public static final M JMS_ROUTING_NOT_SUPPORTED_JMS_HEADER =  m(6034,Level.WARNING, "JMS Header ''{0}'' is not supported.");
     public static final M JMS_ROUTING_NOT_SETTABLE_JMS_HEADER =  m(6035,Level.WARNING, "JMS Header ''{0}'' is not settable.");
+    public static final M JMS_ROUTING_NOT_SETTABLE_JMS_PROPERTY =  m(6036,Level.WARNING, "Cannot set JMS Property ''{0}'' to value ''{1}''. {2}");
 
     // ServerFtpRoutingAssertion
     @Deprecated

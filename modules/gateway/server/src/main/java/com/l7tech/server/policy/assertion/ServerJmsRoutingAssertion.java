@@ -48,8 +48,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.l7tech.message.JmsKnob.HEADER_TYPE_JMS_PROPERTY;
 import static com.l7tech.message.JmsKnob.HEADER_TYPE_JMS_HEADER;
+import static com.l7tech.message.JmsKnob.HEADER_TYPE_JMS_PROPERTY;
 import static com.l7tech.util.ExceptionUtils.getDebugException;
 import static com.l7tech.util.ExceptionUtils.getMessage;
 
@@ -64,6 +64,15 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
     private static final int MAX_OOPSES = 5;
     private static final long RETRY_DELAY = 1000L;
     private static final long DEFAULT_MESSAGE_MAX_BYTES = 2621440L;
+    private static final String BEAN_NAME_APP_EVENT_PROXY = "applicationEventProxy";
+    private static final String BEAN_NAME_DEFAULT_KEY = "defaultKey";
+    private static final String BEAN_NAME_SERVER_CONFIG = "serverConfig";
+    private static final String PROPERTY_NAME_IO_JMS_MESSAGE_MAX_BYTES = "ioJmsMessageMaxBytes";
+    private static final String BEAN_NAME_JMS_ENDPOINT_MANAGER = "jmsEndpointManager";
+    private static final String BEAN_NAME_JMS_CONNECTION_MANAGER = "jmsConnectionManager";
+    private static final String BEAN_NAME_STASH_MANAGER_FACTORY = "stashManagerFactory";
+    private static final String BEAN_NAME_JMS_PROPERTY_MAPPER = "jmsPropertyMapper";
+    private static final String BEAN_NAME_JMS_RESOURCE_MANAGER = "jmsResourceManager";
 
 
     private final ApplicationContext spring;
@@ -87,18 +96,18 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
     public ServerJmsRoutingAssertion(JmsRoutingAssertion data, ApplicationContext spring) {
         super(data, spring);
         this.spring = spring;
-        this.applicationEventProxy = spring.getBean("applicationEventProxy", ApplicationEventProxy.class);
-        this.serverConfig = spring.getBean("serverConfig", ServerConfig.class);
-        this.jmsEndpointManager = (JmsEndpointManager)spring.getBean("jmsEndpointManager");
-        this.jmsConnectionManager = (JmsConnectionManager)spring.getBean("jmsConnectionManager");
-        this.stashManagerFactory = spring.getBean("stashManagerFactory", StashManagerFactory.class);
-        this.jmsPropertyMapper = spring.getBean("jmsPropertyMapper", JmsPropertyMapper.class);
-        this.jmsResourceManager = spring.getBean("jmsResourceManager", JmsResourceManager.class);
+        this.applicationEventProxy = spring.getBean(BEAN_NAME_APP_EVENT_PROXY, ApplicationEventProxy.class);
+        this.serverConfig = spring.getBean(BEAN_NAME_SERVER_CONFIG, ServerConfig.class);
+        this.jmsEndpointManager = (JmsEndpointManager)spring.getBean(BEAN_NAME_JMS_ENDPOINT_MANAGER);
+        this.jmsConnectionManager = (JmsConnectionManager)spring.getBean(BEAN_NAME_JMS_CONNECTION_MANAGER);
+        this.stashManagerFactory = spring.getBean(BEAN_NAME_STASH_MANAGER_FACTORY, StashManagerFactory.class);
+        this.jmsPropertyMapper = spring.getBean(BEAN_NAME_JMS_PROPERTY_MAPPER, JmsPropertyMapper.class);
+        this.jmsResourceManager = spring.getBean(BEAN_NAME_JMS_RESOURCE_MANAGER, JmsResourceManager.class);
         this.invalidator = new JmsInvalidator(this);
         applicationEventProxy.addApplicationListener(invalidator);
         SignerInfo signerInfo = null;
         try {
-            DefaultKey ku = spring.getBean("defaultKey", DefaultKey.class);
+            DefaultKey ku = spring.getBean(BEAN_NAME_DEFAULT_KEY, DefaultKey.class);
             signerInfo = ku.getSslInfo();
         } catch(Exception e) {
             logger.log(Level.WARNING, "Error getting SAML signer information.", e);
@@ -377,6 +386,13 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                         } else {
                             logAndAudit(AssertionMessages.JMS_ROUTING_MESSAGE_FORMAT_ERROR, new String[] {e.getMessage()}, ExceptionUtils.getDebugException(e));
                         }
+                    } catch (NumberFormatException nfe) {
+                        //catching exception so that if incoming request with only JMSXGroupSeq and no JMSXGroupID, it will pass through.
+                        logAndAudit(AssertionMessages.JMS_ROUTING_NOT_SETTABLE_JMS_PROPERTY,
+                                new String[]{name,
+                                        (outboundRequestProps.get(name) == null ? "null" : outboundRequestProps.get(name).toString()),
+                                        ExceptionUtils.getMessage(nfe)},
+                                ExceptionUtils.getDebugException(nfe));
                     }
                 }
 
@@ -713,7 +729,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
     private boolean isValidRequest( final com.l7tech.message.Message message ) throws IOException {
         boolean valid = true;
 
-        long maxSize = serverConfig.getLongProperty( "ioJmsMessageMaxBytes", 5242880L );
+        long maxSize = serverConfig.getLongProperty(PROPERTY_NAME_IO_JMS_MESSAGE_MAX_BYTES, 5242880L );
         final MimeKnob mk = message.getKnob(MimeKnob.class);
 
         if (mk == null || !message.isInitialized()) {
@@ -997,7 +1013,8 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
             for (JmsMessagePropertyRule rule : ruleSet.getRules()) {
                 final String name = rule.getName();
                 if (rule.isPassThru()) {
-                    if (src.containsKey(name) && !name.startsWith("JMS_") && !name.startsWith("JMSX")) {
+                    //Allowing customers to send any jms property using custom pass through, as long as it is available in the request.
+                    if (src.containsKey(name)) {
                         dst.put(name, src.get(name));
                         if (logger.isLoggable(Level.FINEST)) {
                             logger.finest("Propagating a JMS message property with pass through. (name=" + name + ", value=" + src.get(name) + ")");
