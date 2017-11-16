@@ -755,13 +755,16 @@ public class LogonDialog extends JDialog {
             final Version gatewayVersion = GatewayInfoHolder.getInstance().getGatewayVersion();
             final Version policyManagerVersion = PolicyManagerBuildInfo.getInstance().getPolicyManagerVersion();
             if (gatewayVersion != null && !policyManagerVersion.equals(gatewayVersion)) {
-                final String msg = MessageFormat.format(resources.getString("logon.version.unsupported"), policyManagerVersion.toString(), gatewayVersion.toString());
-                SwingUtilities.invokeLater(new Runnable() {
-                    @Override
-                    public void run() {
-                        JOptionPane.showMessageDialog(TopComponents.getInstance().getTopParent(), msg, "Warning", JOptionPane.ERROR_MESSAGE);
-                    }
-                });
+                final String mismatchWarningMsg = MessageFormat.format(
+                    resources.getString("logon.version.unsupported.warning"),
+                    policyManagerVersion.toString(),
+                    gatewayVersion.toString());
+
+                SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(
+                    TopComponents.getInstance().getTopParent(),
+                    mismatchWarningMsg,
+                    resources.getString("logon.version.unsupported.title"),
+                    JOptionPane.WARNING_MESSAGE));
             }
         } catch (Exception e) {
             parentContainer.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
