@@ -60,7 +60,8 @@ public class SolutionKitManagerContext {
 
     @NotNull
     public String getInstanceModifier() {
-        //DE328895: Don't return null instance modifiers to customCallbacks
+        //DE328895: Don't return null instance modifiers to customCallbacks since some customCallbacks assume that
+        // instance modifiers cannot be null, which result in NullPointerException
         return instanceModifier == null ? "" : instanceModifier;
     }
 

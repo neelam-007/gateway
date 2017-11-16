@@ -443,9 +443,9 @@ public class SolutionKitProcessor {
             String errorMessage = "'" + solutionKit.getName() + "' was created with some customization library, which is missed in the customization jar.";
             logger.log(Level.WARNING, errorMessage, ExceptionUtils.getDebugException(e));
             throw new BadRequestException(errorMessage, e);
-        } catch (Throwable e) {
+        } catch (final Throwable e) {
             //DE328895 Log Exception as a warning.
-            String errorMessage = ExceptionUtils.getMessage(e);
+            final String errorMessage = ExceptionUtils.getMessage(e);
             logger.log(Level.WARNING, errorMessage, ExceptionUtils.getDebugException(e));
             throw new BadRequestException(e.getMessage(), e);
         }
