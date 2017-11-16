@@ -304,7 +304,11 @@ public class SolutionKitManagerResource {
                 solutionKitsConfig.setSolutionKitsToUpgrade(solutionKitAdminHelper.getSolutionKitsToUpgrade(foundByGuidAndIM));
 
                 // Check whether selected solution kits have uninstall bundle or not.
-                SolutionKitUtils.checkUninstallBundleExistenceForUpgrade(solutionKitsConfig);
+                try {
+                    SolutionKitUtils.checkUninstallBundleExistenceForUpgrade(solutionKitsConfig);
+                } catch (final SolutionKitException e) {
+                    return Response.status(NOT_FOUND).entity(e.getMessage()).build();
+                }
 
                 // Find previously installed IDs to resolve.
                 solutionKitsConfig.setPreviouslyResolvedIds();
