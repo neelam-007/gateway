@@ -1140,7 +1140,7 @@
                           <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
                         </constraints>
                         <properties>
-                          <toolTipText value="Maximum number of sessions for the session pool. Enter '0' (zero) to create and close sessions are they are used. Enter a negative value for unlimited sessions (not recommended)."/>
+                          <toolTipText value="Maximum number of sessions for the session pool. Enter '0' (zero) to create and close sessions as they are used. Enter a negative value for unlimited sessions (not recommended)."/>
                         </properties>
                       </component>
                       <component id="5f1a0" class="javax.swing.JLabel" binding="sessionPoolMaxWait">
