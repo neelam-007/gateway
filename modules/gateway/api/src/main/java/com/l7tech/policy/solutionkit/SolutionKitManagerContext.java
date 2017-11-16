@@ -1,6 +1,5 @@
 package com.l7tech.policy.solutionkit;
 
-import com.sun.istack.internal.NotNull;
 import org.w3c.dom.Document;
 
 import java.util.HashMap;
