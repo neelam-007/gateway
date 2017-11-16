@@ -304,7 +304,11 @@ public class SolutionKitManagerResource {
                 solutionKitsConfig.setSolutionKitsToUpgrade(solutionKitAdminHelper.getSolutionKitsToUpgrade(foundByGuidAndIM));
 
                 // Check whether selected solution kits have uninstall bundle or not.
-                SolutionKitUtils.checkUninstallBundleExistenceForUpgrade(solutionKitsConfig);
+                try {
+                    SolutionKitUtils.checkUninstallBundleExistenceForUpgrade(solutionKitsConfig);
+                } catch (final SolutionKitException e) {
+                    return Response.status(NOT_FOUND).entity(e.getMessage()).build();
+                }
 
                 // Find previously installed IDs to resolve.
                 solutionKitsConfig.setPreviouslyResolvedIds();
@@ -324,7 +328,12 @@ public class SolutionKitManagerResource {
             // Handle user selection and set selected solution kits for install or upgrade in solutionKitsConfig
             if (isUpgrade) {
                 // For upgrade, before handling user selection, check upgrade eligibility, depending on parent selection or child selection
-                SolutionKitUtils.checkGuidsMatchForUpgrade(solutionKitsConfig);
+                try {
+                    SolutionKitUtils.checkGuidsMatchForUpgrade(solutionKitsConfig);
+                } catch (final SolutionKitException e) {
+                    return Response.status(NOT_ACCEPTABLE).entity(e.getMessage()).build();
+                }
+
                 setSelectedSolutionKitsForUpgrade(foundByGuidAndIM, instanceModifierForUpgrade, selectedGuidList, solutionKitsConfig);
             } else {
                 setSelectedSolutionKitsForInstall(solutionKitsConfig, instanceModifierParameter, solutionKitSelects, failOnExist);
