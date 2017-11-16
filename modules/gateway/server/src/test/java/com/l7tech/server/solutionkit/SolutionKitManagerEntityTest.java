@@ -31,7 +31,6 @@ import java.util.UUID;
 /**
  * SolutionKitManager test with derby backend
  */
-@Ignore("These tests will be fixed next on Nov 13 2017.")
 public class SolutionKitManagerEntityTest extends EntityManagerTest {
 
     private SolutionKitManager solutionKitManager;
