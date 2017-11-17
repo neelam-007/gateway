@@ -38,6 +38,7 @@ public class XMPPStartTLSAssertion extends RoutingAssertion implements UsesVaria
     private String privateKeyId;
     private ClientAuthType clientAuthType = ClientAuthType.NONE;
 
+    private String TLS_Selected_Version = "TLSv1";
     @Override
     public String[] getVariablesUsed() {
         if(requestTarget != null) {
@@ -102,6 +103,8 @@ public class XMPPStartTLSAssertion extends RoutingAssertion implements UsesVaria
         return requestTarget != null && TargetMessageType.RESPONSE == requestTarget.getTarget();
     }
 
+    public String getTLS_Selected_Version() { return TLS_Selected_Version;}
+    public void setTLS_Selected_Version(String TLS_version) {TLS_Selected_Version = TLS_version;}
     public String getSessionId() {
         return sessionId;
     }

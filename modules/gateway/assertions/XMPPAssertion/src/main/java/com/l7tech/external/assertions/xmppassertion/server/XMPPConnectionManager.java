@@ -666,9 +666,16 @@ public class XMPPConnectionManager {
             } else {
                 tm = trustManager;
             }
-
-            Provider provider = JceProvider.getInstance().getProviderFor("SSLContext.TLSv1");
-            SSLContext sslContext = SSLContext.getInstance("TLSv1", provider);
+            ///
+            //DE316646 XMPP - support TLS 1.1 and 1.2
+            // Getting selected TLS version from a JComboBox(TLScombobox) and setting it to a local variable 'selected_TLS_version'
+            // and passing it JceProvide and SSLContext
+            // In default case it will use TLSv1
+            ///
+            String selected_TLS_version = tlsAssertion.getTLS_Selected_Version();
+            String tmpSSL_context = "SSLContext."+tlsAssertion.getTLS_Selected_Version();
+            Provider provider = JceProvider.getInstance().getProviderFor(tmpSSL_context);
+            SSLContext sslContext = SSLContext.getInstance(selected_TLS_version, provider);
             JceProvider.getInstance().prepareSslContext( sslContext );
             sslContext.init(keyManagers, new TrustManager[] {tm}, secureRandom);
 

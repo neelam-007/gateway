@@ -26,7 +26,8 @@ public class XMPPStartTLSAssertionPropertiesDialog extends AssertionPropertiesOk
 
     private static final String TO_SERVER = "To Server";
     private static final String TO_CLIENT = "To Client";
-    
+	private static final String[] TLS_Versions = {"TLSv1", "TLSv1.1","TLSv1.2"};
+	
     private JPanel mainPanel;
     private JTextField sessionIdField;
     private JComboBox directionComboBox;
@@ -36,6 +37,7 @@ public class XMPPStartTLSAssertionPropertiesDialog extends AssertionPropertiesOk
     private PrivateKeysComboBox privateKeyComboBox;
     private JLabel clientAuthTypeLabel;
     private JComboBox clientAuthTypeComboBox;
+    private JComboBox TLScombobox;
 
     public XMPPStartTLSAssertionPropertiesDialog(Window owner, XMPPStartTLSAssertion assertion) {
         super(assertion.getClass(), owner, assertion, true);
@@ -52,6 +54,8 @@ public class XMPPStartTLSAssertionPropertiesDialog extends AssertionPropertiesOk
             }
         });
 
+        TLScombobox.setModel(new DefaultComboBoxModel(TLS_Versions));
+
         clientAuthEnabledCheckBox.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -64,7 +68,7 @@ public class XMPPStartTLSAssertionPropertiesDialog extends AssertionPropertiesOk
         super.initComponents();
         pack();
     }
-    
+
     private void enableDisableComponents() {
         if(TO_SERVER.equals(directionComboBox.getSelectedItem())) {
             clientAuthLabel.setVisible(true);
@@ -107,6 +111,8 @@ public class XMPPStartTLSAssertionPropertiesDialog extends AssertionPropertiesOk
         }
         
         assertion.setSessionId(sessionIdField.getText().trim());
+
+        assertion.setTLS_Selected_Version((String) TLScombobox.getSelectedItem());
         
         if(TO_SERVER.equals(directionComboBox.getSelectedItem())) {
             assertion.setToServer(true);
@@ -130,6 +136,7 @@ public class XMPPStartTLSAssertionPropertiesDialog extends AssertionPropertiesOk
     @Override
     public void setData(XMPPStartTLSAssertion assertion) throws ValidationException {
         sessionIdField.setText(assertion.getSessionId() == null ? "" : assertion.getSessionId());
+        TLScombobox.setSelectedItem(assertion.getTLS_Selected_Version());
         
         if(assertion.isToServer()) {
             directionComboBox.setSelectedItem(TO_SERVER);
