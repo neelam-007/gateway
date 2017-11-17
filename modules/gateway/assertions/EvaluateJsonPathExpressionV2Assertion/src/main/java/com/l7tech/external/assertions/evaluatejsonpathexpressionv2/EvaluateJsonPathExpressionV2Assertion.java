@@ -1,11 +1,15 @@
 package com.l7tech.external.assertions.evaluatejsonpathexpressionv2;
 
+import com.l7tech.external.assertions.evaluatejsonpathexpressionv2.server.EvaluateJsonPathExpressionV2AdminImpl;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.util.Functions;
 import org.springframework.context.ApplicationContext;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * <p>
@@ -63,6 +67,17 @@ public class EvaluateJsonPathExpressionV2Assertion extends MessageTargetableAsse
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
         meta.put(AssertionMetadata.POLICY_NODE_ICON, "com/l7tech/console/resources/Properties16.gif");
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
+
+        meta.put(AssertionMetadata.EXTENSION_INTERFACES_FACTORY, new Functions.Unary<Collection<ExtensionInterfaceBinding>, ApplicationContext>() {
+            @Override
+            public Collection<ExtensionInterfaceBinding> call(ApplicationContext appContext) {
+                final ExtensionInterfaceBinding<EvaluateJsonPathExpressionV2Admin> binding = new ExtensionInterfaceBinding<EvaluateJsonPathExpressionV2Admin>(
+                        EvaluateJsonPathExpressionV2Admin.class,
+                        null,
+                        new EvaluateJsonPathExpressionV2AdminImpl());
+                return Collections.<ExtensionInterfaceBinding>singletonList(binding);
+            }
+        });
 
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, new AssertionNodeNameFactory<EvaluateJsonPathExpressionV2Assertion>() {
             @Override

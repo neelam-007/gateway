@@ -5,6 +5,7 @@ import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.console.panels.TargetMessagePanel;
 import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.console.util.Registry;
+import com.l7tech.external.assertions.evaluatejsonpathexpressionv2.EvaluateJsonPathExpressionV2Admin;
 import com.l7tech.external.assertions.evaluatejsonpathexpressionv2.EvaluateJsonPathExpressionV2Assertion;
 import com.l7tech.external.assertions.evaluatejsonpathexpressionv2.Evaluator;
 import com.l7tech.external.assertions.evaluatejsonpathexpressionv2.JsonPathEvaluator;
@@ -107,8 +108,8 @@ public class EvaluateJsonPathExpressionV2PropertiesDialog extends AssertionPrope
 
                     String evaluator = EvaluateJsonPathExpressionV2Assertion.DEFAULT_EVALUATOR.equals(cbEvaluator.getSelectedItem().toString()) ? getJsonSystemDefaultValue() : cbEvaluator.getSelectedItem().toString();
                     if (EvaluateJsonPathExpressionV2Assertion.getSupportedEvaluators().contains(evaluator)) {
-                        final Evaluator jsonPathEvaluator = JsonPathEvaluator.evaluators.get(evaluator);
-                        final JsonPathExpressionResult result = jsonPathEvaluator.evaluate(testInputArea.getText().trim(), textFieldExpression.getText().trim());
+                        final EvaluateJsonPathExpressionV2Admin admin = Registry.getDefault().getExtensionInterface(EvaluateJsonPathExpressionV2Admin.class, null);
+                        final JsonPathExpressionResult result = admin.testEvaluation(evaluator, testInputArea.getText().trim(), textFieldExpression.getText().trim());
 
                         StringBuilder sb = new StringBuilder("found = ").append(result.isFound()).append("\r\n")
                                 .append("count = ").append(result.getCount());
@@ -128,7 +129,7 @@ public class EvaluateJsonPathExpressionV2PropertiesDialog extends AssertionPrope
                     } else {
                         testOutputArea.setText("Invalid Evaluator : " + evaluator);
                     }
-                } catch (Exception e1) {
+                } catch (EvaluateJsonPathExpressionV2Admin.EvaluateJsonPathExpressionTestException e1) {
                     testOutputArea.setText(e1.getMessage());
                 }
             }
