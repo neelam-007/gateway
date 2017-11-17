@@ -168,13 +168,12 @@ public class WebSocketLoadListener {
                                     }
                                 } else if (ops[i] == EntityInvalidationEvent.DELETE) {
                                     logger.log(Level.INFO, "Changed WebSocket Service " + entity.getId());
-                                    Set<WebSocketConnectionEntity> connections = servers.keySet();
-
-                                    for (WebSocketConnectionEntity connection : connections) {
-                                        if (connection.getId().equals(entity.getId())) {
-                                            connection.setRemovePortFlag(true);
-                                            stop(connection);
-                                        }
+                                    try {
+                                        WebSocketConnectionEntity wsEntity = WebSocketUtils.asConcreteEntity(entity, WebSocketConnectionEntity.class);
+                                        wsEntity.setRemovePortFlag(true);
+                                        stop(wsEntity);
+                                    } catch (FindException e) {
+                                        logger.log(Level.WARNING, "Unable to find WebSocket Connection Entity");
                                     }
                                 }
                             }
@@ -267,14 +266,14 @@ public class WebSocketLoadListener {
         WebSocketConstants.setClusterProperty(WebSocketConstants.MAX_INBOUND_THREADS_KEY, getIntegerProp(WebSocketConstants.MAX_INBOUND_THREADS_KEY, WebSocketConstants.MAX_INBOUND_THREADS));
         WebSocketConstants.setClusterProperty(WebSocketConstants.MIN_INBOUND_THREADS_KEY, getIntegerProp(WebSocketConstants.MIN_INBOUND_THREADS_KEY, WebSocketConstants.MIN_INBOUND_THREADS));
         WebSocketConstants.setClusterProperty(WebSocketConstants.ACCEPT_QUEUE_SIZE_KEY, getIntegerProp(WebSocketConstants.ACCEPT_QUEUE_SIZE_KEY, WebSocketConstants.ACCEPT_QUEUE_SIZE));
-        WebSocketConstants.setClusterProperty(WebSocketConstants.OUTBOUND_ONLY_CONNECTION_RECONNECT_INTERVAL_KEY, getIntegerProp(WebSocketConstants.OUTBOUND_ONLY_CONNECTION_RECONNECT_INTERVAL_KEY, WebSocketConstants.OUTBOUND_ONLY_CONNECTION_RECONNECT_INTERVAL));
+        WebSocketConstants.setClusterProperty(WebSocketConstants.OUTBOUND_ONLY_CONNECTION_RECONNECT_INTERVAL_KEY, getTimeProp(WebSocketConstants.OUTBOUND_ONLY_CONNECTION_RECONNECT_INTERVAL_KEY, WebSocketConstants.OUTBOUND_ONLY_CONNECTION_RECONNECT_INTERVAL));
         WebSocketConstants.setClusterProperty(WebSocketConstants.INBOUND_COPY_UPGRADE_REQUEST_SUBPROTOCOL_HEADER_KEY, getProp(WebSocketConstants.INBOUND_COPY_UPGRADE_REQUEST_SUBPROTOCOL_HEADER_KEY, WebSocketConstants.INBOUND_COPY_UPGRADE_REQUEST_SUBPROTOCOL_HEADER));
     }
 
     @SuppressWarnings({"UnusedDeclaration"})
     public static synchronized void onModuleUnloaded() {
-        unregisterGenericEntities();
         contextDestroyed();
+        unregisterGenericEntities();
         applicationEventProxy.removeApplicationListener(applicationListener);
         applicationListener = null;
     }
@@ -291,7 +290,7 @@ public class WebSocketLoadListener {
 
         Collection<WebSocketConnectionEntity> connections = gem.getEntityManager(WebSocketConnectionEntity.class).findAll();
         try {
-            WebSocketConnectionManager.createConnectionManager(keyStoreManager,trustManager,secureRandom,defaultKey);
+            WebSocketConnectionManager.createConnectionManager(keyStoreManager, trustManager, secureRandom, defaultKey);
             for (WebSocketConnectionEntity connection : connections) {
                 start(connection, true);
             }
@@ -306,19 +305,27 @@ public class WebSocketLoadListener {
             WebSocketConstants.getClusterProperty(WebSocketConstants.OUTBOUND_ONLY_CONNECTION_RECONNECT_INTERVAL_KEY));
     }
 
+
+
     /**
      * Stop Embedding Jetty server when WEB Application is stopped.
      */
     private static void contextDestroyed() {
         Background.cancel(reconnectTask);
 
-        Set<WebSocketConnectionEntity> connections = servers.keySet();
-
-        for (WebSocketConnectionEntity connection : connections) {
-            connection.setRemovePortFlag(true);
-            stop(connection);
+        try {
+            final Collection<WebSocketConnectionEntity> connections = gem.getEntityManager(WebSocketConnectionEntity.class).findAll();
+            for (WebSocketConnectionEntity connection : connections) {
+                connection.setRemovePortFlag(true);
+                stop(connection);
+            }
+        } catch (FindException e) {
+            logger.log(Level.WARNING,
+                    "Failed to retrieve WebSocket connection entities: " + ExceptionUtils.getMessageWithCause(e),
+                    ExceptionUtils.getDebugException(e));
+        } finally {
+            isStarted = false;
         }
-        isStarted = false;
     }
 
 
@@ -469,7 +476,9 @@ public class WebSocketLoadListener {
                     logger.log(Level.WARNING, "Caught exception when deregistering Inbound/Outbound handler " + ExceptionUtils.getMessage(e) + "'.", ExceptionUtils.getDebugException(e));
                 }
             }
-        } else {
+        }
+
+        if (server == null && connectionEntity.isOutboundOnly()) {
             //Deregister outbound handlers
             logger.log(Level.WARNING, "Deregistering outbound handler : " + connectionEntity.getId());
             try {

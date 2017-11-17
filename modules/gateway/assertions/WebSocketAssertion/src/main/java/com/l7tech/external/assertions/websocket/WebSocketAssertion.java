@@ -52,7 +52,7 @@ public class WebSocketAssertion extends Assertion implements UsesVariables {
         props.put(WebSocketConstants.ACCEPT_QUEUE_SIZE_KEY, new String[] { "This property sets the maximum requests that can be buffered. (Default: 100 requests). Requires gateway restart.", "100", "integer" });
         props.put(WebSocketConstants.OUTBOUND_ONLY_CONNECTION_RECONNECT_INTERVAL_KEY,
             new String[] {"This property sets the retry interval for reconnecting outbound only connections to WebSocket server. (Default: " + WebSocketConstants.OUTBOUND_ONLY_CONNECTION_RECONNECT_INTERVAL +" milliseconds).  Requires gateway restart.",
-            Integer.toString(WebSocketConstants.OUTBOUND_ONLY_CONNECTION_RECONNECT_INTERVAL)});
+            Integer.toString(WebSocketConstants.OUTBOUND_ONLY_CONNECTION_RECONNECT_INTERVAL), "timeUnit" });
         props.put(WebSocketConstants.INBOUND_COPY_UPGRADE_REQUEST_SUBPROTOCOL_HEADER_KEY,
             new String[] {"This property copies the upgrade request header \"sec-websocket-protocol\" values to the response header of the same name.  By setting this property to false, modifications to this header are possible within a connection policy. " +
             "(Default: " + Boolean.toString( WebSocketConstants.INBOUND_COPY_UPGRADE_REQUEST_SUBPROTOCOL_HEADER ) +").  Requires gateway restart.",
