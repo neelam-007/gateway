@@ -40,10 +40,7 @@ import javax.naming.CommunicationException;
 import javax.naming.NamingException;
 import java.io.IOException;
 import java.lang.IllegalStateException;
-import java.util.Collection;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -178,10 +175,24 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
             while ( true ) {
                 final JmsRoutingCallback jrc = new JmsRoutingCallback(context, cfg, inboundDestinationHolder);
                 try {
-                    jmsResourceManager.doWithJmsResources( cfg, jrc );
+                    jmsResourceManager.doWithJmsResources(cfg, jrc);
                     jrc.doException();
                     break; // no error
+                } catch(NoSuchElementException pe) {
+                    if ( jrc.isMessageSent() ) {
+                        throw pe;
+                    }
+
+                    if (++oopses < maxOopses) {
+                        logAndAudit(AssertionMessages.JMS_ROUTING_CANT_CONNECT_RETRYING, new String[] {String.valueOf(oopses), String.valueOf(retryDelay)}, getDebugException( pe ));
+                        sleep( retryDelay );
+                    } else {
+                        logAndAudit(AssertionMessages.JMS_ROUTING_CANT_CONNECT_NOMORETRIES, String.valueOf(maxOopses));
+                        // Catcher will log/audit the stack trace
+                        return AssertionStatus.FAILED;
+                    }
                 } catch (JmsRuntimeException jre) {
+                    logger.log(Level.FINE, "JmsRuntimeException thrown", jre);
                     if ( jrc.isMessageSent() ) {
                         throw jre.getCause() != null ? jre.getCause() : jre;
                     }
@@ -196,6 +207,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                         throw jre.getCause() != null ? jre.getCause() : jre;
                     }
                 } catch (JMSException e) {
+                    logger.log(Level.FINE, "JMSException thrown", e);
                     if ( jrc.isMessageSent()) {
                         throw e;
                     }
@@ -219,6 +231,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                         throw e;
                     }
                 } catch (NamingException nex) {
+                    logger.log(Level.FINE, "NamingException thrown", nex);
                     if ( jrc.isMessageSent() ) {
                         throw nex; // this is an error, there should be no possibility of a NamingException after message send
                     }
@@ -448,7 +461,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                 if ( logger.isLoggable( Level.FINE ))
                     logger.fine("Sending JMS outbound message");
 
-                jmsProducer.send( jmsOutboundRequest, deliveryMode, priority, timeToLive );
+                jmsProducer.send(jmsOutboundRequest, deliveryMode, priority, timeToLive);
 
                 messageSent = true; // no retries once sent
 
@@ -461,6 +474,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                     logAndAudit(AssertionMessages.JMS_ROUTING_NO_RESPONSE_EXPECTED);
                     context.setRoutingStatus( RoutingStatus.ROUTED );
                 } else {
+
                     final String selector = getSelector( jmsOutboundRequest, cfg.getEndpoint() );
                     int emergencyTimeoutDefault = 10000;
                     String timeoutStr = assertion.getResponseTimeout();

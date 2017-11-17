@@ -2,19 +2,15 @@ package com.l7tech.server.transport.jms2;
 
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.server.transport.jms.JmsBag;
-import com.l7tech.server.transport.jms.JmsConfigException;
 import com.l7tech.server.transport.jms.JmsRuntimeException;
-import com.l7tech.server.transport.jms.JmsUtil;
 import com.l7tech.server.util.ManagedTimer;
 import com.l7tech.util.Config;
 import com.l7tech.util.ConfigFactory;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.TimeUnit;
-import org.apache.commons.pool.PoolableObjectFactory;
-import org.apache.commons.pool.impl.GenericObjectPool;
 import org.springframework.beans.factory.DisposableBean;
 
-import javax.jms.*;
-import javax.jms.Queue;
+import javax.jms.JMSException;
 import javax.naming.Context;
 import javax.naming.NamingException;
 import java.beans.PropertyChangeEvent;
@@ -22,8 +18,6 @@ import java.beans.PropertyChangeListener;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -59,7 +53,8 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
         this.config = config;
         this.connectionHolder = new ConcurrentHashMap<JmsEndpointConfig.JmsEndpointKey, CachedConnection>();
         this.timer = new ManagedTimer("JmsResourceManager-CacheCleanup-" + name);
-        timer.schedule( new CacheCleanupTask(connectionHolder, cacheConfigReference ), 17371, CACHE_CLEAN_INTERVAL );
+        this.cleanupTask = new CacheCleanupTask(connectionHolder, cacheConfigReference );
+        timer.schedule( cleanupTask, 17371, CACHE_CLEAN_INTERVAL );
         updateConfig();
     }
 
@@ -72,18 +67,20 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
      * @throws JmsRuntimeException If an error occurs creating the resources
      */
     public void doWithJmsResources( final JmsEndpointConfig endpoint,
-                                    final JmsResourceCallback callback ) throws NamingException, JMSException, JmsRuntimeException {
+                                    final JmsResourceCallback callback ) throws NamingException, JMSException, JmsRuntimeException, NoSuchElementException {
         if ( !active.get() ) throw new JmsRuntimeException("JMS resource manager is stopped.");
 
-        CachedConnection cachedConnection = null;
+        SessionHolder sessionHolder = null;
         try {
-            cachedConnection = getConnection(endpoint);
-            cachedConnection.doWithJmsResources( callback );
-        } catch ( JMSException e ) {
-            evict( connectionHolder, endpoint.getJmsEndpointKey(), cachedConnection );
-            throw e;
+            sessionHolder = getSessionHolder(endpoint);
+            sessionHolder.doWithJmsResources( callback );
         } finally {
-            if ( cachedConnection!= null ) cachedConnection.unRef();
+            try {
+                returnSessionHolder(endpoint, sessionHolder);
+            } catch (JmsRuntimeException e) {
+                //not much we can do. log it
+                logger.log(Level.WARNING, "Unable to return cached connection " + sessionHolder, ExceptionUtils.getDebugException(e));
+            }
         }
     }
 
@@ -95,23 +92,49 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
      * @return The Cached JMS Connection
      * @throws JmsRuntimeException If an error occurs creating the resources
      */
-    protected CachedConnection getConnection(JmsEndpointConfig endpoint) throws NamingException, JmsRuntimeException {
 
+    protected SessionHolder getSessionHolder(JmsEndpointConfig endpoint) throws JmsRuntimeException {
         final JmsEndpointConfig.JmsEndpointKey key = endpoint.getJmsEndpointKey();
-        CachedConnection cachedConnection = null;
-        cachedConnection = connectionHolder.get(key);
-        if ( cachedConnection == null || !cachedConnection.ref() ) {
-            cachedConnection = null;
-
-            synchronized( key.toString().intern() ){ // prevent concurrent creation for a key
-                cachedConnection = connectionHolder.get(key); // see if someone else created it
-                if ( cachedConnection == null || !cachedConnection.ref() ) {
-                    cachedConnection = null;
-                    cachedConnection = newConnection(endpoint);
+        CachedConnection conn = connectionHolder.get(key);
+        if(conn == null) {
+            //create pool of connections and add it to the connection holder
+            synchronized (key.toString().intern()) {
+                conn = connectionHolder.get(key);
+                if (conn == null)  {
+                    try {
+                        if(!endpoint.getEndpoint().isMessageSource()
+                                && Boolean.valueOf(endpoint.getConnection().properties().getProperty(JmsConnection.PROP_CONNECTION_POOL_ENABLE, Boolean.FALSE.toString()))) {
+                            conn = new PooledConnection(endpoint, getAndValidateConnectionPoolClusterProperties());
+                        }
+                        else {
+                            conn = new SingleConnection(endpoint, getAndValidateSessionPoolClusterProperties());
+                        }
+                    } catch ( Exception e ) {
+                        throw new JmsRuntimeException(e);
+                    }
+                    connectionHolder.put(key, conn);
+                    logger.log(Level.FINE, "Created new CachedConnection " + conn.toString());
                 }
             }
         }
-        return cachedConnection;
+        return conn.borrowConnection();
+    }
+
+
+    protected void returnSessionHolder(JmsEndpointConfig endpoint, SessionHolder connection) throws JmsRuntimeException{
+        try {
+            final JmsEndpointConfig.JmsEndpointKey key = endpoint.getJmsEndpointKey();
+            CachedConnection conn = connectionHolder.get(key);
+            if(conn != null) {
+                conn.returnConnection(connection);
+            }
+            else {
+                logger.log(Level.WARNING, "JMS Connection with the key " + key.toString() + " does not exist.");
+            }
+        } catch ( Exception ex ) {
+            throw new JmsRuntimeException(ex);
+        }
+
     }
 
     /**
@@ -124,8 +147,8 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
      * @throws JmsRuntimeException If error occur when getting the connection or getting the JmsBag
      */
     public JmsBag borrowJmsBag(final JmsEndpointConfig endpointConfig) throws NamingException, JmsRuntimeException {
-        CachedConnection connection = getConnection(endpointConfig);
-        return connection.borrowJmsBag();
+        SessionHolder sessionHolder = getSessionHolder(endpointConfig);
+        return sessionHolder.borrowJmsBag();
     }
 
     /**
@@ -134,10 +157,10 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
      * @throws JmsRuntimeException If error occur when returning the JmsBag
      */
     public void returnJmsBag(JmsBag bag) throws JmsRuntimeException {
-        CachedConnection cachedConnection = (CachedConnection) bag.getBagOwner();
-        if (cachedConnection != null) {
-            cachedConnection.returnJmsBag(bag);
-            cachedConnection.unRef();
+        SessionHolder sessionHolder = (SessionHolder) bag.getBagOwner();
+        if (sessionHolder != null) {
+            sessionHolder.returnJmsBag(bag);
+            sessionHolder.unRef();
         }
     }
 
@@ -148,9 +171,9 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
      * @throws JmsRuntimeException If error when touching the Cached Connection.
      */
     public void touch(final JmsBag bag) throws JmsRuntimeException {
-        CachedConnection cachedConnection = (CachedConnection) bag.getBagOwner();
-        if (cachedConnection != null) {
-            cachedConnection.touch();
+        SessionHolder sessionHolder = (SessionHolder)bag.getBagOwner();
+        if (sessionHolder != null) {
+            sessionHolder.touch();
         }
 
     }
@@ -165,12 +188,16 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
      *
      * @param endpoint The configuration for the connection.
      */
-    public void invalidate( final JmsEndpointConfig endpoint ) {
+    public synchronized void invalidate( final JmsEndpointConfig endpoint ) {
         if ( active.get() ) {
             final JmsEndpointConfig.JmsEndpointKey key = endpoint.getJmsEndpointKey();
-            final CachedConnection cachedConnection = connectionHolder.get(key);
-            if ( cachedConnection != null ) {
-                evict( connectionHolder, key, cachedConnection );
+            final CachedConnection conn = connectionHolder.get(key);
+            if(conn != null) {
+                if (!conn.isActive()) {
+                    logger.log(Level.FINE, "Removing CachedConnection with key " + key);
+                    conn.close();
+                    connectionHolder.remove(key);
+                }
             }
         }
     }
@@ -247,6 +274,7 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
 
     private static final long DEFAULT_CONNECTION_MAX_AGE = TimeUnit.MINUTES.toMillis( 30 );
     private static final long DEFAULT_CONNECTION_MAX_IDLE = TimeUnit.MINUTES.toMillis( 5 );
+    private static final long DEFAULT_CONNECTION_IDLE_TIME = TimeUnit.MINUTES.toMillis(2);
     private static final int DEFAULT_CONNECTION_CACHE_SIZE = 100;
 
     private static final String PROP_CACHE_CLEAN_INTERVAL = "com.l7tech.server.transport.jms.cacheCleanInterval";
@@ -256,7 +284,8 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
     private final Config config;
     protected final ConcurrentHashMap<JmsEndpointConfig.JmsEndpointKey, CachedConnection> connectionHolder;
     private final Timer timer;
-    private final AtomicReference<JmsResourceManagerConfig> cacheConfigReference = new AtomicReference<JmsResourceManagerConfig>( new JmsResourceManagerConfig(0,0,100) );
+    private final TimerTask cleanupTask;
+    private final AtomicReference<JmsResourceManagerConfig> cacheConfigReference = new AtomicReference<JmsResourceManagerConfig>( new JmsResourceManagerConfig(0L,0L, 0L,1,1, 1,5000L, 300000L, 1, 0, 0, 0L) );
     private final AtomicBoolean active = new AtomicBoolean(true);
 
     /**
@@ -266,56 +295,59 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
         logger.info( "Shutting down JMS Connection cache." );
 
         timer.cancel();
-        Collection<CachedConnection> connList = connectionHolder.values();
+        Collection<CachedConnection> poolList = connectionHolder.values();
 
-        for ( final CachedConnection c : connList ) {
-            c.unRef();
+        for ( CachedConnection pooledConnection : poolList ) {
+            pooledConnection.close();
         }
 
         connectionHolder.clear();
     }
 
-    private CachedConnection newConnection( final JmsEndpointConfig endpoint ) throws NamingException, JmsRuntimeException {
-        final JmsEndpointConfig.JmsEndpointKey key = endpoint.getJmsEndpointKey();
+    public JmsResourceManagerConfig getAndValidateConnectionPoolClusterProperties() {
+        final long maximumIdleTime = config.getTimeUnitProperty( "ioJmsConnectionCacheMaxIdleTime", DEFAULT_CONNECTION_MAX_IDLE );
+        final long idleTime = config.getTimeUnitProperty("ioJmsConnectionIdleTime", DEFAULT_CONNECTION_IDLE_TIME);
+        final int maximumPoolSize = config.getIntProperty("ioJmsConnectionPoolSize", JmsConnection.DEFAULT_CONNECTION_POOL_SIZE);
+        final int minimumConnectionIdle = config.getIntProperty("ioJmsConnectionMinIdle", JmsConnection.DEFAULT_CONNECTION_POOL_MIN_IDLE);
+        final long maximumWait = config.getTimeUnitProperty("ioJmsConnectionMaxWait", JmsConnection.DEFAULT_CONNECTION_POOL_MAX_WAIT);
+        final long timeBetweenEvictions = config.getTimeUnitProperty("ioJmsConnectionTimeBetweenEviction", JmsConnection.DEFAULT_CONNECTION_POOL_EVICT_INTERVAL);
+        final int evictionBatchSize = config.getIntProperty("ioJmsConnectionEvictionBatchSize", JmsConnection.DEFAULT_CONNECTION_POOL_SIZE);
 
-        try {
-            // create the new JmsBag for the endpoint
-            final JmsBag newBag = JmsUtil.connect(endpoint);
-            newBag.getConnection().start();
-
-            // create new cached connection wrapper
-            final CachedConnection newConn = new CachedConnection(endpoint, newBag);
-            newConn.ref(); // referenced by caller
-
-            if ( cacheConfigReference.get().maximumSize > 0 ) {
-                newConn.ref(); // referenced from cache
-
-                // replace connection if the endpoint already exists
-                final CachedConnection existingConn = connectionHolder.put(key, newConn);
-                if ( existingConn != null ) {
-                    existingConn.unRef(); // clear cache reference
-                }
-            }
-
-            logger.log(Level.FINE, "New JMS connection created ({0}), version {1}:{2}", new Object[] {
-                    newConn.name, newConn.connectionVersion, newConn.endpointVersion
-            });
-
-            return newConn;
-        }catch (NamingException ne){
-            throw ne; //rethrow NamingException if it has been caught. Bug SSG-6792
-        } catch ( Throwable t ) {
-            throw new JmsRuntimeException(t);
-        }
+        return new JmsResourceManagerConfig(
+                0L,
+                rangeValidate(maximumIdleTime, DEFAULT_CONNECTION_MAX_IDLE, 0L, Long.MAX_VALUE, "JMS Connection Maximum Idle"),
+                rangeValidate(idleTime, DEFAULT_CONNECTION_IDLE_TIME, 0L, Long.MAX_VALUE, "JMS Pool Soft Idle Timeout"),
+                0,
+                rangeValidate(maximumPoolSize, JmsConnection.DEFAULT_CONNECTION_POOL_SIZE, 1, 10000, "JMS Connection Pool Size"),
+                rangeValidate(minimumConnectionIdle, JmsConnection.DEFAULT_CONNECTION_POOL_SIZE, 0, 10000, "JMS Connection Min Idle"),
+                rangeValidate(maximumWait, JmsConnection.DEFAULT_CONNECTION_POOL_MAX_WAIT, -1L, Long.MAX_VALUE, "JMS Connection Maximum Wait"),
+                rangeValidate(timeBetweenEvictions, JmsConnection.DEFAULT_CONNECTION_POOL_EVICT_INTERVAL, 0L, Long.MAX_VALUE, "JMS Connection Pool Time Between Eviction"),
+                rangeValidate(evictionBatchSize, JmsConnection.DEFAULT_CONNECTION_POOL_SIZE, 1, 10000, "JMS Connection Eviction Batch Size"),
+                0,
+                0,
+                0L);
     }
 
-    private static void evict( final ConcurrentHashMap<JmsEndpointConfig.JmsEndpointKey, CachedConnection> connectionHolder,
-                               final JmsEndpointConfig.JmsEndpointKey key,
-                               final CachedConnection connection ) {
-        if ( connectionHolder.remove( key, connection ) ) {
-            connection.unRef(); // clear cache reference
-        }
+    public JmsResourceManagerConfig getAndValidateSessionPoolClusterProperties() {
+        final long maximumIdleTime = config.getTimeUnitProperty( "ioJmsConnectionCacheMaxIdleTime", DEFAULT_CONNECTION_MAX_IDLE );
+        final int sessionPoolSize = config.getIntProperty("ioJmsSessionPoolSize", JmsConnection.DEFAULT_SESSION_POOL_SIZE);
+        final int sessionMaxIdle = config.getIntProperty("ioJmsSessionMaxIdle", JmsConnection.DEFAULT_SESSION_POOL_SIZE);
+        final long sessionMaxWait = config.getTimeUnitProperty("ioJmsSessionMaxWait", JmsConnection.DEFAULT_SESSION_POOL_MAX_WAIT);
+        return new JmsResourceManagerConfig(
+                0L,
+                rangeValidate(maximumIdleTime, DEFAULT_CONNECTION_MAX_IDLE, 0L, Long.MAX_VALUE, "JMS Connection Maximum Idle"),
+                0L,
+                0,
+                0,
+                0,
+                0L,
+                0L,
+                0,
+                rangeValidate(sessionPoolSize, JmsConnection.DEFAULT_SESSION_POOL_SIZE, -1, Integer.MAX_VALUE, "JMS Session Pool Size"),
+                rangeValidate(sessionMaxIdle, JmsConnection.DEFAULT_SESSION_POOL_SIZE, -1, Integer.MAX_VALUE, "JMS Session Max Idle"),
+                rangeValidate(sessionMaxWait, JmsConnection.DEFAULT_SESSION_POOL_MAX_WAIT, -1L, Long.MAX_VALUE, "JMS Session Max Wait"));
     }
+
 
     private void updateConfig() {
         logger.config( "(Re)loading cache configuration." );
@@ -324,10 +356,11 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
         final long maximumIdleTime = config.getTimeUnitProperty( "ioJmsConnectionCacheMaxIdleTime", DEFAULT_CONNECTION_MAX_IDLE );
         final int maximumSize = config.getIntProperty( "ioJmsConnectionCacheSize", DEFAULT_CONNECTION_CACHE_SIZE );
 
-        cacheConfigReference.set( new JmsResourceManagerConfig(
-                rangeValidate(maximumAge, DEFAULT_CONNECTION_MAX_AGE, 0L, Long.MAX_VALUE, "JMS Connection Maximum Age" ),
-                rangeValidate(maximumIdleTime, DEFAULT_CONNECTION_MAX_IDLE, 0L, Long.MAX_VALUE, "JMS Connection Maximum Idle" ),
-                rangeValidate(maximumSize, DEFAULT_CONNECTION_CACHE_SIZE, 0, Integer.MAX_VALUE, "JMS Connection Cache Size" ) )
+        cacheConfigReference.set(
+                new JmsResourceManagerConfig(
+                        rangeValidate(maximumAge, DEFAULT_CONNECTION_MAX_AGE, 0L, Long.MAX_VALUE, "JMS Connection Maximum Age"),
+                        rangeValidate(maximumIdleTime, DEFAULT_CONNECTION_MAX_IDLE, 0L, Long.MAX_VALUE, "JMS Connection Maximum Idle"),
+                        rangeValidate(maximumSize, DEFAULT_CONNECTION_CACHE_SIZE, 0, Integer.MAX_VALUE, "JMS Connection Cache Size"))
         );
     }
 
@@ -355,288 +388,6 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
         return validatedValue;
     }
 
-    /**
-     * Cache entry
-     */
-    protected class CachedConnection {
-        private static final long MAX_CLOSE_CONNECTION_WAIT = 30; //30 seconds
-        private final AtomicInteger referenceCount = new AtomicInteger(0);
-        private final long createdTime = System.currentTimeMillis();
-        private final AtomicLong lastAccessTime = new AtomicLong(createdTime);
-
-        private final Object contextLock = new Object();
-        private final JmsBag bag;
-        private final String name;
-        private final int endpointVersion;
-        private final int connectionVersion;
-        protected final GenericObjectPool<JmsBag> pool;
-        private final JmsEndpointConfig endpointConfig;
-        private final int sessionPoolMaxActive;
-
-        protected CachedConnection( final JmsEndpointConfig cfg,
-                          final JmsBag bag) {
-            this.bag = bag;
-            this.name = cfg.getJmsEndpointKey().toString();
-            this.endpointVersion = cfg.getEndpoint().getVersion();
-            this.connectionVersion = cfg.getConnection().getVersion();
-            this.endpointConfig = cfg;
-            this.sessionPoolMaxActive = getSessionPoolSize();
-            if(sessionPoolMaxActive != 0) {
-                this.pool = new GenericObjectPool<JmsBag>(new PoolableObjectFactory<JmsBag>() {
-                    @Override
-                    public JmsBag makeObject() throws Exception {
-                        return makeJmsBag();
-                    }
-
-                    @Override
-                    public void destroyObject(JmsBag jmsBag) throws Exception {
-                        jmsBag.closeSession();
-                    }
-
-                    @Override
-                    public boolean validateObject(JmsBag jmsBag) {
-                        return true;
-                    }
-
-                    @Override
-                    public void activateObject(JmsBag jmsBag) throws Exception {
-                    }
-
-                    @Override
-                    public void passivateObject(JmsBag jmsBag) throws Exception {
-                    }
-                }, getSessionPoolSize(), GenericObjectPool.WHEN_EXHAUSTED_BLOCK, getSessionPoolMaxWait(), getMaxSessionIdle());
-            }
-            else {
-                this.pool = null;//no pool needed
-            }
-        }
-
-        protected JmsBag makeJmsBag() throws Exception {
-            Session session = null;
-            MessageConsumer consumer = null;
-            MessageProducer producer = null;
-            final String destinationName = endpointConfig.getEndpoint().getDestinationName();
-            try{
-                if (endpointConfig.getEndpoint().isMessageSource()) {
-                    session = bag.getConnection().createSession(endpointConfig.isTransactional(), Session.CLIENT_ACKNOWLEDGE);
-                } else {
-                    session = bag.getConnection().createSession(false, Session.CLIENT_ACKNOWLEDGE);
-                }
-
-                if (endpointConfig.getEndpoint().isMessageSource()) {
-                    //Create the consumer
-                    Destination destination = JmsUtil.cast( bag.getJndiContext().lookup( destinationName ), Destination.class );
-                    consumer = JmsUtil.createMessageConsumer(session, destination);
-
-                    Destination failureQueue = getFailureQueue(bag.getJndiContext());
-                    if (failureQueue != null) {
-                        producer = JmsUtil.createMessageProducer(session, failureQueue);
-                    }
-                } else {
-                    Destination destination = JmsUtil.cast( bag.getJndiContext().lookup( destinationName ), Destination.class );
-                    producer = JmsUtil.createMessageProducer(session, destination);
-                }
-
-                return new JmsBag(bag.getJndiContext(), bag.getConnectionFactory(),
-                        bag.getConnection(), session, consumer, producer, CachedConnection.this );
-            } catch(Exception ex) {
-                //do the clean up and rethrow the exception
-                try {
-                    if(producer != null) producer.close();
-                } catch (JMSException e) {
-                    logger.log(Level.WARNING, "Unable to close producer for the destination: " + destinationName);
-                }
-                try {
-                    if(consumer != null) consumer.close();
-                } catch (JMSException e) {
-                    logger.log(Level.WARNING, "Unable to close consumer for the destination: " + destinationName);
-                }
-                try {
-                    if(session != null) session.close();
-                } catch (JMSException e) {
-                    logger.log(Level.WARNING, "Unable to close JMS session");
-                }
-                throw ex;
-            }
-        }
-
-        protected int getSessionPoolSize() {
-            if  (endpointConfig.getEndpoint().isMessageSource()) {
-                return -1;
-            } else {
-                return Integer.parseInt(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_SESSION_POOL_SIZE,
-                        String.valueOf(JmsConnection.DEFAULT_SESSION_POOL_SIZE)));
-            }
-        }
-
-        protected int getMaxSessionIdle() {
-            if  (endpointConfig.getEndpoint().isMessageSource()) {
-                return -1;
-            } else {
-                return Integer.parseInt(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_MAX_SESSION_IDLE,
-                        String.valueOf(JmsConnection.DEFAULT_SESSION_POOL_SIZE)));
-            }
-        }
-
-        protected long getSessionPoolMaxWait() {
-            if (endpointConfig.getEndpoint().isMessageSource()) {
-                //The pool is never exhausted, just return a number, it should be ignored.
-                return 0;
-            } else {
-                return Long.parseLong(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_SESSION_POOL_MAX_WAIT,
-                        String.valueOf(JmsConnection.DEFAULT_SESSION_POOL_MAX_WAIT)));
-            }
-        }
-
-        /**
-         * Update the lastAccessTime, to keep the connection alive.
-         */
-        public void touch() {
-            lastAccessTime.set( System.currentTimeMillis() );
-        }
-
-        /**
-         * Borrow a JmsBag from the Cached Connection. Expect to return the JmsBag using returnJmsBag.
-         * Fail to return the JmsBag will leave the JMS Session open, the caller is responsible to
-         * close the jms session.
-         *
-         * @return A JmsBag with JmsSession
-         * @throws JmsRuntimeException If error occur when getting the JmsBag
-         */
-        public JmsBag borrowJmsBag() throws JmsRuntimeException, NamingException {
-            JmsBag jmsBag = null;
-            touch();
-            try {
-                if(sessionPoolMaxActive != 0) {
-                    jmsBag = pool.borrowObject();
-                }
-                else {
-                    logger.log(Level.FINEST, "Session pool is "+ sessionPoolMaxActive + ". Creating new JMS Session.");
-                    jmsBag = makeJmsBag();
-                }
-            } catch (JMSException e) {
-                throw new JmsRuntimeException(e);
-            } catch (NamingException e) {
-                throw e;
-            } catch (JmsConfigException e) {
-                throw new JmsRuntimeException(e);
-            } catch (Exception e) {
-                throw new JmsRuntimeException(e);
-            }
-            return jmsBag;
-        }
-
-        /**
-         * Return a JmsBag to the Cached Connection, the JmsBag can be reuse by other Thread
-         * @param jmsBag The bag return to the pool
-         */
-        public void returnJmsBag(JmsBag jmsBag) {
-            if (jmsBag != null) {
-                if(sessionPoolMaxActive != 0) {
-                    try {
-                        pool.returnObject(jmsBag);
-                    } catch (Exception e) {
-                        jmsBag.closeSession();
-                    }
-                }
-                else {
-                    logger.log(Level.FINEST, "Session pool is "+ sessionPoolMaxActive + ". Closing JMS Session.");
-                    jmsBag.closeSession();
-                }
-            }
-        }
-
-        /**
-         * Caller must hold reference.
-         */
-        public void doWithJmsResources( final JmsResourceCallback callback ) throws JMSException, JmsRuntimeException, NamingException {
-            JmsBag jmsBag = null;
-            try {
-                try {
-                    jmsBag = borrowJmsBag();
-                } catch (NamingException e) {
-                    throw e;
-                } catch ( Throwable t ) {
-                    throw new JmsRuntimeException(t);
-                }
-
-                callback.doWork( jmsBag, new JndiContextProvider(){
-                    @Override
-                    public void doWithJndiContext( final JndiContextCallback contextCallback ) throws NamingException  {
-                        synchronized( contextLock ) {
-                            contextCallback.doWork( bag.getJndiContext() );
-                        }
-                    }
-
-                    @Override
-                    public Object lookup( final String name ) throws NamingException {
-                        synchronized( contextLock ) {
-                            Context context = bag.getJndiContext();
-                            return context.lookup( name );
-                        }
-                    }
-                });
-            } finally {
-                returnJmsBag(jmsBag);
-            }
-        }
-
-        protected Queue getFailureQueue(Context context) throws NamingException, JmsConfigException, JMSException, JmsRuntimeException {
-            if ( endpointConfig.isTransactional() && endpointConfig.getEndpoint().getFailureDestinationName() != null) {
-                logger.finest( "Getting new FailureQueue" );
-                final String failureDestinationName = endpointConfig.getEndpoint().getFailureDestinationName();
-                return JmsUtil.cast( context.lookup( failureDestinationName ), Queue.class );
-            }
-            return null;
-        }
-
-        /**
-         * Once a connection is in the cache a return of false from this
-         * method indicates that the connection is invalid and should not
-         * be used.
-         */
-        public boolean ref() {
-            return referenceCount.getAndIncrement() > 0;
-        }
-
-        public void unRef() {
-            int references = referenceCount.decrementAndGet();
-            //check if no one references the cached session or if the endpoint is inbound which we have to clean up anyways
-            if ( references <= 0 || endpointConfig.getEndpoint().isMessageSource()) {
-                logger.log(
-                        Level.FINE,
-                        "Closing JMS connection ({0}), version {1}:{2}",
-                        new Object[]{
-                                name, connectionVersion, endpointVersion
-                        });
-                try {
-                    if(pool != null)
-                        pool.close();
-                } catch (Exception e) {
-                    //Ignore if we can't close it.
-                }
-                bag.close();
-            }
-        }
-    }
-
-    /**
-     * Bean for cache configuration.
-     */
-    private static final class JmsResourceManagerConfig {
-        private final long maximumAge;
-        private final long maximumIdleTime;
-        private final int maximumSize;
-
-        private JmsResourceManagerConfig( final long maximumAge,
-                                          final long maximumIdleTime,
-                                          final int maximumSize ) {
-            this.maximumAge = maximumAge;
-            this.maximumIdleTime = maximumIdleTime;
-            this.maximumSize = maximumSize;
-        }
-    }
 
     /**
      * Timer task to remove idle, expired or surplus connections from the cache.
@@ -648,46 +399,67 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
         private final ConcurrentHashMap<JmsEndpointConfig.JmsEndpointKey, CachedConnection> connectionHolder;
         private final AtomicReference<JmsResourceManagerConfig> cacheConfigReference;
 
-        private CacheCleanupTask( final ConcurrentHashMap<JmsEndpointConfig.JmsEndpointKey, CachedConnection> connectionHolder,
-                                  final AtomicReference<JmsResourceManagerConfig> cacheConfigReference ) {
+        private CacheCleanupTask(final ConcurrentHashMap<JmsEndpointConfig.JmsEndpointKey, CachedConnection> connectionHolder,
+                                 final AtomicReference<JmsResourceManagerConfig> cacheConfigReference) {
             this.connectionHolder = connectionHolder;
             this.cacheConfigReference = cacheConfigReference;
         }
 
         @Override
         public void run() {
+            logger.log(Level.FINE, "Running CacheCleanupTask...");
             final JmsResourceManagerConfig cacheConfig = cacheConfigReference.get();
             final long timeNow = System.currentTimeMillis();
-            final int overSize = connectionHolder.size() - cacheConfig.maximumSize;
-            final Set<Map.Entry<JmsEndpointConfig.JmsEndpointKey,CachedConnection>> evictionCandidates =
-                new TreeSet<Map.Entry<JmsEndpointConfig.JmsEndpointKey,CachedConnection>>(
-                    new Comparator<Map.Entry<JmsEndpointConfig.JmsEndpointKey,CachedConnection>>(){
-                        @Override
-                        public int compare( final Map.Entry<JmsEndpointConfig.JmsEndpointKey, CachedConnection> e1,
-                                            final Map.Entry<JmsEndpointConfig.JmsEndpointKey, CachedConnection> e2 ) {
-                            return Long.valueOf( e1.getValue().createdTime ).compareTo( e2.getValue().createdTime );
+            final int overSize = connectionHolder.size() - cacheConfig.getMaximumSize();
+            final Set<Map.Entry<JmsEndpointConfig.JmsEndpointKey, CachedConnection>> evictionCandidates =
+                    new TreeSet<Map.Entry<JmsEndpointConfig.JmsEndpointKey, CachedConnection>>(
+                            new Comparator<Map.Entry<JmsEndpointConfig.JmsEndpointKey, CachedConnection>>() {
+                                @Override
+                                public int compare(final Map.Entry<JmsEndpointConfig.JmsEndpointKey, CachedConnection> e1,
+                                                   final Map.Entry<JmsEndpointConfig.JmsEndpointKey, CachedConnection> e2) {
+                                    return Long.valueOf(e1.getValue().getCreatedTime()).compareTo(e2.getValue().getCreatedTime());
+                                }
+                            }
+                    );
+
+            for (final JmsEndpointConfig.JmsEndpointKey key : connectionHolder.keySet()) {
+                CachedConnection evictionCandidate = connectionHolder.get(key);
+                if(logger.isLoggable(Level.FINE)) {
+                    logger.log(Level.FINE, "Check eviction candidate " + evictionCandidate.toString());
+                    evictionCandidate.debugStatus();
+                }
+                if (evictionCandidate.getEndpointConfig().isEvictOnExpired()) { //do not evict inbound jms connections
+                    if ( (timeNow-evictionCandidate.getCreatedTime()) > cacheConfig.getMaximumAge() && cacheConfig.getMaximumAge() > 0 ) {
+                        logger.log(Level.FINE, "Maximum age expired for " + evictionCandidate.toString());
+                        if(!evictionCandidate.isActive()) {
+                            logger.log(Level.FINE, "Remove unused JMS connection "  + evictionCandidate.toString());
+                            evictionCandidate.close();
+                            connectionHolder.remove(key);
                         }
                     }
-                );
+                    else if(evictionCandidate.isIdleTimeoutExpired()) {
+                        logger.log(Level.FINE, "Remove expired idle JMS connection "  + evictionCandidate.toString());
+                        evictionCandidate.close();
+                        connectionHolder.remove(key);
+                    }
+                    else if (overSize > 0) {
+                        evictionCandidates.add(new AbstractMap.SimpleEntry<>(key, evictionCandidate));
+                    }
 
-            for ( final Map.Entry<JmsEndpointConfig.JmsEndpointKey,CachedConnection> cachedConnectionEntry : connectionHolder.entrySet() ) {
-                if(cachedConnectionEntry.getValue().endpointConfig.isEvictOnExpired()) { //do not evict inbound jms connections
-                    if ( (timeNow-cachedConnectionEntry.getValue().createdTime) > cacheConfig.maximumAge && cacheConfig.maximumAge > 0 ) {
-                    evict( connectionHolder, cachedConnectionEntry.getKey(), cachedConnectionEntry.getValue() );
-                    } else if ( (timeNow-cachedConnectionEntry.getValue().lastAccessTime.get()) > cacheConfig.maximumIdleTime && cacheConfig.maximumIdleTime > 0) {
-                        evict( connectionHolder, cachedConnectionEntry.getKey(), cachedConnectionEntry.getValue() );
-                    } else if ( overSize > 0 ) {
-                        evictionCandidates.add( cachedConnectionEntry );
+                }
+
+                // evict oldest first to reduce cache size
+                final Iterator<Map.Entry<JmsEndpointConfig.JmsEndpointKey, CachedConnection>> evictionIterator = evictionCandidates.iterator();
+                for (int i = 0; i < overSize && evictionIterator.hasNext(); i++) {
+                    final Map.Entry<JmsEndpointConfig.JmsEndpointKey, CachedConnection> cachedConnectionEntry =
+                            evictionIterator.next();
+                    CachedConnection connection = cachedConnectionEntry.getValue();
+                    if(!connection.isDisconnected()) {
+                        logger.log(Level.FINE, "Remove unused JMS connection "  + connection.toString());
+                        connection.close();
+                        connectionHolder.remove(cachedConnectionEntry.getKey(), cachedConnectionEntry.getValue());
                     }
                 }
-            }
-
-            // evict oldest first to reduce cache size
-            final Iterator<Map.Entry<JmsEndpointConfig.JmsEndpointKey,CachedConnection>> evictionIterator = evictionCandidates.iterator();
-            for ( int i=0; i<overSize && evictionIterator.hasNext(); i++ ) {
-                final Map.Entry<JmsEndpointConfig.JmsEndpointKey,CachedConnection> cachedConnectionEntry =
-                        evictionIterator.next();
-                evict( connectionHolder, cachedConnectionEntry.getKey(), cachedConnectionEntry.getValue() );
             }
         }
     }
