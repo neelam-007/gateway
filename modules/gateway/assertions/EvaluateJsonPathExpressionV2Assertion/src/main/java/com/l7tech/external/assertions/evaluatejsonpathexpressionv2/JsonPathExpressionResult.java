@@ -1,5 +1,7 @@
 package com.l7tech.external.assertions.evaluatejsonpathexpressionv2;
 
+
+import org.jetbrains.annotations.NotNull;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
@@ -11,6 +13,8 @@ import java.util.List;
  */
 public class JsonPathExpressionResult implements Serializable {
 
+
+    @NotNull
     private final List<String> results;
 
     /**
@@ -18,7 +22,8 @@ public class JsonPathExpressionResult implements Serializable {
      *
      * @param results the results.
      */
-    public JsonPathExpressionResult(final List<String> results) {
+
+    public JsonPathExpressionResult(@NotNull final List<String> results) {
         this.results = results;
     }
 

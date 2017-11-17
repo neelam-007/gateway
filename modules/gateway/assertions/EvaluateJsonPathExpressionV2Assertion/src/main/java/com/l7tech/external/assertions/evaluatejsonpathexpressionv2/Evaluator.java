@@ -11,12 +11,14 @@ public interface Evaluator {
      * @param expression the expression to evaluate.
      * @return {@link JsonPathExpressionResult} which contains the result of the expression.
      */
-    public JsonPathExpressionResult evaluate(final String source, final String expression) throws EvaluatorException;
+
+    JsonPathExpressionResult evaluate(final String source, final String expression) throws EvaluatorException;
 
     /**
      * An exception to signal an error has occurred while evaluating the expression.
      */
-    static public class EvaluatorException extends Exception {
+
+    class EvaluatorException extends Exception {
         public EvaluatorException() {
             super();
         }

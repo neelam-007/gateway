@@ -18,6 +18,9 @@
 		<dependency org="net.minidev" name="accessors-smart" rev="1.1" force="true" conf="core"/>
         <dependency name="layer7-modular-assertions" rev="latest.integration"
                     conf="compile->compile;runtime->runtime;test->test"/>
-                
+
+		<dependency name="jackson-annotations" org="com.fasterxml.jackson.core" rev="2.8.6" conf="core"/>
+		<dependency name="jackson-core" org="com.fasterxml.jackson.core" rev="2.8.6" conf="core"/>
+		<dependency name="jackson-databind" org="com.fasterxml.jackson.core" rev="2.8.6" conf="core"/>
 	</dependencies>
 </ivy-module>

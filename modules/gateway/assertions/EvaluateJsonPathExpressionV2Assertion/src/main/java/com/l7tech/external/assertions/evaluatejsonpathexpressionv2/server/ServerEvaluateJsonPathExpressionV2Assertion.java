@@ -32,7 +32,11 @@ import static com.l7tech.external.assertions.evaluatejsonpathexpressionv2.Evalua
  *
  * @see com.l7tech.external.assertions.evaluatejsonpathexpressionv2.EvaluateJsonPathExpressionV2Assertion
  */
-public class ServerEvaluateJsonPathExpressionV2Assertion extends AbstractServerAssertion<EvaluateJsonPathExpressionV2Assertion> {
+
+public class ServerEvaluateJsonPathExpressionV2Assertion
+        extends AbstractServerAssertion<EvaluateJsonPathExpressionV2Assertion> {
+
+    static final String BEAN_NAME_SERVERCONFIG = "serverConfig";
 
     private final ServerConfig serverConfig;
 
@@ -40,27 +44,35 @@ public class ServerEvaluateJsonPathExpressionV2Assertion extends AbstractServerA
      * Construct a new server assertion.
      * @param assertion the bean.
      */
-    public ServerEvaluateJsonPathExpressionV2Assertion(final EvaluateJsonPathExpressionV2Assertion assertion, ApplicationContext applicationContext ) {
+    public ServerEvaluateJsonPathExpressionV2Assertion(final EvaluateJsonPathExpressionV2Assertion assertion,
+                                                       final ApplicationContext applicationContext) {
         super(assertion);
-        serverConfig = applicationContext.getBean("serverConfig", ServerConfig.class);
+        serverConfig = applicationContext.getBean(BEAN_NAME_SERVERCONFIG, ServerConfig.class);
     }
 
     @Override
-    public AssertionStatus checkRequest( final PolicyEnforcementContext context ) throws IOException, PolicyAssertionException {
+    public AssertionStatus checkRequest(final PolicyEnforcementContext context)
+            throws IOException, PolicyAssertionException {
+
         try {
             final Message sourceMessage = context.getTargetMessage(assertion, false);
             final PartInfo firstPart = sourceMessage.getMimeKnob().getFirstPart();
             if(firstPart.getContentType().isJson()){
                 final Charset encoding = firstPart.getContentType().getEncoding();
-                final String sourceJsonString = new String(IOUtils.slurpStream(firstPart.getInputStream(false)), encoding);
-                final Map<String, Object> lookup = context.getVariableMap(Syntax.getReferencedNames(assertion.getExpression()), getAudit());
+                final String sourceJsonString = new String(IOUtils.slurpStream(
+                        firstPart.getInputStream(false)), encoding);
+                final Map<String, Object> lookup = context.getVariableMap(
+                        Syntax.getReferencedNames(assertion.getExpression()), getAudit());
 
                 final String expression = ExpandVariables.process(assertion.getExpression(), lookup, getAudit());
-                final String evaluator = EvaluateJsonPathExpressionV2Assertion.DEFAULT_EVALUATOR.equals(assertion.getEvaluator()) ? serverConfig.getProperty(PARAM_JSON_SYSTEM_DEFAULT_EVALUATOR) : assertion.getEvaluator();
+                final String evaluator =
+                        assertion.getEvaluator().equals(EvaluateJsonPathExpressionV2Assertion.DEFAULT_EVALUATOR)
+                                ? serverConfig.getProperty(PARAM_JSON_SYSTEM_DEFAULT_EVALUATOR)
+                                : assertion.getEvaluator();
 
                 if (EvaluateJsonPathExpressionV2Assertion.getSupportedEvaluators().contains(evaluator)) {
                     final Evaluator jsonPathEvaluator = JsonPathEvaluator.evaluators.get(evaluator);
-                    if (expression == null || expression.trim().isEmpty()) {
+                    if (expression.trim().isEmpty()) {
                         logAndAudit(AssertionMessages.EVALUATE_JSON_PATH_INVALID_EXPRESSION, expression);
                         return AssertionStatus.FAILED;
                     } else {
@@ -76,16 +88,19 @@ public class ServerEvaluateJsonPathExpressionV2Assertion extends AbstractServerA
                 return AssertionStatus.FAILED;
             }
         } catch (NoSuchVariableException e) {
-            logAndAudit( AssertionMessages.MESSAGE_TARGET_ERROR, assertion.getTargetName(), ExceptionUtils.getMessage(e));
+            logAndAudit( AssertionMessages.MESSAGE_TARGET_ERROR, assertion.getTargetName(),
+                    ExceptionUtils.getMessage(e));
             return AssertionStatus.FAILED;
         } catch (NoSuchPartException e) {
             logAndAudit(AssertionMessages.NO_SUCH_PART, assertion.getTargetName(), "first part");
             return AssertionStatus.FAILED;
         }
     }
-
-    private AssertionStatus evaluateExpression(@NotNull final PolicyEnforcementContext context, @NotNull final Evaluator evaluator,
-                                               @NotNull final String sourceJsonString, @NotNull final String expression) {
+  
+    private AssertionStatus evaluateExpression(@NotNull final PolicyEnforcementContext context,
+                                               @NotNull final Evaluator evaluator,
+                                               @NotNull final String sourceJsonString,
+                                               @NotNull final String expression) {
         try {
             final JsonPathExpressionResult result = evaluator.evaluate(sourceJsonString, expression);
             context.setVariable(assertion.getVariablePrefix() + "." + SUFFIX_FOUND, result.isFound());
@@ -103,6 +118,7 @@ public class ServerEvaluateJsonPathExpressionV2Assertion extends AbstractServerA
             logAndAudit(AssertionMessages.EVALUATE_JSON_PATH_ERROR, e.getMessage());
             return AssertionStatus.FAILED;
         }
+
         return AssertionStatus.NONE;
     }
 }
