@@ -1582,6 +1582,9 @@
     <target name="cleandeploy" description="Delete deployed libraries/modules" depends="init-core">
         <echo level="info">Deleting web libraries</echo>
         <delete dir="${deploy.dir}/web/ssg/webadmin/applet"/>
+		<delete dir="${deploy.dir}/web/ssg/webstart/lib"/>
+		<delete dir="${deploy.dir}/web/ssg/webstart/resources"/>
+		<delete dir="${deploy.dir}/web/ssg/webstart"/>
 
         <echo level="info">Deleting modules</echo>
         <delete dir="${deploy.dir}/modules/assertions"/>
@@ -1591,6 +1594,73 @@
         <delete file="${deploy.dir}/Gateway.jar"/>
     </target>
 
+	<target name="install-managerjnlpfiles">
+		<loadfile property="mess" srcFile="modules/gateway/console-webstart/src/main/resources/com/l7tech/console/webstart/resources/resources.txt"/>
+	
+		<!--<var name="resources" value=""/>-->
+		 <var name="resources" value=""/>
+		 <var name="versionfilecontent" value=""/>
+		 <taskdef resource="net/sf/antcontrib/antlib.xml">
+		<classpath>
+			<pathelement location="lib/ant-contrib-1.0b3.jar"/>
+		</classpath>
+		</taskdef>
+		
+		<for list="${mess}" param="var" delimiter="${line.separator}"> 
+			<sequential>
+				<antcallback target="updatewebstartfiles" return="jnlpresources,versionfileresources">
+					<param name="var" value="@{var}"/>
+				</antcallback>
+				<var name="resources" value="${resources}        ${jnlpresources}${line.separator}"/>
+				<var name="versionfilecontent" value="${versionfilecontent}    ${versionfileresources}${line.separator}"/>
+			</sequential>
+		</for>
+		<loadfile property="jnlpheader" srcFile="modules/gateway/console-webstart/src/main/resources/com/l7tech/console/webstart/resources/managerjnlpheader.xml">
+		</loadfile>	
+		<echo file="${deploypath}/${install.src.ssg.webstart}/manager.jnlp" append="false">${jnlpheader}${line.separator}${resources}
+		&lt;property name=&quot;jnlp.versionEnabled&quot; value=&quot;true&quot;/&gt;
+	&lt;/resources&gt;
+	&lt;application-desc name=&quot;Policy Manager&quot; main-class=&quot;com.l7tech.console.Main&quot;/&gt;
+&lt;/jnlp&gt;
+		</echo>
+		<echo file="${deploypath}/${install.src.ssg.webstartlib}/version.xml" append="false">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; 
+		standalone=&quot;no&quot;?>
+&lt;jnlp-versions&gt;
+${versionfilecontent}
+&lt;/jnlp-versions&gt;
+		</echo>
+	</target>
+	<target name="updatewebstartfiles">		
+		<script language="javascript">
+		  arr = project.getProperty('var').split(' ');
+		  project.setProperty('jarName', arr[0]);
+		  if( arr[1] ) {
+			if(arr[1].indexOf("version") != -1){
+				versionno = arr[1].split('=');
+				project.setProperty('version', (versionno[1] === undefined || versionno[1].length == 0) ? "0.0" : versionno[1].trim());  
+			 }
+			 else {
+				project.setProperty('version', "0.0");  
+			 }
+		}
+		else {
+			project.setProperty('version', "0.0");  
+		}
+		</script>
+		<if>
+		 <equals arg1="${jarName}" arg2="manager.jar" />
+		 <then>
+		   <var  name="jnlpresources" value="&lt;jar href=&quot;lib/${jarName}&quot; main=&quot;true&quot; version=&quot;${version}&quot; /&gt;"/>
+		 </then>
+		 <else>
+		   <var  name="jnlpresources" value="&lt;jar href=&quot;lib/${jarName}&quot; version=&quot;${version}&quot; /&gt;"/>
+		 </else>
+		</if>
+		<var name="versionfileresources" value="&lt;resource&gt;${line.separator}        &lt;pattern&gt;${line.separator}
+           &lt;name&gt;${jarName}&lt;/name&gt;${line.separator}
+           &lt;version-id&gt;${version}&lt;/version-id&gt;${line.separator}        &lt;/pattern&gt;
+		   ${line.separator}        &lt;file&gt;${jarName}&lt;/file&gt;${line.separator}    &lt;/resource&gt;"/>
+	</target>
     <!--
       Deploy SSG configuration files for development (to run with classes from IDE)
       This will not deploy the Manager Applet or any modular assertions
@@ -1772,7 +1842,7 @@
         <pack-mac jarfile="${build.dir}/managerapplet/lib/spring-orm-3.0.7.RELEASE.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/spring-tx-3.0.7.RELEASE.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/spring-web-3.0.7.RELEASE.jar"/>
-        <pack-mac jarfile="${build.dir}/managerapplet/lib/sslj-6.2.1.jar"/>
+        <pack-mac jarfile="${build.dir}/managerapplet/lib/sslj-6.2.2.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/stax-ex-1.2.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/streambuffer-0.8.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/validation-api-1.0.0.GA.jar"/>
@@ -1911,8 +1981,15 @@
                 <include name="*.jar"/>
             </fileset>
         </copy>
+		<mkdir dir="${build.dir}/managerwebstart/lib"/>
+		<copy todir="${build.dir}/managerwebstart/lib">
+            <fileset dir="modules/gateway/console-webstart/build/dependency" excludes="cryptojce-*.jar">
+                <include name="*.jar"/>
+            </fileset>
+        </copy>
         <copy file="modules/gateway/console/build/jar/layer7-gateway-console.jar" tofile="${build.dir}/manager/Manager.jar"/>
         <copy file="modules/gateway/console-applet/build/jar/layer7-gateway-console-applet.jar" todir="${build.dir}/managerapplet"/>
+		<copy file="modules/gateway/console-webstart/build/unsigned/layer7-gateway-console-webstart.jar" todir="${build.dir}/managerwebstart"/>
     </target>
 
     <target name="package.manager" depends="package.manager.jar" unless="manager.notrequired">
@@ -3333,6 +3410,9 @@
                 <mkdir dir="@{dir}/${install.src.ssg.web}"/>
                 <mkdir dir="@{dir}/${install.src.ssg.web}/ssg"/>
                 <mkdir dir="@{dir}/${install.src.ssg.modstaging}"/>
+				<mkdir dir="@{dir}/${install.src.ssg.webstart}"/>				
+                <mkdir dir="@{dir}/${install.src.ssg.webstartlib}"/>
+				<mkdir dir="@{dir}/${install.src.ssg.webstartres}"/>
 
                 <!--copy the config wizard -->
                 <copy todir="@{dir}/${install.src.ssg.configwizard}">
@@ -3480,14 +3560,62 @@
                     <fileset dir="${build.dir}/managerapplet/lib"/>
                 </copy>
 
+                <copy todir="@{dir}/${install.src.ssg.webstartlib}">
+				    <fileset dir="${build.dir}/managerwebstart" includes="layer7-gateway-console-webstart.jar"/>
+                    <fileset dir="${build.dir}/managerwebstart/lib"/>
+                </copy>
+				
+				<foreach target="checkwebstartresourcefile" param="currentFile" parallel="false">
+					<path>
+						<fileset dir="@{dir}/${install.src.ssg.webstartlib}" casesensitive="yes">
+						  <include name="*.jar" />
+						  <exclude name="layer7-gateway-console-webstart.jar" />
+						</fileset>
+					</path>
+				</foreach>
+				
+				<jar destfile="@{dir}/${install.src.ssg.webstartlib}/layer7-gateway-console-webstart.jar" update="true">
+					<manifest>
+						<attribute name="Permissions" value="all-permissions" />
+						<attribute name="Application-Name" value="CA API Gateway - Policy Manager" />
+					</manifest>
+				</jar>
+							
+				<copy todir="@{dir}/${install.src.ssg.webstartres}">
+					<fileset dir="modules/gateway/console-webstart/src/main/resources/com/l7tech/console/webstart/resources">
+						<include name="ca_logo_black_16x16.jpg"/>
+						<include name="ca_logo_black_32x32.jpg"/>
+						<include name="ca_logo_black_64x64.jpg"/>
+					</fileset>
+                </copy>
+				 <antcall target="install-managerjnlpfiles">
+					<param name="deploypath" value="@{dir}"/>
+				 </antcall>
                 <copy file="${src.root}/etc/backup_tables_audit" todir="@{dir}/${install.src.ssg.backuprestore.cfg}"/>
                 <copy file="${src.root}/etc/exclude_tables" todir="@{dir}/${install.src.ssg.backuprestore.cfg}"/>
                 <copy file="${src.root}/etc/exclude_files" todir="@{dir}/${install.src.ssg.backuprestore.cfg}"/>
+				<signjar alias="signer6" keystore="${src.root}/etc/ssgKeyStore" storepass="password" lazy="true">
+					<path>
+						<fileset dir="@{dir}/${install.src.ssg.webstartlib}" includes="*.jar"/>
+					</path>
+				</signjar>
+				
+				<move file="@{dir}/${install.src.ssg.webstartlib}/layer7-gateway-console-webstart.jar" tofile="@{dir}/${install.src.ssg.webstartlib}/manager.jar"/>
             </sequential>
         </macrodef>
 
     </target>
 
+	<target name="checkwebstartresourcefile">
+		<basename property="filename" file="${currentFile}" />
+		<fail message="${filename} details are not updated in modules\gateway\console-webstart\src\main\resources\com\l7tech\console\webstart\resources\resources.txt">
+		<condition>
+		<not>
+		<resourcecontains resource="modules/gateway/console-webstart/src/main/resources/com/l7tech/console/webstart/resources/resources.txt" substring="${filename}"/>
+		</not>
+		</condition>
+		</fail>
+	</target>
     <!--
       Top level work target for official builds
     -->
@@ -3625,6 +3753,7 @@
                 <include name="runtime/modules/assertions/**/EchoRoutingAssertion-*.aar"/>
                 <include name="runtime/modules/assertions/**/EncodeDecodeAssertion-*.aar"/>
                 <include name="runtime/modules/assertions/**/EvaluateJsonPathExpressionAssertion-*.aar"/>
+                <include name="runtime/modules/assertions/**/EvaluateJsonPathExpressionV2Assertion-*.aar"/>
                 <include name="runtime/modules/assertions/**/GatewayManagementAssertion-*.aar"/>
                 <include name="runtime/modules/assertions/**/GenerateOAuthSignatureBaseStringAssertion-*.aar"/>
                 <include name="runtime/modules/assertions/**/GenerateSecurityHashAssertion-*.aar"/>

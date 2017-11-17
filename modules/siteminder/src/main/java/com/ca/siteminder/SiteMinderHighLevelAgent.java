@@ -547,8 +547,14 @@ public class SiteMinderHighLevelAgent {
         boolean validSession = true;
         final int maxTimeOut = sessionDef.getMaxTimeout();
         final int sessionStartTime = sessionDef.getSessionStartTime();
+        final int idleTimeOut = sessionDef.getIdleTimeout();
+        final int lastSessionTime = sessionDef.getSessionLastTime();
 
-        if ( ( serverTimeSeconds - sessionStartTime ) >= maxTimeOut ){ //MaxTimeOut Check
+        if ( ( serverTimeSeconds - lastSessionTime ) >= idleTimeOut ){ //IdleTimeOut Check
+            validSession = false;
+            logger.log( Level.FINEST, "Session validation failed, Reason: IdleTimeOut reached" );
+
+        } else if ( ( serverTimeSeconds - sessionStartTime ) >= maxTimeOut ){ //MaxTimeOut Check
             validSession = false;
             logger.log( Level.FINEST, "Session validation failed, Reason: MaxTimeOut reached" );
         }

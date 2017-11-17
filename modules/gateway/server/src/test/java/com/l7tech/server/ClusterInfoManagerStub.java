@@ -46,6 +46,10 @@ public class ClusterInfoManagerStub implements ClusterInfoManager {
     }
 
     @Override
+    public void removeStaleNodes(long statusTimeStamp) {
+    }
+
+    @Override
     public String renameNode(String nodeid, String newName) throws UpdateException {
         return null;
     }

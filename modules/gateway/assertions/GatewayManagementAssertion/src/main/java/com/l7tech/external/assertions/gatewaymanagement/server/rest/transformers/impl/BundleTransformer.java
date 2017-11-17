@@ -25,6 +25,7 @@ import com.l7tech.server.search.objects.DependencySearchResults;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
+import java.util.Properties;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -157,6 +158,26 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
     }
 
     /**
+     * This converts a list of bundles to a list of entity bundles.
+     *
+     * @param bundles The bundles to convert
+     * @param secretsEncryptor
+     * @return A list of the entity bundles created from the given bundles
+     * @throws ResourceFactory.InvalidResourceException
+     */
+    @NotNull
+    public List<EntityBundle> convertFromMO(@NotNull final BundleList bundles, SecretsEncryptor secretsEncryptor) throws ResourceFactory.InvalidResourceException {
+        final List<Bundle> bundleList = bundles.getBundles();
+        final List<EntityBundle> entityBundles = new ArrayList<>(bundleList.size());
+
+        for (final Bundle bundle: bundleList) {
+            entityBundles.add(convertFromMO(bundle, secretsEncryptor));
+        }
+
+        return entityBundles;
+    }
+
+    /**
      * This converts a bundle to an entity bundle.
      *
      * @param bundle The bundle to convert
@@ -204,7 +225,7 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
         });
 
         // not transform dependency results, not used by import
-        return new EntityBundle(entityContainers, mappingInstructions, new ArrayList<DependencySearchResults>() );
+        return new EntityBundle(bundle.getName(), entityContainers, mappingInstructions, new ArrayList<DependencySearchResults>() );
     }
 
     @Override
@@ -300,6 +321,10 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
             if (entityMappingInstructions.getTargetMapping().getTargetID() != null) {
                 mapping.addProperty(MAP_TO, entityMappingInstructions.getTargetMapping().getTargetID());
             }
+        }
+        
+        for(String propertyNames : entityMappingInstructions.getExtraMappings().stringPropertyNames()) {
+            mapping.addProperty(propertyNames, entityMappingInstructions.getExtraMappingProperty(propertyNames));
         }
         return mapping;
     }
@@ -409,9 +434,17 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
         } else {
             targetMapping = null;
         }
+
+        final Properties extraMappingProperties = new Properties();
+        if(mapping.getProperties() != null) {
+            for (String key : mapping.getProperties().keySet()) {
+                extraMappingProperties.setProperty(key, mapping.getProperties().get(key).toString());
+            }
+        }
+
         final Boolean isFailOnExisting = mapping.getProperty(FAIL_ON_EXISTING);
         final Boolean isFailOnNew = mapping.getProperty(FAIL_ON_NEW);
-        return new EntityMappingInstructions(sourceHeader, targetMapping, convertMappingAction(mapping.getAction()), isFailOnNew != null ? isFailOnNew : false, isFailOnExisting != null ? isFailOnExisting : false);
+        return new EntityMappingInstructions(sourceHeader, targetMapping, convertMappingAction(mapping.getAction()), isFailOnNew != null ? isFailOnNew : false, isFailOnExisting != null ? isFailOnExisting : false, extraMappingProperties);
     }
 
     private boolean matchesMapBy(@NotNull final Mapping mappingToCheck, @NotNull final String mapByToMatch) {

@@ -41,6 +41,7 @@ public class RestmanInvoker extends BaseGatewayManagementInvoker {
     public static final String VAR_RESTMAN_URI = RESTMAN_VAR_PREFIX + ".uri";
     public static final String VAR_RESTMAN_CONTENT_TYPE = RESTMAN_VAR_PREFIX + ".contentType";
     public static final String URL_1_0_BUNDLE = "1.0/bundle";
+    public static final String URL_1_0_BUNDLE_BATCH = "1.0/bundle/batch";
     private static final String URL_LOCALHOST_8080_RESTMAN = "http://localhost:8080/restman/";
     public static final String UTF_8 = "UTF-8";
 

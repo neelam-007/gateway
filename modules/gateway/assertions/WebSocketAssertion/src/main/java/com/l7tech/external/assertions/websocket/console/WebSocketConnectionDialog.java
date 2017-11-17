@@ -32,6 +32,7 @@ public class WebSocketConnectionDialog extends JDialog {
     private JButton buttonOK;
     private JButton buttonCancel;
     private JTextField description;
+    private JCheckBox outboundOnlyCheckBox;
     private JCheckBox enabledCheckBox;
     private JTabbedPane connectionTabbedPanel;
     private JTextField inboundListenPort;
@@ -51,6 +52,7 @@ public class WebSocketConnectionDialog extends JDialog {
     private JCheckBox useClientAuthenticationCheckBox;
     private JComboBox inboundClientAuthenticationComboBox;
     private JComboBox connectionPolicyComboBox;
+    private JComboBox outboundConnectionPolicyComboBox;
     private JButton outboundCipherSuiteButton;
     private JButton outboundTlsProtocolButton;
     private JButton inboundTlsButton;
@@ -105,6 +107,13 @@ public class WebSocketConnectionDialog extends JDialog {
             @Override
             public void actionPerformed(ActionEvent e) {
                 onUseClientAuthorizationChecked();
+            }
+        });
+
+        outboundOnlyCheckBox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                onOutboundOnlyCheckBoxChecked();
             }
         });
 
@@ -226,6 +235,7 @@ public class WebSocketConnectionDialog extends JDialog {
         inboundTlsCipherSuites = connection.getInboundCipherSuites();
         outboundTlsProtocols = connection.getOutboundTlsProtocols();
         outboundTlsCipherSuites = connection.getOutboundCipherSuites();
+        outboundOnlyCheckBox.setSelected(connection.isOutboundOnly());
 
     }
 
@@ -242,6 +252,7 @@ public class WebSocketConnectionDialog extends JDialog {
         inboundPolicyComboBox.setEnabled(!readOnly);
         connectionPolicyComboBox.setEnabled(!readOnly);
         outboundPolicyComboBox.setEnabled(!readOnly);
+        outboundConnectionPolicyComboBox.setEnabled(!readOnly);
         buttonOK.setEnabled(!readOnly);
         useInboundSSLCheckBox.setEnabled(!readOnly);
         useOutboundSSLCheckBox.setEnabled(!readOnly);
@@ -265,10 +276,13 @@ public class WebSocketConnectionDialog extends JDialog {
             outboundPrivateKeysComboBox.setEnabled(false);
             useClientAuthenticationCheckBox.setEnabled(false);
         }
+
+        outboundOnlyCheckBox.setEnabled(!readOnly);
+        onOutboundOnlyCheckBoxChecked();
     }
 
     private boolean validateInboundIdleTime(String idletime) throws WebSocketNumberFormatException {
-        return WebSocketUtils.isInt(idletime, "Inbound Maximum Idle Time") > -1;
+        return outboundOnlyCheckBox.isSelected() || WebSocketUtils.isInt(idletime, "Inbound Maximum Idle Time") > -1;
     }
 
     private boolean validateOutboundIdleTime(String url, String idletime) throws WebSocketNumberFormatException {
@@ -295,27 +309,42 @@ public class WebSocketConnectionDialog extends JDialog {
                 } else {
                     dirtyEnableFlag = false;
                 }
-                int listenPort = validateListenPort(WebSocketUtils.isInt(inboundListenPort.getText(), "Port"));
-                connection.setInboundListenPort(listenPort);
-                if (oldInboundListenPort != listenPort) {
-                    dirtyPortFlag = true;
-                } else {
-                    dirtyPortFlag = false;
-                }
-                connection.setRemovePortFlag(dirtyPortFlag || dirtyEnableFlag);
-                connection.setInboundMaxConnections(WebSocketUtils.isInt(maxInboundConnections.getText(), "Maximum Connections"));
-                connection.setOutboundMaxIdleTime(WebSocketUtils.isInt(outBoundMaxIdleTime.getText(), "Outbound Maximum Idle Time"));
-                connection.setInboundMaxIdleTime(WebSocketUtils.isInt(inBoundMaxIdleTime.getText(), "Inbound Maximum Idle Time"));
-                connection.setOutboundUrl(outboundUrl.getText());
+                if(!outboundOnlyCheckBox.isSelected()) {
+                    int listenPort = validateListenPort(WebSocketUtils.isInt(inboundListenPort.getText(), "Port"));
+                    connection.setInboundListenPort(listenPort);
+                    if (oldInboundListenPort != listenPort) {
+                        dirtyPortFlag = true;
+                    } else {
+                        dirtyPortFlag = false;
+                    }
+                    connection.setRemovePortFlag(dirtyPortFlag || dirtyEnableFlag);
+                    connection.setInboundMaxConnections(WebSocketUtils.isInt(maxInboundConnections.getText(), "Maximum Connections"));
+                    connection.setInboundMaxIdleTime(WebSocketUtils.isInt(inBoundMaxIdleTime.getText(), "Inbound Maximum Idle Time"));
 
-                connection.setInboundSsl(useInboundSSLCheckBox.isSelected());
-                if (useInboundSSLCheckBox.isSelected()){
-                    connection.setInboundTlsProtocols(inboundTlsProtocols);
-                    connection.setInboundCipherSuites(inboundTlsCipherSuites);
+                    connection.setInboundSsl(useInboundSSLCheckBox.isSelected());
+                    if (useInboundSSLCheckBox.isSelected()){
+                        connection.setInboundTlsProtocols(inboundTlsProtocols);
+                        connection.setInboundCipherSuites(inboundTlsCipherSuites);
+                    } else {
+                        connection.setInboundTlsProtocols(null);
+                        connection.setInboundCipherSuites(null);
+                    }
+                    connection.setInboundClientAuth((WebSocketConnectionEntity.ClientAuthType)inboundClientAuthenticationComboBox.getSelectedItem());
                 } else {
+                    // Clear all inbound properties.
+                    connection.setInboundListenPort(0);
+                    connection.setRemovePortFlag(false);
+                    connection.setInboundMaxConnections(0);
+                    connection.setInboundMaxIdleTime(0);
+                    connection.setInboundSsl(false);
                     connection.setInboundTlsProtocols(null);
                     connection.setInboundCipherSuites(null);
+                    connection.setInboundClientAuth(null);
+                    connection.setInboundPrivateKeyId(null);
+                    connection.setInboundPrivateKeyAlias(null);
                 }
+                connection.setOutboundUrl(outboundUrl.getText());
+                connection.setOutboundMaxIdleTime(WebSocketUtils.isInt(outBoundMaxIdleTime.getText(), "Outbound Maximum Idle Time"));
 
                 connection.setOutboundSsl(useOutboundSSLCheckBox.isSelected());
                 if (useOutboundSSLCheckBox.isSelected()) {
@@ -327,7 +356,7 @@ public class WebSocketConnectionDialog extends JDialog {
                 }
 
                 connection.setOutboundClientAuthentication(useClientAuthenticationCheckBox.isSelected());
-                connection.setInboundClientAuth((WebSocketConnectionEntity.ClientAuthType)inboundClientAuthenticationComboBox.getSelectedItem());
+                connection.setOutboundOnly(outboundOnlyCheckBox.isSelected());
 
                 confirmed = true;
                 dispose();
@@ -351,8 +380,9 @@ public class WebSocketConnectionDialog extends JDialog {
     private int validateListenPort(int port) throws InvalidPortException {
 
         //Check ports in use
-
-        if ( port < 1025) { throw new InvalidPortException("Trying to use System port"); }
+        if ( port < WebSocketConstants.MIN_LISTEN_PORT || port > WebSocketConstants.MAX_LISTEN_PORT ) {
+            throw new InvalidPortException("Trying to use System port");
+        }
 
         try {
             Collection<SsgConnector> connectors = Registry.getDefault().getTransportAdmin().findAllSsgConnectors();
@@ -369,7 +399,7 @@ public class WebSocketConnectionDialog extends JDialog {
     }
 
     private void  validateAndSetPrivateKeys(WebSocketConnectionEntity connection) {
-        if (useInboundSSLCheckBox.isSelected()) {
+        if (!outboundOnlyCheckBox.isSelected() && useInboundSSLCheckBox.isSelected()) {
             connection.setInboundPrivateKeyId(inboundPrivateKeysComboBox.getSelectedKeystoreId());
             connection.setInboundPrivateKeyAlias(inboundPrivateKeysComboBox.getSelectedKeyAlias());
         }
@@ -384,28 +414,37 @@ public class WebSocketConnectionDialog extends JDialog {
      * Validates service OIDs before setting them to the connection. Handles the "NONE" case.
      */
     private void validateAndSetPolicyOIDS(WebSocketConnectionEntity connection) {
-        Object inboundObject = inboundPolicyComboBox.getSelectedItem();
-        Object connectionObject = connectionPolicyComboBox.getSelectedItem();
-        Object outboundObject = outboundPolicyComboBox.getSelectedItem();
-
-        if (inboundObject instanceof ServiceHeader) {
-            connection.setInboundPolicyOID(((ServiceHeader) inboundObject).getGoid());
+        if(!outboundOnlyCheckBox.isSelected()) {
+            Object inboundObject = inboundPolicyComboBox.getSelectedItem();
+            Object connectionObject = connectionPolicyComboBox.getSelectedItem();
+            if (inboundObject instanceof ServiceHeader) {
+                connection.setInboundPolicyOID(((ServiceHeader) inboundObject).getGoid());
+            } else {
+                connection.setInboundPolicyOID(Goid.DEFAULT_GOID);
+            }
+            if (connectionObject instanceof ServiceHeader) {
+                connection.setConnectionPolicyGOID(((ServiceHeader) connectionObject).getGoid());
+            } else {
+                connection.setConnectionPolicyGOID(Goid.DEFAULT_GOID);
+            }
         } else {
             connection.setInboundPolicyOID(Goid.DEFAULT_GOID);
-        }
-
-        if (connectionObject instanceof ServiceHeader) {
-            connection.setConnectionPolicyGOID(((ServiceHeader) connectionObject).getGoid());
-        } else {
             connection.setConnectionPolicyGOID(Goid.DEFAULT_GOID);
         }
 
+        Object outboundObject = outboundPolicyComboBox.getSelectedItem();
         if (outboundObject instanceof  ServiceHeader) {
             connection.setOutboundPolicyOID(((ServiceHeader) outboundObject).getGoid());
         } else {
             connection.setOutboundPolicyOID(Goid.DEFAULT_GOID);
         }
 
+        Object outboundConnectionObject = outboundConnectionPolicyComboBox.getSelectedItem();
+        if (outboundConnectionObject instanceof  ServiceHeader) {
+            connection.setOutboundConnectionPolicyId(((ServiceHeader) outboundConnectionObject).getGoid());
+        } else {
+            connection.setOutboundConnectionPolicyId(Goid.DEFAULT_GOID);
+        }
     }
 
     private void setKeyComboBoxes(WebSocketConnectionEntity connection) {
@@ -443,9 +482,11 @@ public class WebSocketConnectionDialog extends JDialog {
             inboundPolicyComboBox.setModel(new DefaultComboBoxModel(serviceHeaders));
             connectionPolicyComboBox.setModel(new DefaultComboBoxModel(serviceHeaders));
             outboundPolicyComboBox.setModel(new DefaultComboBoxModel(serviceHeaders));
+            outboundConnectionPolicyComboBox.setModel(new DefaultComboBoxModel(serviceHeaders));
             inboundPolicyComboBox.insertItemAt("NONE", 0);
             connectionPolicyComboBox.insertItemAt("NONE", 0);
             outboundPolicyComboBox.insertItemAt("NONE", 0);
+            outboundConnectionPolicyComboBox.insertItemAt("NONE", 0);
 
 
             inboundPolicyComboBox.setSelectedIndex(0);
@@ -474,9 +515,19 @@ public class WebSocketConnectionDialog extends JDialog {
                     break;
                 }
             }
+
+            outboundConnectionPolicyComboBox.setSelectedIndex(0);
+            for(int i = 1; i < outboundConnectionPolicyComboBox.getItemCount(); i++) {
+                ServiceHeader serviceHeader = (ServiceHeader)outboundConnectionPolicyComboBox.getItemAt(i);
+                if(Goid.equals(serviceHeader.getGoid(), connection.getOutboundConnectionPolicyId())) {
+                    outboundConnectionPolicyComboBox.setSelectedIndex(i);
+                    break;
+                }
+            }
+
         } catch (FindException e) {
             logger.log(Level.WARNING, "Could not find published services");
-           //Meant to do nothing.
+            //Meant to do nothing.
         }
     }
 
@@ -507,6 +558,24 @@ public class WebSocketConnectionDialog extends JDialog {
         outboundPrivateKeyLabel.setEnabled(useClientAuthenticationCheckBox.isSelected() && useClientAuthenticationCheckBox.isEnabled());
         if (!useClientAuthenticationCheckBox.isSelected()) {
             outboundPrivateKeysComboBox.setSelectedIndex(0);
+        }
+    }
+
+    private void onOutboundOnlyCheckBoxChecked() {
+        boolean outOnly = outboundOnlyCheckBox.isSelected();
+        inboundListenPort.setEnabled(!outOnly);
+        maxInboundConnections.setEnabled(!outOnly);
+        inBoundMaxIdleTime.setEnabled(!outOnly);
+        connectionPolicyComboBox.setEnabled(!outOnly);
+        inboundPolicyComboBox.setEnabled(!outOnly);
+        useInboundSSLCheckBox.setEnabled(!outOnly);
+        if (!outOnly) {
+            onInboundSsLChecked();
+        } else {
+            inboundTlsButton.setEnabled(!outOnly);
+            inboundCipherSuitesButton.setEnabled(!outOnly);
+            inboundClientAuthenticationComboBox.setEnabled(!outOnly);
+            inboundPrivateKeysComboBox.setEnabled(!outOnly);
         }
     }
 

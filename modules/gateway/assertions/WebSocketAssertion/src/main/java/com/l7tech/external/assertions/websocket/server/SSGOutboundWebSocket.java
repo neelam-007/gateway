@@ -5,6 +5,7 @@ import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.message.AuthenticationContext;
 
+import com.l7tech.util.ExceptionUtils;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.StatusCode;
 import org.eclipse.jetty.websocket.api.WebSocketAdapter;
@@ -29,6 +30,7 @@ public class SSGOutboundWebSocket extends WebSocketAdapter {
     private final String clientId;
     // Updated to use 8.0 GOIDs
     private final Goid serviceGoid;
+    private final Goid connectionServiceId;
     private final AuthenticationContext authContext;
     private final MockHttpServletRequest mockRequest;
     private final String origin;
@@ -38,10 +40,11 @@ public class SSGOutboundWebSocket extends WebSocketAdapter {
 
     protected static final Logger logger = Logger.getLogger(SSGOutboundWebSocket.class.getName());
 
-    public SSGOutboundWebSocket(WebSocketOutboundHandler webSocketOutboundHandler, String webSocketId, String outboundUri, String clientId, String origin, String protocol, Goid serviceGoid, MockHttpServletRequest mockRequest, AuthenticationContext authContext) throws Exception {
+    public SSGOutboundWebSocket(WebSocketOutboundHandler webSocketOutboundHandler, String webSocketId, String outboundUri, String clientId, String origin, String protocol, Goid serviceGoid, Goid connectionServiceId, MockHttpServletRequest mockRequest, AuthenticationContext authContext) throws Exception {
 
         this.webSocketOutboundHandler = webSocketOutboundHandler;
         this.serviceGoid = serviceGoid;
+        this.connectionServiceId = connectionServiceId;
         this.webSocketId = webSocketId;
         this.clientId = clientId;
         this.origin = origin;
@@ -124,6 +127,34 @@ public class SSGOutboundWebSocket extends WebSocketAdapter {
 
         super.onWebSocketConnect(session);
         webSocketOutboundHandler.addToWebSocketMap(webSocketId, this);
+
+        // If an outbound connection service policy is configured, execute the policy and
+        // send response to WebSocket server.
+        if ((connectionServiceId != null) && (connectionServiceId.getHi() != 0) && (connectionServiceId.getLow() != 0)) {
+            try {
+                WebSocketMessage message = new WebSocketMessage("");
+                message.setOrigin(origin);
+                message.setProtocol(protocol);
+
+                WebSocketMessage processMessage = webSocketOutboundHandler.processMessage(connectionServiceId, message, new HttpServletRequestKnob(mockRequest), null, authContext);
+                if (processMessage == null) {
+                    disconnectAndNotify(StatusCode.SERVER_ERROR, "Unable to process message");
+                } else {
+                    if ( AssertionStatus.NONE.getMessage().equals(processMessage.getStatus()) ) {
+                        if (WebSocketMessage.BINARY_TYPE.equals(processMessage.getType())) {
+                            this.send(processMessage.getPayloadAsBytes(), processMessage.getOffset(), processMessage.getLength());
+                        } else {
+                            this.send(processMessage.getPayloadAsString());
+                        }
+                    } else {
+                        disconnectAndNotify(StatusCode.SERVER_ERROR, "Unable to process message");
+                    }
+                }
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Unable to create WebSocketMessage: " + ExceptionUtils.getMessage(e), e);
+                disconnectAndNotify(StatusCode.SERVER_ERROR, "Unable to create WebSocketMessage");
+            }
+        }
     }
 
     @Override

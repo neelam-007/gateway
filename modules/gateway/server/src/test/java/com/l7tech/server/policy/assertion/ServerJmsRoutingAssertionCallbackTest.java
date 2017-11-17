@@ -1,5 +1,8 @@
 package com.l7tech.server.policy.assertion;
 
+import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.gateway.common.audit.Messages;
+import com.l7tech.gateway.common.audit.TestAudit;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
 import com.l7tech.gateway.common.transport.jms.JmsOutboundMessageType;
@@ -10,15 +13,21 @@ import com.l7tech.policy.assertion.JmsMessagePropertyRule;
 import com.l7tech.policy.assertion.JmsMessagePropertyRuleSet;
 import com.l7tech.policy.assertion.JmsRoutingAssertion;
 import com.l7tech.policy.assertion.RoutingStatus;
+import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigStub;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
-import com.l7tech.server.transport.jms.*;
+import com.l7tech.server.transport.jms.JmsBag;
+import com.l7tech.server.transport.jms.JmsMessageTestUtility;
+import com.l7tech.server.transport.jms.JmsUtil;
+import com.l7tech.server.transport.jms.TextMessageStub;
 import com.l7tech.server.transport.jms2.JmsEndpointConfig;
 import com.l7tech.server.transport.jms2.JmsResourceManager;
 import com.l7tech.server.util.ApplicationEventProxy;
+import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Pair;
 import org.junit.Before;
 import org.junit.Test;
@@ -29,7 +38,6 @@ import org.springframework.context.ApplicationContext;
 
 import javax.jms.*;
 import javax.jms.Queue;
-
 import java.util.*;
 
 import static com.l7tech.message.JmsKnob.HEADER_TYPE_JMS_HEADER;
@@ -42,6 +50,10 @@ import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ServerJmsRoutingAssertionCallbackTest{
+    private static final String JMS_PROP_JMSX_GROUP_ID = "JMSXGroupID";
+    private static final String JMS_PROP_JMSX_GROUP_SEQ = "JMSXGroupSeq";
+    private static final String JMS_PROP_JMSX_DELIVERY_COUNT  = "JMSXDeliveryCount";
+    private static final String JMS_PROP_VALUE_DELIVERY_COUNT = "111";
     private ServerJmsRoutingAssertion serverAssertion;
     private JmsRoutingAssertion assertion;
     private ServerJmsRoutingAssertion.JmsRoutingCallback callback;
@@ -53,6 +65,7 @@ public class ServerJmsRoutingAssertionCallbackTest{
     private ServerConfig serverConfig;
     private TextMessageStub jmsRequest;
     private TextMessageStub jmsResponse;
+    private TestAudit testAudit;
 
     @Mock
     private Queue inbound;
@@ -82,6 +95,7 @@ public class ServerJmsRoutingAssertionCallbackTest{
     @Before
     public void setup() throws Exception {
         serverConfig = new ServerConfigStub();
+        testAudit = new TestAudit();
         when(applicationContext.getBean("applicationEventProxy", ApplicationEventProxy.class)).thenReturn(applicationEventProxy);
         when(applicationContext.getBean("defaultKey", DefaultKey.class)).thenReturn(defaultKey);
         when(applicationContext.getBean("serverConfig", ServerConfig.class)).thenReturn(serverConfig);
@@ -99,7 +113,7 @@ public class ServerJmsRoutingAssertionCallbackTest{
         endpoint = new JmsEndpoint();
         endpoint.setOutboundMessageType(JmsOutboundMessageType.ALWAYS_TEXT);
         jmsResponse = new TextMessageStub();
-        jmsRequest = new TextMessageStub();
+        jmsRequest = spy(new TextMessageStub());
         jmsResponse.setText("<jmsResponse>success</jmsResponse>");
         JmsMessageTestUtility.setDefaultHeaders(jmsResponse);
         when(endpointConfig.getEndpoint()).thenReturn(endpoint);
@@ -108,6 +122,7 @@ public class ServerJmsRoutingAssertionCallbackTest{
         when(session.createSender(outbound)).thenReturn(queueSender);
         when(session.createReceiver(inbound, null)).thenReturn(queueReceiver);
         when(queueReceiver.receive(anyLong())).thenReturn(jmsResponse);
+        injectDependencies(serverAssertion);
     }
 
     @Test
@@ -238,5 +253,152 @@ public class ServerJmsRoutingAssertionCallbackTest{
 
         //noinspection ThrowableResultOfMethodCallIgnored
         assertTrue(callback.getException() instanceof JMSException);
+    }
+
+    @Test
+    public void callbackGetsJmsPropertiesStartingWithJMSXAndJMS_FromHeadersKnobOnRequest() throws JMSException {
+        // add test properties to Request message HeadersKnob
+        final List<Pair<String, String>> testProperties =
+                Arrays.asList(new Pair<>(JMS_PROP_JMSX_GROUP_ID, "val1"), new Pair<>(JMS_PROP_JMSX_GROUP_SEQ, "111"));
+        setRules(testProperties, false);
+        HeadersKnob requestHeadersKnob = new HeadersKnobSupport();
+
+        for (Pair<String, String> property : testProperties) {
+            requestHeadersKnob.addHeader(property.getKey(), property.getValue(), HEADER_TYPE_JMS_PROPERTY);
+        }
+
+        request.attachKnob(HeadersKnob.class, requestHeadersKnob);
+
+        JmsBag bag = new JmsBag(null, null, connection, session, null, queueSender, null);
+
+        callback.doWork(bag, contextProvider);
+
+        List<String> jmsRequestPropertyNames = Collections.list(jmsRequest.getPropertyNames());
+
+        assertEquals(testProperties.size(), jmsRequestPropertyNames.size());
+
+        // ensure each property added to the headers knob was set on jmsRequest message
+        for (Pair<String, String> testProperty : testProperties) {
+            assertTrue(jmsRequestPropertyNames.contains(testProperty.getKey()));
+            assertEquals(testProperty.getValue(), jmsRequest.getObjectProperty(testProperty.getKey()));
+        }
+        executeTestsForAudits(5,
+                AssertionMessages.JMS_ROUTING_REQUEST_ROUTED,
+                AssertionMessages.JMS_ROUTING_GETTING_RESPONSE,
+                AssertionMessages.JMS_ROUTING_GOT_RESPONSE,
+                AssertionMessages.JMS_ROUTING_CREATE_REQUEST_AS_TEXT_MESSAGE,
+                AssertionMessages.JMS_ROUTING_REQUEST_WITH_AUTOMATIC);
+        testAudit.reset();
+    }
+
+    @Test
+    public void callbackGetsJmsPropertiesStartingWithJMSXAndJMS_FromHeadersKnobOnRequest_WithContextVar() throws JMSException, NoSuchVariableException {
+        // add test properties to Request message HeadersKnob
+        final List<Pair<String, String>> testProperties =
+                Arrays.asList(new Pair<>(JMS_PROP_JMSX_GROUP_ID, "val1"), new Pair<>(JMS_PROP_JMSX_GROUP_SEQ, "111"));
+        setRules(testProperties, true);
+
+        final HeadersKnob requestHeadersKnob = new HeadersKnobSupport();
+
+        for (final Pair<String, String> property : testProperties) {
+            requestHeadersKnob.addHeader(property.getKey(), property.getValue(), HEADER_TYPE_JMS_PROPERTY);
+        }
+
+        request.attachKnob(HeadersKnob.class, requestHeadersKnob);
+
+        JmsBag bag = new JmsBag(null, null, connection, session, null, queueSender, null);
+
+        callback.doWork(bag, contextProvider);
+
+        List<String> jmsRequestPropertyNames = Collections.list(jmsRequest.getPropertyNames());
+
+        assertEquals(testProperties.size(), jmsRequestPropertyNames.size());
+
+        // ensure each property added to the headers knob was set on jmsRequest message
+        for (final Pair<String, String> testProperty : testProperties) {
+            assertTrue(jmsRequestPropertyNames.contains(testProperty.getKey()));
+            assertEquals(testProperty.getValue(), jmsRequest.getObjectProperty(testProperty.getKey()));
+        }
+        executeTestsForAudits(5,
+                AssertionMessages.JMS_ROUTING_REQUEST_ROUTED,
+                AssertionMessages.JMS_ROUTING_GETTING_RESPONSE,
+                AssertionMessages.JMS_ROUTING_GOT_RESPONSE,
+                AssertionMessages.JMS_ROUTING_CREATE_REQUEST_AS_TEXT_MESSAGE,
+                AssertionMessages.JMS_ROUTING_REQUEST_WITH_AUTOMATIC);
+        testAudit.reset();
+    }
+
+    @Test
+    public void callbackGetsJmsPropertiesStartingWithJMSXAndJMS_FromHeadersKnobOnRequest_WithAudit() throws JMSException {
+        // add test properties to Request message HeadersKnob, keep group seq in the end..
+        final List<Pair<String, String>> testProperties =
+                Arrays.asList(new Pair<>(JMS_PROP_JMSX_DELIVERY_COUNT, JMS_PROP_VALUE_DELIVERY_COUNT), new Pair<>(JMS_PROP_JMSX_GROUP_SEQ, null));
+        setRules(testProperties, false);
+        final HeadersKnob requestHeadersKnob = new HeadersKnobSupport();
+
+        for (final Pair<String, String> property : testProperties) {
+            requestHeadersKnob.addHeader(property.getKey(), property.getValue(), HEADER_TYPE_JMS_PROPERTY);
+        }
+
+        request.attachKnob(HeadersKnob.class, requestHeadersKnob);
+
+        JmsBag bag = new JmsBag(null, null, connection, session, null, queueSender, null);
+        doThrow(new NumberFormatException("For input string: \"\"")).when(jmsRequest).setObjectProperty(JMS_PROP_JMSX_GROUP_SEQ, null);
+
+        callback.doWork(bag, contextProvider);
+
+        List<String> jmsRequestPropertyNames = Collections.list(jmsRequest.getPropertyNames());
+
+        assertEquals(testProperties.size() - 1, jmsRequestPropertyNames.size());
+
+        // ensure each property added to the headers knob was set on jmsRequest message
+        for (int counter = 0; counter < testProperties.size() - 1; counter++) {
+            Pair<String, String> testProperty = testProperties.get(counter);
+            assertTrue(jmsRequestPropertyNames.contains(testProperty.getKey()));
+            assertEquals(testProperty.getValue(), jmsRequest.getObjectProperty(testProperty.getKey()));
+        }
+        executeTestsForAudits(6,
+                AssertionMessages.JMS_ROUTING_REQUEST_ROUTED,
+                AssertionMessages.JMS_ROUTING_GETTING_RESPONSE,
+                AssertionMessages.JMS_ROUTING_GOT_RESPONSE,
+                AssertionMessages.JMS_ROUTING_CREATE_REQUEST_AS_TEXT_MESSAGE,
+                AssertionMessages.JMS_ROUTING_REQUEST_WITH_AUTOMATIC,
+                AssertionMessages.JMS_ROUTING_NOT_SETTABLE_JMS_PROPERTY);
+        testAudit.reset();
+    }
+
+    private void setRules(List<Pair<String, String>> testProperties, boolean useContextVariable) {
+        List<JmsMessagePropertyRule> rules = new ArrayList<>();
+        for (final Pair<String, String> property : testProperties) {
+            final JmsMessagePropertyRule rule = new JmsMessagePropertyRule();
+            rule.setName(property.getKey());
+            if(useContextVariable) {
+                rule.setCustomPattern("${request.jms.property." + property.getKey() + "}");
+                rule.setPassThru(false);
+            } else {
+                rule.setPassThru(true);
+            }
+
+            rules.add(rule);
+        }
+
+        final JmsMessagePropertyRuleSet ruleSet = new JmsMessagePropertyRuleSet(false, rules.toArray(new JmsMessagePropertyRule[testProperties.size()]));
+        assertion.setRequestJmsMessagePropertyRuleSet(ruleSet);
+    }
+
+    private void injectDependencies(ServerJmsRoutingAssertion serverAssertion) {
+        ApplicationContexts.inject(serverAssertion, CollectionUtils.<String, Object>mapBuilder()
+                .put("auditFactory", testAudit.factory())
+                        .unmodifiableMap()
+        );
+    }
+
+    private void executeTestsForAudits(int numberOfAudits, Messages.M... messages) {
+        assertEquals(numberOfAudits, testAudit.getAuditCount());
+        if (numberOfAudits > 0 && messages.length > 0) {
+            for (final Messages.M message : messages) {
+                assertEquals(Boolean.TRUE, testAudit.isAuditPresent(message));
+            }
+        }
     }
 }

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<jnlp spec="6.0+" codebase="$$codebase">
+    <information>
+        <title>CA API Gateway - Policy Manager</title>
+        <vendor>CA Technologies</vendor>
+        <description kind="short">Manager Application</description>
+		<icon href="resources/ca_logo_black_64x64.jpg" width="64" height="64"/>
+		<icon kind="shortcut" href="resources/ca_logo_black_16x16.jpg" width="16" height="16"/>
+		<icon kind="shortcut" href="resources/ca_logo_black_32x32.jpg" width="32" height="32"/>
+		<icon kind="shortcut" href="resources/ca_logo_black_64x64.jpg" width="64" height="64"/>
+        <offline-allowed/>
+		<shortcut>
+            <desktop/>
+            <menu submenu="CA API Gateway - Policy Manager"/>
+        </shortcut>
+    </information>
+    <security>
+        <all-permissions/>
+    </security>
+    <resources>
+        <!-- Application Resources -->
+        <j2se version="1.8+"
+          href="http://java.sun.com/products/autodl/j2se"
+          java-vm-args="
+			-Dcom.l7tech.proxy.listener.maxthreads=300
+			-Dsun.net.inetaddr.ttl=10 
+			-Dnetworkaddress.cache.ttl=10 
+			-Dfile.encoding=UTF-8
+			-Duser.language=en 
+			-Duser.country=US 
+            -Xmx1024m
+            -Xss256k"/>

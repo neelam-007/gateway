@@ -127,6 +127,17 @@ public class SolutionKitLoadPanel extends WizardStepPanel<SolutionKitsConfig> {
             }
         }
 
+        //Check solution kit upgrade eligibility.  If any errors found, display error dialog.
+        if (solutionKitsConfig.isUpgrade()) {
+            try {
+                SolutionKitUtils.checkGuidsMatchForUpgrade(solutionKitsConfig);
+            } catch (final SolutionKitException e) {
+                solutionKitsConfig.clear(false);
+                DialogDisplayer.showMessageDialog(this, e.getMessage(), "Solution Kit Upgrade Error", JOptionPane.ERROR_MESSAGE, null);
+                return false;
+            }
+        }
+
         return true;
     }
 

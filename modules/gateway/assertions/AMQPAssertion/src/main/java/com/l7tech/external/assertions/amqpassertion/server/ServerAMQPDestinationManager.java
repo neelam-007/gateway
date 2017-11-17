@@ -871,10 +871,10 @@ public class ServerAMQPDestinationManager implements ApplicationListener {
         ConnectionFactory connectionFactory = createNewConnectionFactory();
         if (destination.getUsername() != null) {
             connectionFactory.setUsername(destination.getUsername());
-
-            connectionFactory.setPassword(new String(securePasswordManager.decryptPassword(
-                    securePasswordManager.findByPrimaryKey(destination.getPasswordGoid()).getEncodedPassword())));
-
+            if (destination.getPasswordGoid() !=null ){
+                connectionFactory.setPassword(new String(securePasswordManager.decryptPassword(
+                        securePasswordManager.findByPrimaryKey(destination.getPasswordGoid()).getEncodedPassword())));
+            }
         }
         if (destination.getVirtualHost() != null) {
             connectionFactory.setVirtualHost(destination.getVirtualHost());

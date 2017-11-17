@@ -96,6 +96,17 @@ public class RestmanMessage {
     }
 
     /**
+     * Check whether message has Restman mapping error (e.g. syntactically correct request, but invalid entity).
+     */
+    public boolean hasMappingErrorFromBundles() {
+        if (mappingErrors == null) {
+            loadMappingErrorsFromBundles();
+        }
+
+        return mappingErrors.size() > 0;
+    }
+
+    /**
      * Get Restman mapping error(s) as a string.
      */
     public String getMappingErrorsAsString() throws IOException {
@@ -531,6 +542,10 @@ public class RestmanMessage {
 
     protected void loadMappingErrors() {
         mappingErrors = XpathUtil.findElements(document.getDocumentElement(), "//l7:Item/l7:Resource/l7:Mappings/l7:Mapping[@errorType]", getNamespaceMap());
+    }
+
+    protected void loadMappingErrorsFromBundles() {
+        mappingErrors = XpathUtil.findElements(document.getDocumentElement(), "//l7:List/l7:Item/l7:Resource/l7:Mappings/l7:Mapping[@errorType]", getNamespaceMap());
     }
 
     protected void loadMappings() {

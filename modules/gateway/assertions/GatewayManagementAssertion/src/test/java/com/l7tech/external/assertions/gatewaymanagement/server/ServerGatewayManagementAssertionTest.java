@@ -117,6 +117,7 @@ import javax.xml.soap.SOAPConstants;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.text.MessageFormat;
@@ -2549,7 +2550,7 @@ public class ServerGatewayManagementAssertionTest {
                 final Element subjectName = XmlUtil.findFirstChildElementByName(certificateData, NS_GATEWAY_MANAGEMENT, "SubjectName");
 
                 assertEquals("PrivateKey id", "00000000000000000000000000000000:bob", privateKey.getAttribute( "id" ));
-                assertEquals("PrivateKey cert chain [0] subject", "CN=Alice,OU=OASIS Interop Test Cert,O=OASIS", XmlUtil.getTextValue( subjectName ));
+                assertEquals("PrivateKey cert chain [0] subject", URLEncoder.encode("CN=Alice,OU=OASIS Interop Test Cert,O=OASIS", "UTF-8"), XmlUtil.getTextValue( subjectName ));
             }
         };
 

@@ -112,7 +112,12 @@
                 <compilerarg value="-Xlint${module.compile.xlint}" compiler="modern"/>
                 <compilerarg value="-Xlint:-serial" compiler="modern"/>
                 <compilerarg value="-Xlint:-path" compiler="modern"/>
-                <classpath refid="lib.path.id"/>
+                <classpath >
+					<path>
+						<fileset dir="${java.home}/lib" includes="javaws.jar" />
+					</path>
+                    <path refid="lib.path.id"/>
+				</classpath>
             </javac>
         </presetdef>
 
@@ -178,6 +183,7 @@
                     <fileset dir="${java.home}/lib/ext">
                         <include name="*.jar"/>
                     </fileset>
+					<fileset dir="${java.home}/lib" includes="javaws.jar" />
                     <path refid="lib.obfuscate.path.id"/>
                 </path>
                 <pathconvert property="lib.obfuscate.path.text" targetos="unix" pathsep="&quot;${line.separator}&quot;" refid="full.obfuscate.path.id"/>
@@ -444,7 +450,14 @@
         <module-javac srcdir="${src.main.java.dir}" destdir="${classes.main.dir}"/>
     </target>
     <target name="compile-main-forms" if="module.source.available" unless="module.skip.forms" depends="compile-main-init, compile-main-java">
-        <module-javac2 srcdir="${src.main.java.dir}" destdir="${classes.main.dir}" classpathref="lib.path.id"/>
+        <module-javac2 srcdir="${src.main.java.dir}" destdir="${classes.main.dir}">
+		<classpath >
+			<path>
+				<fileset dir="${java.home}/lib" includes="javaws.jar" />
+			</path>
+			<path refid="lib.path.id"/>
+		</classpath>
+		</module-javac2>
     </target>
     <target name="compile-main-jasper" if="module.jasper.available" depends="compile-main-init, compile-main-java">
         <module-jrc srcdir="${src.main.java.dir}" destdir="${classes.main.dir}" classpathref="lib.path.id"/>

@@ -16,7 +16,7 @@ public class SiteMinderContext {
 
 
     public enum AuthenticationScheme {
-        NONE, ALLOWSAVE, BASIC, FORM, DIGEST, METADATA, NTCHALLENGE, SAML, SSL, X509CERT, X509CERTISSUEDN, X509CERTUSERDN, XMLDOC, XMLDSIG, XKMS, XMLWSSEC;
+        NONE, ALLOWSAVE, BASIC, FORM, DIGEST, METADATA, NTCHALLENGE, SAML, SSL, X509CERT, X509CERTISSUEDN, X509CERTUSERDN, XMLDOC, XMLDSIG, XKMS, XMLWSSEC, JWT;
 
         public static AuthenticationScheme findValue(String s) {
            for(AuthenticationScheme val : values()) {
@@ -36,6 +36,7 @@ public class SiteMinderContext {
     private List<Attribute> attrList = new ArrayList<>();
     private List<AuthenticationScheme> authSchemes = new ArrayList<>();
     private String ssoToken;
+    private String ssoZoneName;
     private SiteMinderLowLevelAgent agent;
     private String sourceIpAddress;
     private SiteMinderConfiguration config;
@@ -88,6 +89,14 @@ public class SiteMinderContext {
 
     public void setSsoToken(@Nullable String ssoToken) {
         this.ssoToken = ssoToken;
+    }
+
+    public String getSsoZoneName() {
+        return ssoZoneName;
+    }
+
+    public void setSsoZoneName(String ssoZoneName) {
+        this.ssoZoneName = ssoZoneName;
     }
 
     public ResourceContextDef getResContextDef() {

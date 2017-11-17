@@ -91,7 +91,7 @@ public class CustomAssertionsScannerHelper {
      * @return {@code true} is the specified {@code JarEntry} is the configured Custom Assertions properties file,
      * or {@code false} otherwise.
      */
-    private boolean isCustomAssertionPropertiesFile(final JarEntry entry) {
+    public boolean isCustomAssertionPropertiesFile(final JarEntry entry) {
         return ( entry != null && !entry.isDirectory() && (entry.getName().startsWith(caPropFileNS) || entry.getName().startsWith(caPropFileS)) );
     }
 

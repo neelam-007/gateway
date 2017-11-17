@@ -5,9 +5,11 @@ import static org.junit.Assert.*;
 
 import com.l7tech.gateway.common.audit.AuditFactory;
 import com.l7tech.gateway.common.audit.TestAudit;
+import com.l7tech.server.ServerConfig.PropertyRegistrationInfo;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.DateTimeConfigUtils;
 import com.l7tech.util.Pair;
+import com.l7tech.util.TimeUnit;
 import org.junit.*;
 
 import java.text.ParseException;
@@ -236,5 +238,22 @@ public class ServerConfigTest {
         System.out.println(dateFormat.format(time));
         System.out.println(time);
         System.out.println(cal.getTimeInMillis());
+    }
+
+    @Test
+    public void checkPropertyRegistrationInfo() {
+        ServerConfig sc = ServerConfig.getInstance();
+        List<PropertyRegistrationInfo> list = new ArrayList<>();
+
+        list.add(PropertyRegistrationInfo.prInfo("myName", "my.name", "My Name", "Hello World"));
+        list.add(PropertyRegistrationInfo.prInfo("myId", "my.id", "My ID", "1234567890", "long"));
+
+        sc.registerServerConfigProperties(list);
+
+        assertEquals("Hello World", sc.getProperty("myName"));
+        assertEquals("1234567890", sc.getProperty("myId"));
+        assertNull(sc.getClusterPropertyValidators().get("my.name"));
+        assertTrue(sc.getClusterPropertyValidators().get("my.id").isValid("1234"));
+        assertFalse(sc.getClusterPropertyValidators().get("my.id").isValid("Hello1234"));
     }
 }

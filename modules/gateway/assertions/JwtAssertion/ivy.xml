@@ -13,7 +13,7 @@
 		<artifact name="JwtAssertion" type="pom" ext="pom" conf="pom"/>
     </publications>
     <dependencies>
-        <dependency org="org.jose4j" name="jose4j" rev="0.4.4" force="true" conf="core"/>
+        <dependency org="org.jose4j" name="jose4j" rev="0.6.0" force="true" conf="core"/>
         <dependency org="org.codehaus.jackson" name="jackson-core-asl" rev="1.9.7" force="true" conf="core"/>
         <dependency name="layer7-modular-assertions" rev="latest.integration"
                     conf="compile->compile;runtime->runtime;test->test"/>

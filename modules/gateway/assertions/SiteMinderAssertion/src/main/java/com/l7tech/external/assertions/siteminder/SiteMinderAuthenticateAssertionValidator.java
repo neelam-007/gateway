@@ -16,7 +16,7 @@ public class SiteMinderAuthenticateAssertionValidator implements AssertionValida
 
     @Override
     public void validate(AssertionPath path, PolicyValidationContext pvc, PolicyValidatorResult result) {
-        if (!assertion.isUseSMCookie()) {
+        if (!assertion.isUseSMCookie() && !assertion.isSendJWT()) {
             int foundCredentialSource = -1;
             Assertion[] assertions = path.getPath();
             for (int i = 0; i < assertions.length; i++) {

@@ -9,6 +9,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.policy.Policy;
+import com.l7tech.server.cluster.ClusterMaster;
 import com.l7tech.server.event.AdminInfo;
 import com.l7tech.server.event.admin.Created;
 import com.l7tech.server.event.admin.PersistenceEvent;
@@ -51,19 +52,23 @@ public class ServiceTemplateBootstrapService implements PostStartupApplicationLi
     private final ServiceDocumentManager serviceDocumentManager;
     private final PolicyVersionManager policyVersionManager;
     private final ServiceTemplateManager serviceTemplateManager;
+    private final ClusterMaster clusterMaster;
+
 
     public ServiceTemplateBootstrapService(
             final FolderManager folderManager,
             final ServiceManager serviceManager,
             final ServiceDocumentManager serviceDocumentManager,
             final PolicyVersionManager policyVersionManager,
-            final ServiceTemplateManager serviceTemplateManager)
+            final ServiceTemplateManager serviceTemplateManager,
+            final ClusterMaster clusterMaster)
     {
         this.folderManager = folderManager;
         this.serviceManager = serviceManager;
         this.serviceDocumentManager = serviceDocumentManager;
         this.policyVersionManager = policyVersionManager;
         this.serviceTemplateManager = serviceTemplateManager;
+        this.clusterMaster = clusterMaster;
         init();
 
     }
@@ -100,7 +105,7 @@ public class ServiceTemplateBootstrapService implements PostStartupApplicationLi
                 @Override
                 public Boolean call() throws Exception {
 
-                    if (loadServices) {
+                    if (clusterMaster.isMaster() && loadServices) {
                         File serviceFolder = new File(BOOTSTRAP_SERVICES_FOLDER);
                         if (!serviceFolder.exists()) return false;
                         if (!serviceFolder.isDirectory()) return false;

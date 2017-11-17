@@ -24,6 +24,9 @@ import java.util.Hashtable;
  * Immutable endpoint configuration for runtime use.
  */
 class MqNativeEndpointConfig {
+    public static final String PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_IS_REPLY_QUEUE_GET_MESSAGE_OPTIONS_USED = "MqNativeOutboundIsReplyQueueGetMessageOptionsUsed";
+    public static final String PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_REPLY_QUEUE_GET_MESSAGE_OPTIONS = "MqNativeOutboundReplyQueueGetMessageOptions";
+
     private final String name;
     private final boolean dynamic;
     private final String queueName;

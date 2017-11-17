@@ -1123,8 +1123,8 @@ public class ServerMqNativeRoutingAssertionTest {
         SsgActiveConnectorManager connectorManager = (SsgActiveConnectorManager) applicationContext.getBean("ssgActiveConnectorManager");
         SsgActiveConnector connector = connectorManager.findByPrimaryKey(assertion.getSsgActiveConnectorId());
         //noinspection ConstantConditions
-        connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_IS_REPLY_QUEUE_GET_MESSAGE_OPTIONS_USED, Boolean.toString(true));
-        connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_REPLY_QUEUE_GET_MESSAGE_OPTIONS, "1234567");
+        connector.setProperty(MqNativeEndpointConfig.PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_IS_REPLY_QUEUE_GET_MESSAGE_OPTIONS_USED, Boolean.toString(true));
+        connector.setProperty(MqNativeEndpointConfig.PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_REPLY_QUEUE_GET_MESSAGE_OPTIONS, "1234567");
 
         MQMessage mqMessage = createSimpleMessage();
         context = makeContext(mqMessage);

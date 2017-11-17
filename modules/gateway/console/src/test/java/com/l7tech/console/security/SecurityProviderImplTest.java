@@ -48,7 +48,7 @@ public class SecurityProviderImplTest {
         //tests that the response is successful when the gateway is version 9.2
         String gatewayVersion = "9.2.00";
         String minimunGatewayVersionRequired = "9.2.00";
-        String policyManagerVersion = "2.0.00";
+        String policyManagerVersion = "9.4.00";
         String minimumPolicyManagerVersionRequired = "20060228"; //this is what the 9.2 gateway returns
         configProperties.setProperty("gateway.version.minimum", minimunGatewayVersionRequired);
         configProperties.setProperty("policyManager.version", policyManagerVersion);
@@ -56,7 +56,7 @@ public class SecurityProviderImplTest {
         Pair<Version, Version> versions = new SecurityProviderImpl().validateVersionCompatibility(gatewayVersion, minimumPolicyManagerVersionRequired, PolicyManagerBuildInfoTestFactory.getNewInstance(config));
 
         Assert.assertEquals("Gateway Version is incorrect", gatewayVersion, versions.left.toString());
-        Assert.assertEquals("Gateway Version is incorrect", "1.0.00", versions.right.toString());
+        Assert.assertEquals("Minimum Policy Manager Version is incorrect", "9.3.00", versions.right.toString());
     }
 
     private void testVersionCompatibility(String gatewayVersion, String minimunGatewayVersionRequired, String policyManagerVersion, String minimumPolicyManagerVersionRequired) throws VersionException {

@@ -1,10 +1,13 @@
 package com.l7tech.gateway.common.log;
 
 import com.l7tech.common.io.NonCloseableOutputStream;
+import com.l7tech.search.Dependencies;
+import com.l7tech.search.Dependency;
 import com.l7tech.security.rbac.RbacAttribute;
 import com.l7tech.objectmodel.imp.ZoneableNamedEntityImp;
 import com.l7tech.util.*;
 import com.l7tech.util.Functions.Unary;
+import javax.naming.Context;
 import org.hibernate.annotations.Proxy;
 import org.jetbrains.annotations.NotNull;
 
@@ -29,6 +32,8 @@ import static java.util.Collections.unmodifiableMap;
 @Table(name="sink_config")
 @AttributeOverride(name="name", column=@Column(name="name", nullable=false, length=32))
 public class SinkConfiguration extends ZoneableNamedEntityImp {
+
+    private static final long serialVersionUID = 3599816920403650383L;
 
     //- PUBLIC
 
@@ -322,6 +327,19 @@ public class SinkConfiguration extends ZoneableNamedEntityImp {
 
         // invalidate cached properties
         xmlProperties = null;
+    }
+
+    /**
+     * Get a list of all properties
+     *
+     * @return a List of Strings.  May be empty, but never null.
+     */
+    @Transient
+    public List<String> getPropertyNames() {
+        if(properties == null){
+            return new ArrayList<>();
+        }
+        return new ArrayList<>(properties.keySet());
     }
 
     public void addSyslogHostEntry(String value) {

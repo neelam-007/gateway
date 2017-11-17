@@ -46,7 +46,9 @@ public class SsmApplicationHeavy extends SsmApplication  {
             throw new IllegalStateException("Policy Manager already running");
         }
 
-        installAdditionalSecurityProviders();
+        if (!isWebStart()) {
+            installAdditionalSecurityProviders();
+        }
 
         if (!isSuppressAutoLookAndFeel()) setAutoLookAndFeel();
         mainWindow = new MainWindow(this);
@@ -62,6 +64,11 @@ public class SsmApplicationHeavy extends SsmApplication  {
                 mainWindow.activateLogonDialog();
             }
         });
+    }
+
+    public boolean isWebStart() {
+
+        return false;
     }
 
     public boolean isApplet() {

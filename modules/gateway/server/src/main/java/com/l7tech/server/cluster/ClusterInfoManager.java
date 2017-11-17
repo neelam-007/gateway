@@ -30,6 +30,13 @@ public interface ClusterInfoManager {
     String deleteNode(String nodeid) throws DeleteException;
 
     /**
+     * Removes nodes from the database that have a timestamp older then the given timestamp
+     *
+     * @param statusTimeStamp Removes nodes with a timestamp older then this one
+     */
+    void removeStaleNodes(long statusTimeStamp);
+
+    /**
      * Rename a node.
      *
      * @param nodeid The identifier of the node to rename.

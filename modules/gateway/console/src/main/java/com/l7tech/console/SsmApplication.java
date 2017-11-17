@@ -54,6 +54,8 @@ public abstract class SsmApplication extends ApplicationObjectSupport {
 
     public abstract boolean isApplet();
 
+    public abstract boolean isWebStart();
+
     public boolean isTrusted() {
         return trusted;    
     }

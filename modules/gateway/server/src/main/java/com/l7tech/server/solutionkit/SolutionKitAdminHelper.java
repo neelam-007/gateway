@@ -1,6 +1,8 @@
 package com.l7tech.server.solutionkit;
 
-import com.l7tech.gateway.api.Mapping;
+import com.l7tech.common.io.XmlUtil;
+import com.l7tech.gateway.api.*;
+import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.solutionkit.*;
 import com.l7tech.identity.IdentityProviderConfig;
@@ -17,8 +19,11 @@ import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
+import javax.xml.transform.dom.DOMResult;
+import javax.xml.transform.stream.StreamSource;
 import java.io.IOException;
 import java.io.Serializable;
+import java.io.StringReader;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -78,9 +83,15 @@ public class SolutionKitAdminHelper implements SolutionKitAdmin {
     @NotNull
     public String testInstall(@NotNull final SolutionKit solutionKit, @NotNull final String bundle, final boolean isUpgrade) throws Exception {
         checkFeatureEnabled(solutionKit);
-        validateSolutionKitForInstallOrUpgrade(solutionKit, isUpgrade);
-
         return solutionKitManager.importBundle(bundle, solutionKit, true);
+    }
+
+    @NotNull
+    public String testUpgrade(@NotNull final SolutionKitImportInfo solutionKitImportInfo) throws Exception {
+        for (SolutionKit solutionKit : solutionKitImportInfo.getSolutionKitsToInstall().keySet()) {
+            checkFeatureEnabled(solutionKit);
+        }
+        return solutionKitManager.importBundles(solutionKitImportInfo, true);
     }
 
     private void checkFeatureEnabled(@NotNull final SolutionKit solutionKit) throws SolutionKitException {
@@ -96,7 +107,13 @@ public class SolutionKitAdminHelper implements SolutionKitAdmin {
         throw new UnsupportedOperationException();
     }
 
+    @Override
+    public @NotNull JobId<String> testUpgradeAsync(@NotNull SolutionKitImportInfo solutionKitImportInfo) {
+        throw new UnsupportedOperationException();
+    }
+
     @NotNull
+    //TODO: update this to use multi-bundle import in future
     public Goid install(@NotNull final SolutionKit solutionKit, @NotNull final String bundle, final boolean isUpgrade) throws Exception {
         checkFeatureEnabled(solutionKit);
 
@@ -117,17 +134,104 @@ public class SolutionKitAdminHelper implements SolutionKitAdmin {
                     updateUninstallBundleBySettingTargetIds(uninstallBundle, resultMappings)
             );
         }
+        Goid solutionKitGoid = solutionKitManager.save(solutionKit);
+        updateEntityOwnershipDescriptors(resultMappings, solutionKit);
+        solutionKitManager.update(solutionKit);
+        return solutionKitGoid;
+    }
 
-        if (isUpgrade) {
-            updateEntityOwnershipDescriptors(resultMappings, solutionKit);
-            solutionKitManager.update(solutionKit);
-            return solutionKit.getGoid();
-        } else {
-            Goid solutionKitGoid = solutionKitManager.save(solutionKit);
-            updateEntityOwnershipDescriptors(resultMappings, solutionKit);
-            solutionKitManager.update(solutionKit);
-            return solutionKitGoid;
+    /**
+     * Upgrade the solution kits using import bundles. If there are any errors from importbundles, upgrade will not proceed.
+     *
+     * If result from importbundles is successful, then start
+     * @param solutionKitImportInfo the solution kit information including delete bundles of old SKs,
+     *                       install bundles of new Sks, SKs metadata, parent SK
+     * @return
+     * @throws Exception from solutionKitManager.importBundles, marshallingExceptions, updateException, SolutionKitConflictException
+     */
+    @Override
+    public @NotNull ArrayList upgrade(@NotNull SolutionKitImportInfo solutionKitImportInfo) throws Exception {
+        final Map<SolutionKit, String> solutionKitBundleMap = solutionKitImportInfo.getSolutionKitsToInstall();
+        final ArrayList<Goid> resultGoids = new ArrayList<>();
+        for (final SolutionKit solutionKit : solutionKitBundleMap.keySet()) {
+            checkFeatureEnabled(solutionKit);
         }
+        // Delete bundles and Install bundles provided by SolutionKitImportInfo.
+        final String resultMappings = solutionKitManager.importBundles(solutionKitImportInfo, false);
+
+        //Continue with no errors from solutionKitManager.importBundles
+        final ItemsList<Mappings> itemList = MarshallingUtils.unmarshal(ItemsList.class, new StreamSource(new StringReader(resultMappings)));
+        final List<Item<Mappings>> items = itemList.getContent();
+        final List<SolutionKit> deleteSolutionKits = solutionKitImportInfo.getSolutionKitsToDelete();
+        final int totalBundlesExpected = deleteSolutionKits.size() + solutionKitBundleMap.size();
+
+        // sanity check that result mappings and solutionkitpayload map + delete bundles are same size
+        if (totalBundlesExpected != items.size()){
+            throw new SolutionKitConflictException("Error: Expected " + totalBundlesExpected + "bundles, but found " + items.size() + "bundles." +
+                    System.lineSeparator() + resultMappings);
+        }
+
+        final Map<String, SolutionKit> oldSKGuidAndSolutionKits = new HashMap<>();
+        //Keep track of old guids + their solution kits
+        for (final SolutionKit solutionKit : deleteSolutionKits) {
+            oldSKGuidAndSolutionKits.put(solutionKit.getSolutionKitGuid(), solutionKit);
+        }
+
+        final List<String> installMappingResults = new ArrayList<>();
+        int installMappingIndex = deleteSolutionKits.size();
+        // extract the install mapping results
+        for (int i = installMappingIndex; i<items.size(); i++) {
+            DOMResult result = new DOMResult();
+            MarshallingUtils.marshal(items.get(i), result, false);
+            installMappingResults.add(XmlUtil.nodeToString(result.getNode()));
+        }
+
+        installMappingIndex = 0;
+        //Note: SkBundleEntry is the same order as the installMappingResults
+        for (final Map.Entry<SolutionKit, String> skBundleEntry : solutionKitBundleMap.entrySet()) {
+            // get mappings with entity name added as a property
+            String installMappingResult = installMappingResults.get(installMappingIndex);
+            installMappingResult = getMappingsWithEntityNameAddedToProperties(skBundleEntry.getValue(), installMappingResult);
+
+            final SolutionKit solutionKit = skBundleEntry.getKey();
+            // Save solution kit entity.
+            solutionKit.setMappings(installMappingResult);
+
+            // Update the delete mapping probably due to new entities created or an instance modifier specified.
+            final String uninstallBundle = solutionKit.getUninstallBundle();
+            if (!StringUtils.isEmpty(uninstallBundle)) {
+                solutionKit.setUninstallBundle(
+                        // Set 'targetId' in the uninstall bundle.
+                        updateUninstallBundleBySettingTargetIds(uninstallBundle, installMappingResult)
+                );
+            }
+
+            final Goid solutionKitGoid;
+            final Set<String> oldSolutionKitGuids = oldSKGuidAndSolutionKits.keySet();
+            final String solutionKitGuid = solutionKit.getSolutionKitGuid();
+            if (oldSolutionKitGuids.contains(solutionKitGuid)) {
+                //Solution kit on db, matches a new one on install, so update
+                //Get the goid from the database
+                final SolutionKit oldSolutionKit = oldSKGuidAndSolutionKits.get(solutionKitGuid);
+                solutionKitGoid = oldSolutionKit.getGoid();
+                //Don't delete the updated solution kit
+                deleteSolutionKits.remove(oldSolutionKit);
+            } else {
+                solutionKitGoid = solutionKitManager.save(solutionKit);
+            }
+
+            updateEntityOwnershipDescriptors(installMappingResult, solutionKit);
+            solutionKitManager.update(solutionKit);
+            resultGoids.add(solutionKitGoid);
+            installMappingIndex++;
+        }
+
+        //For every other solution kit that was not updated, delete it
+        for (final SolutionKit solutionKit : deleteSolutionKits) {
+            solutionKitManager.delete(solutionKit);
+        }
+
+        return resultGoids;
     }
 
     protected String getMappingsWithEntityNameAddedToProperties(@NotNull final String bundleStr, @NotNull final String resultMappingsStr) throws IOException, SAXException {
@@ -171,6 +275,11 @@ public class SolutionKitAdminHelper implements SolutionKitAdmin {
     @NotNull
     @Override
     public JobId<Goid> installAsync(@NotNull SolutionKit solutionKit, @NotNull String bundle, boolean isUpgrade) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public @NotNull JobId<ArrayList> upgradeAsync(@NotNull SolutionKitImportInfo solutionKitImportInfo) {
         throw new UnsupportedOperationException();
     }
 
@@ -272,65 +381,6 @@ public class SolutionKitAdminHelper implements SolutionKitAdmin {
     @Override
     public JobId<String> uninstallAsync(@NotNull Goid goid) {
         throw new UnsupportedOperationException();
-    }
-
-    /**
-     * Validate if a target solution kit is good for install or upgrade.
-     *
-     * Install: if an existing solution kit is found as same as the target solution kit, fail install.
-     * This is the requirement from the note in the story SSG-10996, Upgrade Solution Kit.
-     * - disable install if SK is already installed (upgrade only)
-     *
-     * Upgrade: if the source solution kit uses an instance modifier that other existing solution kit has been used, fail upgrade.
-     *
-     * @param sourceSK: the solution kit to be validated
-     * @param isUpgrade: indicate if the solution kit is to upgraded or install.  True for upgrade and false for install.
-     * @return true if validation is passed; Otherwise false returns.
-     * @throws BadRequestException: any errors or rule violation will throw BadRequestException
-     */
-    public boolean validateSolutionKitForInstallOrUpgrade(@NotNull final SolutionKit sourceSK, final boolean isUpgrade) throws BadRequestException, SolutionKitConflictException {  // TODO (TL refactor) can move?
-        final Goid sourceGoid = sourceSK.getGoid();
-        final String sourceGuid = sourceSK.getSolutionKitGuid();
-
-        String sourceIM = sourceSK.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY);
-        if (StringUtils.isBlank(sourceIM)) sourceIM = "";
-
-        final String sourceIMDisplayName = InstanceModifier.getDisplayName(sourceIM);
-
-        // Check upgrade
-        if (isUpgrade) {
-            try {
-                SolutionKit found = solutionKitManager.findBySolutionKitGuidAndIM(sourceGuid, sourceIM);
-                if (found != null && sourceGoid != null && !sourceGoid.equals(found.getGoid())) {
-                    //if the source solution kit uses an instance modifier that other existing solution kit has been used, fail upgrade.
-                    throw new SolutionKitConflictException("Upgrade Failed: the solution kit '" + sourceSK.getName() + "' tired to use a same instance modifier '" + sourceIMDisplayName + "', which other existing solution kit already uses");
-                }
-            } catch (FindException e) {
-                throw new BadRequestException(ExceptionUtils.getMessage(e));
-            }
-
-            return true;
-        }
-
-        // Check install
-        final List<SolutionKit> solutionKitsOnDB;
-        try {
-            solutionKitsOnDB = solutionKitManager.findBySolutionKitGuid(sourceGuid);
-        } catch (FindException e) {
-            throw new BadRequestException(ExceptionUtils.getMessage(e));
-        }
-
-        String instanceModifier;
-        for (SolutionKit solutionKit: solutionKitsOnDB) {
-            instanceModifier = solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY);
-            if (StringUtils.isBlank(instanceModifier)) instanceModifier = "";
-
-            if (sourceIM.equals(instanceModifier)) {
-                throw new SolutionKitConflictException("This solution kit already exists. To install it again, specify a unique instance modifier");
-            }
-        }
-
-        return true;
     }
 
     @Override
@@ -495,6 +545,11 @@ public class SolutionKitAdminHelper implements SolutionKitAdmin {
 
     public SolutionKit get(@NotNull Goid goid) throws FindException {
         return solutionKitManager.findByPrimaryKey(goid);
+    }
+
+    @Override
+    public SolutionKit get(@NotNull String guid, @Nullable String instanceModifier) throws FindException {
+        return solutionKitManager.findBySolutionKitGuidAndIM(guid, instanceModifier);
     }
 
     @NotNull

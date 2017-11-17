@@ -41,6 +41,16 @@ import java.util.logging.Logger;
 public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncrementAssertion> {
     private static final Logger logger = Logger.getLogger(ServerGetIncrementAssertion.class.getName());
 
+    private static final String BULK_SYNC_SELECT = "SELECT a.UUID, concat(a.NAME,'-',o.NAME) as NAME, a.API_KEY, a.KEY_SECRET, \n" +
+            "            coalesce (r.PREVIOUS_STATE,a.STATUS) as STATUS, a.ORGANIZATION_UUID, o.NAME as ORGANIZATION_NAME, \n" +
+            "            a.OAUTH_CALLBACK_URL, a.OAUTH_SCOPE, a.OAUTH_TYPE, a.MAG_SCOPE, a.MAG_MASTER_KEY, \n" +
+            "            ax.API_UUID, a.CREATED_BY, a.MODIFIED_BY, r.LATEST_REQ \n" +
+            "            FROM APPLICATION a \n" +
+            "            JOIN ORGANIZATION o on a.ORGANIZATION_UUID = o.UUID \n" +
+            "            JOIN APPLICATION_API_XREF ax on ax.APPLICATION_UUID = a.UUID \n" +
+            "            LEFT JOIN (select ENTITY_UUID, PREVIOUS_STATE, max(CREATE_TS) as LATEST_REQ FROM REQUEST GROUP BY ENTITY_UUID, PREVIOUS_STATE, CREATE_TS) r ON a.UUID = r.ENTITY_UUID \n" +
+            "            WHERE a.API_KEY IS NOT NULL AND a.TENANT_ID='%s' AND a.STATUS IN ('ENABLED','DISABLED','EDIT_APPLICATION_PENDING_APPROVAL')";
+
     private static final String STATUS_ENABLED = "ENABLED";
     private static final String STATUS_ACTIVE = "active";
     private static final String STATUS_SUSPEND = "suspend";
@@ -154,15 +164,7 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
         } else {
             appJsonObj.setBulkSync(ServerIncrementalSyncCommon.BULK_SYNC_TRUE);
             // bulk, get everything
-            results = (Map<String, List>) queryJdbc(connName,
-                    "SELECT a.UUID, concat(a.NAME,'-',o.NAME) as NAME, a.API_KEY, a.KEY_SECRET, coalesce (r.PREVIOUS_STATE,a.STATUS) as STATUS, a.ORGANIZATION_UUID, o.NAME as ORGANIZATION_NAME, a.OAUTH_CALLBACK_URL, a.OAUTH_SCOPE, a.OAUTH_TYPE, a.MAG_SCOPE, \n" +
-                            "a.MAG_MASTER_KEY, ax.API_UUID, a.CREATED_BY, a.MODIFIED_BY, max(r.CREATE_TS) as LATEST_REQ \n" +
-                            "FROM APPLICATION a  \n" +
-                            "\tJOIN ORGANIZATION o on a.ORGANIZATION_UUID = o.UUID \n" +
-                            "\tJOIN APPLICATION_API_XREF ax on ax.APPLICATION_UUID = a.UUID\n" +
-                            "\tLEFT JOIN REQUEST r ON a.UUID = r.ENTITY_UUID" +
-                            "\tWHERE a.API_KEY IS NOT NULL AND a.TENANT_ID='"+tenantId+"' AND a.STATUS IN ('ENABLED','DISABLED','EDIT_APPLICATION_PENDING_APPROVAL')" +
-                            "\tGROUP BY a.UUID, ax.API_UUID", Collections.EMPTY_LIST);
+            results = (Map<String, List>) queryJdbc(connName, String.format(BULK_SYNC_SELECT, tenantId), Collections.EMPTY_LIST);
 
             // do not include deleted list in json response
             appJsonObj.setDeletedIds(null);
@@ -235,7 +237,7 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
     final String UUID_PARAM = "{{UUID_LIST}}";
     final String CF_QUERY = "SELECT ENTITY_UUID, SYSTEM_PROPERTY_NAME, VALUE \n" +
             "from CUSTOM_FIELD cf inner join CUSTOM_FIELD_VALUE cfv on cf.UUID = cfv.CUSTOM_FIELD_UUID \n" +
-            "where ENTITY_UUID in (" + UUID_PARAM + ") AND cf.STATUS=\"ENABLED\"";
+            "where ENTITY_UUID in (" + UUID_PARAM + ") AND cf.STATUS='ENABLED'";
 
     String app_uuids = "'"+StringUtils.join(((HashMap) values).keySet(), "','")+"'";
 

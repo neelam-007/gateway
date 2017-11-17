@@ -9,6 +9,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -55,17 +56,40 @@ public interface SolutionKitAdmin extends AsyncAdminMethods {
     public String testInstall(@NotNull final SolutionKit solutionKit, @NotNull final String bundle, final boolean isUpgrade) throws Exception;
 
     /**
+     * Test upgrade for the given bundles.
+     * @param solutionKitInfo the solution kit information including delete bundles of old SKs,
+     *                       install bundles of new Sks, SKs metadata, parent SK
+     * @return the resulting mappings XML
+     */
+    @NotNull
+    @Transactional(readOnly = true)
+    @Secured(stereotype = MethodStereotype.TEST_CONFIGURATION)
+    public String testUpgrade(@NotNull SolutionKitImportInfo solutionKitImportInfo) throws Exception;
+
+    /**
      * Test installation for the given bundle.
      *
      * @param solutionKit the solution kit to test
      * @param bundle the bundle XML to test
      * @param isUpgrade indicate if the solution kit is to be upgraded or installed.
-     * @return the resulting mapping XML
+     * @return the resulting mapping XML via AsyncAdminMethods
      */
     @NotNull
     @Transactional(readOnly = true)
     @Secured(stereotype = MethodStereotype.TEST_CONFIGURATION)
     JobId<String> testInstallAsync(@NotNull SolutionKit solutionKit, @NotNull String bundle, boolean isUpgrade);
+
+    /**
+     * Test upgrade for the given bundles.
+     *
+     * @param solutionKitImportInfo the solution kit information including delete bundles of old SKs,
+     *                       install bundles of new Sks, SKs metadata, parent SK
+     * @return the resulting mapping XML via AsyncAdminMethods
+     */
+    @NotNull
+    @Transactional(readOnly = true)
+    @Secured(stereotype = MethodStereotype.TEST_CONFIGURATION)
+    JobId<String> testUpgradeAsync(@NotNull SolutionKitImportInfo solutionKitImportInfo);
 
     /**
      * Install the given solution kit.
@@ -80,16 +104,38 @@ public interface SolutionKitAdmin extends AsyncAdminMethods {
     public Goid install(@NotNull final SolutionKit solutionKit, @NotNull final String bundle, final boolean isUpgrade) throws Exception;
 
     /**
+     * Upgrade the given solution kits.
+     *
+     * @param solutionKitImportInfo the solution kit information including delete bundles of old SKs,
+     *                       install bundles of new Sks, SKs metadata, parent SK
+     * @return the list of saved solution kit entity IDs
+     */
+    @NotNull
+    @Secured(stereotype = MethodStereotype.SAVE)
+    public ArrayList upgrade(@NotNull SolutionKitImportInfo solutionKitImportInfo) throws Exception;
+
+    /**
      * Install the given solution kit.
      *
      * @param solutionKit the solution kit to install
      * @param bundle the bundle XML to install
      * @param isUpgrade true if this is a upgrade install; false for new first time install
-     * @return the saved solution kit entity ID
+     * @return the saved solution kit entity ID via AsyncAdminMethod
      */
     @NotNull
     @Secured(stereotype = MethodStereotype.SAVE)
     JobId<Goid> installAsync(@NotNull SolutionKit solutionKit, @NotNull String bundle, boolean isUpgrade);
+
+    /**
+     * Upgrade the given solution kits.
+     *
+     * @param solutionKitImportInfo the solution kit information including delete bundles of old SKs,
+     *                       install bundles of new Sks, SKs metadata, parent SK
+     * @return the saved solution kit entity IDs via AsyncAdminMethod
+     */
+    @NotNull
+    @Secured(stereotype = MethodStereotype.SAVE)
+    JobId<ArrayList> upgradeAsync(@NotNull SolutionKitImportInfo solutionKitImportInfo);
 
     /**
      * Uninstall solution kit identified by the given ID.
@@ -169,6 +215,18 @@ public interface SolutionKitAdmin extends AsyncAdminMethods {
     @Transactional(readOnly = true)
     @Secured(stereotype = MethodStereotype.FIND_ENTITY)
     public  SolutionKit get(@NotNull Goid goid) throws FindException;
+
+    /**
+     * Retrieve solution kit entity with the given guid and instanceModifier.
+     *
+     * @param guid The globally unique identifier of the solution kit entity (author specified)
+     * @param instanceModifier the instance Modifier of the solution kit
+     * @return the solution kit entity
+     * @throws FindException
+     */
+    @Transactional(readOnly = true)
+    @Secured(stereotype = MethodStereotype.FIND_ENTITY)
+    public  SolutionKit get(@NotNull String guid, @Nullable String instanceModifier) throws FindException;
 
     /**
      * Save a solution kit

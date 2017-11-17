@@ -204,6 +204,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         context.addMimeMapping("xml", "text/xml");
         context.addMimeMapping("txt", "text/plain");
         context.addMimeMapping("css", "text/css");
+        context.addMimeMapping("jnlp", "application/x-java-jnlp-file");
 
         StandardWrapper dflt = (StandardWrapper)context.createWrapper();
         dflt.setServletClass(SsgDefaultServlet.class.getName());
@@ -741,7 +742,8 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
 
         ProtocolHandler ph = c.getProtocolHandler();
         if (ph instanceof Http11Protocol) {
-            ((Http11Protocol)ph).setExecutor(executor);
+            // DE286454 : adding the Private Thread Pool feature for HTTP listen ports
+            ((Http11Protocol)ph).setExecutor( createAndRegisterExecutorIfRequired( executorName(ssgConn), ssgConn ) );
         } else
             throw new ListenerException("Unable to start HTTP listener on port " + c.getPort() + ": Unrecognized protocol handler: " + ph.getClass().getName());
 

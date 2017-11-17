@@ -33,6 +33,7 @@ public class WebSocketConnectionReference extends ExternalReference {
     private static final String ELMT_GOID = "GOID";
     private static final String ELMT_NAME = "Name";
     private static final String ELMT_DESC = "Description";
+    private static final String ELMT_NAME_OUTBOUND_ONLY = "OutboundOnly";
     private static final String ELMT_NAME_CLASSNAME = "Classname";
     private static final String ELMT_NAME_ENABLED = "Enabled";
     private static final String ELMT_NAME_XML_VALUE = "XML_Value";
@@ -54,6 +55,7 @@ public class WebSocketConnectionReference extends ExternalReference {
     private static final String ELMT_NAME_OUTBOUND_URL = "OutboundURL";
     private static final String ELMT_NAME_OUTBOUND_MAX_IDLE_TIME = "OutboundMaxIdleTime";
     private static final String ELMT_NAME_OUTBOUND_POLICY_GOID = "OutboundPolicyGOID";
+    private static final String ELMT_NAME_OUTBOUND_CONNECTION_POLICY_ID = "OutboundConnectionPolicyId";
     private static final String ELMT_NAME_OUTBOUND_SSL = "OutboundSSL";
     private static final String ELMT_NAME_OUTBOUND_PRIVATE_KEY_ID = "OutboundPrivateKeyId";
     private static final String ELMT_NAME_OUTBOUND_PRIVATE_KEY_ALIAS = "OutboundPrivateKeyAlias";
@@ -68,6 +70,7 @@ public class WebSocketConnectionReference extends ExternalReference {
     private Goid goid;
     private String name;
     private String description;
+    private boolean outboundOnly;
     private String classname;
     private boolean enabled;
     private String xmlValue;
@@ -83,6 +86,7 @@ public class WebSocketConnectionReference extends ExternalReference {
     private String outboundUrl;
     private int outboundMaxIdleTime;
     private Goid outboundPolicyGOID;
+    private Goid outboundConnectionPolicyId;
     private boolean outboundSsl;
     private Goid outboundPrivateKeyId;
     private String outboundPrivateKeyAlias;
@@ -109,6 +113,7 @@ public class WebSocketConnectionReference extends ExternalReference {
             //General
             goid = entity.getGoid();
             description = entity.getDescription();
+            outboundOnly = entity.isOutboundOnly();
             classname = entity.getEntityClassName();
             name = entity.getName();
             xmlValue = entity.getValueXml();
@@ -130,6 +135,7 @@ public class WebSocketConnectionReference extends ExternalReference {
             outboundUrl = entity.getOutboundUrl();
             outboundMaxIdleTime = entity.getOutboundMaxIdleTime();
             outboundPolicyGOID = entity.getOutboundPolicyOID();
+            outboundConnectionPolicyId = entity.getOutboundConnectionPolicyId();
             outboundPrivateKeyAlias = entity.getOutboundPrivateKeyAlias();
             outboundPrivateKeyId = entity.getOutboundPrivateKeyId();
             outboundSsl = entity.isOutboundSsl();
@@ -181,6 +187,7 @@ public class WebSocketConnectionReference extends ExternalReference {
 
         addParameterElement(ELMT_NAME, name, referenceElement);
         addParameterElement(ELMT_DESC, description, referenceElement);
+        addParameterElement(ELMT_NAME_OUTBOUND_ONLY, String.valueOf(outboundOnly), referenceElement);
         addParameterElement(ELMT_NAME_CLASSNAME, classname, referenceElement);
         addParameterElement(ELMT_NAME_ENABLED, String.valueOf(enabled), referenceElement);
         addParameterElement(ELMT_NAME_XML_VALUE, xmlValue, referenceElement);
@@ -231,6 +238,10 @@ public class WebSocketConnectionReference extends ExternalReference {
 
         if (outboundPolicyGOID != null) {
             addParameterElement(ELMT_NAME_OUTBOUND_POLICY_GOID, outboundPolicyGOID.toHexString(), referenceElement);
+        }
+
+        if (outboundConnectionPolicyId != null) {
+            addParameterElement(ELMT_NAME_OUTBOUND_CONNECTION_POLICY_ID, outboundConnectionPolicyId.toHexString(), referenceElement);
         }
 
         addParameterElement(ELMT_NAME_OUTBOUND_SSL, String.valueOf(outboundSsl), referenceElement);
@@ -296,6 +307,7 @@ public class WebSocketConnectionReference extends ExternalReference {
                     entity.setGoid(goid);
                     entity.setName(name);
                     entity.setDescription(description);
+                    entity.setOutboundOnly(outboundOnly);
                     entity.setEnabled(enabled);
                     entity.setEntityClassName(classname);
                     entity.setValueXml(xmlValue);
@@ -314,6 +326,7 @@ public class WebSocketConnectionReference extends ExternalReference {
                     entity.setOutboundUrl(outboundUrl);
                     entity.setOutboundMaxIdleTime(outboundMaxIdleTime);
                     entity.setOutboundPolicyOID(outboundPolicyGOID);
+                    entity.setOutboundConnectionPolicyId(outboundConnectionPolicyId);
                     entity.setOutboundSsl(outboundSsl);
                     entity.setOutboundPrivateKeyId(outboundPrivateKeyId);
                     entity.setOutboundPrivateKeyAlias(outboundPrivateKeyAlias);
@@ -391,6 +404,7 @@ public class WebSocketConnectionReference extends ExternalReference {
         output.name = getParamFromEl(el, ELMT_NAME);
         output.classname = getParamFromEl(el, ELMT_NAME_CLASSNAME);
         output.description = getParamFromEl(el, ELMT_DESC);
+        output.outboundOnly = Boolean.parseBoolean(getParamFromEl(el, ELMT_NAME_OUTBOUND_ONLY));
         output.enabled = Boolean.parseBoolean(getParamFromEl(el, ELMT_NAME_ENABLED));
         output.xmlValue = getParamFromEl(el, ELMT_NAME_XML_VALUE);
         output.inboundClientAuth = parseClientAuthType(getParamFromEl(el, ELMT_NAME_INBOUND_CLIENT_AUTH));
@@ -446,6 +460,11 @@ public class WebSocketConnectionReference extends ExternalReference {
         String outboundPolicyGOID = getParamFromEl(el, ELMT_NAME_OUTBOUND_POLICY_GOID);
         if (outboundPolicyGOID != null) {
             output.outboundPolicyGOID = Goid.parseGoid(outboundPolicyGOID);
+        }
+
+        String outboundConnectionPolicyId = getParamFromEl(el, ELMT_NAME_OUTBOUND_CONNECTION_POLICY_ID);
+        if (outboundConnectionPolicyId != null) {
+            output.outboundConnectionPolicyId = Goid.parseGoid(outboundConnectionPolicyId);
         }
 
         output.outboundSsl = Boolean.parseBoolean(getParamFromEl(el, ELMT_NAME_OUTBOUND_SSL));

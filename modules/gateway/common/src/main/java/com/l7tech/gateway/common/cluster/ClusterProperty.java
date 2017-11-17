@@ -81,7 +81,7 @@ public class ClusterProperty extends NamedEntityWithPropertiesImp implements Com
     }
 
     @NotNull
-    @Size(min=0,max=131072) // limit to 128k
+    @Size(min=0,max=4194304) // DE308152 : increased the limit to 1/4 th of MEDIUMTEXT size
     @Column(name="propValue", nullable=false, length=Integer.MAX_VALUE)
     @Lob
     public String getValue() {

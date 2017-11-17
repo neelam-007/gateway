@@ -75,7 +75,11 @@ public class SiteMinderConfigurationManagerImpl
     @Override
     public void validateSiteMinderConfiguration(SiteMinderConfiguration config) throws SiteMinderApiClassException {
         try {
-            new SiteMinderLowLevelAgent(new SiteMinderAgentConfig(config));
+            SiteMinderLowLevelAgent smAgent = new SiteMinderLowLevelAgent(new SiteMinderAgentConfig(config));
+            if (!smAgent.isInitialized()) {
+                throw new SiteMinderApiClassException("Unable to initialize CA Single Sign-On Agent. " +
+                        "Either failed to connect to the Policy Server or the Agent's hostname/secret/fipsmode is incorrect.");
+            }
         } catch (IllegalArgumentException e) {
             throw new SiteMinderApiClassException(ExceptionUtils.getMessage(e));
         }

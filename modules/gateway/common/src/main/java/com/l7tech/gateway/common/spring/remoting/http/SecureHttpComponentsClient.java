@@ -55,7 +55,7 @@ public class SecureHttpComponentsClient extends DefaultHttpClientWithHttpContext
 
         connectionManager.setMaxTotal(ConfigFactory.getIntProperty(PROP_MAX_CONNECTIONS, 20));
         connectionManager.setDefaultMaxPerRoute(ConfigFactory.getIntProperty(PROP_MAX_HOSTCONNECTIONS, 20));
-        getParams().setLongParameter(ClientPNames.CONN_MANAGER_TIMEOUT, ConfigFactory.getIntProperty(PROP_CONNECTION_TIMEOUT, 30000));
+        getParams().setIntParameter(CoreConnectionPNames.CONNECTION_TIMEOUT , ConfigFactory.getIntProperty(PROP_CONNECTION_TIMEOUT, 30000));
         getParams().setIntParameter(CoreConnectionPNames.SO_TIMEOUT, ConfigFactory.getIntProperty(PROP_READ_TIMEOUT, 60000));
         getParams().setBooleanParameter("http.protocol.expect-continue", Boolean.TRUE);
 

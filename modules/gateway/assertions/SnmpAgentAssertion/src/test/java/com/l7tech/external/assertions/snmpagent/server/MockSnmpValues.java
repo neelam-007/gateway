@@ -40,6 +40,7 @@ public class MockSnmpValues {
 
     public static final String TEST_SERVICE_URL = "https://localhost:8080/snmp/management";
     public static final String TEST_SERVICE_ADDRESS = ".1.3.6.1.4.1.17304.7.1";
+    public static final String TEST_SERVICE_TABLE = ".1.3.6.1.4.1.17304.7";
 
     public static final String TEST_SERVICE_GOID_STR = "0000000000000000000000000000c000";  // The GOID in normal representation
     public static final String TEST_SERVICE_GOID_INT = "0.0.0.49152";                       // The GOID represented as uints

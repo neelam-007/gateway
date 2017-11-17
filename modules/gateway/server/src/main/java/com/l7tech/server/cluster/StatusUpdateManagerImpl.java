@@ -11,6 +11,7 @@ import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.service.ServiceCache;
 import com.l7tech.server.util.UptimeMonitor;
+import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.UptimeMetrics;
 import org.springframework.orm.hibernate3.support.HibernateDaoSupport;
@@ -18,6 +19,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.FileNotFoundException;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -35,14 +37,20 @@ public class StatusUpdateManagerImpl extends HibernateDaoSupport implements Stat
     private final ClusterInfoManager clusterInfoManager;
     private final ServiceUsageManager serviceUsageManager;
     private final ServiceCache serviceCache;
+    private final ClusterMaster clusterMaster;
+    private final Config config;
 
     public StatusUpdateManagerImpl(ClusterInfoManager clusterInfoManager,
                                    ServiceCache serviceCache,
-                                   ServiceUsageManager serviceUsageManager)
+                                   ServiceUsageManager serviceUsageManager,
+                                   ClusterMaster clusterMaster,
+                                   Config config)
     {
         this.clusterInfoManager = clusterInfoManager;
         this.serviceCache = serviceCache;
         this.serviceUsageManager = serviceUsageManager;
+        this.clusterMaster = clusterMaster;
+        this.config = config;
     }
 
     /**
@@ -50,15 +58,27 @@ public class StatusUpdateManagerImpl extends HibernateDaoSupport implements Stat
      *
      * XXX IMPORTANT XXX: This method may appear to be unused according to IDEA but it is called from a Spring timer 
      * XXX IMPORTANT XXX: defined in webApplicationContext.xml.
-     *
-     * @throws UpdateException
      */
-    public void update() throws UpdateException {
+    public void update() {
         updateNodeStatus();
+        clearStaleNodes();
         updateServiceUsage();
     }
 
-    private void updateNodeStatus() throws UpdateException {
+    /**
+     * This cleans up stale nodes from the ClusterNodeInfo table
+     */
+    private void clearStaleNodes() {
+        //Only the master needs to do cleanup
+        if (clusterMaster.isMaster()) {
+            final int staleTimeoutSeconds = config.getIntProperty("com.l7tech.server.clusterStaleNodeCleanupTimeoutSeconds", 3600);
+            final Calendar oldestTimestamp = Calendar.getInstance();
+            oldestTimestamp.add(Calendar.SECOND, -1 * staleTimeoutSeconds);
+            clusterInfoManager.removeStaleNodes(oldestTimestamp.getTime().getTime());
+        }
+    }
+
+    private void updateNodeStatus() {
         double load;
         UptimeMetrics metrics;
         try {
@@ -71,6 +91,9 @@ public class StatusUpdateManagerImpl extends HibernateDaoSupport implements Stat
         } catch (IllegalStateException e) {
             String msg = "cannot get uptime metrics";
             logger.log(Level.SEVERE, msg, e);
+        } catch (UpdateException e) {
+            String msg = "cannot update node status";
+            logger.log(Level.INFO, msg, e);
         }
     }
 

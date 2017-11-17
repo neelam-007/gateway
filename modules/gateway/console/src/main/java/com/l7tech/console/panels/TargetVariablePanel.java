@@ -46,6 +46,7 @@ public class TargetVariablePanel  extends JPanel {
     private boolean valueWillBeRead;
     private boolean valueWillBeWritten = true;
     private boolean alwaysPermitSyntax = false;
+    private boolean allowDynamicStatusLabelVisibility = false;
 
     private static ResourceBundle resources = ResourceBundle.getBundle(TargetVariablePanel.class.getName());
     private final ImageIcon BLANK_ICON = new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/Transparent16.png"));
@@ -131,14 +132,20 @@ public class TargetVariablePanel  extends JPanel {
     public void setEnabled(boolean enabled) {
         super.setEnabled(enabled);
         prefixOrVariableField.setEnabled(enabled);
-        if (!enabled){
+
+        if (allowDynamicStatusLabelVisibility) {
+            statusLabel.setVisible(enabled);
+        }
+
+        if (!enabled) {
             // clear status and tooltips
             clearVariableNameStatus();
             //mainPanel.setToolTipText(null);
             prefixOrVariableField.setToolTipText(null);
             entryValid = true;
+        } else {
+            validateFields();
         }
-        else validateFields();
     }
 
     public void setAssertion(final Assertion assertion, final Assertion previousAssertion) {
@@ -531,6 +538,19 @@ public class TargetVariablePanel  extends JPanel {
 
     public void setAllowContextVariable(final boolean allowContextVariable) {
         this.allowContextVariable = allowContextVariable;
+    }
+
+    public boolean isAllowDynamicStatusLabelVisibility() {
+        return allowDynamicStatusLabelVisibility;
+    }
+
+    /**
+     * Ensures the internal status label control's visibility dynamically adjusted.
+     * Currently, it is bind to panel's enable status.
+     * @param allowDynamicStatusLabelVisibility
+     */
+    public void setAllowDynamicStatusLabelVisibility(boolean allowDynamicStatusLabelVisibility) {
+        this.allowDynamicStatusLabelVisibility = allowDynamicStatusLabelVisibility;
     }
 }
 

@@ -1341,6 +1341,12 @@
         <constructor-arg ref="entityVersionCheckerTimer"/>
     </bean>
 
+    <bean id="auditConfigurationManager" class="com.l7tech.server.audit.AuditConfigurationManagerImpl">
+        <constructor-arg index="0" ref="policyManager"/>
+        <constructor-arg index="1" ref="clusterPropertyManager"/>
+        <constructor-arg index="2" ref="transactionManager"/>
+    </bean>
+
     <!-- server side audit record manager -->
     <bean id="auditRecordManager" class="com.l7tech.server.audit.AuditRecordManagerImpl" parent="hibernateBean">
         <property name="serverConfig" ref="serverConfig"/>
@@ -1472,6 +1478,8 @@
         <constructor-arg ref="clusterInfoManager"/>
         <constructor-arg ref="serviceCache"/>
         <constructor-arg ref="serviceUsageManager"/>
+        <constructor-arg ref="clusterMaster"/>
+        <constructor-arg ref="serverConfig"/>
         <property name="sessionFactory" ref="sessionFactory"/>
     </bean>
 
@@ -1620,6 +1628,7 @@
         <constructor-arg index="2" ref="serviceDocumentManager"/>
         <constructor-arg index="3" ref="policyVersionManager"/>
         <constructor-arg index="4" ref="serviceTemplateManager"/>
+        <constructor-arg index="5" ref="clusterMaster"/>
     </bean>
 
     <bean id="migrationBundleBootstrapService" class="com.l7tech.server.service.MigrationBundleBootstrapService">
@@ -1639,7 +1648,7 @@
         <property name="targetMethod" value="thisNodeId"/>
     </bean>
 
-    <bean id="clusterMaster" class="com.l7tech.server.cluster.ClusterMaster">
+    <bean id="clusterMaster" class="com.l7tech.server.cluster.ClusterMasterImpl">
         <constructor-arg index="0" ref="transactionManager"/>
         <constructor-arg index="1" ref="hibernateDataSource"/>
         <constructor-arg index="2" ref="serverConfig"/>
@@ -1649,25 +1658,6 @@
             </bean>
         </constructor-arg>
         <constructor-arg index="4" ref="clusterNodeId"/>
-    </bean>
-    <bean id="databaseReplicationMonitor" class="com.l7tech.server.cluster.DatabaseReplicationMonitor"
-          init-method="init">
-        <constructor-arg index="0" ref="serverConfig"/>
-        <constructor-arg index="1" ref="clusterMaster"/>
-        <constructor-arg index="2" value="#{hibernateProperties['l7.database.main.description']}"/>
-        <constructor-arg index="3" ref="primaryDbDataSource"/>
-        <constructor-arg index="4" value="#{hibernateProperties['l7.database.failover.description']}"/>
-        <constructor-arg index="5" ref="secondaryDbDataSource"/>
-        <constructor-arg index="6" ref="lazyDataSource"/>
-        <constructor-arg index="7" ref="auditFactory"/>
-        <constructor-arg index="8" ref="applicationEventPublisher"/>
-        <constructor-arg index="9" ref="clusterNodeId"/>
-        <constructor-arg index="10" value="#{hibernateProperties['node.db.clusterType']}"/>
-        <constructor-arg index="11">
-            <bean class="com.l7tech.server.util.ManagedTimer">
-                <constructor-arg value="DatabaseReplicationMonitor"/>
-            </bean>
-        </constructor-arg>
     </bean>
 
     <!-- Dependency ensures system.properties file is processed first -->
@@ -2135,8 +2125,6 @@
         <constructor-arg index="5" ref="trustedSignerCertsManager"/>
     </bean>
 
-    <bean id="processControllerNodeApiImpl" class="com.l7tech.server.NodeApiImpl"/>
-
     <bean id="gatewayApiImpl" class="com.l7tech.server.cluster.GatewayApiImpl">
         <constructor-arg index="0" ref="serverConfig"/>
         <constructor-arg index="1" ref="clusterInfoManager"/>
@@ -2310,6 +2298,7 @@
                 <ref bean="workQueueEntityManager"/>
                 <ref bean="policyBackedServiceManager"/>
                 <ref bean="solutionKitManager"/>
+                <ref bean="auditConfigurationManager"/>
             </list>
         </constructor-arg>
     </bean>
@@ -2578,6 +2567,10 @@
                 <entry>
                     <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.POLICY_BACKED_SERVICE"/></key>
                     <bean class="com.l7tech.server.search.processors.PolicyBackedServiceDependencyProcessor"/>
+                </entry>
+                <entry>
+                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.LOG_SINK"/></key>
+                    <bean class="com.l7tech.server.search.processors.LogSinkDependencyProcessor"/>
                 </entry>
             </util:map>
         </constructor-arg>
