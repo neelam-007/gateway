@@ -17,10 +17,8 @@ import java.util.logging.Logger;
 public class PooledConnection implements CachedConnection {
     private static final Logger logger = Logger.getLogger(PooledConnection.class.getName());
 
-    private final JmsResourceManagerConfig cacheConfig;
     private final GenericObjectPool.Config config;
     private final GenericObjectPool<SessionHolder> pool;
-    private final AtomicInteger referenceCount = new AtomicInteger(0);
     private final JmsEndpointConfig endpoint;
     private final long createdTime = System.currentTimeMillis();
     private AtomicLong lastAccessTime = new AtomicLong(createdTime);
@@ -28,7 +26,6 @@ public class PooledConnection implements CachedConnection {
     public PooledConnection(final JmsEndpointConfig endpointConfig, JmsResourceManagerConfig cacheConfig) throws  Exception{
         logger.log(Level.FINE, "Creating new PooledConnection object...");
         this.endpoint = endpointConfig;
-        this.cacheConfig = cacheConfig;
         //set pool config initial properties. They are used even if the pool size is 0
         config = new GenericObjectPool.Config();
         config.maxActive = Integer.parseInt(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_CONNECTION_POOL_SIZE,
@@ -142,8 +139,6 @@ public class PooledConnection implements CachedConnection {
     }
 
     private SingleSessionHolder newConnection(final JmsEndpointConfig endpoint ) throws NamingException, JmsRuntimeException {
-        final JmsEndpointConfig.JmsEndpointKey key = endpoint.getJmsEndpointKey();
-
         try {
             // create the new JmsBag for the endpoint
             final JmsBag newBag = JmsUtil.connect(endpoint);

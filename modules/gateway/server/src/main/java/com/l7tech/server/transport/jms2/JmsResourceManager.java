@@ -6,6 +6,7 @@ import com.l7tech.server.transport.jms.JmsRuntimeException;
 import com.l7tech.server.util.ManagedTimer;
 import com.l7tech.util.Config;
 import com.l7tech.util.ConfigFactory;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.TimeUnit;
 import org.springframework.beans.factory.DisposableBean;
 
@@ -78,7 +79,7 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
                 returnSessionHolder(endpoint, sessionHolder);
             } catch (JmsRuntimeException e) {
                 //not much we can do. log it
-                logger.log(Level.WARNING, "Unable to return cached connection " + sessionHolder);
+                logger.log(Level.WARNING, "Unable to return cached connection " + sessionHolder, ExceptionUtils.getDebugException(e));
             }
         }
     }
@@ -423,8 +424,8 @@ public class JmsResourceManager implements DisposableBean, PropertyChangeListene
 
             for (final JmsEndpointConfig.JmsEndpointKey key : connectionHolder.keySet()) {
                 CachedConnection evictionCandidate = connectionHolder.get(key);
-                logger.log(Level.FINE, "Check eviction candidate " + evictionCandidate.toString());
                 if(logger.isLoggable(Level.FINE)) {
+                    logger.log(Level.FINE, "Check eviction candidate " + evictionCandidate.toString());
                     evictionCandidate.debugStatus();
                 }
                 if (evictionCandidate.getEndpointConfig().isEvictOnExpired()) { //do not evict inbound jms connections

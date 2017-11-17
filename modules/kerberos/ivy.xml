@@ -40,9 +40,7 @@
         <dependency org="org.apache.kerby" name="kerb-crypto" rev="1.0.0-RC2" force="true" conf="core"/>
         <dependency org="org.apache.kerby" name="kerb-util" rev="1.0.0-RC2" force="true" conf="core"/>
         <dependency org="junit" name="junit" rev="4.12" force="true" conf="test"/>
-        <!--<dependency org="jboss" name="jboss-j2ee" rev="4.0.5.GA" force="true" conf="core"/>-->
-        <!--<dependency org="javax.jms" name="javax.jms-api" rev="2.0.1" force="true" conf="core"/>-->
-        <dependency org="javax.jms" name="jms" rev="1.1" force="true" conf="core"/>
+        <dependency org="jboss" name="jboss-j2ee" rev="4.0.5.GA" force="true" conf="core"/>
         <dependency org="org.jboss.cache" name="jbosscache-core" rev="3.2.5.GA" force="true" conf="core"/>
         <dependency org="org.slf4j" name="slf4j-api" rev="1.6.6" force="true" conf="core"/>
     </dependencies>

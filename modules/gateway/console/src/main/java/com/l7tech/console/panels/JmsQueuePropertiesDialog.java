@@ -1755,16 +1755,4 @@ public class JmsQueuePropertiesDialog extends JDialog {
         }
         return defaultValue;
     }
-
-/*    *//**
-     * gets title of the border from JPanel if the border is TitledBorder type
-     * @param panel JPanel
-     * @return String containing title
-     *//*
-    public static TitledBorder getBorder(JPanel panel) {
-        if(panel != null && panel.getBorder() instanceof TitledBorder)
-            return (TitledBorder)panel.getBorder();
-        else
-            return null;
-    }*/
 }
