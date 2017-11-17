@@ -57,7 +57,6 @@ public class LdapWriteAssertion extends Assertion implements UsesEntities, UsesV
         meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
         meta.put(SERVER_ASSERTION_CLASSNAME, "com.l7tech.external.assertions.ldapwrite.server.ServerLdapWriteAssertion");
         meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.ldapwrite.console.LdapWritePropertiesDialog");
-        meta.put(AssertionMetadata.MODULE_LOAD_LISTENER_CLASSNAME, "com.l7tech.external.assertions.ldapwrite.LdapWriteAssertionModuleLoadListener");
         meta.put(AssertionMetadata.POLICY_NODE_NAME_FACTORY, policyNameFactory);
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
 
