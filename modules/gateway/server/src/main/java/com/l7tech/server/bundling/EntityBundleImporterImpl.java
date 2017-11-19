@@ -251,20 +251,11 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                 final Set<Goid> deletedPolicyIds = new HashSet<>();
 
                 for (final EntityBundle bundle: bundles) {
-                    mappingRtnList.add(doImportBundle(bundle, test, activate, versionComment, deletedPolicyIds));
-                    transactionStatus.flush();
+                    mappingRtnList.add(doImportBundle(transactionStatus, bundle, test, activate, versionComment, deletedPolicyIds));
                 }
 
-                // When importing all bundle is finished, check if it is for test or any errors occur.  If so, rollback.
                 if (test) {
                     transactionStatus.setRollbackOnly();
-                } else {
-                    for (final List<EntityMappingResult> mappingsRtn: mappingRtnList) {
-                        if (containsErrors(mappingsRtn)) {
-                            transactionStatus.setRollbackOnly();
-                            break;
-                        }
-                    }
                 }
 
                 return mappingRtnList;
@@ -278,6 +269,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
      * import nothing is committed and all changes that were made are rolled back.  No matter whether each bundle is imported
      * successfully or failed to import, one list of EntityMappingResults is generated for the bundle imported.
      *
+     * @param transactionStatus The parent transaction status shared by all other bundles imported.
      * @param bundle         The bundle to import
      * @param test           if true the bundles import will be performed but rolled back afterwards and the results of
      *                       the import will be returned. If false the bundles import will be committed it if is
@@ -288,7 +280,8 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
      * @return A list of EntityMappingResult objects for the bundle imported
      */
     @NotNull
-    private List<EntityMappingResult> doImportBundle(@NotNull final EntityBundle bundle,
+    private List<EntityMappingResult> doImportBundle(@NotNull final TransactionStatus transactionStatus,
+                                                     @NotNull final EntityBundle bundle,
                                                      final boolean test,
                                                      final boolean activate,
                                                      @Nullable final String versionComment,
@@ -318,9 +311,6 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                     //Use the existing entity
                     if (mapping.shouldFailOnExisting() && !EntityMappingInstructions.MappingAction.Ignore.equals(mapping.getMappingAction())) {
                         mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), new TargetExistsException(mapping, "Fail on existing specified and target exists."));
-                        // Add this result and continue next mapping
-                        mappingsRtn.add(mappingResult);
-                       continue;
                     } else {
                         switch (mapping.getMappingAction()) {
                             case NewOrExisting: {
@@ -345,9 +335,6 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                         );
                                     }
                                     mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), new TargetReadOnlyException(mapping, "Not possible to update"));
-                                    // Add this result and continue next mapping
-                                    mappingsRtn.add(mappingResult);
-                                    continue;
                                 } else {
                                     //update the existing entity
                                     final EntityHeader targetEntityHeader = createOrUpdateResource(entity, existingEntity.getId(), mapping, resourceMapping, existingEntity, activate, versionComment, false, cachedPrivateKeyOperations);
@@ -376,9 +363,6 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                         );
                                     }
                                     mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), new TargetReadOnlyException(mapping, "Not possible to delete"));
-                                    // Add this result and continue next mapping
-                                    mappingsRtn.add(mappingResult);
-                                    continue;
                                 } else {
                                     final EntityHeader targetEntityHeader = deleteEntity(existingEntity, mapping, cachedPrivateKeyOperations, deletedPolicyIds);
                                     mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), targetEntityHeader, EntityMappingResult.MappingAction.Deleted);
@@ -391,9 +375,6 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                 } else {
                     if (mapping.shouldFailOnNew() && !EntityMappingInstructions.MappingAction.Ignore.equals(mapping.getMappingAction())) {
                         mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), new TargetNotFoundException(mapping, "Fail on new specified and could not locate existing target"));
-                        // Add this result and continue next mapping
-                        mappingsRtn.add(mappingResult);
-                        continue;
                     } else {
                         switch (mapping.getMappingAction()) {
                             case NewOrExisting:
@@ -432,9 +413,13 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                     }
                 }
                 mappingsRtn.add(mappingResult);
+
+                if (mappingResult.getException() != null) {
+                    transactionStatus.setRollbackOnly();
+                }
             } catch (Throwable e) {
-                // Add this result and continue next mapping
-                mappingsRtn.add(new EntityMappingResult(mapping.getSourceEntityHeader(), e));
+                mappingsRtn.add(new EntityMappingResult(mapping.getSourceEntityHeader(), new IncorrectMappingInstructionsException(mapping, ExceptionUtils.getMessage(e))));
+                transactionStatus.setRollbackOnly();
             }
         }
 
@@ -484,6 +469,10 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                     return null;
                 }
             });
+        }
+
+        if (containsErrors(mappingsRtn)) {
+            transactionStatus.setRollbackOnly();
         }
 
         return mappingsRtn;
