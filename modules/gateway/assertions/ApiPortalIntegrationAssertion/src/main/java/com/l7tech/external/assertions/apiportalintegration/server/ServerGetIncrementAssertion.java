@@ -65,7 +65,7 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
               "FROM APPLICATION_API_GROUP_XREF aagx \n" +
               "JOIN APPLICATION a2 ON a2.UUID = aagx.APPLICATION_UUID \n" +
               "JOIN  API_GROUP_API_XREF agax ON agax.API_GROUP_UUID = aagx.API_GROUP_UUID \n" +
-              "JOIN ORGANIZATION_API_VIEW oav ON oav.UUID = agax.API_UUID \n" +
+              "JOIN ORGANIZATION_ALL_API_VIEW oav ON oav.UUID = agax.API_UUID \n" +
               "WHERE (oav.ACCESS_STATUS = 'PUBLIC' OR (oav.ACCESS_STATUS = 'PRIVATE' AND oav.ORGANIZATION_UUID = a2.ORGANIZATION_UUID))) a3 \n" +
         "JOIN ORGANIZATION o on a3.ORGANIZATION_UUID = o.UUID \n" +
         "LEFT JOIN (select ENTITY_UUID, PREVIOUS_STATE, max(CREATE_TS) as LATEST_REQ FROM REQUEST GROUP BY ENTITY_UUID, PREVIOUS_STATE, CREATE_TS) r ON a3.UUID = r.ENTITY_UUID \n" +

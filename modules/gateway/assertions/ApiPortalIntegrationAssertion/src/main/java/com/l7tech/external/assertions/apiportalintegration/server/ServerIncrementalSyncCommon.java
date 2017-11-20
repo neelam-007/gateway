@@ -38,7 +38,7 @@ public class ServerIncrementalSyncCommon {
                "JOIN APPLICATION a2 ON a2.UUID = aagx.APPLICATION_UUID " +
                "JOIN  API_GROUP_API_XREF agax ON agax.API_GROUP_UUID = aagx.API_GROUP_UUID " +
                "JOIN API_GROUP ag ON ag.UUID = agax.API_GROUP_UUID " +
-               "JOIN ORGANIZATION_API_VIEW oav ON oav.UUID = agax.API_UUID " +
+               "JOIN ORGANIZATION_ALL_API_VIEW oav ON oav.UUID = agax.API_UUID " +
                "WHERE (oav.ACCESS_STATUS = 'PUBLIC' OR (oav.ACCESS_STATUS = 'PRIVATE' AND oav.ORGANIZATION_UUID = a2.ORGANIZATION_UUID))) a3 " +
         "JOIN ORGANIZATION o on a3.ORGANIZATION_UUID = o.UUID " +
         "LEFT JOIN APPLICATION_TENANT_GATEWAY t on t.APPLICATION_UUID = a3.UUID " +
