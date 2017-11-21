@@ -233,9 +233,9 @@ public class ServerIncrementPostBackAssertion extends AbstractServerAssertion<In
         entityIds.addAll(queryEntityInfo(jdbcConnectionName, sqlQuery, Lists.<Object>newArrayList(BigInteger.valueOf(incrementStart), BigInteger.valueOf(incrementEnd)), columeName));
         // get new or updated or last sync error apps
         columeName = "uuid";
-        sqlQuery = ServerIncrementalSyncCommon.getSyncUpdatedAppEntities(Lists.newArrayList("a." + columeName.toUpperCase()), tenantId);
+        sqlQuery = ServerIncrementalSyncCommon.getSyncUpdatedAppEntities(Lists.newArrayList("a3." + columeName.toUpperCase()), tenantId);
         entityIds.addAll(queryEntityInfo(jdbcConnectionName, sqlQuery,
-                Lists.<Object>newArrayList(incrementStart, incrementEnd, incrementStart, incrementEnd, incrementStart, incrementEnd, nodeId), columeName));
+                Lists.<Object>newArrayList(incrementStart, incrementEnd, incrementStart, incrementEnd, incrementStart, incrementEnd, nodeId, incrementStart, incrementEnd, incrementStart, incrementEnd), columeName));
         //subtract the new error sync entities
         return Lists.newArrayList(CollectionUtils.subtract(entityIds, errorEntityIds));
     }
