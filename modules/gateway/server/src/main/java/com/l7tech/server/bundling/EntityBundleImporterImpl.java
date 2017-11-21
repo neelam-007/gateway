@@ -295,9 +295,11 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
         //loop through each mapping instruction to perform the action.
         final Map<EntityHeader,Callable<String>> cachedPrivateKeyOperations = new HashMap<EntityHeader,Callable<String>>();
         int progressCounter = 1;
+        final String bundleName = StringUtils.isBlank(bundle.getBundleName())? "" : ("'" + bundle.getBundleName().trim() + "' ");
 
         for (final EntityMappingInstructions mapping : bundle.getMappingInstructions()) {
-            logger.log(Level.FINEST, "Processing mapping " + progressCounter++ + " of " + bundle.getMappingInstructions().size() + ". Mapping: " + mapping.getSourceEntityHeader().toStringVerbose());
+            final String mappingInfo = "mapping " + progressCounter++ + " of " + bundle.getMappingInstructions().size() + ". Mapping: " + mapping.getSourceEntityHeader().toStringVerbose();
+            logger.log(Level.FINEST, "Processing " + mappingInfo);
 
             //Get the entity that this mapping is for from the bundle
             final EntityContainer entity = getEntityContainerFromBundle(mapping, bundle);
@@ -418,7 +420,11 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                     transactionStatus.setRollbackOnly();
                 }
             } catch (Throwable e) {
-                logger.log(Level.WARNING, e.getMessage(), ExceptionUtils.getDebugException(e));
+                logger.log(
+                    test? Level.FINE : Level.WARNING,
+                    "Error importing bundle " + bundleName + "on procesing " + mappingInfo + "\n" + e.getMessage(),
+                    ExceptionUtils.getDebugException(e)
+                );
                 mappingsRtn.add(new EntityMappingResult(mapping.getSourceEntityHeader(), e));
                 transactionStatus.setRollbackOnly();
             }
