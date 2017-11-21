@@ -418,7 +418,8 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                     transactionStatus.setRollbackOnly();
                 }
             } catch (Throwable e) {
-                mappingsRtn.add(new EntityMappingResult(mapping.getSourceEntityHeader(), new IncorrectMappingInstructionsException(mapping, ExceptionUtils.getMessage(e))));
+                logger.log(Level.WARNING, e.getMessage(), ExceptionUtils.getDebugException(e));
+                mappingsRtn.add(new EntityMappingResult(mapping.getSourceEntityHeader(), e));
                 transactionStatus.setRollbackOnly();
             }
         }
@@ -1189,7 +1190,12 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                     }
                 } catch (Exception e) {
                     //This will catch exceptions like org.springframework.dao.DataIntegrityViolationException or other runtime exceptions
-                    return Option.some(new ObjectModelException("Error attempting to save or update " + entityContainer.getEntity().getClass() + ". Message: " + ExceptionUtils.getMessage(e), e));
+
+                    final Entity entity = entityContainer.getEntity();
+                    final String errorMessage = (e instanceof DataIntegrityViolationException && e.getCause() instanceof org.hibernate.exception.ConstraintViolationException)?
+                        ("Constraint Violation: " + e.getCause().getMessage()) : "Message: " + ExceptionUtils.getMessage(e);
+
+                    return Option.some(new ObjectModelException("Error attempting to save or update the " + entity.getClass().getSimpleName() + " with id = '" + entity.getId() + "'.  " + errorMessage, e));
                 }
                 return Option.none();
             }
