@@ -251,20 +251,11 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                 final Set<Goid> deletedPolicyIds = new HashSet<>();
 
                 for (final EntityBundle bundle: bundles) {
-                    mappingRtnList.add(doImportBundle(bundle, test, activate, versionComment, deletedPolicyIds));
-                    transactionStatus.flush();
+                    mappingRtnList.add(doImportBundle(transactionStatus, bundle, test, activate, versionComment, deletedPolicyIds));
                 }
 
-                // When importing all bundle is finished, check if it is for test or any errors occur.  If so, rollback.
                 if (test) {
                     transactionStatus.setRollbackOnly();
-                } else {
-                    for (final List<EntityMappingResult> mappingsRtn: mappingRtnList) {
-                        if (containsErrors(mappingsRtn)) {
-                            transactionStatus.setRollbackOnly();
-                            break;
-                        }
-                    }
                 }
 
                 return mappingRtnList;
@@ -278,6 +269,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
      * import nothing is committed and all changes that were made are rolled back.  No matter whether each bundle is imported
      * successfully or failed to import, one list of EntityMappingResults is generated for the bundle imported.
      *
+     * @param transactionStatus The parent transaction status shared by all other bundles imported.
      * @param bundle         The bundle to import
      * @param test           if true the bundles import will be performed but rolled back afterwards and the results of
      *                       the import will be returned. If false the bundles import will be committed it if is
@@ -288,7 +280,8 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
      * @return A list of EntityMappingResult objects for the bundle imported
      */
     @NotNull
-    private List<EntityMappingResult> doImportBundle(@NotNull final EntityBundle bundle,
+    private List<EntityMappingResult> doImportBundle(@NotNull final TransactionStatus transactionStatus,
+                                                     @NotNull final EntityBundle bundle,
                                                      final boolean test,
                                                      final boolean activate,
                                                      @Nullable final String versionComment,
@@ -302,9 +295,11 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
         //loop through each mapping instruction to perform the action.
         final Map<EntityHeader,Callable<String>> cachedPrivateKeyOperations = new HashMap<EntityHeader,Callable<String>>();
         int progressCounter = 1;
+        final String bundleName = StringUtils.isBlank(bundle.getBundleName())? "" : ("'" + bundle.getBundleName().trim() + "' ");
 
         for (final EntityMappingInstructions mapping : bundle.getMappingInstructions()) {
-            logger.log(Level.FINEST, "Processing mapping " + progressCounter++ + " of " + bundle.getMappingInstructions().size() + ". Mapping: " + mapping.getSourceEntityHeader().toStringVerbose());
+            final String mappingInfo = "mapping " + progressCounter++ + " of " + bundle.getMappingInstructions().size() + ". Mapping: " + mapping.getSourceEntityHeader().toStringVerbose();
+            logger.log(Level.FINEST, "Processing " + mappingInfo);
 
             //Get the entity that this mapping is for from the bundle
             final EntityContainer entity = getEntityContainerFromBundle(mapping, bundle);
@@ -318,9 +313,6 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                     //Use the existing entity
                     if (mapping.shouldFailOnExisting() && !EntityMappingInstructions.MappingAction.Ignore.equals(mapping.getMappingAction())) {
                         mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), new TargetExistsException(mapping, "Fail on existing specified and target exists."));
-                        // Add this result and continue next mapping
-                        mappingsRtn.add(mappingResult);
-                       continue;
                     } else {
                         switch (mapping.getMappingAction()) {
                             case NewOrExisting: {
@@ -345,9 +337,6 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                         );
                                     }
                                     mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), new TargetReadOnlyException(mapping, "Not possible to update"));
-                                    // Add this result and continue next mapping
-                                    mappingsRtn.add(mappingResult);
-                                    continue;
                                 } else {
                                     //update the existing entity
                                     final EntityHeader targetEntityHeader = createOrUpdateResource(entity, existingEntity.getId(), mapping, resourceMapping, existingEntity, activate, versionComment, false, cachedPrivateKeyOperations);
@@ -376,9 +365,6 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                                         );
                                     }
                                     mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), new TargetReadOnlyException(mapping, "Not possible to delete"));
-                                    // Add this result and continue next mapping
-                                    mappingsRtn.add(mappingResult);
-                                    continue;
                                 } else {
                                     final EntityHeader targetEntityHeader = deleteEntity(existingEntity, mapping, cachedPrivateKeyOperations, deletedPolicyIds);
                                     mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), targetEntityHeader, EntityMappingResult.MappingAction.Deleted);
@@ -391,9 +377,6 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                 } else {
                     if (mapping.shouldFailOnNew() && !EntityMappingInstructions.MappingAction.Ignore.equals(mapping.getMappingAction())) {
                         mappingResult = new EntityMappingResult(mapping.getSourceEntityHeader(), new TargetNotFoundException(mapping, "Fail on new specified and could not locate existing target"));
-                        // Add this result and continue next mapping
-                        mappingsRtn.add(mappingResult);
-                        continue;
                     } else {
                         switch (mapping.getMappingAction()) {
                             case NewOrExisting:
@@ -432,9 +415,18 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                     }
                 }
                 mappingsRtn.add(mappingResult);
+
+                if (mappingResult.getException() != null) {
+                    transactionStatus.setRollbackOnly();
+                }
             } catch (Throwable e) {
-                // Add this result and continue next mapping
+                logger.log(
+                    test? Level.FINE : Level.WARNING,
+                    "Error importing bundle " + bundleName + "on procesing " + mappingInfo + "\n" + e.getMessage(),
+                    ExceptionUtils.getDebugException(e)
+                );
                 mappingsRtn.add(new EntityMappingResult(mapping.getSourceEntityHeader(), e));
+                transactionStatus.setRollbackOnly();
             }
         }
 
@@ -484,6 +476,10 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                     return null;
                 }
             });
+        }
+
+        if (containsErrors(mappingsRtn)) {
+            transactionStatus.setRollbackOnly();
         }
 
         return mappingsRtn;
@@ -1200,7 +1196,8 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                     }
                 } catch (Exception e) {
                     //This will catch exceptions like org.springframework.dao.DataIntegrityViolationException or other runtime exceptions
-                    return Option.some(new ObjectModelException("Error attempting to save or update " + entityContainer.getEntity().getClass() + ". Message: " + ExceptionUtils.getMessage(e), e));
+                    final Entity entity = entityContainer.getEntity();
+                    return Option.some(new ObjectModelException("Error attempting to save or update the " + entity.getClass().getSimpleName() + " with id = '" + entity.getId() + "'.  " + getCauseMessage(e), e));
                 }
                 return Option.none();
             }
@@ -1220,6 +1217,27 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
             resourceMapping.put(originalHeader, targetHeader);
         }
         return targetHeader;
+    }
+
+    /**
+     * Get the cause message from the given exception.  If the exception is or contains data constraint violation exception
+     * (such as DataIntegrityViolationException and org.hibernate.exception.ConstraintViolationException), get the cause
+     * message without low level SQL information such as database table schema information.
+     *
+     * @param e the exception thrown.
+     * @return a cause message depending on what type the exception is.
+     */
+    @NotNull
+    private String getCauseMessage(@NotNull final Exception e) {
+        final boolean isFirstCauseConstrainViolationException = e instanceof DataIntegrityViolationException && e.getCause() instanceof org.hibernate.exception.ConstraintViolationException;
+        final boolean isSecondCauseConstrainViolationException = e.getCause() instanceof DataIntegrityViolationException && e.getCause().getCause() instanceof org.hibernate.exception.ConstraintViolationException;
+        final boolean constraintViolationOccurs = isFirstCauseConstrainViolationException || isSecondCauseConstrainViolationException;
+
+        final String causeMessage = constraintViolationOccurs ?
+            "Constraint Violation: " + (isFirstCauseConstrainViolationException ? e.getCause().getMessage() : e.getCause().getCause().getMessage()) :
+            "Message: " + ExceptionUtils.getMessage(e);
+
+        return causeMessage;
     }
 
     private void throwIncorrectMappingInstructionsExceptionDueToIncorrectEntityType(@NotNull final EntityMappingInstructions mapping, @NotNull String mapByStr) throws IncorrectMappingInstructionsException {
