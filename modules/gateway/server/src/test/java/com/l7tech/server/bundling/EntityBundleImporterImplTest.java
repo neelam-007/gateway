@@ -23,6 +23,7 @@ import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.EntityCrud;
 import com.l7tech.server.EntityHeaderUtils;
 import com.l7tech.server.audit.AuditContextFactory;
+import com.l7tech.server.bundling.exceptions.IncorrectMappingInstructionsException;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.folder.FolderManager;
 import com.l7tech.server.identity.IdentityProviderFactory;
@@ -50,6 +51,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.DefaultTransactionStatus;
@@ -578,6 +580,82 @@ public class EntityBundleImporterImplTest {
         // 2.3 Verify the third mapping result - Service: TestService1
         final EntityMappingResult entityMappingResult_2_3 = bundleResult2.get(2);
         verifyEntityHeaderFromEntityMappingResult(entityMappingResult_2_3, service2, EntityMappingResult.MappingAction.UpdatedExisting);
+    }
+
+    /**
+     * This unit test is designed for testing the defect DE329428 "RESTman /bundle/batch end-pont import: Error exposes
+     * too much low level information when mapping is out of order".
+     * The defect rally ticket link: https://rally1.rallydev.com/#/86142232600d/detail/defect/175607872412
+     */
+    @Test
+    public void testErrorMappingResultNotShowLowLevelSqlInfo() throws FindException, SaveException, UpdateException {
+        final Folder rootFolder = EntityBundleBuilder.createRootFolder();
+        final PublishedService service1 = createTestingPublishedService(createTestingPolicy(), rootFolder, "TestServiceWithSameName", "/test1");
+        final PublishedService service2 = createTestingPublishedService(createTestingPolicy(), rootFolder, "TestServiceWithSameName", "/test2");
+        final Folder subFolder = EntityCreator.createFolderWithRandomGoid("SubFolder", rootFolder);
+
+        when(entityCrud.find(Folder.class, Folder.ROOT_FOLDER_ID.toString())).thenReturn(rootFolder);
+        when(entityCrud.findAll(PublishedService.class, CollectionUtils.MapBuilder.<String, List<Object>>builder().put("name", Arrays.asList("TestServiceWithSameName")).map(),
+            0, -1, null, null)).thenReturn(Arrays.asList(service1, service2));
+
+        final String originalCause = "could not delete: [" + subFolder.getClass().getName() + "#" + subFolder.getGoid().toString() + "]";
+        final DataIntegrityViolationException villationCause = new DataIntegrityViolationException("", new org.hibernate.exception.ConstraintViolationException(originalCause, null, null));
+        final RuntimeException mockedException = new RuntimeException("Mocked exception", villationCause);
+        doThrow(mockedException).when(entityCrud).save(subFolder.getGoid(), subFolder);
+
+        // First bundle is to delete two services.
+        final EntityBundle bundle1_deleteServices = new EntityBundleBuilder().
+            expectExistingRootFolder().
+            deleteServiceByName(service1).
+            deleteServiceByName(service2).create();
+
+        // The second bundle is to create a folder, which is totally independent from the services.
+        final EntityBundle bundle2_createFolder = new EntityBundleBuilder().
+            expectExistingRootFolder().
+            updateFolderByPath(subFolder).create();
+
+        final List<List<EntityMappingResult>> results = importer.importBundles(Arrays.asList(new EntityBundle[]{bundle1_deleteServices, bundle2_createFolder}), false, true, "");
+        assertTrue(results.size() == 2);
+
+        //////////////////////////////////////////////////////
+        // 1. Verify the error mapping result of the first bundle //
+        //////////////////////////////////////////////////////
+
+        final List<EntityMappingResult> bundleResult1 = results.get(0);
+        assertTrue(bundleResult1.size() == 3);
+
+        final EntityMappingResult entityMappingResult_1_2 = bundleResult1.get(1);
+        final EntityMappingResult entityMappingResult_1_3 = bundleResult1.get(2);
+        final Throwable entityMappingResult_1_2_Exception = entityMappingResult_1_2.getException();
+        final Throwable entityMappingResult_1_3_Exception = entityMappingResult_1_3.getException();
+        assertTrue(entityMappingResult_1_2_Exception instanceof IncorrectMappingInstructionsException);
+        assertTrue(entityMappingResult_1_3_Exception instanceof IncorrectMappingInstructionsException);
+
+        String expectedErrorMessage = "Incorrect mapping instructions: Found multiple possible target entities found with " +
+            "name: TestServiceWithSameName. Mapping for: EntityHeader. Name=TestServiceWithSameName, id=" + service1.getId() + ", description=TestServiceWithSameName, type = SERVICE";
+        assertEquals("The exception messages must be matched.", expectedErrorMessage, entityMappingResult_1_2_Exception.getMessage());
+        assertTrue("The exception message doesn't contain SQL information.", !expectedErrorMessage.contains("SQL"));
+
+        expectedErrorMessage = "Incorrect mapping instructions: Found multiple possible target entities found with name: " +
+            "TestServiceWithSameName. Mapping for: EntityHeader. Name=TestServiceWithSameName, id=" + service2.getId() + ", description=TestServiceWithSameName, type = SERVICE";
+        assertEquals("The exception messages must be matched.", expectedErrorMessage, entityMappingResult_1_3_Exception.getMessage());
+        assertTrue("The exception message doesn't contain SQL information.", !expectedErrorMessage.contains("SQL"));
+
+        ///////////////////////////////////////////////////////
+        // 2. Verify the error mapping result of the second bundle //
+        ///////////////////////////////////////////////////////
+
+        final List<EntityMappingResult> bundleResult2 = results.get(1);
+        assertTrue(bundleResult2.size() == 2);
+
+        final EntityMappingResult entityMappingResult_2_2 = bundleResult2.get(1);
+        final Throwable entityMappingResult_2_2_Exception = entityMappingResult_2_2.getException();
+        assertTrue(entityMappingResult_2_2_Exception instanceof ObjectModelException);
+
+        expectedErrorMessage = "Error attempting to save or update the Folder with id = '" + subFolder.getId() + "'.  " +
+            "Constraint Violation: could not delete: [com.l7tech.objectmodel.folder.Folder#" + subFolder.getId() + "]";
+        assertEquals("The exception messages must be matched.", expectedErrorMessage, entityMappingResult_2_2_Exception.getMessage());
+        assertTrue("The exception message doesn't contain SQL information.", !expectedErrorMessage.contains("SQL"));
     }
 
     /**

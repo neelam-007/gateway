@@ -35,6 +35,16 @@ public class EntityBundleBuilder {
         return this;
     }
 
+    public EntityBundleBuilder deleteServiceByName(@NotNull final PublishedService publishedService) {
+        entities.add(new EntityContainer(publishedService));
+        final EntityMappingInstructions.TargetMapping serviceTargetMapping = new EntityMappingInstructions.TargetMapping(EntityMappingInstructions.TargetMapping.Type.NAME);
+        final EntityMappingInstructions serviceMappingInstructions = new EntityMappingInstructions(
+            EntityHeaderUtils.fromEntity(publishedService), serviceTargetMapping, EntityMappingInstructions.MappingAction.Delete, false, false
+        );
+        instructions.add(serviceMappingInstructions);
+        return this;
+    }
+
     public EntityBundleBuilder updateFolderByPath(@NotNull final Folder folder) {
         entities.add(new EntityContainer(folder));
         final EntityMappingInstructions.TargetMapping folderTargetMapping = new EntityMappingInstructions.TargetMapping(EntityMappingInstructions.TargetMapping.Type.PATH);
