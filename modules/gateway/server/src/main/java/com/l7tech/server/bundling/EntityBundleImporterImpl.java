@@ -422,7 +422,7 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
             } catch (Throwable e) {
                 logger.log(
                     test? Level.FINE : Level.WARNING,
-                    "Error importing bundle " + bundleName + "on procesing " + mappingInfo + "\n" + e.getMessage(),
+                    "Error importing bundle " + bundleName + "on processing " + mappingInfo + "\n" + e.getMessage(),
                     ExceptionUtils.getDebugException(e)
                 );
                 mappingsRtn.add(new EntityMappingResult(mapping.getSourceEntityHeader(), e));
@@ -1229,12 +1229,12 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
      */
     @NotNull
     private String getCauseMessage(@NotNull final Exception e) {
-        final boolean isFirstCauseConstrainViolationException = e instanceof DataIntegrityViolationException && e.getCause() instanceof org.hibernate.exception.ConstraintViolationException;
-        final boolean isSecondCauseConstrainViolationException = e.getCause() instanceof DataIntegrityViolationException && e.getCause().getCause() instanceof org.hibernate.exception.ConstraintViolationException;
-        final boolean constraintViolationOccurs = isFirstCauseConstrainViolationException || isSecondCauseConstrainViolationException;
+        final boolean isFirstCauseConstraintViolationException = e instanceof DataIntegrityViolationException && e.getCause() instanceof org.hibernate.exception.ConstraintViolationException;
+        final boolean isSecondCauseConstraintViolationException = e.getCause() instanceof DataIntegrityViolationException && e.getCause().getCause() instanceof org.hibernate.exception.ConstraintViolationException;
+        final boolean constraintViolationOccurs = isFirstCauseConstraintViolationException || isSecondCauseConstraintViolationException;
 
         final String causeMessage = constraintViolationOccurs ?
-            "Constraint Violation: " + (isFirstCauseConstrainViolationException ? e.getCause().getMessage() : e.getCause().getCause().getMessage()) :
+            "Constraint Violation: " + (isFirstCauseConstraintViolationException ? e.getCause().getMessage() : e.getCause().getCause().getMessage()) :
             "Message: " + ExceptionUtils.getMessage(e);
 
         return causeMessage;
