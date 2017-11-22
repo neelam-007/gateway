@@ -1196,12 +1196,8 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
                     }
                 } catch (Exception e) {
                     //This will catch exceptions like org.springframework.dao.DataIntegrityViolationException or other runtime exceptions
-
                     final Entity entity = entityContainer.getEntity();
-                    final String errorMessage = (e instanceof DataIntegrityViolationException && e.getCause() instanceof org.hibernate.exception.ConstraintViolationException)?
-                        ("Constraint Violation: " + e.getCause().getMessage()) : "Message: " + ExceptionUtils.getMessage(e);
-
-                    return Option.some(new ObjectModelException("Error attempting to save or update the " + entity.getClass().getSimpleName() + " with id = '" + entity.getId() + "'.  " + errorMessage, e));
+                    return Option.some(new ObjectModelException("Error attempting to save or update the " + entity.getClass().getSimpleName() + " with id = '" + entity.getId() + "'.  " + getCauseMessage(e), e));
                 }
                 return Option.none();
             }
@@ -1221,6 +1217,27 @@ public class EntityBundleImporterImpl implements EntityBundleImporter {
             resourceMapping.put(originalHeader, targetHeader);
         }
         return targetHeader;
+    }
+
+    /**
+     * Get the cause message from the given exception.  If the exception is or contains data constraint violation exception
+     * (such as DataIntegrityViolationException and org.hibernate.exception.ConstraintViolationException), get the cause
+     * message without low level SQL information such as database table schema information.
+     *
+     * @param e the exception thrown.
+     * @return a cause message depending on what type the exception is.
+     */
+    @NotNull
+    private String getCauseMessage(@NotNull final Exception e) {
+        final boolean isFirstCauseConstrainViolationException = e instanceof DataIntegrityViolationException && e.getCause() instanceof org.hibernate.exception.ConstraintViolationException;
+        final boolean isSecondCauseConstrainViolationException = e.getCause() instanceof DataIntegrityViolationException && e.getCause().getCause() instanceof org.hibernate.exception.ConstraintViolationException;
+        final boolean constraintViolationOccurs = isFirstCauseConstrainViolationException || isSecondCauseConstrainViolationException;
+
+        final String causeMessage = constraintViolationOccurs ?
+            "Constraint Violation: " + (isFirstCauseConstrainViolationException ? e.getCause().getMessage() : e.getCause().getCause().getMessage()) :
+            "Message: " + ExceptionUtils.getMessage(e);
+
+        return causeMessage;
     }
 
     private void throwIncorrectMappingInstructionsExceptionDueToIncorrectEntityType(@NotNull final EntityMappingInstructions mapping, @NotNull String mapByStr) throws IncorrectMappingInstructionsException {
