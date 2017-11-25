@@ -48,8 +48,7 @@ public class ServerIncrementalSyncCommon {
             "OR ( o.MODIFY_TS > ? and o.MODIFY_TS <= ?) OR (t.TENANT_GATEWAY_UUID = ? AND t.SYNC_LOG IS NOT NULL) " +
             "OR (a3.API_GROUP_UUID IS NOT NULL AND a3.API_GROUP_MODIFIED_TS > ? AND a3.API_GROUP_MODIFIED_TS <= ?) " +
             "OR (a3.API_GROUP_UUID IS NOT NULL AND a3.API_GROUP_CREATED_TS = a3.API_GROUP_MODIFIED_TS AND a3.API_GROUP_CREATED_TS > ? AND a3.API_GROUP_CREATED_TS <= ?)) " +
-            "AND a3.TENANT_ID = '%s' " +
-            "GROUP BY a3.API_UUID";
+            "AND a3.TENANT_ID = '%s' ";
 
     final static String SELECT_DELETED_ENTITIES_SQL="SELECT ENTITY_UUID FROM DELETED_ENTITY WHERE TYPE = '%s' AND DELETED_TS > ? AND DELETED_TS <= ? AND TENANT_ID='%s'";
     static final String BULK_SYNC_TRUE = "true";
