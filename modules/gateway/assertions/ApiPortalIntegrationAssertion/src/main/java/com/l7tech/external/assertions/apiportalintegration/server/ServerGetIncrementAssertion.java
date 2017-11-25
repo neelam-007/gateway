@@ -180,7 +180,7 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
             results = (Map<String, List>) queryJdbc(
                     connName,
                     ServerIncrementalSyncCommon.getSyncUpdatedAppEntities(
-                            Lists.newArrayList("a3.UUID", "concat(a3.NAME, '-', o.NAME) as NAME", "a3.API_KEY", "a3.KEY_SECRET", "coalesce(r.PREVIOUS_STATE, a3.STATUS) as STATUS", "a3.ORGANIZATION_UUID", "o.NAME as ORGANIZATION_NAME", "a3.OAUTH_CALLBACK_URL", "a3.OAUTH_SCOPE", "a3.OAUTH_TYPE", "a3.MAG_SCOPE", "a3.MAG_MASTER_KEY", "a3.API_UUID", "a3.CREATED_BY", "a3.MODIFIED_BY"),
+                            Lists.newArrayList("DISTINCT a3.API_UUID", "a3.UUID", "concat(a3.NAME, '-', o.NAME) as NAME", "a3.API_KEY", "a3.KEY_SECRET", "coalesce(r.PREVIOUS_STATE, a3.STATUS) as STATUS", "a3.ORGANIZATION_UUID", "o.NAME as ORGANIZATION_NAME", "a3.OAUTH_CALLBACK_URL", "a3.OAUTH_SCOPE", "a3.OAUTH_TYPE", "a3.MAG_SCOPE", "a3.MAG_MASTER_KEY", "a3.CREATED_BY", "a3.MODIFIED_BY"),
                             tenantId),
                     CollectionUtils.list(since, incrementStart, since, incrementStart, since, incrementStart, nodeId, since, incrementStart, since, incrementStart));
         } else {
