@@ -360,6 +360,7 @@ public class ManageSolutionKitsDialog extends JDialog {
     private void onClose() {
         TopComponents.getInstance().refreshPoliciesFolderNode();
         TopComponents.getInstance().refreshEntitiesProtectionCache();
+        TopComponents.getInstance().refreshIdentityProvidersTree();
         dispose();
     }
 
