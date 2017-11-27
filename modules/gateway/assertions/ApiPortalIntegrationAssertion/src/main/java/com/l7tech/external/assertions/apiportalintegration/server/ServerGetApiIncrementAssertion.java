@@ -150,8 +150,8 @@ public class ServerGetApiIncrementAssertion extends AbstractServerAssertion<GetA
 
     if (apiV2EntityMap.size() > 0) {
       String apiUuids = "'" + StringUtils.join(apiV2EntityMap.keySet(), "','") + "'";
-      buildCustomFields(apiV2EntityMap, apiUuids);
-      buildPolicyEntities(apiV2EntityMap, apiUuids);
+      buildCustomFields(apiV2EntityMap, apiUuids, tenantId);
+      buildPolicyEntities(apiV2EntityMap, apiUuids, tenantId);
     }
 
     return CollectionUtils.toListFromCollection(apiV2EntityMap.values());
@@ -188,15 +188,14 @@ public class ServerGetApiIncrementAssertion extends AbstractServerAssertion<GetA
    * @param apiV2EntityMap
    * @param apiUuids
    */
-  private void buildCustomFields(Map<String, ApiEntity> apiV2EntityMap, String apiUuids) {
+  private void buildCustomFields(Map<String, ApiEntity> apiV2EntityMap, String apiUuids, String tenantId) {
     Map<String, List> results = (Map<String, List>) queryJdbc(jdbcConnectionName.toString(),
            "SELECT\n" +
             "   NAME,\n" +
             "   ENTITY_UUID,\n" +
             "   VALUE\n" +
             "FROM CUSTOM_FIELD_VALUE_VIEW \n" +
-            "WHERE ENTITY_UUID in (" + apiUuids + ")", Collections.EMPTY_LIST);
-
+            "WHERE ENTITY_UUID in (" + apiUuids + ") AND TENANT_ID = ?", CollectionUtils.list(tenantId));
     logger.log(Level.FINE, "Fetched " + results.size() + " Custom Fields from database");
 
     if (results.size() > 0) {
@@ -220,7 +219,7 @@ public class ServerGetApiIncrementAssertion extends AbstractServerAssertion<GetA
    * @param apiV2EntityMap
    * @param apiUuids
    */
-  private void buildPolicyEntities(Map<String, ApiEntity> apiV2EntityMap, String apiUuids) {
+  private void buildPolicyEntities(Map<String, ApiEntity> apiV2EntityMap, String apiUuids, String tenantId) {
 
     Map<String, List> results = (Map<String, List>) queryJdbc(jdbcConnectionName.toString(),
            "SELECT\n" +
@@ -228,9 +227,8 @@ public class ServerGetApiIncrementAssertion extends AbstractServerAssertion<GetA
             "   API_UUID,\n" +
             "   POLICY_ENTITY_UUID\n" +
             "FROM API_POLICY_ENTITY_XREF \n" +
-            "WHERE API_UUID in (" + apiUuids + ")" +
-               " ORDER BY ORDINAL ASC", Collections.EMPTY_LIST);
-
+            "WHERE API_UUID in (" + apiUuids + ") AND TENANT_ID = ?" +
+               " ORDER BY ORDINAL ASC", CollectionUtils.list(tenantId));
     logger.log(Level.FINE, "Fetched " + results.size() + " Policy entities from database");
 
     if (results.size() > 0) {
@@ -249,7 +247,7 @@ public class ServerGetApiIncrementAssertion extends AbstractServerAssertion<GetA
 
       logger.log(Level.FINE, "Linked policy entities with their respective api v2 object");
 
-      buildPolicyTemplateArguments(policyEntityMap, apiUuids);
+      buildPolicyTemplateArguments(policyEntityMap, apiUuids, tenantId);
     }
   }
 
@@ -258,15 +256,14 @@ public class ServerGetApiIncrementAssertion extends AbstractServerAssertion<GetA
    * @param policyEntityMap
    * @param apiUuids
    */
-  private void buildPolicyTemplateArguments(Map<String, PolicyEntity> policyEntityMap, String apiUuids) {
+  private void buildPolicyTemplateArguments(Map<String, PolicyEntity> policyEntityMap, String apiUuids, String tenantId) {
     Map<String, List> results = (Map<String, List>) queryJdbc(jdbcConnectionName.toString(),
            "SELECT\n" +
             "   API_POLICY_ENTITY_XREF_UUID,\n" +
             "   NAME,\n" +
             "   VALUE\n" +
             "FROM API_POLICY_TEMPLATE_XREF_VIEW\n" +
-            "WHERE API_UUID in (" + apiUuids + ")", Collections.EMPTY_LIST);
-
+            "WHERE API_UUID in (" + apiUuids + ") AND TENANT_ID = ?", CollectionUtils.list(tenantId));
     logger.log(Level.FINE, "Fetched " + results.size() + " Policy template Arguments from database");
 
     if (results.size() > 0) {
