@@ -53,7 +53,7 @@ public class RefreshTreeNodeAction extends RefreshAction {
 
             // The below if-statement is added to fix DE310280 (Context menu refresh not working), which was caused
             // by fixing DE304198 (Policy manager is not refreshing after new entity created/removed).  The new fix is
-            // to rootNode.hasLoadedChildren when it is multi-selection or the selected node is root node.
+            // to reset rootNode.hasLoadedChildren to false when it is multi-selection or the selected node is root node.
             if (isMultipleSelection || node == rootNode) {
                 rootNode.hasLoadedChildren = false;
             }
