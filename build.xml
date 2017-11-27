@@ -873,29 +873,16 @@
     </target>
 
     <!--
-      Configure and invoke unit tests
-    -->
-    <target name="test" description="Run JUnit tests" depends="test.work, report.test">
-        <checkfail/>
-    </target>
-
-    <!--
-      Run tests
-    -->
-    <target name="test.work" depends="publish-all-modules">
-    </target>
-
-    <!--
       Run all unit tests
     -->
-    <target name="test.all" description="Run all JUnit tests" depends="test.work, report.test">
+    <target name="test.all" description="Run all JUnit tests" depends="publish-all-modules, report.test">
         <checkfail/>
     </target>
 
     <!--
       Run all unit tests and reports
     -->
-    <target name="test.junit" description="Run all JUnit tests and reports" depends="test.work, report.test, report.jdepend, report.findbugs, report.dependencies, javadoc">
+    <target name="test.junit" description="Run all JUnit tests and reports" depends="publish-all-modules, report.test, report.jdepend, report.findbugs, report.dependencies, javadoc">
         <checkfail/>
     </target>
 
