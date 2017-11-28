@@ -5,11 +5,11 @@
 
 # Note the policy manager version is now kept in UneasyRooster/modules/gateway/console/src/main/resources/com/l7tech/config.properties
 build.version.major=9
-build.version.minor=3
+build.version.minor=4
 build.version.subminor=00
 
 build.em.version.major=1
-build.em.version.minor=18
+build.em.version.minor=19
 build.em.version.subminor=00
 build.em.version.revision=1
 
