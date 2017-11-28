@@ -225,7 +225,7 @@ public class ServerIncrementPostBackAssertionTest {
                         } else if (((String) invocation.getArguments()[2]).startsWith("SELECT ENTITY_UUID FROM DELETED_ENTITY WHERE TYPE = 'APPLICATION' AND DELETED_TS > ? AND DELETED_TS <= ?")) {
                             ImmutableMap<String, ArrayList<String>> result = ImmutableMap.of(entity_uuid_column, Lists.<String>newArrayList("updatedelete1", "insertdelete2"));
                             return result;
-                        } else if (((String) invocation.getArguments()[2]).startsWith(String.format(ServerIncrementalSyncCommon.SELECT_ENTITIES_SQL, "a3."+uuid_column.toUpperCase(),TENANT_ID ))) {
+                        } else if (((String) invocation.getArguments()[2]).startsWith(String.format(ServerIncrementalSyncCommon.SELECT_ENTITIES_SQL, "DISTINCT a3.API_UUID,a3."+uuid_column.toUpperCase(),TENANT_ID ))) {
                             ImmutableMap<String, ArrayList<String>> result = ImmutableMap.of(uuid_column, Lists.newArrayList("update1", "insert1"));
                             return result;
                         }else if (((String) invocation.getArguments()[2]).startsWith(String.format("SELECT  %s FROM APPLICATION_TENANT_GATEWAY WHERE TENANT_GATEWAY_UUID=? and APPLICATION_UUID IN (",
