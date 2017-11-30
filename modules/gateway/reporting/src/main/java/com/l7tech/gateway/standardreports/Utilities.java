@@ -99,11 +99,11 @@ public class Utilities {
     static final String MAPPING_VALUE_4 = "MAPPING_VALUE_4";
     static final String MAPPING_VALUE_5 = "MAPPING_VALUE_5";
 
-    private final static String distinctFrom = "SELECT distinct goidToString(p.goid) as SERVICE_ID, p.name as SERVICE_NAME, " +
-            "p.routing_uri as ROUTING_URI ,'1' as CONSTANT_GROUP";
+    private final static String distinctFrom = "SELECT distinct goidToString(p.goid) as SERVICE_ID, ANY_VALUE(p.name) as SERVICE_NAME, " +
+            "ANY_VALUE(p.routing_uri) as ROUTING_URI ,'1' as CONSTANT_GROUP";
 
-    private final static String aggregateSelect = "SELECT goidToString(p.goid) as SERVICE_ID, " +
-            "p.name as SERVICE_NAME, p.routing_uri as ROUTING_URI, " +
+    private final static String aggregateSelect = "SELECT ANY_VALUE(goidToString(p.goid)) as SERVICE_ID, " +
+            "ANY_VALUE(p.name) as SERVICE_NAME, ANY_VALUE(p.routing_uri) as ROUTING_URI, " +
             "SUM({0}.attempted) as ATTEMPTED, " +
             "SUM({0}.authorized) as AUTHORIZED, " +
             "SUM({0}.front_sum) as FRONT_SUM, " +
@@ -120,8 +120,8 @@ public class Utilities {
             "if(SUM({0}.attempted), ( 1.0 - ( ( (SUM({0}.authorized) - SUM({0}.completed)) / SUM({0}.attempted) ) ) ) , 0) as 'AP'" +
             " ,'1' as CONSTANT_GROUP ";
 
-    private final static String usageAggregateSelect = "SELECT goidToString(p.goid) as SERVICE_ID, " +
-            "p.name as SERVICE_NAME, p.routing_uri as ROUTING_URI, " +
+    private final static String usageAggregateSelect = "SELECT ANY_VALUE(goidToString(p.goid)) as SERVICE_ID, " +
+            "ANY_VALUE(p.name) as SERVICE_NAME, ANY_VALUE(p.routing_uri) as ROUTING_URI, " +
             "SUM(if(smd.completed, smd.completed,0)) as USAGE_SUM,'1' as CONSTANT_GROUP ";
 
     private final static String mappingJoin = " FROM service_metrics sm, published_service p, service_metrics_details smd," +
