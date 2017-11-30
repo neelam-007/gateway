@@ -553,6 +553,66 @@ public class ServerODataAssertionHsqlDbTest {
   }
 
   @Test
+  public void testGetEntitiesCountWithOrExpressionFilterGroup3() throws Exception {
+    MockServletContext servletContext = new MockServletContext();
+    MockHttpServletRequest hrequest = new MockHttpServletRequest(servletContext);
+    hrequest.setRequestURI("/OData.svc/TableName1s/$count");
+    hrequest.setQueryString("$filter=StrCol eq 'value1' or (StrCol eq 'value1' or StrCol eq 'value2')");
+    hrequest.setMethod("GET");
+    request.attachHttpRequestKnob(new HttpServletRequestKnob(hrequest));
+    peCtx = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
+
+    ServerODataProducerAssertion sass = (ServerODataProducerAssertion) serverPolicyFactory.compilePolicy(assertion, false);
+    AssertionStatus status = sass.checkRequest(peCtx);
+    String payloadAsString = IOUtils.toString(sass.getPayload(peCtx.getResponse()), "UTF-8");
+    assertEquals(AssertionStatus.NONE, status);
+    assertNotNull(payloadAsString);
+    assertEquals("2", removeUpdatedDateElement(payloadAsString));
+
+    //let's add a new record, count should increase
+    update(connection, "INSERT INTO " + TABLE_NAME + " values(3,'value3','3')");
+
+    status = sass.checkRequest(peCtx);
+    payloadAsString = IOUtils.toString(sass.getPayload(peCtx.getResponse()), "UTF-8");
+    assertEquals(AssertionStatus.NONE, status);
+    assertNotNull(payloadAsString);
+    assertEquals("2", removeUpdatedDateElement(payloadAsString));
+  }
+
+  @Test
+  public void testGetEntitiesCountWithOrExpressionFilterGroup4() throws Exception {
+    MockServletContext servletContext = new MockServletContext();
+    MockHttpServletRequest hrequest = new MockHttpServletRequest(servletContext);
+    hrequest.setRequestURI("/OData.svc/TableName1s/$count");
+    hrequest.setQueryString("$filter=(StrCol eq 'value1' " +
+            "or (" +
+            "(StrCol eq 'value1' or StrCol eq 'value2' or StrCol eq 'value1' or StrCol eq 'value2') " +
+            "and " +
+            "(StrCol eq 'value1' or StrCol eq 'value2' or StrCol eq 'value1' or StrCol eq 'value2')" +
+            ")" +
+            ")");
+    hrequest.setMethod("GET");
+    request.attachHttpRequestKnob(new HttpServletRequestKnob(hrequest));
+    peCtx = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response);
+
+    ServerODataProducerAssertion sass = (ServerODataProducerAssertion) serverPolicyFactory.compilePolicy(assertion, false);
+    AssertionStatus status = sass.checkRequest(peCtx);
+    String payloadAsString = IOUtils.toString(sass.getPayload(peCtx.getResponse()), "UTF-8");
+    assertEquals(AssertionStatus.NONE, status);
+    assertNotNull(payloadAsString);
+    assertEquals("2", removeUpdatedDateElement(payloadAsString));
+
+    //let's add a new record, count should increase
+    update(connection, "INSERT INTO " + TABLE_NAME + " values(3,'value3','3')");
+
+    status = sass.checkRequest(peCtx);
+    payloadAsString = IOUtils.toString(sass.getPayload(peCtx.getResponse()), "UTF-8");
+    assertEquals(AssertionStatus.NONE, status);
+    assertNotNull(payloadAsString);
+    assertEquals("2", removeUpdatedDateElement(payloadAsString));
+  }
+
+  @Test
   public void testGetEntitiesCountWithInvalidFilter() throws Exception {
     MockServletContext servletContext = new MockServletContext();
     MockHttpServletRequest hrequest = new MockHttpServletRequest(servletContext);
