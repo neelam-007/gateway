@@ -93,6 +93,7 @@ public class GenerateWhereClause implements ExpressionVisitor {
 
   public void append(StringBuilder sql, List<SqlParameter> params) {
     sql.append(" WHERE ");
+    afterDescend();
     sql.append(sb);
     params.addAll(this.params);
   }
