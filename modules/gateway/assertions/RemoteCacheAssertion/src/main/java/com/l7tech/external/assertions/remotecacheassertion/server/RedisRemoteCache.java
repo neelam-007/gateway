@@ -48,7 +48,6 @@ public class RedisRemoteCache implements RemoteCache {
     private RemoteCacheEntity remoteCacheEntity;
     private JedisCluster cluster = null;
     private JedisPool pool = null;
-    private Jedis client = null;
     private HashMap<String, String> properties;
 
     public RedisRemoteCache(RemoteCacheEntity entity) throws Exception {
@@ -81,9 +80,8 @@ public class RedisRemoteCache implements RemoteCache {
     /**
      * Constructor for unit test purpose
      */
-    RedisRemoteCache(RemoteCacheEntity entity, Jedis client, JedisPool pool, JedisCluster cluster) {
+    RedisRemoteCache(RemoteCacheEntity entity, JedisPool pool, JedisCluster cluster) {
         this.remoteCacheEntity = entity;
-        this.client = client;
         this.pool = pool;
         this.cluster = cluster;
         properties = remoteCacheEntity.getProperties();
@@ -99,13 +97,13 @@ public class RedisRemoteCache implements RemoteCache {
         GenericObjectPoolConfig poolConfig = new GenericObjectPoolConfig();
 
         if (StringUtils.isNotBlank(properties.get(APACHE_POOL_TIME_BETWEEN_EVICTION_RUNS_MILLIS))) {
-            poolConfig.setTimeBetweenEvictionRunsMillis(Long.valueOf(properties.get(APACHE_POOL_TIME_BETWEEN_EVICTION_RUNS_MILLIS)));
+            poolConfig.setTimeBetweenEvictionRunsMillis(Long.parseLong(properties.get(APACHE_POOL_TIME_BETWEEN_EVICTION_RUNS_MILLIS)));
         }
         if (StringUtils.isNotBlank(properties.get(APACHE_POOL_TEST_WHILE_IDLE))) {
             poolConfig.setTestWhileIdle(Boolean.parseBoolean(properties.get(APACHE_POOL_TEST_WHILE_IDLE)));
         }
         if (StringUtils.isNotBlank(properties.get(APACHE_POOL_MIN_EVICTABLE_IDLE_TIME_MILLIS))) {
-            poolConfig.setMinEvictableIdleTimeMillis(Long.valueOf(properties.get(APACHE_POOL_MIN_EVICTABLE_IDLE_TIME_MILLIS)));
+            poolConfig.setMinEvictableIdleTimeMillis(Long.parseLong(properties.get(APACHE_POOL_MIN_EVICTABLE_IDLE_TIME_MILLIS)));
         }
         if (StringUtils.isNotBlank(properties.get(APACHE_POOL_NUM_TESTS_PER_EVICTION_RUN))) {
             poolConfig.setNumTestsPerEvictionRun(Integer.parseInt(properties.get(APACHE_POOL_NUM_TESTS_PER_EVICTION_RUN)));
@@ -203,23 +201,19 @@ public class RedisRemoteCache implements RemoteCache {
     @Override
     public CachedMessageData get(String key) throws Exception {
         String value;
-        try {
-            if (isCluster()) {
-                value = cluster.get(key);
-            } else {
-                client = pool.getResource();
+        if (isCluster()) {
+            value = cluster.get(key);
+        } else {
+            try (Jedis client = pool.getResource()) {
                 value = client.get(key);
-                closeClient();
             }
-            if (null == value) {
-                throw new Exception("Cached entry not found for key: " + key);
-            }
-            return new CachedMessageData((value).getBytes());
-        } catch (JedisException ex) {
-            throw ex;
-        } finally {
-            closeClient();
         }
+
+        if (null == value) {
+            throw new Exception("Cached entry not found for key: " + key);
+        }
+
+        return new CachedMessageData((value).getBytes());
     }
 
     /**
@@ -234,23 +228,18 @@ public class RedisRemoteCache implements RemoteCache {
     @Override
     public void set(String key, CachedMessageData value, int expiry) throws Exception {
         String reply;
-        try {
-            if (isCluster()) {
-                reply = cluster.set(key, new String(value.toByteArray()));
-                cluster.expire(key, expiry);
-            } else {
-                client = pool.getResource();
+
+        if (isCluster()) {
+            reply = cluster.set(key, new String(value.toByteArray()));
+            cluster.expire(key, expiry);
+        } else {
+            try (Jedis client = pool.getResource()) {
                 reply = client.set(key, new String(value.toByteArray()));
                 client.expire(key, expiry);
-                closeClient();
             }
-            if (null == reply || !reply.equals("OK")) {
-                throw new Exception("Could not set the cache key" + key);
-            }
-        } catch (JedisException ex) {
-            throw ex;
-        } finally {
-            closeClient();
+        }
+        if (null == reply || !reply.equals("OK")) {
+            throw new Exception("Could not set the cache key" + key);
         }
     }
 
@@ -263,21 +252,16 @@ public class RedisRemoteCache implements RemoteCache {
     @Override
     public void remove(String key) throws Exception {
         Long reply;
-        try {
-            if (isCluster()) {
-                reply = cluster.del(key);
-            } else {
-                client = pool.getResource();
+
+        if (isCluster()) {
+            reply = cluster.del(key);
+        } else {
+            try (Jedis client = pool.getResource()) {
                 reply = client.del(key);
-                closeClient();
             }
-            if (0 == reply) {
-                throw new Exception("Unable to remove key " + key + " .Key does not exists!");
-            }
-        } catch (JedisException ex) {
-            throw ex;
-        } finally {
-            closeClient();
+        }
+        if (0 == reply) {
+            throw new Exception("Unable to remove key " + key + " .Key does not exists!");
         }
     }
 
@@ -288,24 +272,10 @@ public class RedisRemoteCache implements RemoteCache {
     @Override
     public void shutdown() {
         if (pool != null) {
-            if (client != null) {
-                closeClient();
-            }
             pool.close();
         }
         if (cluster != null) {
             cluster.close();
-        }
-    }
-
-    /**
-     * helper function to return client to the pool and disconnects the connection
-     */
-    private void closeClient() {
-        if (client != null && client.isConnected()) {
-            pool.returnResourceObject(client);
-            client.disconnect();
-            client = null;
         }
     }
 }

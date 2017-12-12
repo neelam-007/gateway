@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.remotecacheassertion.console;
 
 import com.l7tech.external.assertions.remotecacheassertion.RemoteCacheEntity;
 import com.l7tech.external.assertions.remotecacheassertion.RemoteCacheTypes;
+import com.l7tech.external.assertions.remotecacheassertion.server.RemoteCache;
 import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
 
@@ -31,8 +32,11 @@ public class CacheServerDialog extends JDialog {
     private JButton okButton;
     private JButton cancelButton;
     private JCheckBox enabledCheckBox;
+    private JLabel timeoutLabel;
 
     private static final String TITLE = "Remote Cache Configuration";
+    private static final String TIMEOUT_LABEL_SECONDS = "Timeout (s):";
+    private static final String TIMEOUT_LABEL_MSECONDS = "Timeout (ms):";
 
     /**
      * @noinspection ThisEscapedInObjectConstruction
@@ -129,6 +133,7 @@ public class CacheServerDialog extends JDialog {
                     default:
                         break;
                 }
+                setTimeoutLabel();
                 pack();
             }
         });
@@ -204,6 +209,7 @@ public class CacheServerDialog extends JDialog {
             default:
                 break;
         }
+        setTimeoutLabel();
         pack();
     }
 
@@ -229,5 +235,13 @@ public class CacheServerDialog extends JDialog {
             remoteCache.setProperties(cacheConfigPanel.getData());
         }
         return remoteCache;
+    }
+
+    private void setTimeoutLabel() {
+        if (cacheConfigPanel != null && cacheConfigPanel instanceof RedisConfigPanel) {
+            timeoutLabel.setText(TIMEOUT_LABEL_MSECONDS);
+        } else {
+            timeoutLabel.setText(TIMEOUT_LABEL_SECONDS);
+        }
     }
 }
