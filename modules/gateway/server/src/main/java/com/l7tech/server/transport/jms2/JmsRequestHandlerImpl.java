@@ -295,7 +295,8 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
                                     faultMessage = msg1;
                                     faultCode = SoapUtil.FC_CLIENT;
                                 } catch (Throwable t) {
-                                    _logger.warning("Exception while processing JMS message: " + ExceptionUtils.getMessage(t));
+                                    _logger.log(Level.WARNING, "Exception while processing JMS message: " + ExceptionUtils.getMessage(t),
+                                            ExceptionUtils.getDebugException(t));
                                     faultMessage = t.getMessage();
                                     if (faultMessage == null) faultMessage = t.toString();
                                 }

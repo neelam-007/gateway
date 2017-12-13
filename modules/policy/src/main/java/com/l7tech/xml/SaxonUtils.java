@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -41,6 +42,7 @@ public class SaxonUtils {
     private static final String PROP_SAXON_ALLOW_COLLATION = "com.l7tech.xml.xslt.saxon.allowCollation";
     private static final String PROP_SAXON_ALLOW_COLLECTIONS = "com.l7tech.xml.xslt.saxon.allowCollections";
     private static final String PROP_SAXON_ALLOW_ENTITY_RESOLUTION = "com.l7tech.xml.xslt.saxon.allowEntityResolution";
+    private static final String PROP_SAXON_GENERATE_BYTECODE = "com.l7tech.xml.xslt.saxon.generateByteCode";
 
     // Layer 7 Technologies license key for Saxon Enterprise Edition
     private static final String key =
@@ -59,13 +61,12 @@ public class SaxonUtils {
 
     private static final Configuration configuration;
     private static final Processor processor;
-    private static final AtomicBoolean enableBytecode = new AtomicBoolean(true);
+    private static final AtomicBoolean enableBytecode = new AtomicBoolean(
+            ConfigFactory.getBooleanProperty(SaxonUtils.PROP_SAXON_GENERATE_BYTECODE, true));
 
     static {
         // Activate licensed configuration and s9api processor
-        EnterpriseConfiguration conf = new EnterpriseConfiguration();
-        activate(conf);
-        configuration = conf;
+        configuration = newConfiguration();
 
         processor = new Processor(configuration);
         activate(processor);
@@ -122,6 +123,8 @@ public class SaxonUtils {
      * @throws TransformerConfigurationException if an error occurs while attempting to configure the transformer factory.
      */
     public static void configureSecureSaxonTransformerFactory(@NotNull TransformerFactory transfactory, boolean useSharedConfiguration) throws TransformerConfigurationException {
+        logger.log(Level.FINE,"Using shared configuration for Saxon: {0}", useSharedConfiguration);
+
         // Share global configuration for now
         final Configuration config = useSharedConfiguration
                 ? getConfiguration()
