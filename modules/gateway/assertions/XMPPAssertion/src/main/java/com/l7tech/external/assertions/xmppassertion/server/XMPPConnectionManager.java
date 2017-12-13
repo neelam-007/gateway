@@ -348,6 +348,7 @@ public class XMPPConnectionManager {
                 Object sessionConfig = classHelper.ioServiceGetSessionConfig(acceptor);
                 classHelper.ioSessionConfigSetReadBufferSize(sessionConfig, 2048);
                 classHelper.ioSessionConfigSetIdleTime(sessionConfig, classHelper.getIdleStatus_BOTH_IDLE(), 120);
+                classHelper.nioSocketAcceptorSetReuseAddress(acceptor, true);
                 classHelper.ioAcceptorBind(acceptor, new InetSocketAddress(entity.getBindAddress(), entity.getPort()));
 
                 synchronized(pendingInboundConnections) {

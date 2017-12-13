@@ -60,6 +60,15 @@ public interface XMPPClassHelper {
     Object nioSocketAcceptorGetFilterChain(Object service) throws XMPPClassHelperNotInitializedException, XMPPMinaClassException;
 
     /**
+     * Set the Reuse Address flag
+     * @param acceptor The NIO socket acceptor to set reuse address for
+     * @param reuseAddress The flag to set
+     * @throws XMPPClassHelperNotInitializedException If this XMPPClassHelper was not initialized properly
+     * @throws XMPPMinaClassException  If there was a problem accessing the classes in the other ClassLoader
+     */
+    void nioSocketAcceptorSetReuseAddress(Object acceptor, boolean reuseAddress) throws XMPPClassHelperNotInitializedException, XMPPMinaClassException;
+
+    /**
      * Returns ((NioSocketConnector)service).getFilterChain()
      * @param service The NIO socket connector to get the filter chain for
      * @return The DefaultIoFilterChain for service
