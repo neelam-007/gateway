@@ -1,6 +1,5 @@
 package com.l7tech.kerberos;
 
-import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
 
 import javax.security.auth.Subject;
@@ -8,12 +7,11 @@ import javax.security.auth.kerberos.KerberosKey;
 import javax.security.auth.kerberos.KerberosPrincipal;
 import javax.security.auth.kerberos.KerberosTicket;
 import javax.security.auth.login.LoginContext;
-import javax.security.auth.login.LoginException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -112,7 +110,6 @@ public class KerberosTicketRepository {
             } else {
                 // toss cached credentials
                 _map.remove(key);
-                cred.discard();
             }
         }
 
@@ -120,7 +117,7 @@ public class KerberosTicketRepository {
     }
 
     /**
-     * Adds the Kerberos credentials into the cache.
+     * Adds or replaces the Kerberos credentials into the cache.
      *
      * @param key the key to use
      * @param tgTicket the Kerberos ticket to get the creds from
@@ -129,10 +126,7 @@ public class KerberosTicketRepository {
      */
     public void add(Key key, KerberosTicket tgTicket, List<KerberosKey> privKeys, LoginContext loginCtx, KerberosServiceTicket svcTicket) {
         // create a new cache value
-        CachedCredential oldCred = _map.put( key, new CachedCredential(tgTicket, privKeys, loginCtx, svcTicket.getServicePrincipalName(), kerberosTicketLifetime) );
-        if ( oldCred != null ) {
-            oldCred.discard();
-        }
+        _map.put( key, new CachedCredential(tgTicket, privKeys, loginCtx, svcTicket.getServicePrincipalName(), kerberosTicketLifetime) );
 
         // perform cleanup when necessary
         if (canRunCleanup())
@@ -140,7 +134,7 @@ public class KerberosTicketRepository {
     }
 
     /**
-     * Adds the Kerberos credentials into the cache.
+     * Adds or replaces the Kerberos credentials into the cache.
      *
      * @param key the key to use
      * @param subject the authenticated subject to extract the Kerberos ticket from
@@ -280,7 +274,6 @@ public class KerberosTicketRepository {
                                     // the 2nd check is ensure the repository doesn't consume all the gateway resources
                                 {
                                     _map.remove(key);
-                                    cred.discard();
                                     counter++;
                                 }
                             }
@@ -353,21 +346,6 @@ public class KerberosTicketRepository {
 
         boolean isExpired() {
             return (System.currentTimeMillis() > expires);
-        }
-
-        void discard() {
-
-            tgTicket = null;
-            privateKeys = null;
-            try {
-                if (loginContext != null)
-                    loginContext.logout();
-                loginContext = null;
-            } catch (LoginException lex) {
-                if ( logger.isLoggable( Level.FINER ) ) {
-                    logger.log( Level.FINER, "Error closing login context '"+ ExceptionUtils.getMessage(lex)+"'.", ExceptionUtils.getDebugException(lex));
-                }
-            }
         }
 
         long getLastAccessTime() {
