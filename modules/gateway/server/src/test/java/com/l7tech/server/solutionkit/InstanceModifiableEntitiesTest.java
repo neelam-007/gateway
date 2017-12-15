@@ -1,11 +1,19 @@
 package com.l7tech.server.solutionkit;
 
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.solutionkit.InstanceModifier;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
+import com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities;
 import com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage;
+import com.l7tech.xml.xpath.XpathUtil;
+import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
+import java.util.List;
 import java.util.UUID;
 
 import static junit.framework.Assert.assertEquals;
@@ -106,22 +114,37 @@ public class InstanceModifiableEntitiesTest {
     @Test
     public void testTargetIdMappingModified() throws Exception{
         final String skInstanceModifier = sampleSolutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY);
-        final RestmanMessage requestMessage = new RestmanMessage(SAMPLE_SOLUTION_KIT_INSTALL_BUNDLE_XML);
+        final Document documentToVerify = XmlUtil.stringToDocument(SAMPLE_SOLUTION_KIT_INSTALL_BUNDLE_XML);
+        final RestmanMessage requestMessage = new RestmanMessage(documentToVerify);
 
         // Apply an instance modifier on these non-sharable entities
-        final InstanceModifier instanceModifier = new InstanceModifier(requestMessage.getBundleReferenceItems(), requestMessage.getMappings(), skInstanceModifier);
-        instanceModifier.apply();
+        new InstanceModifier(requestMessage.getBundleReferenceItems(), requestMessage.getMappings(), skInstanceModifier).apply();
 
         //Test AlwaysCreateNew mapping generates modified Goid SERVICE_ID
-        assertEquals(InstanceModifier.getModifiedGoid(skInstanceModifier, SERVICE_ID), requestMessage.getTargetId(SERVICE_ID));
+        assertEquals(InstanceModifier.getModifiedGoid(skInstanceModifier, SERVICE_ID), getTargetId(SERVICE_ID, documentToVerify));
         //Test NewOrUpdate mapping generates modified Goid SSG_CONNECTOR_ID
-        assertEquals(InstanceModifier.getModifiedGoid(skInstanceModifier, SSG_CONNECTOR_ID), requestMessage.getTargetId(SSG_CONNECTOR_ID));
+        assertEquals(InstanceModifier.getModifiedGoid(skInstanceModifier, SSG_CONNECTOR_ID), getTargetId(SSG_CONNECTOR_ID, documentToVerify));
         //Test NewOrExisting mapping generates modified Goid POLICY_BACKED_SERVICE_ID
-        assertEquals(InstanceModifier.getModifiedGoid(skInstanceModifier, POLICY_BACKED_SERVICE_ID), requestMessage.getTargetId(POLICY_BACKED_SERVICE_ID));
+        assertEquals(InstanceModifier.getModifiedGoid(skInstanceModifier, POLICY_BACKED_SERVICE_ID), getTargetId(POLICY_BACKED_SERVICE_ID, documentToVerify));
         //Test Existing mapping only does not change targetId
-        assertEquals(null, requestMessage.getTargetId(FOLDER_ID));
+        assertEquals(null, getTargetId(FOLDER_ID, documentToVerify));
         //Test Update mapping only does not change targetId
-        assertEquals(null, requestMessage.getTargetId(SCHEDULED_TASK_ID));
+        assertEquals(null, getTargetId(SCHEDULED_TASK_ID, documentToVerify));
+    }
+
+    private String getTargetId(@NotNull final String srcId, @NotNull final Document document) {
+        final List<Element> srcIdMappings = XpathUtil.findElements(document.getDocumentElement(), "//l7:Bundle/l7:Mappings/l7:Mapping[@srcId=\"" + srcId + "\"]", GatewayManagementDocumentUtilities.getNamespaceMap());
+
+        // There should only be one action mapping per scrId  in a restman message
+        if (srcIdMappings.size() > 0) {
+            String entityType = srcIdMappings.get(0).getAttribute("targetId");
+            if (StringUtils.isEmpty(entityType))
+                return null;
+            else
+                return entityType.trim();
+        } else {
+            return null;
+        }
     }
 
     private void initializeSolutionKits() {
