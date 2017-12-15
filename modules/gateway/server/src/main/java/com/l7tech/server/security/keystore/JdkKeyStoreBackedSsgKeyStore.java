@@ -261,23 +261,6 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
         });
     }
 
-    @NotNull
-    private byte[] keyStoreToBytes(KeyStore keystore) throws KeyStoreException {
-        PoolByteArrayOutputStream outputStream = new PoolByteArrayOutputStream();
-        try {
-            keystore.store(outputStream, getEntryPassword());
-            return outputStream.toByteArray();
-        } catch (NoSuchAlgorithmException e) {
-            throw new KeyStoreException("Unable to save software database keystore named " + getName() + ": " + ExceptionUtils.getMessage(e), e);
-        } catch (IOException e) {
-            throw new KeyStoreException("Unable to save software database keystore named " + getName() + ": " + ExceptionUtils.getMessage(e), e);
-        } catch (CertificateException e) {
-            throw new KeyStoreException("Unable to save software database keystore named " + getName() + ": " + ExceptionUtils.getMessage(e), e);
-        } finally {
-            outputStream.close();
-        }
-    }
-
     @Override
     public synchronized Future<Boolean> deletePrivateKeyEntry( Runnable transactionCallback, final String keyAlias) throws KeyStoreException {
         return deletePrivateKeyEntry(false, transactionCallback, keyAlias);
