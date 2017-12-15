@@ -315,6 +315,21 @@ public class RestmanMessage {
         }
     }
 
+    public String getTargetId(@NotNull final String srcId) {
+        final List<Element> srcIdMappings = XpathUtil.findElements(document.getDocumentElement(), "//l7:Bundle/l7:Mappings/l7:Mapping[@srcId=\"" + srcId + "\"]", getNamespaceMap());
+
+        // There should only be one action mapping per scrId  in a restman message
+        if (srcIdMappings.size() > 0) {
+            String entityType = srcIdMappings.get(0).getAttribute("targetId");
+            if (StringUtils.isEmpty(entityType))
+                return null;
+            else
+                return entityType.trim();
+        } else {
+            return null;
+        }
+    }
+
     public String getServiceUrl(@NotNull final String serviceId) {
         final List<Element> urlPatterns = XpathUtil.findElements(document.getDocumentElement(), "//l7:Bundle/l7:References/l7:Item[l7:Id='" + serviceId + "']/descendant::l7:UrlPattern", getNamespaceMap());
 

@@ -199,7 +199,8 @@ public class InstanceModifier {
             srcId = item.getAttribute(ATTRIBUTE_NAME_SRC_ID);
             if (StringUtils.isNotEmpty(entityTypeStr) && StringUtils.isNotEmpty(actionStr)) {
                 action = Mapping.Action.valueOf(actionStr);
-                if (action == Mapping.Action.AlwaysCreateNew || (action == Mapping.Action.NewOrExisting && !isFailOnNewMapping(item))
+                if (action == Mapping.Action.AlwaysCreateNew
+                        || (action == Mapping.Action.NewOrExisting && !isFailOnNewMapping(item))
                         || (action == Mapping.Action.NewOrUpdate && !isFailOnNewMapping(item))) {
                     if (isModifiableType(entityTypeStr, (pbidList.contains(srcId)? IdentityProviderType.POLICY_BACKED.description(): null))) {
                         // deterministically set targetId for the version modified entity
