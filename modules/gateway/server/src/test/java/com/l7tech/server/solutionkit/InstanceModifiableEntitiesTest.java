@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.solutionkit.InstanceModifier;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities;
 import com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage;
+import com.l7tech.test.BugId;
 import com.l7tech.xml.xpath.XpathUtil;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -112,6 +113,7 @@ public class InstanceModifiableEntitiesTest {
     }
 
     @Test
+    @BugId("DE322011")
     public void testTargetIdMappingModified() throws Exception{
         final String skInstanceModifier = sampleSolutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY);
         final Document documentToVerify = XmlUtil.stringToDocument(SAMPLE_SOLUTION_KIT_INSTALL_BUNDLE_XML);
