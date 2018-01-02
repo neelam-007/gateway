@@ -350,8 +350,8 @@ public class ServiceMetricsPanel extends JPanel implements LogonListener {
         return result;
     }
 
-    public EntityHeader getPublishedServiceSelected() {
-        EntityHeader result = (EntityHeader) _publishedServicesComboModel.getSelectedItem();
+    public ServiceHeader getPublishedServiceSelected() {
+        ServiceHeader result = (ServiceHeader) _publishedServicesComboModel.getSelectedItem();
         if (result == ALL_SERVICES)
             result = null;
         return result;
