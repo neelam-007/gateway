@@ -25,8 +25,8 @@
 
 			<!-- Core gateway builds release upload/download -->
 			<url name="artifactory-release" m2compatible="true">
-                <ivy pattern="${artifactory.maven.release}/[organisation]/[module]/[revision]/ivy-[revision].xml" />
-                <artifact pattern="${artifactory.maven.release}/[organisation]/[module]/[revision]/[artifact]-[revision](-[classifier]).[ext]" />
+                <ivy pattern="${artifactory.maven.rc}/[organisation]/[module]/[revision]/ivy-[revision].xml" />
+                <artifact pattern="${artifactory.maven.rc}/[organisation]/[module]/[revision]/[artifact]-[revision](-[classifier]).[ext]" />
             </url>
 			
 			<!-- Thirdparty upload/download -->

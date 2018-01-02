@@ -130,11 +130,11 @@ public class KerberosCacheManager {
         }
     }
 
-    private static class Key {
+    static class Key {
         private PrincipalName principalName;
         private Object ticket;
 
-        private Key(PrincipalName principalName, Object ticket) {
+        Key(PrincipalName principalName, Object ticket) {
             this.principalName = principalName;
             this.ticket = ticket;
         }
@@ -162,10 +162,17 @@ public class KerberosCacheManager {
 
         @Override
         public String toString() {
-            return "Key{" +
-                    "principalName=" + principalName +
-                    ", ticket=" + ticket +
-                    '}';
+            if(ticket instanceof KerberosTicket) {
+                return "Key{" +
+                        "principalName=" + principalName +
+                        ", ticket=" + (((KerberosTicket)ticket).isDestroyed() ? "Expired" : ticket) +
+                        '}';
+            } else {
+                return "Key{" +
+                        "principalName=" + principalName +
+                        ", ticket=" + ticket +
+                        '}';
+            }
         }
     }
 
