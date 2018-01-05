@@ -257,7 +257,7 @@ public class RbacRoleResourceFactory extends EntityManagerResourceFactory<RbacRo
         // Note do not use the userCreated flag from the resource. Roles created using wsman will automatically have this flag set to true.
         try {
             assignmentsFromResource(role, rbacRoleMO.getAssignments());
-            permissionsFromResource(role, rbacRoleMO);
+            permissionsFromResource(role, rbacRoleMO, strict);
         } catch (FindException e) {
             throw new InvalidResourceException(InvalidResourceException.ExceptionType.INVALID_VALUES, "Could not find entity: " + e.getMessage());
         }
@@ -265,7 +265,7 @@ public class RbacRoleResourceFactory extends EntityManagerResourceFactory<RbacRo
         return role;
     }
 
-    private void permissionsFromResource(Role role, RbacRoleMO rbacRoleMO) throws InvalidResourceException, FindException {
+    private void permissionsFromResource(Role role, RbacRoleMO rbacRoleMO, boolean strict) throws InvalidResourceException, FindException {
         for (RbacRolePermissionMO rbacRolePermissionMO : rbacRoleMO.getPermissions()) {
             Permission permission = new Permission(role, OperationType.valueOf(rbacRolePermissionMO.getOperation().name()), getEntityTypeFromString(rbacRolePermissionMO.getEntityType()));
             permission.setOtherOperationName(rbacRolePermissionMO.getOtherOperationName());
@@ -281,9 +281,19 @@ public class RbacRoleResourceFactory extends EntityManagerResourceFactory<RbacRo
                         scopePredicate = new EntityFolderAncestryPredicate(permission, getEntityTypeFromString(predicateMO.getProperties().get("entityType")), predicateMO.getProperties().get("entityId"));
                         break;
                     case FolderPredicate:
-                        final Folder folder = folderManager.findByPrimaryKey(Goid.parseGoid(predicateMO.getProperties().get("folderId")));
+                        Folder folder;
+                        try {
+                            folder = folderManager.findByPrimaryKey(Goid.parseGoid(predicateMO.getProperties().get("folderId")));
+                        } catch (FindException e) {
+                            folder = null;
+                        }
                         if (folder == null) {
-                            throw new FindException("Cannot find folder with id: " + predicateMO.getProperties().get("folderId"));
+                            if(strict) {
+                                throw new FindException("Cannot find folder with id: " + predicateMO.getProperties().get("folderId"));
+                            } else {
+                                folder = new Folder(null, null);
+                                folder.setId(predicateMO.getProperties().get("folderId"));
+                            }
                         }
                         scopePredicate = new FolderPredicate(permission, folder, Boolean.valueOf(predicateMO.getProperties().get("transitive")));
                         break;
@@ -291,11 +301,20 @@ public class RbacRoleResourceFactory extends EntityManagerResourceFactory<RbacRo
                         scopePredicate = new ObjectIdentityPredicate(permission, predicateMO.getProperties().get("entityId"));
                         break;
                     case SecurityZonePredicate:
-                        final SecurityZone securityZone;
+                        SecurityZone securityZone;
                         if (predicateMO.getProperties().get("securityZoneId") != null) {
-                            securityZone = securityZoneManager.findByPrimaryKey(Goid.parseGoid(predicateMO.getProperties().get("securityZoneId")));
+                            try {
+                                securityZone = securityZoneManager.findByPrimaryKey(Goid.parseGoid(predicateMO.getProperties().get("securityZoneId")));
+                            } catch (FindException e) {
+                                securityZone = null;
+                            }
                             if (securityZone == null) {
-                                throw new FindException("Cannot find security zone with id: " + predicateMO.getProperties().get("securityZoneId"));
+                                if (strict) {
+                                    throw new FindException("Cannot find security zone with id: " + predicateMO.getProperties().get("securityZoneId"));
+                                } else {
+                                    securityZone = new SecurityZone();
+                                    securityZone.setId(predicateMO.getProperties().get("securityZoneId"));
+                                }
                             }
                         } else {
                             securityZone = null;
