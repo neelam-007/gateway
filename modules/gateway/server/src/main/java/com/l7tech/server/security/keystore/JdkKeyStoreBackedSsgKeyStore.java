@@ -202,6 +202,7 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
             reloadKeyStore.load(new ByteArrayInputStream(testBytes.toByteArray()), getEntryPassword());
 
         } catch (CertificateException | NoSuchAlgorithmException | IOException e) {
+            logger.info("Unable to import key: " + e.getMessage());
             throw new KeyStoreException(e);
         }
     }
