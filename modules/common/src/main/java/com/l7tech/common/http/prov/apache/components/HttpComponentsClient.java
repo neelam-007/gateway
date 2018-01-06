@@ -98,6 +98,7 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
     public static final String PROP_NTLM_DEFAULT_FLAGS = "commons.httpclient.ntlm.flags";
     public static final String PROP_TERMINATE_CONNECTION_WITHOUT_FIN = COMMONS_HTTP_CLIENT + ".terminateConnection";
     public static final String PROP_KEEP_ALIVE_TIMEOUT = COMMONS_HTTP_CLIENT + ".keepAliveTimeout";
+    public static final String HTTP_PROTOCOL_REDIRECT_LOCATION = "http.protocol.redirect-locations";
 
     public static final String DEFAULT_CREDENTIAL_CHARSET = "ISO-8859-1"; // see bugzilla #5729
     public static final int DEFAULT_CONNECT_TIMEOUT = ConfigFactory.getIntProperty( PROP_DEFAULT_CONNECT_TIMEOUT, 30000 );
@@ -677,6 +678,9 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
         }
 
         clientParams.setParameter(ClientPNames.HANDLE_REDIRECTS, params.isFollowRedirects());
+        if (params.isFollowRedirects()) {
+            state.removeAttribute(HTTP_PROTOCOL_REDIRECT_LOCATION);
+        }
         clientParams.setParameter(CoreConnectionPNames.SO_TIMEOUT, params.getReadTimeout()>=0 ? params.getReadTimeout() : timeout);
         clientParams.setParameter(ClientPNames.CONN_MANAGER_TIMEOUT, (long) (params.getConnectionTimeout() >= 0 ? params.getConnectionTimeout() : connectionTimeout));
         clientParams.setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, (params.getConnectionTimeout() >= 0 ? params.getConnectionTimeout() : connectionTimeout));
