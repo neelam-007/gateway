@@ -1,10 +1,14 @@
 package com.l7tech.message;
 
 import com.l7tech.common.http.HttpConstants;
+import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.test.BugId;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
+
+import java.io.IOException;
 
 import static org.junit.Assert.*;
 
@@ -64,5 +68,23 @@ public class MessageTest {
     @Test
     public void findHttpCookiesKnobNotAttached() {
         assertNull(message.getKnob(HttpCookiesKnob.class));
+    }
+
+    @Test
+    @BugId("DE338158")
+    public void checkContentLengthInIsXml() throws IOException{
+        //Set up
+        final MimeKnob mknob = message.getMimeKnob();
+        mknob.getFirstPart().setContentType(ContentTypeHeader.XML_DEFAULT);
+        final HeadersKnob hknob = message.getHeadersKnob();
+        hknob.setHeader("content-length", 0, HeadersKnob.HEADER_TYPE_HTTP);
+
+        // Test content-length:0, no message body means it's not XML
+        assertFalse(message.isXml());
+
+        // Test no content-length header present
+        message.initialize(ContentTypeHeader.XML_DEFAULT, new byte[]{});
+        hknob.removeHeader("content-length", HeadersKnob.HEADER_TYPE_HTTP);
+        assertTrue(message.isXml());
     }
 }

@@ -447,11 +447,15 @@ public final class Message implements Closeable {
             return false;
 
         // It's declared as XML, check that there is some content
-        HttpRequestKnob knob = getKnob(HttpRequestKnob.class);
+        // DE338158: If the Content-Length header is modified using the AddHeadersAssertion, the header values used in
+        //          here need to reflect those modifications.
+        HeadersKnob knob = getKnob(HeadersKnob.class);
         if (knob != null) {
-            int length = knob.getIntHeader(HttpConstants.HEADER_CONTENT_LENGTH);
-            if (length == 0) {
-                return false;
+            final String[] contentLengthValues = knob.getHeaderValues("content-length", HeadersKnob.HEADER_TYPE_HTTP);
+            for (final String value : contentLengthValues) {
+                if ("0".equals(value)) {
+                    return false;
+                }
             }
         }
 
