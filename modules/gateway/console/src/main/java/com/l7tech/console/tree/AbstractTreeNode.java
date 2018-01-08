@@ -440,7 +440,7 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
      * loads the icon specified by subclass iconResource()
      * implementation.
      *
-     * @return the <code>ImageIcon</code> or null if not found
+     * @return the <code>Image</code> or null if not found
      */
     @Nullable
     public Image getIcon() {
@@ -448,6 +448,15 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
             closedIcon = getIcon(false);
         }
         return closedIcon;
+    }
+
+    /**
+     * @return the {@link Image} as an {@link ImageIcon} or null if not found.
+     */
+    @Nullable
+    public ImageIcon getImageIcon() {
+        final Image icon = getIcon();
+        return icon == null ? null : new ImageIcon(icon);
     }
 
     /**

@@ -81,7 +81,7 @@ public class SearchForm {
             @Override
             public Icon call(AssertionTreeNode assertionTreeNode) {
                 if (assertionTreeNode.asAssertion().isEnabled()) {
-                    return new ImageIcon(assertionTreeNode.getIcon());
+                    return assertionTreeNode.getImageIcon();
                 } else {
                     Image crossImage = ImageCache.getInstance().getIcon("com/l7tech/console/resources/RedCrossSign16.gif");
                     if (crossImage != null) {
@@ -91,7 +91,7 @@ public class SearchForm {
                         g.drawImage(crossImage, 0, 0, null );
                         return new ImageIcon(ret);
                     } else {
-                        return new ImageIcon(assertionTreeNode.getIcon());
+                        return assertionTreeNode.getImageIcon();
                     }
                 }
             }

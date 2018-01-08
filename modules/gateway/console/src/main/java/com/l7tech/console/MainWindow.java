@@ -3357,7 +3357,7 @@ public class MainWindow extends JFrame implements SheetHolder {
 
                 @Override
                 public Icon call(AbstractTreeNode abstractTreeNode) {
-                    return new ImageIcon(abstractTreeNode.getIcon());
+                    return abstractTreeNode.getImageIcon();
                 }
             };
 
@@ -3433,8 +3433,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             final Functions.Unary<Icon, AbstractLeafPaletteNode> iconAccessorFunction = new Functions.Unary<Icon, AbstractLeafPaletteNode>() {
                 @Override
                 public Icon call(AbstractLeafPaletteNode abstractTreeNode) {
-                    Image icon = abstractTreeNode.getIcon();
-                    return icon == null ? null : new ImageIcon(icon);
+                    return abstractTreeNode.getImageIcon();
                 }
             };
 
