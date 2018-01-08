@@ -1,11 +1,20 @@
 package com.l7tech.server.solutionkit;
 
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.gateway.common.solutionkit.InstanceModifier;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
+import com.l7tech.server.policy.bundle.GatewayManagementDocumentUtilities;
 import com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage;
+import com.l7tech.test.BugId;
+import com.l7tech.xml.xpath.XpathUtil;
+import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
+import java.util.List;
 import java.util.UUID;
 
 import static junit.framework.Assert.assertEquals;
@@ -101,6 +110,43 @@ public class InstanceModifiableEntitiesTest {
         assertEquals(SAMPLE_INSTANCE_MODIFIER + " " + SCHEDULED_TASK_NAME, requestMessage.getEntityName(SCHEDULED_TASK_ID));
         // SSG Connector
         assertEquals(SAMPLE_INSTANCE_MODIFIER + " " + SSG_CONNECTOR_NAME, requestMessage.getEntityName(SSG_CONNECTOR_ID));
+    }
+
+    @Test
+    @BugId("DE322011")
+    public void testTargetIdMappingModified() throws Exception{
+        final String skInstanceModifier = sampleSolutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY);
+        final Document documentToVerify = XmlUtil.stringToDocument(SAMPLE_SOLUTION_KIT_INSTALL_BUNDLE_XML);
+        final RestmanMessage requestMessage = new RestmanMessage(documentToVerify);
+
+        // Apply an instance modifier on these non-sharable entities
+        new InstanceModifier(requestMessage.getBundleReferenceItems(), requestMessage.getMappings(), skInstanceModifier).apply();
+
+        //Test AlwaysCreateNew mapping generates modified Goid SERVICE_ID
+        assertEquals(InstanceModifier.getModifiedGoid(skInstanceModifier, SERVICE_ID), getTargetId(SERVICE_ID, documentToVerify));
+        //Test NewOrUpdate mapping generates modified Goid SSG_CONNECTOR_ID
+        assertEquals(InstanceModifier.getModifiedGoid(skInstanceModifier, SSG_CONNECTOR_ID), getTargetId(SSG_CONNECTOR_ID, documentToVerify));
+        //Test NewOrExisting mapping generates modified Goid POLICY_BACKED_SERVICE_ID
+        assertEquals(InstanceModifier.getModifiedGoid(skInstanceModifier, POLICY_BACKED_SERVICE_ID), getTargetId(POLICY_BACKED_SERVICE_ID, documentToVerify));
+        //Test Existing mapping only does not change targetId
+        assertEquals(null, getTargetId(FOLDER_ID, documentToVerify));
+        //Test Update mapping only does not change targetId
+        assertEquals(null, getTargetId(SCHEDULED_TASK_ID, documentToVerify));
+    }
+
+    private String getTargetId(@NotNull final String srcId, @NotNull final Document document) {
+        final List<Element> srcIdMappings = XpathUtil.findElements(document.getDocumentElement(), "//l7:Bundle/l7:Mappings/l7:Mapping[@srcId=\"" + srcId + "\"]", GatewayManagementDocumentUtilities.getNamespaceMap());
+
+        // There should only be one action mapping per scrId  in a restman message
+        if (srcIdMappings.size() > 0) {
+            String entityType = srcIdMappings.get(0).getAttribute("targetId");
+            if (StringUtils.isEmpty(entityType))
+                return null;
+            else
+                return entityType.trim();
+        } else {
+            return null;
+        }
     }
 
     private void initializeSolutionKits() {
@@ -446,10 +492,16 @@ public class InstanceModifiableEntitiesTest {
         "    <l7:Mapping action=\"NewOrExisting\" srcId=\"" + ENCAPSULATED_ASSERTION_ID + "\" srcUri=\"https://127.0.0.1:8443/restman/1.0/encapsulatedAssertions/" + ENCAPSULATED_ASSERTION_ID + "\" type=\"ENCAPSULATED_ASSERTION\"/>\n" +
         "    <l7:Mapping action=\"NewOrExisting\" srcId=\"" + ENCAP_POLICY_ID + "\" srcUri=\"https://127.0.0.1:8443/restman/1.0/policies/" + ENCAP_POLICY_ID + "\" type=\"POLICY\"/>\n" +
         "    <l7:Mapping action=\"NewOrExisting\" srcId=\"" + POLICY_BACKED_IDENTITY_PROVIDER_ID + "\" srcUri=\"https://127.0.0.1:8443/restman/1.0/identityProviders/" + POLICY_BACKED_IDENTITY_PROVIDER_ID + "\" type=\"ID_PROVIDER_CONFIG\"/>\n" +
-        "    <l7:Mapping action=\"NewOrExisting\" srcId=\"" + SERVICE_ID + "\" srcUri=\"https://127.0.0.1:8443/restman/1.0/services/" + SERVICE_ID + "\" type=\"SERVICE\"/>\n" +
+        "    <l7:Mapping action=\"AlwaysCreateNew\" srcId=\"" + SERVICE_ID + "\" srcUri=\"https://127.0.0.1:8443/restman/1.0/services/" + SERVICE_ID + "\" type=\"SERVICE\"/>\n" +
         "    <l7:Mapping action=\"NewOrExisting\" srcId=\"" + POLICY_BACKED_SERVICE_ID + "\" srcUri=\"https://127.0.0.1:8443/restman/1.0/policyBackedServices/" + POLICY_BACKED_SERVICE_ID + "\" type=\"POLICY_BACKED_SERVICE\"/>\n" +
-        "    <l7:Mapping action=\"NewOrExisting\" srcId=\"" + SCHEDULED_TASK_ID + "\" srcUri=\"https://127.0.0.1:8443/restman/1.0/scheduledTasks/" + SCHEDULED_TASK_ID + "\" type=\"SCHEDULED_TASK\"/>\n" +
-        "    <l7:Mapping action=\"NewOrExisting\" srcId=\"" + SSG_CONNECTOR_ID + "\" srcUri=\"https://127.0.0.1:8443/restman/1.0/listenPorts/" + SSG_CONNECTOR_ID + "\" type=\"SSG_CONNECTOR\"/>\n" +
+        "    <l7:Mapping action=\"NewOrUpdate\" srcId=\"" + SCHEDULED_TASK_ID + "\" srcUri=\"https://127.0.0.1:8443/restman/1.0/scheduledTasks/" + SCHEDULED_TASK_ID + "\" type=\"SCHEDULED_TASK\">\n" +
+        "      <l7:Properties>\n" +
+        "        <l7:Property key=\"FailOnNew\">\n" +
+        "          <l7:BooleanValue>true</l7:BooleanValue>\n" +
+        "        </l7:Property>\n" +
+        "      </l7:Properties>\n" +
+        "    </l7:Mapping>\n" +
+        "    <l7:Mapping action=\"NewOrUpdate\" srcId=\"" + SSG_CONNECTOR_ID + "\" srcUri=\"https://127.0.0.1:8443/restman/1.0/listenPorts/" + SSG_CONNECTOR_ID + "\" type=\"SSG_CONNECTOR\"/>\n" +
         "  </l7:Mappings>\n" +
         "</l7:Bundle>";
 }
