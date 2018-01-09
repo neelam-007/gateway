@@ -77,14 +77,14 @@ public class MessageTest {
         final MimeKnob mknob = message.getMimeKnob();
         mknob.getFirstPart().setContentType(ContentTypeHeader.XML_DEFAULT);
         final HeadersKnob hknob = message.getHeadersKnob();
-        hknob.setHeader("content-length", 0, HeadersKnob.HEADER_TYPE_HTTP);
+        hknob.setHeader(HttpConstants.HEADER_CONTENT_LENGTH, 0, HeadersKnob.HEADER_TYPE_HTTP);
 
         // Test content-length:0, no message body means it's not XML
         assertFalse(message.isXml());
 
         // Test no content-length header present
         message.initialize(ContentTypeHeader.XML_DEFAULT, new byte[]{});
-        hknob.removeHeader("content-length", HeadersKnob.HEADER_TYPE_HTTP);
+        hknob.removeHeader(HttpConstants.HEADER_CONTENT_LENGTH, HeadersKnob.HEADER_TYPE_HTTP);
         assertTrue(message.isXml());
     }
 }

@@ -451,7 +451,7 @@ public final class Message implements Closeable {
         //          here need to reflect those modifications.
         HeadersKnob knob = getKnob(HeadersKnob.class);
         if (knob != null) {
-            final String[] contentLengthValues = knob.getHeaderValues("content-length", HeadersKnob.HEADER_TYPE_HTTP);
+            final String[] contentLengthValues = knob.getHeaderValues(HttpConstants.HEADER_CONTENT_LENGTH, HeadersKnob.HEADER_TYPE_HTTP);
             for (final String value : contentLengthValues) {
                 if ("0".equals(value)) {
                     return false;
