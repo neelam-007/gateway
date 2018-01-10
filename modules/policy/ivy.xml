@@ -58,6 +58,7 @@
         <dependency org="com.rsa" name="sslj" rev="6.2.2" force="true" conf="core"/>
         <!-- CryptoComply-->
         <dependency org="com.safelogic.cryptocomply" name="cryptocomply" rev="2.2.1" force="true" conf="core"/>
+        <dependency org="com.safelogic.cryptocomply" name="HMacSP800DRBGResync" rev="2.2.1" force="true" conf="core"/>
         <!-- HttpServletResponseKnobTest needs this dependency-->
         <dependency org="org.springframework" name="spring-test" rev="3.0.7.RELEASE" force="true" conf="test"/>
 

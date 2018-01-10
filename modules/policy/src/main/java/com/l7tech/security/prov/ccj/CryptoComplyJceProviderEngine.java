@@ -39,8 +39,7 @@ public class CryptoComplyJceProviderEngine extends JceProvider {
         if (FIPS || permafips) {
             logger.info("Initializing CryptoComply library in FIPS 140 mode");
             PROVIDER = new SLProvider();
-            Security.removeProvider(SLProvider.PROVIDER_NAME);
-            Security.insertProviderAt(PROVIDER, 1);
+            ProviderUtil.configureCcjProvider(PROVIDER);
 
             if (DISABLE_BLACKLISTED_SERVICES) {
                 ProviderUtil.removeService(SERVICE_BLACKLIST, PROVIDER);
