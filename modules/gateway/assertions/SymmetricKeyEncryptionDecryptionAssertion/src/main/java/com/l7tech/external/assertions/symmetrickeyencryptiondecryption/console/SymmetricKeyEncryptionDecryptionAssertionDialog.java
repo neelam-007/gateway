@@ -22,6 +22,7 @@ public class SymmetricKeyEncryptionDecryptionAssertionDialog extends AssertionPr
     private JTextField pgpPassPhrase;
     private JTextField ivTextField;
     private JComboBox<String> pgpEncryptionComboBox;
+    private JCheckBox asciiArmourCheckBox;
 
 
     public SymmetricKeyEncryptionDecryptionAssertionDialog(Window owner, SymmetricKeyEncryptionDecryptionAssertion assertion) {
@@ -40,6 +41,8 @@ public class SymmetricKeyEncryptionDecryptionAssertionDialog extends AssertionPr
         variableNametextField.setText(assertion.getOutputVariableName());
         pgpPassPhrase.setText(assertion.getPgpPassPhrase());
 
+        asciiArmourCheckBox.setSelected(assertion.isAsciiArmourEnabled());
+
         loadAlgorithmComboBox(assertion.getAlgorithm());
         loadPgpEncryptionTypeComboBox(assertion.getIsPgpKeyEncryption());
     }
@@ -55,6 +58,7 @@ public class SymmetricKeyEncryptionDecryptionAssertionDialog extends AssertionPr
         assertion.setOutputVariableName(variableNametextField.getText());
         assertion.setPgpPassPhrase(pgpPassPhrase.getText());
         assertion.setIsPgpKeyEncryption(this.isPgpPublicKeyEncryptionSelected());
+        assertion.setAsciiArmourEnabled(this.asciiArmourCheckBox.isSelected());
 
         return assertion;
     }
@@ -116,9 +120,11 @@ public class SymmetricKeyEncryptionDecryptionAssertionDialog extends AssertionPr
                 if (isPgpPublicKeyEncryptionSelected()){
                     this.pgpPassPhrase.setEnabled(false);
                     this.keyTextField.setEnabled(true);
+                    this.asciiArmourCheckBox.setEnabled(true);
                 } else {
                     this.pgpPassPhrase.setEnabled(true);
                     this.keyTextField.setEnabled(false);
+                    this.asciiArmourCheckBox.setEnabled(false);
                 }
             }
             else
@@ -126,12 +132,14 @@ public class SymmetricKeyEncryptionDecryptionAssertionDialog extends AssertionPr
                 this.pgpEncryptionComboBox.setEnabled(false);
                 this.pgpPassPhrase.setEnabled(true);
                 this.keyTextField.setEnabled(true);
+                this.asciiArmourCheckBox.setEnabled(false);
             }
         }
         else
         {
             this.pgpEncryptionComboBox.setEnabled(false);
             this.pgpPassPhrase.setEnabled(false);
+            this.asciiArmourCheckBox.setEnabled(false);
             this.keyTextField.setEnabled(true);
             boolean cbcSelected = SymmetricKeyEncryptionDecryptionAssertion.TRANS_AES_CBC_PKCS5Padding.equals(algorithmComboBox.getSelectedItem());
             boolean gcmSelected = SymmetricKeyEncryptionDecryptionAssertion.TRANS_AES_GCM_NoPadding.equals(algorithmComboBox.getSelectedItem());
