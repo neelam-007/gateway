@@ -16,6 +16,7 @@ public class SymmetricKeyEncryptionDecryptionAssertion extends Assertion impleme
     protected static final Logger logger = Logger.getLogger(SymmetricKeyEncryptionDecryptionAssertion.class.getName());
 
     private static final boolean IS_ENCRYPT_VALUE = true;
+    private static final boolean IS_ASCII_ARMOUR = false;
     private static final boolean DEFAULT_IS_PGP_PUB_KEY_ENCRYPT = false;
 
     public static final String DEFAULT_VARIABLE_NAME = "symmetricEncrypDecrypOutput";
@@ -28,6 +29,7 @@ public class SymmetricKeyEncryptionDecryptionAssertion extends Assertion impleme
     public static final int GCM_AUTHENTICATION_TAG_LENGTH_BITS = 128; // Default is 16 bytes (which is 128 bits)
 
     private boolean isEncrypt = IS_ENCRYPT_VALUE;
+    private boolean asciiArmourEnabled = IS_ASCII_ARMOUR;
 
     private String text;
     private String Algorithm;
@@ -69,6 +71,13 @@ public class SymmetricKeyEncryptionDecryptionAssertion extends Assertion impleme
         isEncrypt = encrypt;
     }
 
+    public boolean isAsciiArmourEnabled() {
+        return asciiArmourEnabled;
+    }
+
+    public void setAsciiArmourEnabled(final boolean asciiArmourEnabled) {
+        this.asciiArmourEnabled = asciiArmourEnabled;
+    }
     public String getText() {
         return text;
     }

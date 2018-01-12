@@ -27,9 +27,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.logging.Logger;
 
-import static org.junit.Assert.fail;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
@@ -254,21 +252,12 @@ public class ServerSymmetricKeyEncryptionDecryptionAssertionTest {
         System.out.println("Final Output: " + finaloutput + "   B64Decoded: " + new String(HexUtils.decodeBase64(finaloutput)));
     }
 
-    @Test
-    public void testPgpPublicKeyEncryption() throws Exception{
-        String Algorithm = "PGP";
-        String decryptMsgVar = "decryptMsg";
-        String encryptMsgVar = "encryptMsg";
+    //helper method used for PGP Public Key Encryption
+    private ServerSymmetricKeyEncryptionDecryptionAssertion pgpPublicKeyEncryptionHelper(String msg, String msgVar, boolean isAsciiArmourEnabled) throws Exception {
+         final String algorithm = "PGP";
 
-        String input = "This is what I am encrypting using PGP public key";
-        String inputb64 = HexUtils.encodeBase64(input.getBytes(Charsets.UTF8));
-
-        String passphrase = "7layer";
-        String passpharseb64 = HexUtils.encodeBase64(passphrase.getBytes(Charsets.UTF8));
-
-        //the following public key and private key were crated using gpg 1.4.5 (https://blogs.oracle.com/wssfc/how-to-generate-pgp-keys-using-gpg-145-on-linux)
-
-        String publicKey = "-----BEGIN PGP PUBLIC KEY BLOCK-----\n" +
+        //the following public key was created using gpg 1.4.5 (https://blogs.oracle.com/wssfc/how-to-generate-pgp-keys-using-gpg-145-on-linux)
+         final String publicKey = "-----BEGIN PGP PUBLIC KEY BLOCK-----\n" +
                 "Version: BCPG C# v1.6.1.0\n" +
                 "\n" +
                 "mQENBFmB670BCACMBdid8VQoUCNZYu9h/cdLf15sKIzYl9vJoLqWwTwW5uoOwkuZ\n" +
@@ -285,9 +274,25 @@ public class ServerSymmetricKeyEncryptionDecryptionAssertionTest {
                 "xsiD2Vx90tBcjpLlcnTQl3jwkpMO4n7mHH7uN6Gprhth\n" +
                 "=3o0r\n" +
                 "-----END PGP PUBLIC KEY BLOCK-----";
-        String publicKeyb64 = HexUtils.encodeBase64(publicKey.getBytes(Charsets.UTF8));
+         final String publicKeyb64 = HexUtils.encodeBase64(publicKey.getBytes(Charsets.UTF8));
 
-        String privateKey="-----BEGIN PGP PRIVATE KEY BLOCK-----\n" +
+        SymmetricKeyEncryptionDecryptionAssertion encryptAssertion = new SymmetricKeyEncryptionDecryptionAssertion();
+        setUpAssertion(encryptAssertion, msg, publicKeyb64, msgVar, algorithm, true,null, true, isAsciiArmourEnabled);
+
+        ServerSymmetricKeyEncryptionDecryptionAssertion encryptServerAssertion = new ServerSymmetricKeyEncryptionDecryptionAssertion(encryptAssertion, mockApplicationContext);
+
+        return encryptServerAssertion;
+    }
+
+    //helper method used for PGP Public Key Decryption
+    private ServerSymmetricKeyEncryptionDecryptionAssertion pgpPublicKeyDecryptionHelper(String msg, String msgVar) throws PolicyAssertionException {
+        final String algorithm = "PGP";
+
+        final  String passphrase = "7layer";
+        final  String passphraseb64 = HexUtils.encodeBase64(passphrase.getBytes(Charsets.UTF8));
+
+        //the following private key was created using gpg 1.4.5 (https://blogs.oracle.com/wssfc/how-to-generate-pgp-keys-using-gpg-145-on-linux)
+        final String PRIVATE_KEY="-----BEGIN PGP PRIVATE KEY BLOCK-----\n" +
                 "Version: BCPG C# v1.6.1.0\n" +
                 "\n" +
                 "lQOsBFmB670BCACMBdid8VQoUCNZYu9h/cdLf15sKIzYl9vJoLqWwTwW5uoOwkuZ\n" +
@@ -318,26 +323,42 @@ public class ServerSymmetricKeyEncryptionDecryptionAssertionTest {
                 "yIPZXH3S0FyOkuVydNCXePCSkw7ifuYcfu43oamuG2E=\n" +
                 "=MKxg\n" +
                 "-----END PGP PRIVATE KEY BLOCK-----";
-        String privateKeyb64 = HexUtils.encodeBase64(privateKey.getBytes(Charsets.UTF8));
 
-        //encrypt the input using PGP public key
-        SymmetricKeyEncryptionDecryptionAssertion encryptassertion = new SymmetricKeyEncryptionDecryptionAssertion();
-        setUpAssertion(encryptassertion, inputb64, publicKeyb64, encryptMsgVar, Algorithm, true,null, true);
+        final String privateKeyb64 = HexUtils.encodeBase64(PRIVATE_KEY.getBytes(Charsets.UTF8));
 
-        ServerSymmetricKeyEncryptionDecryptionAssertion encryptserverAssertion = new ServerSymmetricKeyEncryptionDecryptionAssertion(encryptassertion, mockApplicationContext);
-        AssertionStatus status = encryptserverAssertion.checkRequest(mockPolicyEnforcementContext);
-        String output = getOutputString(encryptMsgVar);
+
+        SymmetricKeyEncryptionDecryptionAssertion decryptionAssertion = new SymmetricKeyEncryptionDecryptionAssertion();
+        setUpAssertion(decryptionAssertion, msg, privateKeyb64, msgVar, algorithm, false, passphraseb64);
+
+        ServerSymmetricKeyEncryptionDecryptionAssertion decryptServerAssertion = new ServerSymmetricKeyEncryptionDecryptionAssertion(decryptionAssertion, mockApplicationContext);
+
+        return decryptServerAssertion;
+
+    }
+
+    @Test
+    public void testPgpPublicKeyEncryption() throws Exception{
+        final String encryptVar = "encryptMsg";
+
+        final String input = "This is what I am encrypting using PGP public key";
+        final String inputb64 = HexUtils.encodeBase64(input.getBytes(Charsets.UTF8));
+
+
+        ServerSymmetricKeyEncryptionDecryptionAssertion encryptServerAssertion = pgpPublicKeyEncryptionHelper(inputb64, encryptVar, false);
+        AssertionStatus status = encryptServerAssertion.checkRequest(mockPolicyEnforcementContext);
+        String output = getOutputString(encryptVar);
+
         Assert.assertNotNull(status);
         Assert.assertEquals("First Check", AssertionStatus.NONE.getMessage(), status.getMessage());
         Assert.assertTrue("Second Check - Make sure a cipher is produced", (output).length() > 0);
 
         //decrypt the message that was encrypted earlier
-        SymmetricKeyEncryptionDecryptionAssertion decryptionAssertion = new SymmetricKeyEncryptionDecryptionAssertion();
-        setUpAssertion(decryptionAssertion, output, privateKeyb64, decryptMsgVar, Algorithm, false,passpharseb64);
+        final String decryptVar = "decryptMsg";
 
-        ServerSymmetricKeyEncryptionDecryptionAssertion decryptServerAssertion = new ServerSymmetricKeyEncryptionDecryptionAssertion(decryptionAssertion, mockApplicationContext);
+        ServerSymmetricKeyEncryptionDecryptionAssertion decryptServerAssertion = pgpPublicKeyDecryptionHelper(output, decryptVar);
         status = decryptServerAssertion.checkRequest(mockPolicyEnforcementContext);
-        output = getOutputString(decryptMsgVar);
+        output = getOutputString(decryptVar);
+
         Assert.assertNotNull(status);
         Assert.assertEquals("First Check", AssertionStatus.NONE.getMessage(), status.getMessage());
         Assert.assertTrue("Second Check - Make sure a cipher is produced", (output).length() > 0);
@@ -345,6 +366,43 @@ public class ServerSymmetricKeyEncryptionDecryptionAssertionTest {
         Assert.assertTrue(inputb64.equals(output));
     }
 
+    @Test
+    public void testPgpPublicKeyEncryptionWithAsciiArmour() throws Exception{
+
+        //encrypt the input using PGP public key
+        final String encryptVar = "encryptMsg";
+
+        final String input = "This is what I am encrypting using PGP public key";
+        final String inputb64 = HexUtils.encodeBase64(input.getBytes(Charsets.UTF8));
+
+        final String pgpHeader ="-----BEGIN PGP MESSAGE-----\n";
+        final String pgpFooter="-----END PGP MESSAGE-----\n";
+
+        ServerSymmetricKeyEncryptionDecryptionAssertion encryptServerAssertion = pgpPublicKeyEncryptionHelper(inputb64, encryptVar, true);
+        AssertionStatus status = encryptServerAssertion.checkRequest(mockPolicyEnforcementContext);
+        String output = getOutputString(encryptVar);
+
+        Assert.assertNotNull(status);
+        Assert.assertEquals("First Check", AssertionStatus.NONE.getMessage(), status.getMessage());
+        Assert.assertTrue("Second Check - Make sure a cipher is produced", (output).length() > 0);
+
+        String decodedMessage = new String (HexUtils.decodeBase64(output));
+        Assert.assertTrue(decodedMessage.startsWith(pgpHeader));
+        Assert.assertTrue(decodedMessage.endsWith(pgpFooter));
+
+        //decrypt the message that was encrypted earlier
+        final String decryptVar = "decryptMsg";
+
+        ServerSymmetricKeyEncryptionDecryptionAssertion decryptServerAssertion = pgpPublicKeyDecryptionHelper(output, decryptVar);
+        status = decryptServerAssertion.checkRequest(mockPolicyEnforcementContext);
+        output = getOutputString(decryptVar);
+
+        Assert.assertNotNull(status);
+        Assert.assertEquals("First Check", AssertionStatus.NONE.getMessage(), status.getMessage());
+        Assert.assertTrue("Second Check - Make sure a cipher is produced", (output).length() > 0);
+
+        Assert.assertTrue(inputb64.equals(output));
+    }
     @Test
     public void testPGPDecrypt() throws Exception {
 
@@ -483,7 +541,7 @@ public class ServerSymmetricKeyEncryptionDecryptionAssertionTest {
         Assert.assertEquals("First Check", AssertionStatus.FAILED.getMessage(), status.getMessage());
     }
 
-    private void setUpAssertion(SymmetricKeyEncryptionDecryptionAssertion assertion, String data, String key, String outputVariable, String algorithm, boolean isEncrypt, String pgpPassPhrase, boolean isPgpPublicEncryption) {
+    private void setUpAssertion(SymmetricKeyEncryptionDecryptionAssertion assertion, String data, String key, String outputVariable, String algorithm, boolean isEncrypt, String pgpPassPhrase, boolean isPgpPublicEncryption, boolean isAsciiArmourEnabled) {
         assertion.setText(data);
         assertion.setKey(key);
         assertion.setOutputVariableName(outputVariable);
@@ -491,10 +549,11 @@ public class ServerSymmetricKeyEncryptionDecryptionAssertionTest {
         assertion.setIsEncrypt(isEncrypt);
         assertion.setPgpPassPhrase(pgpPassPhrase);
         assertion.setIsPgpKeyEncryption(isPgpPublicEncryption);
+        assertion.setAsciiArmourEnabled(isAsciiArmourEnabled);
     }
 
     private void setUpAssertion(SymmetricKeyEncryptionDecryptionAssertion assertion, String data, String key, String outputVariable, String algorithm, boolean isEncrypt, String pgpPassPhrase) {
-        setUpAssertion(assertion, data, key, outputVariable, algorithm, isEncrypt, pgpPassPhrase, false);
+        setUpAssertion(assertion, data, key, outputVariable, algorithm, isEncrypt, pgpPassPhrase, false, false);
     }
 
     @Ignore
