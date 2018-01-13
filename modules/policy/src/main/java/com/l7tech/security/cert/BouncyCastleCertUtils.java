@@ -3,19 +3,27 @@ package com.l7tech.security.cert;
 import com.l7tech.common.io.CertGenParams;
 import com.l7tech.common.io.CertificateGeneratorException;
 import com.l7tech.common.io.ParamsCertificateGenerator;
+import com.l7tech.common.io.X509GeneralName;
 import com.l7tech.security.prov.CertificateRequest;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.prov.bc.BouncyCastleCertificateRequest;
 import com.l7tech.util.ConfigFactory;
-import org.bouncycastle.asn1.ASN1EncodableVector;
-import org.bouncycastle.asn1.ASN1Set;
-import org.bouncycastle.asn1.DERSet;
-import org.bouncycastle.asn1.x509.X509Name;
+
+import org.bouncycastle.asn1.*;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.x509.*;
+import org.bouncycastle.asn1.x509.GeneralName;
+import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.jce.PKCS10CertificationRequest;
+import sun.security.util.DerOutputStream;
+import sun.security.x509.*;
+
 
 import javax.security.auth.x500.X500Principal;
+import java.io.IOException;
 import java.security.*;
 import java.security.cert.X509Certificate;
+import java.util.*;
 
 /**
  * Certificate utility methods that require static imports of Bouncy Castle classes.
@@ -56,7 +64,20 @@ public class BouncyCastleCertUtils  {
             throw new IllegalArgumentException("certGenParams must include a subject DN for the CSR");
         Provider sigProvider = JceProvider.getInstance().getProviderFor(JceProvider.SERVICE_CSR_SIGNING);
         X500Principal subject = certGenParams.getSubjectDn();
-        ASN1Set attrs = omitAttrs ? null : new DERSet(new ASN1EncodableVector());
+        DERSet attrSet;
+        //get extensions i.e. SAN (Subject Alternative Names)
+        X509Extensions extensions = getSubjectAlternativeNamesExtensions(certGenParams);
+        if(extensions != null ) {
+            Attribute attribute = new Attribute(
+                    PKCSObjectIdentifiers.pkcs_9_at_extensionRequest,
+                    new DERSet(extensions));
+            attrSet = new DERSet(attribute);
+        }
+        else {
+            attrSet = new DERSet(new ASN1EncodableVector());
+        }
+
+        ASN1Set attrs = omitAttrs ? null : attrSet;
         PublicKey publicKey = keyPair.getPublic();
         PrivateKey privateKey = keyPair.getPrivate();
 
@@ -69,6 +90,39 @@ public class BouncyCastleCertUtils  {
                 ? new PKCS10CertificationRequest(sigAlg, subject, publicKey, attrs, privateKey, null)
                 : new PKCS10CertificationRequest(sigAlg, subject, publicKey, attrs, privateKey, sigProvider.getName());
         return new BouncyCastleCertificateRequest(certReq, publicKey);
+    }
+
+    /**
+     * Get Subject Alternative Names and other extensions possible extensions
+     * @param certGenParams
+     * @return X509Extensions object or null if no extensions found
+     */
+    private static X509Extensions getSubjectAlternativeNamesExtensions(CertGenParams certGenParams) {
+        List<X509GeneralName> sans = certGenParams.getSubjectAlternativeNames();
+        // check if we have any SANs in the request
+        if(sans != null && sans.size() > 0) {
+            List<ASN1Encodable> asn1EncodableList = new ArrayList<>();
+            for (X509GeneralName san : sans) {
+                asn1EncodableList.add(new GeneralName(san.getType().getTag(), san.getStringVal()));
+            }
+
+            ASN1Encodable[] asn1Encodables = asn1EncodableList.toArray(new ASN1Encodable[0]);
+            ASN1Sequence sequence = new DERSequence(asn1Encodables);
+            GeneralNames subjectAltName = new GeneralNames(sequence);
+
+            // create the extensions object and add it as an attribute
+            Vector oids = new Vector();
+            Vector values = new Vector();
+
+            oids.add(X509Extensions.SubjectAlternativeName);
+            values.add(new X509Extension(false, new DEROctetString(subjectAltName)));
+
+
+            return new X509Extensions(oids, values);
+        }
+
+        return null;
+
     }
 
     /**

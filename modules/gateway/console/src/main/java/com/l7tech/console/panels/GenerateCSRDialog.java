@@ -1,14 +1,23 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.common.io.X509GeneralName;
+import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.gui.util.TableUtil;
+import com.l7tech.gui.util.Utilities;
+import com.l7tech.gui.widgets.OkCancelDialog;
+import com.l7tech.util.Functions;
+import com.l7tech.util.NameValuePair;
 
 import javax.security.auth.x500.X500Principal;
 import javax.swing.*;
-import java.awt.*;
+import java.awt.Dialog;
 import java.awt.event.*;
+import java.util.List;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 
 /**
  * This is the generate CSR dialog. It allows a user to enter a DN and select a hash function for the CSR
@@ -19,15 +28,28 @@ public class GenerateCSRDialog extends JDialog {
     private JButton buttonCancel;
     private JTextField dnTextField;
     private JComboBox<SigHash> signatureHashComboBox;
+    private JLabel sanLabel;
+    private JTable sanTable;
+    private JButton addSanButton;
+    private JButton editSanButton;
+    private JButton removeSanButton;
     private boolean okD = false;
     private String selectedHash;
     private String csrSubjectDN;
+    private List<X509GeneralName> csrSAN = new ArrayList<>();
+
+    private SimpleTableModel<NameValuePair> sanTableModel;
 
     public GenerateCSRDialog(Dialog owner, String defaultDN) {
         super(owner, "Generate CSR", true);
 
         setContentPane(contentPane);
         getRootPane().setDefaultButton(buttonOK);
+
+        sanTableModel = TableUtil.configureTable(sanTable,
+                TableUtil.column("Type", 100, 250, 99999, Functions.propertyTransform(NameValuePair.class, "key")),
+                TableUtil.column("Name", 100, 250, 99999, Functions.propertyTransform(NameValuePair.class, "value")));
+        sanTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
         buttonOK.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -66,7 +88,43 @@ public class GenerateCSRDialog extends JDialog {
         signatureHashComboBox.setSelectedItem(defaultSignatureHash);
 
         dnTextField.setText(defaultDN);
+
         dnTextField.setCaretPosition(0);
+
+        sanTableModel.setRows(new ArrayList<NameValuePair>(Collections.<NameValuePair>emptyList()));
+
+        addSanButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                showEditMappingDialog("Add Mapping", new NameValuePair(), new Functions.UnaryVoid<NameValuePair>() {
+                    @Override
+                    public void call(NameValuePair nameValuePair) {
+                        sanTableModel.addRow(nameValuePair);
+                    }
+                });
+            }
+        });
+
+        editSanButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                final int rowIndex = sanTable.getSelectedRow();
+                final NameValuePair mapping = sanTableModel.getRowObject(rowIndex);
+                if (mapping != null) showEditMappingDialog("Edit Mapping", mapping, new Functions.UnaryVoid<NameValuePair>() {
+                    @Override
+                    public void call(NameValuePair nameValuePair) {
+                        sanTableModel.setRowObject(rowIndex, nameValuePair);
+                    }
+                });
+            }
+        });
+
+        removeSanButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                sanTableModel.removeRowAt(sanTable.getSelectedRow());
+            }
+        });
     }
 
     private void onOK() {
@@ -82,6 +140,15 @@ public class GenerateCSRDialog extends JDialog {
 
         selectedHash = ((SigHash) signatureHashComboBox.getSelectedItem()).algorithm;
         csrSubjectDN = dnres;
+
+        List<NameValuePair> pairs = sanTableModel.getRows();
+        List<X509GeneralName> names = new ArrayList<>();
+        for(NameValuePair pair : pairs) {
+            X509GeneralName.Type type = X509GeneralName.Type.valueOf(pair.getKey());
+            String value = pair.getValue();
+            csrSAN.add(new X509GeneralName(type, value));
+        }
+
         okD = true;
 
         dispose();
@@ -116,6 +183,31 @@ public class GenerateCSRDialog extends JDialog {
      */
     public String getCsrSubjectDN() {
         return csrSubjectDN;
+    }
+
+    /**
+     * Returns the subject alternative names
+     * @return
+     */
+    public List<X509GeneralName> getCsrSAN() {
+        return csrSAN;
+    }
+
+    private void showEditMappingDialog(final String title, NameValuePair initialValue, final Functions.UnaryVoid<NameValuePair> actionIfConfirmed) {
+        final X509GeneralNamePanel panel = new X509GeneralNamePanel(initialValue);
+        final OkCancelDialog<NameValuePair> dlg = new OkCancelDialog<NameValuePair>(this, title, true, panel);
+        dlg.pack();
+        Utilities.centerOnParentWindow(dlg);
+        DialogDisplayer.display(dlg, new Runnable() {
+            @Override
+            public void run() {
+                if (dlg.wasOKed()) {
+                    NameValuePair value = dlg.getValue();
+                    if (value != null)
+                        actionIfConfirmed.call(value);
+                }
+            }
+        });
     }
 
     private static class SigHash {
