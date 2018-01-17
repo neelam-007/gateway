@@ -96,7 +96,7 @@ public class GenerateCSRDialog extends JDialog {
         addSanButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                showEditMappingDialog("Add Mapping", new NameValuePair(), new Functions.UnaryVoid<NameValuePair>() {
+                showEditMappingDialog("Add Subject Alternative Name", new NameValuePair(), new Functions.UnaryVoid<NameValuePair>() {
                     @Override
                     public void call(NameValuePair nameValuePair) {
                         sanTableModel.addRow(nameValuePair);
@@ -110,7 +110,7 @@ public class GenerateCSRDialog extends JDialog {
             public void actionPerformed(ActionEvent e) {
                 final int rowIndex = sanTable.getSelectedRow();
                 final NameValuePair mapping = sanTableModel.getRowObject(rowIndex);
-                if (mapping != null) showEditMappingDialog("Edit Mapping", mapping, new Functions.UnaryVoid<NameValuePair>() {
+                if (mapping != null) showEditMappingDialog("Edit Subject Alternative Name", mapping, new Functions.UnaryVoid<NameValuePair>() {
                     @Override
                     public void call(NameValuePair nameValuePair) {
                         sanTableModel.setRowObject(rowIndex, nameValuePair);

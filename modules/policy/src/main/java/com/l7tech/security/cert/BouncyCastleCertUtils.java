@@ -191,7 +191,7 @@ public class BouncyCastleCertUtils  {
                 case GeneralName.ediPartyName:
                 case GeneralName.x400Address:
                 case GeneralName.otherName:
-                    temp.add(new X509GeneralName(type, genName.getEncoded()));
+                    temp.add(new X509GeneralName(type, genName.getDEREncoded()));
                     break;
                 case GeneralName.directoryName:
                     temp.add(new X509GeneralName(type, X500Name.getInstance(genName.getName()).toString()));
@@ -205,7 +205,7 @@ public class BouncyCastleCertUtils  {
                     temp.add(new X509GeneralName(type, ASN1ObjectIdentifier.getInstance(genName.getName()).getId()));
                     break;
                 case GeneralName.iPAddress:
-                    temp.add(new X509GeneralName(type, DEROctetString.getInstance(genName.getName()).getOctets()));
+                    temp.add(new X509GeneralName(type, DEROctetString.getInstance(genName.getName()).getDEREncoded()));
                     break;
                 default:
                     throw new IOException("Bad tag number: " + genName.getTagNo());
