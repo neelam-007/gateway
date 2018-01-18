@@ -860,7 +860,7 @@
     <target name="publish-artifactory" if="publish.jar.target" description="Publish this project to Artifactory repository">
         <ivy:publish artifactspattern="${build.dir}/[type]/[artifact].[ext]"
                      module="${ant.project.name}"
-                     conf="default, master, test, optional, core, pom, skarsigner"
+                     conf="default, master, pom, core, skarsigner, optional, test"
                      resolver="${publish.jar.target}"
                      pubrevision="${version}"
                      overwrite="true"
