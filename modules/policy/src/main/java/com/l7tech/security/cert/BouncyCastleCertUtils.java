@@ -93,7 +93,7 @@ public class BouncyCastleCertUtils  {
     }
 
     /**
-     * Get Subject Alternative Names and other extensions possible extensions
+     * Get Subject Alternative Names extensions
      * @param certGenParams Certificate General Parameters
      * @return X509Extensions object or null if no extensions found
      */

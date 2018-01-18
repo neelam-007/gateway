@@ -11,8 +11,14 @@ import com.l7tech.util.NameValuePair;
 
 import javax.security.auth.x500.X500Principal;
 import javax.swing.*;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.event.TableModelEvent;
+import javax.swing.event.TableModelListener;
 import java.awt.Dialog;
 import java.awt.event.*;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.List;
 import java.util.Collection;
 import java.util.Collections;
@@ -50,6 +56,14 @@ public class GenerateCSRDialog extends JDialog {
                 TableUtil.column("Type", 100, 250, 99999, Functions.propertyTransform(NameValuePair.class, "key")),
                 TableUtil.column("Name", 100, 250, 99999, Functions.propertyTransform(NameValuePair.class, "value")));
         sanTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+        ListSelectionModel selectionModel = sanTable.getSelectionModel();
+        selectionModel.addListSelectionListener(new ListSelectionListener() {
+            @Override
+            public void valueChanged(ListSelectionEvent e) {
+                enableDisableComponents();
+            }
+        });
 
         buttonOK.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -122,9 +136,18 @@ public class GenerateCSRDialog extends JDialog {
         removeSanButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                sanTableModel.removeRowAt(sanTable.getSelectedRow());
+                NameValuePair row = sanTableModel.getRowObject(sanTable.getSelectedRow());
+
+                Object[] options = {"Remove", "Cancel"};
+                int result = JOptionPane.showOptionDialog(GenerateCSRDialog.this, "Do you want to remove " + row.right + "?",
+                        "Remove Subject Alternative Name", 0, JOptionPane.WARNING_MESSAGE, null, options, options[1]);
+                if (result == 0) {
+                    sanTableModel.removeRowAt(sanTable.getSelectedRow());
+                }
             }
         });
+
+        enableDisableComponents();
     }
 
     private void onOK() {
@@ -208,6 +231,12 @@ public class GenerateCSRDialog extends JDialog {
                 }
             }
         });
+    }
+
+    private void enableDisableComponents() {
+        boolean sANnRecordSelected = sanTable.getSelectedRowCount() > 0;
+        editSanButton.setEnabled(sANnRecordSelected);
+        removeSanButton.setEnabled(sANnRecordSelected);
     }
 
     private static class SigHash {
