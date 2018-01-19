@@ -791,6 +791,31 @@ public class CertUtilsTest {
         assertEquals("http://test.ca.com?test=test", generalName.getStringVal());
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void testConvertToX509GeneralName_InvalidDnsNameFormat() throws Exception {
+        CertUtils.convertToX509GeneralName(new NameValuePair("dNSName","bla$"));
+    }
+
+    @Test
+    public void testExtractX509GeneralNamesFromList() throws Exception {
+        String[] sans = {"dNSName:test.ca.com", "rfc822Name:test@ca.com", "iPAddress:111.222.33.44", "uniformResourceIdentifier:http:test.ca.com?test=test", "directoryName:CN=test,OU=people"};
+        List<X509GeneralName> generalNames = CertUtils.extractX509GeneralNamesFromList(Arrays.asList(sans));
+        assertEquals(4,generalNames.size());
+    }
+
+    @Test
+    public void testExtractX509GeneralNamesFromList_isNull() throws Exception {
+        String[] sans = {"test.ca.com","iPAddress"};
+        assertNull(CertUtils.extractX509GeneralNamesFromList(Arrays.asList(sans)));
+        assertNull(CertUtils.extractX509GeneralNamesFromList(Collections.EMPTY_LIST));
+        assertNull(CertUtils.extractX509GeneralNamesFromList(null));
+    }
+
+    @Test
+    public void testExtractX509GeneralNamesFromList_wrongStringFormat() throws Exception {
+        String[] sans = {"dNSName:test.ca.com:test1.ca.com"};
+        assertNull(CertUtils.extractX509GeneralNamesFromList(Arrays.asList(sans)));
+    }
     /**
      * Test certificate with CRL and OCSP URLS and a CRT URL
      */

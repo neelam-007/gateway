@@ -1,5 +1,6 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.common.io.CertUtils;
 import com.l7tech.gui.widgets.ValidatedPanel;
 import com.l7tech.util.NameValuePair;
 import org.apache.commons.lang.StringUtils;
@@ -80,28 +81,22 @@ public class X509GeneralNamePanel extends ValidatedPanel<NameValuePair> {
             error =  nameLabel.getText() + " must be specified.";
         }
         else if(type.equalsIgnoreCase("rfc822Name")) {
-            error = validatePattern(rfc822Pattern, value, nameLabel.getText() + " is not in proper format");
+            error = validatePattern(CertUtils.rfc822Pattern, value, nameLabel.getText() + " format is not valid");
         }
         else if(type.equalsIgnoreCase("dNSName")) {
-            error = validatePattern(dnsNamePattern, value, nameLabel.getText() + " is not in proper format");
+            error = validatePattern(CertUtils.dnsNamePattern, value, nameLabel.getText() + " format is not valid");
         }
         else if(type.equalsIgnoreCase("iPAddress")) {
-            error = validatePattern(ipAddressPattern, value, nameLabel.getText() + " is not in proper format");
+            error = validatePattern(CertUtils.ipAddressPattern, value, nameLabel.getText() + " format is not valid");
         }
         else if(type.equalsIgnoreCase("directoryName")) {
-            error = validatePattern(directoryNamePattern, value, nameLabel.getText() + " is not in proper format");
+            error = validatePattern(CertUtils.directoryNamePattern, value, nameLabel.getText() + " format is not valid");
         }
         else if(type.equalsIgnoreCase("uniformResourceIdentifier")) {
-            error = validatePattern(urlPattern, value, nameLabel.getText() + " is not in proper format");
+            error = validatePattern(CertUtils.urlPattern, value, nameLabel.getText() + " format is not valid");
         }
         return error;
     }
-
-    private static final Pattern rfc822Pattern = Pattern.compile("^[a-zA-Z0-9_!#$%&’*+/=?`{|}~^.-]+@[a-zA-Z0-9.-]+$");
-    private static final Pattern dnsNamePattern = Pattern.compile("^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])$");
-    private static final Pattern ipAddressPattern = Pattern.compile("^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$");
-    private static final Pattern directoryNamePattern = Pattern.compile("(\\w+[=]{1}[a-zA-Z0-9\\-\\$&\\(\\)\\[\\]\\{\\}\\.\\s]+)([,{1}]\\s*\\w+[=]{1}[a-zA-Z0-9\\-\\(\\)\\[\\]\\{\\}\\.\\s]+)*");
-    private static final Pattern urlPattern =Pattern.compile("^([a-z0-9+.-]+):(?://(?:((?:[a-z0-9-._~!$&'()*+,;=:]|%[0-9A-F]{2})*)@)?((?:[a-z0-9-._~!$&'()*+,;=]|%[0-9A-F]{2})*)(?::(\\d*))?(/(?:[a-z0-9-._~!$&'()*+,;=:@/]|%[0-9A-F]{2})*)?|(/?(?:[a-z0-9-._~!$&'()*+,;=:@]|%[0-9A-F]{2})+(?:[a-z0-9-._~!$&'()*+,;=:@/]|%[0-9A-F]{2})*)?)(?:\\?((?:[a-z0-9-._~!$&'()*+,;=:/?@]|%[0-9A-F]{2})*))?(?:#((?:[a-z0-9-._~!$&'()*+,;=:/?@]|%[0-9A-F]{2})*))?$");
 
     private static String validatePattern(Pattern p, String s, String msg) {
         String error = null;

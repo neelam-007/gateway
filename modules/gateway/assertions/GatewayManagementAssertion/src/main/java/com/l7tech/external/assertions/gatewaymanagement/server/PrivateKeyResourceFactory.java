@@ -417,9 +417,9 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
                         final SsgKeyStore ssgKeyStore = getSsgKeyStore( entry.getKeystoreId() );
                         final Map<String, Object> properties = resource.getProperties();
                         final Option<String> signatureHashAlgorithm = getProperty( properties, PrivateKeyGenerateCsrContext.PROP_SIGNATURE_HASH, Option.<String>none(), String.class );
-                        //TODO: add Subject Alternative names to CSR
+                        //add Subject Alternative names to CSR
                         final List<String> sansList = (List<String>) properties.get(PrivateKeyGenerateCsrContext.PROP_SANS);
-                        List<X509GeneralName> csrSAN = extractX509GeneralNamesFromList(sansList);
+                        List<X509GeneralName> csrSAN = CertUtils.extractX509GeneralNamesFromList(sansList);
                         final CertificateRequest res = ssgKeyStore.makeCertificateSigningRequest(
                                 entry.getAlias(),
                                 new CertGenParams(
@@ -437,6 +437,8 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
                         throw new ResourceAccessException( ExceptionUtils.getMessage( e ), e );
                     } catch ( UnrecoverableKeyException e ) {
                         throw new ResourceAccessException( ExceptionUtils.getMessage( e ), e );
+                    } catch (IllegalArgumentException e) {
+                        throw new InvalidResourceException(ExceptionType.INVALID_VALUES, e.getMessage());
                     }
 
                     final PrivateKeyGenerateCsrResult result = new PrivateKeyGenerateCsrResult();
