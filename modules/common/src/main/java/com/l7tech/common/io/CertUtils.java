@@ -8,6 +8,7 @@ import org.bouncycastle.asn1.*;
 import org.bouncycastle.asn1.x509.*;
 import org.bouncycastle.x509.extension.AuthorityKeyIdentifierStructure;
 import org.bouncycastle.x509.extension.X509ExtensionUtil;
+import org.jetbrains.annotations.NotNull;
 
 import javax.naming.InvalidNameException;
 import javax.naming.ldap.LdapName;
@@ -2208,6 +2209,51 @@ public class CertUtils {
         }
 
         return formatter;
+    }
+
+    private static final Pattern rfc822Pattern = Pattern.compile("^[a-zA-Z0-9_!#$%&’*+/=?`{|}~^.-]+@[a-zA-Z0-9.-]+$");
+    private static final Pattern dnsNamePattern = Pattern.compile("^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])$");
+    private static final Pattern ipAddressPattern = Pattern.compile("^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$");
+    private static final Pattern directoryNamePattern = Pattern.compile("(\\w+[=]{1}[a-zA-Z0-9\\-\\$&\\(\\)\\[\\]\\{\\}\\.\\s]+)([,{1}]\\s*\\w+[=]{1}[a-zA-Z0-9\\-\\(\\)\\[\\]\\{\\}\\.\\s]+)*");
+    private static final Pattern urlPattern =Pattern.compile("^([a-z0-9+.-]+):(?://(?:((?:[a-z0-9-._~!$&'()*+,;=:]|%[0-9A-F]{2})*)@)?((?:[a-z0-9-._~!$&'()*+,;=]|%[0-9A-F]{2})*)(?::(\\d*))?(/(?:[a-z0-9-._~!$&'()*+,;=:@/]|%[0-9A-F]{2})*)?|(/?(?:[a-z0-9-._~!$&'()*+,;=:@]|%[0-9A-F]{2})+(?:[a-z0-9-._~!$&'()*+,;=:@/]|%[0-9A-F]{2})*)?)(?:\\?((?:[a-z0-9-._~!$&'()*+,;=:/?@]|%[0-9A-F]{2})*))?(?:#((?:[a-z0-9-._~!$&'()*+,;=:/?@]|%[0-9A-F]{2})*))?$");
+
+    private static String validatePattern(Pattern p, String s) {
+        if(!p.matcher(s).matches()) {
+            throw new IllegalArgumentException("Pattern Validation Failed");
+        }
+        return s;
+    }
+
+    /**
+     * convert NameValuePair to X509GeneralName
+     * @param pair NameValuePair containing string representation of the type and value
+     * @return X509GeneralName object
+     */
+    public static X509GeneralName convertToX509GeneralName(@NotNull NameValuePair pair) throws IllegalArgumentException {
+        if(pair.getKey() == null || pair.getValue() == null) return null;
+        //Determine the type
+        switch (pair.getKey()) {
+            case "otherName":
+                return new X509GeneralName(X509GeneralName.Type.otherName, pair.getValue());
+            case "rfc822Name":
+                return  new X509GeneralName(X509GeneralName.Type.rfc822Name, validatePattern(rfc822Pattern,pair.getValue()));
+            case "dNSName":
+                return X509GeneralName.fromDnsName(validatePattern(dnsNamePattern, pair.getValue()));
+            case "x400Address":
+                return new X509GeneralName(X509GeneralName.Type.x400Address, pair.getValue());
+            case "directoryName":
+                return new X509GeneralName(X509GeneralName.Type.directoryName, validatePattern(directoryNamePattern, pair.getValue()));
+            case "ediPartyName":
+                return new X509GeneralName(X509GeneralName.Type.ediPartyName, pair.getValue());
+            case "uniformResourceIdentifier":
+                return new X509GeneralName(X509GeneralName.Type.uniformResourceIdentifier, validatePattern(urlPattern, pair.getValue()));
+            case "iPAddress":
+                return X509GeneralName.fromIpAddress(validatePattern(ipAddressPattern,pair.getValue()));
+            case "registeredID":
+                return new X509GeneralName(X509GeneralName.Type.registeredID, pair.getValue());
+            default:
+                return null;
+        }
     }
 
     /**

@@ -262,8 +262,8 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
      */
     @GET
     @Path("{id}/generateCSR")
-    public Item<PrivateKeyGenerateCsrResult> generateCSR(@PathParam("id") String id, @QueryParam("csrSubjectDN") String dn, @QueryParam("signatureHash") @ChoiceParam({"SHA1", "SHA256", "SHA384", "SHA512"}) String signatureHash) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-        PrivateKeyGenerateCsrResult privateKeyGenerateCsrResult = factory.generateCSR(id, dn, signatureHash);
+    public Item<PrivateKeyGenerateCsrResult> generateCSR(@PathParam("id") String id, @QueryParam("csrSubjectDN") String dn, @QueryParam("subjectAlternativeName") List<String> sans,  @QueryParam("signatureHash") @ChoiceParam({"SHA1", "SHA256", "SHA384", "SHA512"}) String signatureHash) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+        PrivateKeyGenerateCsrResult privateKeyGenerateCsrResult = factory.generateCSR(id, dn, sans, signatureHash);
         return new ItemBuilder<PrivateKeyGenerateCsrResult>(id + " CSR", id, "PrivateKeyGenerateCsrResult")
                 .setContent(privateKeyGenerateCsrResult)
                 .addLink(ManagedObjectFactory.createLink(Link.LINK_REL_SELF, uriInfo.getRequestUri().toString()))

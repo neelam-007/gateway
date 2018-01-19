@@ -1,5 +1,6 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.X509GeneralName;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
@@ -13,12 +14,8 @@ import javax.security.auth.x500.X500Principal;
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import javax.swing.event.TableModelEvent;
-import javax.swing.event.TableModelListener;
 import java.awt.Dialog;
 import java.awt.event.*;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.util.List;
 import java.util.Collection;
 import java.util.Collections;
@@ -165,11 +162,16 @@ public class GenerateCSRDialog extends JDialog {
         csrSubjectDN = dnres;
 
         List<NameValuePair> pairs = sanTableModel.getRows();
-        List<X509GeneralName> names = new ArrayList<>();
+
         for(NameValuePair pair : pairs) {
-            X509GeneralName.Type type = X509GeneralName.Type.valueOf(pair.getKey());
-            String value = pair.getValue();
-            csrSAN.add(new X509GeneralName(type, value));
+            try {
+                X509GeneralName generalName = CertUtils.convertToX509GeneralName(pair);
+                if(generalName != null) csrSAN.add(generalName);
+            } catch (IllegalArgumentException e) {
+                DialogDisplayer.showMessageDialog(this, "Subject Alternative Name " + pair.right + " is not a valid ",
+                        "Invalid Subject Alternative Name", JOptionPane.ERROR_MESSAGE, null);
+                return;
+            }
         }
 
         okD = true;

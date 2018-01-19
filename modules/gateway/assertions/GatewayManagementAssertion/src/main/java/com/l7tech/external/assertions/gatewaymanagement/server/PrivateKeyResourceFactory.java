@@ -1,9 +1,6 @@
 package com.l7tech.external.assertions.gatewaymanagement.server;
 
-import com.l7tech.common.io.AliasNotFoundException;
-import com.l7tech.common.io.CertGenParams;
-import com.l7tech.common.io.CertUtils;
-import com.l7tech.common.io.KeyGenParams;
+import com.l7tech.common.io.*;
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.InvalidResourceException.ExceptionType;
 import com.l7tech.gateway.api.CertificateData;
 import com.l7tech.gateway.api.ManagedObjectFactory;
@@ -18,6 +15,7 @@ import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.keystore.SsgKeyMetadata;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.objectmodel.*;
+import com.l7tech.security.cert.BouncyCastleCertUtils;
 import com.l7tech.security.cert.KeyUsageUtils;
 import com.l7tech.security.prov.CertificateRequest;
 import com.l7tech.security.prov.JceProvider;
@@ -419,11 +417,14 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
                         final SsgKeyStore ssgKeyStore = getSsgKeyStore( entry.getKeystoreId() );
                         final Map<String, Object> properties = resource.getProperties();
                         final Option<String> signatureHashAlgorithm = getProperty( properties, PrivateKeyGenerateCsrContext.PROP_SIGNATURE_HASH, Option.<String>none(), String.class );
-
+                        //TODO: add Subject Alternative names to CSR
+                        final List<String> sansList = (List<String>) properties.get(PrivateKeyGenerateCsrContext.PROP_SANS);
+                        List<X509GeneralName> csrSAN = extractX509GeneralNamesFromList(sansList);
                         final CertificateRequest res = ssgKeyStore.makeCertificateSigningRequest(
                                 entry.getAlias(),
                                 new CertGenParams(
                                         principal,
+                                        csrSAN,
                                         config.getIntProperty( "pkix.csr.defaultExpiryAge", DEFAULT_CSR_EXPIRY_DAYS ),
                                         false,
                                         signatureHashAlgorithm.map( getSignatureAlgorithmMapper( entry.getPrivateKey().getAlgorithm() ) ).toNull() ) );
@@ -448,6 +449,26 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
                 }
             }
         }, true ) );
+    }
+
+    @Nullable
+    private List<X509GeneralName> extractX509GeneralNamesFromList(List<String> sansList) throws InvalidResourceException{
+        try {
+            List<X509GeneralName> csrSAN = null;
+            if(sansList != null) {
+                for(String sanStr : sansList) {
+                    String[] s = sanStr.split(":");
+                    if(s.length == 2) {
+                        if(csrSAN == null) csrSAN = new ArrayList<>();
+                        X509GeneralName generalName = CertUtils.convertToX509GeneralName(new NameValuePair(s[0],s[1]));
+                        if(generalName != null) csrSAN.add(generalName);
+                    }
+                }
+            }
+            return csrSAN;
+        } catch (IllegalArgumentException e) {
+            throw new InvalidResourceException(ExceptionType.INVALID_VALUES, e.getMessage());
+        }
     }
 
     public PrivateKeySignCsrResult signCert( final Map<String,String> selectorMap, final String subjectDN, final Integer expiryAge, final String signatureHash,

@@ -5,6 +5,7 @@ import com.l7tech.common.TestKeys;
 import com.l7tech.test.BugId;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.HexUtils;
+import com.l7tech.util.NameValuePair;
 import com.l7tech.util.Pair;
 import org.bouncycastle.x509.extension.AuthorityKeyIdentifierStructure;
 import org.junit.Assert;
@@ -765,6 +766,30 @@ public class CertUtilsTest {
         assertEquals( "secp256r1", curveName );
     }
 
+
+    @Test
+    public void testConvertToX509GeneralNameFromNameValuePair() throws Exception {
+        assertNull(CertUtils.convertToX509GeneralName(new NameValuePair()));
+        assertNull(CertUtils.convertToX509GeneralName(new NameValuePair("dNSName",null)));
+        assertNull(CertUtils.convertToX509GeneralName(new NameValuePair(null, "test")));
+        assertNull(CertUtils.convertToX509GeneralName(new NameValuePair("","")));
+        assertNull(CertUtils.convertToX509GeneralName(new NameValuePair("blah", "blah")));
+        X509GeneralName generalName = CertUtils.convertToX509GeneralName(new NameValuePair("dNSName", "test.ca.com"));
+        assertEquals(X509GeneralName.Type.dNSName, generalName.getType());
+        assertEquals("test.ca.com", generalName.getStringVal());
+        generalName = CertUtils.convertToX509GeneralName(new NameValuePair("iPAddress", "111.222.33.44"));
+        assertEquals(X509GeneralName.Type.iPAddress, generalName.getType());
+        assertEquals("111.222.33.44", generalName.getStringVal());
+        generalName = CertUtils.convertToX509GeneralName(new NameValuePair("directoryName", "CN=test,OU=people"));
+        assertEquals(X509GeneralName.Type.directoryName, generalName.getType());
+        assertEquals("CN=test,OU=people", generalName.getStringVal());
+        generalName = CertUtils.convertToX509GeneralName(new NameValuePair("rfc822Name", "test@ca.com"));
+        assertEquals(X509GeneralName.Type.rfc822Name, generalName.getType());
+        assertEquals("test@ca.com", generalName.getStringVal());
+        generalName = CertUtils.convertToX509GeneralName(new NameValuePair("uniformResourceIdentifier", "http://test.ca.com?test=test"));
+        assertEquals(X509GeneralName.Type.uniformResourceIdentifier, generalName.getType());
+        assertEquals("http://test.ca.com?test=test", generalName.getStringVal());
+    }
 
     /**
      * Test certificate with CRL and OCSP URLS and a CRT URL
