@@ -63,22 +63,22 @@ public class ServerIncrementalSyncCommon {
         "SELECT DISTINCT aa.UUID " +
         "FROM (SELECT a.UUID, ax.API_UUID, a.CREATED_BY, a.MODIFIED_BY, a.MODIFY_TS, a.CREATE_TS, a.TENANT_ID " +
             "FROM APPLICATION a " +
-            "LEFT JOIN APPLICATION_API_XREF ax on ax.APPLICATION_UUID = a.UUID " +
-            "WHERE API_UUID IS NULL ) aa " +
+            "LEFT JOIN APPLICATION_API_XREF ax on ax.APPLICATION_UUID = a.UUID AND ax.TENANT_ID = a.TENANT_ID " +
+            "WHERE API_UUID IS NULL AND a.TENANT_ID = ?) aa " +
         "INNER JOIN " +
         "(SELECT a2.UUID, agax.API_UUID, ag.UUID AS API_GROUP_UUID, ag.CREATE_TS AS API_GROUP_CREATED_TS, ag.MODIFY_TS AS API_GROUP_MODIFIED_TS, a2.TENANT_ID  " +
             "FROM APPLICATION_API_GROUP_XREF aagx " +
-            "JOIN APPLICATION a2 ON a2.UUID = aagx.APPLICATION_UUID " +
-            "JOIN API_GROUP ag ON ag.UUID = aagx.API_GROUP_UUID " +
+            "JOIN APPLICATION a2 ON a2.UUID = aagx.APPLICATION_UUID AND a2.TENANT_ID = aagx.TENANT_ID " +
+            "JOIN API_GROUP ag ON ag.UUID = aagx.API_GROUP_UUID AND ag.TENANT_ID = aagx.TENANT_ID " +
             "LEFT JOIN  API_GROUP_API_XREF agax ON agax.API_GROUP_UUID = aagx.API_GROUP_UUID " +
-            "WHERE API_UUID IS NULL) bb " +
+            "WHERE API_UUID IS NULL AND a2.TENANT_ID = ?) bb " +
         "ON aa.UUID = bb.UUID AND aa.TENANT_ID = bb.TENANT_ID " +
         "LEFT JOIN APPLICATION_TENANT_GATEWAY t on t.APPLICATION_UUID = aa.UUID " +
-        "WHERE aa.TENANT_ID = ? AND ( " +
+        "WHERE " +
             "(t.TENANT_GATEWAY_UUID = ? AND t.SYNC_LOG IS NOT NULL) " +
             "OR (aa.MODIFY_TS = 0 and aa.CREATE_TS > ? and aa.CREATE_TS <= ?) " +
             "OR (bb.API_GROUP_UUID IS NOT NULL AND bb.API_GROUP_MODIFIED_TS > ? AND bb.API_GROUP_MODIFIED_TS <= ?) " +
-            "OR (bb.API_GROUP_UUID IS NOT NULL AND bb.API_GROUP_CREATED_TS = bb.API_GROUP_MODIFIED_TS AND bb.API_GROUP_CREATED_TS > ? AND bb.API_GROUP_CREATED_TS <= ?))";
+            "OR (bb.API_GROUP_UUID IS NOT NULL AND bb.API_GROUP_CREATED_TS = bb.API_GROUP_MODIFIED_TS AND bb.API_GROUP_CREATED_TS > ? AND bb.API_GROUP_CREATED_TS <= ?)";
 
     static final String BULK_SYNC_TRUE = "true";
     static final String BULK_SYNC_FALSE = "false";

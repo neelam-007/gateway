@@ -179,7 +179,7 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
 
             // Get apps that are not associated to any API, either directly or indirectly
             results = (Map<String, List>) queryJdbc(connName, ServerIncrementalSyncCommon.SELECT_APP_WITH_NO_API_SQL,
-                CollectionUtils.list(tenantId, nodeId, since, incrementStart, since, incrementStart, since, incrementStart));
+                CollectionUtils.list(tenantId, tenantId, nodeId, since, incrementStart, since, incrementStart, since, incrementStart));
             List<String> appIdsWithNoApi = results.get("uuid");
 
             // Merge the app uuids
