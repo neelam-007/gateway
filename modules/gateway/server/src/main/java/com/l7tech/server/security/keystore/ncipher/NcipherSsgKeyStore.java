@@ -30,7 +30,7 @@ public class NcipherSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements 
     static final String KF_PROP_INITIAL_KEYSTORE_ID = "initialKeystoreId";
     static final String KF_PROP_IGNORE_KEYSTORE_IDS = "ignoreKeystoreIds";
     private static final Logger logger = Logger.getLogger(NcipherSsgKeyStore.class.getName());
-    private static final String DB_FORMAT = "hsm.NcipherKeyStoreData";
+    static final String DB_FORMAT = "hsm.NcipherKeyStoreData";
     private static final String KEYSTORE_TYPE = "nCipher.sworld";
     private static final long refreshTime = 5 * 1000;
     private static final File KMDATA_LOCAL_DIR = new File( ConfigFactory.getProperty( "com.l7tech.server.security.keystore.ncipher.kmdataLocalPath", "/opt/nfast/kmdata/local" ) );
@@ -51,7 +51,7 @@ public class NcipherSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements 
     }
 
     @NotNull
-    private KeystoreFile findKeystoreFile() throws KeyStoreException {
+    KeystoreFile findKeystoreFile() throws KeyStoreException {
         // In order to find the key store file, two parameters kem and goid must be initialized and not be null.
         final Goid goid = getGoid();
         if (kem == null || goid == null) {
@@ -287,7 +287,7 @@ public class NcipherSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements 
         }));
     }
 
-    private synchronized Pair<NcipherKeyStoreData, KeyStore> bytesToKeyStore(byte[] bytes) throws KeyStoreException {
+    synchronized Pair<NcipherKeyStoreData, KeyStore> bytesToKeyStore(byte[] bytes) throws KeyStoreException {
         logger.info("Merging nCipher keystore data from database to local disk");
         try {
             NcipherKeyStoreData ksd = NcipherKeyStoreData.createFromBytes(bytes);
@@ -378,6 +378,14 @@ public class NcipherSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements 
         } finally {
             ResourceUtils.closeQuietly(os);
         }
+    }
+
+    KeyStore getKeystoreObject() {
+        return keystore;
+    }
+
+    int getKeystoreVersion() {
+        return keystoreVersion;
     }
 
     @Override
