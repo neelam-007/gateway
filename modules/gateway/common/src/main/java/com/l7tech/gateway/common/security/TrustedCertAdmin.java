@@ -52,6 +52,7 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
     public static final String CSR_PROP_CURVE_SIZE = "ec.public.key.curve.size";
     public static final String CSR_PROP_CURVE_POINT_W_X = "ec.public.key.curve.point.w.x.coord";
     public static final String CSR_PROP_CURVE_POINT_W_Y = "ec.public.key.curve.point.w.y.coord";
+    public static final String CSR_PROP_SUBJECT_ALTERNATIVE_NAMES = "subject.alternative.names";
 
     /**
      * Retrieves all {@link TrustedCert}s from the database.
@@ -591,7 +592,7 @@ public interface TrustedCertAdmin extends AsyncAdminMethods {
      * @return a map containing CSR properties.
      */
     @Secured(stereotype = UNCHECKED_WIDE_OPEN)
-    Map<String, String> getCsrProperties(byte[] csrBytes);
+    Map<String, Object> getCsrProperties(byte[] csrBytes);
 
     /**
      * Check if the private key is too short key for signature algorithm

@@ -18,6 +18,8 @@ import java.io.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigInteger;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.*;
@@ -2213,7 +2215,6 @@ public class CertUtils {
 
     public static final Pattern rfc822Pattern = Pattern.compile("^[a-zA-Z0-9_!#$%&’*+/=?`{|}~^.-]+@[a-zA-Z0-9.-]+$");
     public static final Pattern dnsNamePattern = Pattern.compile("^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])$");
-    public static final Pattern ipAddressPattern = Pattern.compile("^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$");
     public static final Pattern directoryNamePattern = Pattern.compile("(\\w+[=]{1}[a-zA-Z0-9\\-\\$&\\(\\)\\[\\]\\{\\}\\.\\s]+)([,{1}]\\s*\\w+[=]{1}[a-zA-Z0-9\\-\\(\\)\\[\\]\\{\\}\\.\\s]+)*");
     public static final Pattern urlPattern =Pattern.compile("^([a-z0-9+.-]+):(?://(?:((?:[a-z0-9-._~!$&'()*+,;=:]|%[0-9A-F]{2})*)@)?((?:[a-z0-9-._~!$&'()*+,;=]|%[0-9A-F]{2})*)(?::(\\d*))?(/(?:[a-z0-9-._~!$&'()*+,;=:@/]|%[0-9A-F]{2})*)?|(/?(?:[a-z0-9-._~!$&'()*+,;=:@]|%[0-9A-F]{2})+(?:[a-z0-9-._~!$&'()*+,;=:@/]|%[0-9A-F]{2})*)?)(?:\\?((?:[a-z0-9-._~!$&'()*+,;=:/?@]|%[0-9A-F]{2})*))?(?:#((?:[a-z0-9-._~!$&'()*+,;=:/?@]|%[0-9A-F]{2})*))?$");
 
@@ -2222,6 +2223,54 @@ public class CertUtils {
             throw new IllegalArgumentException("Invalid Format");
         }
         return s;
+    }
+
+    public static NameValuePair convertFromX509GeneralName(@NotNull X509GeneralName generalName) throws IllegalArgumentException {
+        StringBuilder sb = null;
+        switch (generalName.getType()) {
+            case dNSName:
+            case rfc822Name:
+            case directoryName:
+            case uniformResourceIdentifier:
+                return new NameValuePair(generalName.getType().name(), generalName.getStringVal());
+            case iPAddress:
+                String ipAddress = null;
+                if(generalName.getDerVal() != null) {
+                    byte[] bytes = generalName.getDerVal();
+                    //check if this is DEROctetString(4) and the length is correct IP4 or IP6
+                    if(bytes.length < 6 || bytes[0] != 4 || (bytes[1] != 4 && bytes[1] != 16)) {
+                        throw  new IllegalArgumentException("Wrong iPAddress encoding");
+                    }
+                    InetAddress inetAddress = null;
+                    try {
+                        inetAddress = InetAddress.getByAddress(Arrays.copyOfRange(bytes,2, bytes.length));
+                        ipAddress = inetAddress.getHostAddress();
+                    } catch (UnknownHostException e) {
+                        throw new IllegalArgumentException("Wrong InetAddress format");
+                    }
+
+                }
+                else {
+                    ipAddress = generalName.getStringVal();
+                }
+                return new NameValuePair(X509GeneralName.Type.iPAddress.name(), ipAddress);
+            case otherName:
+            case x400Address:
+            case ediPartyName:
+            case registeredID:
+                sb = new StringBuilder();
+                if(generalName.getStringVal() != null) {
+                    sb.append(generalName.getStringVal());
+                }
+                else {
+                    for(byte b : generalName.getDerVal()) {
+                        sb.append('[').append(Byte.toUnsignedInt(b)).append(']');
+                    }
+                }
+                return new NameValuePair(generalName.getType().name(), sb.toString());
+            default:
+                    throw new IllegalArgumentException("Wrong X509GeneralName Type");//should never happen
+        }
     }
 
     /**
@@ -2248,7 +2297,10 @@ public class CertUtils {
             case "uniformResourceIdentifier":
                 return new X509GeneralName(X509GeneralName.Type.uniformResourceIdentifier, validatePattern(urlPattern, pair.getValue()));
             case "iPAddress":
-                return X509GeneralName.fromIpAddress(validatePattern(ipAddressPattern,pair.getValue()));
+                if(InetAddressUtil.looksLikeIpAddressV4OrV6(pair.getValue()))
+                    return X509GeneralName.fromIpAddress(pair.getValue());
+                else
+                    throw new IllegalArgumentException("Invalid IP Address format");
             case "registeredID":
                 return new X509GeneralName(X509GeneralName.Type.registeredID, pair.getValue());
             default:

@@ -216,7 +216,7 @@ public class TrustedCertAdminStub implements TrustedCertAdmin {
     }
 
     @Override
-    public Map<String, String> getCsrProperties(byte[] csrBytes) {
+    public Map<String, Object> getCsrProperties(byte[] csrBytes) {
         return null;
     }
 

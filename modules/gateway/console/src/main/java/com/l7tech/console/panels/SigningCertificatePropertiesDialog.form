@@ -3,15 +3,15 @@
   <grid id="27dc6" binding="mainPanel" layout-manager="GridLayoutManager" row-count="6" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="10" left="10" bottom="10" right="10"/>
     <constraints>
-      <xy x="20" y="20" width="490" height="190"/>
+      <xy x="20" y="20" width="590" height="290"/>
     </constraints>
     <properties>
-      <minimumSize width="490" height="190"/>
-      <preferredSize width="490" height="190"/>
+      <minimumSize width="590" height="290"/>
+      <preferredSize width="590" height="290"/>
     </properties>
     <border type="none"/>
     <children>
-      <grid id="985a2" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+      <grid id="985a2" layout-manager="GridLayoutManager" row-count="2" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
@@ -40,6 +40,32 @@
             <properties>
               <autoscrolls value="true"/>
               <horizontalAlignment value="10"/>
+            </properties>
+          </component>
+          <scrollpane id="51ac5" binding="sansScrollPane">
+            <constraints>
+              <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false">
+                <minimum-size width="50" height="50"/>
+                <preferred-size width="50" height="100"/>
+              </grid>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <component id="59a20" class="javax.swing.JTable" binding="sansTable">
+                <constraints/>
+                <properties>
+                  <autoCreateRowSorter value="false"/>
+                </properties>
+              </component>
+            </children>
+          </scrollpane>
+          <component id="f8061" class="javax.swing.JLabel" binding="sansLabel">
+            <constraints>
+              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="9" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text value="Subject Alternative Names:"/>
             </properties>
           </component>
         </children>

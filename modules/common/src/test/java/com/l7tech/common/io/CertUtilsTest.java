@@ -4,6 +4,7 @@ import com.l7tech.common.TestDocuments;
 import com.l7tech.common.TestKeys;
 import com.l7tech.test.BugId;
 import com.l7tech.test.BugNumber;
+import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.NameValuePair;
 import com.l7tech.util.Pair;
@@ -12,8 +13,8 @@ import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import javax.security.auth.x500.X500Principal;
 import java.math.BigInteger;
+import java.net.InetAddress;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.CertificateException;
@@ -797,6 +798,35 @@ public class CertUtilsTest {
     }
 
     @Test
+    public void testConvertFromX509GeneralNameToNameValuePair() throws Exception {
+        NameValuePair actual = CertUtils.convertFromX509GeneralName(new X509GeneralName(X509GeneralName.Type.dNSName, "test.ca.com"));
+        assertEquals("dNSName", actual.left);
+        assertEquals("test.ca.com", actual.right);
+        actual = CertUtils.convertFromX509GeneralName(new X509GeneralName(X509GeneralName.Type.uniformResourceIdentifier, "https://test.ca.com"));
+        assertEquals("uniformResourceIdentifier", actual.left);
+        assertEquals("https://test.ca.com", actual.right);
+        actual = CertUtils.convertFromX509GeneralName(new X509GeneralName(X509GeneralName.Type.directoryName, "CN=test,OU=people"));
+        assertEquals("directoryName", actual.left);
+        assertEquals("CN=test,OU=people", actual.right);
+        actual = CertUtils.convertFromX509GeneralName(new X509GeneralName(X509GeneralName.Type.rfc822Name, "test@ca.com"));
+        assertEquals("rfc822Name", actual.left);
+        assertEquals("test@ca.com", actual.right);
+        actual = CertUtils.convertFromX509GeneralName(new X509GeneralName(X509GeneralName.Type.iPAddress, new byte[] {4,4,111,-122,33,44}));
+        assertEquals("iPAddress", actual.left);
+        assertEquals("111.134.33.44", actual.right);
+        actual = CertUtils.convertFromX509GeneralName(new X509GeneralName(X509GeneralName.Type.iPAddress, "111.134.33.44"));
+        assertEquals("111.134.33.44", actual.right);
+    }
+
+    @Test
+    public void testConvertFromX509GeneralNameToNameValuePair_ipv6() throws Exception {
+        InetAddress a = InetAddress.getByName("2001:0DB8:AC10:FE01:0000:0000:0000:0000");
+        byte[] bytes = a.getAddress();
+        NameValuePair actual = CertUtils.convertFromX509GeneralName(new X509GeneralName(X509GeneralName.Type.iPAddress, ArrayUtils.concat(new byte[]{4,16}, bytes)));
+        assertEquals("2001:db8:ac10:fe01:0:0:0:0", actual.right);
+    }
+
+    @Test
     public void testExtractX509GeneralNamesFromList() throws Exception {
         String[] sans = {"dNSName:test.ca.com", "rfc822Name:test@ca.com", "iPAddress:111.222.33.44", "uniformResourceIdentifier:http:test.ca.com?test=test", "directoryName:CN=test,OU=people"};
         List<X509GeneralName> generalNames = CertUtils.extractX509GeneralNamesFromList(Arrays.asList(sans));
@@ -816,6 +846,7 @@ public class CertUtilsTest {
         String[] sans = {"dNSName:test.ca.com:test1.ca.com"};
         assertNull(CertUtils.extractX509GeneralNamesFromList(Arrays.asList(sans)));
     }
+
     /**
      * Test certificate with CRL and OCSP URLS and a CRT URL
      */

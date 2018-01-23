@@ -3,21 +3,25 @@ package com.l7tech.console.panels;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
+import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.InputValidator;
+import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
+import com.l7tech.util.NameValuePair;
+import javafx.scene.control.SelectionMode;
 
 import javax.security.auth.x500.X500Principal;
 import javax.swing.*;
-import java.awt.*;
+import java.awt.Frame;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.text.MessageFormat;
-import java.util.Map;
-import java.util.ResourceBundle;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -48,18 +52,22 @@ public class SigningCertificatePropertiesDialog extends JDialog {
     private JComboBox hashAlgComboBox;
     private JButton fullDetailsButton;
     private JTextField publicKeyDetailsTextField;
+    private JTable sansTable;
+    private JLabel sansLabel;
+    private JScrollPane sansScrollPane;
 
     private Functions.Nullary<Boolean> precheckingShortKeyFunc;
     private Functions.Nullary<Void> postTaskFunc;
     private String publicKeyDetails;
 
+    private SimpleTableModel<NameValuePair> sanTableModel;
     /**
      * The constructor will be given the contents of the CSR.
      * @param owner parent of this dialog
      * @param csrProps CSR properties
      * @param precheckingShortKeyFunc: the function to check if the CA key is a short key for signature alorightm
      */
-    public SigningCertificatePropertiesDialog(Frame owner, Map<String, String> csrProps, Functions.Nullary<Boolean> precheckingShortKeyFunc) {
+    public SigningCertificatePropertiesDialog(Frame owner, Map<String, Object> csrProps, Functions.Nullary<Boolean> precheckingShortKeyFunc) {
         super(owner, resources.getString("dialog.title"));
         this.precheckingShortKeyFunc = precheckingShortKeyFunc;
         initialize();
@@ -95,6 +103,14 @@ public class SigningCertificatePropertiesDialog extends JDialog {
         setModal(true);
         getRootPane().setDefaultButton(cancelButton);
         Utilities.setEscKeyStrokeDisposes(this);
+
+        sanTableModel = TableUtil.configureTable(sansTable,
+                TableUtil.column("Type", 100, 250, 99999, Functions.propertyTransform(NameValuePair.class, "key")),
+                TableUtil.column("Name", 100, 250, 99999, Functions.propertyTransform(NameValuePair.class, "value")));
+        sanTableModel.setRows(new ArrayList<NameValuePair>(Collections.<NameValuePair>emptyList()));
+        sansTable.setEnabled(false);
+        sansLabel.setVisible(false);
+        sansScrollPane.setVisible(false);
 
         final InputValidator inputValidator = new InputValidator(this, resources.getString("error.dialog.title"));
         inputValidator.constrainTextFieldToNumberRange(resources.getString("text.cert.expiry.age"), expiryAgeTextField, MIN_CERTIFICATE_EXPIRY, MAX_CERTIFICATE_EXPIRY);
@@ -196,18 +212,26 @@ public class SigningCertificatePropertiesDialog extends JDialog {
      *
      * @param csrProps given the properties of the CSR
      */
-    private void modelToView(final Map<String, String> csrProps) {
+    private void modelToView(final Map<String, Object> csrProps) {
         if (csrProps == null || csrProps.isEmpty()) return;
 
-        subjectDnTextField.setText(csrProps.get(TrustedCertAdmin.CSR_PROP_SUBJECT_DN));
+        subjectDnTextField.setText((String)csrProps.get(TrustedCertAdmin.CSR_PROP_SUBJECT_DN));
         subjectDnTextField.setCaretPosition(0);
+        if(csrProps.containsKey(TrustedCertAdmin.CSR_PROP_SUBJECT_ALTERNATIVE_NAMES)) {
+            List<NameValuePair> sansList = (List<NameValuePair>) csrProps.get(TrustedCertAdmin.CSR_PROP_SUBJECT_ALTERNATIVE_NAMES);
+            if(sansList.size() > 0) {
+                sanTableModel.setRows(sansList);
+                sansScrollPane.setVisible(true);
+                sansLabel.setVisible(true);
+            }
+        }
 
-        final String keyType = csrProps.get(TrustedCertAdmin.CSR_PROP_KEY_TYPE);
+        final String keyType = (String)csrProps.get(TrustedCertAdmin.CSR_PROP_KEY_TYPE);
         if (keyType == null) return;
 
         final String briefDetails;
         if (keyType.startsWith("RSA")) {
-            final String keySize = csrProps.get(TrustedCertAdmin.CSR_PROP_KEY_SIZE);
+            final String keySize = (String)csrProps.get(TrustedCertAdmin.CSR_PROP_KEY_SIZE);
             briefDetails = "RSA, " + keySize + " bits";
 
             publicKeyDetails = "Key type: RSA public key\n" +
@@ -215,7 +239,7 @@ public class SigningCertificatePropertiesDialog extends JDialog {
                 "Modulus: " + csrProps.get(TrustedCertAdmin.CSR_PROP_MODULUS) + "\n" +
                 "Public exponent: " + csrProps.get(TrustedCertAdmin.CSR_PROP_EXPONENT);
         } else if (keyType.startsWith("EC")) {
-            final String curveName = csrProps.get(TrustedCertAdmin.CSR_PROP_CURVE_NAME);
+            final String curveName = (String)csrProps.get(TrustedCertAdmin.CSR_PROP_CURVE_NAME);
             briefDetails = "EC" + (curveName == null? "" : ", " + curveName);
 
             publicKeyDetails = "Key type: EC public key\n" +
@@ -224,7 +248,7 @@ public class SigningCertificatePropertiesDialog extends JDialog {
                 "Curve point-W (X): " + csrProps.get(TrustedCertAdmin.CSR_PROP_CURVE_POINT_W_X) + "\n" +
                 "Curve point-W (Y): " + csrProps.get(TrustedCertAdmin.CSR_PROP_CURVE_POINT_W_Y);
         } else {
-            briefDetails = csrProps.get(TrustedCertAdmin.CSR_PROP_KEY_TYPE);
+            briefDetails = (String)csrProps.get(TrustedCertAdmin.CSR_PROP_KEY_TYPE);
             fullDetailsButton.setEnabled(false); // No full details available for this case.
         }
 

@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.gui.widgets.ValidatedPanel;
+import com.l7tech.util.InetAddressUtil;
 import com.l7tech.util.NameValuePair;
 import org.apache.commons.lang.StringUtils;
 
@@ -87,7 +88,8 @@ public class X509GeneralNamePanel extends ValidatedPanel<NameValuePair> {
             error = validatePattern(CertUtils.dnsNamePattern, value, nameLabel.getText() + " format is not valid");
         }
         else if(type.equalsIgnoreCase("iPAddress")) {
-            error = validatePattern(CertUtils.ipAddressPattern, value, nameLabel.getText() + " format is not valid");
+            if(!InetAddressUtil.looksLikeIpAddressV4OrV6(value))
+                error = nameLabel.getText() + "IP Address format is not valid";
         }
         else if(type.equalsIgnoreCase("directoryName")) {
             error = validatePattern(CertUtils.directoryNamePattern, value, nameLabel.getText() + " format is not valid");
