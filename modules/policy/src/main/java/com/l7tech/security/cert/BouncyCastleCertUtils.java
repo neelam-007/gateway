@@ -97,7 +97,7 @@ public class BouncyCastleCertUtils  {
      * @param certGenParams Certificate General Parameters
      * @return X509Extensions object or null if no extensions found
      */
-    private static X509Extensions getSubjectAlternativeNamesExtensions(CertGenParams certGenParams) {
+    protected static X509Extensions getSubjectAlternativeNamesExtensions(CertGenParams certGenParams) {
         List<X509GeneralName> sans = certGenParams.getSubjectAlternativeNames();
         // check if we have any SANs in the request
         if(sans != null && sans.size() > 0) {
