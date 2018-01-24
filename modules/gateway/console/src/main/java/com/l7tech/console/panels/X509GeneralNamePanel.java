@@ -7,12 +7,11 @@ import com.l7tech.util.NameValuePair;
 import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
-import javax.swing.event.ListDataListener;
 import java.awt.*;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class X509GeneralNamePanel extends ValidatedPanel<NameValuePair> {
+    public static final String FORMAT_IS_NOT_VALID = " format is not valid";
     private JComboBox typeComboBox;
     private JTextField nameTextField;
     private JPanel contentPane;
@@ -82,20 +81,20 @@ public class X509GeneralNamePanel extends ValidatedPanel<NameValuePair> {
             error =  nameLabel.getText() + " must be specified.";
         }
         else if(type.equalsIgnoreCase("rfc822Name")) {
-            error = validatePattern(CertUtils.rfc822Pattern, value, nameLabel.getText() + " format is not valid");
+            error = validatePattern(CertUtils.rfc822Pattern, value, nameLabel.getText() + FORMAT_IS_NOT_VALID);
         }
         else if(type.equalsIgnoreCase("dNSName")) {
-            error = validatePattern(CertUtils.dnsNamePattern, value, nameLabel.getText() + " format is not valid");
+            error = validatePattern(CertUtils.dnsNamePattern, value, nameLabel.getText() + FORMAT_IS_NOT_VALID);
         }
         else if(type.equalsIgnoreCase("iPAddress")) {
             if(!InetAddressUtil.looksLikeIpAddressV4OrV6(value))
                 error = nameLabel.getText() + "IP Address format is not valid";
         }
         else if(type.equalsIgnoreCase("directoryName")) {
-            error = validatePattern(CertUtils.directoryNamePattern, value, nameLabel.getText() + " format is not valid");
+            error = validatePattern(CertUtils.directoryNamePattern, value, nameLabel.getText() + FORMAT_IS_NOT_VALID);
         }
         else if(type.equalsIgnoreCase("uniformResourceIdentifier")) {
-            error = validatePattern(CertUtils.urlPattern, value, nameLabel.getText() + " format is not valid");
+            error = validatePattern(CertUtils.urlPattern, value, nameLabel.getText() + FORMAT_IS_NOT_VALID);
         }
         return error;
     }
