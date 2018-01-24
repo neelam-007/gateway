@@ -167,13 +167,34 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
 
         if (since != null) {
             appJsonObj.setBulkSync(ServerIncrementalSyncCommon.BULK_SYNC_FALSE);
-            // get deleted IDs
+            // Get deleted IDs - there are two parts to this:
+            // 1. Include applications that are actually deleted by the user
+            // 2. Include applications that have empty API groups (disabled API can be removed from a group even if it's used by an app) and no directly associated APIs
+            // A new feature was introduced and the side effect of it is that an app is now possible to have zero API associated to it, which caused sync to break.
+            // The fix is to treat apps with no API as "deleted" in the payload so that OTK will remove it from their db.
+
+            // Get deleted apps
             results = (Map<String, List>) queryJdbc(connName, ServerIncrementalSyncCommon.getSyncDeletedEntities(ServerIncrementalSyncCommon.ENTITY_TYPE_APPLICATION, tenantId), CollectionUtils.list(since, incrementStart));
             List<String> deletedIds = results.get("entity_uuid");
-            if (deletedIds == null || deletedIds.isEmpty()) {
-                appJsonObj.setDeletedIds(new ArrayList<String>());
+
+            // Get apps that are not associated to any API, either directly or indirectly
+            results = (Map<String, List>) queryJdbc(connName, ServerIncrementalSyncCommon.SELECT_APP_WITH_NO_API_SQL,
+                CollectionUtils.list(tenantId, tenantId, nodeId, since, incrementStart, since, incrementStart, since, incrementStart));
+            List<String> appIdsWithNoApi = results.get("uuid");
+
+            // Merge the app uuids
+            Set mergedAppUuids = new HashSet<String>();
+            if (deletedIds != null && !deletedIds.isEmpty()) {
+                mergedAppUuids.addAll(deletedIds);
+            }
+            if (appIdsWithNoApi != null && !appIdsWithNoApi.isEmpty()) {
+                mergedAppUuids.addAll(appIdsWithNoApi);
+            }
+
+            if (mergedAppUuids.isEmpty()) {
+                appJsonObj.setDeletedIds(new ArrayList<>());
             } else {
-                appJsonObj.setDeletedIds(deletedIds);
+                appJsonObj.setDeletedIds(new ArrayList<>(mergedAppUuids));
             }
 
             // get new or updated or last sync error apps
