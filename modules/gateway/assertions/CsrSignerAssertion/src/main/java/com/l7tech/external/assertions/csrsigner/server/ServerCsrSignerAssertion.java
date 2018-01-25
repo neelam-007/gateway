@@ -16,6 +16,7 @@ import com.l7tech.server.DefaultKey;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
+import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
@@ -27,7 +28,9 @@ import java.io.IOException;
 import java.security.PrivateKey;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.X509Certificate;
+import java.util.Map;
 import java.util.logging.Level;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * Server side implementation of the CsrSignerAssertion.
@@ -37,6 +40,8 @@ import java.util.logging.Level;
 public class ServerCsrSignerAssertion extends AbstractServerAssertion<CsrSignerAssertion> {
 
     private static final int MAX_CSR_SIZE = SyspropUtil.getInteger(ServerCsrSignerAssertion.class.getName() + ".maxCsrBytes", 200 * 1024);
+    private static final int MAX_CSR_AGE = 10 * 365; // 10 years (industry max X 2).
+    final String[] variablesUsed;
 
     @Inject
     SsgKeyStoreManager ssgKeyStoreManager;
@@ -47,10 +52,12 @@ public class ServerCsrSignerAssertion extends AbstractServerAssertion<CsrSignerA
 
     public ServerCsrSignerAssertion( final CsrSignerAssertion assertion ) throws PolicyAssertionException {
         super(assertion);
+        variablesUsed = assertion.getVariablesUsed();
     }
 
     public ServerCsrSignerAssertion( final CsrSignerAssertion assertion, final AuditFactory auditFactory ) throws PolicyAssertionException {
         super(assertion, auditFactory);
+        variablesUsed = assertion.getVariablesUsed();
     }
 
     public AssertionStatus checkRequest( final PolicyEnforcementContext context ) throws IOException, PolicyAssertionException {
@@ -88,9 +95,30 @@ public class ServerCsrSignerAssertion extends AbstractServerAssertion<CsrSignerA
             if (certDNVariableName != null && certDNVariableName.trim().length() > 0) {
                 final String certDN =  (String)context.getVariable(certDNVariableName);
                 if (certDN != null && certDN.trim().length() > 0) {
-                    params = new CertGenParams(new X500Principal(certDN), 365, false, null);
+                    params = new CertGenParams(new X500Principal(certDN), 365, false, null); // what about this default expiry days???
                 }
             }
+
+            final Map<String, Object> varMap = context.getVariableMap(variablesUsed, getAudit());
+            String expiryDate = assertion.getExpiryAgeDays();
+            if (StringUtils.isEmpty(expiryDate)){ // will be null for policy saved with older version of this assertion.
+                params.setDaysUntilExpiry(CsrSignerAssertion.DEFAULT_EXPIRY_AGE_DAYS);
+            } else {
+                String resolvedExpiryAgeStr = ExpandVariables.process(assertion.getExpiryAgeDays(), varMap, getAudit());
+                if (StringUtils.isBlank(resolvedExpiryAgeStr)) {
+                    // Could not resolve the context variable.
+                    logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Could not resolve the context variable in the Expiry Age field");
+                    return AssertionStatus.FAILED;
+                } else {
+                    int resolvedExpiryAge = Integer.parseInt(resolvedExpiryAgeStr);
+                    if (resolvedExpiryAge <= 0 || resolvedExpiryAge > MAX_CSR_AGE ) {
+                        logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "The Expiry Age field must a number between 1 and " + String.valueOf(MAX_CSR_AGE));
+                        return AssertionStatus.FAILED;
+                    }
+                    params.setDaysUntilExpiry(resolvedExpiryAge);
+                }
+            }
+
             X509Certificate cert = (X509Certificate)signerEngine.createCertificate(csrBytes, params);
 
             X509Certificate[] fullChain = new X509Certificate[caChain.length + 1];

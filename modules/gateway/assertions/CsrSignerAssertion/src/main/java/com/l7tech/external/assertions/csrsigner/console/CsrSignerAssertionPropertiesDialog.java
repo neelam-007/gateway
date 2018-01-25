@@ -7,6 +7,7 @@ import com.l7tech.external.assertions.csrsigner.CsrSignerAssertion;
 
 import javax.swing.*;
 import java.awt.*;
+import org.apache.commons.lang.StringUtils;
 
 public class CsrSignerAssertionPropertiesDialog extends AssertionPropertiesOkCancelSupport<CsrSignerAssertion> {
     private JPanel contentPane;
@@ -14,6 +15,7 @@ public class CsrSignerAssertionPropertiesDialog extends AssertionPropertiesOkCan
     private TargetVariablePanel csrVariablePanel;
     private PrivateKeysComboBox privateKeyComboBox;
     private TargetVariablePanel certDnVariablePanel;
+    private JTextField expiryAgeField;
 
     public CsrSignerAssertionPropertiesDialog(Window parent, CsrSignerAssertion bean) {
         super(bean.getClass(), parent, bean, true);
@@ -27,6 +29,12 @@ public class CsrSignerAssertionPropertiesDialog extends AssertionPropertiesOkCan
         certDnVariablePanel.setVariable(assertion.getCertDNVariableName());
         csrVariablePanel.setAssertion(assertion, getPreviousAssertion());
         csrVariablePanel.setVariable(assertion.getCsrVariableName());
+
+        String expiryAgeDays = assertion.getExpiryAgeDays();
+        if (StringUtils.isEmpty(expiryAgeDays)){
+            expiryAgeDays = String.valueOf(CsrSignerAssertion.DEFAULT_EXPIRY_AGE_DAYS);
+        }
+        expiryAgeField.setText(String.valueOf(expiryAgeDays));
         String prefix = assertion.getOutputPrefix();
         prefixField.setText(prefix == null ? "" : prefix);
         if (assertion.isUsesDefaultKeyStore())
@@ -42,6 +50,12 @@ public class CsrSignerAssertionPropertiesDialog extends AssertionPropertiesOkCan
 
         assertion.setCertDNVariableName(certDnVariablePanel.getVariable());
         assertion.setCsrVariableName(csrVariablePanel.getVariable());
+
+        String expiryAgeString = expiryAgeField.getText();
+        if (StringUtils.isEmpty(expiryAgeField.getText())){
+            throw new ValidationException("An Expiry Age value must be specified.");
+        }
+        assertion.setExpiryAgeDays(expiryAgeString);
         assertion.setOutputPrefix(prefixField.getText());
 
         assertion.setUsesDefaultKeyStore(privateKeyComboBox.isSelectedDefaultSsl());

@@ -4,9 +4,14 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.DataType;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.util.GoidUpgradeMapper;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Assertion that can create a signed certificate from a CSR.
@@ -14,10 +19,12 @@ import org.jetbrains.annotations.Nullable;
 public class CsrSignerAssertion extends Assertion implements UsesVariables, SetsVariables, PrivateKeyable {
     public static final String VAR_CERT = "certificate";
     public static final String VAR_CHAIN = "chain";
+    public static final int DEFAULT_EXPIRY_AGE_DAYS = 1825;
 
     private final PrivateKeyableSupport pks = new PrivateKeyableSupport();
     private String certDNVariableName;
     private String csrVariableName;
+    private String expiryAgeDays; // String to accept context variables.
     private String outputPrefix;
 
     /**
@@ -51,6 +58,25 @@ public class CsrSignerAssertion extends Assertion implements UsesVariables, Sets
      */
     public void setCsrVariableName(String csrVariableName) {
         this.csrVariableName = csrVariableName;
+    }
+
+    /**
+     *
+     * @return the number of days maximum that the certificate is valid for.
+     */
+
+    public String getExpiryAgeDays() {
+        return expiryAgeDays;
+    }
+
+    /**
+     * Sets the maximum number days the certificate is valid for in days.
+     *
+     * @param expiryAgeDays The maximum number of days the certificate is valid in days.  The input is a String
+     *                      so that it can accept context variables.
+     */
+    public void setExpiryAgeDays(String expiryAgeDays) {
+        this.expiryAgeDays = expiryAgeDays;
     }
 
     /**
@@ -104,12 +130,25 @@ public class CsrSignerAssertion extends Assertion implements UsesVariables, Sets
 
     @Override
     public String[] getVariablesUsed() {
-        if (csrVariableName != null) {
-            if (certDNVariableName != null)
-                return new String[] { certDNVariableName, csrVariableName };
-        } else if (certDNVariableName != null)
-            return new String[] { certDNVariableName };
-        return new String[0];
+
+        List<String> varsUsedList = new ArrayList<>();
+
+        if (!StringUtils.isEmpty(expiryAgeDays)){
+            String varString = Syntax.getSingleVariableReferenced(expiryAgeDays);
+            if (!StringUtils.isEmpty(varString)){
+                varsUsedList.add(varString);
+            }
+        }
+
+        if (!StringUtils.isEmpty(csrVariableName)){
+            varsUsedList.add(csrVariableName);
+        }
+
+        if (!StringUtils.isEmpty(certDNVariableName)){
+            varsUsedList.add(certDNVariableName);
+        }
+
+        return varsUsedList.toArray(new String[]{});
     }
 
     @Override
