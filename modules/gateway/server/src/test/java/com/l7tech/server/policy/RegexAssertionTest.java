@@ -1,20 +1,20 @@
 package com.l7tech.server.policy;
 
+import com.hazelcast.com.eclipsesource.json.JsonObject;
 import com.l7tech.common.TestDocuments;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.PartInfo;
 import com.l7tech.gateway.common.LicenseException;
+import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.gateway.common.audit.TestAudit;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.message.Message;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
-import com.l7tech.server.MessageProcessorListener;
-import com.l7tech.server.MockServletApi;
-import com.l7tech.server.SoapMessageProcessingServlet;
-import com.l7tech.server.TestMessageProcessor;
+import com.l7tech.server.*;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
@@ -23,6 +23,7 @@ import com.l7tech.server.policy.assertion.ServerRegex;
 import com.l7tech.server.service.ServicesHelper;
 import com.l7tech.server.transport.http.HttpTransportModuleTester;
 import com.l7tech.test.BugNumber;
+import com.l7tech.util.CollectionUtils;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.xml.soap.SoapMessageGenerator;
 import com.l7tech.xml.soap.SoapUtil;
@@ -56,6 +57,7 @@ public class RegexAssertionTest {
     private int tokenCount = 0;
     private static TestMessageProcessor messageProcessor;
     private static AssertionRegistry assertionRegistry;
+    private static TestAudit testAudit;
 
     private static ServicesHelper getServicesHelper() {
         if (servicesHelper == null) {
@@ -71,6 +73,7 @@ public class RegexAssertionTest {
     @Before
     public void setUp() throws Exception {
         tokenCount = 0;
+        testAudit = new TestAudit();
         getServicesHelper().deleteAllServices();
         assertionRegistry.registerAssertion(TestEchoAssertion.class);
         HttpTransportModuleTester.setGlobalConnector(new SsgConnector() {
@@ -345,15 +348,25 @@ public class RegexAssertionTest {
         return req;
     }
 
-    private void expect(AssertionStatus expected, Regex regex, PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        ServerRegex sass = new ServerRegex(regex);
+    private void expect(AssertionStatus expected, Regex regex, PolicyEnforcementContext context) throws IOException, PolicyAssertionException, LicenseException {
+
+        ServerRegex serverAssertion = new ServerRegex(regex);
+        injectDependencies(serverAssertion);
+
         AssertionStatus result;
         try {
-            result = sass.checkRequest(context);
+            result = serverAssertion.checkRequest(context);
         } catch (AssertionStatusException ase) {
             result = ase.getAssertionStatus();
         }
         assertEquals(expected, result);
+    }
+
+    final private void injectDependencies(final ServerRegex regexAssertion) {
+        ApplicationContexts.inject(regexAssertion, CollectionUtils.<String, Object>mapBuilder()
+                        .put("auditFactory", testAudit.factory())
+                        .unmodifiableMap()
+        );
     }
 
     private String toString(PartInfo part) throws IOException {
@@ -444,6 +457,18 @@ public class RegexAssertionTest {
     @Test
     public void testNewSimpleReplaceBadBackref() throws Exception {
         expect(AssertionStatus.SERVER_ERROR, regex(SUBSTR_FOO, SUBSTR_POO + "$1"), context(PHRASE_FOO, PHRASE_ORLY));
+
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.REGEX_REPLACEMENT_INVALID));
+        assertTrue(testAudit.isAuditPresentContaining("Error: No group 1"));
+    }
+
+    @Test
+    @BugNumber(336817)
+    public void testGroupReferenceError() throws Exception {
+        expect(AssertionStatus.SERVER_ERROR, regex("(test_string)", "$$badGroupReference"), context(new JsonObject().add("test", "test_string").toString(), PHRASE_ORLY));
+
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.REGEX_REPLACEMENT_INVALID));
+        assertTrue(testAudit.isAuditPresentContaining("Error: Illegal group reference"));
     }
 
     @Test
@@ -744,7 +769,7 @@ public class RegexAssertionTest {
         doMultivaluedTest(AssertionStatus.FALSIFIED, Arrays.asList("qwer", "sdgfb", "asdf"));
     }
 
-    private void doMultivaluedTest(AssertionStatus expectedStatus, Object targetValue) throws IOException, PolicyAssertionException {
+    private void doMultivaluedTest(AssertionStatus expectedStatus, Object targetValue) throws IOException, PolicyAssertionException, LicenseException {
         final Regex regex = regex("blah");
         regex.setAutoTarget(false);
         regex.setTarget(TargetMessageType.OTHER);
