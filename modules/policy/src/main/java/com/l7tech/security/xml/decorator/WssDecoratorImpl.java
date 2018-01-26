@@ -445,9 +445,6 @@ public class WssDecoratorImpl implements WssDecorator {
                 case STR_KEYID_LITERAL_X509: {
                     senderCertKeyInfo = new Pair<>( senderMessageSigningCert, KeyInfoDetails.makeStrKeyIdLiteralX509( senderMessageSigningCert ) );
                     break; }
-                case STR_KEYID_LITERAL_X509: {
-                    senderCertKeyInfo = new Pair<>( senderMessageSigningCert, KeyInfoDetails.makeStrKeyIdLiteralX509( senderMessageSigningCert ) );
-                    break; }
                 case ISSUER_SERIAL: {
                     senderCertKeyInfo = new Pair<>(senderMessageSigningCert, KeyInfoDetails.makeIssuerSerial(senderMessageSigningCert, true));
                     break; }
