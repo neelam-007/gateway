@@ -93,6 +93,8 @@ public class SocketConnectorManager {
     private ReentrantReadWriteLock statusLock = new ReentrantReadWriteLock();
     private static final String EXTENSIBLE_SOCKET_CONNECTOR_PREFIX = "EXT-";
 
+    private static final String EXECUTOR_FILTER_NAME = "threadPool";
+
     public static synchronized void createConnectionManager(EntityManager<ExtensibleSocketConnectorEntity, GenericEntityHeader> entityManager,
                                                             ClusterPropertyManager clusterPropertyManager,
                                                             SsgKeyStoreManager keyStoreManager,
@@ -211,7 +213,13 @@ public class SocketConnectorManager {
     }
 
     private void activateConnector(ExtensibleSocketConnectorEntity connectorConfig) {
-        logger.log(Level.INFO, "Activating connector: " + connectorConfig.getGoid().toString());
+        // Only inbound connectors has enabled checkbox
+        if (connectorConfig.isIn() && !connectorConfig.isEnabled()) {
+            logger.log(Level.FINE, "Extensible socket connector {0} is not enabled", connectorConfig.getGoid());
+            return;
+        }
+
+        logger.log(Level.INFO, "Activating connector: {0}", connectorConfig.getGoid().toString());
         Object codec = MinaCodecFactory.createCodec(connectorConfig.getCodecConfiguration(), classLoader);
 
         NioSocketWrapper nioSocketWrapper = null;
@@ -251,6 +259,13 @@ public class SocketConnectorManager {
             //if the connector is inbound bind it, so it is ready for inbound messages.
             // Also, ensure the Firewall is open so that traffic can be sent in
             if (connectorConfig.isIn()) {
+
+                // We need to apply an executor filter to be able to create a thread pool with min number of threads
+                // instead of 0.  And we need to add this after the codec filter
+                ExecutorFilterWrapper executorFilterWrapper =
+                        ExecutorFilterWrapper.create(connectorConfig.getThreadPoolMin(), connectorConfig.getThreadPoolMax());
+                nioSocketWrapper.getFilterChain().addLast(EXECUTOR_FILTER_NAME, executorFilterWrapper);
+
                 ((NioSocketAcceptorWrapper) nioSocketWrapper).bind(new InetSocketAddress(port));
                 firewallRulesManager.openPort(EXTENSIBLE_SOCKET_CONNECTOR_PREFIX + connectorConfig.getName(), port);
             }
@@ -272,12 +287,28 @@ public class SocketConnectorManager {
     private void destroySocketConnector(ExtensibleSocketConnectorEntity config) {
 
         NioSocketWrapper nioSocketWrapper = registry.getService(config.getGoid());
+
+        if (nioSocketWrapper == null) {
+            return;
+        }
+
         try {
             //ensure that the sessions for this connector are closed.
             closeAllSessionForConnection(nioSocketWrapper);
 
             //dispose of any resources used by this socket.
             nioSocketWrapper.dispose(true);
+
+            // if this is a SocketAcceptor (inbound), then we need to properly cleanup the executor as we are not using
+            // the built in processor per ExectorFilter javadoc
+            if (nioSocketWrapper instanceof NioSocketAcceptorWrapper) {
+                IoFilterChainEntryWrapper ioFilterChainEntryWrapper =
+                        new IoFilterChainEntryWrapper(nioSocketWrapper.getFilterChain().getEntry(EXECUTOR_FILTER_NAME));
+                if (ioFilterChainEntryWrapper.getFilter() != null) {
+                    ExecutorFilterWrapper executorFilterWrapper = new ExecutorFilterWrapper(ioFilterChainEntryWrapper.getFilter());
+                    executorFilterWrapper.destroy();
+                }
+            }
 
             // If listening to a port on the Gateway, close the firewall hole
             if(config.isIn()) {
