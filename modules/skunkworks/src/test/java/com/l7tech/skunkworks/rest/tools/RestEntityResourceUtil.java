@@ -25,14 +25,14 @@ public interface RestEntityResourceUtil<E, M extends ManagedObject> {
      *
      * @return A list of managed objects that can be created using the api
      */
-    public List<M> getCreatableManagedObjects();
+    public List<M> getCreatableManagedObjects() throws Exception;
 
     /**
      * This returns a list of managed objects that can be updated using the api
      *
      * @return A list of managed objects that can be updated using the api
      */
-    public List<M> getUpdateableManagedObjects();
+    public List<M> getUpdateableManagedObjects() throws Exception;
 
     /**
      * This is a map of managed object to response checker for objects that are expected to fail on create.
