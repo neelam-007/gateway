@@ -19,7 +19,8 @@ import java.util.List;
 public class CsrSignerAssertion extends Assertion implements UsesVariables, SetsVariables, PrivateKeyable {
     public static final String VAR_CERT = "certificate";
     public static final String VAR_CHAIN = "chain";
-    public static final int DEFAULT_EXPIRY_AGE_DAYS = 1825;
+    public static final int DEFAULT_EXPIRY_AGE_DAYS_NO_DN_OVERRIDE = 1825;
+    public static final int DEFAULT_EXPIRY_AGE_DAYS_DN_OVERRIDE = 365;
 
     private final PrivateKeyableSupport pks = new PrivateKeyableSupport();
     private String certDNVariableName;

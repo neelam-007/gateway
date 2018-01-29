@@ -32,8 +32,13 @@ public class CsrSignerAssertionPropertiesDialog extends AssertionPropertiesOkCan
 
         String expiryAgeDays = assertion.getExpiryAgeDays();
         if (StringUtils.isEmpty(expiryAgeDays)){
-            expiryAgeDays = String.valueOf(CsrSignerAssertion.DEFAULT_EXPIRY_AGE_DAYS);
+            if (StringUtils.isEmpty(assertion.getCertDNVariableName())){
+                expiryAgeDays = String.valueOf(CsrSignerAssertion.DEFAULT_EXPIRY_AGE_DAYS_NO_DN_OVERRIDE);
+            } else {
+                expiryAgeDays = String.valueOf(CsrSignerAssertion.DEFAULT_EXPIRY_AGE_DAYS_DN_OVERRIDE);
+            }
         }
+
         expiryAgeField.setText(String.valueOf(expiryAgeDays));
         String prefix = assertion.getOutputPrefix();
         prefixField.setText(prefix == null ? "" : prefix);
@@ -51,8 +56,8 @@ public class CsrSignerAssertionPropertiesDialog extends AssertionPropertiesOkCan
         assertion.setCertDNVariableName(certDnVariablePanel.getVariable());
         assertion.setCsrVariableName(csrVariablePanel.getVariable());
 
-        String expiryAgeString = expiryAgeField.getText();
-        if (StringUtils.isEmpty(expiryAgeField.getText())){
+        final String expiryAgeString = expiryAgeField.getText().trim();
+        if (StringUtils.isEmpty(expiryAgeString)){
             throw new ValidationException("An Expiry Age value must be specified.");
         }
         assertion.setExpiryAgeDays(expiryAgeString);

@@ -40,7 +40,7 @@ import org.apache.commons.lang.StringUtils;
 public class ServerCsrSignerAssertion extends AbstractServerAssertion<CsrSignerAssertion> {
 
     private static final int MAX_CSR_SIZE = SyspropUtil.getInteger(ServerCsrSignerAssertion.class.getName() + ".maxCsrBytes", 200 * 1024);
-    private static final int MAX_CSR_AGE = 10 * 365; // 10 years (industry max X 2).
+    private static final int MAX_CSR_AGE = 10 * 365; // 10 years = 5 years (industry max) X 2.
     final String[] variablesUsed;
 
     @Inject
@@ -89,33 +89,52 @@ public class ServerCsrSignerAssertion extends AbstractServerAssertion<CsrSignerA
 
             RsaSignerEngine signerEngine = JceProvider.getInstance().createRsaSignerEngine(caKey, caChain);
 
-            // TODO allow certificate generation parameters to be customized, particularly things like DN, expiry date, and digest algorithm
+            // Set the days until expiry of the certificate.
             CertGenParams params = new CertGenParams();
-            String certDNVariableName = assertion.getCertDNVariableName();
-            if (certDNVariableName != null && certDNVariableName.trim().length() > 0) {
-                final String certDN =  (String)context.getVariable(certDNVariableName);
-                if (certDN != null && certDN.trim().length() > 0) {
-                    params = new CertGenParams(new X500Principal(certDN), 365, false, null); // what about this default expiry days???
-                }
-            }
-
             final Map<String, Object> varMap = context.getVariableMap(variablesUsed, getAudit());
-            String expiryDate = assertion.getExpiryAgeDays();
-            if (StringUtils.isEmpty(expiryDate)){ // will be null for policy saved with older version of this assertion.
-                params.setDaysUntilExpiry(CsrSignerAssertion.DEFAULT_EXPIRY_AGE_DAYS);
+            String daysUntilExpiry = assertion.getExpiryAgeDays();
+            int resolvedExpiryAge;
+
+            // Check if expiryAgeDays has been previously set.
+            if (StringUtils.isEmpty(daysUntilExpiry)){
+                // daysUntilExpiry is a newly introduced field and will be null for policies saved with
+                // older version of this assertion.  For previously saved policies that have null values,
+                // populate the expiry age based on the original default logic.
+                if (StringUtils.isEmpty(assertion.getCertDNVariableName())){
+                    resolvedExpiryAge = CsrSignerAssertion.DEFAULT_EXPIRY_AGE_DAYS_NO_DN_OVERRIDE;
+                } else {
+                    resolvedExpiryAge = CsrSignerAssertion.DEFAULT_EXPIRY_AGE_DAYS_DN_OVERRIDE;
+                }
+                params.setDaysUntilExpiry(resolvedExpiryAge);
+
             } else {
-                String resolvedExpiryAgeStr = ExpandVariables.process(assertion.getExpiryAgeDays(), varMap, getAudit());
-                if (StringUtils.isBlank(resolvedExpiryAgeStr)) {
+                // The expiry age was previously populated.  If context variable is present, resolve.
+                String expiryAgeFromContextVar = ExpandVariables.process(assertion.getExpiryAgeDays(), varMap, getAudit());
+                if (StringUtils.isBlank(expiryAgeFromContextVar)) {
                     // Could not resolve the context variable.
                     logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Could not resolve the context variable in the Expiry Age field");
                     return AssertionStatus.FAILED;
                 } else {
-                    int resolvedExpiryAge = Integer.parseInt(resolvedExpiryAgeStr);
+                    resolvedExpiryAge = Integer.parseInt(expiryAgeFromContextVar);
                     if (resolvedExpiryAge <= 0 || resolvedExpiryAge > MAX_CSR_AGE ) {
                         logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "The Expiry Age field must a number between 1 and " + String.valueOf(MAX_CSR_AGE));
                         return AssertionStatus.FAILED;
                     }
                     params.setDaysUntilExpiry(resolvedExpiryAge);
+                }
+            }
+
+            // TODO allow certificate generation parameters to be customized, particularly things like DN, expiry date, and digest algorithm
+            String certDNVariableName = assertion.getCertDNVariableName();
+            if (certDNVariableName != null && certDNVariableName.trim().length() > 0) {
+                final String certDN =  (String)context.getVariable(certDNVariableName);
+                if (certDN != null && certDN.trim().length() > 0) {
+                    params = new CertGenParams(new X500Principal(certDN), resolvedExpiryAge , false, null); // input expiry age calculated in previous section.
+                    // In regular flow where the Override DN is not specified, the CertGetparam's notAfter was never set and
+                    // daysUntilExpiry was used to calculate the expiry date.
+                    // When the Overide Dn is specified, the CertGetparam's notAfter is set by the CertGenParams() constructor
+                    // and is used to calculate the certificate expiry date.   Therefore, in this flow,
+                    // params.setDaysUntilExpiry(resolvedExpiryAge) is not required.
                 }
             }
 
