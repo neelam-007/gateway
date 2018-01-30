@@ -132,24 +132,13 @@ public class CsrSignerAssertion extends Assertion implements UsesVariables, Sets
     @Override
     public String[] getVariablesUsed() {
 
-        List<String> varsUsedList = new ArrayList<>();
+        List<String> vars = new ArrayList<>();
+        vars.add(expiryAgeDays);
+        vars.add(csrVariableName);
+        vars.add(certDNVariableName);
 
-        if (!StringUtils.isEmpty(expiryAgeDays)){
-            String varString = Syntax.getSingleVariableReferenced(expiryAgeDays);
-            if (!StringUtils.isEmpty(varString)){
-                varsUsedList.add(varString);
-            }
-        }
+        return Syntax.getReferencedNames(vars.toArray(new String[vars.size()]));
 
-        if (!StringUtils.isEmpty(csrVariableName)){
-            varsUsedList.add(csrVariableName);
-        }
-
-        if (!StringUtils.isEmpty(certDNVariableName)){
-            varsUsedList.add(certDNVariableName);
-        }
-
-        return varsUsedList.toArray(new String[]{});
     }
 
     @Override
