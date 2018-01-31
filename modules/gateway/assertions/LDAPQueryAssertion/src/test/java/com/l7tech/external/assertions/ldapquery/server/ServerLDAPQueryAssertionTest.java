@@ -41,6 +41,8 @@ import java.util.Map;
  */
 public class ServerLDAPQueryAssertionTest {
 
+    public static String DEFAULT_TEST_DN = "dc=l7tech,dc=com";
+
     @Test
     public void testTooManyResults() throws Exception {
         doTestTooManyResults( AssertionStatus.FALSIFIED, true, 1000 );
@@ -145,6 +147,7 @@ public class ServerLDAPQueryAssertionTest {
         final LDAPQueryAssertion assertion = new LDAPQueryAssertion();
         assertion.setIncludeEmptyAttributes(includeEmptyAttributes);
         assertion.setSearchFilter( "(cn=*)" );
+        assertion.setDnText(DEFAULT_TEST_DN);
         assertion.setAllowMultipleResults( true );
         assertion.setQueryMappings( new QueryAttributeMapping[]{
                 new QueryAttributeMapping( "cn", "lqcn", true, false, true )
@@ -153,6 +156,7 @@ public class ServerLDAPQueryAssertionTest {
         final ServerLDAPQueryAssertion test = new ServerLDAPQueryAssertion( assertion, beanFactory() ){
             @Override
             protected int doSearch( final String filter,
+                                    final Map<String, Object> varMap,
                                     final String[] attributeNames,
                                     final int maxResults,
                                     final Functions.BinaryVoidThrows<QueryAttributeMapping, ServerLDAPQueryAssertion.SimpleAttribute, Exception> resultCallback ) throws FindException {
@@ -219,6 +223,7 @@ public class ServerLDAPQueryAssertionTest {
         final LDAPQueryAssertion assertion = new LDAPQueryAssertion();
         assertion.setIncludeEmptyAttributes(includeEmptyAttributes);
         assertion.setSearchFilter( "(cn=*)" );
+        assertion.setDnText(DEFAULT_TEST_DN);
         assertion.setAllowMultipleResults( repeats > 0 );
         assertion.setQueryMappings( new QueryAttributeMapping[]{
             new QueryAttributeMapping( "cn", "lqcn", joinMultivalued, failMultivalued, multivalued )
@@ -227,6 +232,7 @@ public class ServerLDAPQueryAssertionTest {
         final ServerLDAPQueryAssertion test = new  ServerLDAPQueryAssertion( assertion, beanFactory() ){
             @Override
             protected int doSearch( final String filter,
+                                    final Map<String, Object> varMap,
                                     final String[] attributeNames,
                                     final int maxResults,
                                     final Functions.BinaryVoidThrows<QueryAttributeMapping, ServerLDAPQueryAssertion.SimpleAttribute, Exception> resultCallback ) throws FindException {
@@ -293,11 +299,13 @@ public class ServerLDAPQueryAssertionTest {
                                                         final String variableValue ) throws Exception {
         final LDAPQueryAssertion assertion = new LDAPQueryAssertion();
         assertion.setSearchFilter( filter );
+        assertion.setDnText(DEFAULT_TEST_DN);
         assertion.setSearchFilterInjectionProtected( injectionProtected );
 
         final ServerLDAPQueryAssertion test = new  ServerLDAPQueryAssertion( assertion, beanFactory() ){
             @Override
             protected int doSearch( final String filter,
+                                    final Map<String, Object> varMap,
                                     final String[] attributeNames,
                                     final int maxResults,
                                     final Functions.BinaryVoidThrows<QueryAttributeMapping, ServerLDAPQueryAssertion.SimpleAttribute, Exception> resultCallback ) throws FindException {
@@ -330,6 +338,7 @@ public class ServerLDAPQueryAssertionTest {
         final ServerLDAPQueryAssertion test = new  ServerLDAPQueryAssertion( assertion, beanFactory() ){
             @Override
             protected int doSearch( final String filter,
+                                    final Map<String, Object> varMap,
                                     final String[] attributeNames,
                                     final int maxResults,
                                     final Functions.BinaryVoidThrows<QueryAttributeMapping, ServerLDAPQueryAssertion.SimpleAttribute, Exception> resultCallback ) throws FindException {
