@@ -12,6 +12,7 @@ import com.l7tech.server.identity.TestIdentityProviderConfigManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
+import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.MockTimer;
@@ -41,8 +42,6 @@ import java.util.Map;
  */
 public class ServerLDAPQueryAssertionTest {
 
-    public static String DEFAULT_TEST_DN = "dc=l7tech,dc=com";
-
     @Test
     public void testTooManyResults() throws Exception {
         doTestTooManyResults( AssertionStatus.FALSIFIED, true, 1000 );
@@ -67,6 +66,15 @@ public class ServerLDAPQueryAssertionTest {
         doTestSearchFilterInjectionProtection( true, "(cn=${var})", "(cn=value)", "value" );
         doTestSearchFilterInjectionProtection( true, "(cn=${var})", "(cn=\\2a)", "*" );
         doTestSearchFilterInjectionProtection( false, "(cn=${var})", "(cn=*)", "*" );
+    }
+
+    @Test
+    public void testBindDnContextVar() throws Exception {
+        // Test context var scenario
+        doTestBindDnContextVar("cn=${var},dc=l7tech,dc=com","cn=MY_CONTEXT_VALUE,dc=l7tech,dc=com", "MY_CONTEXT_VALUE");
+
+        // Test regular string scenario
+        doTestBindDnContextVar("cn=test,dc=l7tech,dc=com","cn=test,dc=l7tech,dc=com", "test");
     }
 
     @Test
@@ -147,7 +155,6 @@ public class ServerLDAPQueryAssertionTest {
         final LDAPQueryAssertion assertion = new LDAPQueryAssertion();
         assertion.setIncludeEmptyAttributes(includeEmptyAttributes);
         assertion.setSearchFilter( "(cn=*)" );
-        assertion.setDnText(DEFAULT_TEST_DN);
         assertion.setAllowMultipleResults( true );
         assertion.setQueryMappings( new QueryAttributeMapping[]{
                 new QueryAttributeMapping( "cn", "lqcn", true, false, true )
@@ -223,7 +230,6 @@ public class ServerLDAPQueryAssertionTest {
         final LDAPQueryAssertion assertion = new LDAPQueryAssertion();
         assertion.setIncludeEmptyAttributes(includeEmptyAttributes);
         assertion.setSearchFilter( "(cn=*)" );
-        assertion.setDnText(DEFAULT_TEST_DN);
         assertion.setAllowMultipleResults( repeats > 0 );
         assertion.setQueryMappings( new QueryAttributeMapping[]{
             new QueryAttributeMapping( "cn", "lqcn", joinMultivalued, failMultivalued, multivalued )
@@ -299,7 +305,6 @@ public class ServerLDAPQueryAssertionTest {
                                                         final String variableValue ) throws Exception {
         final LDAPQueryAssertion assertion = new LDAPQueryAssertion();
         assertion.setSearchFilter( filter );
-        assertion.setDnText(DEFAULT_TEST_DN);
         assertion.setSearchFilterInjectionProtected( injectionProtected );
 
         final ServerLDAPQueryAssertion test = new  ServerLDAPQueryAssertion( assertion, beanFactory() ){
@@ -315,6 +320,33 @@ public class ServerLDAPQueryAssertionTest {
         };
 
         final Map<String,Object> variables = new HashMap<String,Object>();
+        if ( variableValue != null ) {
+            variables.put( "var", variableValue );
+        }
+
+        final AssertionStatus status = evaluateAssertion( test, variables, null );
+        assertEquals( "Status", AssertionStatus.NONE, status );
+    }
+
+    private void doTestBindDnContextVar( final String bindDn,
+                                         final String expectedBindDn,
+                                         final String variableValue ) throws Exception {
+        final LDAPQueryAssertion assertion = new LDAPQueryAssertion();
+        assertion.setDnText( bindDn );
+        assertion.setSearchFilter( ("(cn=*)") );
+        final ServerLDAPQueryAssertion test = new  ServerLDAPQueryAssertion( assertion, beanFactory() ) {
+            @Override
+            protected int doSearch( final String filter,
+                                    final Map<String, Object> varMap,
+                                    final String[] attributeNames,
+                                    final int maxResults,
+                                    final Functions.BinaryVoidThrows<QueryAttributeMapping, ServerLDAPQueryAssertion.SimpleAttribute, Exception> resultCallback ) throws FindException {
+                assertEquals( "Bind Dn", ExpandVariables.process(assertion.getDnText(), varMap, getAudit()), expectedBindDn );
+                return 1;
+            }
+        };
+
+        final Map<String,Object> variables = new HashMap<>();
         if ( variableValue != null ) {
             variables.put( "var", variableValue );
         }
