@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.ldapquery.server;
 
+import com.l7tech.external.assertions.ldapquery.LDAPConstants;
 import com.l7tech.external.assertions.ldapquery.LDAPQueryAssertion;
 import com.l7tech.external.assertions.ldapquery.QueryAttributeMapping;
 import com.l7tech.message.Message;
@@ -163,7 +164,7 @@ public class ServerLDAPQueryAssertionTest {
         final ServerLDAPQueryAssertion test = new ServerLDAPQueryAssertion( assertion, beanFactory() ){
             @Override
             protected int doSearch( final String filter,
-                                    final Map<String, Object> varMap,
+                                    final String dn,
                                     final String[] attributeNames,
                                     final int maxResults,
                                     final Functions.BinaryVoidThrows<QueryAttributeMapping, ServerLDAPQueryAssertion.SimpleAttribute, Exception> resultCallback ) throws FindException {
@@ -238,7 +239,7 @@ public class ServerLDAPQueryAssertionTest {
         final ServerLDAPQueryAssertion test = new  ServerLDAPQueryAssertion( assertion, beanFactory() ){
             @Override
             protected int doSearch( final String filter,
-                                    final Map<String, Object> varMap,
+                                    final String dn,
                                     final String[] attributeNames,
                                     final int maxResults,
                                     final Functions.BinaryVoidThrows<QueryAttributeMapping, ServerLDAPQueryAssertion.SimpleAttribute, Exception> resultCallback ) throws FindException {
@@ -310,7 +311,7 @@ public class ServerLDAPQueryAssertionTest {
         final ServerLDAPQueryAssertion test = new  ServerLDAPQueryAssertion( assertion, beanFactory() ){
             @Override
             protected int doSearch( final String filter,
-                                    final Map<String, Object> varMap,
+                                    final String dn,
                                     final String[] attributeNames,
                                     final int maxResults,
                                     final Functions.BinaryVoidThrows<QueryAttributeMapping, ServerLDAPQueryAssertion.SimpleAttribute, Exception> resultCallback ) throws FindException {
@@ -333,15 +334,16 @@ public class ServerLDAPQueryAssertionTest {
                                          final String variableValue ) throws Exception {
         final LDAPQueryAssertion assertion = new LDAPQueryAssertion();
         assertion.setDnText( bindDn );
+        assertion.setSelectedScope(LDAPConstants.OBJECT_SCOPE);
         assertion.setSearchFilter( ("(cn=*)") );
         final ServerLDAPQueryAssertion test = new  ServerLDAPQueryAssertion( assertion, beanFactory() ) {
             @Override
             protected int doSearch( final String filter,
-                                    final Map<String, Object> varMap,
+                                    final String dn,
                                     final String[] attributeNames,
                                     final int maxResults,
                                     final Functions.BinaryVoidThrows<QueryAttributeMapping, ServerLDAPQueryAssertion.SimpleAttribute, Exception> resultCallback ) throws FindException {
-                assertEquals( "Bind Dn", ExpandVariables.process(assertion.getDnText(), varMap, getAudit()), expectedBindDn );
+                assertEquals( "Bind Dn", dn, expectedBindDn );
                 return 1;
             }
         };
@@ -370,7 +372,7 @@ public class ServerLDAPQueryAssertionTest {
         final ServerLDAPQueryAssertion test = new  ServerLDAPQueryAssertion( assertion, beanFactory() ){
             @Override
             protected int doSearch( final String filter,
-                                    final Map<String, Object> varMap,
+                                    final String dn,
                                     final String[] attributeNames,
                                     final int maxResults,
                                     final Functions.BinaryVoidThrows<QueryAttributeMapping, ServerLDAPQueryAssertion.SimpleAttribute, Exception> resultCallback ) throws FindException {
