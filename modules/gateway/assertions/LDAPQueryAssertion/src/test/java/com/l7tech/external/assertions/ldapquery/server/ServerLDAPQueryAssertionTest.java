@@ -13,7 +13,6 @@ import com.l7tech.server.identity.TestIdentityProviderConfigManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
-import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.MockTimer;
@@ -72,7 +71,8 @@ public class ServerLDAPQueryAssertionTest {
     @Test
     public void testBindDnContextVar() throws Exception {
         // Test context var scenario
-        doTestBindDnContextVar("cn=${var},dc=l7tech,dc=com","cn=MY_CONTEXT_VALUE,dc=l7tech,dc=com", "MY_CONTEXT_VALUE");
+        final String contextVarValue = "MY_CONTEXT_VALUE";
+        doTestBindDnContextVar("cn=${var},dc=l7tech,dc=com","cn=" + contextVarValue + ",dc=l7tech,dc=com", contextVarValue);
 
         // Test regular string scenario
         doTestBindDnContextVar("cn=test,dc=l7tech,dc=com","cn=test,dc=l7tech,dc=com", "test");
