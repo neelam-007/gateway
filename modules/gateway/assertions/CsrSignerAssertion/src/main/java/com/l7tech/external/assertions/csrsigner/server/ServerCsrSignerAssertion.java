@@ -40,7 +40,6 @@ import org.apache.commons.lang.StringUtils;
 public class ServerCsrSignerAssertion extends AbstractServerAssertion<CsrSignerAssertion> {
 
     private static final int MAX_CSR_SIZE = SyspropUtil.getInteger(ServerCsrSignerAssertion.class.getName() + ".maxCsrBytes", 200 * 1024);
-    private static final int MAX_CSR_AGE = 10 * 365; // 10 years = 5 years (industry max) X 2.
     final String[] variablesUsed;
 
     @Inject
@@ -92,7 +91,7 @@ public class ServerCsrSignerAssertion extends AbstractServerAssertion<CsrSignerA
             // Set the days until expiry of the certificate.
             CertGenParams params = new CertGenParams();
             final Map<String, Object> varMap = context.getVariableMap(variablesUsed, getAudit());
-            String daysUntilExpiry = assertion.getExpiryAgeDays();
+            final String daysUntilExpiry = assertion.getExpiryAgeDays();
             int resolvedExpiryAge;
 
             // Check if expiryAgeDays has been previously set.
@@ -112,15 +111,27 @@ public class ServerCsrSignerAssertion extends AbstractServerAssertion<CsrSignerA
                 String expiryAgeFromContextVar = ExpandVariables.process(assertion.getExpiryAgeDays(), varMap, getAudit());
                 if (StringUtils.isBlank(expiryAgeFromContextVar)) {
                     // Could not resolve the context variable.
-                    logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Could not resolve the context variable in the Expiry Age field");
+                    logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Could not resolve the context variable "
+                            + "in the Expiry Age field or the resolved content is blank.");
                     return AssertionStatus.FAILED;
                 } else {
-                    resolvedExpiryAge = Integer.parseInt(expiryAgeFromContextVar);
-                    if (resolvedExpiryAge <= 0 || resolvedExpiryAge > MAX_CSR_AGE ) {
-                        logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "The Expiry Age field must a number between 1 and " + String.valueOf(MAX_CSR_AGE));
+                    if (StringUtils.isNumeric(expiryAgeFromContextVar)) {
+                        try {
+                            resolvedExpiryAge = Integer.parseInt(expiryAgeFromContextVar);
+                        } catch (NumberFormatException e){
+                            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, CsrSignerAssertion.ERR_EXPIRY_AGE_MUST_BE_IN_RANGE);
+                            return AssertionStatus.FAILED;
+                        }
+
+                        if ((resolvedExpiryAge < CsrSignerAssertion.MIN_CSR_AGE) || (resolvedExpiryAge > CsrSignerAssertion.MAX_CSR_AGE)) {
+                            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, CsrSignerAssertion.ERR_EXPIRY_AGE_MUST_BE_IN_RANGE);
+                            return AssertionStatus.FAILED;
+                        }
+                        params.setDaysUntilExpiry(resolvedExpiryAge);
+                    } else {
+                        logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, CsrSignerAssertion.ERR_EXPIRY_AGE_MUST_BE_IN_RANGE);
                         return AssertionStatus.FAILED;
                     }
-                    params.setDaysUntilExpiry(resolvedExpiryAge);
                 }
             }
 

@@ -7,6 +7,7 @@ import com.l7tech.external.assertions.csrsigner.CsrSignerAssertion;
 
 import javax.swing.*;
 import java.awt.*;
+import com.l7tech.util.ValidationUtils;
 import org.apache.commons.lang.StringUtils;
 
 public class CsrSignerAssertionPropertiesDialog extends AssertionPropertiesOkCancelSupport<CsrSignerAssertion> {
@@ -31,15 +32,15 @@ public class CsrSignerAssertionPropertiesDialog extends AssertionPropertiesOkCan
         csrVariablePanel.setVariable(assertion.getCsrVariableName());
 
         String expiryAgeDays = assertion.getExpiryAgeDays();
-        if (StringUtils.isEmpty(expiryAgeDays)){
-            if (StringUtils.isEmpty(assertion.getCertDNVariableName())){
+        if (StringUtils.isBlank(expiryAgeDays)){
+            if (StringUtils.isBlank(assertion.getCertDNVariableName())){
                 expiryAgeDays = String.valueOf(CsrSignerAssertion.DEFAULT_EXPIRY_AGE_DAYS_NO_DN_OVERRIDE);
             } else {
                 expiryAgeDays = String.valueOf(CsrSignerAssertion.DEFAULT_EXPIRY_AGE_DAYS_DN_OVERRIDE);
             }
         }
 
-        expiryAgeField.setText(String.valueOf(expiryAgeDays));
+        expiryAgeField.setText(expiryAgeDays.trim());
         String prefix = assertion.getOutputPrefix();
         prefixField.setText(prefix == null ? "" : prefix);
         if (assertion.isUsesDefaultKeyStore())
@@ -57,9 +58,16 @@ public class CsrSignerAssertionPropertiesDialog extends AssertionPropertiesOkCan
         assertion.setCsrVariableName(csrVariablePanel.getVariable());
 
         final String expiryAgeString = expiryAgeField.getText().trim();
-        if (StringUtils.isEmpty(expiryAgeString)){
+        if (StringUtils.isBlank(expiryAgeString)) {
             throw new ValidationException("An Expiry Age value must be specified.");
         }
+
+        if (StringUtils.isNumeric(expiryAgeString)) {
+            if (!ValidationUtils.isValidInteger(expiryAgeString, false, CsrSignerAssertion.MIN_CSR_AGE, CsrSignerAssertion.MAX_CSR_AGE)) {
+                throw new ValidationException(CsrSignerAssertion.ERR_EXPIRY_AGE_MUST_BE_IN_RANGE);
+            }
+        }
+
         assertion.setExpiryAgeDays(expiryAgeString);
         assertion.setOutputPrefix(prefixField.getText());
 

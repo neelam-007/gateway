@@ -328,7 +328,7 @@ public class ServerCsrSignerAssertionTest {
         assertNotNull(cert);
         assertEquals(cert.getSubjectX500Principal().getName(X500Principal.CANONICAL), new X500Principal("cn=joeblow").getName(X500Principal.CANONICAL));
 
-        validateCertificateExpiryYearAndExpiryDaysOfYear(cert,ass.DEFAULT_EXPIRY_AGE_DAYS_NO_DN_OVERRIDE);
+        validateCertificateExpiryYearAndExpiryDaysOfYear(cert,CsrSignerAssertion.DEFAULT_EXPIRY_AGE_DAYS_NO_DN_OVERRIDE);
     }
 
 
@@ -354,7 +354,7 @@ public class ServerCsrSignerAssertionTest {
         assertNotNull(cert);
         assertEquals(cert.getSubjectX500Principal().getName(X500Principal.CANONICAL), new X500Principal(OVERRIDE_SUBJECT_DN).getName(X500Principal.CANONICAL));
 
-        validateCertificateExpiryYearAndExpiryDaysOfYear(cert,ass.DEFAULT_EXPIRY_AGE_DAYS_DN_OVERRIDE);
+        validateCertificateExpiryYearAndExpiryDaysOfYear(cert,CsrSignerAssertion.DEFAULT_EXPIRY_AGE_DAYS_DN_OVERRIDE);
     }
 
 
@@ -373,7 +373,6 @@ public class ServerCsrSignerAssertionTest {
         ass.setExpiryAgeDays(EXPIRED_AGE);
 
         checkRequest(sass(), context, AssertionStatus.NONE);
-
 
         X509Certificate cert = (X509Certificate) context.getVariable(CsrSignerAssertion.VAR_CERT);
         assertNotNull(cert);
@@ -427,7 +426,6 @@ public class ServerCsrSignerAssertionTest {
         context.setVariable("expiry_age", EXPIRED_AGE);
         ass.setCertDNVariableName("csr_override_dn_var");
         ass.setExpiryAgeDays("${expiry_age}");
-        //ass.setExpiryAgeDays(EXPIRED_AGE);
 
         checkRequest(sass(), context, AssertionStatus.NONE);
 
@@ -439,9 +437,61 @@ public class ServerCsrSignerAssertionTest {
     }
 
 
+    // This will test when the Expiry age specified exceeds the maximum value. The signing of the CSR should fail.
+    @Test
+    @BugId("DE337487")
+    public void test_csrInvalidSigningWithExpiryAgeExceedingMaxAndDnOverride() throws Exception {
+
+        haveCaKey();
+        final String EXPIRED_AGE = String.valueOf(CsrSignerAssertion.MAX_CSR_AGE + 1);
+
+        context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(null, null);
+        Message mess = new Message(new ByteArrayStashManager(), ContentTypeHeader.OCTET_STREAM_DEFAULT, new ByteArrayInputStream(csrBytes));
+
+        context.setVariable("csr_override_dn_var", OVERRIDE_SUBJECT_DN);
+        context.setVariable("csr_var", mess);
+        context.setVariable("expiry_age", EXPIRED_AGE);
+        ass.setCertDNVariableName("csr_override_dn_var");
+        ass.setExpiryAgeDays("${expiry_age}");
+
+        checkRequest(sass(), context, AssertionStatus.FAILED);
+
+        assertNoSuchVar(CsrSignerAssertion.VAR_CERT);
+        assertNoSuchVar(CsrSignerAssertion.VAR_CHAIN);
+
+        assertTrue(testAudit.isAuditPresentContaining(CsrSignerAssertion.ERR_EXPIRY_AGE_MUST_BE_IN_RANGE));
+    }
+
+
+    // This will test when the Expiry age specified is less than the minimum value. The signing of the CSR should fail.
+    @Test
+    @BugId("DE337487")
+    public void test_csrInvalidSigningWithExpiryAgeUnderMinimumAndDnOverride() throws Exception {
+
+        haveCaKey();
+        final String EXPIRED_AGE = String.valueOf(CsrSignerAssertion.MAX_CSR_AGE + 1);
+
+        context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(null, null);
+        Message mess = new Message(new ByteArrayStashManager(), ContentTypeHeader.OCTET_STREAM_DEFAULT, new ByteArrayInputStream(csrBytes));
+
+        context.setVariable("csr_override_dn_var", OVERRIDE_SUBJECT_DN);
+        context.setVariable("csr_var", mess);
+        context.setVariable("expiry_age", EXPIRED_AGE);
+        ass.setCertDNVariableName("csr_override_dn_var");
+        ass.setExpiryAgeDays("${expiry_age}");
+
+        checkRequest(sass(), context, AssertionStatus.FAILED);
+
+        assertNoSuchVar(CsrSignerAssertion.VAR_CERT);
+        assertNoSuchVar(CsrSignerAssertion.VAR_CHAIN);
+
+        assertTrue(testAudit.isAuditPresentContaining(CsrSignerAssertion.ERR_EXPIRY_AGE_MUST_BE_IN_RANGE));
+    }
+
+
     // This is a helper method to validate the expiry date of a given cert.  The year and the days of year
     // of the expiry date are compared with the expected expiry date computed from the given the targetExpiredAge.
-    private void validateCertificateExpiryYearAndExpiryDaysOfYear(X509Certificate cert, int targetExpiredAge ){
+    private void validateCertificateExpiryYearAndExpiryDaysOfYear(X509Certificate cert, int targetExpiredAge) {
 
         // Get the current date and add the target EXPIRED_AGE.
         LocalDate currDt = LocalDate.now();
@@ -453,8 +503,8 @@ public class ServerCsrSignerAssertionTest {
         certCalDate.setTime(signedValidityNotAfterDate);
 
         // Verify the signed certificate's expiry year and expiry day of year are valid.
-        assertTrue(targetDt.getYear()==certCalDate.get(Calendar.YEAR));
-        assertTrue(targetDt.getDayOfYear()==certCalDate.get(Calendar.DAY_OF_YEAR));
+        assertTrue(certCalDate.get(Calendar.YEAR) == targetDt.getYear());
+        assertTrue(certCalDate.get(Calendar.DAY_OF_YEAR) == targetDt.getDayOfYear());
     }
 
 }
