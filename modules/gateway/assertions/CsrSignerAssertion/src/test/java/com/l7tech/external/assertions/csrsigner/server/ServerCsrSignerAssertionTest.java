@@ -328,7 +328,7 @@ public class ServerCsrSignerAssertionTest {
         assertNotNull(cert);
         assertEquals(cert.getSubjectX500Principal().getName(X500Principal.CANONICAL), new X500Principal("cn=joeblow").getName(X500Principal.CANONICAL));
 
-        validateCertificateExpiryYearAndExpiryDaysOfYear(cert,CsrSignerAssertion.DEFAULT_EXPIRY_AGE_DAYS_NO_DN_OVERRIDE);
+        validateCertificateExpiryYearAndExpiryDaysOfYear(cert, CsrSignerAssertion.DEFAULT_EXPIRY_AGE_DAYS_NO_DN_OVERRIDE);
     }
 
 
@@ -354,7 +354,7 @@ public class ServerCsrSignerAssertionTest {
         assertNotNull(cert);
         assertEquals(cert.getSubjectX500Principal().getName(X500Principal.CANONICAL), new X500Principal(OVERRIDE_SUBJECT_DN).getName(X500Principal.CANONICAL));
 
-        validateCertificateExpiryYearAndExpiryDaysOfYear(cert,CsrSignerAssertion.DEFAULT_EXPIRY_AGE_DAYS_DN_OVERRIDE);
+        validateCertificateExpiryYearAndExpiryDaysOfYear(cert, CsrSignerAssertion.DEFAULT_EXPIRY_AGE_DAYS_DN_OVERRIDE);
     }
 
 

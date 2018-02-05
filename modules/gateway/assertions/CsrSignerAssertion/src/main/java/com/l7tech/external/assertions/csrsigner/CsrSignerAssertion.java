@@ -66,7 +66,6 @@ public class CsrSignerAssertion extends Assertion implements UsesVariables, Sets
      *
      * @return the number of days maximum that the certificate is valid for.
      */
-
     public String getExpiryAgeDays() {
         return expiryAgeDays;
     }
@@ -132,9 +131,7 @@ public class CsrSignerAssertion extends Assertion implements UsesVariables, Sets
 
     @Override
     public String[] getVariablesUsed() {
-
-        return Syntax.getReferencedNames(expiryAgeDays,csrVariableName,certDNVariableName);
-
+        return Syntax.getReferencedNames(expiryAgeDays, csrVariableName, certDNVariableName);
     }
 
     @Override

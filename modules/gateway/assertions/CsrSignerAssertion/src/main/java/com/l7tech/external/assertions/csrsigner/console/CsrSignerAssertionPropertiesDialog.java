@@ -62,10 +62,9 @@ public class CsrSignerAssertionPropertiesDialog extends AssertionPropertiesOkCan
             throw new ValidationException("An Expiry Age value must be specified.");
         }
 
-        if (StringUtils.isNumeric(expiryAgeString)) {
-            if (!ValidationUtils.isValidInteger(expiryAgeString, false, CsrSignerAssertion.MIN_CSR_AGE, CsrSignerAssertion.MAX_CSR_AGE)) {
+        if ((StringUtils.isNumeric(expiryAgeString)) &&
+                (!ValidationUtils.isValidInteger(expiryAgeString, false, CsrSignerAssertion.MIN_CSR_AGE, CsrSignerAssertion.MAX_CSR_AGE))) {
                 throw new ValidationException(CsrSignerAssertion.ERR_EXPIRY_AGE_MUST_BE_IN_RANGE);
-            }
         }
 
         assertion.setExpiryAgeDays(expiryAgeString);
