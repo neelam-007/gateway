@@ -4,7 +4,6 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.DataType;
-import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.util.GoidUpgradeMapper;
 import org.jetbrains.annotations.Nullable;
@@ -131,7 +130,7 @@ public class CsrSignerAssertion extends Assertion implements UsesVariables, Sets
 
     @Override
     public String[] getVariablesUsed() {
-        return Syntax.getReferencedNames(expiryAgeDays, csrVariableName, certDNVariableName);
+        return VariableUseSupport.variables(certDNVariableName).withVariables(csrVariableName).withExpressions(expiryAgeDays).asArray();
     }
 
     @Override
