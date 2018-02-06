@@ -8,10 +8,12 @@ import org.apache.commons.lang.StringUtils;
 
 import javax.swing.*;
 import java.awt.*;
+import java.text.MessageFormat;
+import java.util.ResourceBundle;
 import java.util.regex.Pattern;
 
 public class X509GeneralNamePanel extends ValidatedPanel<NameValuePair> {
-    public static final String FORMAT_IS_NOT_VALID = " format is not valid";
+    private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.panels.X509GeneralNamePanel");
     private JComboBox typeComboBox;
     private JTextField nameTextField;
     private JPanel contentPane;
@@ -78,23 +80,23 @@ public class X509GeneralNamePanel extends ValidatedPanel<NameValuePair> {
         String type = typeComboBox.getSelectedItem().toString();
         String value = nameTextField.getText();
         if(StringUtils.isBlank(value)){
-            error =  nameLabel.getText() + " must be specified.";
+            error = MessageFormat.format(resources.getString("error.name.isBlank"),nameLabel.getText());
         }
         else if(type.equalsIgnoreCase("rfc822Name")) {
-            error = validatePattern(CertUtils.rfc822Pattern, value, nameLabel.getText() + FORMAT_IS_NOT_VALID);
+            error = validatePattern(CertUtils.rfc822Pattern, value, MessageFormat.format(resources.getString("error.rfc822Name.invalidFormat"),nameLabel.getText()));
         }
         else if(type.equalsIgnoreCase("dNSName")) {
-            error = validatePattern(CertUtils.dnsNamePattern, value, nameLabel.getText() + FORMAT_IS_NOT_VALID);
+            error = validatePattern(CertUtils.dnsNamePattern, value, MessageFormat.format(resources.getString("error.dNSName.invalidFormat"),nameLabel.getText()));
         }
         else if(type.equalsIgnoreCase("iPAddress")) {
             if(!InetAddressUtil.looksLikeIpAddressV4OrV6(value))
-                error = nameLabel.getText() + "IP Address format is not valid";
+                error = MessageFormat.format(resources.getString("error.iPAddress.invalidFormat"),nameLabel.getText());
         }
         else if(type.equalsIgnoreCase("directoryName")) {
-            error = validatePattern(CertUtils.directoryNamePattern, value, nameLabel.getText() + FORMAT_IS_NOT_VALID);
+            error = validatePattern(CertUtils.directoryNamePattern, value, MessageFormat.format(resources.getString("error.directoryName.invalidFormat"),nameLabel.getText()));
         }
         else if(type.equalsIgnoreCase("uniformResourceIdentifier")) {
-            error = validatePattern(CertUtils.urlPattern, value, nameLabel.getText() + FORMAT_IS_NOT_VALID);
+            error = validatePattern(CertUtils.urlPattern, value, MessageFormat.format(resources.getString("error.uniformResourceIdentifier.invalidFormat"),nameLabel.getText()));
         }
         return error;
     }

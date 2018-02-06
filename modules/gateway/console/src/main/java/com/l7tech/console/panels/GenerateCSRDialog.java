@@ -16,16 +16,16 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import java.awt.Dialog;
 import java.awt.event.*;
-import java.util.List;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.text.MessageFormat;
+import java.util.*;
 
 /**
  * This is the generate CSR dialog. It allows a user to enter a DN and select a hash function for the CSR
  */
 public class GenerateCSRDialog extends JDialog {
+
+    private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.panels.GenerateCSRDialog");
+
     private JPanel contentPane;
     private JButton buttonOK;
     private JButton buttonCancel;
@@ -44,14 +44,14 @@ public class GenerateCSRDialog extends JDialog {
     private SimpleTableModel<NameValuePair> sanTableModel;
 
     public GenerateCSRDialog(Dialog owner, String defaultDN) {
-        super(owner, "Generate CSR", true);
+        super(owner, resources.getString("dialog.title"), true);
 
         setContentPane(contentPane);
         getRootPane().setDefaultButton(buttonOK);
 
         sanTableModel = TableUtil.configureTable(sanTable,
-                TableUtil.column("Type", 100, 250, 99999, Functions.propertyTransform(NameValuePair.class, "key")),
-                TableUtil.column("Name", 100, 250, 99999, Functions.propertyTransform(NameValuePair.class, "value")));
+                TableUtil.column(resources.getString("sanTable.type.column.name"), 100, 250, 99999, Functions.propertyTransform(NameValuePair.class, "key")),
+                TableUtil.column(resources.getString("sanTable.type.column.name"), 100, 250, 99999, Functions.propertyTransform(NameValuePair.class, "value")));
         sanTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
         ListSelectionModel selectionModel = sanTable.getSelectionModel();
@@ -107,7 +107,7 @@ public class GenerateCSRDialog extends JDialog {
         addSanButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                showEditMappingDialog("Add Subject Alternative Name", new NameValuePair(), new Functions.UnaryVoid<NameValuePair>() {
+                showEditMappingDialog(resources.getString("addMapping.dialog.title"), new NameValuePair(), new Functions.UnaryVoid<NameValuePair>() {
                     @Override
                     public void call(NameValuePair nameValuePair) {
                         sanTableModel.addRow(nameValuePair);
@@ -121,7 +121,7 @@ public class GenerateCSRDialog extends JDialog {
             public void actionPerformed(ActionEvent e) {
                 final int rowIndex = sanTable.getSelectedRow();
                 final NameValuePair mapping = sanTableModel.getRowObject(rowIndex);
-                if (mapping != null) showEditMappingDialog("Edit Subject Alternative Name", mapping, new Functions.UnaryVoid<NameValuePair>() {
+                if (mapping != null) showEditMappingDialog(resources.getString("editMapping.dialog.title"), mapping, new Functions.UnaryVoid<NameValuePair>() {
                     @Override
                     public void call(NameValuePair nameValuePair) {
                         sanTableModel.setRowObject(rowIndex, nameValuePair);
@@ -135,9 +135,9 @@ public class GenerateCSRDialog extends JDialog {
             public void actionPerformed(ActionEvent e) {
                 NameValuePair row = sanTableModel.getRowObject(sanTable.getSelectedRow());
 
-                Object[] options = {"Remove", "Cancel"};
-                int result = JOptionPane.showOptionDialog(GenerateCSRDialog.this, "Do you want to remove " + row.right + "?",
-                        "Remove Subject Alternative Name", 0, JOptionPane.WARNING_MESSAGE, null, options, options[1]);
+                Object[] options = {resources.getString("removeMapping.dialog.button.ok"), resources.getString("removeMapping.dialog.button.cancel")};
+                int result = JOptionPane.showOptionDialog(GenerateCSRDialog.this, MessageFormat.format(resources.getString("removeMapping.message")  ,row.right),
+                        resources.getString("removeMapping.dialog.title"), 0, JOptionPane.WARNING_MESSAGE, null, options, options[1]);
                 if (result == 0) {
                     sanTableModel.removeRowAt(sanTable.getSelectedRow());
                 }
@@ -153,8 +153,8 @@ public class GenerateCSRDialog extends JDialog {
         try {
             new X500Principal(dnres);
         } catch (IllegalArgumentException e) {
-            DialogDisplayer.showMessageDialog(this, dnres + " is not a valid DN",
-                    "Invalid Subject", JOptionPane.ERROR_MESSAGE, null);
+            DialogDisplayer.showMessageDialog(this, MessageFormat.format(resources.getString("error.invalidSubject.message"),dnres),
+                    resources.getString("error.invalidSubject.dialog.title"), JOptionPane.ERROR_MESSAGE, null);
             return;
         }
 
@@ -168,8 +168,8 @@ public class GenerateCSRDialog extends JDialog {
                 X509GeneralName generalName = CertUtils.convertToX509GeneralName(pair);
                 if(generalName != null) csrSAN.add(generalName);
             } catch (IllegalArgumentException e) {
-                DialogDisplayer.showMessageDialog(this, "Subject Alternative Name " + pair.right + " is not a valid ",
-                        "Invalid Subject Alternative Name", JOptionPane.ERROR_MESSAGE, null);
+                DialogDisplayer.showMessageDialog(this, MessageFormat.format(resources.getString("error.invalidSan.message"),pair.right),
+                        resources.getString("error.invalidSan.dialog.title"), JOptionPane.ERROR_MESSAGE, null);
                 return;
             }
         }

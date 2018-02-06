@@ -255,7 +255,9 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
      *
      * @param id            The ID of the key to generate the CSR from
      * @param dn            The CSR subject dn to use. It defaults to the key's subject dn if none is specified.
-     * @param sans          The list of subject alternative names in the form of <type>:<value>. No subject alternative names added to CSR by default.
+     * @param sans          The list of subject alternative names in the form of <type>:<value>.
+     *                      Supported types are: rfc822Name, dNSName, directoryName, uniformResourceIdentifier, iPAddress
+     *                      No subject alternative names added to CSR by default.
      * @param signatureHash The signature hash to use. Defaults to 'Automatic'
      * @return The CSR data.
      * @throws ResourceFactory.ResourceNotFoundException
