@@ -2312,7 +2312,7 @@ public class CertUtils {
         List<X509GeneralName> csrSAN = null;
         if(sansList != null) {
             for(String sanStr : sansList) {
-                String[] s = sanStr.split(":");
+                String[] s = sanStr.split(":", 2);
                 if(s.length == 2) {
                     if(csrSAN == null) csrSAN = new ArrayList<>();
                     X509GeneralName generalName = CertUtils.convertToX509GeneralName(new NameValuePair(s[0],s[1]));

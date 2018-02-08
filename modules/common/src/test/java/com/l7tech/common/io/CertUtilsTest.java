@@ -828,9 +828,19 @@ public class CertUtilsTest {
 
     @Test
     public void testExtractX509GeneralNamesFromList() throws Exception {
-        String[] sans = {"dNSName:test.ca.com", "rfc822Name:test@ca.com", "iPAddress:111.222.33.44", "uniformResourceIdentifier:http:test.ca.com?test=test", "directoryName:CN=test,OU=people"};
+        String[] sans = {"dNSName:test.ca.com", "rfc822Name:test@ca.com", "iPAddress:111.222.33.44", "uniformResourceIdentifier:http://test.ca.com?test=test", "directoryName:CN=test,OU=people"};
         List<X509GeneralName> generalNames = CertUtils.extractX509GeneralNamesFromList(Arrays.asList(sans));
-        assertEquals(4,generalNames.size());
+        assertEquals(5,generalNames.size());
+        assertEquals(X509GeneralName.Type.dNSName, generalNames.get(0).getType());
+        assertEquals("test.ca.com", generalNames.get(0).getStringVal());
+        assertEquals(X509GeneralName.Type.rfc822Name, generalNames.get(1).getType());
+        assertEquals("test@ca.com", generalNames.get(1).getStringVal());
+        assertEquals(X509GeneralName.Type.iPAddress, generalNames.get(2).getType());
+        assertEquals("111.222.33.44", generalNames.get(2).getStringVal());
+        assertEquals(X509GeneralName.Type.uniformResourceIdentifier, generalNames.get(3).getType());
+        assertEquals("http://test.ca.com?test=test", generalNames.get(3).getStringVal());
+        assertEquals(X509GeneralName.Type.directoryName, generalNames.get(4).getType());
+        assertEquals("CN=test,OU=people", generalNames.get(4).getStringVal());
     }
 
     @Test
@@ -841,7 +851,7 @@ public class CertUtilsTest {
         assertNull(CertUtils.extractX509GeneralNamesFromList(null));
     }
 
-    @Test
+    @Test(expected = IllegalArgumentException.class)
     public void testExtractX509GeneralNamesFromList_wrongStringFormat() throws Exception {
         String[] sans = {"dNSName:test.ca.com:test1.ca.com"};
         assertNull(CertUtils.extractX509GeneralNamesFromList(Arrays.asList(sans)));
