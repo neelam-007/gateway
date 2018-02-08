@@ -362,13 +362,20 @@ public class SiteMinderLowLevelAgent {
         if(context == null) throw new SiteMinderApiClassException("SiteMinderContext object is null!");
         int result = AgentAPI.FAILURE;
 
-        List<SiteMinderContext.Attribute> attributes = context.getAttrList();
         if(ssoToken != null) {
             AttributeList attrList = new AttributeList();
 
+            List<SiteMinderContext.Attribute> attributes = context.getAttrList();
             result = decodeSsoToken(ssoToken, attrList);
-
             storeAttributes(attributes, attrList);
+
+            for (int i = 0; i < attrList.getAttributeCount(); i++) {
+                final Attribute attribute = attrList.getAttributeAt(i);
+                if (attribute.id == AgentAPI.ATTR_SSOZONE) {
+                    context.setSsoZoneName(SiteMinderUtil.chopNull(new String(attribute.value)));
+                    break;
+                }
+            }
 
             if (result != AgentAPI.SUCCESS) {
                 logger.log(Level.FINE, "SiteMinder authorization attempt - SiteMinder is unable to decode the token '" + SiteMinderUtil.safeNull(ssoToken) + "'");
@@ -805,6 +812,12 @@ public class SiteMinderLowLevelAgent {
         attrList.addAttribute(UserDN);
         Attribute ClientIP= new Attribute( AgentAPI.ATTR_CLIENTIP , 0, 0, "", SiteMinderUtil.getAttrValueByName(context.getAttrList(), "ATTR_CLIENTIP"));
         attrList.addAttribute(ClientIP);
+
+        final String ssoZoneName = context.getSsoZoneName();
+        if (StringUtils.isNotBlank(ssoZoneName)) {
+            attrList.addAttribute(new Attribute(AgentAPI.ATTR_SSOZONE, 0, 0, "", ssoZoneName.getBytes()));
+        }
+
         logger.log(Level.FINEST, "SiteMinder Authentication - Attempt to obtain a new SSO token for " + "UserName: "+ new String( UserName.value ) +" UserDN: "+ new String( UserDN.value ));
 
         int retCode = agentApi.createSSOToken( sessionDef, attrList, sb );

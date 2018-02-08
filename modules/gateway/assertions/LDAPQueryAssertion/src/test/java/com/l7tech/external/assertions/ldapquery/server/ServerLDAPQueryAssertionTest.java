@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.ldapquery.server;
 
+import com.l7tech.external.assertions.ldapquery.LDAPConstants;
 import com.l7tech.external.assertions.ldapquery.LDAPQueryAssertion;
 import com.l7tech.external.assertions.ldapquery.QueryAttributeMapping;
 import com.l7tech.message.Message;
@@ -65,6 +66,16 @@ public class ServerLDAPQueryAssertionTest {
         doTestSearchFilterInjectionProtection( true, "(cn=${var})", "(cn=value)", "value" );
         doTestSearchFilterInjectionProtection( true, "(cn=${var})", "(cn=\\2a)", "*" );
         doTestSearchFilterInjectionProtection( false, "(cn=${var})", "(cn=*)", "*" );
+    }
+
+    @Test
+    public void testBindDnContextVar() throws Exception {
+        // Test context var scenario
+        final String contextVarValue = "MY_CONTEXT_VALUE";
+        doTestBindDnContextVar("cn=${var},dc=l7tech,dc=com","cn=" + contextVarValue + ",dc=l7tech,dc=com", contextVarValue);
+
+        // Test regular string scenario
+        doTestBindDnContextVar("cn=test,dc=l7tech,dc=com","cn=test,dc=l7tech,dc=com", "test");
     }
 
     @Test
@@ -153,6 +164,7 @@ public class ServerLDAPQueryAssertionTest {
         final ServerLDAPQueryAssertion test = new ServerLDAPQueryAssertion( assertion, beanFactory() ){
             @Override
             protected int doSearch( final String filter,
+                                    final String dn,
                                     final String[] attributeNames,
                                     final int maxResults,
                                     final Functions.BinaryVoidThrows<QueryAttributeMapping, ServerLDAPQueryAssertion.SimpleAttribute, Exception> resultCallback ) throws FindException {
@@ -227,6 +239,7 @@ public class ServerLDAPQueryAssertionTest {
         final ServerLDAPQueryAssertion test = new  ServerLDAPQueryAssertion( assertion, beanFactory() ){
             @Override
             protected int doSearch( final String filter,
+                                    final String dn,
                                     final String[] attributeNames,
                                     final int maxResults,
                                     final Functions.BinaryVoidThrows<QueryAttributeMapping, ServerLDAPQueryAssertion.SimpleAttribute, Exception> resultCallback ) throws FindException {
@@ -298,6 +311,7 @@ public class ServerLDAPQueryAssertionTest {
         final ServerLDAPQueryAssertion test = new  ServerLDAPQueryAssertion( assertion, beanFactory() ){
             @Override
             protected int doSearch( final String filter,
+                                    final String dn,
                                     final String[] attributeNames,
                                     final int maxResults,
                                     final Functions.BinaryVoidThrows<QueryAttributeMapping, ServerLDAPQueryAssertion.SimpleAttribute, Exception> resultCallback ) throws FindException {
@@ -307,6 +321,34 @@ public class ServerLDAPQueryAssertionTest {
         };
 
         final Map<String,Object> variables = new HashMap<String,Object>();
+        if ( variableValue != null ) {
+            variables.put( "var", variableValue );
+        }
+
+        final AssertionStatus status = evaluateAssertion( test, variables, null );
+        assertEquals( "Status", AssertionStatus.NONE, status );
+    }
+
+    private void doTestBindDnContextVar( final String bindDn,
+                                         final String expectedBindDn,
+                                         final String variableValue ) throws Exception {
+        final LDAPQueryAssertion assertion = new LDAPQueryAssertion();
+        assertion.setDnText( bindDn );
+        assertion.setSelectedScope(LDAPConstants.OBJECT_SCOPE);
+        assertion.setSearchFilter( ("(cn=*)") );
+        final ServerLDAPQueryAssertion test = new  ServerLDAPQueryAssertion( assertion, beanFactory() ) {
+            @Override
+            protected int doSearch( final String filter,
+                                    final String dn,
+                                    final String[] attributeNames,
+                                    final int maxResults,
+                                    final Functions.BinaryVoidThrows<QueryAttributeMapping, ServerLDAPQueryAssertion.SimpleAttribute, Exception> resultCallback ) throws FindException {
+                assertEquals( "Bind Dn", dn, expectedBindDn );
+                return 1;
+            }
+        };
+
+        final Map<String,Object> variables = new HashMap<>();
         if ( variableValue != null ) {
             variables.put( "var", variableValue );
         }
@@ -330,6 +372,7 @@ public class ServerLDAPQueryAssertionTest {
         final ServerLDAPQueryAssertion test = new  ServerLDAPQueryAssertion( assertion, beanFactory() ){
             @Override
             protected int doSearch( final String filter,
+                                    final String dn,
                                     final String[] attributeNames,
                                     final int maxResults,
                                     final Functions.BinaryVoidThrows<QueryAttributeMapping, ServerLDAPQueryAssertion.SimpleAttribute, Exception> resultCallback ) throws FindException {

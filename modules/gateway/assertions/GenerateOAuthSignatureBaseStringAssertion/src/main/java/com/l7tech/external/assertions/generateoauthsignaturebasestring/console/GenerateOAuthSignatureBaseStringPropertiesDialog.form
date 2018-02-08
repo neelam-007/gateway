@@ -163,7 +163,7 @@
               </component>
             </children>
           </grid>
-          <grid id="c0907" binding="clientPanel" layout-manager="GridLayoutManager" row-count="8" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+          <grid id="c0907" binding="clientPanel" layout-manager="GridLayoutManager" row-count="9" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
               <grid row="3" column="0" row-span="1" col-span="3" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
@@ -204,6 +204,8 @@
                   <model>
                     <item value="HMAC-SHA1"/>
                     <item value="RSA-SHA1"/>
+                    <item value="RSA-SHA256"/>
+                    <item value="RSA-SHA512"/>
                     <item value="PLAINTEXT"/>
                   </model>
                 </properties>
@@ -266,7 +268,7 @@
               </component>
               <component id="739f9" class="javax.swing.JLabel">
                 <constraints>
-                  <grid row="7" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                  <grid row="8" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                 </constraints>
                 <properties>
                   <text value="oauth_verifier"/>
@@ -274,7 +276,7 @@
               </component>
               <component id="546f6" class="javax.swing.JTextField" binding="oauthVerifierTextField">
                 <constraints>
-                  <grid row="7" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                  <grid row="8" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
                     <preferred-size width="150" height="-1"/>
                   </grid>
                 </constraints>
@@ -305,6 +307,15 @@
                 <properties>
                   <text value="1.0"/>
                   <toolTipText value="Generate OAuth Signature Base String only applies to OAuth version 1.0"/>
+                </properties>
+              </component>
+              <component id="dd6e1" class="javax.swing.JCheckBox" binding="allowEmptyCallback">
+                <constraints>
+                  <grid row="7" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <selected value="false"/>
+                  <text value="Allow empty oauth_callback"/>
                 </properties>
               </component>
             </children>

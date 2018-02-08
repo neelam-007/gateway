@@ -210,8 +210,8 @@ public class ExtensibleSocketConnectorDialog extends JDialog {
 
         sslClientAuthComboBox.setModel(new DefaultComboBoxModel(SSLClientAuthEnum.values()));
 
-        threadPoolMinField.setModel(new SpinnerNumberModel(10, 1, 500, 1));
-        threadPoolMaxField.setModel(new SpinnerNumberModel(20, 1, 500, 1));
+        threadPoolMinField.setModel(new SpinnerNumberModel(10, 0, Integer.MAX_VALUE, 1));
+        threadPoolMaxField.setModel(new SpinnerNumberModel(20, 1, Integer.MAX_VALUE, 1));
 
         InetAddress[] addrs = Registry.getDefault().getTransportAdmin().getAvailableBindAddresses();
         java.util.List<String> entries = new ArrayList<String>();

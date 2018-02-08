@@ -303,9 +303,11 @@ public class ServerRegex extends AbstractServerAssertion<Regex> {
                 for (;;) {
                     try {
                         matcher.appendReplacement(sb, replacement);
-                    } catch (IndexOutOfBoundsException e) {
+                    } catch (IndexOutOfBoundsException | IllegalArgumentException e) {
                         //noinspection ThrowableResultOfMethodCallIgnored
-                        logAndAudit(AssertionMessages.REGEX_REPLACEMENT_INVALID, new String[]{ "unable to append replacement expression (possible nonexistent backreference)" }, ExceptionUtils.getDebugException(e));
+                        logAndAudit(AssertionMessages.REGEX_REPLACEMENT_INVALID,
+                                new String[] {"unable to append replacement expression (possible nonexistent back reference or illegal group reference). Error: " + e.getMessage()},
+                                ExceptionUtils.getDebugException(e));
                         throw new AssertionStatusException(AssertionStatus.SERVER_ERROR);
                     }
                     found = matcher.find();
