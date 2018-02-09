@@ -33,6 +33,7 @@ public class GenerateOAuthSignatureBaseStringPropertiesDialog extends AssertionP
     private JPanel clientPanel;
     private JLabel oauthVersionLabel;
     private JCheckBox allowCustomOAuthQueryParamsCheckBox;
+    private JCheckBox allowEmptyCallback;
     private InputValidator validators;
     private InputValidator.ValidationRule authHeaderRule;
 
@@ -88,6 +89,8 @@ public class GenerateOAuthSignatureBaseStringPropertiesDialog extends AssertionP
             validators.removeRule(authHeaderRule);
             authHeaderRule = null;
         }
+
+        allowEmptyCallback.setEnabled(true); // Allow for both server and client mode
     }
 
     @Override
@@ -104,6 +107,7 @@ public class GenerateOAuthSignatureBaseStringPropertiesDialog extends AssertionP
         oauthVersionCheckBox.setSelected(assertion.isUseOAuthVersion());
         oauthTokenTextField.setText(assertion.getOauthToken());
         oauthCallbackTextField.setText(assertion.getOauthCallback());
+        allowEmptyCallback.setSelected(assertion.isAllowEmptyCallback());
         oauthVerifierTextField.setText(assertion.getOauthVerifier());
         clientRadioButton.setSelected(assertion.getUsageMode().equals(GenerateOAuthSignatureBaseStringAssertion.UsageMode.CLIENT));
         serverRadioButton.setSelected(assertion.getUsageMode().equals(GenerateOAuthSignatureBaseStringAssertion.UsageMode.SERVER));
@@ -141,6 +145,7 @@ public class GenerateOAuthSignatureBaseStringPropertiesDialog extends AssertionP
         assertion.setOauthToken(getTrimmedValueOrNull(oauthTokenTextField));
         assertion.setOauthCallback(getTrimmedValueOrNull(oauthCallbackTextField));
         assertion.setOauthVerifier(getTrimmedValueOrNull(oauthVerifierTextField));
+        assertion.setAllowEmptyCallback(allowEmptyCallback.isSelected());
         return assertion;
     }
 

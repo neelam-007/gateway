@@ -26,7 +26,9 @@ import org.junit.Before;
 
 import javax.security.auth.x500.X500Principal;
 import java.io.ByteArrayInputStream;
+import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
+import java.net.URLEncoder;
 import java.security.*;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
@@ -169,7 +171,7 @@ public class CertificateRestEntityResourceTest extends RestEntityTests<TrustedCe
     }
 
     @Override
-    public List<TrustedCertificateMO> getCreatableManagedObjects() {
+    public List<TrustedCertificateMO> getCreatableManagedObjects() throws Exception {
         List<TrustedCertificateMO> trustedCertificateMOs = new ArrayList<>();
 
         TrustedCertificateMO trustedCertificateMO = ManagedObjectFactory.createTrustedCertificate();
@@ -194,8 +196,8 @@ public class CertificateRestEntityResourceTest extends RestEntityTests<TrustedCe
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        certificateData.setIssuerName(x509Certificate.getIssuerDN().getName());
-        certificateData.setSubjectName(x509Certificate.getSubjectDN().getName());
+        certificateData.setIssuerName(URLEncoder.encode(x509Certificate.getIssuerDN().getName(), "UTF-8"));
+        certificateData.setSubjectName(URLEncoder.encode(x509Certificate.getSubjectDN().getName(), "UTF-8"));
         certificateData.setSerialNumber(x509Certificate.getSerialNumber());
         trustedCertificateMO.setCertificateData(certificateData);
         trustedCertificateMOs.add(trustedCertificateMO);
@@ -204,7 +206,7 @@ public class CertificateRestEntityResourceTest extends RestEntityTests<TrustedCe
     }
 
     @Override
-    public List<TrustedCertificateMO> getUpdateableManagedObjects() {
+    public List<TrustedCertificateMO> getUpdateableManagedObjects() throws Exception{
         List<TrustedCertificateMO> trustedCertificateMOs = new ArrayList<>();
 
         TrustedCert trustedCert = this.trustedCerts.get(0);
@@ -228,8 +230,8 @@ public class CertificateRestEntityResourceTest extends RestEntityTests<TrustedCe
         } catch (CertificateEncodingException e) {
             throw new RuntimeException(e);
         }
-        certificateData.setIssuerName(trustedCert.getIssuerDn());
-        certificateData.setSubjectName(trustedCert.getSubjectDn());
+        certificateData.setIssuerName(URLEncoder.encode(trustedCert.getIssuerDn(), "UTF-8"));
+        certificateData.setSubjectName(URLEncoder.encode(trustedCert.getSubjectDn(), "UTF-8"));
         certificateData.setSerialNumber(trustedCert.getSerial());
         trustedCertificateMO.setCertificateData(certificateData);
         trustedCertificateMOs.add(trustedCertificateMO);
@@ -255,8 +257,8 @@ public class CertificateRestEntityResourceTest extends RestEntityTests<TrustedCe
         } catch (CertificateEncodingException e) {
             throw new RuntimeException(e);
         }
-        certificateData.setIssuerName(trustedCert.getIssuerDn());
-        certificateData.setSubjectName(trustedCert.getSubjectDn());
+        certificateData.setIssuerName(URLEncoder.encode(trustedCert.getIssuerDn(), "UTF-8"));
+        certificateData.setSubjectName(URLEncoder.encode(trustedCert.getSubjectDn(), "UTF-8"));
         certificateData.setSerialNumber(trustedCert.getSerial());
         trustedCertificateMO.setCertificateData(certificateData);
         trustedCertificateMOs.add(trustedCertificateMO);
@@ -408,7 +410,7 @@ public class CertificateRestEntityResourceTest extends RestEntityTests<TrustedCe
     }
 
     @Override
-    public void verifyEntity(String id, TrustedCertificateMO managedObject) throws FindException {
+    public void verifyEntity(String id, TrustedCertificateMO managedObject) throws FindException, UnsupportedEncodingException {
         TrustedCert entity = trustedCertManager.findByPrimaryKey(Goid.parseGoid(id));
         if (managedObject == null) {
             Assert.assertNull(entity);
@@ -418,8 +420,8 @@ public class CertificateRestEntityResourceTest extends RestEntityTests<TrustedCe
             Assert.assertEquals(entity.getId(), managedObject.getId());
             Assert.assertEquals(entity.getName(), managedObject.getName());
             Assert.assertEquals(entity.getRevocationCheckPolicyOid() == null ? null : entity.getRevocationCheckPolicyOid().toString(), managedObject.getRevocationCheckingPolicyId());
-            Assert.assertEquals(entity.getIssuerDn(), managedObject.getCertificateData().getIssuerName().toLowerCase());
-            Assert.assertEquals(entity.getSubjectDn(), managedObject.getCertificateData().getSubjectName().toLowerCase());
+            Assert.assertEquals(URLEncoder.encode(entity.getIssuerDn(), "UTF-8").toLowerCase(), managedObject.getCertificateData().getIssuerName().toLowerCase());
+            Assert.assertEquals(URLEncoder.encode(entity.getSubjectDn(), "UTF-8").toLowerCase(), managedObject.getCertificateData().getSubjectName().toLowerCase());
             Assert.assertEquals(entity.getCertBase64(), HexUtils.encodeBase64(managedObject.getCertificateData().getEncoded()));
             Assert.assertEquals(entity.getSerial(), managedObject.getCertificateData().getSerialNumber());
 

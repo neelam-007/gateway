@@ -5,6 +5,7 @@ import com.l7tech.external.assertions.extensiblesocketconnectorassertion.server.
 import com.l7tech.external.assertions.extensiblesocketconnectorassertion.server.ExtensibleSocketConnectorMinaClassException;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 
 /**
  * Created with IntelliJ IDEA.
@@ -16,12 +17,15 @@ import java.lang.reflect.Constructor;
 public class ExecutorFilterWrapper implements IoFilterWrapper {
     private static Class executorFilterClass;
     private static Constructor executorFilterConstructor;
+    private static Method destroyMethod;
 
     private Object executorFilter;
 
     public static void initialize(ExtensibleSocketConnectorClassLoader classLoader) throws ClassNotFoundException, NoSuchMethodException, NoSuchFieldException, IllegalAccessException {
         executorFilterClass = Class.forName("org.apache.mina.filter.executor.ExecutorFilter", true, classLoader);
-        executorFilterConstructor = executorFilterClass.getConstructor(Integer.TYPE);
+        executorFilterConstructor = executorFilterClass.getConstructor(Integer.TYPE, Integer.TYPE);
+        destroyMethod = executorFilterClass.getMethod("destroy");
+
     }
 
     private static void checkInitialized() throws ExtensibleSocketConnectorClassHelperNotInitializedException {
@@ -31,16 +35,20 @@ public class ExecutorFilterWrapper implements IoFilterWrapper {
         if (executorFilterConstructor == null) {
             throw new ExtensibleSocketConnectorClassHelperNotInitializedException("Unexpected Error. ExecutorFilter Constructor not initialized");
         }
+        if (destroyMethod == null) {
+            throw new ExtensibleSocketConnectorClassHelperNotInitializedException("Unexpected Error. ExecutorFilter destroy Method not initialized");
+        }
     }
 
     public ExecutorFilterWrapper(Object executorFilter) {
         this.executorFilter = executorFilter;
     }
 
-    public static ExecutorFilterWrapper create(int maximumPoolSize) throws ExtensibleSocketConnectorClassHelperNotInitializedException, ExtensibleSocketConnectorMinaClassException {
+    public static ExecutorFilterWrapper create(int corePoolSize, int maximumPoolSize)
+            throws ExtensibleSocketConnectorClassHelperNotInitializedException, ExtensibleSocketConnectorMinaClassException {
         checkInitialized();
         try {
-            return new ExecutorFilterWrapper(executorFilterConstructor.newInstance(maximumPoolSize));
+            return new ExecutorFilterWrapper(executorFilterConstructor.newInstance(corePoolSize, maximumPoolSize));
         } catch (Exception e) {
             throw new ExtensibleSocketConnectorMinaClassException("Failed to invoke method", e);
         }
@@ -49,5 +57,14 @@ public class ExecutorFilterWrapper implements IoFilterWrapper {
     @Override
     public Object getFilter() {
         return executorFilter;
+    }
+
+    public void destroy() throws ExtensibleSocketConnectorMinaClassException, ExtensibleSocketConnectorClassHelperNotInitializedException {
+        checkInitialized();
+        try {
+            destroyMethod.invoke(executorFilter);
+        } catch (Exception e) {
+            throw new ExtensibleSocketConnectorMinaClassException("Failed to invoke destroy method.", e);
+        }
     }
 }

@@ -2,16 +2,17 @@ package com.l7tech.gateway.common.spring.remoting.http;
 
 import com.l7tech.gateway.common.spring.remoting.ssl.SSLTrustFailureHandler;
 import com.l7tech.security.prov.JceProvider;
+import com.l7tech.util.Background;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.SyspropUtil;
-import org.apache.http.client.params.ClientPNames;
 import org.apache.http.conn.ConnectTimeoutException;
 import org.apache.http.conn.scheme.Scheme;
 import org.apache.http.conn.ssl.X509HostnameVerifier;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.PoolingClientConnectionManager;
 import org.apache.http.params.CoreConnectionPNames;
 import org.apache.http.params.HttpParams;
+import org.springframework.beans.factory.DisposableBean;
+import org.springframework.beans.factory.InitializingBean;
 
 import javax.net.ssl.*;
 import java.io.IOException;
@@ -25,28 +26,36 @@ import java.security.PrivateKey;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
+import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Extension of HttpClient that sets up SSL for the Manager (or other client)
  */
-public class SecureHttpComponentsClient extends DefaultHttpClientWithHttpContext {
+public class SecureHttpComponentsClient extends DefaultHttpClientWithHttpContext implements InitializingBean, DisposableBean {
+    private static final Logger logger = Logger.getLogger(SecureHttpComponentsClient.class.getName());
 
-    //- PUBLIC
+    private static final String PROP_MAX_CONNECTIONS = "com.l7tech.gateway.remoting.maxConnections";
+    private static final String PROP_MAX_HOSTCONNECTIONS = "com.l7tech.gateway.remoting.maxConnectionsPerHost";
+    private static final String PROP_CONNECTION_TIMEOUT = "com.l7tech.gateway.remoting.connectionTimeout";
+    private static final String PROP_READ_TIMEOUT = "com.l7tech.gateway.remoting.readTimeout";
+    private static final String PROP_IDLE_CONNECTION_INTERVAL = "com.l7tech.gateway.remoting.idleConnectionInterval";
+    private static final String PROP_IDLE_CONNECTION_TIMEOUT = "com.l7tech.gateway.remoting.idleConnectionTimeout";
+    private static final String PROP_PROTOCOLS = "https.protocols";
 
-    public static final String PROP_MAX_CONNECTIONS = "com.l7tech.gateway.remoting.maxConnections";
-    public static final String PROP_MAX_HOSTCONNECTIONS = "com.l7tech.gateway.remoting.maxConnectionsPerHost";
-    public static final String PROP_CONNECTION_TIMEOUT = "com.l7tech.gateway.remoting.connectionTimeout";
-    public static final String PROP_READ_TIMEOUT = "com.l7tech.gateway.remoting.readTimeout";
-    public static final String PROP_PROTOCOLS = "https.protocols";
+    private static final String DEFAULT_PROTOCOLS = null; // "TLSv1.2";
+    private static final long DEFAULT_IDLE_CONNECTION_TIMEOUT = 0L;
+    private static final long DEFAULT_IDLE_CONNECTION_INTERVAL = 60000L;
 
-    public static final String DEFAULT_PROTOCOLS = null; // "TLSv1.2";
+    private TimerTask idleTimeoutTask = null;
 
     public SecureHttpComponentsClient() {
         this(getDefaultKeyManagers());
     }
 
-    public SecureHttpComponentsClient(KeyManager[] keyManagers) {
+    private SecureHttpComponentsClient(KeyManager[] keyManagers) {
         super(new PoolingClientConnectionManager());
 
         this.keyManagers = keyManagers;
@@ -84,6 +93,7 @@ public class SecureHttpComponentsClient extends DefaultHttpClientWithHttpContext
     //- PRIVATE
 
     private static final String PROTOCOLS = ConfigFactory.getProperty(PROP_PROTOCOLS, SyspropUtil.getString(PROP_PROTOCOLS, DEFAULT_PROTOCOLS));
+    private static final long IDLE_CONNECTION_TIMEOUT = ConfigFactory.getLongProperty(PROP_IDLE_CONNECTION_TIMEOUT, DEFAULT_IDLE_CONNECTION_TIMEOUT);
 
     private static X509KeyManager keyManager;
     private static SSLTrustFailureHandler currentTrustFailureHandler;
@@ -209,7 +219,7 @@ public class SecureHttpComponentsClient extends DefaultHttpClientWithHttpContext
     }
 
     private X509TrustManager getWrappedX509TrustManager(final X509TrustManager wrapme) {
-        /**
+        /*
          * An X509 Trust manager that trusts everything.
          */
         return new X509TrustManager() {
@@ -251,8 +261,36 @@ public class SecureHttpComponentsClient extends DefaultHttpClientWithHttpContext
      * Resets the connection by closing any idle connections and recreates the SSL connections.
      */
     public void resetConnection() {
-        this.getConnectionManager().closeIdleConnections(0, TimeUnit.MILLISECONDS);
+        if (logger.isLoggable(Level.FINE)) {
+            logger.log(Level.FINE, "Closing idle connections.");
+        }
+
+        this.getConnectionManager().closeIdleConnections(IDLE_CONNECTION_TIMEOUT, TimeUnit.MILLISECONDS);
         updateHostConfiguration();
     }
 
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        logger.log(Level.FINE, "Scheduling idle connection cleanup task.");
+
+        idleTimeoutTask = new TimerTask() {
+            @Override
+            public void run() {
+                resetConnection();
+            }
+        };
+
+        final long interval = ConfigFactory.getLongProperty(PROP_IDLE_CONNECTION_INTERVAL, DEFAULT_IDLE_CONNECTION_INTERVAL);
+        Background.scheduleRepeated(idleTimeoutTask, interval, interval);
+    }
+
+    @Override
+    public void destroy() throws Exception {
+        logger.log(Level.FINE, "Stopping idle connection cleanup task.");
+
+        if (idleTimeoutTask != null) {
+            Background.cancel(idleTimeoutTask);
+            idleTimeoutTask = null;
+        }
+    }
 }
