@@ -754,11 +754,11 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
         try {
             List<X509GeneralName> sANs = BouncyCastleCertUtils.extractSubjectAlternativeNamesFromCsrInfoAttr(certReqInfo.getAttributes());
             if(sANs.size() > 0) {
-                List<NameValuePair> sansMap = new ArrayList<>();
+                List<NameValuePair> sansList = new ArrayList<>();
                 for (X509GeneralName san : sANs) {
-                    sansMap.add(CertUtils.convertFromX509GeneralName(san));
+                    sansList.add(CertUtils.convertFromX509GeneralName(san));
                 }
-                csrProps.put(CSR_PROP_SUBJECT_ALTERNATIVE_NAMES, sansMap);
+                csrProps.put(CSR_PROP_SUBJECT_ALTERNATIVE_NAMES, sansList);
             }
         } catch (Exception e) {
             logger.log(Level.WARNING, "Unable to get Subject Alternative Names from CSR");

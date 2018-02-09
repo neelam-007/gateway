@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.io.CertUtils;
+import com.l7tech.common.io.X509GeneralName;
 import com.l7tech.gui.widgets.ValidatedPanel;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.util.NameValuePair;
@@ -9,8 +10,10 @@ import org.apache.commons.lang.StringUtils;
 import javax.swing.*;
 import java.awt.*;
 import java.text.MessageFormat;
+import java.util.Arrays;
 import java.util.ResourceBundle;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class X509GeneralNamePanel extends ValidatedPanel<NameValuePair> {
     private static final ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.panels.X509GeneralNamePanel");
@@ -39,13 +42,13 @@ public class X509GeneralNamePanel extends ValidatedPanel<NameValuePair> {
 
     @Override
     protected void initComponents() {
-        typeComboBox.setModel(new DefaultComboBoxModel(new String[]{
-                "dNSName",
-                "directoryName",
-                "iPAddress",
-                "rfc822Name",
-                "uniformResourceIdentifier"
-                }));
+        typeComboBox.setModel(new DefaultComboBoxModel(
+                Arrays.stream(X509GeneralName.Type.values())
+                        .filter(x -> CertUtils.isSubjectAlternativeNameTypeSupported(x))
+                        .map((x) -> x.getUserFriendlyName())
+                        .collect(Collectors.toList())
+                        .toArray(new String[0])
+        ));
 
         nameTextField.getDocument().addDocumentListener(syntaxListener());
         typeComboBox.addItemListener(syntaxListener());
@@ -82,20 +85,20 @@ public class X509GeneralNamePanel extends ValidatedPanel<NameValuePair> {
         if(StringUtils.isBlank(value)){
             error = MessageFormat.format(resources.getString("error.name.isBlank"),nameLabel.getText());
         }
-        else if(type.equalsIgnoreCase("rfc822Name")) {
+        else if(type.equalsIgnoreCase(X509GeneralName.Type.rfc822Name.getUserFriendlyName())) {
             error = validatePattern(CertUtils.rfc822Pattern, value, MessageFormat.format(resources.getString("error.rfc822Name.invalidFormat"),nameLabel.getText()));
         }
-        else if(type.equalsIgnoreCase("dNSName")) {
+        else if(type.equalsIgnoreCase(X509GeneralName.Type.dNSName.getUserFriendlyName())) {
             error = validatePattern(CertUtils.dnsNamePattern, value, MessageFormat.format(resources.getString("error.dNSName.invalidFormat"),nameLabel.getText()));
         }
-        else if(type.equalsIgnoreCase("iPAddress")) {
+        else if(type.equalsIgnoreCase(X509GeneralName.Type.iPAddress.getUserFriendlyName())) {
             if(!InetAddressUtil.looksLikeIpAddressV4OrV6(value))
                 error = MessageFormat.format(resources.getString("error.iPAddress.invalidFormat"),nameLabel.getText());
         }
-        else if(type.equalsIgnoreCase("directoryName")) {
+        else if(type.equalsIgnoreCase(X509GeneralName.Type.directoryName.getUserFriendlyName())) {
             error = validatePattern(CertUtils.directoryNamePattern, value, MessageFormat.format(resources.getString("error.directoryName.invalidFormat"),nameLabel.getText()));
         }
-        else if(type.equalsIgnoreCase("uniformResourceIdentifier")) {
+        else if(type.equalsIgnoreCase(X509GeneralName.Type.uniformResourceIdentifier.getUserFriendlyName())) {
             error = validatePattern(CertUtils.urlPattern, value, MessageFormat.format(resources.getString("error.uniformResourceIdentifier.invalidFormat"),nameLabel.getText()));
         }
         return error;

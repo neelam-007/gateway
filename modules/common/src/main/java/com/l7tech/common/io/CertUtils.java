@@ -135,6 +135,9 @@ public class CertUtils {
     private static final Pattern SUN_ECPUBLICKEYIMPL_EC_CURVENAME_GUESSER = Pattern.compile("  parameters: ([a-zA-Z0-9]+)(?:\\s|,|$)");
     /** Use static Charset to avoid JDK blocking (google "FastCharsetProvider synchronization" ) */
     private static final Charset ISO_8859_1_CHARSET = Charset.forName( "ISO-8859-1" );
+    /** Only the following X509Types are supported in Subject Alternative Names */
+    private static final Set<X509GeneralName.Type> supportedX509GeneralNameTypes = new HashSet<>(Arrays.asList(new X509GeneralName.Type[]{X509GeneralName.Type.dNSName, X509GeneralName.Type.directoryName, X509GeneralName.Type.iPAddress, X509GeneralName.Type.rfc822Name, X509GeneralName.Type.uniformResourceIdentifier}));
+
 
     public static boolean isCertCaCapable(X509Certificate cert) {
         if (cert == null) return false;
@@ -2232,7 +2235,7 @@ public class CertUtils {
             case rfc822Name:
             case directoryName:
             case uniformResourceIdentifier:
-                return new NameValuePair(generalName.getType().name(), generalName.getStringVal());
+                return new NameValuePair(generalName.getType().getUserFriendlyName(), generalName.getStringVal());
             case iPAddress:
                 String ipAddress = null;
                 if(generalName.getDerVal() != null) {
@@ -2253,7 +2256,7 @@ public class CertUtils {
                 else {
                     ipAddress = generalName.getStringVal();
                 }
-                return new NameValuePair(X509GeneralName.Type.iPAddress.name(), ipAddress);
+                return new NameValuePair(X509GeneralName.Type.iPAddress.getUserFriendlyName(), ipAddress);
             case otherName:
             case x400Address:
             case ediPartyName:
@@ -2267,7 +2270,7 @@ public class CertUtils {
                         sb.append('[').append(Byte.toUnsignedInt(b)).append(']');
                     }
                 }
-                return new NameValuePair(generalName.getType().name(), sb.toString());
+                return new NameValuePair(generalName.getType().getUserFriendlyName(), sb.toString());
             default:
                     throw new UnsupportedX509GeneralNameException("Wrong X509GeneralName Type");//should never happen
         }
@@ -2281,25 +2284,30 @@ public class CertUtils {
     public static X509GeneralName convertToX509GeneralName(@NotNull NameValuePair pair) throws UnsupportedX509GeneralNameException {
         if(pair.getKey() == null || pair.getValue() == null) return null;
         //Determine the type
-        switch (pair.getKey()) {
-            case "rfc822Name":
-                return  new X509GeneralName(X509GeneralName.Type.rfc822Name, validatePattern(rfc822Pattern,pair.getValue()));
-            case "dNSName":
-                return X509GeneralName.fromDnsName(validatePattern(dnsNamePattern, pair.getValue()));
-            case "directoryName":
-                return new X509GeneralName(X509GeneralName.Type.directoryName, validatePattern(directoryNamePattern, pair.getValue()));
-            case "uniformResourceIdentifier":
-                return new X509GeneralName(X509GeneralName.Type.uniformResourceIdentifier, validatePattern(urlPattern, pair.getValue()));
-            case "iPAddress":
-                if(InetAddressUtil.looksLikeIpAddressV4OrV6(pair.getValue()))
-                    return X509GeneralName.fromIpAddress(pair.getValue());
-                else
-                    throw new IllegalArgumentException("Invalid IP Address format");
-            default:
-                throw new UnsupportedX509GeneralNameException("Unsupported X509GeneralName Type");
-        }
+        String type = pair.getKey();
+        if(X509GeneralName.Type.rfc822Name.getUserFriendlyName().equalsIgnoreCase(type))
+            return  new X509GeneralName(X509GeneralName.Type.rfc822Name, validatePattern(rfc822Pattern,pair.getValue()));
+        else if(X509GeneralName.Type.dNSName.getUserFriendlyName().equalsIgnoreCase(type))
+            return X509GeneralName.fromDnsName(validatePattern(dnsNamePattern, pair.getValue()));
+        else if(X509GeneralName.Type.directoryName.getUserFriendlyName().equalsIgnoreCase(type))
+            return new X509GeneralName(X509GeneralName.Type.directoryName, validatePattern(directoryNamePattern, pair.getValue()));
+        else if(X509GeneralName.Type.uniformResourceIdentifier.getUserFriendlyName().equalsIgnoreCase(type))
+            return new X509GeneralName(X509GeneralName.Type.uniformResourceIdentifier, validatePattern(urlPattern, pair.getValue()));
+        else if(X509GeneralName.Type.iPAddress.getUserFriendlyName().equalsIgnoreCase(type))
+            if(InetAddressUtil.looksLikeIpAddressV4OrV6(pair.getValue()))
+                return X509GeneralName.fromIpAddress(pair.getValue());
+            else
+                throw new IllegalArgumentException("Invalid IP Address format");
+        else
+            throw new UnsupportedX509GeneralNameException("Unsupported X509GeneralName Type");
     }
 
+    /**
+     * Extracts types and values from the string list and converts them into a list of X509GeneralName objects
+     * @param sansList list of strings in <X509GeneralName.Type friendly name>:<value> format
+     * @return X509GeneralName list
+     * @throws UnsupportedX509GeneralNameException
+     */
     public static List<X509GeneralName> extractX509GeneralNamesFromList(List<String> sansList) throws UnsupportedX509GeneralNameException{
         List<X509GeneralName> csrSAN = null;
         if(sansList != null) {
@@ -2315,6 +2323,14 @@ public class CertUtils {
         return csrSAN;
     }
 
+    /**
+     * checks if the Subject Alternative Name Type is supporte by the RESTMan or Manager
+     * @param type X509GeneralName.Type type
+     * @return true if the type is supported
+     */
+    public static boolean isSubjectAlternativeNameTypeSupported(@NotNull X509GeneralName.Type type) {
+        return supportedX509GeneralNameTypes.contains(type);
+    }
     /**
      * Interface for pluggable DN format services.
      */

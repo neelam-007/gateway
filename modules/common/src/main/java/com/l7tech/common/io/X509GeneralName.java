@@ -1,9 +1,11 @@
 package com.l7tech.common.io;
 
 import com.l7tech.util.InetAddressUtil;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -13,15 +15,15 @@ import java.util.List;
  */
 public class X509GeneralName implements Serializable {
     public enum Type {
-        otherName(0),
-        rfc822Name(1),
-        dNSName(2),
-        x400Address(3),
-        directoryName(4),
-        ediPartyName(5),
-        uniformResourceIdentifier(6),
-        iPAddress(7),
-        registeredID(8)
+        otherName(0, "Other Name"),
+        rfc822Name(1, "Email"),
+        dNSName(2, "DNS Name"),
+        x400Address(3, "X400 Address"),
+        directoryName(4, "Directory Name"),
+        ediPartyName(5, "EDI Party Name"),
+        uniformResourceIdentifier(6, "URI"),
+        iPAddress(7, "IP Address"),
+        registeredID(8, "Registered ID")
         ;
 
         private static Type[] BY_TAG = new Type[] {
@@ -37,19 +39,27 @@ public class X509GeneralName implements Serializable {
         };
 
         private final int tag;
+        private final String userFriendlyName;
 
-        Type(int tag) {
+        Type(int tag, String name) {
             this.tag = tag;
+            this.userFriendlyName = name;
         }
 
         public int getTag() {
             return tag;
         }
 
+        public String getUserFriendlyName() { return userFriendlyName; }
+
         public static Type fromTag(int tag) {
             if (tag < 0 || tag >= BY_TAG.length)
                 throw new IllegalArgumentException("Unrecognized Type tag");
             return BY_TAG[tag];
+        }
+
+        public static Type fromUserName(@NotNull String name) {
+            return Arrays.stream(Type.values()).filter(x -> x.userFriendlyName.equalsIgnoreCase(name)).findFirst().get();
         }
     }
 
