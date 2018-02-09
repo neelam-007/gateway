@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Predicate;
 
 /**
  * Holds a GeneralName, as used for each component of an X.509 Subject Alternative Name GeneralNames sequence.
@@ -59,7 +60,12 @@ public class X509GeneralName implements Serializable {
         }
 
         public static Type fromUserName(@NotNull String name) {
-            return Arrays.stream(Type.values()).filter(x -> x.userFriendlyName.equalsIgnoreCase(name)).findFirst().get();
+            return Arrays.stream(Type.values()).filter(new Predicate<Type>() {
+                                                           @Override
+                                                           public boolean test(Type type) {
+                                                               return type.userFriendlyName.equalsIgnoreCase(name);
+                                                           }
+                                                       }).findFirst().get();
         }
     }
 

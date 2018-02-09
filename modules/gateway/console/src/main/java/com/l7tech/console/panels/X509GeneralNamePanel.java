@@ -12,6 +12,8 @@ import java.awt.*;
 import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.ResourceBundle;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -44,8 +46,18 @@ public class X509GeneralNamePanel extends ValidatedPanel<NameValuePair> {
     protected void initComponents() {
         typeComboBox.setModel(new DefaultComboBoxModel(
                 Arrays.stream(X509GeneralName.Type.values())
-                        .filter(x -> CertUtils.isSubjectAlternativeNameTypeSupported(x))
-                        .map((x) -> x.getUserFriendlyName())
+                        .filter(new Predicate<X509GeneralName.Type>() {
+                            @Override
+                            public boolean test(X509GeneralName.Type type) {
+                                return CertUtils.isSubjectAlternativeNameTypeSupported(type);
+                            }
+                        })
+                        .map(new Function<X509GeneralName.Type, String>() {
+                            @Override
+                            public String apply(X509GeneralName.Type type) {
+                                return type.getUserFriendlyName();
+                            }
+                        })
                         .collect(Collectors.toList())
                         .toArray(new String[0])
         ));

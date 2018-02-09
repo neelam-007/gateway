@@ -9,11 +9,10 @@ import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.TableUtil;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.security.cert.TrustedCert;
+
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.NameValuePair;
-import javafx.scene.control.SelectionMode;
 
 import javax.security.auth.x500.X500Principal;
 import javax.swing.*;
