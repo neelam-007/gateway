@@ -437,7 +437,7 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
                         throw new ResourceAccessException( ExceptionUtils.getMessage( e ), e );
                     } catch ( UnrecoverableKeyException e ) {
                         throw new ResourceAccessException( ExceptionUtils.getMessage( e ), e );
-                    } catch (IllegalArgumentException e) {
+                    } catch ( UnsupportedX509GeneralNameException | IllegalArgumentException e) {
                         throw new InvalidResourceException(ExceptionType.INVALID_VALUES, e.getMessage());
                     }
 
@@ -451,26 +451,6 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
                 }
             }
         }, true ) );
-    }
-
-    @Nullable
-    private List<X509GeneralName> extractX509GeneralNamesFromList(List<String> sansList) throws InvalidResourceException{
-        try {
-            List<X509GeneralName> csrSAN = null;
-            if(sansList != null) {
-                for(String sanStr : sansList) {
-                    String[] s = sanStr.split(":");
-                    if(s.length == 2) {
-                        if(csrSAN == null) csrSAN = new ArrayList<>();
-                        X509GeneralName generalName = CertUtils.convertToX509GeneralName(new NameValuePair(s[0],s[1]));
-                        if(generalName != null) csrSAN.add(generalName);
-                    }
-                }
-            }
-            return csrSAN;
-        } catch (IllegalArgumentException e) {
-            throw new InvalidResourceException(ExceptionType.INVALID_VALUES, e.getMessage());
-        }
     }
 
     public PrivateKeySignCsrResult signCert( final Map<String,String> selectorMap, final String subjectDN, final Integer expiryAge, final String signatureHash,

@@ -773,8 +773,6 @@ public class CertUtilsTest {
         assertNull(CertUtils.convertToX509GeneralName(new NameValuePair()));
         assertNull(CertUtils.convertToX509GeneralName(new NameValuePair("dNSName",null)));
         assertNull(CertUtils.convertToX509GeneralName(new NameValuePair(null, "test")));
-        assertNull(CertUtils.convertToX509GeneralName(new NameValuePair("","")));
-        assertNull(CertUtils.convertToX509GeneralName(new NameValuePair("blah", "blah")));
         X509GeneralName generalName = CertUtils.convertToX509GeneralName(new NameValuePair("dNSName", "test.ca.com"));
         assertEquals(X509GeneralName.Type.dNSName, generalName.getType());
         assertEquals("test.ca.com", generalName.getStringVal());
@@ -795,6 +793,21 @@ public class CertUtilsTest {
     @Test(expected = IllegalArgumentException.class)
     public void testConvertToX509GeneralName_InvalidDnsNameFormat() throws Exception {
         CertUtils.convertToX509GeneralName(new NameValuePair("dNSName","bla$"));
+    }
+
+    @Test(expected = UnsupportedX509GeneralNameException.class)
+    public void testConvertToX509GeneralName_UnspecifiedType() throws Exception {
+        CertUtils.convertToX509GeneralName(new NameValuePair("",""));
+    }
+
+    @Test(expected = UnsupportedX509GeneralNameException.class)
+    public void testConvertToX509GeneralName_UnsupportedType1() throws Exception {
+        CertUtils.convertToX509GeneralName(new NameValuePair("blah", "blah"));
+    }
+
+    @Test(expected = UnsupportedX509GeneralNameException.class)
+    public void testConvertToX509GeneralName_UnsupportedType2() throws Exception {
+        CertUtils.convertToX509GeneralName(new NameValuePair("otherName", "123"));
     }
 
     @Test

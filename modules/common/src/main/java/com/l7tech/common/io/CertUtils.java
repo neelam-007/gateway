@@ -2225,7 +2225,7 @@ public class CertUtils {
         return s;
     }
 
-    public static NameValuePair convertFromX509GeneralName(@NotNull X509GeneralName generalName) throws IllegalArgumentException {
+    public static NameValuePair convertFromX509GeneralName(@NotNull X509GeneralName generalName) throws UnsupportedX509GeneralNameException {
         StringBuilder sb = null;
         switch (generalName.getType()) {
             case dNSName:
@@ -2269,7 +2269,7 @@ public class CertUtils {
                 }
                 return new NameValuePair(generalName.getType().name(), sb.toString());
             default:
-                    throw new IllegalArgumentException("Wrong X509GeneralName Type");//should never happen
+                    throw new UnsupportedX509GeneralNameException("Wrong X509GeneralName Type");//should never happen
         }
     }
 
@@ -2278,22 +2278,16 @@ public class CertUtils {
      * @param pair NameValuePair containing string representation of the type and value
      * @return X509GeneralName object
      */
-    public static X509GeneralName convertToX509GeneralName(@NotNull NameValuePair pair) throws IllegalArgumentException {
+    public static X509GeneralName convertToX509GeneralName(@NotNull NameValuePair pair) throws UnsupportedX509GeneralNameException {
         if(pair.getKey() == null || pair.getValue() == null) return null;
         //Determine the type
         switch (pair.getKey()) {
-            case "otherName":
-                return new X509GeneralName(X509GeneralName.Type.otherName, pair.getValue());
             case "rfc822Name":
                 return  new X509GeneralName(X509GeneralName.Type.rfc822Name, validatePattern(rfc822Pattern,pair.getValue()));
             case "dNSName":
                 return X509GeneralName.fromDnsName(validatePattern(dnsNamePattern, pair.getValue()));
-            case "x400Address":
-                return new X509GeneralName(X509GeneralName.Type.x400Address, pair.getValue());
             case "directoryName":
                 return new X509GeneralName(X509GeneralName.Type.directoryName, validatePattern(directoryNamePattern, pair.getValue()));
-            case "ediPartyName":
-                return new X509GeneralName(X509GeneralName.Type.ediPartyName, pair.getValue());
             case "uniformResourceIdentifier":
                 return new X509GeneralName(X509GeneralName.Type.uniformResourceIdentifier, validatePattern(urlPattern, pair.getValue()));
             case "iPAddress":
@@ -2301,14 +2295,12 @@ public class CertUtils {
                     return X509GeneralName.fromIpAddress(pair.getValue());
                 else
                     throw new IllegalArgumentException("Invalid IP Address format");
-            case "registeredID":
-                return new X509GeneralName(X509GeneralName.Type.registeredID, pair.getValue());
             default:
-                return null;
+                throw new UnsupportedX509GeneralNameException("Unsupported X509GeneralName Type");
         }
     }
 
-    public static List<X509GeneralName> extractX509GeneralNamesFromList(List<String> sansList) throws IllegalArgumentException{
+    public static List<X509GeneralName> extractX509GeneralNamesFromList(List<String> sansList) throws UnsupportedX509GeneralNameException{
         List<X509GeneralName> csrSAN = null;
         if(sansList != null) {
             for(String sanStr : sansList) {

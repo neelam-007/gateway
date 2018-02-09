@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.io.CertUtils;
+import com.l7tech.common.io.UnsupportedX509GeneralNameException;
 import com.l7tech.common.io.X509GeneralName;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
@@ -170,6 +171,10 @@ public class GenerateCSRDialog extends JDialog {
             } catch (IllegalArgumentException e) {
                 DialogDisplayer.showMessageDialog(this, MessageFormat.format(resources.getString("error.invalidSan.message"),pair.right),
                         resources.getString("error.invalidSan.dialog.title"), JOptionPane.ERROR_MESSAGE, null);
+                return;
+            } catch (UnsupportedX509GeneralNameException ue) {
+                DialogDisplayer.showMessageDialog(this, MessageFormat.format(resources.getString("error.unsupportedSan.message"),pair.right),
+                        resources.getString("error.unsupported.dialog.title"), JOptionPane.ERROR_MESSAGE, null);
                 return;
             }
         }
