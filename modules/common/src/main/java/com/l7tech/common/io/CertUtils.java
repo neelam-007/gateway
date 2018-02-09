@@ -2214,7 +2214,7 @@ public class CertUtils {
     }
 
     public static final Pattern rfc822Pattern = Pattern.compile("^[a-zA-Z0-9_!#$%&’*+/=?`{|}~^.-]+@[a-zA-Z0-9.-]+$");
-    public static final Pattern dnsNamePattern = Pattern.compile("^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])$");
+    public static final Pattern dnsNamePattern = Pattern.compile("^(([a-zA-Z0-9*]|[a-zA-Z0-9][a-zA-Z0-9\\-*]*[a-zA-Z0-9*])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])$");
     public static final Pattern directoryNamePattern = Pattern.compile("(\\w+[=]{1}[a-zA-Z0-9\\-\\$&\\(\\)\\[\\]\\{\\}\\.\\s]+)([,{1}]\\s*\\w+[=]{1}[a-zA-Z0-9\\-\\(\\)\\[\\]\\{\\}\\.\\s]+)*");
     public static final Pattern urlPattern =Pattern.compile("^([a-z0-9+.-]+):(?://(?:((?:[a-z0-9-._~!$&'()*+,;=:]|%[0-9A-F]{2})*)@)?((?:[a-z0-9-._~!$&'()*+,;=]|%[0-9A-F]{2})*)(?::(\\d*))?(/(?:[a-z0-9-._~!$&'()*+,;=:@/]|%[0-9A-F]{2})*)?|(/?(?:[a-z0-9-._~!$&'()*+,;=:@]|%[0-9A-F]{2})+(?:[a-z0-9-._~!$&'()*+,;=:@/]|%[0-9A-F]{2})*)?)(?:\\?((?:[a-z0-9-._~!$&'()*+,;=:/?@]|%[0-9A-F]{2})*))?(?:#((?:[a-z0-9-._~!$&'()*+,;=:/?@]|%[0-9A-F]{2})*))?$");
 

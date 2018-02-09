@@ -776,6 +776,9 @@ public class CertUtilsTest {
         X509GeneralName generalName = CertUtils.convertToX509GeneralName(new NameValuePair("dNSName", "test.ca.com"));
         assertEquals(X509GeneralName.Type.dNSName, generalName.getType());
         assertEquals("test.ca.com", generalName.getStringVal());
+        generalName = CertUtils.convertToX509GeneralName(new NameValuePair("dNSName","*.ca.com"));
+        assertEquals(X509GeneralName.Type.dNSName, generalName.getType());
+        assertEquals("*.ca.com", generalName.getStringVal());
         generalName = CertUtils.convertToX509GeneralName(new NameValuePair("iPAddress", "111.222.33.44"));
         assertEquals(X509GeneralName.Type.iPAddress, generalName.getType());
         assertEquals("111.222.33.44", generalName.getStringVal());
