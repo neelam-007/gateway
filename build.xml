@@ -3081,7 +3081,7 @@ ${versionfilecontent}
     -->
     <target name="ssg-install-full"
             description="Offical build target [optionally use with skip-obfuscate, makerpm and makensis]"
-            depends="ssg-install-full-init,INTERNAL-ssg-install-init-pre,package,package.extras,distribute,publish-rpms-all,publish-generic-all">
+            depends="ssg-install-full-init,INTERNAL-ssg-install-init-pre,package,package.extras,distribute">
     </target>
 
     <!--
@@ -4271,7 +4271,7 @@ ${versionfilecontent}
 		<propertyregex property="nospace.filename" input="${generic.filename}" regexp=" " replace="%20" global="true" />
 		<exec executable="curl">
 			<arg line="-i -u ${artifactory.username}:${artifactory.passwd} -T"/>
-			<arg value="./dist/${generic.filename}"/>
+			<arg value="${var}"/>
 			<arg value="${publish.generic.target}/${ant.project.name}/${build.version.major}.${build.version.minor}.${build.version.subminor}/${nospace.filename}"/>
 		</exec>
 	</target>

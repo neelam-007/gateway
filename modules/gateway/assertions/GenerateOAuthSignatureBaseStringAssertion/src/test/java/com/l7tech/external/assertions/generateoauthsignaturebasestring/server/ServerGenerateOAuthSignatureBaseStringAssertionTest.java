@@ -11,6 +11,7 @@ import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.test.BugId;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.TestTimeSource;
 import org.jetbrains.annotations.NotNull;
@@ -1421,6 +1422,33 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
         assertEquals(AssertionStatus.FALSIFIED, assertionStatus);
         assertTrue(testAudit.isAuditPresent(AssertionMessages.OAUTH_INVALID_PARAMETER));
         assertEquals("Invalid oauth_callback: ", (String) policyContext.getVariable("oauth.error"));
+    }
+
+
+    @Test
+    @BugId("DE336259")
+    public void emptyCallbackAllowed() throws Exception {
+        request.setServerName(SERVER_NAME);
+        request.setRequestURI("/photos");
+        request.setQueryString(QUERY_STRING);
+        request.setMethod(HTTP_METHOD);
+        final String authorizationHeader = "OAuth realm=\"http://photos.example.net/\"," +
+                "oauth_consumer_key=\"" + CONSUMER_KEY + "\"," +
+                "oauth_signature_method=\"" + SIG_METHOD + "\"," +
+                "oauth_timestamp=\"" + TIMESTAMP + "\"," +
+                "oauth_nonce=\"" + NONCE + "\"," +
+                "oauth_callback=\"\"," +
+                "oauth_version=\"" + VERSION + "\"";
+        requestMessage.getHeadersKnob().addHeader("Authorization", authorizationHeader, HEADER_TYPE_HTTP);
+        requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
+        assertion.setUsageMode(UsageMode.SERVER);
+        assertion.setQueryString("${request.url}");
+        assertion.setAllowEmptyCallback(true);
+
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
+
+        assertEquals(AssertionStatus.NONE, assertionStatus);
     }
 
     @Test

@@ -110,8 +110,12 @@ public class PolicyPropertyResolver extends DefaultEntityPropertyResolver {
         }
 
         Method getter = MigrationUtils.getterForPropertyName(assertion, assertionPropName);
-        PropertyResolver resolver = getResolver(getter);
-        resolver.applyMapping(assertion, assertionPropName, targetHeader, targetValue, originalHeader);
+        if (getter != null) {
+            PropertyResolver resolver = getResolver(getter);
+            resolver.applyMapping(assertion, assertionPropName, targetHeader, targetValue, originalHeader);
+        } else {
+            logger.log(Level.WARNING, "Property not found at assertion : [" + assertion + "] with property name [" + assertionPropName + "] in policy [" + policy.getName() + "]");
+        }
 
         // The policy XML will be updated from the root assertion prior to being stored
     }

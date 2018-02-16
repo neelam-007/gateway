@@ -8,16 +8,24 @@ import com.l7tech.policy.variable.VariableMetadata;
 import com.l7tech.util.GoidUpgradeMapper;
 import org.jetbrains.annotations.Nullable;
 
+
 /**
  * Assertion that can create a signed certificate from a CSR.
  */
 public class CsrSignerAssertion extends Assertion implements UsesVariables, SetsVariables, PrivateKeyable {
     public static final String VAR_CERT = "certificate";
     public static final String VAR_CHAIN = "chain";
+    public static final int DEFAULT_EXPIRY_AGE_DAYS_NO_DN_OVERRIDE = 1825;
+    public static final int DEFAULT_EXPIRY_AGE_DAYS_DN_OVERRIDE = 365;
+    public static final int MAX_CSR_AGE = 10 * 365; // 10 years = 5 years (industry max) X 2.
+    public static final int MIN_CSR_AGE = 1;
+    public static final String ERR_EXPIRY_AGE_MUST_BE_IN_RANGE = "An Expiry Age must be between " + String.valueOf(CsrSignerAssertion.MIN_CSR_AGE)
+            + " and " + String.valueOf(CsrSignerAssertion.MAX_CSR_AGE);
 
     private final PrivateKeyableSupport pks = new PrivateKeyableSupport();
     private String certDNVariableName;
     private String csrVariableName;
+    private String expiryAgeDays; // String to accept context variables.
     private String outputPrefix;
 
     /**
@@ -51,6 +59,24 @@ public class CsrSignerAssertion extends Assertion implements UsesVariables, Sets
      */
     public void setCsrVariableName(String csrVariableName) {
         this.csrVariableName = csrVariableName;
+    }
+
+    /**
+     *
+     * @return the number of days maximum that the certificate is valid for.
+     */
+    public String getExpiryAgeDays() {
+        return expiryAgeDays;
+    }
+
+    /**
+     * Sets the maximum number days the certificate is valid for in days.
+     *
+     * @param expiryAgeDays The maximum number of days the certificate is valid in days.  The input is a String
+     *                      so that it can accept context variables.
+     */
+    public void setExpiryAgeDays(@Nullable final String expiryAgeDays) {
+        this.expiryAgeDays = expiryAgeDays;
     }
 
     /**
@@ -104,12 +130,7 @@ public class CsrSignerAssertion extends Assertion implements UsesVariables, Sets
 
     @Override
     public String[] getVariablesUsed() {
-        if (csrVariableName != null) {
-            if (certDNVariableName != null)
-                return new String[] { certDNVariableName, csrVariableName };
-        } else if (certDNVariableName != null)
-            return new String[] { certDNVariableName };
-        return new String[0];
+        return VariableUseSupport.variables(certDNVariableName).withVariables(csrVariableName).withExpressions(expiryAgeDays).asArray();
     }
 
     @Override
