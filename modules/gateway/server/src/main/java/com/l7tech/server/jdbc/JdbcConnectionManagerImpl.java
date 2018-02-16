@@ -1,19 +1,17 @@
 package com.l7tech.server.jdbc;
 
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.NamedEntity;
-import com.l7tech.objectmodel.PersistentEntity;
+import com.l7tech.objectmodel.*;
 import com.l7tech.server.HibernateEntityManager;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
+import com.l7tech.server.event.RoleAwareEntityDeletionEvent;
+import com.l7tech.server.util.PostStartupTransactionalApplicationListener;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
-import org.hibernate.CacheMode;
-import org.hibernate.Criteria;
-import org.hibernate.HibernateException;
-import org.hibernate.Session;
+import org.hibernate.*;
 import org.hibernate.criterion.Restrictions;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationListener;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,7 +19,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -32,7 +30,7 @@ import java.util.logging.Logger;
 @Transactional(propagation= Propagation.REQUIRED, rollbackFor=Throwable.class)
 public class JdbcConnectionManagerImpl
     extends HibernateEntityManager<JdbcConnection, EntityHeader>
-    implements JdbcConnectionManager {
+    implements JdbcConnectionManager, PostStartupTransactionalApplicationListener {
     private static final Logger logger = Logger.getLogger(JdbcConnectionManagerImpl.class.getName());
     @Override
     public Class<? extends PersistentEntity> getImpClass() {
@@ -106,10 +104,8 @@ public class JdbcConnectionManagerImpl
 
     @Override
     public boolean isDriverClassSupported(String driverClass) {
-        if (driverClass != null ) {
-            if (!driverClass.isEmpty()) {
-                return getSupportedDriverClass().contains(driverClass);
-            }
+        if (driverClass != null && !driverClass.isEmpty()) {
+            return getSupportedDriverClass().contains(driverClass);
         }
         return false;
     }
@@ -125,4 +121,34 @@ public class JdbcConnectionManagerImpl
             getSessionFactory().getCache().evictEntityRegion(JdbcConnection.class);
         }
     }
+
+    @Override
+    public ApplicationListener getListener() {
+        return new ApplicationListener() {
+            @Override
+            public void onApplicationEvent(ApplicationEvent event) {
+                Cache cache = getSessionFactory().getCache();
+                if (cache == null) {
+                    return;
+                }
+
+                if (event instanceof RoleAwareEntityDeletionEvent) {
+                    RoleAwareEntityDeletionEvent roleEvent = (RoleAwareEntityDeletionEvent) event;
+                    if (roleEvent.getEntity() instanceof SecurityZone) {
+                        SecurityZone zone = (SecurityZone) roleEvent.getEntity();
+                        try {
+                            // To avoid clear all the cache we find only the affected connections by security zone deletion
+                            for (JdbcConnection connection : findByPropertyMaybeNull("securityZone.goid", zone.getGoid())) {
+                                cache.evictEntity(JdbcConnection.class, connection.getGoid());
+                            }
+                        } catch (FindException e) {
+                            logger.log(Level.WARNING, "Could not load JdbcConnections with SecurityZone " + zone.getGoid());
+                        }
+                    }
+                }
+            }
+        };
+    }
+
+
 }
