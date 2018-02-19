@@ -54,6 +54,20 @@ public class SsgSSLImplementation extends SSLImplementation {
     }
 
     /**
+     * Get the ServerSocketFactory for this SSLImplementation.
+     *
+     * <p>This will create a new {@code SsgJSSESocketFactory}.</p>
+     *
+     * @return The wrapped SSL ServerSocketFactory
+     * @see SsgJSSESocketFactory
+     * @param sslProtocol
+     */
+    @Override
+    public ServerSocketFactory getServerSocketFactory(String sslProtocol) {
+        return new SsgJSSESocketFactory();
+    }
+
+    /**
      * Invokes delegate
      */
     @Override
