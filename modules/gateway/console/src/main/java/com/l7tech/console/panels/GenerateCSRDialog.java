@@ -52,7 +52,7 @@ public class GenerateCSRDialog extends JDialog {
 
         sanTableModel = TableUtil.configureTable(sanTable,
                 TableUtil.column(resources.getString("sanTable.type.column.name"), 100, 250, 99999, Functions.propertyTransform(NameValuePair.class, "key")),
-                TableUtil.column(resources.getString("sanTable.type.column.name"), 100, 250, 99999, Functions.propertyTransform(NameValuePair.class, "value")));
+                TableUtil.column(resources.getString("sanTable.name.column.name"), 100, 250, 99999, Functions.propertyTransform(NameValuePair.class, "value")));
         sanTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
         ListSelectionModel selectionModel = sanTable.getSelectionModel();

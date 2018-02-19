@@ -34,7 +34,7 @@ public class X509GeneralNamePanel extends ValidatedPanel<NameValuePair> {
     public X509GeneralNamePanel(NameValuePair model) {
         this.model = model;
         setStatusLabel(statusLabel);
-        init();
+        initComponents();
     }
 
     @Override
@@ -77,7 +77,7 @@ public class X509GeneralNamePanel extends ValidatedPanel<NameValuePair> {
 
     @Override
     public void focusFirstComponent() {
-        nameTextField.requestFocusInWindow();
+        typeComboBox.requestFocusInWindow();
     }
 
     @Override

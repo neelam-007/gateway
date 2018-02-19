@@ -1,11 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.l7tech.console.panels.X509GeneralNamePanel">
-  <grid id="27dc6" binding="contentPane" layout-manager="GridLayoutManager" row-count="3" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+  <grid id="27dc6" binding="contentPane" layout-manager="GridLayoutManager" row-count="4" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="0" left="0" bottom="0" right="0"/>
     <constraints>
-      <xy x="12" y="20" width="358" height="89"/>
+      <xy x="12" y="20" width="358" height="108"/>
     </constraints>
-    <properties/>
+    <properties>
+      <foreground color="-65536"/>
+      <preferredSize width="300" height="90"/>
+    </properties>
     <border type="none"/>
     <children>
       <component id="88689" class="javax.swing.JLabel" binding="nameLabel">
@@ -50,10 +53,15 @@
           <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
         </constraints>
         <properties>
-          <foreground color="-15137274"/>
+          <foreground color="-65536"/>
           <text value=""/>
         </properties>
       </component>
+      <vspacer id="fdd6e">
+        <constraints>
+          <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+        </constraints>
+      </vspacer>
     </children>
   </grid>
 </form>
