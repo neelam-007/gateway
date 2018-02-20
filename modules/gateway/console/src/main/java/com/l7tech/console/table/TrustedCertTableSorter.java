@@ -309,7 +309,7 @@ public class TrustedCertTableSorter extends FilteredDefaultTableModel {
             } else {
                 if (ascending) {
                     if (elementA instanceof Long && elementB instanceof Long) {
-                        return ((Long) elementA).longValue() > ((Long) elementB).longValue()?1:0;
+                        return Long.compare((Long) elementA, (Long) elementB);
                     } else if(elementA instanceof String && elementB instanceof String) {
                         return ((String)elementA).compareToIgnoreCase((String)elementB);
                     } else {
@@ -318,7 +318,7 @@ public class TrustedCertTableSorter extends FilteredDefaultTableModel {
                     }
                 } else {
                      if (elementA instanceof Long && elementB instanceof Long) {
-                        return ((Long) elementB).longValue() > ((Long) elementA).longValue()?1:0;
+                         return Long.compare((Long) elementB, (Long) elementA);
                     } else if(elementA instanceof String && elementB instanceof String) {
                         return ((String)elementB).compareToIgnoreCase((String)elementA);
                     } else {
