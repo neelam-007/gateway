@@ -794,6 +794,17 @@ public class CertUtilsTest {
         assertEquals("http://test.ca.com?test=test", generalName.getStringVal());
     }
 
+    @Test
+    @BugId("DE346973")
+    public void testConvertToX509GeneralName_UpperCaseURI() throws Exception {
+        X509GeneralName generalName = CertUtils.convertToX509GeneralName(new NameValuePair("URI", "http://appserver:6394/wa/r/myApp"));
+        assertEquals(X509GeneralName.Type.uniformResourceIdentifier, generalName.getType());
+        assertEquals("http://appserver:6394/wa/r/myApp", generalName.getStringVal());
+        generalName = CertUtils.convertToX509GeneralName(new NameValuePair("URI", "urn:ISSN:1535-3613"));
+        assertEquals(X509GeneralName.Type.uniformResourceIdentifier, generalName.getType());
+        assertEquals("urn:ISSN:1535-3613", generalName.getStringVal());
+    }
+
     @Test(expected = IllegalArgumentException.class)
     public void testConvertToX509GeneralName_InvalidDnsNameFormat() throws Exception {
         CertUtils.convertToX509GeneralName(new NameValuePair("DNS Name","bla$"));
