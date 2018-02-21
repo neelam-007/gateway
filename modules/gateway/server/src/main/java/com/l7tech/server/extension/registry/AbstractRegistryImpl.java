@@ -65,7 +65,9 @@ public abstract class AbstractRegistryImpl<E extends Extension> implements Exten
      */
     @Override
     public Collection<E> getTaggedExtensions(final String... tags) {
-        return Arrays.stream(tags).flatMap(tag -> tagExtensionMap.getOrDefault(tag, Collections.emptySet()).stream()).collect(Collectors.toSet());
+        return Arrays.stream(tags)
+                .flatMap(tag -> tagExtensionMap.getOrDefault(tag, Collections.emptySet()).stream())
+                .collect(Collectors.collectingAndThen(Collectors.toSet(), Collections::unmodifiableCollection));
     }
 
     /**
