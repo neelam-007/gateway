@@ -104,7 +104,7 @@ public class SigningCertificatePropertiesDialog extends JDialog {
         Utilities.setEscKeyStrokeDisposes(this);
 
         sanTableModel = TableUtil.configureTable(sansTable,
-                TableUtil.column(resources.getString("sanTable.type.column.name"), 100, 250, 99999, Functions.propertyTransform(NameValuePair.class, "key")),
+                TableUtil.column(resources.getString("sanTable.type.column.name"), 100, 100, 99999, Functions.propertyTransform(NameValuePair.class, "key")),
                 TableUtil.column(resources.getString("sanTable.name.column.name"), 100, 250, 99999, Functions.propertyTransform(NameValuePair.class, "value")));
         sanTableModel.setRows(new ArrayList<NameValuePair>(Collections.<NameValuePair>emptyList()));
         sansTable.setEnabled(false);
