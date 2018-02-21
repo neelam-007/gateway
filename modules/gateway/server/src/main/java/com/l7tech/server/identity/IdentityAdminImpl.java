@@ -3,7 +3,6 @@ package com.l7tech.server.identity;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.password.IncorrectPasswordException;
 import com.l7tech.common.password.PasswordHasher;
-import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.gateway.common.admin.IdentityAdmin;
 import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.gateway.common.security.rbac.Role;
@@ -32,6 +31,7 @@ import com.l7tech.server.security.PasswordEnforcerManager;
 import com.l7tech.server.security.rbac.RoleManager;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.*;
+import org.apache.commons.collections.CollectionUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationEventPublisher;
@@ -256,8 +256,11 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
             return null;
         }
         UserManager userManager = provider.getUserManager();
-
-        return userManager.findByPrimaryKey(userId);
+        User user = userManager.findByPrimaryKey(userId);
+        if (user instanceof InternalUser) {
+            this.cleanInternalUserSecurityInformation((InternalUser) user);
+        }
+        return user;
     }
 
     @Override
@@ -268,8 +271,11 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
             return null;
         }
         UserManager userManager = provider.getUserManager();
-
-        return userManager.findByLogin(login);
+        User user = userManager.findByLogin(login);
+        if (user instanceof InternalUser) {
+            this.cleanInternalUserSecurityInformation((InternalUser) user);
+        }
+        return user;
     }
 
     @Override
@@ -319,18 +325,10 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
             if (user instanceof InternalUser) {
                 InternalUser internalUser = (InternalUser) user;
                 if (!isSave) {
-                    //ensure password has not changed
-                    final InternalUser originalUser = (InternalUser) userManager.findByPrimaryKey(internalUser.getId());
-                    if (!originalUser.getHashedPassword().equals(internalUser.getHashedPassword())) {
-                        throw new UpdateException("Cannot modify existing users password using this api.");
-                    }
-                    final String origDigest = originalUser.getHttpDigest();
-                    if (origDigest == null && internalUser.getHttpDigest() != null) {
-                        throw new UpdateException("Cannot modify existing users digest using this api.");
-                    }
-                    if (origDigest != null && !origDigest.equals(internalUser.getHttpDigest())) {
-                        throw new UpdateException("Cannot modify existing users digest using this api.");
-                    }
+                    this.validateEmptySecurityFields(internalUser);
+
+                    // keeping the current values
+                    this.restoreInternalUserSecurityInformation(internalUser, (InternalUser) userManager.findByPrimaryKey(internalUser.getId()));
                 } else {
                     //validate password
                     passwordEnforcerManager.isPasswordPolicyCompliant(clearTextPassword);
@@ -787,7 +785,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
             identityProviderFactory.test(identityProviderConfig, testUser, testPassword);
         } catch (InvalidIdProviderCfgException e) {
             throw e;
-        } catch (Throwable t) {
+        } catch (Exception t) {
             logger.log(Level.INFO, "Identity Provider test failed because an exception was thrown", t);
             throw new InvalidIdProviderCfgException(t);
         }
@@ -837,7 +835,7 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
         this.logonManager = logonManager;
     }
 
-    public void initDao() throws Exception {
+    public void initDao() {
         checkidentityProviderFactory();
         checkidentityProviderConfigManager();
         checkClientCertManager();
@@ -882,6 +880,53 @@ public class IdentityAdminImpl implements ApplicationEventPublisherAware, Identi
             throw new FindException("IdentityProvider could not be found");
 
         return provider.getGroupManager();
+    }
+
+    /**
+     * Clean the security information of the user object before returning it to the policy manager.
+     * WARNING: Do not call this from a transactional method without readOnly set to true.
+     *
+     * @param user
+     */
+    private void cleanInternalUserSecurityInformation(InternalUser user) {
+        user.setHashedPassword(null);
+        user.changePasswordChangesHistory(null);
+        user.setHttpDigest(null);
+    }
+
+    /**
+     * Ensure all the security fields are still empty/null when calling methods of this class.
+     *
+     * @param userFromManager
+     * @throws UpdateException
+     */
+    private void validateEmptySecurityFields(InternalUser userFromManager) throws UpdateException {
+        //ensure password has not changed
+        if (userFromManager.getHashedPassword() != null) {
+            // if there is a password, it's not allowed, user objects from PM does not have password.
+            throw new UpdateException("Cannot modify existing users password using this api.");
+        }
+        if (CollectionUtils.isNotEmpty(userFromManager.getPasswordChangesHistory())) {
+            // also not allowed to modify password history
+            throw new UpdateException("Cannot modify existing users password history using this api.");
+        }
+        //ensure digest has not changed
+        if (userFromManager.getHttpDigest() != null) {
+            // if there is a http digest, it's not allowed, user objects from PM does not have password.
+            throw new UpdateException("Cannot modify existing users http digest using this api.");
+        }
+    }
+
+    /**
+     * Restore the security information of the user with database saved info, to ensure it keeps unchanged.
+     *
+     * @param userFromManager
+     * @param userFromDb
+     */
+    private void restoreInternalUserSecurityInformation(InternalUser userFromManager, InternalUser userFromDb) {
+        userFromManager.setHashedPassword(userFromDb.getHashedPassword());
+        userFromManager.setPasswordChangesHistory(userFromDb.getPasswordChangesHistory());
+        userFromManager.setHttpDigest(userFromDb.getHttpDigest());
     }
 
     private IdentityProviderConfigManager identityProviderConfigManager;
