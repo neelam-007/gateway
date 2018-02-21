@@ -1,5 +1,6 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.common.io.X509GeneralName;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
@@ -23,6 +24,7 @@ import java.text.MessageFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * The dialog displays the contents of a CSR and allows user to set/modify some settings of signing certificate.
@@ -217,7 +219,10 @@ public class SigningCertificatePropertiesDialog extends JDialog {
         subjectDnTextField.setText((String)csrProps.get(TrustedCertAdmin.CSR_PROP_SUBJECT_DN));
         subjectDnTextField.setCaretPosition(0);
         if(csrProps.containsKey(TrustedCertAdmin.CSR_PROP_SUBJECT_ALTERNATIVE_NAMES)) {
-            List<NameValuePair> sansList = (List<NameValuePair>) csrProps.get(TrustedCertAdmin.CSR_PROP_SUBJECT_ALTERNATIVE_NAMES);
+            List<NameValuePair> sansList = ((List<NameValuePair>) csrProps.get(TrustedCertAdmin.CSR_PROP_SUBJECT_ALTERNATIVE_NAMES))
+                    .stream()
+                    .map(x -> x.left.equals(X509GeneralName.Type.otherName.getUserFriendlyName()) ? new NameValuePair(x.left, "<binary>") : new NameValuePair(x.left, x.right))
+                    .collect(Collectors.toList());
             if(sansList.size() > 0) {
                 sanTableModel.setRows(sansList);
                 sansScrollPane.setVisible(true);
