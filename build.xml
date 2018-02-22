@@ -21,7 +21,12 @@
 	<property name="build.number.api.password" value="${env.build.number.api.password}"/>
 	<property name="build.artifact.name" value="${env.build.artifact.name}"/>
 	<property name="build.number.api.parameters" value="${env.build.number.api.parameters}"/>
-	<property name="build.number.api.parameters.suffix" value="${env.build.number.api.parameters.suffix}"/>
+	<condition property="build.number.api.parameters.suffix" value="${env.build.number.api.parameters.suffix}" else="">
+        	<isset property="env.build.number.api.parameters.suffix"/>
+	</condition>
+	<echo level="info">
+		build.number.api.parameters.suffix=${build.number.api.parameters.suffix}
+	</echo>
 	
     <!-- get the version -->
     <property file="${src.root}/build.version"/>
