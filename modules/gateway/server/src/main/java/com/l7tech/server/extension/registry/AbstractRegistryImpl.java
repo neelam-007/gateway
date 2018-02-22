@@ -4,12 +4,12 @@ import com.ca.apim.gateway.extension.Extension;
 import com.ca.apim.gateway.extension.ExtensionAccess;
 import com.ca.apim.gateway.extension.ExtensionRegistry;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -66,8 +66,18 @@ public abstract class AbstractRegistryImpl<E extends Extension> implements Exten
     @Override
     public Collection<E> getTaggedExtensions(final String... tags) {
         return Arrays.stream(tags)
-                .flatMap(tag -> tagExtensionMap.getOrDefault(tag, Collections.emptySet()).stream())
-                .collect(Collectors.collectingAndThen(Collectors.toSet(), Collections::unmodifiableCollection));
+                .flatMap(new Function<String, Stream<? extends E>>() {
+                    @Override
+                    public Stream<? extends E> apply(String tag) {
+                        return tagExtensionMap.getOrDefault(tag, Collections.emptySet()).stream();
+                    }
+                })
+                .collect(Collectors.collectingAndThen(Collectors.toSet(), new Function<Set<E>, Collection<E>>() {
+                    @Override
+                    public Collection<E> apply(Set<E> c) {
+                        return Collections.unmodifiableCollection(c);
+                    }
+                }));
     }
 
     /**
@@ -93,12 +103,21 @@ public abstract class AbstractRegistryImpl<E extends Extension> implements Exten
         E existingExtension = extensionsMap.put(key, extension);
 
         for (final String tag : tags) {
-            tagExtensionMap.merge(tag, new HashSet<>(Collections.singleton(extension)), (n, o) ->
-                    Stream.concat(n.stream(), o.stream()).collect(Collectors.toSet()));
+            tagExtensionMap.merge(tag, new HashSet<>(Collections.singleton(extension)), new BiFunction<Collection<E>, Collection<E>, Collection<E>>() {
+                @Override
+                public Collection<E> apply(Collection<E> n, Collection<E> o) {
+                    return Stream.concat(n.stream(), o.stream()).collect(Collectors.toSet());
+                }
+            });
         }
 
         if (existingExtension != null) {
-            tagExtensionMap.values().forEach(s -> s.remove(existingExtension));
+            tagExtensionMap.values().forEach(new Consumer<Collection<E>>() {
+                @Override
+                public void accept(Collection<E> s) {
+                    s.remove(existingExtension);
+                }
+            });
             getLogger().log(Level.WARNING, "Overwriting already registered extension with key {0}.", key);
         }
 
@@ -113,7 +132,12 @@ public abstract class AbstractRegistryImpl<E extends Extension> implements Exten
     public void unregister(final String key) {
         final E extension = extensionsMap.remove(key);
         if (extension != null) {
-            tagExtensionMap.values().forEach(s -> s.remove(extension));
+            tagExtensionMap.values().forEach(new Consumer<Collection<E>>() {
+                @Override
+                public void accept(Collection<E> s) {
+                    s.remove(extension);
+                }
+            });
         }
         getLogger().log(Level.INFO, "Unregistered extension with key {0}", key);
     }
