@@ -177,6 +177,15 @@
     <bean id="wssDecorator" class="com.l7tech.security.xml.decorator.WssDecoratorImpl">
     </bean>
 
+    <bean id="messageProcessorInjector" class="com.l7tech.server.MessageProcessorInjectorImpl" >
+        <constructor-arg>
+            <bean class="com.l7tech.server.extension.registry.processorinjection.ServiceInjectionsRegistry"/>
+        </constructor-arg>
+        <constructor-arg>
+            <bean class="com.l7tech.server.extension.registry.processorinjection.ServiceInjectionsRegistry"/>
+        </constructor-arg>
+    </bean>
+
     <!-- server Message Processor -->
     <!--bean id="messageProcessor" class="com.l7tech.server.TestMessageProcessor">
         <constructor-arg ref="serviceCache"/>
@@ -198,9 +207,10 @@
         <constructor-arg index="6" ref="serviceMetricsServices"/>
         <constructor-arg index="7" ref="auditContextFactory"/>
         <constructor-arg index="8" ref="messageSummaryAuditFactory"/>
-        <constructor-arg index="9" ref="config"/>
-        <constructor-arg index="10" ref="trafficLogger"/>
-        <constructor-arg index="11" ><null/></constructor-arg>
+        <constructor-arg index="9" ref="messageProcessorInjector"/>
+        <constructor-arg index="10" ref="config"/>
+        <constructor-arg index="11" ref="trafficLogger"/>
+        <constructor-arg index="12" ><null/></constructor-arg>
     </bean>
 
     <bean id="auditContextFactory" class="com.l7tech.server.audit.AuditContextFactoryStub">
