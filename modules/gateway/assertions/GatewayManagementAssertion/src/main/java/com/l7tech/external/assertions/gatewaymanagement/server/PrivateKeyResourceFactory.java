@@ -15,7 +15,6 @@ import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.keystore.SsgKeyMetadata;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.objectmodel.*;
-import com.l7tech.security.cert.BouncyCastleCertUtils;
 import com.l7tech.security.cert.KeyUsageUtils;
 import com.l7tech.security.prov.CertificateRequest;
 import com.l7tech.security.prov.JceProvider;
@@ -437,8 +436,10 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
                         throw new ResourceAccessException( ExceptionUtils.getMessage( e ), e );
                     } catch ( UnrecoverableKeyException e ) {
                         throw new ResourceAccessException( ExceptionUtils.getMessage( e ), e );
-                    } catch ( UnsupportedX509GeneralNameException | IllegalArgumentException e) {
-                        throw new InvalidResourceException(ExceptionType.INVALID_VALUES, e.getMessage());
+                    } catch ( IllegalArgumentException e) {
+                        throw new InvalidResourceException(ExceptionType.INVALID_VALUES, ExceptionUtils.getMessage(e));
+                    } catch ( UnsupportedX509GeneralNameException e) {
+                        throw new InvalidResourceException(ExceptionType.UNEXPECTED_TYPE, "Unsupported Subject Alternative Name Type");
                     }
 
                     final PrivateKeyGenerateCsrResult result = new PrivateKeyGenerateCsrResult();
