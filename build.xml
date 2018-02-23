@@ -4294,7 +4294,7 @@ ${versionfilecontent}
 	-->
 	<target name="publish-generic">
 		<basename property="generic.filename" file="${var}"/>
-		<propertyregex property="nospace.filename" input="${generic.filename}" regexp=" " replace="%20" global="true" />
+		<propertyregex property="nospace.filename" input="${generic.filename}" regexp=" " replace="%20" global="true" defaultValue="${generic.filename}" />
 		<exec executable="curl">
 			<arg line="-i -u ${artifactory.username}:${artifactory.passwd} -T"/>
 			<arg value="${var}"/>
