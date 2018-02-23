@@ -334,83 +334,31 @@ public class PolicyTree extends JTree implements DragSourceListener,
                 AbstractTreeNode node = (AbstractTreeNode)path.getLastPathComponent();
 
                 // Check for selected ancestors
-                CompositeAssertionTreeNode currentAncestor = null;
-                CompositeAssertionTreeNode immediateParent = null;
+                AbstractTreeNode currentAncestor;
+                AbstractTreeNode immediateParent;
                 HashMap<AbstractTreeNode, AbstractTreeNode> ancestorMap = new HashMap<>();
                 for(int i = path.getPathCount() - 2;i >= 0;i--) {
                     if(path.getPathComponent(i) instanceof AbstractTreeNode) {
                         AbstractTreeNode ancestor = (AbstractTreeNode)path.getPathComponent(i);
 
-                        CompositeAssertionTreeNode newAncestor;
+                        AbstractTreeNode newAncestor;
 
-                        if (ancestor instanceof CompositeAssertionTreeNode) {
-                            // get ancestor tree node's assertion instance and class
-                            CompositeAssertion ancestorAssertion = (CompositeAssertion) ancestor.asAssertion();
-                            Class<?> ancestorAssertionClass = ancestorAssertion.getClass();
+                        if (ancestor instanceof CompositeAssertionTreeNode || ancestor instanceof IncludeAssertionPolicyNode) {
+                            newAncestor = createNewAssertionInstance(ancestor);
 
-                            try {
-                                // create new instance of assertion
-                                CompositeAssertion newAncestorAssertion =
-                                        (CompositeAssertion) ancestorAssertionClass.getConstructor().newInstance();
+                            currentAncestor = newAncestor;
+                            ancestorMap.put(ancestor, currentAncestor);
 
-                                // find all the assertion properties (includes inherited)
-                                Set<PropertyDescriptor> cassProperties = BeanUtils.getProperties(CompositeAssertion.class);
-                                // find all the properties of the CompositeAssertion class (includes inherited)
-                                Set<PropertyDescriptor> assProperties = BeanUtils.getProperties(ancestorAssertionClass);
-
-                                /*
-                                 * Remove all inherited properties (from CompositeAssertion and superclasses) from
-                                 * assertion properties, leaving only those which are assertion-specific. This ensures
-                                 * composite assertion children aren't copied twice and maintains the behaviour of the
-                                 * previous implementation of this method.
-                                 */
-                                assProperties.removeAll(cassProperties);
-
-                                // copy only assertion-specific properties from the ancestor to the new assertion
-                                BeanUtils.copyProperties(ancestorAssertion, newAncestorAssertion, assProperties);
-
-                                // create a new instance of the tree node for the new assertion
-                                Constructor<?> ancestorNodeConstructor =
-                                        ancestor.getClass().getConstructor(ancestorAssertionClass);
-                                newAncestor = (CompositeAssertionTreeNode) ancestorNodeConstructor.newInstance(newAncestorAssertion);
-                            } catch (IllegalAccessException | InvocationTargetException |
-                                    NoSuchMethodException | InstantiationException e) {
-                                throw new RuntimeException("Failed to copy composite assertion tree node", e);
-                            }
-                        } else {
-                            break;
-                        }
-
-                        if(currentAncestor != null) {
-                            newAncestor.add(currentAncestor);
-                            ((CompositeAssertion)newAncestor.asAssertion()).addChild(currentAncestor.asAssertion());
-                        }
-                        currentAncestor = newAncestor;
-                        ancestorMap.put(ancestor, currentAncestor);
-
-                        if(immediateParent == null) {
                             immediateParent = newAncestor;
-                        }
 
-                        if(assertionMap.containsKey(ancestor)) {
-                            assertionsToSkip.add(node);
-
-                            immediateParent.add((AbstractTreeNode)node.clone());  // add copy, not move node
-                            ((CompositeAssertion)immediateParent.asAssertion()).addChild(node.asAssertion());
-
-                            if(assertionMap.get(ancestor) == ancestor) {
-                                assertionMap.putAll(ancestorMap);
-                            } else {
-                                CompositeAssertionTreeNode x = (CompositeAssertionTreeNode)assertionMap.get(ancestor);
-                                for(int j = 0;j < currentAncestor.getChildCount();j++) {
-                                    AbstractTreeNode child = (AbstractTreeNode)currentAncestor.getChildAt(j);
-                                    x.add(child);
-                                    ((CompositeAssertion)x.asAssertion()).addChild(child.asAssertion());
-                                }
+                            //Condition to check if current node is the root node.
+                            if (assertionMap.containsKey(ancestor)) {
+                                assertionsToSkip.add(node);
+                                immediateParent.add((AbstractTreeNode) node.clone());  // add copy, not move node
+                                handleCompositeAssertionChanges(ancestor, immediateParent, assertionMap, node, ancestorMap);
                             }
-
-                            break;
                         }
+                        break;
                     }
                 }
 
@@ -418,6 +366,64 @@ public class PolicyTree extends JTree implements DragSourceListener,
             }
         }
 
+        return createAssertionListFromSelection(paths, assertionsToSkip, assertionMap);
+    }
+
+
+    /**
+     * This method only alters CompositeAssertionTreeNode and not IncludeAssertionPolicyNode
+     * because when copying IncludeAssertionPolicyNode, it should copy all children
+     * assertions while CompositeAssertionTreeNode should only copy assertions that
+     * were chosen or highlighted. Also, updates assertion with new list of children
+     * @param ancestor AssertionTreeNode of ancestor
+     * @param immediateParent AssertionTreeNode that's parent of node.
+     * @param assertionMap Map containing all the assertions
+     * @param node AssertionTreeNode currently being evaluated
+     * @param ancestorMap Map that keeps all new or updated AssertionTreeNode
+     */
+    private void handleCompositeAssertionChanges(AbstractTreeNode ancestor, AbstractTreeNode immediateParent,
+                                                Map<AbstractTreeNode, AbstractTreeNode> assertionMap,
+                                                AbstractTreeNode node,
+                                                Map<AbstractTreeNode, AbstractTreeNode> ancestorMap ){
+
+
+        if(ancestor instanceof CompositeAssertionTreeNode) {
+            ((CompositeAssertion) immediateParent.asAssertion()).addChild(node.asAssertion());
+            if (assertionMap.get(ancestor) == ancestor) {
+                AbstractTreeNode parentKey = (AbstractTreeNode) ancestor.getParent();
+                AbstractTreeNode parentNode = assertionMap.get(parentKey);
+
+                /*
+                 * Checking if nested CompositeAssertionTreeNodes need to be updated
+                 * because not all children assertions are chosen.
+                 */
+                if (immediateParent instanceof CompositeAssertionTreeNode && parentNode instanceof CompositeAssertionTreeNode) {
+                    ((CompositeAssertion) parentNode.asAssertion()).replaceChild(ancestor.asAssertion(), immediateParent.asAssertion());
+                    ancestorMap.put(parentKey, parentNode);
+                }
+                // Puts new values in assertionMap while updating previous values that need to be updated.
+                assertionMap.putAll(ancestorMap);
+
+            } else {
+                // For loop goes through all children so that all children gets added to parent assertion
+                CompositeAssertionTreeNode x = (CompositeAssertionTreeNode) assertionMap.get(ancestor);
+                for (int j = 0; j < immediateParent.getChildCount(); j++) {
+                    AbstractTreeNode child = (AbstractTreeNode) immediateParent.getChildAt(j);
+                    x.add(child);
+                    ((CompositeAssertion) x.asAssertion()).addChild(child.asAssertion());
+                }
+            }
+        }
+    }
+
+    /**
+     * Creates List of AssertionTreeNode that was selected/copied
+     * @param paths The selected TreePath's in sorted order
+     * @param assertionsToSkip Set of Assertions needed to skip
+     * @param assertionMap List of All assertions to add
+     * @return list of AbstractTreeNodes containing copied assertions
+     */
+    private AbstractTreeNode[] createAssertionListFromSelection(TreePath[] paths, Set<AbstractTreeNode> assertionsToSkip, Map<AbstractTreeNode, AbstractTreeNode> assertionMap){
         List<AbstractTreeNode> assertions = new ArrayList<>();
         for(TreePath path : paths) {
             if(path.getLastPathComponent() instanceof AbstractTreeNode) {
@@ -429,6 +435,60 @@ public class PolicyTree extends JTree implements DragSourceListener,
         }
 
         return assertions.toArray(new AbstractTreeNode[assertions.size()]);
+    }
+
+    /**
+     * Returns new instance of the tree node while removing all inherited properties
+     * that aren't assertion specific to avoid children to be copied twice while
+     * maintaining behaviour. ancestor params should be CompositeAssertionTreeNode or
+     * AssertionTreeNode, and will throw IllegalArgumentException if not.
+     * @param ancestor AssertionTreeNode of ancestor
+     * @return new instance of the tree node for the new assertion.
+     */
+    private AbstractTreeNode createNewAssertionInstance(AbstractTreeNode ancestor){
+        // get ancestor tree node's assertion instance and class
+        Assertion ancestorAssertion = ancestor.asAssertion();
+        Class<?> ancestorAssertionClass = ancestorAssertion.getClass();
+        if (!(ancestor instanceof CompositeAssertionTreeNode || ancestor instanceof IncludeAssertionPolicyNode)) {
+            throw new IllegalArgumentException("Failed to copy assertion tree node");
+        }
+        try {
+            // create new instance of assertion
+            Assertion newAncestorAssertion;
+            newAncestorAssertion =
+                    (Assertion) ancestorAssertionClass.getConstructor().newInstance();
+
+            // find all the assertion properties (includes inherited)
+            Set<PropertyDescriptor> cassProperties;
+
+            if (ancestor instanceof CompositeAssertionTreeNode) {
+                cassProperties = BeanUtils.getProperties(CompositeAssertion.class);
+            } else {
+                cassProperties = BeanUtils.getProperties(IncludeAssertionPolicyNode.class);
+            }
+            // find all the properties of the CompositeAssertion class (includes inherited)
+            Set<PropertyDescriptor> assProperties = BeanUtils.getProperties(ancestorAssertionClass);
+
+            /*
+             * Remove all inherited properties (from CompositeAssertion and superclasses) from
+             * assertion properties, leaving only those which are assertion-specific. This ensures
+             * composite assertion children aren't copied twice and maintains the behaviour of the
+             * previous implementation of this method.
+             */
+            assProperties.removeAll(cassProperties);
+
+            // copy only assertion-specific properties from the ancestor to the new assertion
+            BeanUtils.copyProperties(ancestorAssertion, newAncestorAssertion, assProperties);
+
+            // create a new instance of the tree node for the new assertion
+            Constructor<?> ancestorNodeConstructor =
+                    ancestor.getClass().getConstructor(ancestorAssertionClass);
+            return (AssertionTreeNode) ancestorNodeConstructor.newInstance(newAncestorAssertion);
+        } catch (IllegalAccessException | InvocationTargetException |
+                NoSuchMethodException | InstantiationException e) {
+            throw new IllegalArgumentException("Failed to copy assertion tree node");
+        }
+
     }
 
 
