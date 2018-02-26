@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 
 import com.l7tech.console.MainWindow;
+import com.l7tech.console.action.RefreshAction;
 import com.l7tech.console.event.WeakEventListenerList;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.ServicesAndPoliciesTree;
@@ -33,15 +34,18 @@ public class RefreshButtonTest {
 
     @Before
     public void setup(){
-        servicesAndPoliciesTree = new ServicesAndPoliciesTree((DefaultTreeModel)new JTree(serviceNode).getModel());
-
-        //mock private fields used when performing refresh action
+        //mock refresh ConnectionListener
         Whitebox.setInternalState(mainWindow, "listenerList", new WeakEventListenerList());
+
+        //mock class loader
         Whitebox.setInternalState(mainWindow, "cl", MainWindow.class.getClassLoader());
+
+        //create and add servicesAndPoliciesTree to SSM
+        servicesAndPoliciesTree = new ServicesAndPoliciesTree((DefaultTreeModel)new JTree(serviceNode).getModel());
         Whitebox.setInternalState(mainWindow, "servicesAndPoliciesTree", servicesAndPoliciesTree);
 
-        //mock method used when performing refresh action
-        when(serviceNode.getActions(any())).thenReturn(new Action[]{});
+        //mock refresh action
+        when(serviceNode.getActions(any())).thenReturn(new RefreshAction[]{});
     }
 
     @Test
