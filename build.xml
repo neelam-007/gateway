@@ -21,6 +21,12 @@
 	<property name="build.number.api.password" value="${env.build.number.api.password}"/>
 	<property name="build.artifact.name" value="${env.build.artifact.name}"/>
 	<property name="build.number.api.parameters" value="${env.build.number.api.parameters}"/>
+	<condition property="build.number.api.parameters.suffix" value="${env.build.number.api.parameters.suffix}" else="">
+        	<isset property="env.build.number.api.parameters.suffix"/>
+	</condition>
+	<echo level="info">
+		build.number.api.parameters.suffix=${build.number.api.parameters.suffix}
+	</echo>
 	
     <!-- get the version -->
     <property file="${src.root}/build.version"/>
@@ -1434,6 +1440,15 @@
         <!-- Revision is set to 1 for all builds except official. Official builds already set build.version.revision in OFFICIAL-build.init -->
         <property name="build.version.revision" value="1"/>
 
+        <!-- Include hyphen with suffix if it is defined and not empty -->
+        <condition property="build.version.revision.suffix" value="-${build.number.api.parameters.suffix}" else="">
+            <and>
+                <isset property="build.number.api.parameters.suffix"/>
+                <not>
+                    <equals arg1="${build.number.api.parameters.suffix}" arg2=""/>
+                </not>
+            </and>
+        </condition>
         <property name="build.version" value="${build.version.major}.${build.version.minor}.${build.version.subminor}${build.version.label}"/>
         <property name="build.rpmversion" value="${build.version}"/>
     </target>
@@ -2104,44 +2119,44 @@ ${versionfilecontent}
     <target name="package.installclient.work" depends="package.installclient.work.main, package.installclient.work.nsis"/>
     <target name="package.installclient.work.main" depends="init, package.readversion.unsafe">
         <!-- Copy Client JAR and its lib JARs -->
-        <delete dir="${build.installer}/Client-${build.version}" failonerror="false"/>
-        <delete file="${build.installer}/Client-${build.version}.tar.gz" failonerror="false"/>
-        <mkdir dir="${build.installer}/Client-${build.version}/lib/assertions"/>
-        <copy todir="${build.installer}/Client-${build.version}/lib" preservelastmodified="true" granularity="2000">
+        <delete dir="${build.installer}/Client-${build.version}*" failonerror="false"/>
+        <delete file="${build.installer}/Client-${build.version}*.tar.gz" failonerror="false"/>
+        <mkdir dir="${build.installer}/Client-${build.version}${build.version.revision.suffix}/lib/assertions"/>
+        <copy todir="${build.installer}/Client-${build.version}${build.version.revision.suffix}/lib" preservelastmodified="true" granularity="2000">
             <fileset dir="${build.dir}/client/lib">
                 <include name="*.jar"/>
             </fileset>
         </copy>
-        <copy todir="${build.installer}/Client-${build.version}/lib/assertions">
+        <copy todir="${build.installer}/Client-${build.version}${build.version.revision.suffix}/lib/assertions">
             <fileset dir="${build.dir}/modules" includes="*-client-*.aar"/>
         </copy>
         <copy file="${build.dir}/client/Client.jar"
-              tofile="${build.installer}/Client-${build.version}/Client.jar"
+              tofile="${build.installer}/Client-${build.version}${build.version.revision.suffix}/Client.jar"
               preservelastmodified="true"
               granularity="2000"/>
 
         <!-- Start script -->
         <copy file="${src.root}/etc/Client.sh"
-              tofile="${build.installer}/Client-${build.version}/Client.sh"
+              tofile="${build.installer}/Client-${build.version}${build.version.revision.suffix}/Client.sh"
               preservelastmodified="true"
               granularity="2000"/>
-        <chmod file="${build.installer}/Client-${build.version}/Client.sh" perm="755"/>
+        <chmod file="${build.installer}/Client-${build.version}${build.version.revision.suffix}/Client.sh" perm="755"/>
 
         <!-- Config files -->
         <copy file="${src.root}/modules/proxy/src/main/resources/com/l7tech/proxy/resources/logging.properties"
-              todir="${build.installer}/Client-${build.version}"
+              todir="${build.installer}/Client-${build.version}${build.version.revision.suffix}"
               preservelastmodified="true"
               granularity="2000"/>
 
         <!-- Create distro TAR -->
-        <tar destfile="${build.installer}/Client-${build.version}.tar.gz"
+        <tar destfile="${build.installer}/Client-${build.version}${build.version.revision.suffix}.tar.gz"
              compression="gzip">
             <tarfileset dir="${build.installer}" mode="555" username="build" group="build">
-                <include name="Client-${build.version}/Client.sh"/>
+                <include name="Client-${build.version}${build.version.revision.suffix}/Client.sh"/>
             </tarfileset>
             <tarfileset dir="${build.installer}" mode="444" username="build" group="build">
-                <include name="Client-${build.version}/**/*"/>
-                <exclude name="Client-${build.version}/Client.sh"/>
+                <include name="Client-${build.version}${build.version.revision.suffix}/**/*"/>
+                <exclude name="Client-${build.version}${build.version.revision.suffix}/Client.sh"/>
             </tarfileset>
         </tar>
     </target>
@@ -2155,9 +2170,9 @@ ${versionfilecontent}
             <arg value="/NOCD"/>
             <arg value="/DJ2RE=${install.jre.version}"/>
             <arg value="/DJ2RE_DIR=${install.wintarballs}"/>
-            <arg value="/DPACKAGE_REL=installer\Client-${build.version}"/>
+            <arg value="/DPACKAGE_REL=installer\Client-${build.version}${build.version.revision.suffix}"/>
             <arg value="/DOUTPUT_DIR=../../../build/installer"/>
-            <arg value="/DMUI_VERSION=${build.version}"/>
+            <arg value="/DMUI_VERSION=${build.version}${build.version.revision.suffix}"/>
             <arg value="/XSetCompressor bzip2"/>
             <arg value="Client.nsi"/>
         </exec>
@@ -2175,45 +2190,45 @@ ${versionfilecontent}
     <target name="package.installmanager.work" depends="package.installmanager.work.main, package.installmanager.work.nsis"/>
     <target name="package.installmanager.work.main" depends="package.readversion.unsafe">
         <!-- Copy Manager JAR and its lib JARs -->
-        <delete dir="${build.installer}/Manager-${build.version}" failonerror="false"/>
-        <delete file="${build.installer}/Manager-${build.version}.tar.gz" failonerror="false"/>
-        <mkdir dir="${build.installer}/Manager-${build.version}/lib"/>
-        <copy todir="${build.installer}/Manager-${build.version}/lib" preservelastmodified="true" granularity="2000">
+        <delete dir="${build.installer}/Manager-${build.version}*" failonerror="false"/>
+        <delete file="${build.installer}/Manager-${build.version}*.tar.gz" failonerror="false"/>
+        <mkdir dir="${build.installer}/Manager-${build.version}${build.version.revision.suffix}/lib"/>
+        <copy todir="${build.installer}/Manager-${build.version}${build.version.revision.suffix}/lib" preservelastmodified="true" granularity="2000">
             <fileset dir="${build.dir}/manager/lib">
                 <include name="*.jar"/>
             </fileset>
         </copy>
         <copy file="${build.dir}/manager/Manager.jar"
-              tofile="${build.installer}/Manager-${build.version}/Manager.jar"
+              tofile="${build.installer}/Manager-${build.version}${build.version.revision.suffix}/Manager.jar"
               preservelastmodified="true"
               granularity="2000"/>
 
         <!-- Start script -->
         <copy file="${src.root}/etc/Manager.sh"
-              tofile="${build.installer}/Manager-${build.version}/Manager.sh"
+              tofile="${build.installer}/Manager-${build.version}${build.version.revision.suffix}/Manager.sh"
               preservelastmodified="true"
               granularity="2000"/>
-        <chmod file="${build.installer}/Manager-${build.version}/Manager.sh" perm="555"/>
+        <chmod file="${build.installer}/Manager-${build.version}${build.version.revision.suffix}/Manager.sh" perm="555"/>
 
         <!-- Config files -->
         <copy file="${src.root}/modules/gateway/console/src/main/resources/com/l7tech/console/resources/logging.properties"
-              todir="${build.installer}/Manager-${build.version}"
+              todir="${build.installer}/Manager-${build.version}${build.version.revision.suffix}"
               preservelastmodified="true"
               granularity="2000"/>
         <copy file="${src.root}/lib/repository/com.safelogic.cryptocomply/cryptocomply-2.2.1.hmac"
-              todir="${build.installer}/Manager-${build.version}/lib"
+              todir="${build.installer}/Manager-${build.version}${build.version.revision.suffix}/lib"
               preservelastmodified="true"
               granularity="2000"/>
 
         <!-- Create distro TAR -->
-        <tar destfile="${build.installer}/Manager-${build.version}.tar.gz"
+        <tar destfile="${build.installer}/Manager-${build.version}${build.version.revision.suffix}.tar.gz"
              compression="gzip">
             <tarfileset dir="${build.installer}" mode="555" username="build" group="build">
-                <include name="Manager-${build.version}/Manager.sh"/>
+                <include name="Manager-${build.version}${build.version.revision.suffix}/Manager.sh"/>
             </tarfileset>
             <tarfileset dir="${build.installer}" mode="444" username="build" group="build">
-                <include name="Manager-${build.version}/**/*"/>
-                <exclude name="Manager-${build.version}/Manager.sh"/>
+                <include name="Manager-${build.version}${build.version.revision.suffix}/**/*"/>
+                <exclude name="Manager-${build.version}${build.version.revision.suffix}/Manager.sh"/>
             </tarfileset>
         </tar>
     </target>
@@ -2226,9 +2241,9 @@ ${versionfilecontent}
             <arg value="/NOCD"/>
             <arg value="/DJ2RE=${install.jre.version}"/>
             <arg value="/DJ2RE_DIR=${install.wintarballs}"/>
-            <arg value="/DPACKAGE_REL=installer\Manager-${build.version}"/>
+            <arg value="/DPACKAGE_REL=installer\Manager-${build.version}${build.version.revision.suffix}"/>
             <arg value="/DOUTPUT_DIR=../../../build/installer"/>
-            <arg value="/DMUI_VERSION=${build.version}"/>
+            <arg value="/DMUI_VERSION=${build.version}${build.version.revision.suffix}"/>
             <arg value="/XSetCompressor bzip2"/>
             <arg value="Manager.nsi"/>
         </exec>
@@ -2854,7 +2869,7 @@ ${versionfilecontent}
     </target>
 
     <target name="package.managerapi" depends="package.manager.jar,managerapi.javadoc" description="Package the Manager API for distribution.">
-        <zip destfile="${build.dir}/ManagerAPI-${build.version}.zip">
+        <zip destfile="${build.dir}/ManagerAPI-${build.version}${build.version.revision.suffix}.zip">
             <zipfileset dir="${src.root}/modules/skunkworks/src/main/resources/com/l7tech/example/manager/apidemo" includes="readme.txt"/>
             <zipfileset dir="${src.root}/modules/skunkworks/src/main/java" includes="com/l7tech/example/manager/apidemo/**/*.java" prefix="sample/src"/>
             <zipfileset dir="${build.dir}" includes="Manager.jar" prefix="lib"/>
@@ -2865,7 +2880,7 @@ ${versionfilecontent}
 
     <target name="package.clientapi" depends="package.client.jar,bridgeapi.javadoc" description="Package the Client API for distribution.">
         <!-- package bridge api for distribution -->
-        <zip destfile="${build.dir}/BridgeAPI-${build.version}.zip" basedir="${build.dir}/docs" includes="bridge-api/**" />
+        <zip destfile="${build.dir}/BridgeAPI-${build.version}${build.version.revision.suffix}.zip" basedir="${build.dir}/docs" includes="bridge-api/**" />
     </target>
 
     <target name="detect.custom.assertion.sample" depends="prepare">
@@ -2874,59 +2889,59 @@ ${versionfilecontent}
 
     <target name="zip.api.customassertion" depends="package.api,detect.custom.assertion.sample" if="custom.assertion.sample.present">
         <!-- package layer7 api for distribution -->
-        <mkdir dir="${build.dir}/CustomAssertionAPI-${build.version}"/>
-        <copy todir="${build.dir}/CustomAssertionAPI-${build.version}">
+        <mkdir dir="${build.dir}/CustomAssertionAPI-${build.version}${build.version.revision.suffix}"/>
+        <copy todir="${build.dir}/CustomAssertionAPI-${build.version}${build.version.revision.suffix}">
           <fileset dir="${src.root}/CustomAssertionSample/">
             <include name="*.txt"/>
             <include name="*.pdf"/>
           </fileset>
         </copy>
 
-        <mkdir dir="${build.dir}/CustomAssertionAPI-${build.version}/javadoc"/>
-        <mkdir dir="${build.dir}/CustomAssertionAPI-${build.version}/javadoc/html"/>
-        <copy todir="${build.dir}/CustomAssertionAPI-${build.version}/javadoc/html">
+        <mkdir dir="${build.dir}/CustomAssertionAPI-${build.version}${build.version.revision.suffix}/javadoc"/>
+        <mkdir dir="${build.dir}/CustomAssertionAPI-${build.version}${build.version.revision.suffix}/javadoc/html"/>
+        <copy todir="${build.dir}/CustomAssertionAPI-${build.version}${build.version.revision.suffix}/javadoc/html">
           <fileset dir="${build.dir}/docs/layer7-api"/>
         </copy>
 
-        <mkdir dir="${build.dir}/CustomAssertionAPI-${build.version}/lib"/>
-        <copy todir="${build.dir}/CustomAssertionAPI-${build.version}/lib">
+        <mkdir dir="${build.dir}/CustomAssertionAPI-${build.version}${build.version.revision.suffix}/lib"/>
+        <copy todir="${build.dir}/CustomAssertionAPI-${build.version}${build.version.revision.suffix}/lib">
           <fileset dir="${src.root}/CustomAssertionSample/lib"/>
         </copy>
         
-        <mkdir dir="${build.dir}/CustomAssertionAPI-${build.version}/tools"/>
-        <copy todir="${build.dir}/CustomAssertionAPI-${build.version}/tools">
+        <mkdir dir="${build.dir}/CustomAssertionAPI-${build.version}${build.version.revision.suffix}/tools"/>
+        <copy todir="${build.dir}/CustomAssertionAPI-${build.version}${build.version.revision.suffix}/tools">
           <fileset dir="${src.root}/CustomAssertionSample/tools"/>
         </copy>
         
-        <copy file="${src.root}/CustomAssertionSample/build.sh" todir="${build.dir}/CustomAssertionAPI-${build.version}"/>
-        <copy file="${src.root}/CustomAssertionSample/build.xml" todir="${build.dir}/CustomAssertionAPI-${build.version}"/>
-        <copy file="${src.root}/CustomAssertionSample/build-common.xml" todir="${build.dir}/CustomAssertionAPI-${build.version}"/>
+        <copy file="${src.root}/CustomAssertionSample/build.sh" todir="${build.dir}/CustomAssertionAPI-${build.version}${build.version.revision.suffix}"/>
+        <copy file="${src.root}/CustomAssertionSample/build.xml" todir="${build.dir}/CustomAssertionAPI-${build.version}${build.version.revision.suffix}"/>
+        <copy file="${src.root}/CustomAssertionSample/build-common.xml" todir="${build.dir}/CustomAssertionAPI-${build.version}${build.version.revision.suffix}"/>
         
         <!-- Traffic Logger Sample -->
-        <mkdir dir="${build.dir}/CustomAssertionAPI-${build.version}/TrafficLoggerSample"/>
-        <copy file="${src.root}/CustomAssertionSample/TrafficLoggerSample/build.xml" todir="${build.dir}/CustomAssertionAPI-${build.version}/TrafficLoggerSample"/>
+        <mkdir dir="${build.dir}/CustomAssertionAPI-${build.version}${build.version.revision.suffix}/TrafficLoggerSample"/>
+        <copy file="${src.root}/CustomAssertionSample/TrafficLoggerSample/build.xml" todir="${build.dir}/CustomAssertionAPI-${build.version}${build.version.revision.suffix}/TrafficLoggerSample"/>
         
-        <mkdir dir="${build.dir}/CustomAssertionAPI-${build.version}/TrafficLoggerSample/src"/>
-        <copy todir="${build.dir}/CustomAssertionAPI-${build.version}/TrafficLoggerSample/src">
+        <mkdir dir="${build.dir}/CustomAssertionAPI-${build.version}${build.version.revision.suffix}/TrafficLoggerSample/src"/>
+        <copy todir="${build.dir}/CustomAssertionAPI-${build.version}${build.version.revision.suffix}/TrafficLoggerSample/src">
           <fileset dir="${src.root}/CustomAssertionSample/TrafficLoggerSample/src"/>
         </copy>
         
         <!-- Salesforce Sample -->
-        <mkdir dir="${build.dir}/CustomAssertionAPI-${build.version}/SalesforceSample"/>
-        <copy file="${src.root}/CustomAssertionSample/SalesforceSample/build.xml" todir="${build.dir}/CustomAssertionAPI-${build.version}/SalesforceSample"/>
+        <mkdir dir="${build.dir}/CustomAssertionAPI-${build.version}${build.version.revision.suffix}/SalesforceSample"/>
+        <copy file="${src.root}/CustomAssertionSample/SalesforceSample/build.xml" todir="${build.dir}/CustomAssertionAPI-${build.version}${build.version.revision.suffix}/SalesforceSample"/>
         
-        <mkdir dir="${build.dir}/CustomAssertionAPI-${build.version}/SalesforceSample/src"/>
-        <copy todir="${build.dir}/CustomAssertionAPI-${build.version}/SalesforceSample/src">
+        <mkdir dir="${build.dir}/CustomAssertionAPI-${build.version}${build.version.revision.suffix}/SalesforceSample/src"/>
+        <copy todir="${build.dir}/CustomAssertionAPI-${build.version}${build.version.revision.suffix}/SalesforceSample/src">
           <fileset dir="${src.root}/CustomAssertionSample/SalesforceSample/src"/>
         </copy>
         
-        <zip destfile="${build.dir}/CustomAssertion_dev_kit-${build.version}.zip">
+        <zip destfile="${build.dir}/CustomAssertion_dev_kit-${build.version}${build.version.revision.suffix}.zip">
             <zipfileset dir="${build.dir}" filemode="755">
-                <include name="CustomAssertionAPI-${build.version}/**/*.sh"/>
+                <include name="CustomAssertionAPI-${build.version}${build.version.revision.suffix}/**/*.sh"/>
             </zipfileset>
             <zipfileset dir="${build.dir}">
-                <include name="CustomAssertionAPI-${build.version}/**/*"/>
-                <exclude name="CustomAssertionAPI-${build.version}/**/*.sh"/>
+                <include name="CustomAssertionAPI-${build.version}${build.version.revision.suffix}/**/*"/>
+                <exclude name="CustomAssertionAPI-${build.version}${build.version.revision.suffix}/**/*.sh"/>
             </zipfileset>
         </zip>
     </target>
@@ -2935,44 +2950,44 @@ ${versionfilecontent}
       Package gateway management API Jar / Javadoc for distribution
     -->
     <target name="zip.api.gatewaymanagement" depends="package.management.api">
-        <mkdir dir="${build.dir}/GatewayManagementAPI-${build.version}/docs/api"/>
-        <mkdir dir="${build.dir}/GatewayManagementAPI-${build.version}/docs/schema"/>
-        <mkdir dir="${build.dir}/GatewayManagementAPI-${build.version}/examples/api/"/>
-        <mkdir dir="${build.dir}/GatewayManagementAPI-${build.version}/examples/client/"/>
-        <mkdir dir="${build.dir}/GatewayManagementAPI-${build.version}/examples/ws/"/>
-        <mkdir dir="${build.dir}/GatewayManagementAPI-${build.version}/examples/resources/"/>
+        <mkdir dir="${build.dir}/GatewayManagementAPI-${build.version}${build.version.revision.suffix}/docs/api"/>
+        <mkdir dir="${build.dir}/GatewayManagementAPI-${build.version}${build.version.revision.suffix}/docs/schema"/>
+        <mkdir dir="${build.dir}/GatewayManagementAPI-${build.version}${build.version.revision.suffix}/examples/api/"/>
+        <mkdir dir="${build.dir}/GatewayManagementAPI-${build.version}${build.version.revision.suffix}/examples/client/"/>
+        <mkdir dir="${build.dir}/GatewayManagementAPI-${build.version}${build.version.revision.suffix}/examples/ws/"/>
+        <mkdir dir="${build.dir}/GatewayManagementAPI-${build.version}${build.version.revision.suffix}/examples/resources/"/>
 
-        <copy todir="${build.dir}/GatewayManagementAPI-${build.version}/">
+        <copy todir="${build.dir}/GatewayManagementAPI-${build.version}${build.version.revision.suffix}/">
             <fileset dir="${build.dir}/layer7-gateway-api"/>
         </copy>
 
-        <copy todir="${build.dir}/GatewayManagementAPI-${build.version}/docs/api">
+        <copy todir="${build.dir}/GatewayManagementAPI-${build.version}${build.version.revision.suffix}/docs/api">
           <fileset dir="${build.dir}/docs/layer7-gateway-api"/>
         </copy>
 
-        <copy todir="${build.dir}/GatewayManagementAPI-${build.version}/docs/schema">
+        <copy todir="${build.dir}/GatewayManagementAPI-${build.version}${build.version.revision.suffix}/docs/schema">
           <fileset dir="${src.root}/modules/gateway/gateway-api/build/etc/schema" includes="*.xsd"/>
         </copy>
 
-        <copy todir="${build.dir}/GatewayManagementAPI-${build.version}/examples/api">
+        <copy todir="${build.dir}/GatewayManagementAPI-${build.version}${build.version.revision.suffix}/examples/api">
           <fileset dir="${src.root}/modules/gateway/gateway-api/src/test/java" includes="com/l7tech/gateway/api/examples/*.java"/>
         </copy>
 
-        <copy todir="${build.dir}/GatewayManagementAPI-${build.version}/examples/client">
+        <copy todir="${build.dir}/GatewayManagementAPI-${build.version}${build.version.revision.suffix}/examples/client">
           <fileset dir="${src.root}/etc/gatewaymanagement/examples/client"/>
         </copy>
 
-        <copy todir="${build.dir}/GatewayManagementAPI-${build.version}/examples/ws">
+        <copy todir="${build.dir}/GatewayManagementAPI-${build.version}${build.version.revision.suffix}/examples/ws">
           <fileset dir="${src.root}/etc/gatewaymanagement/examples/ws" includes="*.xml"/>
         </copy>
 
-        <copy todir="${build.dir}/GatewayManagementAPI-${build.version}/examples/resources">
+        <copy todir="${build.dir}/GatewayManagementAPI-${build.version}${build.version.revision.suffix}/examples/resources">
           <fileset dir="${src.root}/etc/gatewaymanagement/examples/resources" includes="*.xml"/>
         </copy>
 
-        <zip destfile="${build.dir}/GatewayManagement_dev_kit-${build.version}.zip">
+        <zip destfile="${build.dir}/GatewayManagement_dev_kit-${build.version}${build.version.revision.suffix}.zip">
             <zipfileset dir="${build.dir}">
-                <include name="GatewayManagementAPI-${build.version}/**/*"/>
+                <include name="GatewayManagementAPI-${build.version}${build.version.revision.suffix}/**/*"/>
             </zipfileset>
         </zip>
     </target>
@@ -2981,34 +2996,34 @@ ${versionfilecontent}
       Package the gateway management client for distribution
     -->
     <target name="package.gatewaymanagementclient" depends="package.jars">
-        <mkdir dir="${build.dir}/GatewayManagementClient-${build.version}/lib"/>
+        <mkdir dir="${build.dir}/GatewayManagementClient-${build.version}${build.version.revision.suffix}/lib"/>
 
         <copy file="etc/gatewaymanagement/gatewayManagementClient.sh"
-              tofile="${build.dir}/GatewayManagementClient-${build.version}/gatewayManagementClient.sh"/>
+              tofile="${build.dir}/GatewayManagementClient-${build.version}${build.version.revision.suffix}/gatewayManagementClient.sh"/>
 
         <copy file="etc/jdk_utils.sh"
-              tofile="${build.dir}/GatewayManagementClient-${build.version}/jdk_utils.sh"/>
+              tofile="${build.dir}/GatewayManagementClient-${build.version}${build.version.revision.suffix}/jdk_utils.sh"/>
 
         <copy file="modules/gateway/gateway-management-client/build/jar/layer7-gateway-management-client.jar"
-              tofile="${build.dir}/GatewayManagementClient-${build.version}/GatewayManagementClient.jar"/>
+              tofile="${build.dir}/GatewayManagementClient-${build.version}${build.version.revision.suffix}/GatewayManagementClient.jar"/>
 
-        <copy todir="${build.dir}/GatewayManagementClient-${build.version}/lib">
+        <copy todir="${build.dir}/GatewayManagementClient-${build.version}${build.version.revision.suffix}/lib">
             <fileset dir="modules/gateway/gateway-management-client/build/dependency">
                 <include name="**/*.jar"/>
             </fileset>
         </copy>
 
-        <zip destfile="${build.dir}/GatewayManagementClient-${build.version}.zip">
+        <zip destfile="${build.dir}/GatewayManagementClient-${build.version}${build.version.revision.suffix}.zip">
             <zipfileset dir="${build.dir}" filemode="555">
-                <include name="GatewayManagementClient-${build.version}/gatewayManagementClient.sh"/>
+                <include name="GatewayManagementClient-${build.version}${build.version.revision.suffix}/gatewayManagementClient.sh"/>
             </zipfileset>
             <zipfileset dir="${build.dir}" filemode="555">
-                <include name="GatewayManagementClient-${build.version}/jdk_utils.sh"/>
+                <include name="GatewayManagementClient-${build.version}${build.version.revision.suffix}/jdk_utils.sh"/>
             </zipfileset>
             <zipfileset dir="${build.dir}" filemode="444">
-                <include name="GatewayManagementClient-${build.version}/**/*"/>
-                <exclude name="GatewayManagementClient-${build.version}/gatewayManagementClient.sh"/>
-                <exclude name="GatewayManagementClient-${build.version}/jdk_utils.sh"/>
+                <include name="GatewayManagementClient-${build.version}${build.version.revision.suffix}/**/*"/>
+                <exclude name="GatewayManagementClient-${build.version}${build.version.revision.suffix}/gatewayManagementClient.sh"/>
+                <exclude name="GatewayManagementClient-${build.version}${build.version.revision.suffix}/jdk_utils.sh"/>
             </zipfileset>
         </zip>
     </target>
@@ -3881,7 +3896,18 @@ ${versionfilecontent}
 		<property file="build.number" prefix="install"/>
 
 		<!-- Set the build revision number to the build number for official builds -->
-        <property name="build.version.revision" value="${install.build.number}" />
+		<property name="build.version.revision" value="${install.build.number}" />
+		
+		<!-- Include hyphen with suffix if it is defined and not empty -->
+		<condition property="build.version.revision.suffix" value="-${build.number.api.parameters.suffix}" else="">
+			<and>  
+				<isset property="build.number.api.parameters.suffix"/>
+				<not>  
+					<equals arg1="${build.number.api.parameters.suffix}" arg2=""/>
+				</not>
+			</and>
+		</condition>
+		
 		<echo file="local.build.version"># Generated local build properties file ${line.separator}build.version=${official.build.version}${line.separator}build.api.version=${official.build.api.version}${line.separator}</echo>
     </target>
 
@@ -4268,7 +4294,7 @@ ${versionfilecontent}
 	-->
 	<target name="publish-generic">
 		<basename property="generic.filename" file="${var}"/>
-		<propertyregex property="nospace.filename" input="${generic.filename}" regexp=" " replace="%20" global="true" />
+		<propertyregex property="nospace.filename" input="${generic.filename}" regexp=" " replace="%20" global="true" defaultValue="${generic.filename}" />
 		<exec executable="curl">
 			<arg line="-i -u ${artifactory.username}:${artifactory.passwd} -T"/>
 			<arg value="${var}"/>

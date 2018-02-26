@@ -177,6 +177,11 @@ public class InternalUser extends PersistentUser {
         this.changePassword = changePassword;
     }
 
+    /**
+     * Merge the list of password history with the current one.
+     *
+     * @param passwordChangesHistory list of password history, may be null only if the current list is null.
+     */
     public void setPasswordChangesHistory(List<PasswordChangeRecord> passwordChangesHistory) {
         if ( this.passwordChangesHistory != null) {
             for (PasswordChangeRecord changeRecord : passwordChangesHistory) {
@@ -185,8 +190,17 @@ public class InternalUser extends PersistentUser {
                 }
             }
         } else {
-            this.passwordChangesHistory = passwordChangesHistory;
+            this.changePasswordChangesHistory(passwordChangesHistory);
         }
+    }
+
+    /**
+     * Define the list of password history to this user. Does not perform any additional check and no list merge.
+     *
+     * @param passwordChangesHistory list of password history, may be null.
+     */
+    public void changePasswordChangesHistory(List<PasswordChangeRecord> passwordChangesHistory) {
+        this.passwordChangesHistory = passwordChangesHistory;
     }
 
     @SuppressWarnings({"RedundantIfStatement"})

@@ -151,8 +151,6 @@ public class MLLPCodec implements ProtocolCodecFactory, ExtensibleSocketConnecto
                     ioSession.setAttribute("outstandingBytes", null);
                     ioSession.setAttribute("endByte1Found", null);
                 }
-
-                in.clear();
             }
 
             @Override

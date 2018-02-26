@@ -44,6 +44,7 @@
         <dependency name="layer7-siteminder" rev="latest.integration" conf="core"/>
         <dependency name="layer7-gateway-rest-toolkit" rev="latest.integration" conf="core"/>
         <dependency name="layer7-cassandra" rev="latest.integration" conf="core"/>
+        <dependency name="extension-api" rev="latest.integration" conf="core"/>
 
         <!-- Dependencies -->
         <dependency org="javax.jnlp" name="jnlp-servlet" rev="1.0" conf="core"/>
@@ -101,9 +102,9 @@
         <dependency org="org.aspectj" name="aspectjweaver" rev="1.6.12" force="true" conf="core"/> <!-- Used for parsing pointcut expressions only -->
         <dependency org="org.apache.ftpserver" name="ftplet-api" rev="1.0.6" force="true" conf="core"/>
         <dependency org="org.apache.ftpserver" name="ftpserver-core" rev="1.0.6" force="true" conf="core"/>
-        <dependency org="org.apache.tomcat" name="annotations-api" rev="6.0.35" force="true" conf="core"/>
-        <dependency org="org.apache.tomcat" name="catalina" rev="6.0.41-l7p2" force="true" conf="core"/>
-        <dependency org="org.apache.tomcat" name="coyote" rev="6.0.41-l7p2" force="true" conf="core"/>
+        <dependency org="org.apache.tomcat" name="annotations-api" rev="6.0.53" force="true" conf="core"/>
+        <dependency org="org.apache.tomcat" name="catalina" rev="6.0.53-l7p1" force="true" conf="core"/>
+        <dependency org="org.apache.tomcat" name="coyote" rev="6.0.53-l7p1" force="true" conf="core"/>
         <dependency org="com.hazelcast" name="hazelcast" rev="3.6.1" force="true" conf="core"/>
 
         <!-- Progress Data Direct JDBC Drivers -->

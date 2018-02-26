@@ -2,9 +2,9 @@
 <ivy-module version="1.0" xmlns:m="http://ant.apache.org/ivy/maven">
 	<info organisation="org.apache.tomcat"
 		module="coyote"
-		revision="6.0.41-l7p1"
+		revision="6.0.53-l7p1"
 		status="release"
-		publication="20120104140000"
+		publication="20171201140000"
 	>
 		<description homepage="">
 		Tomcat Connectors and HTTP parser
@@ -26,8 +26,8 @@
 		<artifact name="coyote" type="jar" ext="jar" conf="master"/>
 	</publications>
 	<dependencies>
-		<dependency org="org.apache.tomcat" name="catalina" rev="6.0.41-l7p1" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
-		<dependency org="org.apache.tomcat" name="juli" rev="6.0.41" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
+		<dependency org="org.apache.tomcat" name="catalina" rev="6.0.53-l7p1" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
+		<dependency org="org.apache.tomcat" name="juli" rev="6.0.53" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 		<dependency org="javax.servlet" name="javax.servlet-api" rev="3.0.1" force="true" conf="compile->compile(*),master(*);runtime->runtime(*)"/>
 	</dependencies>
 </ivy-module>

@@ -1425,6 +1425,14 @@
         <property name="encryptedKeyCache" ref="encryptedKeyCache"/>
     </bean>
 
+    <bean id="preServiceInvocationInjectionsRegistry" class="com.l7tech.server.extension.registry.processorinjection.ServiceInjectionsRegistry"/>
+    <bean id="postServiceInvocationInjectionsRegistry" class="com.l7tech.server.extension.registry.processorinjection.ServiceInjectionsRegistry"/>
+
+    <bean id="messageProcessorInjector" class="com.l7tech.server.MessageProcessorInjectorImpl" >
+        <constructor-arg ref="preServiceInvocationInjectionsRegistry" />
+        <constructor-arg ref="postServiceInvocationInjectionsRegistry" />
+    </bean>
+
     <!-- server Message Processor -->
     <bean id="messageProcessor" class="com.l7tech.server.MessageProcessor">
         <constructor-arg ref="serviceCache"/>
@@ -1436,6 +1444,7 @@
         <constructor-arg ref="serviceMetricsServices"/>
         <constructor-arg ref="auditContextFactory"/>
         <constructor-arg ref="messageSummaryAuditFactory"/>
+        <constructor-arg ref="messageProcessorInjector"/>
         <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="trafficLogger"/>
         <constructor-arg ref="messageProcessingEventChannel"/>
