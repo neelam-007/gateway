@@ -39,7 +39,7 @@ public class RefreshButtonTest {
         Whitebox.setInternalState(mainWindow, "cl", MainWindow.class.getClassLoader());
 
         //create and add servicesAndPoliciesTree to main window
-        servicesAndPoliciesTree = new ServicesAndPoliciesTree();
+        servicesAndPoliciesTree = new MockServicesAndPoliciesTree();
         Whitebox.setInternalState(mainWindow, "servicesAndPoliciesTree", servicesAndPoliciesTree);
     }
 
@@ -55,5 +55,11 @@ public class RefreshButtonTest {
         refreshAction.actionPerformed(new ActionEvent(new Object(), 0, "Refresh"));
 
         Assert.assertEquals("No node should be selected", 0, servicesAndPoliciesTree.getSelectionCount());
+    }
+
+    private class MockServicesAndPoliciesTree extends ServicesAndPoliciesTree{
+        public void setDragEnabled(boolean b) {
+            //do nothing to prevent HeadlessException
+        }
     }
 }
