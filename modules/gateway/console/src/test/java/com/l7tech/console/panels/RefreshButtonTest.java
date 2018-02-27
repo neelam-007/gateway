@@ -36,7 +36,7 @@ public class RefreshButtonTest {
     private ServicesAndPoliciesTree servicesAndPoliciesTree;
 
     @Before
-    public void setup(){
+    public void setup() {
         //mock refresh ConnectionListener
         Whitebox.setInternalState(mainWindow, "listenerList", new WeakEventListenerList());
 
@@ -47,7 +47,7 @@ public class RefreshButtonTest {
         doNothing().when(servicesAndPoliciesTree).setDragEnabled(true);
 
         //create and add servicesAndPoliciesTree to main window
-        servicesAndPoliciesTree = new ServicesAndPoliciesTree((DefaultTreeModel)new JTree(serviceNode).getModel());
+        servicesAndPoliciesTree = new ServicesAndPoliciesTree((DefaultTreeModel) new JTree(serviceNode).getModel());
         Whitebox.setInternalState(mainWindow, "servicesAndPoliciesTree", servicesAndPoliciesTree);
 
         //mock refresh action
@@ -58,11 +58,11 @@ public class RefreshButtonTest {
     public void testNoSelectedNodesAfterRefresh() throws Exception {
         //select a node from servicesAndPoliciesTree
         servicesAndPoliciesTree.setSelectionPath(new TreePath(serviceNode));
-        Assert.assertEquals("One node should be selected",1, servicesAndPoliciesTree.getSelectionCount());
+        Assert.assertEquals("One node should be selected", 1, servicesAndPoliciesTree.getSelectionCount());
 
         //init and perform refresh action
-        Action refreshAction= Whitebox.invokeMethod(mainWindow, "getRefreshAction");
-        refreshAction.actionPerformed(new ActionEvent(new Object(),0,"Refresh"));
+        Action refreshAction = Whitebox.invokeMethod(mainWindow, "getRefreshAction");
+        refreshAction.actionPerformed(new ActionEvent(new Object(), 0, "Refresh"));
 
         Assert.assertEquals("No node should be selected", 0, servicesAndPoliciesTree.getSelectionCount());
     }
