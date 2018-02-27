@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<l7:Bundle xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management">
+    <l7:References>
+        <l7:Item>
+            <l7:Name>otherService</l7:Name>
+            <l7:Id>cd13425f904d480c16db414385d8764b</l7:Id>
+            <l7:Type>SERVICE</l7:Type>
+            <l7:TimeStamp>2018-02-19T14:00:36.077-08:00</l7:TimeStamp>
+            <l7:Resource>
+                <l7:Service id="cd13425f904d480c16db414385d8764b" version="1">
+                    <l7:ServiceDetail folderId="0000000000000000ffffffffffffec76" id="cd13425f904d480c16db414385d8764b" version="2">
+                        <l7:Name>otherService</l7:Name>
+                        <l7:Enabled>true</l7:Enabled>
+                    </l7:ServiceDetail>
+                </l7:Service>
+            </l7:Resource>
+        </l7:Item>
+        <l7:Item>
+            <l7:Name>service</l7:Name>
+            <l7:Id>cd13425f904d480c16db414385d876e1</l7:Id>
+            <l7:Type>SERVICE</l7:Type>
+            <l7:TimeStamp>2018-02-19T14:00:36.909-08:00</l7:TimeStamp>
+            <l7:Resource>
+                <l7:Service id="cd13425f904d480c16db414385d876e1" version="1">
+                    <l7:ServiceDetail folderId="0000000000000000ffffffffffffec76" id="cd13425f904d480c16db414385d876e1" version="1">
+                        <l7:Name>service</l7:Name>
+                        <l7:Enabled>true</l7:Enabled>
+                    </l7:ServiceDetail>
+                </l7:Service>
+            </l7:Resource>
+        </l7:Item>
+        <l7:Item>
+            <l7:Name>duplicate</l7:Name>
+            <l7:Id>cd13425f904d480c16db414385d876e1</l7:Id>
+            <l7:Type>SERVICE</l7:Type>
+            <l7:TimeStamp>2018-02-19T14:00:36.909-08:00</l7:TimeStamp>
+            <l7:Resource>
+                <l7:Service id="cd13425f904d480c16db414385d876e1" version="2">
+                    <l7:ServiceDetail folderId="0000000000000000ffffffffffffec76" id="cd13425f904d480c16db414385d876e1" version="2">
+                        <l7:Name>duplicate</l7:Name>
+                        <l7:Enabled>true</l7:Enabled>
+                    </l7:ServiceDetail>
+                </l7:Service>
+            </l7:Resource>
+        </l7:Item>
+    </l7:References>
+</l7:Bundle>

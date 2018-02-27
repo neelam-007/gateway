@@ -1,22 +1,15 @@
 package com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl;
 
-import static junit.framework.Assert.assertNotNull;
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertTrue;
-import static org.mockito.Mockito.*;
+import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.ServiceResourceFactory;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.APIUtilityLocator;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.SecretsEncryptor;
+import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.common.BundleBuilder;
 import com.l7tech.gateway.common.MappingBuilder;
-import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.APIUtilityLocator;
-import com.l7tech.gateway.api.Bundle;
-import com.l7tech.gateway.api.BundleList;
-import com.l7tech.gateway.api.ManagedObjectFactory;
-import com.l7tech.gateway.api.Mapping;
-import com.l7tech.gateway.api.ServiceAliasMO;
-import com.l7tech.gateway.api.ServiceMO;
-
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.PublishedServiceAlias;
+import com.l7tech.gateway.common.service.ServiceDocument;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
@@ -24,17 +17,26 @@ import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.server.bundling.EntityBundle;
 import com.l7tech.server.bundling.EntityContainer;
 import com.l7tech.server.bundling.EntityMappingInstructions;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import com.l7tech.server.bundling.PublishedServiceContainer;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.stubbing.Answer;
+
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.Unmarshaller;
+import java.util.*;
+
+import static junit.framework.Assert.assertNotNull;
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertFalse;
+import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class BundleTransformerTest {
@@ -46,6 +48,8 @@ public class BundleTransformerTest {
     private PublishedServiceTransformer serviceTransformer;
     @Mock
     private ServiceAliasTransformer aliasTransformer;
+    @InjectMocks
+    private ServiceResourceFactory serviceResourceFactory;
 
     @Before
     public void setup() {
@@ -226,6 +230,39 @@ public class BundleTransformerTest {
         assertTrue(result.getMappingInstructions().get(1).getExtraMappings().containsKey("otherProp"));
     }
 
+    @Test (expected = IllegalStateException.class)
+    public void testConvertThrowsExceptionOnDuplicateEntityIds() throws Exception {
+        JAXBContext context = JAXBContext.newInstance(Bundle.class);
+        Unmarshaller unmarshaller = context.createUnmarshaller();
+        Bundle bundle = (Bundle) unmarshaller.unmarshal(
+                getClass().getClassLoader().getResourceAsStream("com/l7tech/external/assertions/gatewaymanagement/server/Bundle_withDuplicateIds_minimal.xml")
+        );
+        PublishedServiceTransformer serviceTransformer = new PublishedServiceTransformer();
+        serviceTransformer.setFactory(serviceResourceFactory);
+        PublishedServiceTransformer mockServiceTransformer = spy(serviceTransformer);
+
+        when(apiUtilityLocator.findTransformerByResourceType(any())).thenReturn(mockServiceTransformer);
+        doAnswer(new Answer<EntityContainer>() {
+            @Override
+            public EntityContainer answer(InvocationOnMock invocationOnMock) throws Throwable {
+                ServiceMO serviceMO = invocationOnMock.getArgumentAt(0, ServiceMO.class);
+                PublishedService service = new PublishedService();
+                if (serviceMO.getServiceDetail().getId() != null) {
+                    service.setGoid(Goid.parseGoid(serviceMO.getServiceDetail().getId()));
+                }
+                return new PublishedServiceContainer(service, Collections.singleton(new ServiceDocument()));
+            }
+        }).when(mockServiceTransformer).convertFromMO(any(ServiceMO.class), any(Boolean.class), any(SecretsEncryptor.class));
+
+        try {
+            bundleTransformer.convertFromMO(bundle, false, null);
+        } catch (IllegalStateException e) {
+            assertTrue(e.getMessage().contains("cd13425f904d480c16db414385d876e1")); // duplicated id output in error message
+            assertFalse(e.getMessage().contains("cd13425f904d480c16db414385d8764b")); // unique id is not
+            throw e;
+        }
+    }
+
     private Map<Goid, EntityMappingInstructions> instructionsToMap(final List<EntityMappingInstructions> instructions) {
         final Map<Goid, EntityMappingInstructions> map = new HashMap<>();
         for (final EntityMappingInstructions instruction : instructions) {
@@ -238,4 +275,6 @@ public class BundleTransformerTest {
     private Mapping createMappingForTest(final String type, final Mapping.Action action, final String id) {
         return new MappingBuilder().withType(type).withAction(action).withSrcId(id).build();
     }
+
+
 }
