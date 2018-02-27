@@ -17,9 +17,6 @@ import com.l7tech.server.cluster.ClusterMaster;
 import com.l7tech.server.event.FaultProcessed;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
-import com.l7tech.server.message.metrics.GatewayMetricsPublisher;
-import com.l7tech.server.message.metrics.GatewayMetricsUtils;
-import com.l7tech.server.message.metrics.LatencyMetrics;
 import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.server.transport.jms.*;
 import com.l7tech.server.util.EventChannel;
@@ -70,8 +67,6 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
     private AuditContextFactory auditContextFactory;
     private MessageSummaryAuditFactory messageSummaryAuditFactory;
     private MessageProducer responseProducer;
-    private GatewayMetricsPublisher metricsPublisher;
-    private final TimeSource timeSource = new TimeSource();
 
     public JmsRequestHandlerImpl( final ApplicationContext ctx ) {
         if (ctx == null) {
@@ -84,7 +79,6 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
         clusterMaster = ctx.getBean("clusterMaster", ClusterMaster.class);
         auditContextFactory = ctx.getBean("auditContextFactory", AuditContextFactory.class);
         messageSummaryAuditFactory = ctx.getBean("messageSummaryAuditFactory", MessageSummaryAuditFactory.class);
-        metricsPublisher = ctx.getBean("gatewayMetricsPublisher", GatewayMetricsPublisher.class);
     }
 
     /**
@@ -254,8 +248,6 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
 
                 final PolicyEnforcementContext context =
                         PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, null, replyExpected);
-                GatewayMetricsUtils.setPublisher(context, messageProcessor.isRelayGatewayMetricsEnable() ? metricsPublisher : null);
-                final long startTime = timeSource.currentTimeMillis();
 
                 try {
                     auditContextFactory.doWithNewAuditContext( new Callable<Object>() {
@@ -373,7 +365,6 @@ public class JmsRequestHandlerImpl implements JmsRequestHandler {
                 } catch (Exception e) {
                     throw new JmsRuntimeException(e);
                 } finally {
-                    GatewayMetricsUtils.publishServiceFinish(context, new LatencyMetrics(startTime, timeSource.currentTimeMillis()));
                     ResourceUtils.closeQuietly(context);
                 }
             } catch (IOException e) {

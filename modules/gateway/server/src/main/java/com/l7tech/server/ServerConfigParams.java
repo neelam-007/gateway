@@ -170,6 +170,7 @@ public interface ServerConfigParams {
     String PARAM_JDBC_QUERY_MAXRECORDS_DEFAULT = "jdbcQuery.maxRecords.defaultValue";
     String PARAM_JDBC_QUERY_MAX_CLOB_SIZE_OUT = "jdbcQuery.maxClobSizeOut";
     String PARAM_JDBC_QUERY_MAX_BLOB_SIZE_OUT = "jdbcQuery.maxBlobSizeOut";
+    String PARAM_RELAY_GATEWAY_METRICS_ENABLE = "relayGatewayMetrics.enable";
 
     String PARAM_JDBC_QUERY_MANAGER_CACHE_METADATA_ENABLED = "jdbcQueryManager.cacheMetaData.enable";
     String PARAM_JDBC_QUERY_MANAGER_CACHE_METADATA_TASK_ENABLED = "jdbcQueryManager.cacheMetaDataTask.enable";
