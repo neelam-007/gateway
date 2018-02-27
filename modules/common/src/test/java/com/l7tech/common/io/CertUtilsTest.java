@@ -792,6 +792,18 @@ public class CertUtilsTest {
         generalName = CertUtils.convertToX509GeneralName(new NameValuePair("URI", "http://test.ca.com?test=test"));
         assertEquals(X509GeneralName.Type.uniformResourceIdentifier, generalName.getType());
         assertEquals("http://test.ca.com?test=test", generalName.getStringVal());
+        generalName = CertUtils.convertToX509GeneralName(new NameValuePair("URI", "http+svn://test.ca.com/svn/root"));
+        assertEquals(X509GeneralName.Type.uniformResourceIdentifier, generalName.getType());
+        assertEquals("http+svn://test.ca.com/svn/root", generalName.getStringVal());
+        generalName = CertUtils.convertToX509GeneralName(new NameValuePair("URI", "custom-scheme:test.ca.com/custom"));
+        assertEquals(X509GeneralName.Type.uniformResourceIdentifier, generalName.getType());
+        assertEquals("custom-scheme:test.ca.com/custom", generalName.getStringVal());
+        generalName = CertUtils.convertToX509GeneralName(new NameValuePair("URI", "custom.scheme://test.ca.com/custom"));
+        assertEquals(X509GeneralName.Type.uniformResourceIdentifier, generalName.getType());
+        assertEquals("custom.scheme://test.ca.com/custom", generalName.getStringVal());
+        generalName = CertUtils.convertToX509GeneralName(new NameValuePair("URI", "s://test.ca.com/custom"));
+        assertEquals(X509GeneralName.Type.uniformResourceIdentifier, generalName.getType());
+        assertEquals("s://test.ca.com/custom", generalName.getStringVal());
     }
 
     @Test
@@ -803,6 +815,30 @@ public class CertUtilsTest {
         generalName = CertUtils.convertToX509GeneralName(new NameValuePair("URI", "urn:ISSN:1535-3613"));
         assertEquals(X509GeneralName.Type.uniformResourceIdentifier, generalName.getType());
         assertEquals("urn:ISSN:1535-3613", generalName.getStringVal());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    @BugId("DE348135")
+    public void testConvertToX509GeneralName_InvalidUriSchemeWithDot() throws Exception {
+        CertUtils.convertToX509GeneralName(new NameValuePair("URI", ".scheme:appserver:6394/wa/r/myApp"));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    @BugId("DE348135")
+    public void testConvertToX509GeneralName_InvalidUriSchemeWithPlus() throws Exception {
+        CertUtils.convertToX509GeneralName(new NameValuePair("URI", "+scheme:appserver:6394/wa/r/myApp"));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    @BugId("DE348135")
+    public void testConvertToX509GeneralName_InvalidUriSchemeWithNumber() throws Exception {
+        CertUtils.convertToX509GeneralName(new NameValuePair("URI", "9scheme:appserver:6394/wa/r/myApp"));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    @BugId("DE348135")
+    public void testConvertToX509GeneralName_InvalidUriSchemeWithDash() throws Exception {
+        CertUtils.convertToX509GeneralName(new NameValuePair("URI", "-scheme:appserver:6394/wa/r/myApp"));
     }
 
     @Test(expected = IllegalArgumentException.class)
