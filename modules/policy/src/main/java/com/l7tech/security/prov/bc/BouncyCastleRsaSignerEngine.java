@@ -28,6 +28,7 @@ import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -72,7 +73,7 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
             certGenParams.setSubjectDn(new X500Principal(certReqInfo.getSubject().getEncoded()));
         //extract SANs from the certReqInfo
         if(certGenParams.getSubjectAlternativeNames() == null) {
-            logger.info("Extracting SANs from the CSR info...");
+            logger.log(Level.FINE,"Extracting SANs from the CSR info...");
             List<X509GeneralName> sANs = BouncyCastleCertUtils.extractSubjectAlternativeNamesFromCsrInfoAttr(certReqInfo.getAttributes());
             if(sANs.size() > 0) {
                 certGenParams.setIncludeSubjectAlternativeName(true);
