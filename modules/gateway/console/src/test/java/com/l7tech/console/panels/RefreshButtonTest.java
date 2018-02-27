@@ -11,6 +11,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.powermock.reflect.Whitebox;
 
@@ -20,6 +21,7 @@ import javax.swing.tree.TreePath;
 import java.awt.event.ActionEvent;
 
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -30,6 +32,7 @@ public class RefreshButtonTest {
     @Mock
     private AbstractTreeNode serviceNode;
 
+    @Spy
     private ServicesAndPoliciesTree servicesAndPoliciesTree;
 
     @Before
@@ -40,7 +43,10 @@ public class RefreshButtonTest {
         //mock class loader
         Whitebox.setInternalState(mainWindow, "cl", MainWindow.class.getClassLoader());
 
-        //create and add servicesAndPoliciesTree to SSM
+        //prevent HeadlessException thrown
+        doNothing().when(servicesAndPoliciesTree).setDragEnabled(true);
+
+        //create and add servicesAndPoliciesTree to main window
         servicesAndPoliciesTree = new ServicesAndPoliciesTree((DefaultTreeModel)new JTree(serviceNode).getModel());
         Whitebox.setInternalState(mainWindow, "servicesAndPoliciesTree", servicesAndPoliciesTree);
 
