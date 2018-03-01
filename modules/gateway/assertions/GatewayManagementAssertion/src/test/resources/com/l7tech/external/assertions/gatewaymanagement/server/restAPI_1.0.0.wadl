@@ -1553,9 +1553,6 @@
                         <wadl:param name="csrSubjectDN" style="query" type="xsd:string">
                             <wadl:doc>The CSR subject dn to use. It defaults to the key's subject dn if none is specified.</wadl:doc>
                         </wadl:param>
-                        <wadl:param name="subjectAlternativeName" style="query" type="xsd:string" repeating="true">
-                            <wadl:doc>The list of subject alternative names in the form of &lt;type&gt;:&lt;value&gt;. No subject alternative names added to CSR by default.</wadl:doc>
-                        </wadl:param>
                         <wadl:param name="signatureHash" style="query" type="xsd:string">
                             <wadl:doc>The signature hash to use. Defaults to 'Automatic'</wadl:doc>
                             <wadl:option value="SHA1"/>
