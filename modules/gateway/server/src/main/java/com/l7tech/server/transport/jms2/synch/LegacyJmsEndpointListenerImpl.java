@@ -1,5 +1,6 @@
 package com.l7tech.server.transport.jms2.synch;
 
+import com.l7tech.server.transport.jms2.JmsConnectionMaxWaitException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.server.transport.jms.JmsBag;
 import com.l7tech.server.transport.jms.JmsConfigException;
@@ -37,7 +38,7 @@ class LegacyJmsEndpointListenerImpl extends AbstractJmsEndpointListener {
         this._handler = new JmsRequestHandlerImpl(endpointConfig.getApplicationContext());
     }
 
-    MessageProducer getFailureProducer() throws JMSException, NamingException, JmsConfigException, JmsRuntimeException {
+    MessageProducer getFailureProducer() throws JMSException, NamingException, JmsConnectionMaxWaitException, JmsRuntimeException {
         synchronized(sync) {
             if ( _failureProducer == null &&
                  _endpointCfg.isTransactional() &&
@@ -59,7 +60,7 @@ class LegacyJmsEndpointListenerImpl extends AbstractJmsEndpointListener {
                 } catch (NamingException e) {
                     message = ExceptionUtils.getMessage(e);
                     throw e;
-                } catch (JmsConfigException e) {
+                } catch (JmsConnectionMaxWaitException e) {
                     message = ExceptionUtils.getMessage(e);
                     throw e;
                 } catch (RuntimeException e) {

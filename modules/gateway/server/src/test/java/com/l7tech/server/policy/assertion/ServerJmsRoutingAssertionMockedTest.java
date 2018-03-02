@@ -17,6 +17,7 @@ import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.transport.jms.JmsConnectionManager;
 import com.l7tech.server.transport.jms.JmsEndpointManager;
 import com.l7tech.server.transport.jms.JmsPropertyMapper;
+import com.l7tech.server.transport.jms2.JmsConnectionMaxWaitException;
 import com.l7tech.server.transport.jms2.JmsEndpointConfig;
 import com.l7tech.server.transport.jms2.JmsResourceManager;
 import com.l7tech.server.util.ApplicationEventProxy;
@@ -97,8 +98,10 @@ public class ServerJmsRoutingAssertionMockedTest {
 
     @Test
     public void checkRequestNoSuchElementExceptionRetries() throws Exception {
-        doThrow(new NoSuchElementException()).when(jmsResourceManager).doWithJmsResources(any(JmsEndpointConfig.class), any(ServerJmsRoutingAssertion.JmsRoutingCallback.class));
+        doThrow(new JmsConnectionMaxWaitException()).when(jmsResourceManager).doWithJmsResources(any(JmsEndpointConfig.class), any(ServerJmsRoutingAssertion.JmsRoutingCallback.class));
         assertEquals(AssertionStatus.FAILED, serverAssertion.checkRequest(context));
         verify(jmsResourceManager, times(5)).doWithJmsResources(any(JmsEndpointConfig.class), any(ServerJmsRoutingAssertion.JmsRoutingCallback.class));
     }
+
+
 }

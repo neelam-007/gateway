@@ -21,8 +21,6 @@ import org.apache.commons.lang.StringUtils;
 
 import javax.naming.Context;
 import javax.swing.*;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
@@ -52,6 +50,19 @@ public class JmsQueuePropertiesDialog extends JDialog {
     public static final String CLUSTER_PROP_SESSION_POOL_SIZE = "io.jmsSessionPoolSize";
     public static final String CLUSTER_PROP_SESSION_MAX_IDLE = "io.jmsSessionMaxIdle";
     public static final String CLUSTER_PROP_SESSION_MAX_WAIT = "io.jmsSessionMaxWait";
+    public static final int CONNECTION_POOL_SIZE_MINIMUM = 1;
+    public static final int CONNECTION_POOL_SIZE_MAXIMUM = 10000;
+    public static final int SPINNER_STEP_SIZE = 1;
+    public static final int CONNECTION_POOL_IDLE_MINIMUM = 0;
+    public static final int CONNECTION_POOL_IDLE_MAXIMUM = 10000;
+    public static final int SESSION_POOL_SIZE_MINIMUM = -1;
+    public static final int SESSION_POOL_SIZE_MAXIMUM = 10000;
+    public static final int SESSION_MAX_IDLE_MINIMUM = -1;
+    public static final int SESSION_MAX_IDLE_MAXIMUM = 10000;
+    public static final int DEDICATED_CONSUMER_CONNECTION_LIMIT_MINIMUM = 1;
+    public static final int DEDICATED_CONSUMER_CONNECTION_LIMIT_MAXIMUM = 10000;
+    public static final long SESSION_POOL_MAX_WAIT_MINIMUM = -1L;
+    public static final long CONNECTION_POOL_MAX_WAIT_MINIMUM = -1L;
 
     private JPanel contentPane;
     private JRadioButton outboundRadioButton;
@@ -152,7 +163,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
     private boolean isOk;
     private boolean outboundOnly = false;
     private FormAuthorizationPreparer securityFormAuthorizationPreparer;
-    private static Logger logger = Logger.getLogger(JmsQueuePropertiesDialog.class.getName());
+    private static final Logger logger = Logger.getLogger(JmsQueuePropertiesDialog.class.getName());
     private ContentTypeComboBoxModel contentTypeModel;
     private SimpleTableModel<NameValuePair> environmentPropertiesTableModel;
 
@@ -343,31 +354,31 @@ public class JmsQueuePropertiesDialog extends JDialog {
 
         });
         Utilities.enableGrayOnDisabled(jmsConsumerConnectionsLabel);
-        dedicatedConsumerConnectionLimitSpinner.setModel(new SpinnerNumberModel(Registry.getDefault().getJmsManager().getDefaultConsumerConnectionSize(), 1, 10000, 1));
+        dedicatedConsumerConnectionLimitSpinner.setModel(new SpinnerNumberModel(Registry.getDefault().getJmsManager().getDefaultConsumerConnectionSize(), DEDICATED_CONSUMER_CONNECTION_LIMIT_MINIMUM, DEDICATED_CONSUMER_CONNECTION_LIMIT_MAXIMUM, SPINNER_STEP_SIZE));
         Utilities.enableGrayOnDisabled(dedicatedConsumerConnectionLimitSpinner);
 
         inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(dedicatedConsumerConnectionLimitSpinner, jmsConsumerConnectionsLabel.getText()));
 
         connectionPoolSizeSpinner.setModel((new SpinnerNumberModel((Number)
                 safeNumber(() -> Integer.valueOf(getClusterPropertyValue(CLUSTER_PROP_CONNECTION_POOL_SIZE, String.valueOf(JmsConnection.DEFAULT_CONNECTION_POOL_SIZE)))
-                , JmsConnection.DEFAULT_CONNECTION_POOL_SIZE), 1, 10000, 1)));
+                , JmsConnection.DEFAULT_CONNECTION_POOL_SIZE), CONNECTION_POOL_SIZE_MINIMUM, CONNECTION_POOL_SIZE_MAXIMUM, SPINNER_STEP_SIZE)));
         inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(connectionPoolSizeSpinner, connectionPoolSizeLabel.getText()));
 
         connectionMinIdleSpinner.setModel((new SpinnerNumberModel((Number) safeNumber(() -> Integer.valueOf(getClusterPropertyValue(CLUSTER_PROP_CONNECTION_MIN_IDLE, String.valueOf(JmsConnection.DEFAULT_CONNECTION_POOL_MIN_IDLE)))
-                ,JmsConnection.DEFAULT_CONNECTION_POOL_MIN_IDLE), 0, 10000, 1)));
+                ,JmsConnection.DEFAULT_CONNECTION_POOL_MIN_IDLE), CONNECTION_POOL_IDLE_MINIMUM, CONNECTION_POOL_IDLE_MAXIMUM, SPINNER_STEP_SIZE)));
         inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(connectionMinIdleSpinner, connectionMinIdleLabel.getText()));
 
-        sessionPoolSizeSpinner.setModel((new SpinnerNumberModel((Number) safeNumber(() -> Integer.valueOf(getClusterPropertyValue(CLUSTER_PROP_SESSION_POOL_SIZE, String.valueOf(JmsConnection.DEFAULT_SESSION_POOL_SIZE))), JmsConnection.DEFAULT_SESSION_POOL_SIZE), -1, 10000, 1)));
+        sessionPoolSizeSpinner.setModel((new SpinnerNumberModel((Number) safeNumber(() -> Integer.valueOf(getClusterPropertyValue(CLUSTER_PROP_SESSION_POOL_SIZE, String.valueOf(JmsConnection.DEFAULT_SESSION_POOL_SIZE))), JmsConnection.DEFAULT_SESSION_POOL_SIZE), SESSION_POOL_SIZE_MINIMUM, SESSION_POOL_SIZE_MAXIMUM, SPINNER_STEP_SIZE)));
         inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(sessionPoolSizeSpinner,sessionPoolSizeLabel.getText()));
 
-        maxIdleSessionSpinner.setModel((new SpinnerNumberModel((Number) safeNumber(() -> Integer.valueOf(getClusterPropertyValue(CLUSTER_PROP_SESSION_MAX_IDLE, String.valueOf(JmsConnection.DEFAULT_SESSION_POOL_SIZE))), JmsConnection.DEFAULT_SESSION_POOL_SIZE), -1, 10000, 1)));
+        maxIdleSessionSpinner.setModel((new SpinnerNumberModel((Number) safeNumber(() -> Integer.valueOf(getClusterPropertyValue(CLUSTER_PROP_SESSION_MAX_IDLE, String.valueOf(JmsConnection.DEFAULT_SESSION_POOL_SIZE))), JmsConnection.DEFAULT_SESSION_POOL_SIZE), SESSION_MAX_IDLE_MINIMUM, SESSION_MAX_IDLE_MAXIMUM, SPINNER_STEP_SIZE)));
         inputValidator.addRule(new InputValidator.NumberSpinnerValidationRule(maxIdleSessionSpinner,maxSessionIdleLabel.getText()));
 
         inputValidator.addRule(new InputValidator.ComponentValidationRule(sessionPoolMaxWaitTextField) {
             @Override
             public String getValidationError() {
                 return inputValidator.buildTextFieldNumberRangeValidationRule(Utilities.removeColonFromLabel(sessionPoolMaxWait),
-                        sessionPoolMaxWaitTextField, -1L, Long.MAX_VALUE, false).getValidationError();
+                        sessionPoolMaxWaitTextField, SESSION_POOL_MAX_WAIT_MINIMUM, Long.MAX_VALUE, false).getValidationError();
             }
         });
 
@@ -375,7 +386,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
             @Override
             public String getValidationError() {
                 return inputValidator.buildTextFieldNumberRangeValidationRule(Utilities.removeColonFromLabel(connectionMaxWaitLabel),
-                        connectionMaxWaitTextField, -1L, Long.MAX_VALUE, false).getValidationError();
+                        connectionMaxWaitTextField, CONNECTION_POOL_MAX_WAIT_MINIMUM, Long.MAX_VALUE, false).getValidationError();
             }
         });
 
@@ -1738,6 +1749,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
         try{
             return action.call();
         } catch(Exception ex) {
+            logger.log(Level.FINE, "Error occurred " + ex.getMessage());
             return defaultVal;
         }
     }

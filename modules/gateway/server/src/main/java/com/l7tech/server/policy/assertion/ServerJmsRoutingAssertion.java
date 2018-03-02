@@ -25,6 +25,7 @@ import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.transport.jms.*;
+import com.l7tech.server.transport.jms2.JmsConnectionMaxWaitException;
 import com.l7tech.server.transport.jms2.JmsEndpointConfig;
 import com.l7tech.server.transport.jms2.JmsResourceManager;
 import com.l7tech.server.util.ApplicationEventProxy;
@@ -178,7 +179,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion<JmsRouting
                     jmsResourceManager.doWithJmsResources(cfg, jrc);
                     jrc.doException();
                     break; // no error
-                } catch(NoSuchElementException pe) {
+                } catch(JmsConnectionMaxWaitException pe) {
                     if ( jrc.isMessageSent() ) {
                         throw pe;
                     }
