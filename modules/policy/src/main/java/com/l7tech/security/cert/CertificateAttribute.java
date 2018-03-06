@@ -308,6 +308,25 @@ public enum CertificateAttribute {
         }},
 
     /**
+     * Directory Name (if any) for the Subject Alternative Name (e.g. "CN=test,OU=People")
+     */
+    SUBJECT_ALT_DN("subjectAltNameDN", false, false) {
+        @Override
+        public Map<String, Collection<Object>> extractValues(X509Certificate certificate) {
+            return makeMap(this.toString(), getSubjectAltName(certificate, AltName.DIRECTORY));
+        }
+    },
+
+    /**
+     * IP Address (if any) for the Subject Alternative Name (e.g. "111.222.33.55 or FF::EE::45::33::ED:FF")
+     */
+    SUBJECT_ALT_IP("subjectAltNameIP", false, false) {
+        @Override
+        public Map<String, Collection<Object>> extractValues(X509Certificate certificate) {
+            return makeMap(this.toString(), getSubjectAltName(certificate, AltName.IP));
+        }
+    },
+    /**
      * Uniform Resource Identifier (if any) for the Subject Alternative Name (e.g. "http://example2.oasis-open.org/")
      */
     SUBJECT_ALT_URI("subjectAltNameURI", false, false) {
@@ -325,6 +344,36 @@ public enum CertificateAttribute {
             return makeMap(this.toString(), getSubjectAltName(certificate, AltName.OTHER));
         }},
 
+    /**
+     * EDI Party name (if any) for the Subject Alternative Name
+     */
+    SUBJECT_ALT_EDI("subjectAltNameEdiParty", false, false) {
+        @Override
+        public Map<String, Collection<Object>> extractValues(X509Certificate certificate) {
+            return makeMap(this.toString(), getSubjectAltName(certificate, AltName.EDI_PARTY));
+        }
+    },
+
+    /**
+     * Registered ID (if any) for the Subject Alternative Name (e.g. "ID")
+     */
+    SUBJECT_ALT_REGISTERED_ID("subjectAltNameRegisteredId", false, false) {
+        @Override
+        public Map<String, Collection<Object>> extractValues(X509Certificate certificate) {
+            return makeMap(this.toString(), getSubjectAltName(certificate, AltName.REGISTERED_ID));
+        }
+    },
+
+    /**
+     * X400 (if any) for the Subject Alternative Name in binary form
+     */
+    SUBJECT_ALT_X400("subjectAltNameX400", false, false) {
+        @Override
+        public Map<String, Collection<Object>> extractValues(X509Certificate certificate) {
+            return makeMap(this.toString(), getSubjectAltName(certificate, AltName.X400));
+        }
+    },
+// End of unsupported types
     /**
      * The BASE64 encoded value of the SHA-1 hash for the DER encoded certificate .
      */

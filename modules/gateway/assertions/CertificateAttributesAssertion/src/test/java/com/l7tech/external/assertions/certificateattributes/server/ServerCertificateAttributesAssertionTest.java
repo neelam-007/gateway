@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.certificateattributes.server;
 
+import com.l7tech.common.io.X509GeneralName;
 import com.l7tech.external.assertions.certificateattributes.CertificateAttributesAssertion;
 import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.identity.UserBean;
@@ -20,7 +21,9 @@ import com.l7tech.util.HexUtils;
 import org.junit.*;
 
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -31,7 +34,10 @@ public class ServerCertificateAttributesAssertionTest {
     @Test
     @BugNumber(6455)
     public void testMissingDnSubcomponents() throws Exception {
-        X509Certificate cert = new TestCertificateGenerator().subject("cn=blah, o=foo, dc=deeceeone, dc=deeceetwo, L=vancouver, ST=bc, ou=marketing, C=canada, STREET=123 mystreet").generate();
+        X509Certificate cert = new TestCertificateGenerator()
+                .subject("cn=blah, o=foo, dc=deeceeone, dc=deeceetwo, L=vancouver, ST=bc, ou=marketing, C=canada, STREET=123 mystreet")
+                .subjectAlternativeNames(true, new X509GeneralName(X509GeneralName.Type.dNSName, "test.ca.com"))
+                .generate();
 
         CertificateAttributesAssertion ass = new CertificateAttributesAssertion();
         ServerCertificateAttributesAssertion sass = new ServerCertificateAttributesAssertion(ass);
@@ -79,6 +85,40 @@ public class ServerCertificateAttributesAssertionTest {
         assertEquals("canada", expand(context, "${certificate.subject.c}"));
         assertEquals("123 mystreet", expand(context, "${certificate.subject.street}"));
 
+    }
+
+    @Test
+    public void testSubjectAlternativeNames() throws Exception {
+        X509Certificate cert = new TestCertificateGenerator()
+                .subject("cn=test")
+                .subjectAlternativeNames(true,
+                        new X509GeneralName(X509GeneralName.Type.dNSName, "test.ca.com"),
+                        new X509GeneralName(X509GeneralName.Type.directoryName, "cn=blah, o=foo, dc=deeceeone, dc=deeceetwo, L=vancouver, ST=bc, ou=marketing, C=canada, STREET=123 mystreet"),
+                        new X509GeneralName(X509GeneralName.Type.iPAddress, "111.222.33.44"),
+                        new X509GeneralName(X509GeneralName.Type.uniformResourceIdentifier, "https://test.ca.com?test=test&test2=test2"),
+                        new X509GeneralName(X509GeneralName.Type.rfc822Name, "test@ca.com"),
+                        new X509GeneralName(X509GeneralName.Type.registeredID, "1.2.3.4.5"))
+                .generate();
+
+        CertificateAttributesAssertion ass = new CertificateAttributesAssertion();
+        ServerCertificateAttributesAssertion sass = new ServerCertificateAttributesAssertion(ass);
+
+        PolicyEnforcementContext context = pec(cert);
+        sass.checkRequest(context);
+
+        Object san1 = context.getVariable("certificate.subjectAltNameDNS");
+        Object san2 = context.getVariable("certificate.subjectAltNameDN");
+        String[] dn = Arrays.stream(san2.toString().toLowerCase().split(",")).sorted().collect(Collectors.toList()).toArray(new String[0]);
+        Object san3 = context.getVariable("certificate.subjectAltNameIP");
+        Object san4 = context.getVariable("certificate.subjectAltNameURI");
+        Object san5 = context.getVariable("certificate.subjectAltNameEmail");
+        Object san6 = context.getVariable("certificate.subjectAltNameRegisteredID");
+        assertEquals("test.ca.com", san1);
+        assertArrayEquals(Arrays.stream("street=123 mystreet,c=canada,ou=marketing,st=bc,l=vancouver,dc=deeceetwo,dc=deeceeone,o=foo,cn=blah".split(",")).sorted().collect(Collectors.toList()).toArray(new String[0]), dn);
+        assertEquals("111.222.33.44", san3);
+        assertEquals("https://test.ca.com?test=test&test2=test2", san4);
+        assertEquals("test@ca.com", san5);
+        assertEquals("1.2.3.4.5", san6);
     }
 
     private String expand(PolicyEnforcementContext context, String str) {
