@@ -14,29 +14,29 @@ public class SingleConnection implements CachedConnection {
 
     private static final Logger logger = Logger.getLogger(SingleConnection.class.getName());
 
-    private final SessionHolderBase singleConnection;
+    private final SessionHolder sessionHolder;
     private final JmsEndpointConfig endpoint;
     private final long minEvictableIdleTimeMillis;
     private final JmsResourceManagerConfig cacheConfig;
 
-    public SingleConnection(final JmsEndpointConfig endpointConfig, JmsResourceManagerConfig cacheConfig) throws  Exception{
+    public SingleConnection(final JmsEndpointConfig endpointConfig, JmsResourceManagerConfig cacheConfig) throws NamingException, JmsRuntimeException {
         this.endpoint = endpointConfig;
         this.cacheConfig = cacheConfig;
-        this.singleConnection = newConnection(endpointConfig);
-        this.minEvictableIdleTimeMillis = Long.parseLong(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_CONNECTION_MAX_AGE,
+        this.sessionHolder = newConnection(endpointConfig);
+        this.minEvictableIdleTimeMillis = Long.parseLong(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_CONNECTION_EVICTABLE_TIME,
                 String.valueOf(cacheConfig.getMaximumIdleTime())));
     }
 
     @Override
-    public synchronized SessionHolderBase borrowConnection() throws JmsRuntimeException {
+    public synchronized SessionHolder borrowConnection() throws JmsRuntimeException {
         touch();
-        singleConnection.ref();
-        return singleConnection;
+        sessionHolder.ref();
+        return sessionHolder;
     }
 
     @Override
     public synchronized void returnConnection(SessionHolder connection) throws JmsRuntimeException {
-        singleConnection.unRef();
+        sessionHolder.unRef();
     }
 
     @Override
@@ -45,31 +45,29 @@ public class SingleConnection implements CachedConnection {
     }
 
     @Override
-    public void close() {
+    public synchronized void close() {
         //force to close connection and all sessions
-        synchronized (singleConnection) {
-            singleConnection.close();
-        }
+        sessionHolder.close();
     }
 
     @Override
     public long getCreatedTime() {
-        return singleConnection.getCreatedTime();
+        return sessionHolder.getCreatedTime();
     }
 
     @Override
     public void touch() {
-        singleConnection.touch();
+        sessionHolder.touch();
     }
 
     @Override
     public AtomicLong getLastAccessTime() {
-        return singleConnection.getLastAccessTime();
+        return sessionHolder.getLastAccessTime();
     }
 
     @Override
     public synchronized void invalidate(SessionHolder connection) throws Exception {
-        singleConnection.close();
+        sessionHolder.close();
     }
 
     @Override
@@ -89,7 +87,7 @@ public class SingleConnection implements CachedConnection {
 
     @Override
     public void debugStatus() {
-        logger.log(Level.FINE, "Active: " + singleConnection.refCount() + " references " + endpoint.getDisplayName());
+        logger.log(Level.FINE, "Active: " + sessionHolder.refCount() + " references " + endpoint.getDisplayName());
     }
 
     @Override
@@ -97,16 +95,14 @@ public class SingleConnection implements CachedConnection {
         return this.getClass().getSimpleName() + " : " + endpoint.getDisplayName();
     }
 
-    private PooledSessionHolder newConnection(final JmsEndpointConfig endpoint ) throws NamingException, JmsRuntimeException {
-        final JmsEndpointConfig.JmsEndpointKey key = endpoint.getJmsEndpointKey();
-
+    protected SessionHolder newConnection(final JmsEndpointConfig endpoint ) throws NamingException, JmsRuntimeException {
         try {
             // create the new JmsBag for the endpoint
             final JmsBag newBag = JmsUtil.connect(endpoint);
             newBag.getConnection().start();
 
             // create new cached connection wrapper
-            final PooledSessionHolder newConn = new PooledSessionHolder(endpoint, newBag, cacheConfig);
+            final SessionHolder newConn = SessionHolderFactory.createSessionHolder(endpoint, newBag, cacheConfig);
             newConn.ref(); // referenced by caller
 
             logger.log(Level.FINE, "New JMS connection created ({0}), version {1}:{2}", new Object[] {

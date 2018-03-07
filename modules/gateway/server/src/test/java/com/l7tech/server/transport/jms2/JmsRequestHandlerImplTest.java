@@ -16,11 +16,7 @@ import com.l7tech.server.audit.AuditContextFactory;
 import com.l7tech.server.audit.AuditContextFactoryStub;
 import com.l7tech.server.audit.MessageSummaryAuditFactory;
 import com.l7tech.server.cluster.ClusterMaster;
-import com.l7tech.server.event.metrics.ServiceFinished;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.message.metrics.GatewayMetricsListener;
-import com.l7tech.server.message.metrics.GatewayMetricsPublisher;
-import com.l7tech.server.message.metrics.LatencyMetrics;
 import com.l7tech.server.transport.jms.*;
 import com.l7tech.server.util.EventChannel;
 import com.l7tech.util.Config;
@@ -30,8 +26,6 @@ import com.l7tech.xml.SoapFaultLevel;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
@@ -58,11 +52,6 @@ public class JmsRequestHandlerImplTest {
     private Properties connectionProperties;
     private TextMessageStub jmsRequest;
     private TextMessageStub jmsResponse;
-    private GatewayMetricsPublisher metricsPublisher;
-    private GatewayMetricsListener metricsListener;
-
-    @Captor
-    private ArgumentCaptor<ServiceFinished> serviceFinishedArgumentCaptor;
 
     @Mock
     private ApplicationContext applicationContext;
@@ -98,14 +87,6 @@ public class JmsRequestHandlerImplTest {
                 .thenReturn(new AuditContextFactoryStub(ConfigFactory.getCachedConfig(), "testnode"));
         when(applicationContext.getBean("messageSummaryAuditFactory", MessageSummaryAuditFactory.class))
                 .thenReturn(new MessageSummaryAuditFactory("testnode"));
-        when(applicationContext.getBean("messageProcessingEventChannel", EventChannel.class))
-                .thenReturn(eventChannel);
-
-        metricsPublisher = new GatewayMetricsPublisher();
-        when(applicationContext.getBean("gatewayMetricsPublisher", GatewayMetricsPublisher.class))
-                .thenReturn(metricsPublisher);
-        metricsListener = mock(GatewayMetricsListener.class);
-        metricsPublisher.addListener(metricsListener);
 
         handler = spy(new JmsRequestHandlerImpl(applicationContext));
         connectionProperties = new Properties();
@@ -281,78 +262,6 @@ public class JmsRequestHandlerImplTest {
         jmsRequest.setThrowExceptionForHeaders(true);
 
         handler.onMessage(endpointConfig, jmsBag, false, jmsRequest); // will fail if JmsRuntimeException not thrown
-    }
-
-    @Test
-    public void onMessageServiceFinishedEventWithSuccess() throws Exception {
-        setupJmsForServiceFinishedEvent(AssertionStatus.NONE);
-        handler.onMessage(endpointConfig, jmsBag, false, jmsRequest);
-
-        verify(metricsListener).serviceFinished(serviceFinishedArgumentCaptor.capture());
-        final ServiceFinished serviceFinished = serviceFinishedArgumentCaptor.getValue();
-        final LatencyMetrics latencyMetrics = serviceFinished.getServiceMetrics();
-        final PolicyEnforcementContext policyContext = serviceFinished.getContext();
-        assertTrue(latencyMetrics.getLatencyMs() >= 1000);
-        assertEquals(AssertionStatus.NONE, policyContext.getPolicyResult());
-    }
-
-    @Test
-    public void onMessageServiceFinishedEventWithFailure() throws Exception {
-        setupJmsForServiceFinishedEvent(AssertionStatus.SERVER_ERROR);
-        handler.onMessage(endpointConfig, jmsBag, false, jmsRequest);
-
-        verify(metricsListener, times(1)).serviceFinished(serviceFinishedArgumentCaptor.capture());
-        final ServiceFinished serviceFinished = serviceFinishedArgumentCaptor.getValue();
-        final LatencyMetrics latencyMetrics = serviceFinished.getServiceMetrics();
-        final PolicyEnforcementContext policyContext = serviceFinished.getContext();
-        assertTrue(latencyMetrics.getLatencyMs() >= 1000);
-        assertEquals(AssertionStatus.SERVER_ERROR, policyContext.getPolicyResult());
-    }
-
-    @Test
-    public void onMessageServiceFinishedEventWithMessageSizeFailure() throws Exception {
-        setupJmsForServiceFinishedEvent(AssertionStatus.NONE);
-        jmsRequest.setText("Hello World!");
-        when(endpoint.getRequestMaxSize()).thenReturn(8L);
-        handler.onMessage(endpointConfig, jmsBag, false, jmsRequest);
-
-        verify(metricsListener, times(1)).serviceFinished(serviceFinishedArgumentCaptor.capture());
-        final ServiceFinished serviceFinished = serviceFinishedArgumentCaptor.getValue();
-        final LatencyMetrics latencyMetrics = serviceFinished.getServiceMetrics();
-        final PolicyEnforcementContext policyContext = serviceFinished.getContext();
-        assertNotEquals(AssertionStatus.NONE, policyContext.getPolicyResult());
-        assertTrue(latencyMetrics.getLatencyMs() > 0);
-    }
-
-    @Test
-    public void onMessageServiceFinishedEventWithRelayMetricsDisabled() throws Exception {
-        setupJmsForServiceFinishedEvent(AssertionStatus.NONE);
-        doReturn(false).when(messageProcessor).isRelayGatewayMetricsEnable();
-        handler.onMessage(endpointConfig, jmsBag, false, jmsRequest);
-
-        verify(metricsListener, times(0)).serviceFinished(serviceFinishedArgumentCaptor.capture());
-    }
-
-    private void setupJmsForServiceFinishedEvent(final AssertionStatus neededAssertionStatus) throws Exception {
-        doReturn(true).when(messageProcessor).isRelayGatewayMetricsEnable();
-        jmsRequest.setObjectProperty("msg", "Hello World!");
-
-        mockJmsEndpoint();
-
-        when(jmsBag.getSession()).thenReturn(session);
-        when(session.createTextMessage()).thenReturn(jmsResponse);
-
-        when(messageProcessor.processMessageNoAudit(any(PolicyEnforcementContext.class))).thenAnswer(new Answer() {
-            @Override
-            public Object answer(final InvocationOnMock invocation) throws Throwable {
-                final PolicyEnforcementContext policyContext = (PolicyEnforcementContext) invocation.getArguments()[0];
-
-                Thread.sleep(1000);
-                setContextSoapFaultLevel(policyContext, SoapFaultLevel.DROP_CONNECTION); // no jmsResponse needed
-
-                return neededAssertionStatus;
-            }
-        });
     }
 
     private void setContextSoapFaultLevel(PolicyEnforcementContext policyContext, int level) {

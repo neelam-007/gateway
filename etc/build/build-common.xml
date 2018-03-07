@@ -216,7 +216,7 @@
           Modules JAR signing task with presets
         -->
         <presetdef name="sign-jar">
-            <signjar keystore="${src.root}/etc/ssgKeyStore" alias="signer6" storepass="password" jar="${jar.file}">
+            <signjar keystore="${src.root}/etc/ssgKeyStore" alias="signer7" storepass="password" jar="${jar.file}">
                 <path>
                     <fileset dir="${build.dir}" includes="${jar.sign.pattern}" />
                 </path>
@@ -561,7 +561,7 @@
 					 Example: -Dtest.migration.waitTimeMinutes=15 -->
 					<propertyref name="test.migration.waitTimeMinutes"/>
 					<!-- use this property to set the current code signing certificate inside /etc/ssgKeyStore
-					 Example: -Dcode.signer.cert.alias=signer6 -->
+					 Example: -Dcode.signer.cert.alias=signer7 -->
 					<propertyref name="code.signer.cert.alias"/>
 					<!-- use this property to tweak the code signing certificate expiry period (in days) threshold
 					nightly builds will fail when the current code signing certificate already expired or will expire within the specified threshold

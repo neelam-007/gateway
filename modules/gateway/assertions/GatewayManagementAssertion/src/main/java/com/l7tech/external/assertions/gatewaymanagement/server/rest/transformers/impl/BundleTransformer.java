@@ -25,17 +25,15 @@ import com.l7tech.server.search.objects.DependencySearchResults;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
-import java.util.Properties;
+
+import java.util.*;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
 
 /**
  * This a the bundle transformer. It will transform a bundle to an internal EntityBundle and back. It is also used to
@@ -212,8 +210,16 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
         });
 
         //Validate entityMap has the same number of elements as there are entityContainers
-        if (entityContainerMap.size() != entityContainers.size()) {
-            throw new IllegalStateException("Could not uniquely map EntityContainers by their id's.");
+        assert entityContainerMap.size() <= entityContainers.size();
+        if (entityContainerMap.size() < entityContainers.size()) {
+            List<EntityContainer> duplicates = new ArrayList<>(entityContainers);
+            duplicates.removeAll(entityContainerMap.values());
+            StringBuilder error = new StringBuilder("Could not uniquely map EntityContainers by their id's. Found these duplicates ids:\n");
+            for(EntityContainer e : duplicates) {
+                error.append(e.getId());
+                error.append("\n");
+            }
+            throw new IllegalStateException(error.toString());
         }
 
         //convert the mappings to entityMapping instruction.

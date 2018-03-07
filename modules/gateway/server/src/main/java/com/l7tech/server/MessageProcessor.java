@@ -36,6 +36,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.message.metrics.GatewayMetricsPublisher;
 import com.l7tech.server.message.metrics.GatewayMetricsUtils;
+import com.l7tech.server.message.metrics.LatencyMetrics;
 import com.l7tech.server.policy.PolicyCache;
 import com.l7tech.server.policy.PolicyMetadata;
 import com.l7tech.server.policy.PolicyVersionException;
@@ -84,6 +85,7 @@ import java.util.logging.Logger;
 import static com.l7tech.gateway.common.log.GatewayDiagnosticContextKeys.FOLDER_ID;
 import static com.l7tech.gateway.common.log.GatewayDiagnosticContextKeys.SERVICE_ID;
 import static com.l7tech.objectmodel.EntityUtil.id;
+import static com.l7tech.server.ServerConfigParams.PARAM_RELAY_GATEWAY_METRICS_ENABLE;
 import static com.l7tech.util.Functions.map;
 
 /**
@@ -94,8 +96,8 @@ import static com.l7tech.util.Functions.map;
 @SuppressWarnings({ "ThrowableResultOfMethodCallIgnored" })
 public class MessageProcessor extends ApplicationObjectSupport implements InitializingBean {
     private static final int SETTINGS_RECHECK_MILLIS = 7937;
-    private static final String CLUSTER_PROP_RELAY_GATEWAY_METRICS_ENABLE = "relayGatewayMetrics.enable";
     private static final boolean CLUSTER_PROP_RELAY_GATEWAY_METRICS_ENABLE_DEFAULT_VALUE = true;
+
     private final ServiceCache serviceCache;
     private final PolicyCache policyCache;
     private final WssDecorator wssDecorator;
@@ -115,11 +117,11 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
 
     @Inject
     @Named("debugManager")
-    private DebugManager debugManager;
+    DebugManager debugManager;
 
     @Inject
     @Named("gatewayMetricsPublisher")
-    private GatewayMetricsPublisher gatewayMetricsEventsPublisher;
+    GatewayMetricsPublisher gatewayMetricsEventsPublisher;
 
     /**
      * Create the new <code>MessageProcessor</code> instance with the service
@@ -201,7 +203,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             config.getBooleanProperty( ServerConfigParams.PARAM_WSS_PROCESSOR_STRICT_SIG_CONFIRMATION, true)
         ) );
 
-        relayGatewayMetricsEnable.set(config.getBooleanProperty(CLUSTER_PROP_RELAY_GATEWAY_METRICS_ENABLE, CLUSTER_PROP_RELAY_GATEWAY_METRICS_ENABLE_DEFAULT_VALUE));
+        relayGatewayMetricsEnable.set(config.getBooleanProperty(PARAM_RELAY_GATEWAY_METRICS_ENABLE, CLUSTER_PROP_RELAY_GATEWAY_METRICS_ENABLE_DEFAULT_VALUE));
     }
 
     /**
@@ -381,6 +383,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
 
         updateServiceStatisticsAndMetrics( context );
         notifyTrafficMonitors(context, status);
+        GatewayMetricsUtils.publishServiceFinish(context, new LatencyMetrics(context.getStartTime(), context.getEndTime()));
 
         publishMessageProcessedEvent(context, status);
 
@@ -611,7 +614,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             if (context.getRequest().isHttpRequest())
                 processRequestHttpHeaders(context);
 
-           publishMessageReceivedEvent(context);
+            publishMessageReceivedEvent(context);
 
             // Get the server policy
             lookupServerPolicy();

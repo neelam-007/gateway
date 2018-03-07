@@ -16,20 +16,16 @@ import java.util.logging.Logger;
  * Cache entry
  */
 public class PooledSessionHolder extends SessionHolderBase {
-
     private static final Logger logger = Logger.getLogger(PooledSessionHolder.class.getName());
 
     protected final GenericObjectPool<JmsBag> pool;
     private final JmsResourceManagerConfig cacheConfig;
-    private final int sessionPoolMaxActive;
 
     protected PooledSessionHolder(final JmsEndpointConfig cfg,
                                   final JmsBag bag,
                                   JmsResourceManagerConfig cacheConfig) {
         super(cfg, bag);
         this.cacheConfig = cacheConfig;
-        this.sessionPoolMaxActive = getSessionPoolSize();
-        if(sessionPoolMaxActive != 0) {
             this.pool = new GenericObjectPool<JmsBag>(new PoolableObjectFactory<JmsBag>() {
                 @Override
                 public JmsBag makeObject() throws Exception {
@@ -54,10 +50,6 @@ public class PooledSessionHolder extends SessionHolderBase {
                 public void passivateObject(JmsBag jmsBag) throws Exception {
                 }
             }, getSessionPoolSize(), GenericObjectPool.WHEN_EXHAUSTED_BLOCK, getSessionPoolMaxWait(), getMaxSessionIdle());
-        }
-        else {
-            this.pool = null;//no pool needed
-        }
     }
 
     protected int getSessionPoolSize() {
@@ -90,16 +82,9 @@ public class PooledSessionHolder extends SessionHolderBase {
 
     @Override
     public JmsBag borrowJmsBag() throws JmsRuntimeException, NamingException {
-        JmsBag jmsBag = null;
         touch();
         try {
-            if(sessionPoolMaxActive != 0) {
-                jmsBag = pool.borrowObject();
-            }
-            else {
-                logger.log(Level.FINEST, "Session pool is "+ sessionPoolMaxActive + ". Creating new JMS Session.");
-                jmsBag = makeJmsBag();
-            }
+            return pool.borrowObject();
         } catch (JMSException e) {
             throw new JmsRuntimeException(e);
         } catch (NamingException e) {
@@ -109,21 +94,14 @@ public class PooledSessionHolder extends SessionHolderBase {
         } catch (Exception e) {
             throw new JmsRuntimeException(e);
         }
-        return jmsBag;
     }
 
     @Override
     public void returnJmsBag(JmsBag jmsBag) {
         if (jmsBag != null) {
-            if(sessionPoolMaxActive != 0) {
-                try {
-                    pool.returnObject(jmsBag);
-                } catch (Exception e) {
-                    jmsBag.closeSession();
-                }
-            }
-            else {
-                logger.log(Level.FINEST, "Session pool is "+ sessionPoolMaxActive + ". Closing JMS Session.");
+            try {
+                pool.returnObject(jmsBag);
+            } catch (Exception e) {
                 jmsBag.closeSession();
             }
         }
