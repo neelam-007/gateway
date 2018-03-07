@@ -96,8 +96,7 @@ public class ServerCertificateAttributesAssertionTest {
                         new X509GeneralName(X509GeneralName.Type.directoryName, "cn=blah, o=foo, dc=deeceeone, dc=deeceetwo, L=vancouver, ST=bc, ou=marketing, C=canada, STREET=123 mystreet"),
                         new X509GeneralName(X509GeneralName.Type.iPAddress, "111.222.33.44"),
                         new X509GeneralName(X509GeneralName.Type.uniformResourceIdentifier, "https://test.ca.com?test=test&test2=test2"),
-                        new X509GeneralName(X509GeneralName.Type.rfc822Name, "test@ca.com"),
-                        new X509GeneralName(X509GeneralName.Type.registeredID, "1.2.3.4.5"))
+                        new X509GeneralName(X509GeneralName.Type.rfc822Name, "test@ca.com"))
                 .generate();
 
         CertificateAttributesAssertion ass = new CertificateAttributesAssertion();
@@ -112,13 +111,12 @@ public class ServerCertificateAttributesAssertionTest {
         Object san3 = context.getVariable("certificate.subjectAltNameIP");
         Object san4 = context.getVariable("certificate.subjectAltNameURI");
         Object san5 = context.getVariable("certificate.subjectAltNameEmail");
-        Object san6 = context.getVariable("certificate.subjectAltNameRegisteredID");
+
         assertEquals("test.ca.com", san1);
         assertArrayEquals(Arrays.stream("street=123 mystreet,c=canada,ou=marketing,st=bc,l=vancouver,dc=deeceetwo,dc=deeceeone,o=foo,cn=blah".split(",")).sorted().collect(Collectors.toList()).toArray(new String[0]), dn);
         assertEquals("111.222.33.44", san3);
         assertEquals("https://test.ca.com?test=test&test2=test2", san4);
         assertEquals("test@ca.com", san5);
-        assertEquals("1.2.3.4.5", san6);
     }
 
     private String expand(PolicyEnforcementContext context, String str) {
