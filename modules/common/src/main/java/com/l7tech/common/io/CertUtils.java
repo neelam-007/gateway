@@ -9,6 +9,7 @@ import org.bouncycastle.asn1.x509.*;
 import org.bouncycastle.x509.extension.AuthorityKeyIdentifierStructure;
 import org.bouncycastle.x509.extension.X509ExtensionUtil;
 import org.jetbrains.annotations.NotNull;
+import sun.security.util.DerValue;
 
 import javax.naming.InvalidNameException;
 import javax.naming.ldap.LdapName;
@@ -2229,7 +2230,8 @@ public class CertUtils {
     }
 
     public static NameValuePair convertFromX509GeneralName(@NotNull X509GeneralName generalName) throws UnsupportedX509GeneralNameException {
-        StringBuilder sb = null;
+        //StringBuilder sb = null;
+        boolean base64Encode = false;
         switch (generalName.getType()) {
             case dNSName:
             case rfc822Name:
@@ -2258,19 +2260,29 @@ public class CertUtils {
                 }
                 return new NameValuePair(X509GeneralName.Type.iPAddress.getUserFriendlyName(), ipAddress);
             case otherName:
+                base64Encode = true;
             case x400Address:
             case ediPartyName:
             case registeredID:
-                sb = new StringBuilder();
+                String val = null;
                 if(generalName.getStringVal() != null) {
-                    sb.append(generalName.getStringVal());
+                    val = generalName.getStringVal();
                 }
                 else {
-                    for(byte b : generalName.getDerVal()) {
-                        sb.append('[').append(Byte.toUnsignedInt(b)).append(']');
+                    try {
+                        final byte[] bytesVal = generalName.getDerVal();
+                        if(base64Encode) {
+                            val = HexUtils.encodeBase64(bytesVal, true);
+                        }
+                        else {
+                            val = (new DerValue(bytesVal)).toString();
+                        }
+                    } catch (IOException e) {
+                        logger.log(Level.WARNING, "Error extracting value for " + generalName.getType().getUserFriendlyName());
+                        throw new IllegalArgumentException("Incompatible value format");
                     }
                 }
-                return new NameValuePair(generalName.getType().getUserFriendlyName(), sb.toString());
+                return new NameValuePair(generalName.getType().getUserFriendlyName(), val);
             default:
                     throw new UnsupportedX509GeneralNameException("Wrong X509GeneralName Type");//should never happen
         }
@@ -2294,7 +2306,7 @@ public class CertUtils {
         else if(X509GeneralName.Type.uniformResourceIdentifier.getUserFriendlyName().equalsIgnoreCase(type))
             return new X509GeneralName(X509GeneralName.Type.uniformResourceIdentifier, validatePattern(urlPattern, pair.getValue()));
         else if(X509GeneralName.Type.iPAddress.getUserFriendlyName().equalsIgnoreCase(type))
-            if(InetAddressUtil.looksLikeIpAddressV4OrV6(pair.getValue()))
+            if(InetAddressUtil.looksLikeIpAddressV4OrV6(pair.getValue(), false))
                 return X509GeneralName.fromIpAddress(pair.getValue());
             else
                 throw new IllegalArgumentException("Invalid IP Address format");

@@ -806,6 +806,28 @@ public class CertUtilsTest {
         assertEquals("s://test.ca.com/custom", generalName.getStringVal());
     }
 
+    @BugId("DE347819")
+    @Test
+    public void testConvertToX509GeneralName_InvalidIPv4Addres() throws Exception {
+        int errorCount = 0;
+        try {
+            CertUtils.convertToX509GeneralName(new NameValuePair("IP Address", "111.222.333.44"));
+        } catch (IllegalArgumentException e) {
+            errorCount++;
+        }
+        try {
+            CertUtils.convertToX509GeneralName(new NameValuePair("IP Address", "1111.555.3333.44"));
+        } catch (IllegalArgumentException e) {
+            errorCount++;
+        }
+        try {
+            CertUtils.convertToX509GeneralName(new NameValuePair("IP Address", "0000.0000.0000.0000"));
+        } catch (IllegalArgumentException e) {
+            errorCount++;
+        }
+        assertEquals(3, errorCount);
+    }
+
     @Test
     @BugId("DE346973")
     public void testConvertToX509GeneralName_UpperCaseURI() throws Exception {
@@ -938,6 +960,31 @@ public class CertUtilsTest {
         assertTrue(supportedTypes.contains(X509GeneralName.Type.uniformResourceIdentifier));
     }
 
+    @BugId("DE347819")
+    @Test
+    public void testConvertToX509GeneralNameIpv6Addresses() throws Exception {
+        X509GeneralName generalName = CertUtils.convertToX509GeneralName(new NameValuePair("IP Address","2001:0db8:85a3:08d3:1319:8a2e:0370:7348"));
+        assertEquals(X509GeneralName.Type.iPAddress, generalName.getType());
+        assertEquals("2001:0db8:85a3:08d3:1319:8a2e:0370:7348", generalName.getStringVal());
+        generalName = CertUtils.convertToX509GeneralName(new NameValuePair("IP Address","abf3:FF2:0::00:23"));
+        assertEquals(X509GeneralName.Type.iPAddress, generalName.getType());
+        assertEquals("abf3:FF2:0::00:23", generalName.getStringVal());
+        generalName = CertUtils.convertToX509GeneralName(new NameValuePair("IP Address","2001:db8::1"));
+        assertEquals(X509GeneralName.Type.iPAddress, generalName.getType());
+        assertEquals("2001:db8::1", generalName.getStringVal());
+    }
+
+    @BugId("DE347819")
+    @Test(expected = IllegalArgumentException.class)
+    public void testConvertToX509GeneralNameIpv6Address_InvalidFormat1() throws Exception {
+        CertUtils.convertToX509GeneralName(new NameValuePair("IP Address","2001:db8:::1"));
+    }
+
+    @BugId("DE347819")
+    @Test(expected = IllegalArgumentException.class)
+    public void testConvertToX509GeneralNameIpv6Address_InvalidFormat2() throws Exception {
+        CertUtils.convertToX509GeneralName(new NameValuePair("IP Address","cafe:babe:0000::4343:1.2.3.4"));
+    }
     /**
      * Test certificate with CRL and OCSP URLS and a CRT URL
      */
