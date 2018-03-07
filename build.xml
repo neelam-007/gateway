@@ -3596,7 +3596,7 @@ ${versionfilecontent}
                 <copy file="${src.root}/etc/backup_tables_audit" todir="@{dir}/${install.src.ssg.backuprestore.cfg}"/>
                 <copy file="${src.root}/etc/exclude_tables" todir="@{dir}/${install.src.ssg.backuprestore.cfg}"/>
                 <copy file="${src.root}/etc/exclude_files" todir="@{dir}/${install.src.ssg.backuprestore.cfg}"/>
-				<signjar alias="signer6" keystore="${src.root}/etc/ssgKeyStore" storepass="password" lazy="true">
+				<signjar alias="signer7" keystore="${src.root}/etc/ssgKeyStore" storepass="password" lazy="true">
 					<path>
 						<fileset dir="@{dir}/${install.src.ssg.webstartlib}" includes="*.jar"/>
 					</path>
