@@ -985,6 +985,12 @@ public class CertUtilsTest {
     public void testConvertToX509GeneralNameIpv6Address_InvalidFormat2() throws Exception {
         CertUtils.convertToX509GeneralName(new NameValuePair("IP Address","cafe:babe:0000::4343:1.2.3.4"));
     }
+
+    @BugId("DE347819")
+    @Test(expected = IllegalArgumentException.class)
+    public void testConvertToX509GeneralNameIpv6Address_InvalidFormat3() throws Exception {
+        CertUtils.convertToX509GeneralName(new NameValuePair("IP Address","2001:1111"));
+    }
     /**
      * Test certificate with CRL and OCSP URLS and a CRT URL
      */

@@ -129,7 +129,7 @@ public class X509GeneralNamePanel extends ValidatedPanel<NameValuePair> {
         } else if (type.equalsIgnoreCase(X509GeneralName.Type.dNSName.getUserFriendlyName())) {
             error = validatePattern(CertUtils.dnsNamePattern, value, MessageFormat.format(resources.getString("error.dNSName.invalidFormat"), nameLabel.getText()));
         } else if (type.equalsIgnoreCase(X509GeneralName.Type.iPAddress.getUserFriendlyName())) {
-            if (!InetAddressUtil.looksLikeIpAddressV4OrV6(value))
+            if (!InetAddressUtil.looksLikeIpAddressV4OrV6(value, false))
                 error = MessageFormat.format(resources.getString("error.iPAddress.invalidFormat"), nameLabel.getText());
         } else if (type.equalsIgnoreCase(X509GeneralName.Type.directoryName.getUserFriendlyName())) {
             error = validatePattern(CertUtils.directoryNamePattern, value, MessageFormat.format(resources.getString("error.directoryName.invalidFormat"), nameLabel.getText()));
