@@ -1,6 +1,5 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.common.io.X509GeneralName;
 import com.l7tech.console.util.Registry;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
@@ -17,11 +16,12 @@ import com.l7tech.util.NameValuePair;
 
 import javax.security.auth.x500.X500Principal;
 import javax.swing.*;
-import java.awt.Frame;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.text.MessageFormat;
 import java.util.*;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -45,6 +45,19 @@ public class SigningCertificatePropertiesDialog extends JDialog {
         "SHA-512"
     };
 
+    //a set of supported Subject Alternative Name types
+    private static final Set<String> SUPPORTED_SAN_TYPES = new HashSet<>();
+
+    static {
+        try {
+            String[] types = resources.getString("san.supported.types").split(",");
+            Arrays.stream(types).forEach(x -> SUPPORTED_SAN_TYPES.add(x.trim()));
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Unable to retrieve Subject Alternative Name upported types.");
+        }
+    }
+
+
     private JPanel mainPanel;
     private JButton okButton;
     private JButton cancelButton;
@@ -56,6 +69,7 @@ public class SigningCertificatePropertiesDialog extends JDialog {
     private JTable sansTable;
     private JLabel sansLabel;
     private JScrollPane sansScrollPane;
+    private JPanel settingsPane;
 
     private Functions.Nullary<Boolean> precheckingShortKeyFunc;
     private Functions.Nullary<Void> postTaskFunc;
@@ -73,6 +87,7 @@ public class SigningCertificatePropertiesDialog extends JDialog {
         this.precheckingShortKeyFunc = precheckingShortKeyFunc;
         initialize();
         modelToView(csrProps);
+        DialogDisplayer.pack(this);
     }
 
     public void setPostTaskFunc(Functions.Nullary<Void> postTaskFunc) {
@@ -142,7 +157,6 @@ public class SigningCertificatePropertiesDialog extends JDialog {
             }
         });
 
-        DialogDisplayer.pack(this);
     }
 
     private void validatePropertiesAndExecutePostTask() {
@@ -216,18 +230,26 @@ public class SigningCertificatePropertiesDialog extends JDialog {
     private void modelToView(final Map<String, Object> csrProps) {
         if (csrProps == null || csrProps.isEmpty()) return;
 
+
         subjectDnTextField.setText((String)csrProps.get(TrustedCertAdmin.CSR_PROP_SUBJECT_DN));
         subjectDnTextField.setCaretPosition(0);
         if(csrProps.containsKey(TrustedCertAdmin.CSR_PROP_SUBJECT_ALTERNATIVE_NAMES)) {
             List<NameValuePair> sansList = ((List<NameValuePair>) csrProps.get(TrustedCertAdmin.CSR_PROP_SUBJECT_ALTERNATIVE_NAMES))
                     .stream()
-                    .map(x -> x.left.equals(X509GeneralName.Type.otherName.getUserFriendlyName()) ? new NameValuePair(x.left, "<binary>") : new NameValuePair(x.left, x.right))
+                    .filter(x -> SUPPORTED_SAN_TYPES.contains(x.left))
+                    //.map(x -> x.left.equals(X509GeneralName.Type.otherName.getUserFriendlyName()) ? new NameValuePair(x.left, "<binary>") : new NameValuePair(x.left, x.right))
                     .collect(Collectors.toList());
             if(sansList.size() > 0) {
                 sanTableModel.setRows(sansList);
                 sansScrollPane.setVisible(true);
                 sansLabel.setVisible(true);
             }
+            else {
+                resizeDialogWithNoSans();
+            }
+        }
+        else {
+            resizeDialogWithNoSans();
         }
 
         final String keyType = (String)csrProps.get(TrustedCertAdmin.CSR_PROP_KEY_TYPE);
@@ -258,6 +280,13 @@ public class SigningCertificatePropertiesDialog extends JDialog {
 
         publicKeyDetailsTextField.setText(briefDetails);
     }
+
+    private void resizeDialogWithNoSans() {
+        sansScrollPane.setSize(0,0);
+        sansLabel.setSize(0,0);
+        mainPanel.setPreferredSize(new Dimension(590, 185));
+    }
+
     /**
      * The dialog displays the details of a public key.
      */
