@@ -18,7 +18,6 @@ import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
-import com.l7tech.gateway.common.workqueue.WorkQueue;
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.*;
@@ -58,7 +57,6 @@ import com.l7tech.server.transport.SsgActiveConnectorManager;
 import com.l7tech.server.transport.jms.JmsConnectionManager;
 import com.l7tech.server.transport.jms.JmsEndpointManager;
 import com.l7tech.server.util.JaasUtils;
-import com.l7tech.server.workqueue.WorkQueueEntityManager;
 import com.l7tech.util.*;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.xml.soap.SoapVersion;
@@ -383,7 +381,6 @@ public class PolicyHelper {
         private final SecurePasswordManager securePasswordManager;
         private final CustomKeyValueStoreManager customKeyValueStoreManager;
         private final CassandraConnectionEntityManager cassandraEntityManager;
-        private final WorkQueueEntityManager workQueueEntityManager;
 
         public GatewayExternalReferenceFinder( final RbacServices rbacServices,
                                                final SecurityFilter securityFilter,
@@ -405,8 +402,7 @@ public class PolicyHelper {
                                                final RoleManager roleManager,
                                                final SecurePasswordManager securePasswordManager,
                                                final CustomKeyValueStoreManager customKeyValueStoreManager,
-                                               final CassandraConnectionEntityManager cassandraEntityManager,
-                                               final WorkQueueEntityManager workQueueEntityManager) {
+                                               final CassandraConnectionEntityManager cassandraEntityManager) {
             this.rbacServices = rbacServices;
             this.securityFilter = securityFilter;
             this.customAssertionsRegistrar = customAssertionsRegistrar;
@@ -428,7 +424,6 @@ public class PolicyHelper {
             this.securePasswordManager = securePasswordManager;
             this.customKeyValueStoreManager = customKeyValueStoreManager;
             this.cassandraEntityManager = cassandraEntityManager;
-            this.workQueueEntityManager = workQueueEntityManager;
         }
 
         private User getUser() {
@@ -668,11 +663,6 @@ public class PolicyHelper {
         @Override
         public CustomEntitySerializer getCustomKeyValueEntitySerializer(final String entitySerializerClassName) {
             return customAssertionsRegistrar.getExternalEntitySerializer(entitySerializerClassName);
-        }
-
-        @Override
-        public WorkQueue getWorkQueue(final Goid id) throws FindException {
-            return filter(workQueueEntityManager.findByPrimaryKey(id));
         }
 
         private IdentityProvider<?,?,?,?> getIdentityProvider( final Goid providerOid ) throws FindException {

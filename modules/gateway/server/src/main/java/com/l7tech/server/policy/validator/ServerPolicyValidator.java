@@ -12,7 +12,6 @@ import com.l7tech.gateway.common.resources.ResourceEntryHeader;
 import com.l7tech.gateway.common.resources.ResourceType;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
-import com.l7tech.gateway.common.workqueue.WorkQueue;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
@@ -51,7 +50,6 @@ import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.store.CustomKeyValueStoreImpl;
 import com.l7tech.server.transport.jms.JmsEndpointManager;
 import com.l7tech.server.util.EntityUseUtils;
-import com.l7tech.server.workqueue.WorkQueueEntityManager;
 import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
@@ -125,7 +123,6 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
     private KeyValueStore keyValueStore;
     private CustomAssertionsRegistrar customAssertionsRegistrar;
     private CassandraConnectionEntityManager cassandraEntityManager;
-    private WorkQueueEntityManager workQueueEntityManager;
 
     public ServerPolicyValidator( final GuidBasedEntityManager<Policy> policyFinder,
                                   final PolicyPathBuilderFactory pathBuilderFactory ) {
@@ -836,10 +833,6 @@ public class ServerPolicyValidator extends AbstractPolicyValidator implements In
 
     public void setCustomAssertionsRegistrar(@NotNull final CustomAssertionsRegistrar customAssertionsRegistrar) {
         this.customAssertionsRegistrar = customAssertionsRegistrar;
-    }
-
-    public void setWorkQueueEntityManager(WorkQueueEntityManager workQueueEntityManager) {
-        this.workQueueEntityManager = workQueueEntityManager;
     }
 
     @Override

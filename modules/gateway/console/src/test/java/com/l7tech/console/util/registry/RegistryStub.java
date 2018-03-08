@@ -31,7 +31,6 @@ import com.l7tech.gateway.common.transport.ftp.FtpAdmin;
 import com.l7tech.gateway.common.transport.ftp.FtpAdminStub;
 import com.l7tech.gateway.common.transport.jms.JmsAdmin;
 import com.l7tech.gateway.common.transport.jms.JmsAdminStub;
-import com.l7tech.gateway.common.workqueue.WorkQueueManagerAdmin;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
@@ -648,11 +647,6 @@ public class RegistryStub extends Registry {
 
     public void setScheduledTaskAdmin (@NotNull final ScheduledTaskAdmin scheduledTaskAdmin) {
         this.scheduledTaskAdmin = scheduledTaskAdmin;
-    }
-
-    @Override
-    public WorkQueueManagerAdmin getWorkQueueManagerAdmin() {
-        return null;
     }
 
     @Override

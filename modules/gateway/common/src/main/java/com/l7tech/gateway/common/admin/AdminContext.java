@@ -17,7 +17,6 @@ import com.l7tech.gateway.common.transport.jms.JmsAdmin;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
 import com.l7tech.gateway.common.service.ServiceAdmin;
 import com.l7tech.gateway.common.jdbc.JdbcAdmin;
-import com.l7tech.gateway.common.workqueue.WorkQueueManagerAdmin;
 
 public interface AdminContext {
 
@@ -160,12 +159,6 @@ public interface AdminContext {
      * @throws SecurityException on security error accessing the interface
      */
     UDDIRegistryAdmin getUDDIRegistryAdmin() throws SecurityException;
-
-    /**
-     * @return the work queue admin interface implementation
-     * @throws SecurityException on security error accessing the interface
-     */
-    WorkQueueManagerAdmin getWorkQueueAdmin() throws SecurityException;
 
     /**
      * Get the administrative interface of the given type.

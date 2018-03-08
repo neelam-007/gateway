@@ -1283,7 +1283,6 @@
         <property name="keyValueStoreManager" ref="customKeyValueStoreManager"/>
         <property name="customAssertionsRegistrar" ref="customAssertionRegistrar"/>
         <property name="cassandraEntityManager" ref="cassandraEntityManager"/>
-        <property name="workQueueEntityManager" ref="workQueueEntityManager"/>
     </bean>
 
     <!-- server side policy filter manager  -->
@@ -1715,7 +1714,6 @@
                 <ref bean="serverModuleFileManager"/>
                 <ref bean="scheduledTaskManager"/>
                 <ref bean="cassandraEntityManager"/>
-                <ref bean="workQueueEntityManager"/>
                 <ref bean="solutionKitManager"/>
             </list>
         </property>
@@ -2304,7 +2302,6 @@
                 <ref bean="cassandraEntityManager"/>
                 <ref bean="serverModuleFileManager"/>
                 <ref bean="scheduledTaskManager"/>
-                <ref bean="workQueueEntityManager"/>
                 <ref bean="policyBackedServiceManager"/>
                 <ref bean="solutionKitManager"/>
                 <ref bean="auditConfigurationManager"/>
@@ -2321,7 +2318,6 @@
         <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="jdbcConnectionManager"/>
         <constructor-arg ref="cassandraEntityManager"/>
-        <!--constructor-arg ref="workQueueEntityManager"/-->
     </bean>
 
     <bean id="serviceExternalEntityHeaderEnhancer"
@@ -2627,12 +2623,6 @@
 
     <bean id="ssgCustomMessageFormatRegistry" class="com.l7tech.server.custom.format.CustomMessageFormatRegistry" depends-on="stashManagerFactory">
         <constructor-arg ref="stashManagerFactory"/>
-    </bean>
-
-    <bean id="workQueueEntityManager" class="com.l7tech.server.workqueue.WorkQueueEntityManagerImpl" parent="hibernateBean"/>
-
-    <bean id="workQueueExecutorManager" class="com.l7tech.server.workqueue.WorkQueueExecutorManagerImpl">
-        <constructor-arg ref="workQueueEntityManager"/>
     </bean>
 
     <bean id="solutionKitManager" class="com.l7tech.server.solutionkit.SolutionKitManagerImpl" parent="hibernateBean" />

@@ -172,7 +172,6 @@
                 <ref bean="identityProviderConfigManager"/>
                 <ref bean="customKeyValueStoreManager"/>
                 <ref bean="cassandraEntityManager"/>
-                <ref bean="workQueueEntityManager"/>
                 <ref bean="solutionKitManager"/>
             </list>
         </property>
@@ -768,7 +767,6 @@
                 <ref bean="genericEntityManager"/>
                 <ref bean="cassandraEntityManager"/>
                 <ref bean="serverModuleFileManager"/>
-                <ref bean="workQueueEntityManager"/>
                 <ref bean="scheduledTaskManager"/>
                 <ref bean="policyBackedServiceManager"/>
                 <ref bean="auditConfigurationManager"/>
@@ -803,7 +801,6 @@
         <property name="keyValueStoreManager" ref="customKeyValueStoreManager"/>
         <property name="customAssertionsRegistrar" ref="customAssertionRegistrar"/>
         <property name="cassandraEntityManager" ref="cassandraEntityManager"/>
-        <property name="workQueueEntityManager" ref="workQueueEntityManager"/>
     </bean>
 
     <bean id="policyPathBuilderFactory" class="com.l7tech.policy.PolicyPathBuilderFactory">
@@ -1773,9 +1770,6 @@
           class="com.l7tech.server.util.PostStartupApplicationListener$StartupListenerRegistration"/>
 
     <bean id="postStartupTransactionalApplicationListenerRegistration" class="com.l7tech.server.util.PostStartupTransactionalApplicationListener$StartupListenerRegistration"/>
-
-    <bean id="workQueueEntityManager" class="com.l7tech.server.workqueue.WorkQueueEntityManagerImpl"
-          parent="hibernateBean"/>
 
     <bean id="scheduledTaskManager" class="com.l7tech.server.task.ScheduledTaskManagerImpl" parent="hibernateBean"/>
 
