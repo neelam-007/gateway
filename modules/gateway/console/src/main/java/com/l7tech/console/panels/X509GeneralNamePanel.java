@@ -32,6 +32,7 @@ public class X509GeneralNamePanel extends ValidatedPanel<NameValuePair> {
     private JPanel contentPane;
     private JLabel nameLabel;
     private JLabel statusLabel;
+    private boolean textUpdated = false;
 
     private NameValuePair model = new NameValuePair("", "");
 
@@ -82,9 +83,18 @@ public class X509GeneralNamePanel extends ValidatedPanel<NameValuePair> {
         ));
 
         nameTextField.getDocument().addDocumentListener(new DocumentListener() {
-            public void insertUpdate(DocumentEvent e) { checkSyntax(); }
-            public void removeUpdate(DocumentEvent e) { checkSyntax(); }
-            public void changedUpdate(DocumentEvent e) { checkSyntax(); }
+            public void insertUpdate(DocumentEvent e) {
+                textUpdated |= true;
+                checkSyntax();
+            }
+            public void removeUpdate(DocumentEvent e) {
+                textUpdated |= true;
+                checkSyntax();
+            }
+            public void changedUpdate(DocumentEvent e) {
+                textUpdated |= true;
+                checkSyntax();
+            }
         });
         typeComboBox.addItemListener(new ItemListener() {
             @Override
@@ -99,6 +109,7 @@ public class X509GeneralNamePanel extends ValidatedPanel<NameValuePair> {
             typeComboBox.setSelectedIndex(0);
         }
         nameTextField.setText(model.getValue());
+        textUpdated = StringUtils.isNotBlank(model.getValue());
         setLayout(new BorderLayout());
         add(contentPane, BorderLayout.CENTER);
     }
@@ -117,6 +128,7 @@ public class X509GeneralNamePanel extends ValidatedPanel<NameValuePair> {
     @Override
     protected String getSyntaxError(final NameValuePair model) {
         String error = null;
+        statusLabel.setVisible(textUpdated);
         if(typeComboBox.getSelectedItem() == null) return "";
         // must validate value set on TextField, not the NameValuePair
         // because NameValuePair is not updated until OK is clicked
@@ -144,9 +156,11 @@ public class X509GeneralNamePanel extends ValidatedPanel<NameValuePair> {
     }
 
     protected void badSyntax() {
-        ((SquigglyTextField)nameTextField).setColor(Color.RED);
-        ((SquigglyTextField)nameTextField).setSquiggly();
-        ((SquigglyTextField)nameTextField).setAll();
+        if(textUpdated) {
+            ((SquigglyTextField) nameTextField).setColor(Color.RED);
+            ((SquigglyTextField) nameTextField).setSquiggly();
+            ((SquigglyTextField) nameTextField).setAll();
+        }
     }
 
     private static String validatePattern(Pattern p, String s, String msg) {
