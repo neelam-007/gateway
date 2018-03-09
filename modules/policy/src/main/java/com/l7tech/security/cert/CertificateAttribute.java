@@ -313,7 +313,7 @@ public enum CertificateAttribute {
     SUBJECT_ALT_DN("subjectAltNameDN", false, false) {
         @Override
         public Map<String, Collection<Object>> extractValues(X509Certificate certificate) {
-            return makeMap(this.toString(), getSubjectAltName(certificate, AltName.DIRECTORY));
+            return makeMap(this.toString(), CertUtils.formatDN(getSubjectAltName(certificate, AltName.DIRECTORY)));
         }
     },
 

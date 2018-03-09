@@ -14,6 +14,7 @@ import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.test.BugId;
 import com.l7tech.test.BugNumber;
 import static org.junit.Assert.*;
 
@@ -117,6 +118,23 @@ public class ServerCertificateAttributesAssertionTest {
         assertEquals("111.222.33.44", san3);
         assertEquals("https://test.ca.com?test=test&test2=test2", san4);
         assertEquals("test@ca.com", san5);
+    }
+
+    @BugId("DE351077")
+    @Test
+    public void testSubjectAlternativeNames_DN() throws Exception {
+        X509Certificate cert = new TestCertificateGenerator()
+                .subject("cn=test")
+                .subjectAlternativeNames(true, new X509GeneralName(X509GeneralName.Type.directoryName, "2.5.4.46=#1309736f6d657468696e67"))
+                .generate();
+
+        CertificateAttributesAssertion ass = new CertificateAttributesAssertion();
+        ServerCertificateAttributesAssertion sass = new ServerCertificateAttributesAssertion(ass);
+
+        PolicyEnforcementContext context = pec(cert);
+        sass.checkRequest(context);
+
+        assertEquals("2.5.4.46=something", context.getVariable("certificate.subjectAltNameDN"));
     }
 
     private String expand(PolicyEnforcementContext context, String str) {
