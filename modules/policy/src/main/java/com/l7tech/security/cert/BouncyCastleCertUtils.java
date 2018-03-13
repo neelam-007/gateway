@@ -8,16 +8,12 @@ import com.l7tech.security.prov.CertificateRequest;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.prov.bc.BouncyCastleCertificateRequest;
 import com.l7tech.util.ConfigFactory;
-
 import org.bouncycastle.asn1.*;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.*;
-import org.bouncycastle.asn1.x509.GeneralName;
-import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.jce.PKCS10CertificationRequest;
 import org.bouncycastle.x509.extension.X509ExtensionUtil;
-
 
 import javax.security.auth.x500.X500Principal;
 import java.io.IOException;

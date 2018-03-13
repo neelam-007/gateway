@@ -141,7 +141,8 @@ public class CertUtils {
 
 
     public static boolean isCertCaCapable(X509Certificate cert) {
-        if (cert == null) return false;
+        if (cert == null)
+            return false;
         boolean[] usages = cert.getKeyUsage();
         return usages != null && usages[KeyUsage.keyCertSign] && cert.getBasicConstraints() > 0;
     }
@@ -2230,62 +2231,58 @@ public class CertUtils {
     }
 
     public static NameValuePair convertFromX509GeneralName(@NotNull X509GeneralName generalName) throws UnsupportedX509GeneralNameException {
-        //StringBuilder sb = null;
-        boolean base64Encode = false;
         switch (generalName.getType()) {
             case dNSName:
             case rfc822Name:
             case directoryName:
             case uniformResourceIdentifier:
+            case registeredID:
                 return new NameValuePair(generalName.getType().getUserFriendlyName(), generalName.getStringVal());
             case iPAddress:
-                String ipAddress = null;
-                if(generalName.getDerVal() != null) {
-                    byte[] bytes = generalName.getDerVal();
-                    //check if this is DEROctetString(4) and the length is correct IP4 or IP6
-                    if(bytes.length < 6 || bytes[0] != 4 || (bytes[1] != 4 && bytes[1] != 16)) {
-                        throw  new IllegalArgumentException("Wrong iPAddress encoding");
-                    }
-                    InetAddress inetAddress = null;
-                    try {
-                        inetAddress = InetAddress.getByAddress(Arrays.copyOfRange(bytes,2, bytes.length));
-                        ipAddress = inetAddress.getHostAddress();
-                    } catch (UnknownHostException e) {
-                        throw new IllegalArgumentException("Wrong InetAddress format");
-                    }
-
-                }
-                else {
-                    ipAddress = generalName.getStringVal();
-                }
-                return new NameValuePair(X509GeneralName.Type.iPAddress.getUserFriendlyName(), ipAddress);
+                return convertIpAddress2NameValuePair(generalName);
             case otherName:
-                base64Encode = true;
             case x400Address:
             case ediPartyName:
-            case registeredID:
-                String val = null;
-                if(generalName.getStringVal() != null) {
-                    val = generalName.getStringVal();
-                }
-                else {
-                    try {
-                        final byte[] bytesVal = generalName.getDerVal();
-                        if(base64Encode) {
-                            val = HexUtils.encodeBase64(bytesVal, true);
-                        }
-                        else {
-                            val = (new DerValue(bytesVal)).toString();
-                        }
-                    } catch (IOException e) {
-                        logger.log(Level.WARNING, "Error extracting value for " + generalName.getType().getUserFriendlyName());
-                        throw new IllegalArgumentException("Incompatible value format");
-                    }
-                }
-                return new NameValuePair(generalName.getType().getUserFriendlyName(), val);
+                return convert2NameValuePair(generalName);
             default:
                     throw new UnsupportedX509GeneralNameException("Wrong X509GeneralName Type");//should never happen
         }
+    }
+
+    @NotNull
+    private static NameValuePair convert2NameValuePair(@NotNull X509GeneralName generalName) {
+        String val = null;
+        if(generalName.getStringVal() != null) {
+            val = generalName.getStringVal();
+        }
+        else {
+            val = HexUtils.encodeBase64(generalName.getDerVal(), true);
+        }
+        return new NameValuePair(generalName.getType().getUserFriendlyName(), val);
+    }
+
+    @NotNull
+    private static NameValuePair convertIpAddress2NameValuePair(@NotNull X509GeneralName generalName) {
+        String ipAddress = null;
+        if(generalName.getDerVal() != null) {
+            byte[] bytes = generalName.getDerVal();
+            //check if this is DEROctetString(4) and the length is correct IP4 or IP6
+            if(bytes.length < 6 || bytes[0] != 4 || (bytes[1] != 4 && bytes[1] != 16)) {
+                throw  new IllegalArgumentException("Wrong iPAddress encoding");
+            }
+            InetAddress inetAddress = null;
+            try {
+                inetAddress = InetAddress.getByAddress(Arrays.copyOfRange(bytes,2, bytes.length));
+                ipAddress = inetAddress.getHostAddress();
+            } catch (UnknownHostException e) {
+                throw new IllegalArgumentException("Wrong InetAddress format");
+            }
+
+        }
+        else {
+            ipAddress = generalName.getStringVal();
+        }
+        return new NameValuePair(X509GeneralName.Type.iPAddress.getUserFriendlyName(), ipAddress);
     }
 
     /**
@@ -2294,7 +2291,9 @@ public class CertUtils {
      * @return X509GeneralName object
      */
     public static X509GeneralName convertToX509GeneralName(@NotNull NameValuePair pair) throws UnsupportedX509GeneralNameException {
-        if(pair.getKey() == null || pair.getValue() == null) return null;
+        if(pair.getKey() == null || pair.getValue() == null) {
+            return null;
+        }
         //Determine the type
         String type = pair.getKey();
         if(X509GeneralName.Type.rfc822Name.getUserFriendlyName().equalsIgnoreCase(type))
@@ -2326,9 +2325,13 @@ public class CertUtils {
             for(String sanStr : sansList) {
                 String[] s = sanStr.split(":", 2);
                 if(s.length == 2) {
-                    if(csrSAN == null) csrSAN = new ArrayList<>();
+                    if(csrSAN == null) {
+                        csrSAN = new ArrayList<>();
+                    }
                     X509GeneralName generalName = CertUtils.convertToX509GeneralName(new NameValuePair(s[0],s[1]));
-                    if(generalName != null) csrSAN.add(generalName);
+                    if(generalName != null) {
+                        csrSAN.add(generalName);
+                    }
                 }
             }
         }

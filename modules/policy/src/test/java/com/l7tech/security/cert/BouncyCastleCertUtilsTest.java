@@ -11,6 +11,7 @@ import org.bouncycastle.asn1.x509.X509Extension;
 import org.bouncycastle.asn1.x509.X509Extensions;
 import org.bouncycastle.jce.PKCS10CertificationRequest;
 import org.junit.Test;
+import sun.security.util.DerValue;
 
 import javax.security.auth.x500.X500Principal;
 import java.io.*;
@@ -36,15 +37,28 @@ public class BouncyCastleCertUtilsTest {
         List collection = BouncyCastleCertUtils.extractSubjectAlternativeNamesFromCsrInfoAttr(attrSet);
         certGenParams.setSubjectAlternativeNames(collection);
 
-        DEROctetString derIpAddress = new DEROctetString(new byte[]{111,44,23,45});
+        DEROctetString derIpAddress = new DEROctetString(new byte[]{10,7,10,10});
+        byte[] otherValue = new byte[]{-96,19,6,3,42,3,4,-96,12,12,10,105,100,101,110,116,105,102,105,101,114};
 
-        assertEquals(3, certGenParams.getSubjectAlternativeNames().size());
-        assertEquals(X509GeneralName.Type.rfc822Name, certGenParams.getSubjectAlternativeNames().get(0).getType());
-        assertEquals("test@ca.com", certGenParams.getSubjectAlternativeNames().get(0).getStringVal());
-        assertEquals(X509GeneralName.Type.iPAddress, certGenParams.getSubjectAlternativeNames().get(1).getType());
-        assertArrayEquals(derIpAddress.getEncoded(), certGenParams.getSubjectAlternativeNames().get(1).getDerVal());
-        assertEquals(X509GeneralName.Type.dNSName, certGenParams.getSubjectAlternativeNames().get(2).getType());
-        assertEquals("test.ca.com", certGenParams.getSubjectAlternativeNames().get(2).getStringVal());
+        assertEquals(9, certGenParams.getSubjectAlternativeNames().size());
+        assertEquals(X509GeneralName.Type.dNSName, certGenParams.getSubjectAlternativeNames().get(0).getType());
+        assertEquals("your-new-domain.com", certGenParams.getSubjectAlternativeNames().get(0).getStringVal());
+        assertEquals(X509GeneralName.Type.dNSName, certGenParams.getSubjectAlternativeNames().get(1).getType());
+        assertEquals("www.your-new-domain.com", certGenParams.getSubjectAlternativeNames().get(1).getStringVal());
+        assertEquals(X509GeneralName.Type.rfc822Name, certGenParams.getSubjectAlternativeNames().get(2).getType());
+        assertEquals("test@ca.com", certGenParams.getSubjectAlternativeNames().get(2).getStringVal());
+        assertEquals(X509GeneralName.Type.iPAddress, certGenParams.getSubjectAlternativeNames().get(3).getType());
+        assertArrayEquals(derIpAddress.getEncoded(), certGenParams.getSubjectAlternativeNames().get(3).getDerVal());
+        assertEquals(X509GeneralName.Type.registeredID, certGenParams.getSubjectAlternativeNames().get(4).getType());
+        assertEquals("1.2.3.4", certGenParams.getSubjectAlternativeNames().get(4).getStringVal());
+        assertEquals(X509GeneralName.Type.uniformResourceIdentifier, certGenParams.getSubjectAlternativeNames().get(5).getType());
+        assertEquals("urn:ISSN:1535-3613", certGenParams.getSubjectAlternativeNames().get(5).getStringVal());
+        assertEquals(X509GeneralName.Type.uniformResourceIdentifier, certGenParams.getSubjectAlternativeNames().get(6).getType());
+        assertEquals("http://appserver:6394/wa/r/myApp", certGenParams.getSubjectAlternativeNames().get(6).getStringVal());
+        assertEquals(X509GeneralName.Type.otherName, certGenParams.getSubjectAlternativeNames().get(7).getType());
+        assertArrayEquals(otherValue, certGenParams.getSubjectAlternativeNames().get(7).getDerVal());
+        assertEquals(X509GeneralName.Type.directoryName, certGenParams.getSubjectAlternativeNames().get(8).getType());
+        assertEquals("C=UK,O=My Organization,OU=My Unit,CN=My Name", certGenParams.getSubjectAlternativeNames().get(8).getStringVal());
     }
 
     @Test
