@@ -9,6 +9,7 @@ import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.x509.X509Extensions;
 import org.bouncycastle.asn1.x509.X509Name;
 import org.bouncycastle.x509.extension.X509ExtensionUtil;
+import org.jetbrains.annotations.Nullable;
 import sun.security.util.DerValue;
 
 import javax.naming.NamingEnumeration;
@@ -24,6 +25,7 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 
 /**
@@ -292,56 +294,56 @@ public enum CertificateAttribute {
     /**
      * EMail address (if any) for the Subject Alternative Name (rfc288) (e.g. "example2@oasis-open.org")
      */
-    SUBJECT_ALT_EMAIL("subjectAltNameEmail", false, false) {
+    SUBJECT_ALT_EMAIL("subjectAltNameEmail", false, true) {
         @Override
         public Map<String, Collection<Object>> extractValues(X509Certificate certificate) {
-            return makeMap(this.toString(), getSubjectAltName(certificate, AltName.EMAIL));
+            return makeMap(this.toString(), getSubjectAltNames(certificate, AltName.EMAIL));
         }},
 
     /**
      * DNS Name address (if any) for the Subject Alternative Name (e.g. "example2.oasis-open.org")
      */
-    SUBJECT_ALT_DNS("subjectAltNameDNS", false, false) {
+    SUBJECT_ALT_DNS("subjectAltNameDNS", false, true) {
         @Override
         public Map<String, Collection<Object>> extractValues(X509Certificate certificate) {
-            return makeMap(this.toString(), getSubjectAltName(certificate, AltName.DNS));
+            return makeMap(this.toString(), getSubjectAltNames(certificate, AltName.DNS));
         }},
 
     /**
      * Directory Name (if any) for the Subject Alternative Name (e.g. "CN=test,OU=People")
      */
-    SUBJECT_ALT_DN("subjectAltNameDN", false, false) {
+    SUBJECT_ALT_DN("subjectAltNameDN", false, true) {
         @Override
         public Map<String, Collection<Object>> extractValues(X509Certificate certificate) {
-            return makeMap(this.toString(), CertUtils.formatDN(getSubjectAltName(certificate, AltName.DIRECTORY)));
+            return makeMap(this.toString(), Optional.ofNullable(getSubjectAltNames(certificate, AltName.DIRECTORY)).orElse(new ArrayList<>()).stream().map(CertUtils::formatDN).collect(Collectors.toList()));
         }
     },
 
     /**
      * IP Address (if any) for the Subject Alternative Name (e.g. "111.222.33.55 or FF::EE::45::33::ED:FF")
      */
-    SUBJECT_ALT_IP("subjectAltNameIP", false, false) {
+    SUBJECT_ALT_IP("subjectAltNameIP", false, true) {
         @Override
         public Map<String, Collection<Object>> extractValues(X509Certificate certificate) {
-            return makeMap(this.toString(), getSubjectAltName(certificate, AltName.IP));
+            return makeMap(this.toString(), getSubjectAltNames(certificate, AltName.IP));
         }
     },
     /**
      * Uniform Resource Identifier (if any) for the Subject Alternative Name (e.g. "http://example2.oasis-open.org/")
      */
-    SUBJECT_ALT_URI("subjectAltNameURI", false, false) {
+    SUBJECT_ALT_URI("subjectAltNameURI", false, true) {
         @Override
         public Map<String, Collection<Object>> extractValues(X509Certificate certificate) {
-            return makeMap(this.toString(), getSubjectAltName(certificate, AltName.URI));
+            return makeMap(this.toString(), getSubjectAltNames(certificate, AltName.URI));
         }},
 
     /**
      * "Other Name" (if any) for the Subject Alternative Name, encoded as Base-64 (e.g. "3027060a2b060104018237140203a019a0170c15313730303030303030302e5640736d696c2e6d696c")
      */
-    SUBJECT_ALT_OTHER("subjectAltNameOther", false, false) {
+    SUBJECT_ALT_OTHER("subjectAltNameOther", false, true) {
         @Override
         public Map<String, Collection<Object>> extractValues(X509Certificate certificate) {
-            return makeMap(this.toString(), getSubjectAltName(certificate, AltName.OTHER));
+            return makeMap(this.toString(), getSubjectAltNames(certificate, AltName.OTHER));
         }},
 
     /**
@@ -694,13 +696,14 @@ public enum CertificateAttribute {
         return null;
     }
 
-    private static String getSubjectAltName(X509Certificate certificate, AltName altNameType) {
+
+    private static Collection<String> getSubjectAltNames(X509Certificate certificate, AltName altNameType) {
         try {
-            return getAltName(certificate.getSubjectAlternativeNames(), altNameType);
+            return getAltNames(certificate.getSubjectAlternativeNames(), altNameType);
         } catch (CertificateParsingException e) {
             if (logger.isLoggable(Level.FINE)) {
                 logger.log(Level.FINE, "Could not extract issuer alternative names from certificate '" +
-                                        ExceptionUtils.getMessage(e) + "'.", ExceptionUtils.getDebugException(e));
+                        ExceptionUtils.getMessage(e) + "'.", ExceptionUtils.getDebugException(e));
             }
         }
         return null;
@@ -711,25 +714,39 @@ public enum CertificateAttribute {
             Integer intType = altNameType.getType();
             for (List<?> altName : altNames) {
                 if (altName != null && altName.size() > 0 && (intType.equals(altName.get(0)))) {
-                    Object value = altName.get(1);
-                    if (value instanceof String) {
-                        return (String) value;
-                    } else if (value instanceof byte[]) {
-                        try {
-                            final byte[] bytesVal = (byte[]) value;
-                            return altNameType.isExposeAsBase64()
-                                    ? HexUtils.encodeBase64(bytesVal, true)
-                                    : (new DerValue(bytesVal)).toString();
-                        } catch (IOException e) {
-                            logger.log(Level.WARNING, "Error extracting value for {0}", altNameType);
-                            return null;
-                        }
-                    } else { // should not happen
-                        logger.log(Level.WARNING, "Invalid alternative name value type: {0}", value == null ? null : value.getClass());
-                        return null;
-                    }
+                    return getAltNameValue(altNameType, altName.get(1));
                 }
             }
+        }
+        return null;
+    }
+
+    @Nullable
+    private static String getAltNameValue(AltName altNameType, Object value) {
+        if (value instanceof String) {
+            return (String) value;
+        } else if (value instanceof byte[]) {
+            try {
+                final byte[] bytesVal = (byte[]) value;
+                return altNameType.isExposeAsBase64()
+                        ? HexUtils.encodeBase64(bytesVal, true)
+                        : (new DerValue(bytesVal)).toString();
+            } catch (IOException e) {
+                logger.log(Level.WARNING, "Error extracting value for {0}", altNameType);
+                return null;
+            }
+        } else { // should not happen
+            logger.log(Level.WARNING, "Invalid alternative name value type: {0}", value == null ? null : value.getClass());
+            return null;
+        }
+    }
+
+    private static Collection<String> getAltNames(Collection<List<?>> altNames, AltName altNameType) {
+        if (altNames != null) {
+            final Integer intType = altNameType.getType();
+            return altNames.stream()
+                    .filter(altName -> altName != null && altName.size() > 0 && (intType.equals(altName.get(0))))
+                    .map(altName ->  getAltNameValue(altNameType, altName.get(1))).collect(Collectors.toList());
         }
         return null;
     }
