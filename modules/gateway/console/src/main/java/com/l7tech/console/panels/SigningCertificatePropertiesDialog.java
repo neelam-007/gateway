@@ -13,7 +13,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.NameValuePair;
-import org.apache.commons.lang.StringUtils;
+import com.l7tech.util.SyspropUtil;
 
 import javax.security.auth.x500.X500Principal;
 import javax.swing.*;
@@ -293,11 +293,7 @@ public class SigningCertificatePropertiesDialog extends JDialog {
     }
 
     private boolean isMac() {
-        String osName = System.getProperty("os.name");
-        if(StringUtils.isNotBlank(osName)) {
-            return osName.toLowerCase(Locale.ENGLISH).contains("mac os");
-        }
-        return false;
+        return SyspropUtil.getString( "os.name", "Unknown" ).toLowerCase(Locale.ENGLISH).contains("mac os");
     }
 
     /**
