@@ -1,18 +1,21 @@
-package com.l7tech.server;
+package com.l7tech.server.messageprocessor.injection;
 
 import com.ca.apim.gateway.extension.processorinjection.ServiceInjection;
-import com.ca.apim.gateway.extension.processorinjection.ServiceInjectionContext;
 import com.l7tech.gateway.common.service.PublishedService;
-import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.extension.registry.processorinjection.ServiceInjectionsRegistry;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.util.ExceptionUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.function.Consumer;
+import java.util.function.BiFunction;
+import java.util.function.BinaryOperator;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 public class MessageProcessorInjectorImpl implements MessageProcessorInjector {
+    private static final Logger LOGGER = Logger.getLogger(MessageProcessorInjectorImpl.class.getName());
 
     private final ServiceInjectionsRegistry preServiceInvocationInjectionsRegistry;
     private final ServiceInjectionsRegistry postServiceInvocationInjectionsRegistry;
@@ -25,13 +28,13 @@ public class MessageProcessorInjectorImpl implements MessageProcessorInjector {
     }
 
     @Override
-    public void executePreServiceInjections(@NotNull final PolicyEnforcementContext context) {
-        executeInjections(preServiceInvocationInjectionsRegistry, context);
+    public boolean executePreServiceInjections(@NotNull final PolicyEnforcementContext context) {
+        return executeInjections(preServiceInvocationInjectionsRegistry, context);
     }
 
     @Override
-    public void executePostServiceInjections(@NotNull final PolicyEnforcementContext context) {
-        executeInjections(postServiceInvocationInjectionsRegistry, context);
+    public boolean executePostServiceInjections(@NotNull final PolicyEnforcementContext context) {
+        return executeInjections(postServiceInvocationInjectionsRegistry, context);
     }
 
     /**
@@ -40,42 +43,28 @@ public class MessageProcessorInjectorImpl implements MessageProcessorInjector {
      * @param serviceInjectionsRegistry The service injection registry to search
      * @param context                   The context to look up the service tags from and to inject into.
      */
-    private static void executeInjections(@NotNull final ServiceInjectionsRegistry serviceInjectionsRegistry, @NotNull final PolicyEnforcementContext context) {
-        final Stream<ServiceInjection> preServiceInvocationExtensions = Stream.concat(
+    static boolean executeInjections(@NotNull final ServiceInjectionsRegistry serviceInjectionsRegistry, @NotNull final PolicyEnforcementContext context) {
+        final Stream<ServiceInjection> serviceInvocationExtensions = Stream.concat(
                 serviceInjectionsRegistry.getTaggedExtensions(getServiceTags(context.getService())).stream(),
                 serviceInjectionsRegistry.getTaggedExtensions(ServiceInjectionsRegistry.GLOBAL_TAG).stream())
                 .distinct();
-        preServiceInvocationExtensions.forEach(new Consumer<ServiceInjection>() {
+        final ServiceInjectionContextImpl serviceInjectionContext = new ServiceInjectionContextImpl(context);
+        return serviceInvocationExtensions.reduce(Boolean.TRUE, new BiFunction<Boolean, ServiceInjection, Boolean>() {
             @Override
-            public void accept(ServiceInjection preServiceInvocationExtension) {
-                preServiceInvocationExtension.execute(getServiceInjectionContext(context));
+            public Boolean apply(Boolean shouldContinue, ServiceInjection serviceInjection) {
+                try {
+                    return serviceInjection.execute(serviceInjectionContext) && shouldContinue;
+                } catch (Exception e) {
+                    LOGGER.log(Level.WARNING, "Service injection failed to execute. Ignoring and continuing. Message: " + ExceptionUtils.getMessageWithCause(e), ExceptionUtils.getDebugException(e));
+                }
+                return shouldContinue;
+            }
+        }, new BinaryOperator<Boolean>() {
+            @Override
+            public Boolean apply(Boolean b1, Boolean b2) {
+                return b1 && b2;
             }
         });
-    }
-
-    /**
-     * Returns an injectable context in that injects into the given PEC
-     *
-     * @param context The context to inject into
-     * @return The injectable context
-     */
-    @NotNull
-    private static ServiceInjectionContext getServiceInjectionContext(@NotNull final PolicyEnforcementContext context) {
-        return new ServiceInjectionContext() {
-            @Override
-            public Object getVariable(String name) {
-                try {
-                    return context.getVariable(name);
-                } catch (NoSuchVariableException e) {
-                    return null;
-                }
-            }
-
-            @Override
-            public void setVariable(String name, Object value) {
-                context.setVariable(name, value);
-            }
-        };
     }
 
     /**

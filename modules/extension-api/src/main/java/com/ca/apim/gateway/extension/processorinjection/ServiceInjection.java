@@ -9,7 +9,9 @@ import com.ca.apim.gateway.extension.Extension;
 public interface ServiceInjection extends Extension {
     /**
      * Allows modification of the execution context of a service.
+     *
      * @param context The context for the service that is/was executed.
+     * @return in pre-service injections return false in order to stop service processing. In post-service injections return false in order to falsify service processing
      */
-    void execute(ServiceInjectionContext context);
+    boolean execute(ServiceInjectionContext context);
 }

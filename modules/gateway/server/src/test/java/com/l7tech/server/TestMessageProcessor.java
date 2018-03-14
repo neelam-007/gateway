@@ -11,6 +11,7 @@ import com.l7tech.server.audit.MessageSummaryAuditFactory;
 import com.l7tech.server.extension.registry.processorinjection.ServiceInjectionsRegistry;
 import com.l7tech.server.log.TrafficLogger;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.messageprocessor.injection.MessageProcessorInjectorImpl;
 import com.l7tech.server.policy.PolicyCache;
 import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.server.secureconversation.InboundSecureConversationContextManager;

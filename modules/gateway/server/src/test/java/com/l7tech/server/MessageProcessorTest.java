@@ -18,6 +18,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.metrics.GatewayMetricsPublisher;
 import com.l7tech.server.message.metrics.GatewayMetricsSupport;
 import com.l7tech.server.message.metrics.MockGatewayMetricsPublisher;
+import com.l7tech.server.messageprocessor.injection.MessageProcessorInjector;
 import com.l7tech.server.policy.PolicyCache;
 import com.l7tech.server.policy.PolicyMetadata;
 import com.l7tech.server.policy.PolicyMetadataStub;
