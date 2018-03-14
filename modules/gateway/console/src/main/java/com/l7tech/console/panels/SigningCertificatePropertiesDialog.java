@@ -13,6 +13,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.NameValuePair;
+import org.apache.commons.lang.StringUtils;
 
 import javax.security.auth.x500.X500Principal;
 import javax.swing.*;
@@ -69,7 +70,6 @@ public class SigningCertificatePropertiesDialog extends JDialog {
     private JTable sansTable;
     private JLabel sansLabel;
     private JScrollPane sansScrollPane;
-    private JPanel settingsPane;
 
     private Functions.Nullary<Boolean> precheckingShortKeyFunc;
     private Functions.Nullary<Void> postTaskFunc;
@@ -237,8 +237,7 @@ public class SigningCertificatePropertiesDialog extends JDialog {
             List<NameValuePair> sansList = ((List<NameValuePair>) csrProps.get(TrustedCertAdmin.CSR_PROP_SUBJECT_ALTERNATIVE_NAMES))
                     .stream()
                     .filter(x -> SUPPORTED_SAN_TYPES.contains(x.left))
-                    //.map(x -> x.left.equals(X509GeneralName.Type.otherName.getUserFriendlyName()) ? new NameValuePair(x.left, "<binary>") : new NameValuePair(x.left, x.right))
-                    .collect(Collectors.toList());
+                   .collect(Collectors.toList());
             if(sansList.size() > 0) {
                 sanTableModel.setRows(sansList);
                 sansScrollPane.setVisible(true);
@@ -283,8 +282,22 @@ public class SigningCertificatePropertiesDialog extends JDialog {
 
     private void resizeDialogWithNoSans() {
         sansScrollPane.setSize(0,0);
+        sansTable.setSize(0,0);
         sansLabel.setSize(0,0);
-        mainPanel.setPreferredSize(new Dimension(590, 185));
+        Dimension minDimension = new Dimension(590, 148);//this is minimum dimensions for Windows or Linux
+        //find out what operating system is running on
+        if(isMac()) {
+            minDimension.setSize(590, 185);//Mac Os has specific dimensions
+        }
+        mainPanel.setPreferredSize(minDimension);
+    }
+
+    private boolean isMac() {
+        String osName = System.getProperty("os.name");
+        if(StringUtils.isNotBlank(osName)) {
+            return osName.toLowerCase(Locale.ENGLISH).contains("mac os");
+        }
+        return false;
     }
 
     /**
