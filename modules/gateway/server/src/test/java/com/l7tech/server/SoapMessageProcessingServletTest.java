@@ -565,6 +565,47 @@ public class SoapMessageProcessingServletTest {
         verify(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
     }
 
+    @BugId("DE347523")
+    @Test
+    public void testUnencodeRequestURIWithoutFailure() throws Exception {
+        // Set request URL containing some un-encoding characters such as '{' and '}'.
+        final String testingUnencodedUri = "/test{}";
+
+        request.setContent("test".getBytes());
+        request.setServerName("test.l7tech.com");
+        request.setServerPort(8080);
+        request.setRequestURI(testingUnencodedUri);
+
+        doAnswer(new Answer() {
+            @Override
+            public Object answer(final InvocationOnMock invocationOnMock) throws Throwable {
+                final PolicyEnforcementContext context = (PolicyEnforcementContext) invocationOnMock.getArguments()[0];
+                final HttpCookiesKnob cookiesKnob = context.getResponse().getHttpCookiesKnob();
+                cookiesKnob.addCookie(new HttpCookie("1", "a", 1, "/original", "original", 60, false, "test", false));
+                cookiesKnob.addCookie(new HttpCookie("2", "b", 1, "/original", "original", 60, false, "test", false));
+                return AssertionStatus.NONE;
+            }
+        }).when(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
+
+        // The service method has been successfully executed without any exceptions and getPassThroughHeaders() has
+        // successfully processed retrieving domain and path from reqeust URL.
+        try {
+            servlet.service(request, response);
+        } catch (Exception e) {
+            fail("should not fail on this method call, service");
+        }
+
+        verify(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
+
+        List cookieHeaders = response.getHeaders("Set-Cookie");
+
+        // Verify domain and path are correctly overwritten in cookie headers, even though the request URL contains unwise characters.
+        assertEquals(2, cookieHeaders.size());
+        assertTrue("Checking first Set-Cookie header", cookieHeaders.contains("1=a; Version=1; Domain=test.l7tech.com; Path=" + testingUnencodedUri + "; Comment=test; Max-Age=60"));
+        assertTrue("Checking second Set-Cookie header", cookieHeaders.contains("2=b; Version=1; Domain=test.l7tech.com; Path=" + testingUnencodedUri + "; Comment=test; Max-Age=60"));
+        assertTrue("Empty cookies", response.getCookies().length == 0);
+    }
+
     private class TestableSoapMessageProcessingServlet extends SoapMessageProcessingServlet {
         @Override
         SsgConnector getConnector(final HttpServletRequest request) {
