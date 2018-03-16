@@ -124,9 +124,6 @@ public class SigningCertificatePropertiesDialog extends JDialog {
                 TableUtil.column(resources.getString("sanTable.type.column.name"), 100, 100, 99999, Functions.propertyTransform(NameValuePair.class, "key")),
                 TableUtil.column(resources.getString("sanTable.name.column.name"), 100, 250, 99999, Functions.propertyTransform(NameValuePair.class, "value")));
         sanTableModel.setRows(new ArrayList<NameValuePair>(Collections.<NameValuePair>emptyList()));
-        sansTable.setEnabled(false);
-        sansLabel.setVisible(false);
-        sansScrollPane.setVisible(false);
 
         final InputValidator inputValidator = new InputValidator(this, resources.getString("error.dialog.title"));
         inputValidator.constrainTextFieldToNumberRange(resources.getString("text.cert.expiry.age"), expiryAgeTextField, MIN_CERTIFICATE_EXPIRY, MAX_CERTIFICATE_EXPIRY);
@@ -240,17 +237,8 @@ public class SigningCertificatePropertiesDialog extends JDialog {
                    .collect(Collectors.toList());
             if(sansList.size() > 0) {
                 sanTableModel.setRows(sansList);
-                sansScrollPane.setVisible(true);
-                sansLabel.setVisible(true);
-            }
-            else {
-                resizeDialogWithNoSans();
             }
         }
-        else {
-            resizeDialogWithNoSans();
-        }
-
         final String keyType = (String)csrProps.get(TrustedCertAdmin.CSR_PROP_KEY_TYPE);
         if (keyType == null) return;
 
@@ -278,22 +266,6 @@ public class SigningCertificatePropertiesDialog extends JDialog {
         }
 
         publicKeyDetailsTextField.setText(briefDetails);
-    }
-
-    private void resizeDialogWithNoSans() {
-        sansScrollPane.setSize(0,0);
-        sansTable.setSize(0,0);
-        sansLabel.setSize(0,0);
-        Dimension minDimension = new Dimension(590, 148);//this is minimum dimensions for Windows or Linux
-        //find out what operating system is running on
-        if(isMac()) {
-            minDimension.setSize(590, 185);//Mac Os has specific dimensions
-        }
-        mainPanel.setPreferredSize(minDimension);
-    }
-
-    private boolean isMac() {
-        return SyspropUtil.getString( "os.name", "Unknown" ).toLowerCase(Locale.ENGLISH).contains("mac os");
     }
 
     /**
