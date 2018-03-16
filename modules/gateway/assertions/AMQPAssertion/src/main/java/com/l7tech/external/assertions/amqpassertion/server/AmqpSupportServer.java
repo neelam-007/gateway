@@ -9,8 +9,10 @@ import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.transport.http.SslClientTrustManager;
 import com.rabbitmq.client.Address;
+import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.context.ApplicationContext;
 
 import javax.net.ssl.TrustManager;
@@ -83,6 +85,11 @@ public class AmqpSupportServer {
                     serverAMQPDestinationManager.initSSLSettings(destination, connectionFactory);
                     Address[] addresses = serverAMQPDestinationManager.getAddresses(destination);
                     connection = connectionFactory.newConnection(addresses);
+                    final Channel channel = connection.createChannel();
+                    if (destination.isInbound() && !StringUtils.isBlank(destination.getQueueName())) {
+                        //Verify that the queue exists
+                        channel.queueDeclarePassive(destination.getQueueName());
+                    }
                     return true;
                 } catch (IOException e) {
                     logger.log(Level.WARNING, e.getMessage(), e);
@@ -93,10 +100,7 @@ public class AmqpSupportServer {
                         } catch (IOException e) {
                             //Ignore..
                         }
-                        connection = null;
                     }
-
-
                 }
                 return false;
             }
