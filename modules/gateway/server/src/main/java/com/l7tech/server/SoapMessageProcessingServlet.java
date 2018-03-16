@@ -83,6 +83,8 @@ public class SoapMessageProcessingServlet extends HttpServlet {
     private static final Charset SOAP_1_2_CONTENT_ENCODING = Charsets.UTF8;
     private static final String PARAM_POLICYSERVLET_URI = "PolicyServletUri";
     private static final String DEFAULT_POLICYSERVLET_URI = "/policy/disco?serviceoid=";
+    private static final String ALLOW_GZIP_COMPRESSED_REQUEST = "request.compress.gzip.allow";
+    private static final String ALLOW_GZIP_COMPRESSED_RESPONSE = "response.compress.gzip.allow";
 
     private final Logger logger = Logger.getLogger(getClass().getName());
 
@@ -201,15 +203,21 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         String maybegzipencoding = hrequest.getHeader(HEADER_CONTENT_ENCODING);
         boolean gzipEncodedTransaction = false;
         boolean gzipResponse = false;
-        final boolean allowGzipResponse = config.getBooleanProperty("response.compress.gzip.allow", true);
+        final boolean allowGzipResponse = config.getBooleanProperty(ALLOW_GZIP_COMPRESSED_RESPONSE, true);
         if ( maybegzipencoding != null ) {
             if (maybegzipencoding.toLowerCase().contains("gzip")) {
-                if( !config.getBooleanProperty("request.compress.gzip.allow", true) ) {
+                if( !config.getBooleanProperty(ALLOW_GZIP_COMPRESSED_REQUEST, true) ) {
                     logger.log( Level.INFO, "Rejecting GZIP compressed request.");
                     rejectGzipRequest( hrequest, hresponse, STATUS_UNSUPPORTED_MEDIA_TYPE, "Rejecting GZIP compressed request" );
                     return null;
                 }
-                if (hrequest.getContentLength() != 0) {
+                /**
+                 * DE218036 : Request to Gateway with Content-Encoding header set to gzip fails when body is empty
+                 *
+                 * The below condition check (for empty content) fails because hrequest.getContentLength() returns -1 for empty body.
+                 * So, changing from (hrequest.getContentLength() != 0) to (hrequest.getContentLength() > 0)
+                 */
+                if (hrequest.getContentLength() > 0) {
                     gzipEncodedTransaction = true;
                     gzipResponse = allowGzipResponse;
                     logger.fine("request with gzip content-encoding detected " + hrequest.getContentLength());
@@ -223,7 +231,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                         return null;
                     }
                 } else {
-                    logger.fine("content-encoding is gzip but content-length is zero");
+                    logger.fine("content-encoding is gzip, but either content-length is zero or no content is present");
                 }
             } else {
                 logger.fine("content-encoding not gzip " + maybegzipencoding);

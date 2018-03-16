@@ -38,7 +38,9 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.w3c.dom.Document;
 
 import javax.servlet.ServletException;
+import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.Callable;
 
@@ -67,6 +69,8 @@ public class SoapMessageProcessingServletTest {
     private MessageSummaryAuditFactory messageSummaryAuditFactory;
     @Mock
     private AuditContextFactory auditContextFactory;
+
+    private static final String ALLOW_GZIP_COMPRESSED_REQUEST = "request.compress.gzip.allow";
 
     @Before
     public void setup() throws Exception {
@@ -468,7 +472,7 @@ public class SoapMessageProcessingServletTest {
                 final PolicyEnforcementContext context = (PolicyEnforcementContext) invocationOnMock.getArguments()[0];
                 final Document emptyDocument = XmlUtil.createEmptyDocument();
                 context.getResponse().initialize(emptyDocument, ContentTypeHeader.XML_DEFAULT);
-                assertFalse(context.getResponse().getHeadersKnob().containsHeader("Content-Type", HEADER_TYPE_HTTP));
+                assertFalse(context.getResponse().getHeadersKnob().containsHeader(HttpConstants.HEADER_CONTENT_TYPE, HEADER_TYPE_HTTP));
                 return AssertionStatus.NONE;
             }
         }).when(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
@@ -481,10 +485,10 @@ public class SoapMessageProcessingServletTest {
     @Test
     public void gzipRequestZeroContentLength() throws Exception {
         request.addHeader(HttpConstants.HEADER_CONTENT_ENCODING, "gzip");
-        request.addHeader(HttpConstants.HEADER_CONTENT_TYPE, "text/plain");
+        request.addHeader(HttpConstants.HEADER_CONTENT_TYPE, ContentTypeHeader.TEXT_DEFAULT.getFullValue());
         request.addHeader(HttpConstants.HEADER_CONTENT_LENGTH, "0");
         request.setContent("".getBytes());
-        when(config.getBooleanProperty("request.compress.gzip.allow", true)).thenReturn(true);
+        when(config.getBooleanProperty(ALLOW_GZIP_COMPRESSED_REQUEST, true)).thenReturn(true);
         doAnswer(new Answer() {
             @Override
             public Object answer(final InvocationOnMock invocationOnMock) throws Throwable {
@@ -500,9 +504,9 @@ public class SoapMessageProcessingServletTest {
     @Test
     public void gzipRequest() throws Exception {
         request.addHeader(HttpConstants.HEADER_CONTENT_ENCODING, "gzip");
-        request.addHeader(HttpConstants.HEADER_CONTENT_TYPE, "text/plain");
+        request.addHeader(HttpConstants.HEADER_CONTENT_TYPE, ContentTypeHeader.TEXT_DEFAULT.getFullValue());
         request.setContent(IOUtils.compressGzip("test".getBytes()));
-        when(config.getBooleanProperty("request.compress.gzip.allow", true)).thenReturn(true);
+        when(config.getBooleanProperty(ALLOW_GZIP_COMPRESSED_REQUEST, true)).thenReturn(true);
         doAnswer(new Answer() {
             @Override
             public Object answer(final InvocationOnMock invocationOnMock) throws Throwable {
@@ -512,6 +516,60 @@ public class SoapMessageProcessingServletTest {
             }
         }).when(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
         servlet.service(request, response);
+        verify(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
+    }
+
+    @BugId("DE218036")
+    @Test
+    public void gzipGetRequestNoContent() throws Exception {
+        final String TEST_REQUEST_URL="http://testURL/test";
+        final HttpServletRequest mockRequest = mock(HttpServletRequest.class);
+        when(mockRequest.getInputStream()).thenReturn(new ServletInputStream() {
+            @Override
+            public int read() throws IOException {
+                return 0;
+            }
+        });
+        when(mockRequest.getMethod()).thenReturn(HttpConstants.METHOD_GET);
+        when(mockRequest.getContentLength()).thenReturn(-1);
+
+        final Map<String, String> headers = new HashMap<>();
+        headers.put(HttpConstants.HEADER_CONTENT_ENCODING, "gzip");
+
+        // create an Enumeration over the header keys
+        final Iterator<String> iterator = headers.keySet().iterator();
+        final Enumeration headerNames = new Enumeration<String>() {
+            @Override
+            public boolean hasMoreElements() {
+                return iterator.hasNext();
+            }
+
+            @Override
+            public String nextElement() {
+                return iterator.next();
+            }
+        };
+        when(mockRequest.getHeader(HttpConstants.HEADER_CONTENT_ENCODING)).thenReturn("gzip");
+        when(mockRequest.getHeaderNames()).thenReturn(headerNames);
+
+        final Vector<String> headerValues = new Vector<>();
+        headerValues.add("gzip");
+        final Enumeration<String> headerValuesEnum = headerValues.elements();
+        when(mockRequest.getHeaders(HttpConstants.HEADER_CONTENT_ENCODING)).thenReturn(headerValuesEnum);
+        when(mockRequest.getRequestURL()).thenReturn(new StringBuffer(TEST_REQUEST_URL));
+
+        when(config.getBooleanProperty(ALLOW_GZIP_COMPRESSED_REQUEST, true)).thenReturn(true);
+        doAnswer(new Answer() {
+            @Override
+            public Object answer(final InvocationOnMock invocationOnMock) throws Throwable {
+                final PolicyEnforcementContext context = (PolicyEnforcementContext) invocationOnMock.getArguments()[0];
+                final HeadersKnob responseHeadersKnob = context.getResponse().getHeadersKnob();
+                responseHeadersKnob.addHeader(HttpConstants.HEADER_CONTENT_TYPE, ContentTypeHeader.TEXT_DEFAULT.getFullValue(), HEADER_TYPE_HTTP);
+                return AssertionStatus.NONE;
+            }
+        }).when(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
+        servlet.service(mockRequest, response);
+        assertEquals(response.getHeader(HttpConstants.HEADER_CONTENT_TYPE), ContentTypeHeader.TEXT_DEFAULT.getFullValue());
         verify(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
     }
 
