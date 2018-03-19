@@ -780,7 +780,14 @@
             <param name="scope" expression="${module.idea.dependencies.scope}"/>
         </xslt>
     </target>
-	
+
+    <target name="enable-m2local-snapshot" description="Enable publish of jars and rpms to local m2 repository">
+        <echo level="info">Enabling publishing of integration (snapshot) to local m2 repo.</echo>
+        <property name="publish.jar.target" value="local-m2"/>
+        <property name="publish.status" value="integration"/>
+        <property name="suffix.snapshot" value="-SNAPSHOT"/>
+    </target>
+
 	<!--
 	-->
     <target name="enable-snapshot" description="Enable publish of jars and rpms to Artifactory">
@@ -817,7 +824,7 @@
 					 haltonmissing="false"/>
         <echo message="project ${ant.project.name} local published with version ${version}"/>
     </target>
-    
+
 	<!--
 		Assume that package is ready. Publish locally, then try to publish to artifactory
     -->
