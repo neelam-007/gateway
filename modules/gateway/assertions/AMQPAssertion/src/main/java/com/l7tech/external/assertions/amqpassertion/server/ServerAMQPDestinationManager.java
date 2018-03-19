@@ -65,6 +65,7 @@ public class ServerAMQPDestinationManager implements ApplicationListener {
     private static final Logger logger = Logger.getLogger(ServerAMQPDestinationManager.class.getName());
 
     private static ServerAMQPDestinationManager INSTANCE;
+    private final String FAIL_TO_QUEUE_MESSAGE = "Failed to queue the request message: ";
 
     private ServiceCache serviceCache;
 
@@ -190,10 +191,10 @@ public class ServerAMQPDestinationManager implements ApplicationListener {
             channel.close();
             conn.close();
         } catch (IOException e) {
-            logger.log(Level.WARNING, "Failed to close the AMQP destination: " + name, e);
+            logger.log(Level.WARNING, "Failed to close the AMQP destination: " + name, ExceptionUtils.getDebugException(e));
         } catch (AlreadyClosedException e) {
             // Connection already closed.
-            logger.log(Level.FINE, "Attempting to close already closed AMQP destination: " + name, e);
+            logger.log(Level.FINE, "Attempting to close already closed AMQP destination: " + name, ExceptionUtils.getDebugException(e));
         }
     }
 
@@ -224,7 +225,7 @@ public class ServerAMQPDestinationManager implements ApplicationListener {
                 responseTimeout = ModuleLoadListener.DEFAULT_AMQP_RESPONSE_TIMEOUT_MS;
             }
         } catch (NumberFormatException | FindException e) {
-            logger.log(Level.WARNING, "Error loading cluster-wide property " + ModuleLoadListener.AMQP_RESPONSE_TIMEOUT_UI_PROPERTY + ". Using default value.", e);
+            logger.log(Level.WARNING, "Error loading cluster-wide property " + ModuleLoadListener.AMQP_RESPONSE_TIMEOUT_UI_PROPERTY + ". Using default value.", ExceptionUtils.getDebugException(e));
             responseTimeout = ModuleLoadListener.DEFAULT_AMQP_RESPONSE_TIMEOUT_MS;
         }
 
@@ -236,7 +237,7 @@ public class ServerAMQPDestinationManager implements ApplicationListener {
                 maxMessageSize = ModuleLoadListener.DEFAULT_AMQP_MESSAGE_MAX_BYTES;
             }
         } catch (NumberFormatException | FindException e) {
-            logger.log(Level.WARNING, "Error loading cluster-wide property " + ModuleLoadListener.AMQP_MESSAGE_MAX_BYTES_UI_PROPERTY + ". Using default value.", e);
+            logger.log(Level.WARNING, "Error loading cluster-wide property " + ModuleLoadListener.AMQP_MESSAGE_MAX_BYTES_UI_PROPERTY + ". Using default value.", ExceptionUtils.getDebugException(e));
             maxMessageSize = ModuleLoadListener.DEFAULT_AMQP_MESSAGE_MAX_BYTES;
         }
 
@@ -248,7 +249,7 @@ public class ServerAMQPDestinationManager implements ApplicationListener {
                 inboundConnectTimeout = ModuleLoadListener.DEFAULT_AMQP_CONNECT_ERROR_SLEEP_MS;
             }
         } catch (NumberFormatException | FindException e) {
-            logger.log(Level.WARNING, "Error loading cluster-wide property " + ModuleLoadListener.AMQP_CONNECT_ERROR_SLEEP_UI_PROPERTY + ". Using default value.", e);
+            logger.log(Level.WARNING, "Error loading cluster-wide property " + ModuleLoadListener.AMQP_CONNECT_ERROR_SLEEP_UI_PROPERTY + ". Using default value.", ExceptionUtils.getDebugException(e));
             inboundConnectTimeout = ModuleLoadListener.DEFAULT_AMQP_CONNECT_ERROR_SLEEP_MS;
         }
 
@@ -325,7 +326,7 @@ public class ServerAMQPDestinationManager implements ApplicationListener {
         try {
             conn.close();
         } catch (IOException e) {
-            logger.log(Level.WARNING, "Failed to close the AMQP destination connection", e);
+            logger.log(Level.WARNING, "Failed to close the AMQP destination connection", ExceptionUtils.getDebugException(e));
         } catch (AlreadyClosedException e) {
             // Connection already closed.
             logger.log(Level.FINE, "Attempting to close already closed AMQP destination connection", ExceptionUtils.getDebugException(e));
@@ -354,7 +355,7 @@ public class ServerAMQPDestinationManager implements ApplicationListener {
                 }
             }
         } catch (FindException | ParseException | IOException e) {
-            logger.log(Level.WARNING, e.getMessage(), e);
+            logger.log(Level.WARNING, "Error while activating consumer: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             synchronized (failedConsumers) {
                 failedConsumers.put(destination.getGoid(), System.currentTimeMillis());
             }
@@ -381,7 +382,7 @@ public class ServerAMQPDestinationManager implements ApplicationListener {
                 }
             }
         } catch (FindException | ParseException | IOException e) {
-            logger.log(Level.WARNING, e.getMessage(), e);
+            logger.log(Level.WARNING, "Error activating producer: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             synchronized (failedProducers) {
                 failedProducers.put(destination.getGoid(), System.currentTimeMillis());
             }
@@ -462,7 +463,7 @@ public class ServerAMQPDestinationManager implements ApplicationListener {
 
                     result = queueMessageWaitForResponse(channel, queueName, destination, routingKey, requestMsg, responseMsg, amqpProps);
                 } catch (IOException | ShutdownSignalException e) {
-                    logger.log(Level.WARNING, "Failed to create the temporary response queue.", e);
+                    logger.log(Level.WARNING, "Failed to create the temporary response queue.", ExceptionUtils.getDebugException(e));
                 }
             } else if (AMQPDestination.OutboundReplyBehaviour.ONE_WAY == destination.getOutboundReplyBehaviour()) {
                 result = queueOneWayMessage(channel, destination, routingKey, requestMsg, amqpProps);
@@ -524,14 +525,11 @@ public class ServerAMQPDestinationManager implements ApplicationListener {
                     IOUtils.slurpStream(message.getMimeKnob().getEntireMessageBodyAsInputStream()));
 
             return true;
-        } catch (IOException e) {
-            logger.log(Level.WARNING, "Failed to queue the request message.", e);
-            return false;
-        } catch (NoSuchPartException e) {
-            logger.log(Level.WARNING, "Failed to queue the request message.", e);
+        } catch (IOException | NoSuchPartException e) {
+            logger.log(Level.WARNING, FAIL_TO_QUEUE_MESSAGE + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             return false;
         } catch (AlreadyClosedException e) {
-            logger.log(Level.WARNING, "Failed to queue the request message.", e);
+            logger.log(Level.WARNING, FAIL_TO_QUEUE_MESSAGE + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             deactivateDestination(destination);
             synchronized (failedProducers) {
                 failedProducers.put(destination.getGoid(), System.currentTimeMillis());
@@ -611,14 +609,11 @@ public class ServerAMQPDestinationManager implements ApplicationListener {
                 replyConsumer.initializeMessage(stashManagerFactory.createStashManager(), responseMsg, destination.getServiceGoid());
                 return true;
             }
-        } catch (IOException e) {
-            logger.log(Level.WARNING, "Failed to queue the request message.", e);
-            return false;
-        } catch (NoSuchPartException e) {
-            logger.log(Level.WARNING, "Failed to queue the request message.", e);
+        } catch (IOException | NoSuchPartException e) {
+            logger.log(Level.WARNING, FAIL_TO_QUEUE_MESSAGE + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             return false;
         } catch (AlreadyClosedException e) {
-            logger.log(Level.WARNING, "Failed to queue the request message.", e);
+            logger.log(Level.WARNING, FAIL_TO_QUEUE_MESSAGE + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             deactivateDestination(destination);
             synchronized (failedProducers) {
                 failedProducers.put(destination.getGoid(), System.currentTimeMillis());
@@ -753,7 +748,7 @@ public class ServerAMQPDestinationManager implements ApplicationListener {
             }
 
         } catch (FindException e) {
-            logger.log(Level.WARNING, "Something went wrong while fetching AMQP destinations", e);
+            logger.log(Level.WARNING, "Something went wrong while fetching AMQP destinations", ExceptionUtils.getDebugException(e));
         }
     }
 
@@ -975,7 +970,7 @@ public class ServerAMQPDestinationManager implements ApplicationListener {
 
         } catch (IOException | FindException | KeyStoreException | NoSuchAlgorithmException |
                 KeyManagementException | UnrecoverableKeyException e) {
-            logger.log(Level.WARNING, e.getMessage(), e);
+            logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
         }
     }
 

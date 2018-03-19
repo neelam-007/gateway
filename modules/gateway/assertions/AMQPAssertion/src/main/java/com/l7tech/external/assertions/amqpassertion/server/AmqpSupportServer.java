@@ -8,6 +8,7 @@ import com.l7tech.server.DefaultKey;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.transport.http.SslClientTrustManager;
+import com.l7tech.util.ExceptionUtils;
 import com.rabbitmq.client.Address;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
@@ -75,7 +76,7 @@ public class AmqpSupportServer {
                             connectionFactory.setPassword(new String(securePasswordManager.decryptPassword(
                                     securePasswordManager.findByPrimaryKey(destination.getPasswordGoid()).getEncodedPassword())));
                         } catch (FindException | ParseException e) {
-                            logger.log(Level.WARNING, e.getMessage(), e);
+                            logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                             return false;
                         }
                     }
@@ -86,13 +87,23 @@ public class AmqpSupportServer {
                     Address[] addresses = serverAMQPDestinationManager.getAddresses(destination);
                     connection = connectionFactory.newConnection(addresses);
                     final Channel channel = connection.createChannel();
-                    if (destination.isInbound() && !StringUtils.isBlank(destination.getQueueName())) {
-                        //Verify that the queue exists
-                        channel.queueDeclarePassive(destination.getQueueName());
+
+                    if (destination.isInbound()) {
+                        if (!StringUtils.isBlank(destination.getQueueName())){
+                            //Verify that the queue exists
+                            channel.queueDeclarePassive(destination.getQueueName());
+                        }
+                    } else {
+                        if (!StringUtils.isBlank(destination.getExchangeName())) {
+                            //Exchange was specified, validate exchange
+                            channel.exchangeDeclarePassive(destination.getExchangeName());
+                        }
                     }
+
                     return true;
                 } catch (IOException e) {
-                    logger.log(Level.WARNING, e.getMessage(), e);
+                    logger.log(Level.WARNING, "Test Settings Error: " + ExceptionUtils.getMessage(e),
+                            ExceptionUtils.getDebugException(e));
                 } finally {
                     if (connection != null) {
                         try {
