@@ -139,7 +139,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
      * @param messageSummaryAuditFactory factory for producing message summary audit records after each request
      * @param config          config provider
      * @param trafficLogger   traffic logger
-     * @param messageProcessingEventChannel   channel on which to publish the message processed event (for auditing)
+     * @param messageProcessingEventChannel   channel on which to publish the message processed event (for auditing and metrics)
      * @throws IllegalArgumentException if any of the arguments is null
      */
     public MessageProcessor(final ServiceCache sc,
