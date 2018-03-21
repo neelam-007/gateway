@@ -2658,4 +2658,17 @@
     <!-- Proxy for service metrics event -->
     <bean id="serviceMetricsEventListenerProxy" class="com.l7tech.server.extension.event.metrics.ServiceMetricsEventListenerProxy"/>
 
+    <!-- Registries for sharing state -->
+    <bean id="sharedStateProviderRegistry" class="com.l7tech.server.extension.registry.sharedstate.SharedStateProviderRegistry">
+        <constructor-arg index="0" ref="serverConfig"/>
+    </bean>
+
+    <bean id="sharedCounterProviderRegistry" class="com.l7tech.server.extension.registry.sharedstate.SharedCounterProviderRegistry">
+        <constructor-arg index="0" ref="serverConfig"/>
+    </bean>
+
+    <bean id="sharedExecutorServiceProviderRegistry" class="com.l7tech.server.extension.registry.sharedstate.SharedExecutorProviderRegistry">
+        <constructor-arg index="0" ref="serverConfig"/>
+    </bean>
+    <!-- End of Registries for sharing state -->
 </beans>
