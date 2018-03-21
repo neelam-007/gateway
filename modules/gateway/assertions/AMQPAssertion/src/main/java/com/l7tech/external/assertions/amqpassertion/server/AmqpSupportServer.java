@@ -90,12 +90,12 @@ public class AmqpSupportServer {
 
                     if (destination.isInbound()) {
                         if (!StringUtils.isBlank(destination.getQueueName())){
-                            //Verify that the queue exists
+                            //Verify that the queue exists, will throw IOException if queue does not exist
                             channel.queueDeclarePassive(destination.getQueueName());
                         }
                     } else {
                         if (!StringUtils.isBlank(destination.getExchangeName())) {
-                            //Exchange was specified, validate exchange
+                            //Validate exchange exists, will throw IOException if exchange does not exist
                             channel.exchangeDeclarePassive(destination.getExchangeName());
                         }
                     }

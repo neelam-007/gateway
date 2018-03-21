@@ -161,10 +161,10 @@ public class ServerAMQPDestinationManagerTest {
 
         Assert.assertEquals(1, spyManager.destinations.size());
         assertTrue(spyManager.destinations.containsKey(destinations.get(0).getGoid()));
-        Assert.assertEquals(0, spyManager.failedProducers.size());
-        assertTrue(spyManager.clientChannels.containsKey(destinations.get(0).getGoid()));
+        Assert.assertEquals(0, spyManager.getFailedProducers().size());
+        assertTrue(spyManager.getClientChannels().containsKey(destinations.get(0).getGoid()));
 
-        Channel channel = spyManager.clientChannels.get(destinations.get(0).getGoid()).getClientChannel();
+        Channel channel = spyManager.getClientChannels().get(destinations.get(0).getGoid()).getClientChannel();
         Assert.assertNotNull(channel);
     }
 
@@ -198,10 +198,10 @@ public class ServerAMQPDestinationManagerTest {
 
         Assert.assertEquals(1, spyManager.destinations.size());
         assertTrue(spyManager.destinations.containsKey(destinations.get(0).getGoid()));
-        Assert.assertEquals(0, spyManager.failedConsumers.size());
-        assertTrue(spyManager.serverChannels.containsKey(destinations.get(0).getGoid()));
+        Assert.assertEquals(0, spyManager.getFailedConsumers().size());
+        assertTrue(spyManager.getServerChannels().containsKey(destinations.get(0).getGoid()));
 
-        final Channel channel = spyManager.serverChannels.get(destinations.get(0).getGoid());
+        final Channel channel = spyManager.getServerChannels().get(destinations.get(0).getGoid());
         Assert.assertNotNull(channel);
         Mockito.verify(spyManager, times(1)).createNewConnectionFactory();
 
@@ -280,8 +280,8 @@ public class ServerAMQPDestinationManagerTest {
 
         Assert.assertEquals(1, spyManager.destinations.size());
         assertTrue(spyManager.destinations.containsKey(destinations.get(0).getGoid()));
-        Assert.assertEquals(0, spyManager.failedProducers.size());
-        assertTrue(spyManager.clientChannels.containsKey(destinations.get(0).getGoid()));
+        Assert.assertEquals(0, spyManager.getFailedProducers().size());
+        assertTrue(spyManager.getClientChannels().containsKey(destinations.get(0).getGoid()));
 
         HashMap amqpProperties = new HashMap();
         String routingKey = "key";
