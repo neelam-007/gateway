@@ -11,7 +11,6 @@ import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
-import com.l7tech.gateway.common.workqueue.WorkQueue;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.User;
@@ -193,11 +192,6 @@ public class ExternalReferenceFinderStub implements ExternalReferenceFinder {
 
     @Override
     public CustomEntitySerializer getCustomKeyValueEntitySerializer(String entitySerializerClassName) {
-        return null;
-    }
-
-    @Override
-    public WorkQueue getWorkQueue(final Goid id) throws FindException {
         return null;
     }
 }

@@ -605,15 +605,6 @@ public class ManagedObjectFactory {
     }
 
     /**
-     * Create a new WorkQueueMO instance.
-     *
-     * @return The new instance.
-     */
-    public static WorkQueueMO createWorkQueueMO() {
-        return new WorkQueueMO();
-    }
-
-    /**
      * Create a new Logsink instance.
      *
      * @return The new instance.

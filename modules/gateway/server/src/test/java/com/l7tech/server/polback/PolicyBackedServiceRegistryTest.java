@@ -47,6 +47,9 @@ public class PolicyBackedServiceRegistryTest {
     PolicyCache policyCache;
 
     @Mock
+    PolicyBackedServiceManager policyBackedServiceManager;
+
+    @Mock
     ServerPolicyHandle getPolicy;
 
     @Mock
@@ -55,6 +58,7 @@ public class PolicyBackedServiceRegistryTest {
     @Before
     public void init() {
         registry.policyCache = policyCache;
+        registry.policyBackedServiceManager = policyBackedServiceManager;
     }
 
     @Test
@@ -79,6 +83,33 @@ public class PolicyBackedServiceRegistryTest {
         Set<String> templates = registry.getPolicyBackedServiceTemplates();
         assertEquals( 1, templates.size() );
         assertEquals( TestFace.class.getName(), templates.iterator().next() );
+    }
+
+    @Test
+    public void testUnregisterPolicyBackedServiceTemplate() throws Exception {
+        registry.registerPolicyBackedServiceTemplate( TestFace.class );
+
+        Set<String> templates = registry.getPolicyBackedServiceTemplates();
+        assertEquals( 1, templates.size() );
+        assertEquals( TestFace.class.getName(), templates.iterator().next() );
+
+        assertTrue( registry.unregisterPolicyBackedServiceTemplate(TestFace.class) );
+        templates = registry.getPolicyBackedServiceTemplates();
+        assertEquals( 0, templates.size() );
+    }
+
+    @Test
+    public void testUnregisterPolicyBackedServiceTemplate_alreadyUnregistered() throws Exception {
+        assertTrue( registry.registerPolicyBackedServiceTemplate( TestFace.class ) );
+
+        Set<String> templates = registry.getPolicyBackedServiceTemplates();
+        assertEquals( 1, templates.size() );
+        assertEquals( TestFace.class.getName(), templates.iterator().next() );
+
+        assertTrue( registry.unregisterPolicyBackedServiceTemplate(TestFace.class) );
+        assertFalse( registry.unregisterPolicyBackedServiceTemplate(TestFace.class) );
+        templates = registry.getPolicyBackedServiceTemplates();
+        assertEquals( 0, templates.size() );
     }
 
     @Test

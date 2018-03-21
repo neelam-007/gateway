@@ -611,8 +611,7 @@ public class GatewayFeatureSets {
             mass("assertion:HardcodedResponse"),
             mass("assertion:UUIDGenerator"),
             mass("assertion:ManipulateMultiValuedVariable"),
-            ass(MapValueAssertion.class),
-            ass(InvokePolicyAsyncAssertion.class));
+            ass(MapValueAssertion.class));
 
         GatewayFeatureSet threatIps =
         fsr("set:Threats:IPS", "SecureSpan XML IPS threat protection",
@@ -1430,7 +1429,6 @@ public class GatewayFeatureSets {
                 mass("assertion:UUIDGenerator"),
                 mass("assertion:ManipulateMultiValuedVariable"),
                 ass(MapValueAssertion.class),
-                ass(InvokePolicyAsyncAssertion.class),
                 fs(adaptiveLoadBalancingAssertions),
                 fs(splitJoinAssertions),
                 mass("assertion:IndexLookupByItem"),

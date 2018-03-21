@@ -49,8 +49,7 @@ import org.junit.runners.Suite;
         SiteminderConfigurationMigration.class,
         TransactionRollback.class,
         TrustedCertificateMigration.class,
-        UsersMigration.class,
-        WorkQueueMigration.class
+        UsersMigration.class
 })
 public class MigrationSuiteTest {
 

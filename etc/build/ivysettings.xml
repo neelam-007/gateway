@@ -38,7 +38,11 @@
 			<!-- Full resolution -->			
 			<ibiblio name="artifactory-all" m2compatible="true" usepoms="false" root="${artifactory.maven.all}"/>
         </chain>
-		
+
+        <filesystem name="local-m2" m2compatible="true" >
+            <artifact pattern="${user.home}/.m2/repository/[organisation]/[module]/[revision]-SNAPSHOT/[artifact]-[revision]-SNAPSHOT(-[classifier]).[ext]"/>
+            <ivy pattern="${user.home}/.m2/repository/[organisation]/[module]/[revision]-SNAPSHOT/ivy-[revision]-SNAPSHOT.xml" />
+        </filesystem>
     </resolvers>
     
     <!-- 

@@ -60,7 +60,6 @@ GroupMO
 FirewallRuleMO
 SampleMessageMO
 ScheduledTaskMO
-WorkQueueMO
 LogSinkMO
 ServerModuleFileMO
 PolicyBackedServiceMO

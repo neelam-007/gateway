@@ -27,8 +27,7 @@ public interface PropertyResolver {
         SERVER_VARIABLE,
         RESOURCE_ENTRY,
         JDBC_CONNECTION,
-        CASSANDRA_CONNECTION,
-        WORK_QUEUE,
+        CASSANDRA_CONNECTION
     }
 
     /**

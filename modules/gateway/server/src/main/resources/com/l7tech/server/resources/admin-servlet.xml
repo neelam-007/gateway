@@ -321,17 +321,6 @@
         <property name="bypassDeserializationClassFilter" value="true" />
     </bean>
 
-    <bean name="/WorkQueueAdmin" parent="httpInvokerParent">
-        <property name="service" ref="workQueueAdmin"/>
-        <property name="serviceInterface" value="com.l7tech.gateway.common.workqueue.WorkQueueManagerAdmin"/>
-        <!--
-            TODO: remove the bypass once all classes needed by WorkQueueAdmin have been whitelisted and the resulting system have been properly tested.
-            For details on whitelisting classes, please see Deserialization ClassFilter FuncSpec:
-                https://wiki.l7tech.com/mediawiki/index.php/Deserialization_ClassFilter
-        -->
-        <property name="bypassDeserializationClassFilter" value="true" />
-    </bean>
-
     <bean name="/SolutionKitAdmin" parent="httpInvokerParent">
         <property name="service" ref="solutionKitAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.solutionkit.SolutionKitAdmin"/>

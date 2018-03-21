@@ -100,9 +100,6 @@ public class MainWindow extends JFrame implements SheetHolder {
 
     private static final long PING_INTERVAL = ConfigFactory.getLongProperty( "com.l7tech.console.sessionPingInterval", 50000L );
 
-    // TODO SSG-11880 hide in GUI for now
-    private static final boolean OFFER_MANAGE_WORK_QUEUES = SyspropUtil.getBoolean( "com.l7tech.console.enableManageWorkQueues", false );
-
     /**
      * the resource bundle name
      */
@@ -227,7 +224,6 @@ public class MainWindow extends JFrame implements SheetHolder {
     private ManageSecurityZonesAction manageSecurityZonesAction = null;
     private ManageSiteMinderConfigurationAction manageSiteMinderConfigurationAction = null;
     private ManageServerModuleFilesAction manageServerModuleFilesAction = null;
-    private ManageWorkQueuesAction manageWorkQueuesAction = null;
     private ManageSolutionKitsAction manageSolutionKitsAction = null;
 
     private JPanel frameContentPane = null;
@@ -1278,9 +1274,6 @@ public class MainWindow extends JFrame implements SheetHolder {
         globalSettingsSubMenu.add(getManageScheduledTasksAction());
         globalSettingsSubMenu.add(getManageGlobalResourcesMenuItem());
 
-        if (OFFER_MANAGE_WORK_QUEUES)
-            globalSettingsSubMenu.add(getManageWorkQueuesAction());
-
         globalSettingsSubMenu.add(getManageUDDIRegistriesAction());
     }
 
@@ -1779,6 +1772,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                         // no matter what, if service tree exists, always refresh it
                         if (servicesAndPoliciesTree != null) {
                             servicesAndPoliciesTree.refresh(rootNode);
+                            servicesAndPoliciesTree.setSelectionPath(null);
                             alreadyRefreshed.add(servicesAndPoliciesTree);
                         }
 
@@ -2589,25 +2583,17 @@ public class MainWindow extends JFrame implements SheetHolder {
     }
 
     private Action getManageServerModuleFilesAction() {
-        if ( manageServerModuleFilesAction == null ) {
+        if (manageServerModuleFilesAction == null) {
             manageServerModuleFilesAction = new ManageServerModuleFilesAction();
-            disableUntilLogin( manageServerModuleFilesAction );
+            disableUntilLogin(manageServerModuleFilesAction);
         }
         return manageServerModuleFilesAction;
     }
 
-    private Action getManageWorkQueuesAction() {
-        if (manageWorkQueuesAction == null) {
-            manageWorkQueuesAction = new ManageWorkQueuesAction();
-            disableUntilLogin(manageWorkQueuesAction);
-        }
-        return manageWorkQueuesAction;
-    }
-
     private Action getManageSecurityZonesAction() {
-        if (manageSecurityZonesAction == null) {
+        if ( manageSecurityZonesAction == null ) {
             manageSecurityZonesAction = new ManageSecurityZonesAction();
-            disableUntilLogin(manageSecurityZonesAction);
+            disableUntilLogin( manageSecurityZonesAction );
         }
         return manageSecurityZonesAction;
     }
