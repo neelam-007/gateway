@@ -294,7 +294,16 @@ public enum CertificateAttribute {
     /**
      * EMail address (if any) for the Subject Alternative Name (rfc288) (e.g. "example2@oasis-open.org")
      */
-    SUBJECT_ALT_EMAIL("subjectAltNameEmail", false, true) {
+    SUBJECT_ALT_EMAIL("subjectAltNameEmail", false, false) {
+        @Override
+        public Map<String, Collection<Object>> extractValues(X509Certificate certificate) {
+            return makeMap(this.toString(), getSubjectAltName(certificate, AltName.EMAIL));
+        }},
+
+    /**
+     * EMail address (if any) for the Subject Alternative Name (rfc288) (e.g. "example2@oasis-open.org")
+     */
+    SUBJECT_ALT_EMAIL_MULTI("subjectAltNameEmails", false, true) {
         @Override
         public Map<String, Collection<Object>> extractValues(X509Certificate certificate) {
             return makeMap(this.toString(), getSubjectAltNames(certificate, AltName.EMAIL));
@@ -303,16 +312,34 @@ public enum CertificateAttribute {
     /**
      * DNS Name address (if any) for the Subject Alternative Name (e.g. "example2.oasis-open.org")
      */
-    SUBJECT_ALT_DNS("subjectAltNameDNS", false, true) {
+    SUBJECT_ALT_DNS("subjectAltNameDNS", false, false) {
+        @Override
+        public Map<String, Collection<Object>> extractValues(X509Certificate certificate) {
+            return makeMap(this.toString(), getSubjectAltName(certificate, AltName.DNS));
+        }},
+
+    /**
+     * DNS Name address (if any) for the Subject Alternative Name (e.g. "example2.oasis-open.org")
+     */
+    SUBJECT_ALT_DNS_MULTI("subjectAltNameDNSs", false, true) {
         @Override
         public Map<String, Collection<Object>> extractValues(X509Certificate certificate) {
             return makeMap(this.toString(), getSubjectAltNames(certificate, AltName.DNS));
         }},
+    /**
+     * Directory Name (if any) for the Subject Alternative Name (e.g. "CN=test,OU=People")
+     */
+    SUBJECT_ALT_DN("subjectAltNameDirName", false, false) {
+        @Override
+        public Map<String, Collection<Object>> extractValues(X509Certificate certificate) {
+            return makeMap(this.toString(), CertUtils.formatDN(getSubjectAltName(certificate, AltName.DIRECTORY)));
+        }
+    },
 
     /**
      * Directory Name (if any) for the Subject Alternative Name (e.g. "CN=test,OU=People")
      */
-    SUBJECT_ALT_DN("subjectAltNameDN", false, true) {
+    SUBJECT_ALT_DN_MULTI("subjectAltNameDirNames", false, true) {
         @Override
         public Map<String, Collection<Object>> extractValues(X509Certificate certificate) {
             return makeMap(this.toString(), Optional.ofNullable(getSubjectAltNames(certificate, AltName.DIRECTORY)).orElse(new ArrayList<>()).stream().map(CertUtils::formatDN).collect(Collectors.toList()));
@@ -322,16 +349,36 @@ public enum CertificateAttribute {
     /**
      * IP Address (if any) for the Subject Alternative Name (e.g. "111.222.33.55 or FF::EE::45::33::ED:FF")
      */
-    SUBJECT_ALT_IP("subjectAltNameIP", false, true) {
+    SUBJECT_ALT_IP("subjectAltNameIP", false, false) {
+        @Override
+        public Map<String, Collection<Object>> extractValues(X509Certificate certificate) {
+            return makeMap(this.toString(), getSubjectAltName(certificate, AltName.IP));
+        }
+    },
+
+    /**
+     * IP Address (if any) for the Subject Alternative Name (e.g. "111.222.33.55 or FF::EE::45::33::ED:FF")
+     */
+    SUBJECT_ALT_IP_MULTI("subjectAltNameIPs", false, true) {
         @Override
         public Map<String, Collection<Object>> extractValues(X509Certificate certificate) {
             return makeMap(this.toString(), getSubjectAltNames(certificate, AltName.IP));
         }
     },
+
     /**
      * Uniform Resource Identifier (if any) for the Subject Alternative Name (e.g. "http://example2.oasis-open.org/")
      */
-    SUBJECT_ALT_URI("subjectAltNameURI", false, true) {
+    SUBJECT_ALT_URI("subjectAltNameURI", false, false) {
+        @Override
+        public Map<String, Collection<Object>> extractValues(X509Certificate certificate) {
+            return makeMap(this.toString(), getSubjectAltName(certificate, AltName.URI));
+        }},
+
+    /**
+     * Uniform Resource Identifier (if any) for the Subject Alternative Name (e.g. "http://example2.oasis-open.org/")
+     */
+    SUBJECT_ALT_URI_MULTI("subjectAltNameURIs", false, true) {
         @Override
         public Map<String, Collection<Object>> extractValues(X509Certificate certificate) {
             return makeMap(this.toString(), getSubjectAltNames(certificate, AltName.URI));
@@ -340,7 +387,16 @@ public enum CertificateAttribute {
     /**
      * "Other Name" (if any) for the Subject Alternative Name, encoded as Base-64 (e.g. "3027060a2b060104018237140203a019a0170c15313730303030303030302e5640736d696c2e6d696c")
      */
-    SUBJECT_ALT_OTHER("subjectAltNameOther", false, true) {
+    SUBJECT_ALT_OTHER("subjectAltNameOther", false, false) {
+        @Override
+        public Map<String, Collection<Object>> extractValues(X509Certificate certificate) {
+            return makeMap(this.toString(), getSubjectAltName(certificate, AltName.OTHER));
+        }},
+
+    /**
+     * "Other Name" (if any) for the Subject Alternative Name, encoded as Base-64 (e.g. "3027060a2b060104018237140203a019a0170c15313730303030303030302e5640736d696c2e6d696c")
+     */
+    SUBJECT_ALT_OTHER_MULTI("subjectAltNameOthers", false, true) {
         @Override
         public Map<String, Collection<Object>> extractValues(X509Certificate certificate) {
             return makeMap(this.toString(), getSubjectAltNames(certificate, AltName.OTHER));
@@ -696,13 +752,24 @@ public enum CertificateAttribute {
         return null;
     }
 
+    private static String getSubjectAltName(X509Certificate certificate, AltName altNameType) {
+        try {
+            return getAltName(certificate.getSubjectAlternativeNames(), altNameType);
+        } catch (CertificateParsingException e) {
+            if (logger.isLoggable(Level.FINE)) {
+                logger.log(Level.FINE, "Could not extract subject alternative name from certificate '" +
+                        ExceptionUtils.getMessage(e) + "'.", ExceptionUtils.getDebugException(e));
+            }
+        }
+        return null;
+    }
 
     private static Collection<String> getSubjectAltNames(X509Certificate certificate, AltName altNameType) {
         try {
             return getAltNames(certificate.getSubjectAlternativeNames(), altNameType);
         } catch (CertificateParsingException e) {
             if (logger.isLoggable(Level.FINE)) {
-                logger.log(Level.FINE, "Could not extract issuer alternative names from certificate '" +
+                logger.log(Level.FINE, "Could not extract subject alternative names from certificate '" +
                         ExceptionUtils.getMessage(e) + "'.", ExceptionUtils.getDebugException(e));
             }
         }

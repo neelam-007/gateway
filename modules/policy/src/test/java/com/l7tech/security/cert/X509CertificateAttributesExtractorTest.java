@@ -84,7 +84,7 @@ public class X509CertificateAttributesExtractorTest {
         assertEquals( "Issuer DN", "CN=UGRID CA, DC=ugrid, DC=org", cae.getAttributeValue("issuer") );
         assertEquals( "Issuer Alternative Name Email", "ca@ugrid.org", cae.getAttributeValue("issuerAltNameEmail") );
         assertEquals( "Subject DN", "CN=Sergiy Velichkevych, OU=CA, O=UGRID, O=people, DC=ugrid, DC=org", cae.getAttributeValue("subject") );
-        assertEquals( "Subject Alternative Name Email", "serg@ugrid.org", ((Object[])cae.getAttributeValue("subjectAltNameEmail"))[0] );
+        assertEquals( "Subject Alternative Name Email", "serg@ugrid.org", cae.getAttributeValue("subjectAltNameEmail") );
         assertEquals( "Subject Public Key Algorithm", "RSA", cae.getAttributeValue("subjectPublicKeyAlgorithm") );
         assertEquals( "Subject Public Key", "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC9jffvsc52drXepK2INEkvG+IVHXd17cO/8mdZfSOevKhMmVtdAdhD8bTtj1WIo3PpRugEQavcKCEfJqSq75e3PD+eVjjaT6K85NtXHfNsATZKpVrKUnV2bsxUuG8jrIIjLJbFHX8W+5zmVT4XlNaujY3KfOH1zM4WFQngwtsjtwIDAQAB",
                 cae.getAttributeValue( "subjectPublicKey" ) );
@@ -186,10 +186,10 @@ public class X509CertificateAttributesExtractorTest {
         X509Certificate cert = CertUtils.decodeFromPEM(ALT_NAME_CERT_B64, false);
         X509CertificateAttributesExtractor cae = new X509CertificateAttributesExtractor(cert);
 
-        assertTrue("otherName not exposed as subjectAltNameDNS", ((Object[])cae.getAttributeValue(CertificateAttribute.SUBJECT_ALT_DNS.toString())).length == 0);
-        assertTrue("otherName not exposed as subjectAltNameEmail", ((Object[])cae.getAttributeValue(CertificateAttribute.SUBJECT_ALT_EMAIL.toString())).length == 0);
-        assertTrue("otherName not exposed as subjectAltNameURI", ((Object[])cae.getAttributeValue(CertificateAttribute.SUBJECT_ALT_URI.toString())).length == 0);
-        assertEquals("otherName exposed as subjectAltNameOther, Base-64 encoded", "MCcGCisGAQQBgjcUAgOgGaAXDBUxNzAwMDAwMDAwLlZAc21pbC5taWw=", ((Object[])cae.getAttributeValue(CertificateAttribute.SUBJECT_ALT_OTHER.toString()))[0]);
+        assertNull("otherName not exposed as subjectAltNameDNS", cae.getAttributeValue(CertificateAttribute.SUBJECT_ALT_DNS.toString()));
+        assertNull("otherName not exposed as subjectAltNameEmail", cae.getAttributeValue(CertificateAttribute.SUBJECT_ALT_EMAIL.toString()));
+        assertNull("otherName not exposed as subjectAltNameURI", cae.getAttributeValue(CertificateAttribute.SUBJECT_ALT_URI.toString()));
+        assertEquals("otherName exposed as subjectAltNameOther, Base-64 encoded", "MCcGCisGAQQBgjcUAgOgGaAXDBUxNzAwMDAwMDAwLlZAc21pbC5taWw=", cae.getAttributeValue(CertificateAttribute.SUBJECT_ALT_OTHER.toString()));
 
         // Recognized as to "1.3.6.1.5.5.7.9.4" (id-pda-countryOfCitizenship), or as "2.5.4.6" (X.509 Name "C" country code).  Update test if this is later modified.
         final Object countriesOfCitizenship = cae.getAttributeValue("countryOfCitizenship");

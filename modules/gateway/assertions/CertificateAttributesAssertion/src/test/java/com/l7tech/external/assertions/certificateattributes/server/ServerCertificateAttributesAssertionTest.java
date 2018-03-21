@@ -89,6 +89,39 @@ public class ServerCertificateAttributesAssertionTest {
     }
 
     @Test
+    public void testSubjectAlternativeName() throws Exception {
+        X509Certificate cert = new TestCertificateGenerator()
+                .subject("cn=test")
+                .subjectAlternativeNames(true,
+                        new X509GeneralName(X509GeneralName.Type.dNSName, "test.ca.com"),
+                        new X509GeneralName(X509GeneralName.Type.dNSName, "test2.ca.com"),
+                        new X509GeneralName(X509GeneralName.Type.directoryName, "cn=blah, o=foo, dc=deeceeone, dc=deeceetwo, L=vancouver, ST=bc, ou=marketing, C=canada, STREET=123 mystreet"),
+                        new X509GeneralName(X509GeneralName.Type.iPAddress, "111.222.33.44"),
+                        new X509GeneralName(X509GeneralName.Type.uniformResourceIdentifier, "https://test.ca.com?test=test&test2=test2"),
+                        new X509GeneralName(X509GeneralName.Type.rfc822Name, "test@ca.com"))
+                .generate();
+
+        CertificateAttributesAssertion ass = new CertificateAttributesAssertion();
+        ServerCertificateAttributesAssertion sass = new ServerCertificateAttributesAssertion(ass);
+
+        PolicyEnforcementContext context = pec(cert);
+        sass.checkRequest(context);
+
+        Object san1 = context.getVariable("certificate.subjectAltNameDNS");
+        Object san2 = context.getVariable("certificate.subjectAltNameDirName");
+        String[] dn = Arrays.stream(san2.toString().toLowerCase().split(",")).sorted().collect(Collectors.toList()).toArray(new String[0]);
+        Object san3 = context.getVariable("certificate.subjectAltNameIP");
+        Object san4 = context.getVariable("certificate.subjectAltNameURI");
+        Object san5 = context.getVariable("certificate.subjectAltNameEmail");
+
+        assertEquals("test.ca.com", san1);
+        assertArrayEquals(Arrays.stream("street=123 mystreet,c=canada,ou=marketing,st=bc,l=vancouver,dc=deeceetwo,dc=deeceeone,o=foo,cn=blah".split(",")).sorted().collect(Collectors.toList()).toArray(new String[0]), dn);
+        assertEquals("111.222.33.44", san3);
+        assertEquals("https://test.ca.com?test=test&test2=test2", san4);
+        assertEquals("test@ca.com", san5);
+    }
+
+    @Test
     public void testSubjectAlternativeNames() throws Exception {
         X509Certificate cert = new TestCertificateGenerator()
                 .subject("cn=test")
@@ -107,12 +140,12 @@ public class ServerCertificateAttributesAssertionTest {
         PolicyEnforcementContext context = pec(cert);
         sass.checkRequest(context);
 
-        Object[] san1 = (Object[])context.getVariable("certificate.subjectAltNameDNS");
-        Object[] san2 = (Object[]) context.getVariable("certificate.subjectAltNameDN");
+        Object[] san1 = (Object[])context.getVariable("certificate.subjectAltNameDNSs");
+        Object[] san2 = (Object[]) context.getVariable("certificate.subjectAltNameDirNames");
         String[] dn = Arrays.stream(san2[0].toString().toLowerCase().split(",")).sorted().collect(Collectors.toList()).toArray(new String[0]);
-        Object[] san3 = (Object[])context.getVariable("certificate.subjectAltNameIP");
-        Object[] san4 = (Object[])context.getVariable("certificate.subjectAltNameURI");
-        Object[] san5 = (Object[])context.getVariable("certificate.subjectAltNameEmail");
+        Object[] san3 = (Object[])context.getVariable("certificate.subjectAltNameIPs");
+        Object[] san4 = (Object[])context.getVariable("certificate.subjectAltNameURIs");
+        Object[] san5 = (Object[])context.getVariable("certificate.subjectAltNameEmails");
 
         assertEquals("test.ca.com", san1[0]);
         assertEquals("test2.ca.com", san1[1]);
@@ -135,8 +168,10 @@ public class ServerCertificateAttributesAssertionTest {
 
         PolicyEnforcementContext context = pec(cert);
         sass.checkRequest(context);
-        Object[] actual = (Object[]) context.getVariable("certificate.subjectAltNameDN");
-        assertEquals("2.5.4.46=something", actual[0]);
+        Object[] actual_multi = (Object[]) context.getVariable("certificate.subjectAltNameDirNames");
+        assertEquals("2.5.4.46=something", actual_multi[0]);
+        Object  actual_single = context.getVariable("certificate.subjectAltNameDirName");
+        assertEquals("2.5.4.46=something", actual_single);
     }
 
     @BugId("DE351030")
@@ -157,7 +192,7 @@ public class ServerCertificateAttributesAssertionTest {
         PolicyEnforcementContext context = pec(cert);
         sass.checkRequest(context);
 
-        Object[] san = (Object[])context.getVariable("certificate.subjectAltNameDNS");
+        Object[] san = (Object[])context.getVariable("certificate.subjectAltNameDNSs");
 
         assertArrayEquals(expected, Arrays.copyOf(san, san.length, String[].class));
     }
