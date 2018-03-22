@@ -171,7 +171,7 @@ public class ServerAMQPDestinationManager implements ApplicationListener {
                         closeChannel(channel, destinations.get(goid).getName());
                         //Setting the producer to automatically re-connect the connection, as this was not a "failed" connection
                         //in the strict sense. This is a cache expiry
-                        failedProducers.put(goid, System.currentTimeMillis() - ModuleLoadListener.DEFAULT_AMQP_CONNECT_ERROR_SLEEP_MS);
+                        failedProducers.putIfAbsent(goid, System.currentTimeMillis() - ModuleLoadListener.DEFAULT_AMQP_CONNECT_ERROR_SLEEP_MS);
                         it.remove();
                     }
                 }
@@ -346,13 +346,13 @@ public class ServerAMQPDestinationManager implements ApplicationListener {
                         messageProcessor, messageProcessingEventChannel, this);
                 channel.basicConsume(destination.getQueueName(),
                         JmsAcknowledgementType.AUTOMATIC == destination.getAcknowledgementType(), consumer);
-                serverChannels.put(destination.getGoid(), channel);
+                serverChannels.putIfAbsent(destination.getGoid(), channel);
             } else {
-                failedConsumers.put(destination.getGoid(), System.currentTimeMillis());
+                failedConsumers.putIfAbsent(destination.getGoid(), System.currentTimeMillis());
             }
         } catch (IOException | AMQPException e) {
             logger.log(Level.WARNING, "Error while activating consumer: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-            failedConsumers.put(destination.getGoid(), System.currentTimeMillis());
+            failedConsumers.putIfAbsent(destination.getGoid(), System.currentTimeMillis());
             //DE350748: Channel not closed if an error arises from basicConsume.
             if (channel != null) {
                 closeChannel(channel, destination.getName());
@@ -369,13 +369,13 @@ public class ServerAMQPDestinationManager implements ApplicationListener {
         try {
             final Channel channel = getConnection(destination).createChannel();
             if (channel != null) {
-                clientChannels.put(destination.getGoid(), new CachedChannel(channel));
+                clientChannels.putIfAbsent(destination.getGoid(), new CachedChannel(channel));
             } else {
-                failedProducers.put(destination.getGoid(), System.currentTimeMillis());
+                failedProducers.putIfAbsent(destination.getGoid(), System.currentTimeMillis());
             }
         } catch (IOException | AMQPException e) {
             logger.log(Level.WARNING, "Error activating producer: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-            failedProducers.put(destination.getGoid(), System.currentTimeMillis());
+            failedProducers.putIfAbsent(destination.getGoid(), System.currentTimeMillis());
         }
     }
 
@@ -420,7 +420,7 @@ public class ServerAMQPDestinationManager implements ApplicationListener {
 
             if (clientChannels.containsKey(destinationGoid) && !clientChannels.get(destinationGoid).getClientChannel().isOpen()) {
                 clientChannels.remove(destinationGoid);
-                failedProducers.put(destinationGoid, System.currentTimeMillis());
+                failedProducers.putIfAbsent(destinationGoid, System.currentTimeMillis());
             }
 
             // Try to reconnect producer
@@ -519,7 +519,7 @@ public class ServerAMQPDestinationManager implements ApplicationListener {
         } catch (AlreadyClosedException e) {
             logger.log(Level.WARNING, FAIL_TO_QUEUE_MESSAGE + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             deactivateDestination(destination);
-            failedProducers.put(destination.getGoid(), System.currentTimeMillis());
+            failedProducers.putIfAbsent(destination.getGoid(), System.currentTimeMillis());
             return false;
         }
     }
@@ -601,7 +601,7 @@ public class ServerAMQPDestinationManager implements ApplicationListener {
         } catch (AlreadyClosedException e) {
             logger.log(Level.WARNING, FAIL_TO_QUEUE_MESSAGE + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             deactivateDestination(destination);
-            failedProducers.put(destination.getGoid(), System.currentTimeMillis());
+            failedProducers.putIfAbsent(destination.getGoid(), System.currentTimeMillis());
             return false;
         }
     }
@@ -859,6 +859,7 @@ public class ServerAMQPDestinationManager implements ApplicationListener {
                         try {
                             return createConnection(destination);
                         } catch (FindException | ParseException | IOException e) {
+                            //Since Java8 does not allow checked exceptions here, AMQPRuntimeException is used as a wrapper
                             throw new AMQPRuntimeException(e);
                         }
                     }
@@ -866,6 +867,7 @@ public class ServerAMQPDestinationManager implements ApplicationListener {
             }
             return connection;
         } catch (AMQPRuntimeException e) {
+            //If the AMQPRuntimeException was thrown, rethrow the checked exception
             throw new AMQPException(e.getCause());
         }
     }
@@ -978,11 +980,11 @@ public class ServerAMQPDestinationManager implements ApplicationListener {
     }
 
     Map<Goid, CachedChannel> getClientChannels() {
-        return clientChannels;
+        return Collections.unmodifiableMap(clientChannels);
     }
 
     Map<Goid, Long> getFailedProducers() {
-        return failedProducers;
+        return Collections.unmodifiableMap(failedProducers);
     }
 
     private class ConnectionRecoverListener implements RecoveryListener {
