@@ -338,25 +338,31 @@ public class ServerAMQPDestinationManager implements ApplicationListener {
             return;
         }
 
-        Channel channel = null;
-        try {
-            channel = getConnection(destination).createChannel();
-            if (channel != null) {
-                AMQPConsumer consumer = new AMQPConsumer(channel, destination, stashManagerFactory,
-                        messageProcessor, messageProcessingEventChannel, this);
-                channel.basicConsume(destination.getQueueName(),
-                        JmsAcknowledgementType.AUTOMATIC == destination.getAcknowledgementType(), consumer);
-                serverChannels.putIfAbsent(destination.getGoid(), channel);
-            } else {
+        final Connection connection = getConnection(destination);
+        if (connection != null) {
+            Channel channel = null;
+            try {
+                channel = connection.createChannel();
+                if (channel != null) {
+                    AMQPConsumer consumer = new AMQPConsumer(channel, destination, stashManagerFactory,
+                            messageProcessor, messageProcessingEventChannel, this);
+                    channel.basicConsume(destination.getQueueName(),
+                            JmsAcknowledgementType.AUTOMATIC == destination.getAcknowledgementType(), consumer);
+                    serverChannels.putIfAbsent(destination.getGoid(), channel);
+                } else {
+                    failedConsumers.putIfAbsent(destination.getGoid(), System.currentTimeMillis());
+                }
+            } catch (IOException e) {
+                logger.log(Level.WARNING, "Error while activating consumer: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                 failedConsumers.putIfAbsent(destination.getGoid(), System.currentTimeMillis());
+                //DE350748: Channel not closed if an error arises from basicConsume.
+                if (channel != null) {
+                    closeChannel(channel, destination.getName());
+                }
             }
-        } catch (IOException | AMQPException e) {
-            logger.log(Level.WARNING, "Error while activating consumer: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+        } else {
+            logger.log(Level.FINE, "No Connection for consumer.");
             failedConsumers.putIfAbsent(destination.getGoid(), System.currentTimeMillis());
-            //DE350748: Channel not closed if an error arises from basicConsume.
-            if (channel != null) {
-                closeChannel(channel, destination.getName());
-            }
         }
     }
 
@@ -366,15 +372,22 @@ public class ServerAMQPDestinationManager implements ApplicationListener {
         if (clientChannels.containsKey(destination.getGoid())) {
             return;
         }
-        try {
-            final Channel channel = getConnection(destination).createChannel();
-            if (channel != null) {
-                clientChannels.putIfAbsent(destination.getGoid(), new CachedChannel(channel));
-            } else {
+
+        final Connection connection = getConnection(destination);
+        if (connection != null) {
+            try {
+                final Channel channel = connection.createChannel();
+                if (channel != null) {
+                    clientChannels.putIfAbsent(destination.getGoid(), new CachedChannel(channel));
+                } else {
+                    failedProducers.putIfAbsent(destination.getGoid(), System.currentTimeMillis());
+                }
+            } catch (IOException e) {
+                logger.log(Level.WARNING, "Error activating producer: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                 failedProducers.putIfAbsent(destination.getGoid(), System.currentTimeMillis());
             }
-        } catch (IOException | AMQPException e) {
-            logger.log(Level.WARNING, "Error activating producer: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+        } else {
+            logger.log(Level.FINE, "No Connection for producer.");
             failedProducers.putIfAbsent(destination.getGoid(), System.currentTimeMillis());
         }
     }
@@ -845,38 +858,34 @@ public class ServerAMQPDestinationManager implements ApplicationListener {
      * Creates a new connection if it does not yet exist, or the connection was dropped
      * @param destination the AMQP destination to get a connection from
      * @return The connection to the AMQP destination
-     * @throws AMQPException thrown by createConnection
      */
-    private Connection getConnection(final AMQPDestination destination) throws AMQPException {
-        try {
-            Connection connection = destinationConnection.get(destination.getGoid());
-            //DE350748: Only create connections if they were never established, or they closed.
-            if (connection == null || !connection.isOpen()) {
-                destinationConnection.remove(destination.getGoid());
-                connection = destinationConnection.computeIfAbsent(destination.getGoid(), new Function<Goid, Connection>() {
-                    @Override
-                    public Connection apply(Goid goid) {
-                        try {
-                            return createConnection(destination);
-                        } catch (FindException | ParseException | IOException e) {
-                            //Since Java8 does not allow checked exceptions here, AMQPRuntimeException is used as a wrapper
-                            throw new AMQPRuntimeException(e);
-                        }
+    private Connection getConnection(final AMQPDestination destination) {
+        Connection connection = destinationConnection.get(destination.getGoid());
+        //DE350748: Only create connections if they were never established, or they closed.
+        if (connection == null || !connection.isOpen()) {
+            destinationConnection.remove(destination.getGoid());
+            connection = destinationConnection.computeIfAbsent(destination.getGoid(), new Function<Goid, Connection>() {
+                @Override
+                public Connection apply(Goid goid) {
+                    try {
+                        return createConnection(destination);
+                    } catch (FindException | ParseException | IOException e) {
+                        logger.log(Level.WARNING, "AMQP Connection error: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                        return null;
                     }
-                });
-            }
-            return connection;
-        } catch (AMQPRuntimeException e) {
-            //If the AMQPRuntimeException was thrown, rethrow the checked exception
-            throw new AMQPException(e.getCause());
+                }
+            });
         }
+        return connection;
     }
 
     /**
      * Creates an autorecovery connection from the connection factory
      * @param destination The AMQP destination
      * @return The connection for the AMQP destination
-     * @throws AMQPRuntimeException if FindException, ParseException, or IOException is thrown
+     * @throws FindException from findByPrimaryKey
+     * @throws ParseException from decryptPassword
+     * @throws IOException when failing to create a connection
      */
     private Connection createConnection(AMQPDestination destination) throws FindException, ParseException, IOException {
         ConnectionFactory connectionFactory = createNewConnectionFactory();
