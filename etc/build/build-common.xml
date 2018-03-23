@@ -577,9 +577,9 @@
 			</junit>
 		</jacoco:coverage>
 
-        <!-- Fail on runtime error but not test failure -->
+        <!-- Does not fail on runtime error and test failure -->
         <!-- <fail if="test.failure">One or more JUnit tests failed.</fail> -->
-        <fail if="test.error">One or more JUnit tests exited due to error.</fail>
+        <!-- <fail if="test.error">One or more JUnit tests exited due to error.</fail> -->
     </target>
 
     <!--
