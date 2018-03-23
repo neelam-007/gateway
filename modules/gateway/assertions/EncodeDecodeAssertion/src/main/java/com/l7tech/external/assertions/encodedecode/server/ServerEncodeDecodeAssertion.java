@@ -538,7 +538,7 @@ public class ServerEncodeDecodeAssertion extends AbstractServerAssertion<EncodeD
             final String decoded;
             try {
                 decoded = URLDecoder.decode( data, getEncoding().name() );
-            } catch ( IOException e ) {
+            } catch ( IOException | IllegalArgumentException e ) {
                 audit( AssertionMessages.ENCODE_DECODE_ERROR, ExceptionUtils.getDebugException(e), ExceptionUtils.getMessage(e) );
                 throw new AssertionStatusException( AssertionStatus.FAILED );
             }
