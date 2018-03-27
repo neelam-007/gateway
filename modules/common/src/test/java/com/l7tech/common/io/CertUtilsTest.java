@@ -4,21 +4,24 @@ import com.l7tech.common.TestDocuments;
 import com.l7tech.common.TestKeys;
 import com.l7tech.test.BugId;
 import com.l7tech.test.BugNumber;
+import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.HexUtils;
+import com.l7tech.util.NameValuePair;
 import com.l7tech.util.Pair;
 import org.bouncycastle.x509.extension.AuthorityKeyIdentifierStructure;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import javax.security.auth.x500.X500Principal;
 import java.math.BigInteger;
+import java.net.InetAddress;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
@@ -765,7 +768,308 @@ public class CertUtilsTest {
         assertEquals( "secp256r1", curveName );
     }
 
+    @Test
+    public void testConvertToX509GeneralNameFromNameValuePair_Empty() throws Exception {
+        assertNull(CertUtils.convertToX509GeneralName(new NameValuePair()));
+    }
 
+    @Test
+    public void testConvertToX509GeneralNameFromNameValuePair_NullValue() throws Exception {
+        assertNull(CertUtils.convertToX509GeneralName(new NameValuePair("DNS Name",null)));
+    }
+
+    @Test
+    public void testConvertToX509GeneralNameFromNameValuePair_NullKey() throws Exception {
+        assertNull(CertUtils.convertToX509GeneralName(new NameValuePair(null, "test")));
+    }
+
+    @Test
+    public void testConvertToX509GeneralNameFromNameValuePair_Dns() throws Exception {
+        X509GeneralName generalName = CertUtils.convertToX509GeneralName(new NameValuePair("DNS Name", "test.ca.com"));
+        assertEquals(X509GeneralName.Type.dNSName, generalName.getType());
+        assertEquals("test.ca.com", generalName.getStringVal());
+    }
+
+    @Test
+    public void testConvertToX509GeneralNameFromNameValuePair_WildcardDns() throws Exception {
+        X509GeneralName generalName = CertUtils.convertToX509GeneralName(new NameValuePair("DNS Name","*.ca.com"));
+        assertEquals(X509GeneralName.Type.dNSName, generalName.getType());
+        assertEquals("*.ca.com", generalName.getStringVal());
+    }
+
+    @Test
+    public void testConvertToX509GeneralNameFromNameValuePair_Ip() throws Exception {
+        X509GeneralName generalName = CertUtils.convertToX509GeneralName(new NameValuePair("IP Address", "111.222.33.44"));
+        assertEquals(X509GeneralName.Type.iPAddress, generalName.getType());
+        assertEquals("111.222.33.44", generalName.getStringVal());
+    }
+
+    @Test
+    public void testConvertToX509GeneralNameFromNameValuePair_Dn() throws Exception {
+        X509GeneralName generalName = CertUtils.convertToX509GeneralName(new NameValuePair("Directory Name", "CN=test,OU=people"));
+        assertEquals(X509GeneralName.Type.directoryName, generalName.getType());
+        assertEquals("CN=test,OU=people", generalName.getStringVal());
+    }
+
+    @Test
+    public void testConvertToX509GeneralNameFromNameValuePair_Email() throws Exception {
+        X509GeneralName generalName = CertUtils.convertToX509GeneralName(new NameValuePair("Email", "test@ca.com"));
+        assertEquals(X509GeneralName.Type.rfc822Name, generalName.getType());
+        assertEquals("test@ca.com", generalName.getStringVal());
+    }
+
+    @Test
+    public void testConvertToX509GeneralNameFromNameValuePair_Http() throws Exception {
+        X509GeneralName generalName = CertUtils.convertToX509GeneralName(new NameValuePair("URI", "http://test.ca.com?test=test"));
+        assertEquals(X509GeneralName.Type.uniformResourceIdentifier, generalName.getType());
+        assertEquals("http://test.ca.com?test=test", generalName.getStringVal());
+    }
+
+    @Test
+    public void testConvertToX509GeneralNameFromNameValuePair_HttpSvn() throws Exception {
+        X509GeneralName generalName = CertUtils.convertToX509GeneralName(new NameValuePair("URI", "http+svn://test.ca.com/svn/root"));
+        assertEquals(X509GeneralName.Type.uniformResourceIdentifier, generalName.getType());
+        assertEquals("http+svn://test.ca.com/svn/root", generalName.getStringVal());
+    }
+
+    @Test
+    public void testConvertToX509GeneralNameFromNameValuePair_UriCustomScheme1() throws Exception {
+        X509GeneralName generalName = CertUtils.convertToX509GeneralName(new NameValuePair("URI", "custom-scheme:test.ca.com/custom"));
+        assertEquals(X509GeneralName.Type.uniformResourceIdentifier, generalName.getType());
+        assertEquals("custom-scheme:test.ca.com/custom", generalName.getStringVal());
+    }
+
+    @Test
+    public void testConvertToX509GeneralNameFromNameValuePair_UriCustomScheme2() throws Exception {
+        X509GeneralName generalName = CertUtils.convertToX509GeneralName(new NameValuePair("URI", "custom.scheme://test.ca.com/custom"));
+        assertEquals(X509GeneralName.Type.uniformResourceIdentifier, generalName.getType());
+        assertEquals("custom.scheme://test.ca.com/custom", generalName.getStringVal());
+    }
+
+    @Test
+    public void testConvertToX509GeneralNameFromNameValuePair_UriCustomScheme3() throws Exception {
+        X509GeneralName generalName = CertUtils.convertToX509GeneralName(new NameValuePair("URI", "s://test.ca.com/custom"));
+        assertEquals(X509GeneralName.Type.uniformResourceIdentifier, generalName.getType());
+        assertEquals("s://test.ca.com/custom", generalName.getStringVal());
+    }
+
+    @BugId("DE347819")
+    @Test
+    public void testConvertToX509GeneralName_InvalidIPv4Addres() throws Exception {
+        int errorCount = 0;
+        try {
+            CertUtils.convertToX509GeneralName(new NameValuePair("IP Address", "111.222.333.44"));
+        } catch (IllegalArgumentException e) {
+            errorCount++;
+        }
+        try {
+            CertUtils.convertToX509GeneralName(new NameValuePair("IP Address", "1111.555.3333.44"));
+        } catch (IllegalArgumentException e) {
+            errorCount++;
+        }
+        try {
+            CertUtils.convertToX509GeneralName(new NameValuePair("IP Address", "0000.0000.0000.0000"));
+        } catch (IllegalArgumentException e) {
+            errorCount++;
+        }
+        assertEquals(3, errorCount);
+    }
+
+    @Test
+    @BugId("DE346973")
+    public void testConvertToX509GeneralName_UpperCaseURI() throws Exception {
+        X509GeneralName generalName = CertUtils.convertToX509GeneralName(new NameValuePair("URI", "http://appserver:6394/wa/r/myApp"));
+        assertEquals(X509GeneralName.Type.uniformResourceIdentifier, generalName.getType());
+        assertEquals("http://appserver:6394/wa/r/myApp", generalName.getStringVal());
+        generalName = CertUtils.convertToX509GeneralName(new NameValuePair("URI", "urn:ISSN:1535-3613"));
+        assertEquals(X509GeneralName.Type.uniformResourceIdentifier, generalName.getType());
+        assertEquals("urn:ISSN:1535-3613", generalName.getStringVal());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    @BugId("DE348135")
+    public void testConvertToX509GeneralName_InvalidUriSchemeWithDot() throws Exception {
+        CertUtils.convertToX509GeneralName(new NameValuePair("URI", ".scheme:appserver:6394/wa/r/myApp"));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    @BugId("DE348135")
+    public void testConvertToX509GeneralName_InvalidUriSchemeWithPlus() throws Exception {
+        CertUtils.convertToX509GeneralName(new NameValuePair("URI", "+scheme:appserver:6394/wa/r/myApp"));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    @BugId("DE348135")
+    public void testConvertToX509GeneralName_InvalidUriSchemeWithNumber() throws Exception {
+        CertUtils.convertToX509GeneralName(new NameValuePair("URI", "9scheme:appserver:6394/wa/r/myApp"));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    @BugId("DE348135")
+    public void testConvertToX509GeneralName_InvalidUriSchemeWithDash() throws Exception {
+        CertUtils.convertToX509GeneralName(new NameValuePair("URI", "-scheme:appserver:6394/wa/r/myApp"));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testConvertToX509GeneralName_InvalidDnsNameFormat() throws Exception {
+        CertUtils.convertToX509GeneralName(new NameValuePair("DNS Name","bla$"));
+    }
+
+    @Test(expected = UnsupportedX509GeneralNameException.class)
+    public void testConvertToX509GeneralName_UnspecifiedType() throws Exception {
+        CertUtils.convertToX509GeneralName(new NameValuePair("",""));
+    }
+
+    @Test(expected = UnsupportedX509GeneralNameException.class)
+    public void testConvertToX509GeneralName_UnsupportedType1() throws Exception {
+        CertUtils.convertToX509GeneralName(new NameValuePair("blah", "blah"));
+    }
+
+    @Test(expected = UnsupportedX509GeneralNameException.class)
+    public void testConvertToX509GeneralName_UnsupportedType2() throws Exception {
+        CertUtils.convertToX509GeneralName(new NameValuePair("Other Name", "123"));
+    }
+
+    @Test
+    public void testConvertFromX509GeneralNameToNameValuePair() throws Exception {
+        NameValuePair actual = CertUtils.convertFromX509GeneralName(new X509GeneralName(X509GeneralName.Type.dNSName, "test.ca.com"));
+        assertEquals("DNS Name", actual.left);
+        assertEquals("test.ca.com", actual.right);
+        actual = CertUtils.convertFromX509GeneralName(new X509GeneralName(X509GeneralName.Type.uniformResourceIdentifier, "https://test.ca.com"));
+        assertEquals("URI", actual.left);
+        assertEquals("https://test.ca.com", actual.right);
+        actual = CertUtils.convertFromX509GeneralName(new X509GeneralName(X509GeneralName.Type.directoryName, "CN=test,OU=people"));
+        assertEquals("Directory Name", actual.left);
+        assertEquals("CN=test,OU=people", actual.right);
+        actual = CertUtils.convertFromX509GeneralName(new X509GeneralName(X509GeneralName.Type.rfc822Name, "test@ca.com"));
+        assertEquals("Email", actual.left);
+        assertEquals("test@ca.com", actual.right);
+        actual = CertUtils.convertFromX509GeneralName(new X509GeneralName(X509GeneralName.Type.iPAddress, new byte[] {4,4,111,-122,33,44}));
+        assertEquals("IP Address", actual.left);
+        assertEquals("111.134.33.44", actual.right);
+        actual = CertUtils.convertFromX509GeneralName(new X509GeneralName(X509GeneralName.Type.iPAddress, "111.134.33.44"));
+        assertEquals("111.134.33.44", actual.right);
+    }
+
+    @Test
+    public void testConvertFromX509GeneralNameToNameValuePair_Other() throws Exception {
+        byte[] expectedBytes = new byte[] {0,127,126,3};
+        NameValuePair actual = CertUtils.convertFromX509GeneralName(new X509GeneralName(X509GeneralName.Type.otherName, expectedBytes));
+        assertEquals("Other Name", actual.left);
+        assertArrayEquals(expectedBytes, Base64.getDecoder().decode(actual.right));
+    }
+
+    @Test
+    public void testConvertFromX509GeneralNameToNameValuePair_EdiParty() throws Exception {
+        byte[] expectedBytes = new byte[] {5,1,1};
+        NameValuePair actual = CertUtils.convertFromX509GeneralName(new X509GeneralName(X509GeneralName.Type.ediPartyName, expectedBytes));
+        assertEquals("EDI Party Name", actual.left);
+        assertArrayEquals(expectedBytes, Base64.getDecoder().decode(actual.right));
+    }
+
+    @Test
+    public void testConvertFromX509GeneralNameToNameValuePair_X400Address() throws Exception {
+        byte[] expectedBytes = new byte[] {3,4,1,2,3,4};
+        NameValuePair actual = CertUtils.convertFromX509GeneralName(new X509GeneralName(X509GeneralName.Type.x400Address, expectedBytes));
+        assertEquals("X400 Address", actual.left);
+        assertArrayEquals(expectedBytes, Base64.getDecoder().decode(actual.right));
+    }
+
+    @Test
+    public void testConvertFromX509GeneralNameToNameValuePair_RegisteredId() throws Exception {
+        String expected = "1.2.3.4.5";
+        NameValuePair actual = CertUtils.convertFromX509GeneralName(new X509GeneralName(X509GeneralName.Type.registeredID, expected));
+        assertEquals("Registered ID", actual.left);
+        assertEquals(expected, actual.right);
+    }
+
+    @Test
+    public void testConvertFromX509GeneralNameToNameValuePair_ipv6() throws Exception {
+        InetAddress a = InetAddress.getByName("2001:0DB8:AC10:FE01:0000:0000:0000:0000");
+        byte[] bytes = a.getAddress();
+        NameValuePair actual = CertUtils.convertFromX509GeneralName(new X509GeneralName(X509GeneralName.Type.iPAddress, ArrayUtils.concat(new byte[]{4,16}, bytes)));
+        assertEquals("2001:db8:ac10:fe01:0:0:0:0", actual.right);
+    }
+
+    @Test
+    public void testExtractX509GeneralNamesFromList() throws Exception {
+        String[] sans = {"DNS Name:test.ca.com", "Email:test@ca.com", "IP Address:111.222.33.44", "URI:http://test.ca.com?test=test", "Directory Name:CN=test,OU=people"};
+        List<X509GeneralName> generalNames = CertUtils.extractX509GeneralNamesFromList(Arrays.asList(sans));
+        assertEquals(5,generalNames.size());
+        assertEquals(X509GeneralName.Type.dNSName, generalNames.get(0).getType());
+        assertEquals("test.ca.com", generalNames.get(0).getStringVal());
+        assertEquals(X509GeneralName.Type.rfc822Name, generalNames.get(1).getType());
+        assertEquals("test@ca.com", generalNames.get(1).getStringVal());
+        assertEquals(X509GeneralName.Type.iPAddress, generalNames.get(2).getType());
+        assertEquals("111.222.33.44", generalNames.get(2).getStringVal());
+        assertEquals(X509GeneralName.Type.uniformResourceIdentifier, generalNames.get(3).getType());
+        assertEquals("http://test.ca.com?test=test", generalNames.get(3).getStringVal());
+        assertEquals(X509GeneralName.Type.directoryName, generalNames.get(4).getType());
+        assertEquals("CN=test,OU=people", generalNames.get(4).getStringVal());
+    }
+
+    @Test
+    public void testExtractX509GeneralNamesFromList_isNull() throws Exception {
+        String[] sans = {"test.ca.com","IP Address"};
+        assertNull(CertUtils.extractX509GeneralNamesFromList(Arrays.asList(sans)));
+        assertNull(CertUtils.extractX509GeneralNamesFromList(Collections.EMPTY_LIST));
+        assertNull(CertUtils.extractX509GeneralNamesFromList(null));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testExtractX509GeneralNamesFromList_wrongStringFormat() throws Exception {
+        String[] sans = {"DNS Name:test.ca.com:test1.ca.com"};
+        assertNull(CertUtils.extractX509GeneralNamesFromList(Arrays.asList(sans)));
+    }
+
+    @Test
+    public void testX509GeneralNameGetUserFriendlyNames() throws Exception {
+        String[] userFriendlyNames = Arrays.stream(X509GeneralName.Type.values()).map(X509GeneralName.Type::getUserFriendlyName).collect(Collectors.toList()).toArray(new String[0]);
+        assertEquals(9, userFriendlyNames.length);
+    }
+
+    @Test
+    public void testSupportedSubjectAlternativeNameTypes() {
+        Set supportedTypes = Arrays.stream(X509GeneralName.Type.values()).filter(CertUtils::isSubjectAlternativeNameTypeSupported).collect(Collectors.toSet());
+        assertEquals(5, supportedTypes.size());
+        assertTrue(supportedTypes.contains(X509GeneralName.Type.iPAddress));
+        assertTrue(supportedTypes.contains(X509GeneralName.Type.dNSName));
+        assertTrue(supportedTypes.contains(X509GeneralName.Type.directoryName));
+        assertTrue(supportedTypes.contains(X509GeneralName.Type.rfc822Name));
+        assertTrue(supportedTypes.contains(X509GeneralName.Type.uniformResourceIdentifier));
+    }
+
+    @BugId("DE347819")
+    @Test
+    public void testConvertToX509GeneralNameIpv6Addresses() throws Exception {
+        X509GeneralName generalName = CertUtils.convertToX509GeneralName(new NameValuePair("IP Address","2001:0db8:85a3:08d3:1319:8a2e:0370:7348"));
+        assertEquals(X509GeneralName.Type.iPAddress, generalName.getType());
+        assertEquals("2001:0db8:85a3:08d3:1319:8a2e:0370:7348", generalName.getStringVal());
+        generalName = CertUtils.convertToX509GeneralName(new NameValuePair("IP Address","abf3:FF2:0::00:23"));
+        assertEquals(X509GeneralName.Type.iPAddress, generalName.getType());
+        assertEquals("abf3:FF2:0::00:23", generalName.getStringVal());
+        generalName = CertUtils.convertToX509GeneralName(new NameValuePair("IP Address","2001:db8::1"));
+        assertEquals(X509GeneralName.Type.iPAddress, generalName.getType());
+        assertEquals("2001:db8::1", generalName.getStringVal());
+    }
+
+    @BugId("DE347819")
+    @Test(expected = IllegalArgumentException.class)
+    public void testConvertToX509GeneralNameIpv6Address_InvalidFormat1() throws Exception {
+        CertUtils.convertToX509GeneralName(new NameValuePair("IP Address","2001:db8:::1"));
+    }
+
+    @BugId("DE347819")
+    @Test(expected = IllegalArgumentException.class)
+    public void testConvertToX509GeneralNameIpv6Address_InvalidFormat2() throws Exception {
+        CertUtils.convertToX509GeneralName(new NameValuePair("IP Address","cafe:babe:0000::4343:1.2.3.4"));
+    }
+
+    @BugId("DE347819")
+    @Test(expected = IllegalArgumentException.class)
+    public void testConvertToX509GeneralNameIpv6Address_InvalidFormat3() throws Exception {
+        CertUtils.convertToX509GeneralName(new NameValuePair("IP Address","2001:1111"));
+    }
     /**
      * Test certificate with CRL and OCSP URLS and a CRT URL
      */
@@ -955,6 +1259,4 @@ public class CertUtilsTest {
             "QAYuoPtFToXUeHxAyGtMbzWNMPp3+Ty/LWjXvAVVmArXbKMUgpUWh1Hxs8Hl3w750xf9nJzbPwpi\n" +
             "yxVMOlbs8IyLyLOP5K/WcM216/C+C7f6gkh2uM4pVVFknhofXt/5RWigam6gt8LdVrcGrkdjap9d\n" +
             "NKX+L5E=";
-
-
 }

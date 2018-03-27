@@ -20,6 +20,7 @@ public class PrivateKeyGenerateCsrContext extends ElementExtendableManagedObject
     //- PUBLIC
 
     public static final String PROP_SIGNATURE_HASH = "signatureHashAlgorithm";
+    public static final String PROP_SANS = "sANs";
 
     /**
      * Get the DN use in the CSR (optional)

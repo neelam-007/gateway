@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
 import javax.inject.Inject;
 import javax.inject.Named;
 import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -57,12 +58,20 @@ public class PrivateKeyAPIResourceFactory extends WsmanBaseResourceFactory<Priva
         return factory.setSpecialPurposes(CollectionUtils.<String, String>mapBuilder().put("id", id).map(),ctx);
     }
 
-    public PrivateKeyGenerateCsrResult generateCSR(@NotNull String id, @Nullable String dn, @Nullable String signatureHash) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+    public PrivateKeyGenerateCsrResult generateCSR(@NotNull String id, @Nullable String dn, @Nullable List<String> sans, @Nullable String signatureHash) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
         PrivateKeyGenerateCsrContext ctx = new PrivateKeyGenerateCsrContext();
         ctx.setDn(dn);
-        if (signatureHash != null) {
-            ctx.setProperties(CollectionUtils.MapBuilder.<String, Object>builder().put(PrivateKeyGenerateCsrContext.PROP_SIGNATURE_HASH, signatureHash).map());
+        if(sans !=null || signatureHash != null) {
+            Map<String, Object> map = CollectionUtils.MapBuilder.<String, Object>builder().map();
+            if (signatureHash != null) {
+                map.put(PrivateKeyGenerateCsrContext.PROP_SIGNATURE_HASH, signatureHash);
+            }
+            if(sans != null) {
+                map.put(PrivateKeyGenerateCsrContext.PROP_SANS, sans);
+            }
+            ctx.setProperties(map);
         }
+
         return factory.generateCSR(CollectionUtils.<String, String>mapBuilder().put("id", id).map(), ctx);
     }
 
