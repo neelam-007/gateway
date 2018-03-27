@@ -6,11 +6,14 @@ import com.l7tech.objectmodel.polback.PolicyBackedService;
 import com.l7tech.server.extension.event.metrics.ServiceMetricsEvent;
 import com.l7tech.server.polback.PolicyBackedServiceRegistry;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
-import org.junit.*;
+import com.l7tech.util.DateUtils;
+import org.junit.Before;
+import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.*;
+import org.mockito.runners.*;
+
+import java.util.Date;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -24,7 +27,14 @@ import static org.mockito.Mockito.*;
 @RunWith(MockitoJUnitRunner.class)
 public class ServiceMetricsEventListenerTest {
 
-    private static final String JSON_TEMPLATE = "{\"time\":1,\"nodeId\":\"0000000000000000ffffffffffffffff\",\"nodeName\":\"localhost\",\"nodeIp\":\"127.0.0.1\",\"serviceId\":\"0000000000000000ffffffffffffffff\",\"serviceName\":\"Service\",\"serviceUri\":\"/service\",\"totalFrontendLatency\":250,\"totalBackendLatency\":100,\"isPolicySuccessful\":true,\"isPolicyViolation\":false,\"isRoutingFailure\":false}";
+    private static final String JSON_TEMPLATE;
+    private static final Long TIMESTAMP = System.currentTimeMillis();
+
+    static {
+        // Generates the template using a date in the local timezone
+        String date = DateUtils.getDefaultTimeZoneFormattedString(new Date(TIMESTAMP));
+        JSON_TEMPLATE = "{\"time\":"+TIMESTAMP+",\"formattedTime\":\"" + date + "\",\"nodeId\":\"0000000000000000ffffffffffffffff\",\"nodeName\":\"localhost\",\"nodeIp\":\"127.0.0.1\",\"serviceId\":\"0000000000000000ffffffffffffffff\",\"serviceName\":\"Service\",\"serviceUri\":\"/service\",\"totalFrontendLatency\":250,\"totalBackendLatency\":100,\"isPolicySuccessful\":true,\"isPolicyViolation\":false,\"isRoutingFailure\":false}";
+    }
 
     @Mock
     private PolicyBackedServiceRegistry pbsreg;
@@ -77,7 +87,7 @@ public class ServiceMetricsEventListenerTest {
     @Test
     public void testJsonConversion() {
         ServiceMetricsEvent event = mock(ServiceMetricsEvent.class);
-        when(event.getTime()).thenReturn(1L);
+        when(event.getTime()).thenReturn(TIMESTAMP);
         when(event.getNodeId()).thenReturn(Goid.DEFAULT_GOID.toString());
         when(event.getNodeIp()).thenReturn("127.0.0.1");
         when(event.getNodeName()).thenReturn("localhost");
@@ -94,4 +104,5 @@ public class ServiceMetricsEventListenerTest {
         assertNotNull(json);
         assertEquals(JSON_TEMPLATE, json);
     }
+
 }

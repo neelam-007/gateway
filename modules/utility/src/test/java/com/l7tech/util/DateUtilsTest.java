@@ -4,6 +4,7 @@ import org.junit.Test;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Map;
 import java.util.TimeZone;
 import java.util.regex.Pattern;
 
@@ -14,7 +15,7 @@ import static org.junit.Assert.*;
  */
 public class DateUtilsTest {
     @Test
-    public void testGetTimeZone() throws Exception {
+    public void testGetTimeZone() {
 
         assertNotNull(DateUtils.getTimeZone("utc"));
         assertNotNull(DateUtils.getTimeZone("local"));
@@ -46,11 +47,6 @@ public class DateUtilsTest {
 
     @Test
     public void testCaseInsensitiveNamedTimeZone() throws Exception {
-//        final String[] availableIDs = TimeZone.getAvailableIDs();
-//        for (String availableID : availableIDs) {
-//            System.out.println(availableID);
-//        }
-
         final TimeZone timeZone = DateUtils.getTimeZone("americA/halifaX");
         assertNotNull(timeZone);
 
@@ -61,7 +57,7 @@ public class DateUtilsTest {
     }
 
     @Test
-    public void testGetZuluFormattedString() throws Exception {
+    public void testGetZuluFormattedString() {
         try {
             TimeZone.setDefault(TimeZone.getTimeZone("PST"));
             final Date date = new Date();
@@ -75,6 +71,29 @@ public class DateUtilsTest {
         } finally {
             TimeZone.setDefault(null);
         }
+    }
+
+    @Test
+    public void testGetDefaultTimeZoneFormattedString() {
+        try {
+            final Date date = new Date();
+            final String actual = DateUtils.getDefaultTimeZoneFormattedString(date);
+
+            final SimpleDateFormat format = new SimpleDateFormat(DateUtils.ISO8601_PATTERN);
+            format.setTimeZone(TimeZone.getDefault());
+            final String expected = format.format(date);
+
+            assertEquals(expected, actual);
+        } finally {
+            TimeZone.setDefault(null);
+        }
+    }
+
+    @Test
+    public void testTimezoneMap() {
+        Map<String, String> lowerToActualTimeZones = DateUtils.getLowerToActualTimeZones();
+        // test if the map has keys equal to values but lower-cased
+        lowerToActualTimeZones.forEach((k,v) -> assertEquals(v.toLowerCase(), k));
     }
 
     @Test

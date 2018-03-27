@@ -3,6 +3,7 @@ package com.l7tech.external.assertions.pbsmel.server;
 import com.ca.apim.gateway.extension.event.EventListener;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.gson.GsonBuilder;
+import com.google.gson.annotations.SerializedName;
 import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.StashManager;
@@ -10,11 +11,13 @@ import com.l7tech.message.Message;
 import com.l7tech.objectmodel.polback.PolicyBackedService;
 import com.l7tech.server.extension.event.metrics.ServiceMetricsEvent;
 import com.l7tech.server.polback.PolicyBackedServiceRegistry;
+import com.l7tech.util.DateUtils;
 import com.l7tech.util.ExceptionUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -73,35 +76,39 @@ public class ServiceMetricsEventListener implements EventListener<ServiceMetrics
     /**
      * Internal inner class with the json fields. Created to avoid that changes in the event class causes changes in the json format.
      */
+    @SuppressWarnings("UnusedDeclaration")
     private static class ServiceMetricsEventJson {
 
-        @SuppressWarnings("UnusedDeclaration")
+        @SerializedName("time")
         private final long time;
-        @SuppressWarnings("UnusedDeclaration")
+        @SerializedName("formattedTime")
+        private final String formattedTime;
+        @SerializedName("nodeId")
         private final String nodeId;
-        @SuppressWarnings("UnusedDeclaration")
+        @SerializedName("nodeName")
         private final String nodeName;
-        @SuppressWarnings("UnusedDeclaration")
+        @SerializedName("nodeIp")
         private final String nodeIp;
-        @SuppressWarnings("UnusedDeclaration")
+        @SerializedName("serviceId")
         private final String serviceId;
-        @SuppressWarnings("UnusedDeclaration")
+        @SerializedName("serviceName")
         private final String serviceName;
-        @SuppressWarnings("UnusedDeclaration")
+        @SerializedName("serviceUri")
         private final String serviceUri;
-        @SuppressWarnings("UnusedDeclaration")
+        @SerializedName("totalFrontendLatency")
         private final int totalFrontendLatency;
-        @SuppressWarnings("UnusedDeclaration")
+        @SerializedName("totalBackendLatency")
         private final int totalBackendLatency;
-        @SuppressWarnings("UnusedDeclaration")
+        @SerializedName("isPolicySuccessful")
         private final boolean isPolicySuccessful;
-        @SuppressWarnings("UnusedDeclaration")
+        @SerializedName("isPolicyViolation")
         private final boolean isPolicyViolation;
-        @SuppressWarnings("UnusedDeclaration")
+        @SerializedName("isRoutingFailure")
         private final boolean isRoutingFailure;
 
         ServiceMetricsEventJson(@NotNull ServiceMetricsEvent event) {
             this.time = event.getTime();
+            this.formattedTime = DateUtils.getDefaultTimeZoneFormattedString(new Date(event.getTime()));
             this.nodeId = event.getNodeId();
             this.nodeName = event.getNodeName();
             this.nodeIp = event.getNodeIp();
