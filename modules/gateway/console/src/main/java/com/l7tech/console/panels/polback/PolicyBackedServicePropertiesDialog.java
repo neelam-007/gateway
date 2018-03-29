@@ -19,15 +19,13 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.*;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class PolicyBackedServicePropertiesDialog extends JDialog {
-    private static final Logger logger = Logger.getLogger( PolicyBackedServicePropertiesDialog.class.getName() );
+    private static final Logger LOGGER = Logger.getLogger( PolicyBackedServicePropertiesDialog.class.getName() );
 
     private JPanel contentPane;
     private JButton okButton;
@@ -38,11 +36,10 @@ public class PolicyBackedServicePropertiesDialog extends JDialog {
     private JButton assignButton;
 
     private SimpleTableModel<OperationRow> operationsTableModel;
-    private final InputValidator inputValidator;
 
     private boolean confirmed = false;
 
-    public PolicyBackedServicePropertiesDialog( Window owner, PolicyBackedService bean ) {
+    PolicyBackedServicePropertiesDialog( Window owner, PolicyBackedService bean ) throws InvalidPolicyBackedServiceException {
         super( owner, ModalityType.APPLICATION_MODAL );
         setTitle( "Policy Backed Service Properties" );
         setContentPane( contentPane );
@@ -51,23 +48,15 @@ public class PolicyBackedServicePropertiesDialog extends JDialog {
         setDefaultCloseOperation( DISPOSE_ON_CLOSE );
         Utilities.setEscKeyStrokeDisposes( this );
 
-        inputValidator = new InputValidator( this, getTitle() );
-        inputValidator.attachToButton( okButton, new ActionListener() {
-            @Override
-            public void actionPerformed( ActionEvent e ) {
-                confirmed = true;
-                dispose();
-            }
-        } );
+        InputValidator inputValidator = new InputValidator( this, getTitle() );
+        inputValidator.attachToButton( okButton, e -> {
+            confirmed = true;
+            dispose();
+        });
         inputValidator.addRule( new InputValidator.ComponentValidationRule( operationsTable ) {
             @Override
             public String getValidationError() {
-                OperationRow missingAssignment = Functions.grepFirst( operationsTableModel.getRows(), new Functions.Unary<Boolean, OperationRow>() {
-                    @Override
-                    public Boolean call( OperationRow row ) {
-                        return row.concreteOperation == null;
-                    }
-                } );
+                OperationRow missingAssignment = operationsTableModel.getRows().stream().filter(row -> row.concreteOperation == null).findFirst().orElse(null);
 
                 return missingAssignment == null
                         ? null
@@ -75,12 +64,7 @@ public class PolicyBackedServicePropertiesDialog extends JDialog {
             }
         });
 
-        RunOnChangeListener disposeListener = new RunOnChangeListener( new Runnable() {
-            @Override
-            public void run() {
-                dispose();
-            }
-        } );
+        RunOnChangeListener disposeListener = new RunOnChangeListener( this::dispose );
         cancelButton.addActionListener( disposeListener );
 
         populateTemplatesComboBox();
@@ -91,29 +75,25 @@ public class PolicyBackedServicePropertiesDialog extends JDialog {
         templateComboBox.setRenderer( new DefaultListCellRenderer() {
             @Override
             public Component getListCellRendererComponent( JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus ) {
-
+                Object valueToUse = value;
                 if ( value instanceof PolicyBackedService ) {
                     PolicyBackedService tbs = (PolicyBackedService) value;
-                    value = tbs.getName();
+                    valueToUse = tbs.getName();
                 }
 
-                return super.getListCellRendererComponent( list, value, index, isSelected, cellHasFocus );
+                return super.getListCellRendererComponent( list, valueToUse, index, isSelected, cellHasFocus );
             }
         });
 
-        templateComboBox.addActionListener( new RunOnChangeListener( new Runnable() {
-            @Override
-            public void run() {
-                populateOperationsTable( (String) templateComboBox.getSelectedItem() );
+        templateComboBox.addActionListener( new RunOnChangeListener( () ->  {
+            try {
+                populateOperationsTable((String) templateComboBox.getSelectedItem());
+            } catch (InvalidPolicyBackedServiceException e) {
+                LOGGER.log(Level.FINE, ExceptionUtils.getDebugException(e), e::getMessage);
+                showError(e.getMessage(), null);
             }
-        } ) );
-
-        assignButton.addActionListener( new ActionListener() {
-            @Override
-            public void actionPerformed( ActionEvent e ) {
-                doAssign();
-            }
-        } );
+        }));
+        assignButton.addActionListener( event -> doAssign() );
 
         Utilities.setDoubleClickAction( operationsTable, assignButton );
 
@@ -126,13 +106,13 @@ public class PolicyBackedServicePropertiesDialog extends JDialog {
 
         final String serviceInterfaceName = row.templateEncass.getProperty( EncapsulatedAssertionConfig.PROP_SERVICE_INTERFACE );
         if ( serviceInterfaceName == null ) {
-            logger.warning( "template encass config " + row.templateEncass.getName() + " lacks serviceInterface property" );
+            LOGGER.warning( "template encass config " + row.templateEncass.getName() + " lacks serviceInterface property" );
             return;
         }
 
         final String operationName = row.templateEncass.getProperty( EncapsulatedAssertionConfig.PROP_SERVICE_METHOD );
         if ( operationName == null ) {
-            logger.warning( "template encass config " + row.templateEncass.getName() + " lacks serviceMethod property" );
+            LOGGER.warning( "template encass config " + row.templateEncass.getName() + " lacks serviceMethod property" );
             return;
         }
 
@@ -168,21 +148,18 @@ public class PolicyBackedServicePropertiesDialog extends JDialog {
                 null,
                 items.toArray(),
                 null,
-                new DialogDisplayer.InputListener() {
-                    @Override
-                    public void reportResult( Object option ) {
-                        if ( option != null ) {
-                            Pair item = (Pair) option;
-                            Policy policy = (Policy) item.left;
+                option -> {
+                    if ( option != null ) {
+                        Pair item = (Pair) option;
+                        Policy policy = (Policy) item.left;
 
-                            if ( row.concreteOperation == null ) {
-                                row.concreteOperation = new PolicyBackedServiceOperation();
-                                row.concreteOperation.setName( row.templateEncass.getName() );
-                            }
-                            row.concreteOperation.setPolicyGoid( policy.getGoid() );
-                            row.concretePolicy = policy;
-                            operationsTableModel.fireTableDataChanged(); // TODO update only affected row
+                        if ( row.concreteOperation == null ) {
+                            row.concreteOperation = new PolicyBackedServiceOperation();
+                            row.concreteOperation.setName( row.templateEncass.getName() );
                         }
+                        row.concreteOperation.setPolicyGoid( policy.getGoid() );
+                        row.concretePolicy = policy;
+                        operationsTableModel.fireTableDataChanged(); // TODO update only affected row
                     }
                 }
         );
@@ -197,14 +174,7 @@ public class PolicyBackedServicePropertiesDialog extends JDialog {
         templateComboBox.setModel( new DefaultComboBoxModel<>( templates.toArray( new String[templates.size()] ) ));
     }
 
-    private void error( String msg, Throwable t ) {
-        if ( t != null )
-            msg = msg + ": " + ExceptionUtils.getMessage( t );
-        logger.log( Level.WARNING, msg, t );
-        DialogDisplayer.showMessageDialog( this, msg, "Error", JOptionPane.ERROR_MESSAGE, null );
-    }
-
-    public void setData( PolicyBackedService in ) {
+    public void setData( PolicyBackedService in ) throws InvalidPolicyBackedServiceException {
         nameField.setText( in.getName() );
         templateComboBox.setSelectedItem( in.getServiceInterfaceName() );
 
@@ -212,7 +182,7 @@ public class PolicyBackedServicePropertiesDialog extends JDialog {
         populateOperationsTableConcreteAssignments( in );
     }
 
-    private void populateOperationsTable( String templateInterfaceName ) {
+    private void populateOperationsTable( String templateInterfaceName ) throws InvalidPolicyBackedServiceException {
         operationsTableModel = TableUtil.configureTable( operationsTable,
                 TableUtil.column( "Operation", 100, 200, 9999, Functions.propertyTransform( OperationRow.class, "operationName" ) ),
                 TableUtil.column( "Backing Policy", 100, 200, 9999, Functions.propertyTransform( OperationRow.class, "implementationName" ) ) );
@@ -222,8 +192,7 @@ public class PolicyBackedServicePropertiesDialog extends JDialog {
             try {
                 templateEacs = Registry.getDefault().getPolicyBackedServiceAdmin().getInterfaceDescription( templateInterfaceName );
             } catch ( ObjectNotFoundException e ) {
-                showError( "Unable to obtain description of service interface: " + templateInterfaceName, e );
-                return;
+                 throw new InvalidPolicyBackedServiceException("Unable to obtain description of service interface " + templateInterfaceName + ": " + ExceptionUtils.getMessage(e));
             }
 
             java.util.List<OperationRow> rows = new ArrayList<>();
@@ -259,7 +228,7 @@ public class PolicyBackedServicePropertiesDialog extends JDialog {
         try {
             return Registry.getDefault().getPolicyAdmin().findPolicyByPrimaryKey( policyGoid );
         } catch ( Exception e ) {
-            logger.log( Level.WARNING, "Unable to access policy " + policyGoid + ": " + ExceptionUtils.getMessage( e ), ExceptionUtils.getDebugException( e ) );
+            LOGGER.log( Level.WARNING, "Unable to access policy " + policyGoid + ": " + ExceptionUtils.getMessage( e ), ExceptionUtils.getDebugException( e ) );
             return new Policy( PolicyType.POLICY_BACKED_OPERATION, "<Not accessible: " + policyGoid + ">", null, false);
         }
     }
@@ -272,12 +241,7 @@ public class PolicyBackedServicePropertiesDialog extends JDialog {
         if ( methodName == null )
             return null;
 
-        return Functions.grepFirst( concreteService.getOperations(), new Functions.Unary<Boolean, PolicyBackedServiceOperation>() {
-            @Override
-            public Boolean call( PolicyBackedServiceOperation concreteOperation ) {
-                return methodName.equals( concreteOperation.getName() );
-            }
-        } );
+        return concreteService.getOperations().stream().filter(concreteOperation -> methodName.equals(concreteOperation.getName())).findFirst().orElse(null);
     }
 
     public boolean isConfirmed() {
@@ -336,5 +300,12 @@ public class PolicyBackedServicePropertiesDialog extends JDialog {
             error = error + ": " + ExceptionUtils.getMessage(e);
         }
         DialogDisplayer.showMessageDialog(this, error, "Error", JOptionPane.ERROR_MESSAGE, null);
+    }
+
+    static class InvalidPolicyBackedServiceException extends Exception {
+
+        InvalidPolicyBackedServiceException (String message) {
+            super(message);
+        }
     }
 }
