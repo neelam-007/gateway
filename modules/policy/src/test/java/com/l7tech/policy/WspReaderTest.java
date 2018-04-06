@@ -4,7 +4,6 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.policy.assertion.composite.*;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xml.XslTransformation;
@@ -251,7 +250,7 @@ public class WspReaderTest {
             assertEquals("Encryption type", "http://www.w3.org/2001/04/xmlenc#aes128-cbc", assertion.getXEncAlgorithm());
             assertEquals("Recipient context", localRecipientContext, assertion.getRecipientContext() );
         }
-        
+
         assIndex++;
         {
             assertTrue("Assertion is request encryption", children.get(assIndex) instanceof RequireWssEncryptedElement);
@@ -473,7 +472,7 @@ public class WspReaderTest {
             assertEquals("Key alias", "alice", assertion.getKeyAlias());
             assertEquals("Recipient context", localRecipientContext, assertion.getRecipientContext() );
         }
-        
+
         assIndex++;
         {
             assertTrue("Assertion is response security token", children.get(assIndex) instanceof AddWssSecurityToken);
@@ -542,38 +541,34 @@ public class WspReaderTest {
 
     @Test
     public void testUnknownElementGetsPreserved() throws Exception {
-
-
-        String policyXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+        final String policyXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                 "<wsp:Policy xmlns=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/200" +
                 "2/12/policy\">\n" +
                 "    <All>\n" +
                 "        <HttpRoutingAssertion>\n" +
                 "            <ProtectedServiceUrl stringValue=\"http://hugh/ACMEWarehouseWS/Service1.asmx\"/>\n" +
+                "            <CopyCookies booleanValue=\"false\"/>" +
                 "        </HttpRoutingAssertion>\n" +
-                "        <EmailAlert>\n" +
-                "            <Message stringValue=\"Woot!  Hola!\n" +
-                "\n" +
-                "Blah blah blah!\n" +
-                "\"/>\n" +
-                "            <TargetEmailAddress stringValue=\"mlyons@layer7-tech.com\"/>\n" +
-                "            <SourceEmailAddress stringValue=\"mlyons-4@layer7-tech.com\"/>\n" +
-                "            <Subject stringValue=\"ALERT ALERT from EmailAlertAssertion asdfhasdhf\"/>\n" +
-                "        </EmailAlert>\n" +
+                "        <MyTestModularAssertion/>\n" +
                 "    </All>\n" +
                 "</wsp:Policy>\n";
 
-        Assertion p = wspReader.parsePermissively(policyXml, INCLUDE_DISABLED);
-        String parsed1 = p.toString();
+        Assertion policy1 = wspReader.parsePermissively(policyXml, INCLUDE_DISABLED);
+        Assert.assertThat(policy1.getAssertionWithOrdinal(2), Matchers.instanceOf(HttpRoutingAssertion.class));
+        Assert.assertThat(policy1.getAssertionWithOrdinal(3), Matchers.instanceOf(UnknownAssertion.class));
+
+        final String parsed1 = policy1.toString();
         log.info("Parsed data including unknown element: " + parsed1);
 
-        String out = WspWriter.getPolicyXml(p);
-        Assertion p2 = wspReader.parsePermissively(out, INCLUDE_DISABLED);
-        String parsed2 = p2.toString();
+        final String out = WspWriter.getPolicyXml(policy1);
+        final Assertion policy2 = wspReader.parsePermissively(out, INCLUDE_DISABLED);
+        Assert.assertThat(policy2.getAssertionWithOrdinal(2), Matchers.instanceOf(HttpRoutingAssertion.class));
+        Assert.assertThat(policy2.getAssertionWithOrdinal(3), Matchers.instanceOf(UnknownAssertion.class));
+
+        final String parsed2 = policy2.toString();
         log.info("After reparsing: " + parsed2);
 
         assertEquals(parsed1, parsed2);
-
     }
 
     @Test
@@ -734,21 +729,6 @@ public class WspReaderTest {
 
         RequireWssSaml rwi = (RequireWssSaml)root.children().next();
         assertTrue(rwi.getRecipientContext().getActor().equals("ppal"));
-    }
-
-    @Test
-    public void testReproBug2214TabsInEmail() throws Exception {
-        final String body = "foo\r\nbar baz blah\tbleet blot";
-
-        EmailAlertAssertion ema = new EmailAlertAssertion();
-        ema.setSubject("Hi there");
-        ema.setTargetEmailAddress("blah@blah.example.com");
-        ema.messageString(body);
-
-        String emXml = WspWriter.getPolicyXml(ema);
-        EmailAlertAssertion got = (EmailAlertAssertion)wspReader.parseStrictly(emXml, INCLUDE_DISABLED);
-
-        assertEquals(got.messageString(), body);
     }
 
     @Test

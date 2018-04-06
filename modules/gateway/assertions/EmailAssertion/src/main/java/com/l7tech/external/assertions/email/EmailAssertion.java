@@ -1,23 +1,17 @@
-/*
- * Copyright (C) 2004 Layer 7 Technologies Inc.
- */
+package com.l7tech.external.assertions.email;
 
-package com.l7tech.policy.assertion.alert;
-
+import com.l7tech.external.assertions.email.server.EmailAdminImpl;
 import com.l7tech.objectmodel.migration.Migration;
 import com.l7tech.objectmodel.migration.MigrationMappingSelection;
 import com.l7tech.objectmodel.migration.PropertyResolver;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.Syntax;
-import com.l7tech.policy.wsp.Java5EnumTypeMapping;
-import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
-import com.l7tech.policy.wsp.TypeMapping;
-import com.l7tech.policy.wsp.WspSensitive;
+import com.l7tech.policy.wsp.*;
 import com.l7tech.search.Dependency;
-import com.l7tech.util.Charsets;
-import com.l7tech.util.HexUtils;
+import com.l7tech.util.*;
+import org.springframework.context.ApplicationContext;
 
-import java.util.Arrays;
+import java.util.*;
 
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
@@ -25,13 +19,10 @@ import static com.l7tech.policy.assertion.AssertionMetadata.*;
 /**
  * An assertion that sends an email base64message.
  */
-public class EmailAlertAssertion extends Assertion implements UsesVariables {
-    private static final String META_INITIALIZED = EmailAlertAssertion.class.getName() + ".metadataInitialized";
+public class EmailAssertion extends Assertion implements UsesVariables {
 
     public static final String DEFAULT_HOST = "mail";
-    public static final int DEFAULT_PORT = 25;
-    public static final String DEFAULT_SUBJECT = "CA API Gateway Email Alert";
-    public static final String DEFAULT_MESSAGE = "This is an alert message from a Layer 7 Gateway.";
+    public static final String DEFAULT_SUBJECT = "CA API Gateway Email";
     public static final String DEFAULT_FROM = "L7SSG@NOMAILBOX";
 
     private String targetEmailAddress = "";
@@ -39,38 +30,19 @@ public class EmailAlertAssertion extends Assertion implements UsesVariables {
     private String targetBCCEmailAddress = "";
     private String sourceEmailAddress = DEFAULT_FROM;
     private String smtpHost = DEFAULT_HOST;
-    private String smtpPort = Integer.toString(DEFAULT_PORT);
+    private String smtpPort = Integer.toString(EmailProtocol.PLAIN.getDefaultSmtpPort());
     private String subject = DEFAULT_SUBJECT;
     private String base64message = "";
-    private Protocol protocol = Protocol.PLAIN;
+    private EmailProtocol protocol = EmailProtocol.PLAIN;
+    private EmailFormat format = EmailFormat.PLAIN_TEXT;
+    private List<EmailAttachment> attachments = new ArrayList<>();
     private boolean authenticate = false;
     private boolean contextVarPassword = false;
     private String authUsername;
     private String authPassword;
     private boolean isTestBean = false;
 
-    public static enum Protocol {
-        PLAIN("Plain SMTP"),
-        SSL("SMTP over SSL"),
-        STARTTLS("SMTP with STARTTLS"),;
-
-        private final String description;
-
-        private Protocol(String s) {
-            this.description = s;
-        }
-
-        public String getDescription() {
-            return description;
-        }
-
-        @Override
-        public String toString() {
-            return description;
-        }
-    }
-
-    public EmailAlertAssertion() {
+    public EmailAssertion() {
     }
 
     public boolean isTestBean(){
@@ -148,6 +120,15 @@ public class EmailAlertAssertion extends Assertion implements UsesVariables {
         base64message = message;
     }
 
+    /**
+     * This method exists to maintain the backward compatibility for old style email assertion
+     * @param text body text
+     */
+    @Deprecated
+    public void setMessage(final String text) {
+        messageString(text);
+    }
+
     public String messageString() {
         return new String(HexUtils.decodeBase64(base64message, true), Charsets.UTF8);
     }
@@ -168,14 +149,33 @@ public class EmailAlertAssertion extends Assertion implements UsesVariables {
         this.sourceEmailAddress = sourceEmailAddress;
     }
 
-    public Protocol getProtocol() {
+    public EmailProtocol getProtocol() {
         return protocol;
     }
 
-    public void setProtocol(Protocol protocol) {
+    public void setProtocol(EmailProtocol protocol) {
         this.protocol = protocol;
     }
 
+    public EmailFormat getFormat() {
+        return format;
+    }
+
+    public void setFormat(final EmailFormat format) {
+        this.format = format;
+    }
+  
+    public List<EmailAttachment> getAttachments() {
+        return Collections.unmodifiableList(attachments);
+    }
+
+    public void setAttachments(final List<EmailAttachment> attachments) {
+        this.attachments.clear();
+        if (attachments != null) {
+            this.attachments.addAll(attachments);
+        }
+    }
+  
     public boolean isAuthenticate() {
         return authenticate;
     }
@@ -213,26 +213,66 @@ public class EmailAlertAssertion extends Assertion implements UsesVariables {
     @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
-        return Syntax.getReferencedNames(
-                messageString(),
-                smtpPort,
-                smtpHost,
-                targetEmailAddress,
-                targetBCCEmailAddress,
-                targetCCEmailAddress,
-                subject,
-                sourceEmailAddress,
-                authUsername,
-                contextVarPassword ? authPassword : null
-        );
+        final List<String> varsUsedList = new ArrayList<>();
+
+        addUsedVariablesTo(varsUsedList,
+                Syntax.getReferencedNames(
+                        messageString(),
+                        smtpPort,
+                        smtpHost,
+                        targetEmailAddress,
+                        targetBCCEmailAddress,
+                        targetCCEmailAddress,
+                        subject,
+                        sourceEmailAddress,
+                        authUsername,
+                        contextVarPassword ? authPassword : null
+                ));
+        addUsedVariablesInAttachmentsTo(varsUsedList);
+
+        return varsUsedList.toArray(new String[varsUsedList.size()]);
     }
 
-    private final static String baseName = "Send Email Alert";
+    private void addUsedVariablesInAttachmentsTo(final List<String> varsUsedList) {
+        for (EmailAttachment item : attachments) {
+            addUsedVariablesTo(varsUsedList, Syntax.getReferencedNames(item.getName()));
+            varsUsedList.add(item.getSourceVariable());
+        }
+    }
 
-    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<EmailAlertAssertion>() {
+    private void addUsedVariablesTo(final List<String> varsUsedList, final String[] vars) {
+        for (String item : vars) {
+            varsUsedList.add(item);
+        }
+    }
+
+    private static final String META_INITIALIZED = EmailAssertion.class.getName() + ".metadataInitialized";
+    private static final String ASSERTION_NAME = "Send Email";
+
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<EmailAssertion>() {
+        /**
+         * The Assertion name will be seen as "Send Email in HTML Format with 1 attachment" in the Policy Manager.
+         * @param assertion Assertion to generate a name for. Cannot be null
+         * @param decorate if true, the implementation can decorate the name with values which are specific to the state
+         * of the Assertion and it's location in a policy
+         * @return String Display name
+         */
         @Override
-        public String getAssertionName(final EmailAlertAssertion assertion, final boolean decorate) {
-            return baseName;
+        public String getAssertionName(final EmailAssertion assertion, final boolean decorate) {
+            if(!decorate) return ASSERTION_NAME;
+
+            final StringBuilder name = new StringBuilder(ASSERTION_NAME + " in ");
+            name.append(assertion.getFormat().getDescription());
+            name.append(" format");
+            if (!assertion.getAttachments().isEmpty()) {
+                name.append(" with ").append(assertion.getAttachments().size());
+                if(assertion.getAttachments().size() == 1) {
+                    name.append(" attachment");
+                } else {
+                    name.append(" attachments");
+                }
+            }
+            return AssertionUtils.decorateName(assertion, name);
         }
     };
 
@@ -242,23 +282,35 @@ public class EmailAlertAssertion extends Assertion implements UsesVariables {
         if (Boolean.TRUE.equals(meta.get(META_INITIALIZED)))
             return meta;
 
-        meta.put(PALETTE_FOLDERS, new String[]{"audit"});
-
-        meta.put(SHORT_NAME, baseName);
+        meta.put(SHORT_NAME, ASSERTION_NAME);
         meta.put(DESCRIPTION, "Send an email message to predetermined recipients.");
 
+        meta.put(PALETTE_FOLDERS, new String[]{"audit"});
         meta.put(PALETTE_NODE_ICON, "com/l7tech/console/resources/Edit16.gif");
-
         meta.put(POLICY_NODE_NAME_FACTORY, policyNameFactory);
 
-        meta.put(PROPERTIES_ACTION_CLASSNAME, "com.l7tech.console.action.EmailAlertAssertionPropertiesAction");
-        meta.put(PROPERTIES_ACTION_NAME, "Email Alert Properties");
+        meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
+        meta.put(PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.email.console.EmailPropertiesDialog");
+        meta.put(PROPERTIES_ACTION_NAME, "Email Properties");
 
         meta.put(WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(Arrays.<TypeMapping>asList(
-                new Java5EnumTypeMapping(Protocol.class, "Protocol")
+                new Java5EnumTypeMapping(EmailProtocol.class, "Protocol"),
+                new Java5EnumTypeMapping(EmailFormat.class, "Format"),
+                new CollectionTypeMapping(List.class, EmailAttachment.class, ArrayList.class, "Attachments"),
+                new BeanTypeMapping(EmailAttachment.class, "Attachment")
         )));
+
+        meta.put(EXTENSION_INTERFACES_FACTORY,
+                (Functions.Unary<Collection<ExtensionInterfaceBinding>, ApplicationContext>) appContext ->
+                        Collections.singletonList(new ExtensionInterfaceBinding<>(EmailAdmin.class, null, new EmailAdminImpl())));
+
+        // Old External name must be handled for backward compatibility.
+        final Map<String, TypeMapping> typeMap = new HashMap<>();
+        typeMap.put("EmailAlert", (TypeMapping) meta.get(WSP_TYPE_MAPPING_INSTANCE));
+        meta.put(AssertionMetadata.WSP_COMPATIBILITY_MAPPINGS, typeMap);
 
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }
+
 }

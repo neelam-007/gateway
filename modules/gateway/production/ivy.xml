@@ -34,6 +34,7 @@
         <dependency name="RateLimitAssertion" rev="latest.integration" conf="module"/>
         <dependency name="ComparisonAssertion" rev="latest.integration" conf="module"/>
         <dependency name="SnmpTrapAssertion" rev="latest.integration" conf="module"/>
+        <dependency name="EmailAssertion" rev="latest.integration" conf="module"/>
         <dependency name="EchoRoutingAssertion" rev="latest.integration" conf="module"/>
         <dependency name="FtpRoutingAssertion" rev="latest.integration" conf="module"/>
         <dependency name="FtpCredentialAssertion" rev="latest.integration" conf="module"/>

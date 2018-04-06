@@ -223,4 +223,13 @@ public class SyntaxTest {
             //success
         }
     }
+
+    @Test
+    public void testAnyVaiableReferenced() {
+        Assert.assertTrue("Single variable reference", Syntax.isAnyVariableReferenced("Hello World", "${host}"));
+        Assert.assertTrue("Multiple variable references", Syntax.isAnyVariableReferenced("Hello World", "Hello ${host  ${hi}"));
+        Assert.assertTrue("Multiple variable references but with one invalid reference", Syntax.isAnyVariableReferenced("Hello World", "Hello ${|host}  ${hi}"));
+        Assert.assertFalse("Single variable reference but invalid one", Syntax.isAnyVariableReferenced("Hello World", "Hello ${|host}"));
+        Assert.assertFalse("No variable references", Syntax.isAnyVariableReferenced("Hello World", "Hello"));
+    }
 }

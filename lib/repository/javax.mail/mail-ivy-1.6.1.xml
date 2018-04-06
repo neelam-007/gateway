@@ -2,9 +2,9 @@
 <ivy-module version="2.0">
 	<info organisation="javax.mail"
 		module="mail"
-		revision="1.4.5"
+		revision="1.6.1"
 		status="release"
-		publication="20120524093936"
+		publication="20180222154205"
 		default="true"
 	/>
 	<configurations>

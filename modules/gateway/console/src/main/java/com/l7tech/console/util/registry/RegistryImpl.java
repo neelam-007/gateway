@@ -20,7 +20,6 @@ import com.l7tech.gateway.common.siteminder.SiteMinderAdmin;
 import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
 import com.l7tech.gateway.common.task.ScheduledTaskAdmin;
 import com.l7tech.gateway.common.transport.TransportAdmin;
-import com.l7tech.gateway.common.transport.email.EmailAdmin;
 import com.l7tech.gateway.common.transport.email.EmailListenerAdmin;
 import com.l7tech.gateway.common.transport.ftp.FtpAdmin;
 import com.l7tech.gateway.common.transport.jms.JmsAdmin;
@@ -84,7 +83,6 @@ public final class RegistryImpl extends Registry
     private RbacAdmin rbacAdmin;
     private TransportAdmin transportAdmin;
     private EmailListenerAdmin emailListenerAdmin;
-    private EmailAdmin emailAdmin;
     private PolicyAdmin policyAdmin;
     private LogSinkAdmin logSinkAdmin;
     private UDDIRegistryAdmin uddiRegistryAdmin;
@@ -330,16 +328,6 @@ public final class RegistryImpl extends Registry
     }
 
     @Override
-    public EmailAdmin getEmailAdmin() {
-        checkAdminContext();
-        if (emailAdmin != null) {
-            return emailAdmin;
-        }
-        emailAdmin = adminContext.getEmailAdmin();
-        return emailAdmin;
-    }
-
-    @Override
     public PolicyAdmin getPolicyAdmin() {
         checkAdminContext();
         if (policyAdmin != null) {
@@ -561,7 +549,6 @@ public final class RegistryImpl extends Registry
         policyBackedServiceAdmin = null;
         customKeyValueStoreAdmin = null;
         emailListenerAdmin = null;
-        emailAdmin = null;
         entityNameResolver = null;
         siteMinderAdmin = null;
         cassandraConnectionAdmin = null;

@@ -161,9 +161,6 @@
         <L7p:ThroughputQuotaQuery>
             <L7p:Enabled booleanValue="false"/>
         </L7p:ThroughputQuotaQuery>
-        <L7p:EmailAlert>
-            <L7p:Enabled booleanValue="false"/>
-        </L7p:EmailAlert>
         <L7p:CommentAssertion>
             <L7p:Enabled booleanValue="false"/>
         </L7p:CommentAssertion>

@@ -1,17 +1,21 @@
-package com.l7tech.server.policy.assertion.alert;
+package com.l7tech.external.assertions.email.server;
 
+import com.l7tech.common.mime.ByteArrayStashManager;
+import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.external.assertions.email.*;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.TestAudit;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.server.ApplicationContexts;
+import com.l7tech.server.ServerConfigStub;
 import com.l7tech.server.boot.GatewayPermissiveLoggingSecurityManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.CollectionUtils;
-import com.sun.mail.smtp.SMTPTransport;
+
+import com.l7tech.util.HexUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -23,21 +27,18 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import javax.mail.Address;
 import javax.mail.AuthenticationFailedException;
 import javax.mail.MessagingException;
-import javax.mail.Session;
 import javax.net.ssl.SSLHandshakeException;
+import java.io.ByteArrayInputStream;
 import java.net.ConnectException;
-import java.util.Properties;
+import java.util.ArrayList;
+import java.util.List;
 
+import static com.l7tech.external.assertions.email.EmailAttachmentException.*;
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.*;
-
 
 /**
  * Date: Sep 23, 2010
@@ -47,19 +48,18 @@ import static org.mockito.Mockito.*;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = "/com/l7tech/server/resources/testApplicationContext.xml")
-public class ServerEmailAlertAssertionTest {
+public class ServerEmailAssertionTest {
 
     @Spy
-    private SMTPTransport smtpTransport = new SMTPTransport(Session.getInstance(new Properties(), null), null);
-
-    private ServerEmailAlertAssertion spyServer;
+    private EmailSender sender =  EmailSender.getInstance();
+    private ServerEmailAssertion spyServer;
 
     @Autowired
     private ApplicationContext applicationContext;
     private PolicyEnforcementContext policyContext;
-    private EmailAlertAssertion assertion;
-    private ServerEmailAlertAssertion serverAssertion;
-
+    private EmailAssertion assertion;
+    private ServerEmailAssertion serverAssertion;
+    private ServerConfigStub serverConfig;
     private TestAudit testAudit;
 
     private SecurityManager originalSecurityManager;
@@ -67,10 +67,11 @@ public class ServerEmailAlertAssertionTest {
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
-
+        serverConfig = applicationContext.getBean("serverConfig", ServerConfigStub.class);
+        serverConfig.putProperty("email.attachments.maxSize", "40");
         testAudit = new TestAudit();
-        assertion = new EmailAlertAssertion();
-        serverAssertion = new ServerEmailAlertAssertion(assertion, applicationContext);
+        assertion = new EmailAssertion();
+        serverAssertion = new ServerEmailAssertion(assertion, applicationContext, sender);
         policyContext = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
 
         setDefaultTestData();
@@ -93,9 +94,6 @@ public class ServerEmailAlertAssertionTest {
 
     private void myMocks() throws Exception {
         spyServer = spy(serverAssertion);
-
-        doReturn(smtpTransport).when(spyServer).getTransport((Session) anyObject(), anyString());
-        doNothing().when(smtpTransport).sendMessage((javax.mail.Message) any(), (Address[]) any());
     }
 
     @Test
@@ -117,7 +115,7 @@ public class ServerEmailAlertAssertionTest {
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
 
         assertEquals(AssertionStatus.FAILED, assertionStatus);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.EMAILALERT_BAD_PORT));
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.EMAIL_BAD_PORT));
     }
 
     @Test
@@ -127,7 +125,7 @@ public class ServerEmailAlertAssertionTest {
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
 
         assertEquals(AssertionStatus.FAILED, assertionStatus);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.EMAILALERT_BAD_PORT));
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.EMAIL_BAD_PORT));
     }
 
     @Test
@@ -137,7 +135,7 @@ public class ServerEmailAlertAssertionTest {
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
 
         assertEquals(AssertionStatus.FAILED, assertionStatus);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.EMAILALERT_BAD_TO_ADDR));
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.EMAIL_BAD_TO_ADDR));
         assertTrue(testAudit.isAuditPresent(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO));
     }
 
@@ -148,7 +146,7 @@ public class ServerEmailAlertAssertionTest {
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
 
         assertEquals(AssertionStatus.FAILED, assertionStatus);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.EMAILALERT_BAD_FROM_ADDR));
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.EMAIL_BAD_FROM_ADDR));
         assertTrue(testAudit.isAuditPresent(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO));
     }
 
@@ -159,7 +157,7 @@ public class ServerEmailAlertAssertionTest {
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
 
         assertEquals(AssertionStatus.FAILED, assertionStatus);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.EMAILALERT_BAD_HOST));
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.EMAIL_BAD_HOST));
     }
 
     @Test
@@ -169,7 +167,7 @@ public class ServerEmailAlertAssertionTest {
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
 
         assertEquals(AssertionStatus.FAILED, assertionStatus);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.EMAILALERT_BAD_USER));
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.EMAIL_BAD_USER));
     }
 
     @Test
@@ -179,23 +177,23 @@ public class ServerEmailAlertAssertionTest {
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
 
         assertEquals(AssertionStatus.FAILED, assertionStatus);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.EMAILALERT_BAD_PWD));
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.EMAIL_BAD_PWD));
     }
 
     @Test
     public void testCheckRequestWithAuthenticationFailedException_AssertionFailed() throws Exception {
-        doThrow(new AuthenticationFailedException()).when(smtpTransport)
-                .connect(anyString(), anyInt(), anyString(), anyString());
+        doThrow(new AuthenticationFailedException()).when(sender).send((EmailConfig) any(),
+                (EmailMessage) any());
 
         final AssertionStatus assertionStatus = spyServer.checkRequest(policyContext);
 
         assertEquals(AssertionStatus.FAILED, assertionStatus);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.EMAILALERT_AUTH_FAIL));
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.EMAIL_AUTH_FAIL));
     }
 
     @Test
     public void testCheckRequestWithMessagingException_AssertionFailed() throws Exception {
-        doThrow(new MessagingException()).when(smtpTransport).connect(anyString(), anyInt(), anyString(), anyString());
+        doThrow(new MessagingException()).when(sender).send((EmailConfig) any(), (EmailMessage) any());
 
         final AssertionStatus assertionStatus = spyServer.checkRequest(policyContext);
 
@@ -205,41 +203,40 @@ public class ServerEmailAlertAssertionTest {
 
     @Test
     public void testCheckRequestWithMessagingExceptionByConnectException_AssertionFailed() throws Exception {
-        doThrow(new MessagingException(null, new ConnectException())).when(smtpTransport)
-                .connect(anyString(), anyInt(), anyString(), anyString());
+        doThrow(new MessagingException(null, new ConnectException())).when(sender).send((EmailConfig) any(),
+                (EmailMessage) any());
 
         final AssertionStatus assertionStatus = spyServer.checkRequest(policyContext);
 
         assertEquals(AssertionStatus.FAILED, assertionStatus);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.EMAILALERT_CONNECT_FAIL));
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.EMAIL_CONNECT_FAIL));
     }
 
     @Test
     public void testCheckRequestWithMessagingExceptionBySSLHandshakeException_AssertionFailed() throws Exception {
-        doThrow(new MessagingException(null, new SSLHandshakeException(null))).when(smtpTransport)
-                .connect(anyString(), anyInt(), anyString(), anyString());
+        doThrow(new MessagingException(null, new SSLHandshakeException(null))).when(sender).send((EmailConfig) any(),
+                (EmailMessage) any());
 
         final AssertionStatus assertionStatus = spyServer.checkRequest(policyContext);
 
         assertEquals(AssertionStatus.FAILED, assertionStatus);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.EMAILALERT_SSL_FAIL));
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.EMAIL_SSL_FAIL));
     }
 
     @Test
     public void testCheckRequestWithMessagingExceptionByAuthenticationFailure_AssertionFailed() throws Exception {
-        doThrow(new MessagingException("[EOF]")).when(smtpTransport)
-                .connect(anyString(), anyInt(), anyString(), anyString());
+        doThrow(new MessagingException("[EOF]")).when(sender).send((EmailConfig) any(), (EmailMessage) any());
 
         final AssertionStatus assertionStatus = spyServer.checkRequest(policyContext);
 
         assertEquals(AssertionStatus.FAILED, assertionStatus);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.EMAILALERT_AUTH_FAIL));
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.EMAIL_AUTH_FAIL));
     }
 
     @Test
     @BugNumber(8681)
     public void testCheckRequestWithContextVariables_Success() throws Exception {
-        doNothing().when(smtpTransport).connect(anyString(), anyInt(), anyString(), anyString());
+        doNothing().when(sender).send((EmailConfig) any(), (EmailMessage) any());
 
         assertion.setIsTestBean(true);
         assertTrue(containsContextVar(assertion.getSmtpHost()));
@@ -252,11 +249,10 @@ public class ServerEmailAlertAssertionTest {
             fail(e.getMessage());
         }
 
-        verify(smtpTransport, times(1)).connect(anyString(), anyInt(), anyString(), anyString());
-        verify(smtpTransport, times(1)).sendMessage((javax.mail.Message) any(), (Address[]) any());
+        verify(sender, times(1)).send((EmailConfig) any(), (EmailMessage) any());
 
         assertEquals(AssertionStatus.NONE, status);
-        assertTrue(testAudit.isAuditPresent(AssertionMessages.EMAILALERT_MESSAGE_SENT));
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.EMAIL_MESSAGE_SENT));
 
         // confirm that the context variables have been replaced.
         assertFalse(containsContextVar(assertion.getSmtpHost()));
@@ -268,6 +264,139 @@ public class ServerEmailAlertAssertionTest {
         assertFalse(containsContextVar(assertion.getTargetBCCEmailAddress()));
         assertFalse(containsContextVar(assertion.getTargetCCEmailAddress()));
         assertFalse(containsContextVar(assertion.getTargetEmailAddress()));
+    }
+
+    @Test
+    public void testEmailSentSuccessfully() throws Exception {
+        doNothing().when(sender).send((EmailConfig) any(), (EmailMessage) any());
+
+        assertion.setBase64message(HexUtils.encodeBase64("Hello".getBytes()));
+        assertion.setSmtpPort("25");
+        assertion.setSmtpHost("mail");
+        assertion.setSourceEmailAddress("L7SSG@NOMAILBOX");
+        assertion.setTargetEmailAddress("ssgautotest@layer7tech.com");
+        assertion.setFormat(EmailFormat.PLAIN_TEXT);
+
+        EmailAttachment attachment = new EmailAttachment("Hello.txt", "textContent", false);
+        List<EmailAttachment> attachmentList = new ArrayList<>();
+        attachmentList.add(attachment);
+        assertion.setAttachments(attachmentList);
+
+        Message message = new Message(new ByteArrayStashManager(), ContentTypeHeader.TEXT_DEFAULT, new
+                ByteArrayInputStream("This is the attachment content.".getBytes()));
+        policyContext.setVariable("textContent", message);
+
+        AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
+
+        assertEquals(AssertionStatus.NONE, assertionStatus);
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.EMAIL_MESSAGE_SENT));
+    }
+
+    @Test
+    public void testEmail_DuplicateNameError() throws Exception {
+        doNothing().when(sender).send((EmailConfig) any(), (EmailMessage) any());
+
+        assertion.setBase64message(HexUtils.encodeBase64("Hello".getBytes()));
+        assertion.setSmtpPort("25");
+        assertion.setSmtpHost("mail");
+        assertion.setSourceEmailAddress("L7SSG@NOMAILBOX");
+        assertion.setTargetEmailAddress("ssgautotest@layer7tech.com");
+        assertion.setFormat(EmailFormat.PLAIN_TEXT);
+
+        EmailAttachment attachment = new EmailAttachment("text.txt", "textContent", false);
+        EmailAttachment attachment2 = new EmailAttachment("text.txt", "textContent2", false);
+        List<EmailAttachment> attachmentList = new ArrayList<>();
+        attachmentList.add(attachment);
+        attachmentList.add(attachment2);
+        assertion.setAttachments(attachmentList);
+
+        Message message = new Message(new ByteArrayStashManager(), ContentTypeHeader.TEXT_DEFAULT, new
+                ByteArrayInputStream("This is the attachment content.".getBytes()));
+        Message message2 = new Message(new ByteArrayStashManager(), ContentTypeHeader.TEXT_DEFAULT, new
+                ByteArrayInputStream("This is the attachment 2 content.".getBytes()));
+        policyContext.setVariable("textContent", message);
+        policyContext.setVariable("textContent2", message2);
+        AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
+
+        assertEquals(AssertionStatus.FAILED, assertionStatus);
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.EMAIL_ATTACHMENT_INVALID));
+        assertTrue(testAudit.isAuditPresentContaining(DUPLICATE_ATTACHMENT_NAME));
+    }
+
+    @Test
+    public void testEmail_AttachmentNameError() throws Exception {
+        doNothing().when(sender).send((EmailConfig) any(), (EmailMessage) any());
+
+        assertion.setBase64message(HexUtils.encodeBase64("Hello".getBytes()));
+        assertion.setSmtpPort("25");
+        assertion.setSmtpHost("mail");
+        assertion.setSourceEmailAddress("L7SSG@NOMAILBOX");
+        assertion.setTargetEmailAddress("ssgautotest@layer7tech.com");
+        assertion.setFormat(EmailFormat.PLAIN_TEXT);
+
+        EmailAttachment attachment = new EmailAttachment(null, "textContent", false);
+        List<EmailAttachment> attachmentList = new ArrayList<>();
+        attachmentList.add(attachment);
+        assertion.setAttachments(attachmentList);
+
+        Message message = new Message(new ByteArrayStashManager(), ContentTypeHeader.TEXT_DEFAULT, new
+                ByteArrayInputStream("This is the attachment content.".getBytes()));
+        policyContext.setVariable("textContent", message);
+        AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
+
+        assertEquals(AssertionStatus.FAILED, assertionStatus);
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.EMAIL_ATTACHMENT_INVALID));
+        assertTrue(testAudit.isAuditPresentContaining(INVALID_ATTACHMENT_NAME));
+    }
+
+    @Test
+    public void testEmail_UndefinedAttachmentSourceVariableError() throws Exception {
+        doNothing().when(sender).send((EmailConfig) any(), (EmailMessage) any());
+
+        assertion.setBase64message(HexUtils.encodeBase64("Hello".getBytes()));
+        assertion.setSmtpPort("25");
+        assertion.setSmtpHost("mail");
+        assertion.setSourceEmailAddress("L7SSG@NOMAILBOX");
+        assertion.setTargetEmailAddress("ssgautotest@layer7tech.com");
+        assertion.setFormat(EmailFormat.PLAIN_TEXT);
+
+        EmailAttachment attachment = new EmailAttachment("text.txt", "textContent", false);
+        List<EmailAttachment> attachmentList = new ArrayList<>();
+        attachmentList.add(attachment);
+        assertion.setAttachments(attachmentList);
+
+        AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
+
+        assertEquals(AssertionStatus.FAILED, assertionStatus);
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.EMAIL_ATTACHMENT_INVALID));
+        assertTrue(testAudit.isAuditPresentContaining(UNDEFINED_ATTACHMENT_SOURCE_VARIABLE));
+    }
+
+    @Test
+    public void testEmail_AttachmentMaxSizeExceedsError() throws Exception {
+        doNothing().when(sender).send((EmailConfig) any(), (EmailMessage) any());
+
+        assertion.setBase64message(HexUtils.encodeBase64("Hello".getBytes()));
+        assertion.setSmtpPort("25");
+        assertion.setSmtpHost("mail");
+        assertion.setSourceEmailAddress("L7SSG@NOMAILBOX");
+        assertion.setTargetEmailAddress("ssgautotest@layer7tech.com");
+        assertion.setFormat(EmailFormat.PLAIN_TEXT);
+
+        Message message = new Message(new ByteArrayStashManager(), ContentTypeHeader.TEXT_DEFAULT, new
+                ByteArrayInputStream("This is the attachment content which is used to validate the maxSize of the attachment.".getBytes()));
+
+        policyContext.setVariable("textContent", message);
+        EmailAttachment attachment = new EmailAttachment("text.txt", "textContent", false);
+        List<EmailAttachment> attachmentList = new ArrayList<>();
+        attachmentList.add(attachment);
+        assertion.setAttachments(attachmentList);
+
+        AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
+
+        assertEquals(AssertionStatus.FAILED, assertionStatus);
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.EMAIL_ATTACHMENT_INVALID));
+        assertTrue(testAudit.isAuditPresentContaining(ATTACHMENT_SIZE_EXCEEDS));
     }
 
     private boolean containsContextVar(String s){
