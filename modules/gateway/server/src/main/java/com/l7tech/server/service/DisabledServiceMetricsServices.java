@@ -3,13 +3,12 @@ package com.l7tech.server.service;
 import com.l7tech.gateway.common.mapping.MessageContextMapping;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.Goid;
-
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.List;
 
 /**
- *
+ * Implementation that does nothing when metrics are sent to the database.
  */
 public class DisabledServiceMetricsServices implements ServiceMetricsServices, PropertyChangeListener {
 
@@ -22,6 +21,7 @@ public class DisabledServiceMetricsServices implements ServiceMetricsServices, P
                             final boolean completed,
                             final int frontTime,
                             final int backTime ) {
+        // Do nothing.
     }
 
     @Override
@@ -31,6 +31,7 @@ public class DisabledServiceMetricsServices implements ServiceMetricsServices, P
 
     @Override
     public void trackServiceMetrics( final Goid serviceGoid ) {
+        // Do nothing.
     }
 
     @Override
@@ -40,5 +41,6 @@ public class DisabledServiceMetricsServices implements ServiceMetricsServices, P
 
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
+        // Do nothing.
     }
 }

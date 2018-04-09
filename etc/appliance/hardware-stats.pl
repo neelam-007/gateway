@@ -31,7 +31,9 @@ my $cputemp = "null";
 my $errornum = "";
 my @cputemps = ();
 
-my @sensors = qw(MB/T_AMB0 MB/T_AMB1 MB/T_AMB2 MB/T_AMB3);
+#Command in the following line returns a list of all Temperature type sensors in the SDR.
+my $temp = 'ipmitool sdr type temperature';
+my @sensors = qx(exec $temp);
 
 # first determine the hardware make
 #my $dmidecode=`./dmidecode 2>&1 | grep Product | uniq`;
@@ -40,7 +42,9 @@ my $hardware = &get_hardware;
 
 if( $hardware =~ /x4150/i ) {
 	foreach my $sensordata ( @sensors ) {
-		my $command = "ipmitool sdr get $sensordata | grep 'Sensor Reading' |";
+	    #sensordata is in the form 0 |MB/T_AMB_FRONT | 2Ah | ok |  7.0 | 26 degrees C. Hence it is parsed below to fetch the sensor name.
+	    my $sensorname = (split(/ +/,$sensordata))[0];
+		my $command = "ipmitool sdr get $sensorname | grep 'Sensor Reading' |";
 		# should return
 		#  Sensor Reading        : 42 (+/- 0) degrees C
 		open SENSOR, $command or $errornum = 2;
@@ -71,20 +75,20 @@ print "CPU|$cputemp";
 #################
 
 sub get_hardware {
-	my $s = "undefined";
+	my $s = 'undefined';
 	my $ret = `cat /proc/cpuinfo | grep vendor_id | uniq -c`;
 	my ($num,$vendor) = (split(/ +/,$ret))[1,3];
-	if( int $num == 8 and $vendor =~ /GenuineIntel/i ) {
-		$s = "x4150";
+	if($vendor =~ /GenuineIntel/i ) {
+		$s = 'x4150';
 	}
 	elsif( int $num == 4 and $vendor =~ /AuthenticAMD/i ) {
-		$s = "x4100";
+		$s = 'x4100';
 	}
 	elsif( int $num == 1 ) {
-		$s = "vmware";
+		$s = 'vmware';
 	}
 	else {
-		$s = "unknown";
+		$s = 'unknown';
 	}
 	return $s;
 }

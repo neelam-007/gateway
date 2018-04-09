@@ -135,7 +135,8 @@ public class ServerGetApiIncrementAssertion extends AbstractServerAssertion<GetA
             "    a.PORTAL_STATUS AS PORTAL_STATUS,\n" +
             "    atg.API_LOCATION_URL AS API_LOCATION_URL,\n" +
             "    a.PUBLISHED_BY_PORTAL AS PUBLISHED_BY_PORTAL,\n" +
-            "    a.SSG_URL AS SSG_URL\n" +
+            "    a.SSG_URL AS SSG_URL,\n" +
+            "    a.MODIFY_TS AS MODIFY_TS\n" +
             "FROM\n" +
             "   API a LEFT JOIN API_TENANT_GATEWAY atg on atg.API_UUID = a.UUID and atg.TENANT_ID = a.TENANT_ID \n" +
             "WHERE a.TENANT_ID = ? and atg.TENANT_GATEWAY_UUID = ?",
@@ -175,6 +176,7 @@ public class ServerGetApiIncrementAssertion extends AbstractServerAssertion<GetA
       apiEntity.setPortalPublished((Boolean) results.get("published_by_portal").get(i));
       apiEntity.setApiLocationUrl((String) results.get("api_location_url").get(i));
       apiEntity.setSsgUrl((String) results.get("ssg_url").get(i));
+      apiEntity.setPortalModifyTS((Long) results.get("modify_ts").get(i));
       apiV2EntityMap.put(uuid, apiEntity);
     }
 

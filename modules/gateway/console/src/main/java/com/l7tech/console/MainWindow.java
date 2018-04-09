@@ -1772,6 +1772,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                         // no matter what, if service tree exists, always refresh it
                         if (servicesAndPoliciesTree != null) {
                             servicesAndPoliciesTree.refresh(rootNode);
+                            servicesAndPoliciesTree.setSelectionPath(null);
                             alreadyRefreshed.add(servicesAndPoliciesTree);
                         }
 

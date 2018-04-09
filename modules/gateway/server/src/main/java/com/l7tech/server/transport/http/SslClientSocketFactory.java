@@ -10,8 +10,8 @@ import java.util.logging.Logger;
 import java.util.Comparator;
 
 /**
- * {@link SSLSocketFactory} implementation used by {@link com.l7tech.server.identity.ldap.LdapIdentityProvider}s and
- * {@link com.l7tech.server.policy.assertion.alert.ServerEmailAlertAssertion} to provide a bridge between the bizarro
+ * {@link SSLSocketFactory} implementation used by {@link com.l7tech.server.identity.ldap.LdapIdentityProvider}s
+ *  to provide a bridge between the bizarro
  * {@link SSLSocketFactory#getDefault} mechanism and our non-singleton {@link SslClientTrustManager}.
  * @author alex
  */

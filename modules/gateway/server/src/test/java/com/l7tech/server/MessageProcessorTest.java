@@ -18,6 +18,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.metrics.GatewayMetricsPublisher;
 import com.l7tech.server.message.metrics.GatewayMetricsSupport;
 import com.l7tech.server.message.metrics.MockGatewayMetricsPublisher;
+import com.l7tech.server.messageprocessor.injection.MessageProcessorInjector;
 import com.l7tech.server.policy.PolicyCache;
 import com.l7tech.server.policy.PolicyMetadata;
 import com.l7tech.server.policy.PolicyMetadataStub;
@@ -28,6 +29,7 @@ import com.l7tech.server.service.resolution.ServiceResolutionException;
 import com.l7tech.server.stepdebug.DebugManager;
 import com.l7tech.util.Config;
 import com.l7tech.util.Functions;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 import org.springframework.context.ApplicationEventPublisher;
 
@@ -47,9 +49,41 @@ public class MessageProcessorTest {
     private final static Goid SERVICE_GOID = new Goid(3L, 4L);
 
     @Test
-    public void shouldFireServiceFinishedWhenBlah() throws Exception {
+    public void shouldFireServiceFinishedWhenProcessMessageSuccessfully() throws Exception {
+        final MessageProcessor messageProcessor = newMessageProcessor();
+        messageProcessor.afterPropertiesSet();
+        messageProcessor.processMessage(new PolicyEnforcementContextBuilder()
+                .withRequest(new Message())
+                .withResponse(new Message())
+                .build());
+
+        verify((MockGatewayMetricsPublisher) messageProcessor.gatewayMetricsEventsPublisher,
+                times(1))
+                .publishEvent(any(ServiceFinished.class));
+    }
+
+    @Test
+    public void shouldFireServiceFinishedOnError() throws Exception {
+        final MessageProcessor messageProcessor = spy(newMessageProcessor());
+        messageProcessor.processMessage(new PolicyEnforcementContextBuilder()
+                .withRequest(new Message())
+                .withResponse(new Message())
+                .build());
+
+        doThrow(new RuntimeException()).when(messageProcessor).processMessage(any(PolicyEnforcementContext.class));
+        try {
+            messageProcessor.processMessage(new PolicyEnforcementContextBuilder().build());
+        } catch (Exception e) {
+            verify((MockGatewayMetricsPublisher) messageProcessor.gatewayMetricsEventsPublisher,
+                    times(1))
+                    .publishEvent(any(ServiceFinished.class));
+        }
+    }
+
+    @NotNull
+    private MessageProcessor newMessageProcessor() throws Exception {
         final ApplicationEventPublisher applicationEventPublisher = new ApplicationEventPublisherBuilder().build();
-        final MessageProcessor messageProcessor = new MessageProcessor(
+        MessageProcessor messageProcessor = new MessageProcessor(
                 new ServiceCacheBuilder()
                         .withService(new PublishedServiceBuilder()
                                 .withId(SERVICE_ID).withGoid(SERVICE_GOID)
@@ -70,17 +104,10 @@ public class MessageProcessorTest {
                 applicationEventPublisher);
 
         messageProcessor.debugManager = new DebugManagerBuilder().build();
-        final MockGatewayMetricsPublisher gatewayMetricsEventsPublisher = new GatewayMetricsEventPublisherBuilder().build();
-        messageProcessor.gatewayMetricsEventsPublisher = gatewayMetricsEventsPublisher;
+        messageProcessor.gatewayMetricsEventsPublisher = new GatewayMetricsEventPublisherBuilder().build();
         messageProcessor.afterPropertiesSet();
-        messageProcessor.processMessage(new PolicyEnforcementContextBuilder()
-                .withRequest(new Message())
-                .withResponse(new Message())
-                .build());
-
-        verify(gatewayMetricsEventsPublisher, times(1)).publishEvent(any(ServiceFinished.class));
+        return messageProcessor;
     }
-
 
     class ServiceCacheBuilder {
         private final ServiceCache serviceCache;

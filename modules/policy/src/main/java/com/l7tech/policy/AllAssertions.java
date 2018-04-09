@@ -1,7 +1,6 @@
 package com.l7tech.policy;
 
 import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.policy.assertion.composite.*;
 import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenExchange;
 import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
@@ -78,7 +77,6 @@ public class AllAssertions {
         new UnknownAssertion(),
         new ThroughputQuota(),
         new ThroughputQuotaQueryAssertion(),
-        new EmailAlertAssertion(),
         new CommentAssertion(),
         new SqlAttackAssertion(),
         new OversizedTextAssertion(),
@@ -164,7 +162,6 @@ public class AllAssertions {
         new UnknownAssertion(),
         new ThroughputQuota(),
         new ThroughputQuotaQueryAssertion(),
-        new EmailAlertAssertion(),
         new CommentAssertion(),
         new SqlAttackAssertion(),
         new OversizedTextAssertion(),

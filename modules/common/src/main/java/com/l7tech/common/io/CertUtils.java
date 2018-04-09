@@ -8,6 +8,8 @@ import org.bouncycastle.asn1.*;
 import org.bouncycastle.asn1.x509.*;
 import org.bouncycastle.x509.extension.AuthorityKeyIdentifierStructure;
 import org.bouncycastle.x509.extension.X509ExtensionUtil;
+import org.jetbrains.annotations.NotNull;
+import sun.security.util.DerValue;
 
 import javax.naming.InvalidNameException;
 import javax.naming.ldap.LdapName;
@@ -17,6 +19,8 @@ import java.io.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigInteger;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.*;
@@ -132,9 +136,13 @@ public class CertUtils {
     private static final Pattern SUN_ECPUBLICKEYIMPL_EC_CURVENAME_GUESSER = Pattern.compile("  parameters: ([a-zA-Z0-9]+)(?:\\s|,|$)");
     /** Use static Charset to avoid JDK blocking (google "FastCharsetProvider synchronization" ) */
     private static final Charset ISO_8859_1_CHARSET = Charset.forName( "ISO-8859-1" );
+    /** Only the following X509Types are supported in Subject Alternative Names */
+    private static final Set<X509GeneralName.Type> supportedX509GeneralNameTypes = new HashSet<>(Arrays.asList(new X509GeneralName.Type[]{X509GeneralName.Type.dNSName, X509GeneralName.Type.directoryName, X509GeneralName.Type.iPAddress, X509GeneralName.Type.rfc822Name, X509GeneralName.Type.uniformResourceIdentifier}));
+
 
     public static boolean isCertCaCapable(X509Certificate cert) {
-        if (cert == null) return false;
+        if (cert == null)
+            return false;
         boolean[] usages = cert.getKeyUsage();
         return usages != null && usages[KeyUsage.keyCertSign] && cert.getBasicConstraints() > 0;
     }
@@ -2210,6 +2218,134 @@ public class CertUtils {
         return formatter;
     }
 
+    public static final Pattern rfc822Pattern = Pattern.compile("^[a-zA-Z0-9_!#$%&’*+/=?`{|}~^.-]+@[a-zA-Z0-9.-]+$");
+    public static final Pattern dnsNamePattern = Pattern.compile("^(([a-zA-Z0-9*]|[a-zA-Z0-9][a-zA-Z0-9\\-*]*[a-zA-Z0-9*])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])$");
+    public static final Pattern directoryNamePattern = Pattern.compile("(\\w+[=]{1}[a-zA-Z0-9\\-\\$&\\(\\)\\[\\]\\{\\}\\.\\s]+)([,{1}]\\s*\\w+[=]{1}[a-zA-Z0-9\\-\\(\\)\\[\\]\\{\\}\\.\\s]+)*");
+    public static final Pattern urlPattern =Pattern.compile("^((?:[a-z])[a-z0-9+.-]*):(?://(?:((?:[a-zA-Z0-9-._~!$&'()*+,;=:]|%[0-9A-F]{2})*)@)?((?:[a-zA-Z0-9-._~!$&'()*+,;=]|%[0-9A-F]{2})*)(?::(\\\\d*))?(/(?:[a-zA-Z0-9-._~!$&'()*+,;=:@/]|%[0-9A-F]{2})*)?|(/?(?:[a-zA-Z0-9-._~!$&'()*+,;=:@]|%[0-9A-F]{2})+(?:[a-zA-Z0-9-._~!$&'()*+,;=:@/]|%[0-9A-F]{2})*)?)(?:\\\\?((?:[a-zA-Z0-9-._~!$&'()*+,;=:/?@]|%[0-9A-F]{2})*))?(?:#((?:[a-zA-Z0-9-._~!$&'()*+,;=:/?@]|%[0-9A-F]{2})*))?$");
+
+    private static String validatePattern(Pattern p, String s) {
+        if(!p.matcher(s).matches()) {
+            throw new IllegalArgumentException("Invalid Format");
+        }
+        return s;
+    }
+
+    public static NameValuePair convertFromX509GeneralName(@NotNull X509GeneralName generalName) throws UnsupportedX509GeneralNameException {
+        switch (generalName.getType()) {
+            case dNSName:
+            case rfc822Name:
+            case directoryName:
+            case uniformResourceIdentifier:
+            case registeredID:
+                return new NameValuePair(generalName.getType().getUserFriendlyName(), generalName.getStringVal());
+            case iPAddress:
+                return convertIpAddress2NameValuePair(generalName);
+            case otherName:
+            case x400Address:
+            case ediPartyName:
+                return convert2NameValuePair(generalName);
+            default:
+                    throw new UnsupportedX509GeneralNameException("Wrong X509GeneralName Type");//should never happen
+        }
+    }
+
+    @NotNull
+    private static NameValuePair convert2NameValuePair(@NotNull X509GeneralName generalName) {
+        String val = null;
+        if(generalName.getStringVal() != null) {
+            val = generalName.getStringVal();
+        }
+        else {
+            val = HexUtils.encodeBase64(generalName.getDerVal(), true);
+        }
+        return new NameValuePair(generalName.getType().getUserFriendlyName(), val);
+    }
+
+    @NotNull
+    private static NameValuePair convertIpAddress2NameValuePair(@NotNull X509GeneralName generalName) {
+        String ipAddress = null;
+        if(generalName.getDerVal() != null) {
+            byte[] bytes = generalName.getDerVal();
+            //check if this is DEROctetString(4) and the length is correct IP4 or IP6
+            if(bytes.length < 6 || bytes[0] != 4 || (bytes[1] != 4 && bytes[1] != 16)) {
+                throw  new IllegalArgumentException("Wrong iPAddress encoding");
+            }
+            InetAddress inetAddress = null;
+            try {
+                inetAddress = InetAddress.getByAddress(Arrays.copyOfRange(bytes,2, bytes.length));
+                ipAddress = inetAddress.getHostAddress();
+            } catch (UnknownHostException e) {
+                throw new IllegalArgumentException("Wrong InetAddress format");
+            }
+
+        }
+        else {
+            ipAddress = generalName.getStringVal();
+        }
+        return new NameValuePair(X509GeneralName.Type.iPAddress.getUserFriendlyName(), ipAddress);
+    }
+
+    /**
+     * convert NameValuePair to X509GeneralName
+     * @param pair NameValuePair containing string representation of the type and value
+     * @return X509GeneralName object
+     */
+    public static X509GeneralName convertToX509GeneralName(@NotNull NameValuePair pair) throws UnsupportedX509GeneralNameException {
+        if(pair.getKey() == null || pair.getValue() == null) {
+            return null;
+        }
+        //Determine the type
+        String type = pair.getKey();
+        if(X509GeneralName.Type.rfc822Name.getUserFriendlyName().equalsIgnoreCase(type))
+            return  new X509GeneralName(X509GeneralName.Type.rfc822Name, validatePattern(rfc822Pattern,pair.getValue()));
+        else if(X509GeneralName.Type.dNSName.getUserFriendlyName().equalsIgnoreCase(type))
+            return X509GeneralName.fromDnsName(validatePattern(dnsNamePattern, pair.getValue()));
+        else if(X509GeneralName.Type.directoryName.getUserFriendlyName().equalsIgnoreCase(type))
+            return new X509GeneralName(X509GeneralName.Type.directoryName, validatePattern(directoryNamePattern, pair.getValue()));
+        else if(X509GeneralName.Type.uniformResourceIdentifier.getUserFriendlyName().equalsIgnoreCase(type))
+            return new X509GeneralName(X509GeneralName.Type.uniformResourceIdentifier, validatePattern(urlPattern, pair.getValue()));
+        else if(X509GeneralName.Type.iPAddress.getUserFriendlyName().equalsIgnoreCase(type))
+            if(InetAddressUtil.looksLikeIpAddressV4OrV6(pair.getValue(), false))
+                return X509GeneralName.fromIpAddress(pair.getValue());
+            else
+                throw new IllegalArgumentException("Invalid IP Address format");
+        else
+            throw new UnsupportedX509GeneralNameException("Unsupported X509GeneralName Type");
+    }
+
+    /**
+     * Extracts types and values from the string list and converts them into a list of X509GeneralName objects
+     * @param sansList list of strings in <X509GeneralName.Type friendly name>:<value> format
+     * @return X509GeneralName list
+     * @throws UnsupportedX509GeneralNameException
+     */
+    public static List<X509GeneralName> extractX509GeneralNamesFromList(List<String> sansList) throws UnsupportedX509GeneralNameException{
+        List<X509GeneralName> csrSAN = null;
+        if(sansList != null) {
+            for(String sanStr : sansList) {
+                String[] s = sanStr.split(":", 2);
+                if(s.length == 2) {
+                    if(csrSAN == null) {
+                        csrSAN = new ArrayList<>();
+                    }
+                    X509GeneralName generalName = CertUtils.convertToX509GeneralName(new NameValuePair(s[0],s[1]));
+                    if(generalName != null) {
+                        csrSAN.add(generalName);
+                    }
+                }
+            }
+        }
+        return csrSAN;
+    }
+
+    /**
+     * checks if the Subject Alternative Name Type is supporte by the RESTMan or Manager
+     * @param type X509GeneralName.Type type
+     * @return true if the type is supported
+     */
+    public static boolean isSubjectAlternativeNameTypeSupported(@NotNull X509GeneralName.Type type) {
+        return supportedX509GeneralNameTypes.contains(type);
+    }
     /**
      * Interface for pluggable DN format services.
      */

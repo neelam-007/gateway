@@ -126,7 +126,7 @@ class EmailNotifier extends Notifier<EmailNotificationRule> {
 
         // SSL Config
         if ( cryptoType == EmailNotificationRule.CryptoType.STARTTLS ) {
-            props.put("mail." + protoVal + ".socketFactory.class", EmailUtils.StartTlsSocketFactory.class.getName());
+            props.put("mail." + protoVal + ".socketFactory.class", EmailUtils.getStartTlsSocketFactoryClassName());
             props.put("mail." + protoVal + ".starttls.enable", "true");
         } else if ( cryptoType == EmailNotificationRule.CryptoType.SSL ) {
             props.put("mail." + protoVal + ".socketFactory.class", SOCKET_FACTORY_CLASSNAME);

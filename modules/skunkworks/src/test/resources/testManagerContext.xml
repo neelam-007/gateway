@@ -1082,7 +1082,7 @@
     <bean id="preServiceInvocationInjectionsRegistry" class="com.l7tech.server.extension.registry.processorinjection.ServiceInjectionsRegistry"/>
     <bean id="postServiceInvocationInjectionsRegistry" class="com.l7tech.server.extension.registry.processorinjection.ServiceInjectionsRegistry"/>
 
-    <bean id="messageProcessorInjector" class="com.l7tech.server.MessageProcessorInjectorImpl" >
+    <bean id="messageProcessorInjector" class="com.l7tech.server.messageprocessor.injection.MessageProcessorInjectorImpl" >
         <constructor-arg ref="preServiceInvocationInjectionsRegistry" />
         <constructor-arg ref="postServiceInvocationInjectionsRegistry" />
     </bean>

@@ -26,6 +26,7 @@ import com.l7tech.xml.InvalidDocumentSignatureException;
 import com.l7tech.xml.UnsupportedDocumentFormatException;
 import com.l7tech.xml.saml.SamlAssertion;
 import com.l7tech.xml.soap.SoapUtil;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.*;
 import org.xml.sax.SAXException;
@@ -1628,18 +1629,13 @@ public class WssProcessorImpl implements WssProcessor {
 
     private void recordKerberosFromBst(Element binarySecurityTokenElement, byte[] decodedValue, String wsuId) {
         try {
-            HttpRequestKnob requestKnob = message.getKnob(HttpRequestKnob.class);
-            URL requestUrl = requestKnob != null? requestKnob.getRequestURL(): null;
-            String remoteAddress = requestKnob != null? requestKnob.getRemoteAddress(): null;
-            String spn = KerberosUtils.extractSpnFromRequest(requestUrl, remoteAddress);
-
             // SSG-13640 - When the SSG has multiple service keys (SPNs) in its keytab it attempts to:
             //     guess the SPN required to authenticate the request via in the bound URL (KerberosUtils.extractSpnFromRequest())
             //     or by reverse lookup the remote calling endpoint and do the same (to support Load Balancer Proxies)
             //     or failing those uses the first key in the keytab.
             //     If this property is set true the SSG will manually parse the Kerberos Ticket to determine
             //     the service SPN from the ticket itself.
-
+            String spn = null;
             if ( config.getBooleanProperty(KRB5_USE_SPN_FROM_TICKET_PROP, false) ) {
                 try {
                     Krb5ApReq apReq = new Krb5ApReq(decodedValue);
@@ -1647,6 +1643,13 @@ public class WssProcessorImpl implements WssProcessor {
                 } catch (Krb5ApReqException e) {
                     logger.warning("Configured to Decode Kerberos Ticket to identify SPN for Gateway Service but Cannot Parse Ticket in the BinarySecurtyToken");
                 }
+            }
+
+            if(StringUtils.isBlank(spn)) {
+                HttpRequestKnob requestKnob = message.getKnob(HttpRequestKnob.class);
+                URL requestUrl = requestKnob != null ? requestKnob.getRequestURL() : null;
+                String remoteAddress = requestKnob != null ? requestKnob.getRemoteAddress() : null;
+                spn = KerberosUtils.extractSpnFromRequest(requestUrl, remoteAddress);
             }
 
             securityTokens.add(new KerberosSigningSecurityTokenImpl(spn, new KerberosGSSAPReqTicket(decodedValue),

@@ -544,24 +544,25 @@ public class SiteMinderHighLevelAgent {
 
         if ( sessionDef == null ) { return false;}
 
-        boolean validSession = true;
         final int maxTimeOut = sessionDef.getMaxTimeout();
         final int sessionStartTime = sessionDef.getSessionStartTime();
         final int idleTimeOut = sessionDef.getIdleTimeout();
         final int lastSessionTime = sessionDef.getSessionLastTime();
 
-        if ( ( serverTimeSeconds - lastSessionTime ) >= idleTimeOut ){ //IdleTimeOut Check
-            validSession = false;
-            logger.log( Level.FINEST, "Session validation failed, Reason: IdleTimeOut reached" );
-
-        } else if ( ( serverTimeSeconds - sessionStartTime ) >= maxTimeOut ){ //MaxTimeOut Check
-            validSession = false;
-            logger.log( Level.FINEST, "Session validation failed, Reason: MaxTimeOut reached" );
+        // Avoid validation if idle / max timeout are not defined.
+        if (idleTimeOut > 0 && (serverTimeSeconds - lastSessionTime) >= idleTimeOut) { //IdleTimeOut Check
+            logger.log( Level.FINE, "Session validation failed, Reason: IdleTimeOut reached" );
+            return false; // Session validation failed;
+        }
+        
+        // Enforce maxtimeout validation even if idletimeout validation turned positive        
+        if (maxTimeOut > 0 && (serverTimeSeconds - sessionStartTime) >= maxTimeOut) { //MaxTimeOut Check
+            logger.log( Level.FINE, "Session validation failed, Reason: MaxTimeOut reached" );
+            return false; // Session validation failed;
         }
 
-        return validSession;
+        return true;
     }
-
     private SiteMinderAuthResponseDetails getAuthorizationCacheEntry(Cache cache, Object cacheKey, long entryMaxAge) {
         SiteMinderAuthResponseDetails cachedAuthResponseDetails =
                 (SiteMinderAuthResponseDetails) cache.retrieve(cacheKey);

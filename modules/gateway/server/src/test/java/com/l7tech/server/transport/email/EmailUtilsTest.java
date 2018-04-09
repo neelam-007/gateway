@@ -1,6 +1,5 @@
 package com.l7tech.server.transport.email;
 
-import com.l7tech.server.transport.email.EmailUtils.StartTlsSocketFactory;
 import com.l7tech.test.BugId;
 import com.l7tech.test.util.TestUtils;
 import org.junit.Test;

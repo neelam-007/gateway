@@ -328,6 +328,7 @@ public class DependencySecurePasswordTest extends DependencyTestBase{
         });
     }
 
+    @Ignore ("EmailAlert is now modular assertion. This needs to be moved.")
     @Test
     public void emailAlertAssertionTest() throws Exception {
 

@@ -34,6 +34,7 @@
         <dependency name="RateLimitAssertion" rev="latest.integration" conf="module"/>
         <dependency name="ComparisonAssertion" rev="latest.integration" conf="module"/>
         <dependency name="SnmpTrapAssertion" rev="latest.integration" conf="module"/>
+        <dependency name="EmailAssertion" rev="latest.integration" conf="module"/>
         <dependency name="EchoRoutingAssertion" rev="latest.integration" conf="module"/>
         <dependency name="FtpRoutingAssertion" rev="latest.integration" conf="module"/>
         <dependency name="FtpCredentialAssertion" rev="latest.integration" conf="module"/>
@@ -98,6 +99,7 @@
         <dependency name="CORSAssertion" rev="latest.integration" conf="module"/>
         <dependency name="CircuitBreakerAssertion" rev="latest.integration" conf="module"/>
         <dependency name="LdapWriteAssertion" rev="latest.integration" conf="module"/>
+        <dependency name="PolicyBackedServiceMetricsEventListener" rev="latest.integration" conf="module"/>
         <!-- Optional Modular Assertions are copied to "dist" but not packaged -->
         <dependency name="CaWsdmAssertion" rev="latest.integration" conf="module-optional"/>
     </dependencies>

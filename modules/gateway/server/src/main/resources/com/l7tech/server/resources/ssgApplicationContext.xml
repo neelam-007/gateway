@@ -539,6 +539,11 @@
                                 <value>ssh.session.pool.numTestsPerEvictionRun</value>
                             </list>
                         </entry>
+                        <entry key="serviceMetricsEventListenerProxy">
+                            <list>
+                                <value>serviceMetricsEventListener.maxPoolSize</value>
+                            </list>
+                        </entry>
                     </map>
                 </constructor-arg>
             </bean>
@@ -1427,7 +1432,7 @@
     <bean id="preServiceInvocationInjectionsRegistry" class="com.l7tech.server.extension.registry.processorinjection.ServiceInjectionsRegistry"/>
     <bean id="postServiceInvocationInjectionsRegistry" class="com.l7tech.server.extension.registry.processorinjection.ServiceInjectionsRegistry"/>
 
-    <bean id="messageProcessorInjector" class="com.l7tech.server.MessageProcessorInjectorImpl" >
+    <bean id="messageProcessorInjector" class="com.l7tech.server.messageprocessor.injection.MessageProcessorInjectorImpl" >
         <constructor-arg ref="preServiceInvocationInjectionsRegistry" />
         <constructor-arg ref="postServiceInvocationInjectionsRegistry" />
     </bean>
@@ -2646,4 +2651,24 @@
 
     <!-- An events publisher for GatewayMetricsEvent's. -->
     <bean id="gatewayMetricsPublisher" class="com.l7tech.server.message.metrics.GatewayMetricsPublisher"/>
+
+    <!-- Registry for event listeners-->
+    <bean id="eventListenerRegistry" class="com.l7tech.server.extension.registry.event.EventListenerRegistryImpl" />
+
+    <!-- Proxy for service metrics event -->
+    <bean id="serviceMetricsEventListenerProxy" class="com.l7tech.server.extension.event.metrics.ServiceMetricsEventListenerProxy"/>
+
+    <!-- Registries for sharing state -->
+    <bean id="sharedStateProviderRegistry" class="com.l7tech.server.extension.registry.sharedstate.SharedStateProviderRegistry">
+        <constructor-arg index="0" ref="serverConfig"/>
+    </bean>
+
+    <bean id="sharedCounterProviderRegistry" class="com.l7tech.server.extension.registry.sharedstate.SharedCounterProviderRegistry">
+        <constructor-arg index="0" ref="serverConfig"/>
+    </bean>
+
+    <bean id="sharedExecutorServiceProviderRegistry" class="com.l7tech.server.extension.registry.sharedstate.SharedExecutorProviderRegistry">
+        <constructor-arg index="0" ref="serverConfig"/>
+    </bean>
+    <!-- End of Registries for sharing state -->
 </beans>

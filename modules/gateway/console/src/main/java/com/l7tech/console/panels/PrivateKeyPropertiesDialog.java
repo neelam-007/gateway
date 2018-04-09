@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.io.CertGenParams;
 import com.l7tech.common.io.CertUtils;
+import com.l7tech.common.io.X509GeneralName;
 import com.l7tech.console.SsmApplication;
 import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.event.WizardAdapter;
@@ -23,6 +24,7 @@ import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.FileUtils;
 import org.apache.commons.lang.ObjectUtils;
+import org.jetbrains.annotations.NotNull;
 
 import javax.security.auth.x500.X500Principal;
 import javax.swing.*;
@@ -586,6 +588,13 @@ public class PrivateKeyPropertiesDialog extends JDialog {
                 try {
                     CertGenParams params = new CertGenParams(new X500Principal(dlg.getCsrSubjectDN()), 365 * 2, false, null);
                     params.setHashAlgorithm(dlg.getSelectedHash());
+                    //TODO: SAN
+                    params.setIncludeSubjectAlternativeName(true);
+                    params.setSubjectDirectoryAttributesCritical(true);
+                    List<X509GeneralName> names = dlg.getCsrSAN();
+
+                    params.setSubjectAlternativeNames(names);
+                    // end of SAN
                     csr = admin.generateCSR(subject.getKeystore().getGoid(), subject.getAlias(), params);
                 } catch (FindException e) {
                     logger.log(Level.WARNING, "cannot get csr from ssg", e);

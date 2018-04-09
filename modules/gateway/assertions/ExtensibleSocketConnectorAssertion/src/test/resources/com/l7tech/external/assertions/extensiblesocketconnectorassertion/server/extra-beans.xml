@@ -177,13 +177,12 @@
     <bean id="wssDecorator" class="com.l7tech.security.xml.decorator.WssDecoratorImpl">
     </bean>
 
-    <bean id="messageProcessorInjector" class="com.l7tech.server.MessageProcessorInjectorImpl" >
-        <constructor-arg>
-            <bean class="com.l7tech.server.extension.registry.processorinjection.ServiceInjectionsRegistry"/>
-        </constructor-arg>
-        <constructor-arg>
-            <bean class="com.l7tech.server.extension.registry.processorinjection.ServiceInjectionsRegistry"/>
-        </constructor-arg>
+    <bean id="preServiceInvocationInjectionsRegistry" class="com.l7tech.server.extension.registry.processorinjection.ServiceInjectionsRegistry"/>
+    <bean id="postServiceInvocationInjectionsRegistry" class="com.l7tech.server.extension.registry.processorinjection.ServiceInjectionsRegistry"/>
+
+    <bean id="messageProcessorInjector" class="com.l7tech.server.messageprocessor.injection.MessageProcessorInjectorImpl" >
+        <constructor-arg ref="preServiceInvocationInjectionsRegistry" />
+        <constructor-arg ref="postServiceInvocationInjectionsRegistry" />
     </bean>
 
     <!-- server Message Processor -->

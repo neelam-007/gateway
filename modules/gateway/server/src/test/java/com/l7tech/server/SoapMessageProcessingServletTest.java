@@ -15,21 +15,16 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.HttpPassthroughRuleSet;
 import com.l7tech.server.audit.AuditContextFactory;
 import com.l7tech.server.audit.MessageSummaryAuditFactory;
-import com.l7tech.server.event.metrics.ServiceFinished;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.message.metrics.GatewayMetricsListener;
-import com.l7tech.server.message.metrics.GatewayMetricsPublisher;
 import com.l7tech.test.BugId;
 import com.l7tech.util.Config;
 import com.l7tech.util.Functions;
 import com.l7tech.util.IOUtils;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Matchers;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
@@ -37,8 +32,9 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.w3c.dom.Document;
 
-import javax.servlet.ServletException;
+import javax.servlet.ServletInputStream;
 import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.Callable;
 
@@ -52,7 +48,6 @@ public class SoapMessageProcessingServletTest {
     private MockHttpServletRequest request;
     private MockHttpServletResponse response;
     private SsgConnector connector;
-    private GatewayMetricsPublisher gatewayMetricsPublisher;
     @Mock
     private LicenseManager licenseManager;
     @Mock
@@ -68,6 +63,8 @@ public class SoapMessageProcessingServletTest {
     @Mock
     private AuditContextFactory auditContextFactory;
 
+    private static final String ALLOW_GZIP_COMPRESSED_REQUEST = "request.compress.gzip.allow";
+
     @Before
     public void setup() throws Exception {
         request = new MockHttpServletRequest();
@@ -81,7 +78,6 @@ public class SoapMessageProcessingServletTest {
         servlet.messageSummaryAuditFactory = messageSummaryAuditFactory;
         connector = new SsgConnector();
         connector.setEndpoints(SsgConnector.Endpoint.MESSAGE_INPUT.name());
-        gatewayMetricsPublisher = new GatewayMetricsPublisher();
         when(stashManagerFactory.createStashManager()).thenReturn(stashManager);
         when(auditContextFactory.doWithNewAuditContext(Matchers.<Callable>any(), Matchers.<Functions.Nullary>any())).then(new Answer<Object>() {
             @Override
@@ -468,7 +464,7 @@ public class SoapMessageProcessingServletTest {
                 final PolicyEnforcementContext context = (PolicyEnforcementContext) invocationOnMock.getArguments()[0];
                 final Document emptyDocument = XmlUtil.createEmptyDocument();
                 context.getResponse().initialize(emptyDocument, ContentTypeHeader.XML_DEFAULT);
-                assertFalse(context.getResponse().getHeadersKnob().containsHeader("Content-Type", HEADER_TYPE_HTTP));
+                assertFalse(context.getResponse().getHeadersKnob().containsHeader(HttpConstants.HEADER_CONTENT_TYPE, HEADER_TYPE_HTTP));
                 return AssertionStatus.NONE;
             }
         }).when(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
@@ -481,10 +477,10 @@ public class SoapMessageProcessingServletTest {
     @Test
     public void gzipRequestZeroContentLength() throws Exception {
         request.addHeader(HttpConstants.HEADER_CONTENT_ENCODING, "gzip");
-        request.addHeader(HttpConstants.HEADER_CONTENT_TYPE, "text/plain");
+        request.addHeader(HttpConstants.HEADER_CONTENT_TYPE, ContentTypeHeader.TEXT_DEFAULT.getFullValue());
         request.addHeader(HttpConstants.HEADER_CONTENT_LENGTH, "0");
         request.setContent("".getBytes());
-        when(config.getBooleanProperty("request.compress.gzip.allow", true)).thenReturn(true);
+        when(config.getBooleanProperty(ALLOW_GZIP_COMPRESSED_REQUEST, true)).thenReturn(true);
         doAnswer(new Answer() {
             @Override
             public Object answer(final InvocationOnMock invocationOnMock) throws Throwable {
@@ -500,9 +496,9 @@ public class SoapMessageProcessingServletTest {
     @Test
     public void gzipRequest() throws Exception {
         request.addHeader(HttpConstants.HEADER_CONTENT_ENCODING, "gzip");
-        request.addHeader(HttpConstants.HEADER_CONTENT_TYPE, "text/plain");
+        request.addHeader(HttpConstants.HEADER_CONTENT_TYPE, ContentTypeHeader.TEXT_DEFAULT.getFullValue());
         request.setContent(IOUtils.compressGzip("test".getBytes()));
-        when(config.getBooleanProperty("request.compress.gzip.allow", true)).thenReturn(true);
+        when(config.getBooleanProperty(ALLOW_GZIP_COMPRESSED_REQUEST, true)).thenReturn(true);
         doAnswer(new Answer() {
             @Override
             public Object answer(final InvocationOnMock invocationOnMock) throws Throwable {
@@ -515,37 +511,58 @@ public class SoapMessageProcessingServletTest {
         verify(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
     }
 
+    @BugId("DE218036")
     @Test
-    public void serviceFinishedEventOnError() throws Exception {
-        final GatewayMetricsListener subscriber = Mockito.mock(GatewayMetricsListener.class);
-        try {
-            servlet.getPublisher().addListener(subscriber);
-            doReturn(true).when(messageProcessor).isRelayGatewayMetricsEnable();
-            try {
-                request.setContent("test".getBytes());
-                doThrow(new RuntimeException("my runtime exception")).when(auditContextFactory).doWithNewAuditContext(Matchers.<Callable>any(), Matchers.<Functions.Nullary>any());
-                servlet.service(request, response);
-            } catch (Exception ex) {
-                Assert.assertThat(ex, org.hamcrest.Matchers.instanceOf(ServletException.class));
-                Assert.assertThat(
-                        ex.getCause(),
-                        org.hamcrest.Matchers.allOf(
-                                org.hamcrest.Matchers.not(org.hamcrest.Matchers.nullValue()),
-                                org.hamcrest.Matchers.instanceOf(RuntimeException.class)
-                        )
-                );
-                Assert.assertThat(
-                        ex.getCause().getMessage(),
-                        org.hamcrest.Matchers.allOf(
-                                org.hamcrest.Matchers.not(org.hamcrest.Matchers.nullValue()),
-                                org.hamcrest.Matchers.equalTo("my runtime exception")
-                        )
-                );
-                verify(subscriber, times(1)).serviceFinished(Mockito.any(ServiceFinished.class));
+    public void gzipGetRequestNoContent() throws Exception {
+        final String TEST_REQUEST_URL="http://testURL/test";
+        final HttpServletRequest mockRequest = mock(HttpServletRequest.class);
+        when(mockRequest.getInputStream()).thenReturn(new ServletInputStream() {
+            @Override
+            public int read() throws IOException {
+                return 0;
             }
-        } finally {
-            servlet.getPublisher().removeListener(subscriber);
-        }
+        });
+        when(mockRequest.getMethod()).thenReturn(HttpConstants.METHOD_GET);
+        when(mockRequest.getContentLength()).thenReturn(-1);
+
+        final Map<String, String> headers = new HashMap<>();
+        headers.put(HttpConstants.HEADER_CONTENT_ENCODING, "gzip");
+
+        // create an Enumeration over the header keys
+        final Iterator<String> iterator = headers.keySet().iterator();
+        final Enumeration headerNames = new Enumeration<String>() {
+            @Override
+            public boolean hasMoreElements() {
+                return iterator.hasNext();
+            }
+
+            @Override
+            public String nextElement() {
+                return iterator.next();
+            }
+        };
+        when(mockRequest.getHeader(HttpConstants.HEADER_CONTENT_ENCODING)).thenReturn("gzip");
+        when(mockRequest.getHeaderNames()).thenReturn(headerNames);
+
+        final Vector<String> headerValues = new Vector<>();
+        headerValues.add("gzip");
+        final Enumeration<String> headerValuesEnum = headerValues.elements();
+        when(mockRequest.getHeaders(HttpConstants.HEADER_CONTENT_ENCODING)).thenReturn(headerValuesEnum);
+        when(mockRequest.getRequestURL()).thenReturn(new StringBuffer(TEST_REQUEST_URL));
+
+        when(config.getBooleanProperty(ALLOW_GZIP_COMPRESSED_REQUEST, true)).thenReturn(true);
+        doAnswer(new Answer() {
+            @Override
+            public Object answer(final InvocationOnMock invocationOnMock) throws Throwable {
+                final PolicyEnforcementContext context = (PolicyEnforcementContext) invocationOnMock.getArguments()[0];
+                final HeadersKnob responseHeadersKnob = context.getResponse().getHeadersKnob();
+                responseHeadersKnob.addHeader(HttpConstants.HEADER_CONTENT_TYPE, ContentTypeHeader.TEXT_DEFAULT.getFullValue(), HEADER_TYPE_HTTP);
+                return AssertionStatus.NONE;
+            }
+        }).when(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
+        servlet.service(mockRequest, response);
+        assertEquals(response.getHeader(HttpConstants.HEADER_CONTENT_TYPE), ContentTypeHeader.TEXT_DEFAULT.getFullValue());
+        verify(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
     }
 
     private class TestableSoapMessageProcessingServlet extends SoapMessageProcessingServlet {
@@ -553,14 +570,6 @@ public class SoapMessageProcessingServletTest {
         SsgConnector getConnector(final HttpServletRequest request) {
             return connector;
         }
-
-        /**
-         * Must cleanup any subscribers added in your test(s).
-         * See {@link #serviceFinishedEventOnError()} for reference on how to do it.
-         */
-        @Override
-        GatewayMetricsPublisher getPublisher() {
-            return gatewayMetricsPublisher;
-        }
     }
+
 }

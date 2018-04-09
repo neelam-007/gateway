@@ -319,6 +319,24 @@ public abstract class Syntax {
     }
 
     /**
+     * Check if an expression references any variables. This method will never throw a VariableNameSyntaxException
+     *
+     * @param values one or more expression values to check
+     * @return true if any variable is referenced, false otherwise. No distinction is made for invalid references, a
+     * variable is only referenced if the reference is valid.
+     */
+    public static boolean isAnyVariableReferenced(final @NotNull String... values) {
+        for (final String value : values) {
+            final String[] referencedNames = Syntax.getReferencedNames(value, false);
+            if (referencedNames.length > 0) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Remove "${}" syntax surrounding a variable name.
      *
      * @param var variable name, possibly surrounded by dollar-brace and close-brace

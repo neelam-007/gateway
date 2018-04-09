@@ -37,6 +37,7 @@ import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.message.metrics.GatewayMetricsPublisher;
 import com.l7tech.server.message.metrics.GatewayMetricsUtils;
 import com.l7tech.server.message.metrics.LatencyMetrics;
+import com.l7tech.server.messageprocessor.injection.MessageProcessorInjector;
 import com.l7tech.server.policy.PolicyCache;
 import com.l7tech.server.policy.PolicyMetadata;
 import com.l7tech.server.policy.PolicyVersionException;
@@ -138,7 +139,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
      * @param messageSummaryAuditFactory factory for producing message summary audit records after each request
      * @param config          config provider
      * @param trafficLogger   traffic logger
-     * @param messageProcessingEventChannel   channel on which to publish the message processed event (for auditing)
+     * @param messageProcessingEventChannel   channel on which to publish the message processed event (for auditing and metrics)
      * @throws IllegalArgumentException if any of the arguments is null
      */
     public MessageProcessor(final ServiceCache sc,
@@ -626,7 +627,11 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 return securityProcessingAssertionStatus;
 
             // Execute pre service extensions
-            messageProcessorInjector.executePreServiceInjections(context);
+            boolean continueProcessing = messageProcessorInjector.executePreServiceInjections(context);
+            if (!continueProcessing) {
+                logger.log(Level.FINE, "Stopping message processing due to pre-service injection response");
+                return AssertionStatus.NONE;
+            }
 
             AssertionStatus status = processPreServicePolicies();
             if ( status != AssertionStatus.NONE ) {
@@ -651,7 +656,13 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             context.setPolicyResult(status);
 
             // Execute post service extensions
-            messageProcessorInjector.executePostServiceInjections(context);
+            if (status == AssertionStatus.NONE) {
+                boolean maintainAssertionStatus = messageProcessorInjector.executePostServiceInjections(context);
+                if (!maintainAssertionStatus) {
+                    logger.log(Level.FINE, "Message processing falsified due to post-service injection response");
+                    status = AssertionStatus.FALSIFIED;
+                }
+            }
 
             // Run post service global policies
             if ( status == AssertionStatus.NONE ) {

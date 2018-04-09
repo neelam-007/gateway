@@ -37,7 +37,6 @@ import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.*;
-import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.util.Functions;
 import com.l7tech.util.InetAddressUtil;
 import com.l7tech.util.Option;
@@ -523,6 +522,11 @@ public class RegistryStub extends Registry {
             }
 
             @Override
+            public long getXmlMaxBytes() {
+                return 0;
+            }
+
+            @Override
             public boolean testEmailAccount(EmailServerType serverType,
                                             String hostname,
                                             int port,
@@ -663,26 +667,6 @@ public class RegistryStub extends Registry {
     @Override
     public <T> Option<T> getAdminInterface( final Class<T> interfaceClass ) {
         return none();
-    }
-
-    @Override
-    public EmailAdmin getEmailAdmin() {
-        return new EmailAdmin() {
-            @Override
-            public void testSendEmail(EmailAlertAssertion eaa) throws EmailTestException {
-            }
-
-            @Override
-            public long getXmlMaxBytes() {
-                return 0L;
-            }
-
-            @Override
-            public void testSendEmail(String toAddr, String ccAddr, String bccAddr, String fromAddr, String subject,
-                                      String host, int port, String base64Message, EmailAlertAssertion.Protocol protocol,
-                                      boolean authenticate, String authUsername, String authPassword) throws EmailTestException {
-            }
-        };
     }
 
     private IdentityAdmin identityAdmin = new IdentityAdminStub();
