@@ -14,6 +14,8 @@ import com.l7tech.gui.util.InputValidator;
 import com.l7tech.policy.variable.Syntax;
 import org.apache.commons.lang.StringUtils;
 
+import javax.mail.internet.AddressException;
+import javax.mail.internet.InternetAddress;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import java.awt.*;
@@ -66,6 +68,9 @@ public class EmailPropertiesDialog extends AssertionPropertiesOkCancelSupport<Em
     /* Reads the EmailAssertion.properties to get messages. */
     private static ResourceBundle resources = ResourceBundle.getBundle(EmailAssertion.class.getSimpleName());
     private static final String EMAIL_TEST_TITLE = resources.getString("email.test.title");
+
+    /* Character limit in a single line for the email list (To, Cc and Bcc) shown in Confirm Email Test dialig. */
+    private static int CHARACTER_LIMIT_IN_LINE_FOR_EMAIL_LIST = 100;
     /**
      * Creates a new EmailPropertiesDialog object backed by the provided EmailAssertion object.
      *
@@ -90,30 +95,36 @@ public class EmailPropertiesDialog extends AssertionPropertiesOkCancelSupport<Em
         sendTestEmailButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                DialogDisplayer.showConfirmDialog(sendTestEmailButton, constructRecipientEmailMessage(), "Confirm Email Test", JOptionPane.OK_CANCEL_OPTION, new DialogDisplayer.OptionListener(){
-                    @Override
-                    public void reportResult(int option) {
-                        if ( option == JOptionPane.OK_OPTION ) {
-                            doSendTestMail();
+                try {
+                    DialogDisplayer.showConfirmDialog(sendTestEmailButton, constructRecipientEmailMessage(),
+                    "Confirm Email Test", JOptionPane
+                            .OK_CANCEL_OPTION, new DialogDisplayer.OptionListener() {
+                        @Override
+                        public void reportResult(int option) {
+                            if (option == JOptionPane.OK_OPTION) {
+                                doSendTestMail();
+                            }
                         }
-                    }
-                });
+                    });
+                }catch (AddressException e1) {
+                    DialogDisplayer.showMessageDialog(sendTestEmailButton,
+                            "Unable to parse email addresses: " + e1.getMessage(),
+                            EMAIL_TEST_TITLE, JOptionPane.ERROR_MESSAGE, null);
+                }
             }
 
-            private String constructRecipientEmailMessage() {
-                final StringBuilder msg = new StringBuilder("This will send an email to the following recipients.\n");
-
-                msg.append("To: " + toAddressesField.getText() + "\n");
+            private String constructRecipientEmailMessage() throws AddressException {
+                final StringBuilder msg = new StringBuilder("This will send an email to the following recipients.\n\n");
+                msg.append("To:  ").append(constructEmailList(toAddressesField.getText())).append("\n");
 
                 if (!"".equals(ccAddressesField.getText())) {
-                    msg.append("Cc: " + ccAddressesField.getText() + "\n");
+                    msg.append("Cc:  ").append(constructEmailList(ccAddressesField.getText())).append("\n");
                 }
 
                 if (!"".equals(bccAddressesField.getText())) {
-                    msg.append("Bcc: " + bccAddressesField.getText() + "\n");
+                    msg.append("Bcc: ").append(constructEmailList(bccAddressesField.getText())).append("\n");
                 }
-
-                msg.append("\nNote: Attachments will be ignored.\n");
+                msg.append("\nNote: Attachments will be ignored.");
                 return msg.toString();
             }
         });
@@ -351,5 +362,32 @@ public class EmailPropertiesDialog extends AssertionPropertiesOkCancelSupport<Em
     @Override
     protected JPanel createPropertyPanel() {
         return mainPanel;
+    }
+
+    /**
+     * This method formats the list of emails in To, Cc and Bcc list for the Confirm Email Test dialog. It wraps the
+     * emails in to 100 character limit and display the list in multiple lines.
+     * @param emails List of emails in To or Cc or Bcc list
+     * @return Formatted string
+     * @throws AddressException if there was an error parsing the email list
+     */
+    private static String constructEmailList(String emails) throws AddressException {
+        final InternetAddress[] emailAddresses = InternetAddress.parse(emails);
+        final StringBuilder listToDisplay = new StringBuilder();
+        int lineCharCount = 0;
+        for (final InternetAddress address : emailAddresses) {
+            final String emailAddress = address.getAddress();
+            if(lineCharCount > 0 && (lineCharCount + emailAddress.length()) > CHARACTER_LIMIT_IN_LINE_FOR_EMAIL_LIST) {
+                listToDisplay.append(",").append("\n       ").append(emailAddress);
+                lineCharCount = emailAddress.length();
+            } else {
+                if(listToDisplay.length() > 0) {
+                    listToDisplay.append(", ");
+                }
+                listToDisplay.append(emailAddress);
+                lineCharCount += emailAddress.length();
+            }
+        }
+        return listToDisplay.toString();
     }
 }
