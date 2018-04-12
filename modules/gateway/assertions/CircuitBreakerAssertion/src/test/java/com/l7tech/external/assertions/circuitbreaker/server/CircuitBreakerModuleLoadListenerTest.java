@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.circuitbreaker.server;
 
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigStub;
@@ -21,7 +22,7 @@ import static org.junit.Assert.assertNotNull;
 public class CircuitBreakerModuleLoadListenerTest {
 
     @Test
-    public void testOnModuleLoad() {
+    public void testOnModuleLoad() throws FindException {
         ApplicationContext context = ApplicationContexts.getTestApplicationContext();
         final ServerConfig config = context.getBean("serverConfig", ServerConfigStub.class);
 

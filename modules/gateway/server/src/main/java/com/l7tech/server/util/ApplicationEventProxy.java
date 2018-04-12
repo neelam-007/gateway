@@ -1,6 +1,7 @@
 package com.l7tech.server.util;
 
 import com.l7tech.server.policy.module.AssertionModuleUnregistrationEvent;
+import com.l7tech.util.ExceptionUtils;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationListener;
@@ -10,6 +11,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Non-transactional bean that gathers and re-dispatches application events.
@@ -18,6 +21,9 @@ import java.util.concurrent.CopyOnWriteArraySet;
  * a 30% performance decrease system-wide between Gateway versions 3.5 and 3.6.
  */
 public class ApplicationEventProxy implements ApplicationListener, ApplicationEventPublisher, Ordered {
+
+    private static final Logger LOGGER = Logger.getLogger(ApplicationEventProxy.class.getName());
+
     final Set<ApplicationListener> subscribers = new CopyOnWriteArraySet<ApplicationListener>();
     final boolean primaryChannel;
 
@@ -103,8 +109,14 @@ public class ApplicationEventProxy implements ApplicationListener, ApplicationEv
     }
 
     private void deliverEventToSubscribers(ApplicationEvent event) {
-        for (ApplicationListener applicationListener : subscribers)
-            applicationListener.onApplicationEvent(event);
+        for (ApplicationListener applicationListener : subscribers){
+            try{
+                applicationListener.onApplicationEvent(event);
+            }
+            catch (Exception e){
+                LOGGER.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            }
+        }
     }
 
     void removeListenersFromClassLoader(ClassLoader classLoader) {
