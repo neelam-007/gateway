@@ -42,34 +42,22 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
     private static final Logger logger = Logger.getLogger(ServerGetIncrementAssertion.class.getName());
 
     /**
-     * 1. Get all the APIs that are directly added to applications.
-     * 2. Get all the APIs that are associated to applications through API groups.  These APIs should either be public or belong to the same org as the application.
-     * 3. Union 1 & 2.
-     * 4. Filter results that have an API key and an application status of enabled, disabled, or pending approval.
-     * 5. Filter results by tenant ID
+     * 1. Get all the APIs that are directly added to applications or indirectly added through API groups.
+     * 2. Filter results that have an API key, by tenant ID, and an application status of enabled, disabled, or pending approval.
+     * 3. Remove duplicate APIs
      */
     private static final String BULK_SYNC_SELECT =
-        "SELECT a3.UUID, concat(a3.NAME,'-',o.NAME) as NAME, a3.API_KEY, a3.KEY_SECRET, \n" +
-               "coalesce (r.PREVIOUS_STATE, a3.STATUS) as STATUS, a3.ORGANIZATION_UUID, o.NAME as ORGANIZATION_NAME, \n" +
-               "a3.OAUTH_CALLBACK_URL, a3.OAUTH_SCOPE, a3.OAUTH_TYPE, a3.MAG_SCOPE, a3.MAG_MASTER_KEY, \n" +
-               "a3.API_UUID, a3.CREATED_BY, a3.MODIFIED_BY, r.LATEST_REQ \n" +
-        "FROM (SELECT a.UUID, a.NAME, a.API_KEY, a.KEY_SECRET, a.STATUS, a.ORGANIZATION_UUID, \n" +
-                     "a.OAUTH_CALLBACK_URL, a.OAUTH_SCOPE, a.OAUTH_TYPE, a.MAG_SCOPE, a.MAG_MASTER_KEY, \n" +
-                     "ax.API_UUID, a.CREATED_BY, a.MODIFIED_BY, a.TENANT_ID \n" +
-              "FROM APPLICATION a \n" +
-              "JOIN APPLICATION_API_XREF ax on ax.APPLICATION_UUID = a.UUID \n" +
-              "UNION \n" +
-              "SELECT a2.UUID, a2.NAME, a2.API_KEY, a2.KEY_SECRET, a2.STATUS, a2.ORGANIZATION_UUID, \n" +
-                     "a2.OAUTH_CALLBACK_URL, a2.OAUTH_SCOPE, a2.OAUTH_TYPE, a2.MAG_SCOPE, a2.MAG_MASTER_KEY, \n" +
-                     "agax.API_UUID, a2.CREATED_BY, a2.MODIFIED_BY, a2.TENANT_ID \n" +
-              "FROM APPLICATION_API_GROUP_XREF aagx \n" +
-              "JOIN APPLICATION a2 ON a2.UUID = aagx.APPLICATION_UUID \n" +
-              "JOIN  API_GROUP_API_XREF agax ON agax.API_GROUP_UUID = aagx.API_GROUP_UUID \n" +
-              "JOIN ORGANIZATION_ALL_API_VIEW oav ON oav.UUID = agax.API_UUID \n" +
-              "WHERE (oav.ACCESS_STATUS = 'PUBLIC' OR (oav.ACCESS_STATUS = 'PRIVATE' AND oav.ORGANIZATION_UUID = a2.ORGANIZATION_UUID))) a3 \n" +
-        "JOIN ORGANIZATION o on a3.ORGANIZATION_UUID = o.UUID \n" +
-        "LEFT JOIN (select ENTITY_UUID, PREVIOUS_STATE, max(CREATE_TS) as LATEST_REQ FROM REQUEST GROUP BY ENTITY_UUID, PREVIOUS_STATE, CREATE_TS) r ON a3.UUID = r.ENTITY_UUID \n" +
-        "WHERE a3.API_KEY IS NOT NULL AND a3.TENANT_ID='%s' AND a3.STATUS IN ('ENABLED', 'DISABLED', 'EDIT_APPLICATION_PENDING_APPROVAL')";
+        "SELECT DISTINCT(aaagx.API_UUID), a.UUID, concat(a.NAME,'-',o.NAME) AS NAME, a.API_KEY, a.KEY_SECRET, " +
+               "coalesce (r.PREVIOUS_STATE, a.STATUS) AS STATUS, a.ORGANIZATION_UUID, o.NAME AS ORGANIZATION_NAME, " +
+               "a.OAUTH_CALLBACK_URL, a.OAUTH_SCOPE, a.OAUTH_TYPE, a.MAG_SCOPE, a.MAG_MASTER_KEY, a.CREATED_BY, a.MODIFIED_BY, r.LATEST_REQ " +
+        "FROM APPLICATION_API_API_GROUP_XREF aaagx " +
+        "JOIN (SELECT * FROM APPLICATION " +
+            "WHERE API_KEY IS NOT NULL AND TENANT_ID ='%s' AND STATUS IN ('ENABLED','DISABLED','EDIT_APPLICATION_PENDING_APPROVAL')) a ON aaagx.APPLICATION_UUID = a.UUID AND aaagx.TENANT_ID = a.TENANT_ID " +
+        "JOIN ORGANIZATION o on a.ORGANIZATION_UUID = o.UUID AND a.TENANT_ID = o.TENANT_ID " +
+        "LEFT JOIN API_GROUP ag ON ag.UUID = aaagx.API_GROUP_UUID AND ag.TENANT_ID = aaagx.TENANT_ID " +
+        "LEFT JOIN (SELECT ENTITY_UUID, PREVIOUS_STATE, max(CREATE_TS) AS LATEST_REQ, TENANT_ID " +
+            "FROM REQUEST GROUP BY ENTITY_UUID, PREVIOUS_STATE, CREATE_TS, TENANT_ID) r ON a.UUID = r.ENTITY_UUID AND a.TENANT_ID = r.TENANT_ID " +
+        "WHERE aaagx.API_UUID IS NOT NULL ";
 
     private static final String STATUS_ENABLED = "ENABLED";
     private static final String STATUS_ACTIVE = "active";
@@ -179,7 +167,7 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
 
             // Get apps that are not associated to any API, either directly or indirectly
             results = (Map<String, List>) queryJdbc(connName, ServerIncrementalSyncCommon.SELECT_APP_WITH_NO_API_SQL,
-                CollectionUtils.list(tenantId, tenantId, nodeId, since, incrementStart, since, incrementStart, since, incrementStart));
+                CollectionUtils.list(tenantId, tenantId, nodeId, since, incrementStart, since, incrementStart, since, incrementStart, since, incrementStart));
             List<String> appIdsWithNoApi = results.get("uuid");
 
             // Merge the app uuids
@@ -201,7 +189,7 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
             results = (Map<String, List>) queryJdbc(
                     connName,
                     ServerIncrementalSyncCommon.getSyncUpdatedAppEntities(
-                            Lists.newArrayList("DISTINCT a3.API_UUID", "a3.UUID", "concat(a3.NAME, '-', o.NAME) as NAME", "a3.API_KEY", "a3.KEY_SECRET", "coalesce(r.PREVIOUS_STATE, a3.STATUS) as STATUS", "a3.ORGANIZATION_UUID", "o.NAME as ORGANIZATION_NAME", "a3.OAUTH_CALLBACK_URL", "a3.OAUTH_SCOPE", "a3.OAUTH_TYPE", "a3.MAG_SCOPE", "a3.MAG_MASTER_KEY", "a3.CREATED_BY", "a3.MODIFIED_BY"),
+                            Lists.newArrayList("DISTINCT aaagx.API_UUID", "a.UUID", "concat(a.NAME, '-', o.NAME) as NAME", "a.API_KEY", "a.KEY_SECRET", "coalesce(r.PREVIOUS_STATE, a.STATUS) as STATUS", "a.ORGANIZATION_UUID", "o.NAME as ORGANIZATION_NAME", "a.OAUTH_CALLBACK_URL", "a.OAUTH_SCOPE", "a.OAUTH_TYPE", "a.MAG_SCOPE", "a.MAG_MASTER_KEY", "a.CREATED_BY", "a.MODIFIED_BY"),
                             tenantId),
                     CollectionUtils.list(since, incrementStart, since, incrementStart, since, incrementStart, nodeId, since, incrementStart, since, incrementStart));
         } else {
