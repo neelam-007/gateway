@@ -9,6 +9,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.security.token.SessionSecurityToken;
+import com.l7tech.security.token.SshSecurityToken;
 import com.l7tech.util.GoidUpgradeMapper;
 
 import javax.security.auth.x500.X500Principal;
@@ -68,6 +69,7 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider<User
         private char[] password;
         private String certDn;
         private UserBean user;
+        private String sshPublicKey;
         private long passwordExpiryTime;
 
         private MyUser(UserBean user, char[] password, long passwordExpiryTime) {
@@ -82,6 +84,11 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider<User
             this.passwordExpiryTime = passwordExpiryTime;
             this.certDn = certDn;
             user.setSubjectDn( certDn );
+        }
+
+        private MyUser(UserBean user, String sshPublicKey) {
+            this.user = user;
+            this.sshPublicKey = sshPublicKey;
         }
     }
 
@@ -102,6 +109,11 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider<User
 
     public static void addUser(UserBean user, String username, char[] password, String certDn) {
         MyUser myUser = new MyUser(user, password, certDn, user.getPasswordExpiry());
+        usernameMap.put(username, myUser);
+    }
+
+    public static void addUser(UserBean user, String username, String sshKey) {
+        MyUser myUser = new MyUser(user, sshKey);
         usernameMap.put(username, myUser);
     }
 
@@ -132,6 +144,9 @@ public class TestIdentityProvider implements AuthenticatingIdentityProvider<User
         if ( pc.getFormat().equals( CredentialFormat.SESSIONTOKEN ) &&
              mu.user.getId().equals( ((SessionSecurityToken)pc.getSecurityToken()).getUserId() ) &&
              config.getGoid().equals(((SessionSecurityToken)pc.getSecurityToken()).getProviderId())) {
+            return new AuthenticationResult(mu.user, pc.getSecurityTokens());
+        }
+        if(pc.getFormat().equals(CredentialFormat.SSHTOKEN) && ((SshSecurityToken)pc.getSecurityToken()).getPublicKey().equals(mu.sshPublicKey)) {
             return new AuthenticationResult(mu.user, pc.getSecurityTokens());
         }
         throw new AuthenticationException("Invalid username or password");
