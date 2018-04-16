@@ -27,6 +27,7 @@ import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.util.ThreadPoolBean;
 import com.l7tech.util.*;
 import com.l7tech.util.Functions.UnaryThrows;
+import com.l7tech.xml.SoapFaultLevel;
 import com.l7tech.xml.soap.SoapFaultUtils;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.soap.SoapVersion;
@@ -89,7 +90,7 @@ public class MqNativeModule extends ActiveTransportModule implements Application
     static {
         final long connectTimeout = getTimeUnitProperty( PROP_SOCKET_CONNECT_TIMEOUT, 30000L);
         if ( SyspropUtil.getString( SYSPROP_MQ_SOCKET_CONNECT_TIMEOUT, null ) == null ) {
-            logger.config( "Setting MQ socket timeout to " + connectTimeout + "ms" );
+            logger.log(Level.CONFIG, "Setting MQ socket timeout to {0} ms", connectTimeout);
             SyspropUtil.setProperty( SYSPROP_MQ_SOCKET_CONNECT_TIMEOUT, String.valueOf(connectTimeout) );
         }
 
@@ -189,13 +190,13 @@ public class MqNativeModule extends ActiveTransportModule implements Application
     protected void doStop() {
         for (final Set<MqNativeListener> listenerSet : activeListeners.values()) {
             for (final MqNativeListener listener : listenerSet) {
-                logger.info("Stopping MQ native receiver '" + listener.toString() + "'");
+                logger.log(Level.INFO, "Stopping MQ native receiver '{0}'", listener.toString());
                 listener.stop();
             }
         }
         for (final Set<MqNativeListener> listenerSet : activeListeners.values()) {
             for (final MqNativeListener listener : listenerSet) {
-                logger.info("Waiting for MQ native receiver to stop '" + listener.toString() + "'");
+                logger.log(Level.INFO, "Waiting for MQ native receiver to stop '{0}'", listener.toString());
                 listener.ensureStopped();
             }
             listenerSet.clear();
@@ -220,8 +221,9 @@ public class MqNativeModule extends ActiveTransportModule implements Application
         int numberOfListenersToCreate =  ssgActiveConnector.getIntegerProperty(PROPERTIES_KEY_NUMBER_OF_SAC_TO_CREATE, 1);
         int maxListenersAllowed = serverConfig.getIntProperty(MQ_LISTENER_MAX_CONCURRENT_CONNECTIONS_PROPERTY, DEFAULT_LISTENER_MAX_CONCURRENT_CONNECTIONS);
         if (numberOfListenersToCreate > maxListenersAllowed) {
-            logger.log(Level.INFO, "Overriding connection concurrency configured for " + ssgActiveConnector.getName() + " to: " + maxListenersAllowed +
-                    ", configured: " + numberOfListenersToCreate + ", maximum allowed: " + maxListenersAllowed  +  ".");
+            logger.log(Level.INFO,
+                    "Overriding connection concurrency configured for {0} to: {1}, configured: {2}, maximum allowed: {3}.",
+                    new Object[]{ ssgActiveConnector.getName(), maxListenersAllowed, numberOfListenersToCreate, maxListenersAllowed});
             numberOfListenersToCreate = maxListenersAllowed;
         }
 
@@ -474,20 +476,9 @@ public class MqNativeModule extends ActiveTransportModule implements Application
                                 if ( faultMessage == null ) {
                                     faultMessage = status[0].getMessage();
                                 }
-                                try {
-                                    String faultXml = SoapFaultUtils.generateSoapFaultXml(
-                                            (context[0].getService() != null) ? context[0].getService().getSoapVersion() : SoapVersion.UNKNOWN,
-                                            faultCode == null ? SoapUtil.FC_SERVER : faultCode,
-                                            faultMessage, null, "");
-
-                                    responseStream = new ByteArrayInputStream(faultXml.getBytes( Charsets.UTF8));
-
-                                    if (faultXml != null) {
-                                        messageProcessingEventChannel.publishEvent(new FaultProcessed(context[0], faultXml, messageProcessor));
-                                    }
-                                } catch (SAXException e) {
-                                    throw new MqNativeException(e);
-                                }
+                                final String faultTemplate = generateFaultTemplate(faultMessage, faultCode, context[0]);
+                                responseStream = new ByteArrayInputStream(faultTemplate.getBytes(Charsets.UTF8));
+                                messageProcessingEventChannel.publishEvent(new FaultProcessed(context[0], faultTemplate, messageProcessor));
                             }
                         }
 
@@ -533,12 +524,9 @@ public class MqNativeModule extends ActiveTransportModule implements Application
                     return messageSummaryAuditFactory.makeEvent( context[0], s );
                 }
             });
+        } catch (MqNativeException | MqNativeConfigException e) {
+                throw e;
         } catch (Exception e) {
-            if (e instanceof MqNativeException) {
-                throw (MqNativeException)e;
-            } else if (e instanceof MqNativeConfigException) {
-                throw (MqNativeConfigException)e;
-            }
             // it shouldn't reach here
             // in case it does this is unexpected exception so throw RuntimeException
             throw new RuntimeException(e);
@@ -565,6 +553,38 @@ public class MqNativeModule extends ActiveTransportModule implements Application
                 }
             }
         }
+    }
+
+    /**
+     * DE341493: Customized Error Response not working for MQ messages
+     * Generates a user defined fault template instead of using the default soap fault xml.
+     * @param faultMessage The fault message
+     * @param faultCode The fault code
+     * @param context The context being evaluated
+     * @return The String to return, either the template specified by the user or a default soap response
+     * @throws IOException thrown by generateSoapFaultXml
+     * @throws MqNativeException thrown if there is a SAXException from generateSoapFaultXml
+     */
+    String generateFaultTemplate(@Nullable final String faultMessage,
+                                 @Nullable final String faultCode,
+                                 @NotNull final PolicyEnforcementContext context) throws IOException, MqNativeException {
+        final SoapFaultLevel contextFaultLevel = context.getFaultlevel();
+        final String faultTemplate;
+        if (contextFaultLevel != null && contextFaultLevel.getLevel() == SoapFaultLevel.TEMPLATE_FAULT) {
+            // Customized error message specified, use that instead
+            faultTemplate = contextFaultLevel.getFaultTemplate();
+        } else {
+            // Use default soap fault
+            try {
+                faultTemplate = SoapFaultUtils.generateSoapFaultXml(
+                        (context.getService() != null) ? context.getService().getSoapVersion() : SoapVersion.UNKNOWN,
+                        faultCode == null ? SoapUtil.FC_SERVER : faultCode,
+                        faultMessage, null, "");
+            } catch (SAXException e) {
+                throw new MqNativeException(e);
+            }
+        }
+        return faultTemplate;
     }
 
     boolean sendResponse( final MQMessage requestMessage,
@@ -652,16 +672,13 @@ public class MqNativeModule extends ActiveTransportModule implements Application
                             return null;
                         }
                     }, allowReconnect );
-                } catch ( MQException e ) {
-                    success = false;
-                    logger.log( Level.WARNING, "Error sending MQ response: " + getMessage(e), ExceptionUtils.getDebugException(e) );
-                } catch ( MqNativeConfigException e ) {
+                } catch ( MQException | MqNativeConfigException e ) {
                     success = false;
                     logger.log( Level.WARNING, "Error sending MQ response: " + getMessage(e), ExceptionUtils.getDebugException(e) );
                 }
                 break;
             default:
-                logger.log( Level.WARNING, "Configuration exception while sending response.  Bad state - unknown MQ native replyType = " + replyType);
+                logger.log( Level.WARNING, "Configuration exception while sending response.  Bad state - unknown MQ native replyType = {0}", replyType);
                 break;
         }
 
