@@ -22,6 +22,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.ContextConfiguration;
@@ -29,6 +31,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import javax.mail.AuthenticationFailedException;
 import javax.mail.MessagingException;
+import javax.mail.util.ByteArrayDataSource;
 import javax.net.ssl.SSLHandshakeException;
 import java.io.ByteArrayInputStream;
 import java.net.ConnectException;
@@ -374,7 +377,19 @@ public class ServerEmailAssertionTest {
 
     @Test
     public void testEmail_AttachmentMaxSizeExceedsError() throws Exception {
-        doNothing().when(sender).send((EmailConfig) any(), (EmailMessage) any());
+        /**
+         * Reading the input stream using data source to mock the
+         * runtime behaviour of sending email to validate the attachment size.
+         */
+        doAnswer(new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocationOnMock) throws Throwable {
+                final EmailMessage message = invocationOnMock.getArgumentAt(1, EmailMessage.class);
+                final ByteArrayDataSource dataSource = new ByteArrayDataSource(
+                        message.getAttachmentDataSources().get(0).getInputStream(), "test");
+                return null;
+            }
+        }).when(sender).send((EmailConfig) any(), (EmailMessage) any());
 
         assertion.setBase64message(HexUtils.encodeBase64("Hello".getBytes()));
         assertion.setSmtpPort("25");

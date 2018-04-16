@@ -2,6 +2,7 @@ package com.l7tech.external.assertions.email;
 
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.AddressException;
+import javax.activation.DataSource;
 import java.io.Serializable;
 import java.util.*;
 
@@ -23,7 +24,7 @@ public class EmailMessage implements Serializable {
     private String message;
     private String subject;
     private EmailFormat format = EmailFormat.PLAIN_TEXT;
-    private transient List<EmailAttachmentDataSource> attachmentDataSources;
+    private transient List<DataSource> attachmentDataSources;
 
     private EmailMessage(final InternetAddress fromAddress, final InternetAddress[] toAddresses, final String message,
                         final String subject) {
@@ -59,7 +60,7 @@ public class EmailMessage implements Serializable {
 
     public EmailFormat getFormat() { return format; }
 
-    public List<EmailAttachmentDataSource> getAttachmentDataSources() {
+    public List<DataSource> getAttachmentDataSources() {
         return attachmentDataSources != null ? attachmentDataSources : Collections.emptyList();
     }
 
@@ -77,7 +78,7 @@ public class EmailMessage implements Serializable {
         private EmailFormat format = EmailFormat.PLAIN_TEXT;
         private InternetAddress[] ccAddresses;
         private InternetAddress[] bccAddresses;
-        private List<EmailAttachmentDataSource> attachmentDataSources;
+        private List<DataSource> attachmentDataSources;
 
         public EmailMessageBuilder(final InternetAddress fromAddress, final InternetAddress[] toAddresses, final
                 String message, final String subject) {
@@ -123,7 +124,7 @@ public class EmailMessage implements Serializable {
             return this;
         }
 
-        public EmailMessageBuilder setAttachmentDataSources(final List<EmailAttachmentDataSource> attachmentDataSources) {
+        public EmailMessageBuilder setAttachmentDataSources(final List<DataSource> attachmentDataSources) {
             this.attachmentDataSources = attachmentDataSources;
             return this;
         }

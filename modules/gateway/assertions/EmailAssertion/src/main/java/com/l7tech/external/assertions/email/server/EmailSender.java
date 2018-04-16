@@ -12,6 +12,7 @@ import javax.mail.Transport;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMultipart;
+import javax.activation.DataSource;
 import java.util.Map;
 import java.util.Properties;
 import java.util.WeakHashMap;
@@ -111,7 +112,7 @@ public class EmailSender {
         Multipart multipart = new MimeMultipart();
         multipart.addBodyPart(messageBodyPart);
 
-        for (EmailAttachmentDataSource attachment : emailMessage.getAttachmentDataSources()) {
+        for (DataSource attachment : emailMessage.getAttachmentDataSources()) {
             final MimeBodyPart attachmentPart = new MimeBodyPart();
             attachmentPart.setFileName(attachment.getName());
             attachmentPart.setDataHandler(new DataHandler(attachment));

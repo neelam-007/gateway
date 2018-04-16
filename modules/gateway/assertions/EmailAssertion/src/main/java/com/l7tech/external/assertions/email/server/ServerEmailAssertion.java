@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.email.server;
 
+import com.l7tech.common.io.ByteLimitInputStream;
 import com.l7tech.external.assertions.email.*;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -17,6 +18,7 @@ import javax.mail.*;
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 import javax.net.ssl.SSLHandshakeException;
+import javax.activation.DataSource;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.util.*;
@@ -33,8 +35,8 @@ public class ServerEmailAssertion extends AbstractServerAssertion<EmailAssertion
     private final Config config;
     private final EmailSender emailSender;
 
-    /* By default, there is no size limit on attachments, represented as -1. */
-    private static final int DEFAULT_ATTACHMENT_SIZE_LIMIT = -1;
+    /* By default, the size limit on attachments is 2621440 bytes. */
+    private static final long DEFAULT_ATTACHMENT_SIZE_LIMIT = 2621440;
     private static final String EMAIL_ATTACHMENT_MAX_SIZE = "email.attachments.maxSize";
 
     public ServerEmailAssertion(EmailAssertion ass, ApplicationContext spring) {
@@ -171,7 +173,7 @@ public class ServerEmailAssertion extends AbstractServerAssertion<EmailAssertion
 
         try {
             final String body = ExpandVariables.process(assertion.messageString(), context.getVariableMap(varsUsed, getAudit()), getAudit());
-            final List<EmailAttachmentDataSource> attachmentDataSources = prepareAttachmentDataSources(variableMap, assertion.getAttachments());
+            final List<DataSource> attachmentDataSources = prepareAttachmentDataSources(variableMap, assertion.getAttachments());
             final EmailConfig emailConfig = new EmailConfig(assertion.isAuthenticate(), userName, pwd, host, portNumberInt,
                     assertion.getProtocol(), connectTimeout, readTimeout);
             final EmailMessage emailMessage = new EmailMessageBuilder(fromAddress, toAddresses, body, subject)
@@ -202,6 +204,9 @@ public class ServerEmailAssertion extends AbstractServerAssertion<EmailAssertion
             return AssertionStatus.FAILED;
         } catch (EmailAttachmentException e) {
             logAndAudit(AssertionMessages.EMAIL_ATTACHMENT_INVALID, e.getMessage());
+            return AssertionStatus.FAILED;
+        } catch (ByteLimitInputStream.DataSizeLimitExceededException e) {
+            logAndAudit(AssertionMessages.EMAIL_ATTACHMENT_INVALID, ATTACHMENT_SIZE_EXCEEDS);
             return AssertionStatus.FAILED;
         } catch (Exception e) {
             logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
@@ -250,19 +255,20 @@ public class ServerEmailAssertion extends AbstractServerAssertion<EmailAssertion
      * @throws EmailAttachmentException
      * @throws IOException
      */
-    private List<EmailAttachmentDataSource> prepareAttachmentDataSources(
+    private List<DataSource> prepareAttachmentDataSources(
             final Map<String, Object> variableMap,
             final List<EmailAttachment> emailAttachments) throws EmailAttachmentException, IOException {
-        final List<EmailAttachmentDataSource> attachmentDataSources = new ArrayList<>();
+        final List<DataSource> attachmentDataSources = new ArrayList<>();
+        final long maxAttachmentSize = config.getLongProperty(EMAIL_ATTACHMENT_MAX_SIZE, DEFAULT_ATTACHMENT_SIZE_LIMIT);
 
         for (EmailAttachment attachment : emailAttachments) {
             final Object source = getAttachmentSource(variableMap, attachment);
 
             if (attachment.isMimePartVariable()) {
-                attachmentDataSources.addAll(EmailAttachmentDataSourceHelper.getAttachmentDataSources(attachment, source));
+                attachmentDataSources.addAll(EmailAttachmentDataSourceHelper.getAttachmentDataSources(attachment, source, maxAttachmentSize));
             } else {
                 final String name = getAttachmentName(variableMap, attachment);
-                attachmentDataSources.add(EmailAttachmentDataSourceHelper.getAttachmentDataSource(attachment, source, name));
+                attachmentDataSources.add(EmailAttachmentDataSourceHelper.getAttachmentDataSource(attachment, source, name, maxAttachmentSize));
             }
         }
 
@@ -294,17 +300,12 @@ public class ServerEmailAssertion extends AbstractServerAssertion<EmailAssertion
      * @param attachments
      * @throws EmailAttachmentException
      */
-    private void verifyAttachmentDataSources(List<EmailAttachmentDataSource> attachments) throws EmailAttachmentException {
+    private void verifyAttachmentDataSources(List<DataSource> attachments) throws EmailAttachmentException {
         final Set<String> names = new HashSet<>();
-        final int attachmentMaxSize = config.getIntProperty(EMAIL_ATTACHMENT_MAX_SIZE, DEFAULT_ATTACHMENT_SIZE_LIMIT);
 
-        for (EmailAttachmentDataSource attachment : attachments) {
+        for (DataSource attachment : attachments) {
             if (names.contains(attachment.getName())) {
                 throw newAttachmentException(DUPLICATE_ATTACHMENT_NAME, attachment.getName());
-            }
-
-            if (attachmentMaxSize != DEFAULT_ATTACHMENT_SIZE_LIMIT && attachment.getContentLength() > attachmentMaxSize) {
-                throw newAttachmentException(ATTACHMENT_SIZE_EXCEEDS, attachment.getName());
             }
 
             logger.log(Level.FINE, "Including the attachment: " + attachment.getName());
