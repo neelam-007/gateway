@@ -2,6 +2,8 @@ package com.l7tech.kerberos.delegate;
 
 import com.l7tech.kerberos.*;
 import com.l7tech.util.FileUtils;
+import com.l7tech.util.TestTimeSource;
+import com.l7tech.util.TimeSource;
 import org.apache.commons.codec.binary.Base64;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -23,6 +25,7 @@ public class KerberosDelegateClientTest {
     private static String tmpPath;
 
     private static KerberosDelegateClient client;
+    private static TimeSource TIME_SOURCE;
 
     /**
      * TGT object captured by real KDC Connection
@@ -31,6 +34,7 @@ public class KerberosDelegateClientTest {
 
     @BeforeClass
     public static void setup() throws IOException, KerberosException {
+        TIME_SOURCE = new TestTimeSource();
         tmpDir = FileUtils.createTempDirectory("kerberos", null, null, true);
         tmpPath = tmpDir.getPath();
 
@@ -85,6 +89,8 @@ public class KerberosDelegateClientTest {
                 return clientPrincipalName;
             }
         };
+        KerberosClient.setTimeSource(TIME_SOURCE);
+        client.setTimeSource(TIME_SOURCE);
         KerberosTestSetup.setUpLoginConfig(tmpDir);
     }
 
@@ -97,6 +103,8 @@ public class KerberosDelegateClientTest {
     @Test
     public void testS4U2Self() throws Exception {
         KerberosDelegateClient client = new KerberosDelegateClient();
+        client.setTimeSource(TIME_SOURCE);
+        KerberosClient.setTimeSource(TIME_SOURCE);
         //KerberosServiceTicket serviceTicket = client.getKerberosSelfServiceTicket("http/ssg5.l7tech.dev@L7TECH.DEV", "awitrisna");
         //KerberosServiceTicket serviceTicket = client.getKerberosSelfServiceTicket("http/ssg.rf.lilly.com@RF.LILLY.COM", "test");
         KerberosServiceTicket serviceTicket = client.getKerberosSelfServiceTicket("http/ssg1.kworld.kpmg.com@KWORLD.KPMG.COM", "kerb");
@@ -107,6 +115,8 @@ public class KerberosDelegateClientTest {
     @Test
     public void testReferralWithKeyTab() throws Exception {
         KerberosDelegateClient client = new KerberosDelegateClient();
+        client.setTimeSource(TIME_SOURCE);
+        KerberosClient.setTimeSource(TIME_SOURCE);
         KerberosServiceTicket serviceTicket = client.getKerberosProxyServiceTicketWithReferral("http/kpmg2.kworld.kpmg.com@KWORLD.KPMG.COM", "http/ssg1.kworld.kpmg.com@KWORLD.KPMG.COM", "awitrisna", "US.KWORLD.KPMG.COM", 1);
         assertNotNull(serviceTicket.getGSSAPReqTicket());
     }
@@ -115,9 +125,13 @@ public class KerberosDelegateClientTest {
     @Test
     public void testCacheReferralWithKeyTab() throws Exception {
         KerberosDelegateClient client = new KerberosDelegateClient();
+        client.setTimeSource(TIME_SOURCE);
+        KerberosClient.setTimeSource(TIME_SOURCE);
         KerberosServiceTicket serviceTicket = client.getKerberosProxyServiceTicketWithReferral("http/kpmg2.kworld.kpmg.com@KWORLD.KPMG.COM", "http/ssg1.kworld.kpmg.com@KWORLD.KPMG.COM", "awitrisna", "US.KWORLD.KPMG.COM", 1);
         assertNotNull(serviceTicket.getGSSAPReqTicket());
         KerberosDelegateClient client2 = new KerberosDelegateClient();
+        client.setTimeSource(TIME_SOURCE);
+        KerberosClient.setTimeSource(TIME_SOURCE);
         client2.getKerberosProxyServiceTicketWithReferral("http/kpmg2.kworld.kpmg.com@KWORLD.KPMG.COM", "http/ssg1.kworld.kpmg.com@KWORLD.KPMG.COM", "awitrisna", "US.KWORLD.KPMG.COM", 1);
     }
 
@@ -125,6 +139,8 @@ public class KerberosDelegateClientTest {
     @Test
     public void test2ReferralWithKeyTab() throws Exception {
         KerberosDelegateClient client = new KerberosDelegateClient();
+        client.setTimeSource(TIME_SOURCE);
+        KerberosClient.setTimeSource(TIME_SOURCE);
         KerberosServiceTicket serviceTicket = client.getKerberosProxyServiceTicketWithReferral("http/kpmg-ca.hr.kpmg.com@HR.KPMG.COM", "http/ssg1.hr.kpmg.com@HR.KPMG.COM", "awitrisna", "US.KWORLD.KPMG.COM", 5);
         assertNotNull(serviceTicket.getGSSAPReqTicket());
     }
@@ -134,6 +150,8 @@ public class KerberosDelegateClientTest {
     @Test
     public void testReferralUserPassword() throws Exception {
         KerberosDelegateClient client = new KerberosDelegateClient();
+        client.setTimeSource(TIME_SOURCE);
+        KerberosClient.setTimeSource(TIME_SOURCE);
         KerberosServiceTicket serviceTicket = client.getKerberosProxyServiceTicketWithReferral("http/kpmg2.kworld.kpmg.com@KWORLD.KPMG.COM", "ssg1", "7layer]", "awitrisna", "US.KWORLD.KPMG.COM", 1);
         assertNotNull(serviceTicket.getGSSAPReqTicket());
     }
@@ -149,6 +167,8 @@ public class KerberosDelegateClientTest {
     @Test
     public void testS4U2Proxy() throws Exception {
         KerberosDelegateClient client = new KerberosDelegateClient();
+        client.setTimeSource(TIME_SOURCE);
+        KerberosClient.setTimeSource(TIME_SOURCE);
         KerberosServiceTicket serviceTicket = client.getKerberosProxyServiceTicketWithKeytab("http/kpmg2.kworld.kpmg.com@KWORLD.KPMG.COM", "http/ssg1.kworld.kpmg.com@KWORLD.KPMG.COM", "kerb", "KWORLD.KPMG.COM");
         assertNotNull(serviceTicket.getGSSAPReqTicket());
     }
@@ -164,6 +184,8 @@ public class KerberosDelegateClientTest {
     @Test
     public void testS4U2Proxy2() throws Exception {
         KerberosDelegateClient client = new KerberosDelegateClient();
+        client.setTimeSource(TIME_SOURCE);
+        KerberosClient.setTimeSource(TIME_SOURCE);
         KerberosServiceTicket s4uSelfServiceTicket = client.getKerberosSelfServiceTicket("http/ssg5.l7tech.dev@L7TECH.DEV", "awitrisna");
 
         KerberosServiceTicket s4u2ProxyServiceTicket = client.getKerberosProxyServiceTicket("http/test2008.l7tech.dev@L7TECH.DEV", new PrincipalName("awitrisna@L7TECH.DEV"), "http/ssg5.l7tech.dev@L7TECH.DEV", s4uSelfServiceTicket.getDelegatedKerberosTicket());
@@ -183,6 +205,8 @@ public class KerberosDelegateClientTest {
     @Test
     public void testS4U2ProxyWithUserNamePassword() throws Exception {
         KerberosDelegateClient client = new KerberosDelegateClient();
+        client.setTimeSource(TIME_SOURCE);
+        KerberosClient.setTimeSource(TIME_SOURCE);
         KerberosServiceTicket s4u2ProxyServiceTicket = client.getKerberosProxyServiceTicketWithCredentials("http/test2008.l7tech.dev@L7TECH.DEV", "ssg5test@L7TECH.DEV", "7layer]", "awitrisna", "L7TECH.DEV");
         assertNotNull(s4u2ProxyServiceTicket.getGSSAPReqTicket());
     }

@@ -13,7 +13,7 @@
         <artifact type="test" ext="jar" conf="test" m:classifier="test"/>
     </publications>
     <dependencies>
-        <dependency name="layer7-utility" rev="latest.integration" conf="core"/>
+        <dependency name="layer7-utility" rev="latest.integration" conf="core;test->test"/>
         <dependency org="bouncycastle" name="bcprov-jdk16" rev="1.46" force="true" conf="core"/>
 	    <dependency org="org.jaaslounge" name="jaaslounge-decoding" rev="2.0-l7p2-SNAPSHOT" force="true" conf="core"/>
         <dependency org="org.apache.directory.server" name="apacheds-kerberos-codec" rev="2.0.0-M21" force="true" conf="core"/>

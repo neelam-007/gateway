@@ -2,6 +2,7 @@ package com.l7tech.kerberos;
 
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.TimeSource;
 import org.ietf.jgss.*;
 import org.jaaslounge.decoding.DecodingException;
 import org.jaaslounge.decoding.kerberos.KerberosEncData;
@@ -51,7 +52,10 @@ import java.util.logging.Logger;
 @SuppressWarnings({ "UseOfSunClasses" })
 public class KerberosClient {
 
+    protected static final String MESSAGE_COULD_NOT_LOGIN = "Could not log in";
+    private static final String ERROR_GETTING_PRINCIPAL = "Error getting principal.";
     //- PUBLIC
+    private static TimeSource timeSource = new TimeSource();
 
     /**
      *
@@ -238,7 +242,7 @@ public class KerberosClient {
                         return new KerberosServiceTicket(ticket.getClient().getName(),
                                                          servicePrincipalName,
                                                          ticket.getSessionKey().getEncoded(),
-                                                         System.currentTimeMillis() + (context.getLifetime() * 1000L),
+                                                         timeSource.currentTimeMillis() + (context.getLifetime() * 1000L),
                                                          apReq, null, krbEncData);
                     }
                     finally {
@@ -264,7 +268,7 @@ public class KerberosClient {
             }
         }
         catch(LoginException le) {
-            throw new KerberosException("Could not login", le);
+            throw new KerberosException(MESSAGE_COULD_NOT_LOGIN, le);
         }
         catch(PrivilegedActionException pae) {
 
@@ -355,7 +359,7 @@ public class KerberosClient {
             throw new KerberosConfigException("Kerberos configuration error.", se);
         }
         catch(LoginException le) {
-            throw new KerberosException("Could not login", le);
+            throw new KerberosException(MESSAGE_COULD_NOT_LOGIN, le);
         }
         catch(PrivilegedActionException pae) {
             Throwable cause = pae.getCause();
@@ -439,14 +443,14 @@ public class KerberosClient {
             throw new KerberosConfigException("Kerberos configuration error.", se);
         }
         catch(LoginException le) {
-            throw new KerberosException("Could not login", le);
+            throw new KerberosException(MESSAGE_COULD_NOT_LOGIN, le);
         }
         catch(PrivilegedActionException pae) {
-            throw new KerberosException("Error getting principal.", pae.getCause());
+            throw new KerberosException(ERROR_GETTING_PRINCIPAL, pae.getCause());
         }
 
         if (name == null) {
-            throw new KerberosException("Error getting principal.");
+            throw new KerberosException(ERROR_GETTING_PRINCIPAL);
         }
 
         return name;
@@ -585,7 +589,7 @@ public class KerberosClient {
             acceptPrincipalCache.put(principal, Boolean.TRUE); // cache success
         } else {
             acceptPrincipalCache.put(principal, Boolean.FALSE); // cache failure
-            throw new KerberosException("Error getting principal.");
+            throw new KerberosException(ERROR_GETTING_PRINCIPAL);
         }
 
         return aPrincipal;
@@ -665,9 +669,6 @@ public class KerberosClient {
     private static final String KERBEROS_LIFETIME_PROPERTY = "com.l7tech.common.security.kerberos.lifetime";
     private static final Integer KERBEROS_LIFETIME_DEFAULT = 60 * 60; // in seconds, default ==> 1 hour
     protected static final Integer KERBEROS_LIFETIME = ConfigFactory.getIntProperty( KERBEROS_LIFETIME_PROPERTY, KERBEROS_LIFETIME_DEFAULT );
-
-    private static final String PASS_INETADDR_PROPERTY = "com.l7tech.common.security.kerberos.useaddr";
-    private static final boolean PASS_INETADDR = ConfigFactory.getBooleanProperty( PASS_INETADDR_PROPERTY, true );
 
     private static Oid kerb5Oid;
     private static Map<String, Boolean> acceptPrincipalCache = new ConcurrentHashMap<String, Boolean>();
@@ -926,6 +927,13 @@ public class KerberosClient {
             | ((data[offset+3]&0xFF) << 24);
     }
 
+
+    /**
+     * Assigning this timesource so that It will be used instead of one instantiated inside static block for unit testing.
+     * */
+    public static void setTimeSource(TimeSource timeSource) {
+        KerberosClient.timeSource = timeSource;
+    }
 
     //- TESTING
 

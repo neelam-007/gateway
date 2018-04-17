@@ -1,6 +1,8 @@
 package com.l7tech.kerberos;
 
 import com.l7tech.util.FileUtils;
+import com.l7tech.util.TestTimeSource;
+import com.l7tech.util.TimeSource;
 import org.apache.commons.codec.binary.Base64;
 import org.ietf.jgss.*;
 import org.junit.*;
@@ -38,6 +40,7 @@ public class KerberosClientTest {
     public static final String HOST = KerberosConfigTest.HOST;
 
     private static final String SIMPLE_SERVICE_PRINCIPAL_NAME = "http/ssg3.l7tech.sup";
+    private static TimeSource TIME_SOURCE;
 
     /**
      * TGT object captured by real KDC Connection
@@ -57,6 +60,7 @@ public class KerberosClientTest {
         MockKrb5LoginModule.setUsesRainier(false);
         MockKrb5LoginModule.setKerberosTicket(KERBEROS_TGT);
         KerberosTestSetup.init(tmpDir);
+        TIME_SOURCE = new TestTimeSource();
     }
 
     @After
@@ -160,6 +164,8 @@ public class KerberosClientTest {
     @Test
     public void getDelegatedServiceTicket() throws Exception {
         KerberosClient client = new KerberosClient();
+        KerberosClient.setTimeSource(TIME_SOURCE);
+        KerberosTicketRepository.setTimeSource(TIME_SOURCE);
         KerberosServiceTicket serviceTicket = client.getKerberosServiceTicket(SERVICE_PRINCIPAL_NAME, true);
         KerberosServiceTicket delegateTicket = client.getKerberosServiceTicket(SERVICE_PRINCIPAL_NAME, InetAddress.getByName("localhost"), serviceTicket.getGSSAPReqTicket() );
         assertNotNull(delegateTicket);
@@ -181,6 +187,8 @@ public class KerberosClientTest {
      */
     public void testGetKerberosServiceTicket() throws Exception {
         KerberosClient client = new KerberosClient();
+        KerberosClient.setTimeSource(TIME_SOURCE);
+        KerberosTicketRepository.setTimeSource(TIME_SOURCE);
         final KerberosServiceTicket serviceTicket = client.getKerberosServiceTicket(SERVICE_PRINCIPAL_NAME, true);
 
 
@@ -205,6 +213,8 @@ public class KerberosClientTest {
     @Test
     public void testValidateKerberosServiceTicket() throws Exception {
         KerberosClient client = new KerberosClient();
+        KerberosClient.setTimeSource(TIME_SOURCE);
+        KerberosTicketRepository.setTimeSource(TIME_SOURCE);
         KerberosServiceTicket serviceTicket = client.getKerberosServiceTicket(SERVICE_PRINCIPAL_NAME, true);
         serviceTicket = client.getKerberosServiceTicket(SERVICE_PRINCIPAL_NAME, InetAddress.getByName("localhost"), serviceTicket.getGSSAPReqTicket());
         assertNotNull(serviceTicket);
