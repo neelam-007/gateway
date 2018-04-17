@@ -3,7 +3,7 @@ IDEA additional info:
 Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
 <+>UTF-8
 ===================================================================
---- java/org/apache/coyote/http11/Http11Processor.java	(revision 1816899)
+--- java/org/apache/coyote/http11/Http11Processor.java	(revision 1826386)
 +++ java/org/apache/coyote/http11/Http11Processor.java	(revision )
 @@ -1042,6 +1042,9 @@
                      if (sslO != null)
@@ -20,24 +20,24 @@ IDEA additional info:
 Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
 <+>UTF-8
 ===================================================================
---- java/org/apache/catalina/connector/Connector.java	(revision 1816899)
+--- java/org/apache/catalina/connector/Connector.java	(revision 1826386)
 +++ java/org/apache/catalina/connector/Connector.java	(revision )
 @@ -129,6 +129,11 @@
       */
      protected boolean xpoweredBy = false;
- 
+
 +    /*
 +    * Is trim the space between the ; and charset in content type header
 +    */
 +    protected boolean trimContentType = true;
 +
- 
+
      /**
       * Descriptive information about this Connector implementation.
 @@ -977,6 +982,14 @@
          setProperty("xpoweredBy", String.valueOf(xpoweredBy));
      }
- 
+
 +    public boolean isTrimContentType() {
 +        return trimContentType;
 +    }
@@ -54,7 +54,7 @@ IDEA additional info:
 Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
 <+>UTF-8
 ===================================================================
---- java/org/apache/catalina/connector/Response.java	(revision 1816899)
+--- java/org/apache/catalina/connector/Response.java	(revision 1826386)
 +++ java/org/apache/catalina/connector/Response.java	(revision )
 @@ -1017,7 +1017,7 @@
       * @param cookie Cookie to be added
@@ -63,7 +63,7 @@ Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
 -        addCookieInternal(cookie, false);
 +        addCookieInternal(cookie, cookie.isHttpOnly());
      }
- 
+
      /**
 Index: java/org/apache/coyote/Response.java
 IDEA additional info:
@@ -75,15 +75,15 @@ Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
 @@ -21,6 +21,7 @@
  import java.io.StringReader;
  import java.util.Locale;
- 
+
 +import org.apache.catalina.connector.Connector;
  import org.apache.tomcat.util.buf.ByteChunk;
  import org.apache.tomcat.util.http.MimeHeaders;
  import org.apache.tomcat.util.http.parser.HttpParser;
 @@ -92,6 +93,9 @@
      protected boolean commited = false;
- 
- 
+
+
 +    protected Connector connector;
 +
 +
@@ -93,7 +93,7 @@ Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
 @@ -229,6 +233,13 @@
          this.commited = v;
      }
- 
+
 +    public Connector getConnector() {
 +        return connector;
 +    }
@@ -101,9 +101,9 @@ Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
 +    public void setConnector(Connector connector) {
 +        this.connector = connector;
 +    }
- 
+
      // -----------------Error State --------------------
- 
+
 @@ -496,7 +507,11 @@
          if (ret != null
              && characterEncoding != null
@@ -115,19 +115,19 @@ Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
 +                ret = ret + ";charset=" + characterEncoding;
 +            }
          }
- 
+
          return ret;
 Index: java/org/apache/tomcat/util/net/jsse/JSSESupport.java
 IDEA additional info:
 Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
 <+>UTF-8
 ===================================================================
---- java/org/apache/tomcat/util/net/jsse/JSSESupport.java	(revision 1816899)
+--- java/org/apache/tomcat/util/net/jsse/JSSESupport.java	(revision 1826386)
 +++ java/org/apache/tomcat/util/net/jsse/JSSESupport.java	(revision )
 @@ -265,5 +265,13 @@
          }
      }
- 
+
 +    /**
 +     * Added to support request attribute supporting SSL/TLS negotiation protocol
 +     * returned on request.
@@ -137,13 +137,13 @@ Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
 +    }
 +
  }
- 
+
 Index: java/javax/servlet/http/Cookie.java
 IDEA additional info:
 Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
 <+>UTF-8
 ===================================================================
---- java/javax/servlet/http/Cookie.java	(revision 1816899)
+--- java/javax/servlet/http/Cookie.java	(revision 1826386)
 +++ java/javax/servlet/http/Cookie.java	(revision )
 @@ -84,11 +84,12 @@
      private String comment;	// ;Comment=VALUE ... describes cookie's use
@@ -154,24 +154,24 @@ Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
      private String path;	// ;Path=VALUE ... URLs that see the cookie
      private boolean secure;	// ;Secure ... e.g. use SSL
      private int version = 0;	// ;Version=1 ... means RFC 2109++ style
--    
+-
 +
-     
- 
+
+
      /**
 @@ -231,8 +232,13 @@
  	return domain;
      }
- 
+
 +    public boolean isHttpOnly() {
 +        return httpOnly;
 +    }
- 
+
 -
 +    public void setHttpOnly(final boolean httpOnly) {
 +        this.httpOnly = httpOnly;
 +    }
- 
+
      /**
       * Sets the maximum age of the cookie in seconds.
 Index: java/org/apache/catalina/connector/Request.java
@@ -179,7 +179,7 @@ IDEA additional info:
 Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
 <+>UTF-8
 ===================================================================
---- java/org/apache/catalina/connector/Request.java	(revision 1816899)
+--- java/org/apache/catalina/connector/Request.java	(revision 1826386)
 +++ java/org/apache/catalina/connector/Request.java	(revision )
 @@ -956,6 +956,10 @@
              if(attr != null) {
@@ -207,7 +207,7 @@ IDEA additional info:
 Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
 <+>UTF-8
 ===================================================================
---- java/org/apache/catalina/Globals.java	(revision 1816899)
+--- java/org/apache/catalina/Globals.java	(revision 1826386)
 +++ java/org/apache/catalina/Globals.java	(revision )
 @@ -402,4 +402,10 @@
       */
@@ -225,7 +225,7 @@ IDEA additional info:
 Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
 <+>UTF-8
 ===================================================================
---- java/org/apache/catalina/core/StandardContextValve.java	(revision 1816899)
+--- java/org/apache/catalina/core/StandardContextValve.java	(revision 1826386)
 +++ java/org/apache/catalina/core/StandardContextValve.java	(revision )
 @@ -114,16 +114,6 @@
      public final void invoke(Request request, Response response)
@@ -249,7 +249,7 @@ IDEA additional info:
 Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
 <+>UTF-8
 ===================================================================
---- java/org/apache/catalina/connector/CoyoteAdapter.java	(revision 1816899)
+--- java/org/apache/catalina/connector/CoyoteAdapter.java	(revision 1826386)
 +++ java/org/apache/catalina/connector/CoyoteAdapter.java	(revision )
 @@ -252,6 +252,8 @@
      	                org.apache.coyote.Response res)
@@ -265,7 +265,7 @@ IDEA additional info:
 Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
 <+>UTF-8
 ===================================================================
---- java/org/apache/tomcat/util/net/SSLSupport.java	(revision 1816899)
+--- java/org/apache/tomcat/util/net/SSLSupport.java	(revision 1826386)
 +++ java/org/apache/tomcat/util/net/SSLSupport.java	(revision )
 @@ -48,6 +48,12 @@
       */
@@ -288,4 +288,32 @@ Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
 +
 +    public String getProtocol();
  }
- 
+
+Index: java/org/apache/tomcat/util/http/parser/HttpParser.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- java/org/apache/tomcat/util/http/parser/HttpParser.java	(revision 1826386)
++++ java/org/apache/tomcat/util/http/parser/HttpParser.java	(revision )
+@@ -121,6 +121,19 @@
+                 IS_HTTP_PROTOCOL[i] = true;
+             }
+         }
++
++        // Apply a system property "tomcat.util.http.parser.HttpParser.requestTargetAllow" to allow some valid special characters.
++        final String requestTargetAllow = System.getProperty("tomcat.util.http.parser.HttpParser.requestTargetAllow");
++        if (requestTargetAllow != null && !requestTargetAllow.trim().isEmpty()) {
++            for (int i = 0; i < requestTargetAllow.length(); i++) {
++                final char ch = requestTargetAllow.charAt(i);
++                try {
++                    IS_NOT_REQUEST_TARGET[ch] = false;
++                } catch (final ArrayIndexOutOfBoundsException e) {
++                    // if the character is not in IS_NOT_REQUEST_TARGET, then just ignore it.
++                }
++            }
++        }
+     }
+
+     /**
+
