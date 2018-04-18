@@ -198,6 +198,26 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
 
         this.formParamsDialog = new HttpRoutingParamsDialog( this, assertion );
 
+        httpVersionComboBox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                final Object selectedItem = httpVersionComboBox.getSelectedItem();
+                if (selectedItem != null) {
+                    final GenericHttpRequestParams.HttpVersion httpVersion =
+                        (GenericHttpRequestParams.HttpVersion) ((ComboBoxItem) httpVersionComboBox.getSelectedItem()).getValue();
+
+                    // If HTTP version is chosen as 1.0, enable the checkbox, "Omit Host Header".
+                    // Otherwise, disable it and clean the selection on it.
+                    if (httpVersion == GenericHttpRequestParams.HttpVersion.HTTP_VERSION_1_0) {
+                        omitHostHeaderCheckBox.setEnabled(true);
+                    } else {
+                        omitHostHeaderCheckBox.setEnabled(false);
+                        omitHostHeaderCheckBox.setSelected(false);
+                    }
+                }
+            }
+        });
+
         okButtonAction = new BaseAction() {
             @Override
             public String getName() {
@@ -1009,7 +1029,9 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
             assertion.setXmlSecurityActorToPromote(wssPromoteActorCombo.getSelectedItem().toString());
 
         assertion.setRequestMsgSrc((String)((ComboBoxItem) reqMsgSrcComboBox.getSelectedItem()).getValue());
-        assertion.setHttpVersion((GenericHttpRequestParams.HttpVersion) ((ComboBoxItem) httpVersionComboBox.getSelectedItem()).getValue());
+
+        final GenericHttpRequestParams.HttpVersion httpVersion = (GenericHttpRequestParams.HttpVersion) ((ComboBoxItem) httpVersionComboBox.getSelectedItem()).getValue();
+        assertion.setHttpVersion(httpVersion);
 
         assertion.setResponseSize(byteLimitPanel.getValue());
 
@@ -1066,7 +1088,13 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
 
         assertion.setOverrideContentType(overrideContentTypeCheckBox.isSelected());
 
-        assertion.setOmitHostHeader(omitHostHeaderCheckBox.isSelected());
+        // Host header can be omitted only for HTTP/1.0.
+        // More info: DE213587, SSG-12037, and DE337924.
+        // RFC: https://tools.ietf.org/html/rfc7230#section-5.4
+        // "A client MUST send a Host header field in all HTTP/1.1 request messages.  "
+        assertion.setOmitHostHeader(
+            (httpVersion == GenericHttpRequestParams.HttpVersion.HTTP_VERSION_1_0) && omitHostHeaderCheckBox.isSelected()
+        );
 
         final boolean proxy = rbProxySpecified.isSelected();
         if (proxy) {
