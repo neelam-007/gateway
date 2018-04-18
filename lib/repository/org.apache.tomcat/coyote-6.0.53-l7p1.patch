@@ -25,19 +25,19 @@ Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
 @@ -129,6 +129,11 @@
       */
      protected boolean xpoweredBy = false;
-
+ 
 +    /*
 +    * Is trim the space between the ; and charset in content type header
 +    */
 +    protected boolean trimContentType = true;
 +
-
+ 
      /**
       * Descriptive information about this Connector implementation.
 @@ -977,6 +982,14 @@
          setProperty("xpoweredBy", String.valueOf(xpoweredBy));
      }
-
+ 
 +    public boolean isTrimContentType() {
 +        return trimContentType;
 +    }
@@ -63,27 +63,27 @@ Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
 -        addCookieInternal(cookie, false);
 +        addCookieInternal(cookie, cookie.isHttpOnly());
      }
-
+ 
      /**
 Index: java/org/apache/coyote/Response.java
 IDEA additional info:
 Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
 <+>UTF-8
 ===================================================================
---- java/org/apache/coyote/Response.java	(revision 1816899)
+--- java/org/apache/coyote/Response.java	(revision 1826386)
 +++ java/org/apache/coyote/Response.java	(revision )
 @@ -21,6 +21,7 @@
  import java.io.StringReader;
  import java.util.Locale;
-
+ 
 +import org.apache.catalina.connector.Connector;
  import org.apache.tomcat.util.buf.ByteChunk;
  import org.apache.tomcat.util.http.MimeHeaders;
  import org.apache.tomcat.util.http.parser.HttpParser;
 @@ -92,6 +93,9 @@
      protected boolean commited = false;
-
-
+ 
+ 
 +    protected Connector connector;
 +
 +
@@ -93,7 +93,7 @@ Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
 @@ -229,6 +233,13 @@
          this.commited = v;
      }
-
+ 
 +    public Connector getConnector() {
 +        return connector;
 +    }
@@ -101,9 +101,9 @@ Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
 +    public void setConnector(Connector connector) {
 +        this.connector = connector;
 +    }
-
+ 
      // -----------------Error State --------------------
-
+ 
 @@ -496,7 +507,11 @@
          if (ret != null
              && characterEncoding != null
@@ -115,7 +115,7 @@ Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
 +                ret = ret + ";charset=" + characterEncoding;
 +            }
          }
-
+ 
          return ret;
 Index: java/org/apache/tomcat/util/net/jsse/JSSESupport.java
 IDEA additional info:
@@ -127,7 +127,7 @@ Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
 @@ -265,5 +265,13 @@
          }
      }
-
+ 
 +    /**
 +     * Added to support request attribute supporting SSL/TLS negotiation protocol
 +     * returned on request.
@@ -137,7 +137,7 @@ Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
 +    }
 +
  }
-
+ 
 Index: java/javax/servlet/http/Cookie.java
 IDEA additional info:
 Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
@@ -154,24 +154,24 @@ Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
      private String path;	// ;Path=VALUE ... URLs that see the cookie
      private boolean secure;	// ;Secure ... e.g. use SSL
      private int version = 0;	// ;Version=1 ... means RFC 2109++ style
--
+-    
 +
-
-
+     
+ 
      /**
 @@ -231,8 +232,13 @@
  	return domain;
      }
-
+ 
 +    public boolean isHttpOnly() {
 +        return httpOnly;
 +    }
-
+ 
 -
 +    public void setHttpOnly(final boolean httpOnly) {
 +        this.httpOnly = httpOnly;
 +    }
-
+ 
      /**
       * Sets the maximum age of the cookie in seconds.
 Index: java/org/apache/catalina/connector/Request.java
