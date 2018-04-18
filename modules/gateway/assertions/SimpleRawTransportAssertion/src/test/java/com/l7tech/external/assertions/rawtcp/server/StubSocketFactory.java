@@ -17,6 +17,11 @@ class StubSocketFactory extends SocketFactory {
     }
 
     @Override
+    public Socket createSocket() throws IOException {
+        return fakeSocket;
+    }
+
+    @Override
     public Socket createSocket(String s, int i) throws IOException {
         fakeSocket.connect(new InetSocketAddress(s, i));
         return fakeSocket;
