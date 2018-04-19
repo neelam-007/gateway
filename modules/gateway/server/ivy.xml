@@ -104,7 +104,7 @@
         <dependency org="org.apache.ftpserver" name="ftpserver-core" rev="1.0.6" force="true" conf="core"/>
         <dependency org="org.apache.tomcat" name="annotations-api" rev="6.0.53" force="true" conf="core"/>
         <dependency org="org.apache.tomcat" name="catalina" rev="6.0.53-l7p1" force="true" conf="core"/>
-        <dependency org="org.apache.tomcat" name="coyote" rev="6.0.53-l7p1" force="true" conf="core"/>
+        <dependency org="org.apache.tomcat" name="coyote" rev="6.0.53-l7p2" force="true" conf="core"/>
         <dependency org="com.hazelcast" name="hazelcast" rev="3.6.1" force="true" conf="core"/>
 
         <!-- Progress Data Direct JDBC Drivers -->
