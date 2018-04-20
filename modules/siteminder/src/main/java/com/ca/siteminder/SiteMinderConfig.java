@@ -21,6 +21,9 @@ public interface SiteMinderConfig {
     String AGENT_AUTHENTICATION_CACHE_MAX_AGE_PROPNAME = "authenticationCache.maxAge";
     String AGENT_AUTHORIZATION_CACHE_SIZE_PROPNAME = "authorizationCache.size";
     String AGENT_AUTHORIZATION_CACHE_MAX_AGE_PROPNAME = "authorizationCache.maxAge";
+    String AGENT_ACO_CACHE_SIZE_PROPNAME = "acoCache.size";
+    String AGENT_ACO_CACHE_MAX_AGE_PROPNAME = "acoCache.maxAge";
+    String GENERATE_SESSION_COOKIE_STRING_PROPERTY = "siteminder.session.generateCookieString";
 
     static final int DEFAULT_CONNECTION_MIN = 1;
     static final int DEFAULT_CONNECTION_MAX = 10;
