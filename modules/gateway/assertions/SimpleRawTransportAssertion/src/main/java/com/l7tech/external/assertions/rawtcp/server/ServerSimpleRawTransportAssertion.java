@@ -13,13 +13,13 @@ import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableNameSyntaxException;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.IOUtils;
-import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.*;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.BeanFactory;
 
 import javax.net.SocketFactory;
@@ -53,7 +53,7 @@ public class ServerSimpleRawTransportAssertion extends AbstractServerAssertion<S
     private final String[] referencedVariables;
     SocketFactory socketFactory = SocketFactory.getDefault();
 
-    public ServerSimpleRawTransportAssertion(SimpleRawTransportAssertion assertion, BeanFactory beanFactory)
+    public ServerSimpleRawTransportAssertion(@NotNull SimpleRawTransportAssertion assertion, final BeanFactory beanFactory)
             throws PolicyAssertionException, IOException
     {
         super(assertion);
@@ -134,7 +134,10 @@ public class ServerSimpleRawTransportAssertion extends AbstractServerAssertion<S
             final long maxResponseSize = assertion.getMaxResponseBytesText()== null ?
                     Message.getMaxBytes() :
                     Long.parseLong(ExpandVariables.process(assertion.getMaxResponseBytesText(), vars, getAudit(), true));
-            sock = socketFactory.createSocket(InetAddress.getByName(targetHost), Integer.parseInt(targetPort));
+
+            //changing below code to set timeout for issue DE342952: 00942345-Audit Sink policy timeout blocks login
+            sock = socketFactory.createSocket();
+            sock.connect(new InetSocketAddress(targetHost, Integer.parseInt(targetPort)),assertion.getConnectionTimeoutMillis());
             sock.setSoTimeout(assertion.getWriteTimeoutMillis());
             inputStream = request == null
                     ? new EmptyInputStream()

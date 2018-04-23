@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.circuitbreaker.server;
 
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.server.util.Injector;
@@ -36,7 +37,7 @@ public class CircuitBreakerModuleLoadListener {
         prInfo(CB_FORCE_EVENT_TRACKER_LIST_CIRCUIT_OPEN, CB_FORCE_EVENT_TRACKER_LIST_CIRCUIT_OPEN_UI_PROPERTY, CB_FORCE_EVENT_TRACKER_LIST_CIRCUIT_OPEN_DESC, "")
     );
 
-    public static synchronized void onModuleLoaded(final ApplicationContext context) {
+    public static synchronized void onModuleLoaded(final ApplicationContext context) throws FindException {
         initializeModuleClusterProperties(context.getBean("serverConfig", ServerConfig.class));
 
         eventTrackerManager = new EventTrackerManager();

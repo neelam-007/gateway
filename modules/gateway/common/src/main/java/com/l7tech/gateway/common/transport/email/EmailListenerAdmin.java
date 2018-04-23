@@ -105,4 +105,12 @@ public interface EmailListenerAdmin {
 
     @Secured(stereotype=SAVE)
     IMAPFolder getIMAPFolderList(String hostname, int port, String username, String password, boolean useSSL);
+
+    /**
+     * Get the xml part max bytes value set in the io.xmlPartMaxBytes cluster property
+     * @return the xml part max bytes value set in the io.xmlPartMaxBytes cluster property
+     */
+    @Transactional(readOnly=true)
+    @Secured(stereotype=UNCHECKED_WIDE_OPEN)
+    long getXmlMaxBytes();
 }

@@ -8,7 +8,6 @@ import com.l7tech.objectmodel.AttributeHeader;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
@@ -266,30 +265,6 @@ public class WspConstants {
         new AssertionMapping(new WsTrustCredentialExchange(), "WsTrustCredentialExchange"),
         new SerializedJavaClassMapping(CustomAssertionHolder.class, "CustomAssertion"),
         new AssertionMapping(new Regex(), "Regex"),
-        new AssertionMapping(new EmailAlertAssertion(), "EmailAlert") {
-            @Override
-            public void populateObject(TypedReference object, Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
-                if (source == null) { throw new IllegalArgumentException("Source cannot be null");}
-                NodeList messageNodes = source.getElementsByTagName("L7p:Message");
-                if (messageNodes.getLength() == 0) {
-                    super.populateObject(object, source, visitor);
-                } else {
-                    //this is an old style EmailAssertion
-                    Element messageNode = (Element)messageNodes.item(0);
-                    Node messageAttr = messageNode.getAttributeNode("stringValue");
-                    String message = messageAttr.getNodeValue();
-
-                    EmailAlertAssertion ema = (EmailAlertAssertion) object.target;
-                    ema.messageString(message);
-                    super.populateObject(object, source, new PermissiveWspVisitor(visitor.getTypeMappingFinder()));
-                }
-            }
-
-            @Override
-            protected void populateElement(WspWriter wspWriter, Element element, TypedReference object) {
-                super.populateElement(wspWriter, element, object);
-            }
-        },
         new AssertionMapping(new CommentAssertion(), "CommentAssertion"),
         new AssertionMapping(new Operation(), "WSDLOperation"),
         new AssertionMapping(new SqlAttackAssertion(), "SqlAttackProtection"),

@@ -1,6 +1,7 @@
 package com.l7tech.kerberos;
 
 import com.l7tech.util.HexUtils;
+import com.l7tech.util.TimeSource;
 
 import javax.security.auth.Subject;
 import javax.security.auth.kerberos.KerberosKey;
@@ -26,11 +27,6 @@ public class KerberosTicketRepository {
     private static final Logger logger = Logger.getLogger(KerberosTicketRepository.class.getName());
 
     /**
-     * Amount of time prior to a ticket's expiry
-     */
-    private static final long EXPIRES_BUFFER = 1000L * 30L; // 30 seconds -- a bit arbitrary
-
-    /**
      * Singleton instance for the KerberosTicketRepository class.
      */
     private static KerberosTicketRepository instance;
@@ -44,6 +40,8 @@ public class KerberosTicketRepository {
      * Hashmap used to store the cached credentials.
      */
     private final Map<Key, CachedCredential> _map;
+
+    private static TimeSource timeSource = new TimeSource();
 
     /**
      * Maintenance thread for removing old tickets.
@@ -225,7 +223,7 @@ public class KerberosTicketRepository {
     private CachedCredential getElement(Key k) {
         CachedCredential cred;
         if ((cred = _map.get(k)) != null) {
-            cred.lastAccessTime = System.currentTimeMillis();
+            cred.lastAccessTime = timeSource.currentTimeMillis();
         }
         return cred;
     }
@@ -259,7 +257,7 @@ public class KerberosTicketRepository {
                     public void run() {
                         int counter = 0;
                         synchronized(_map) {
-                            long checkTime = System.currentTimeMillis() - THREASHOLD;
+                            long checkTime = timeSource.currentTimeMillis() - THREASHOLD;
 
                             // traverse map
                             Iterator<Key> it = _map.keySet().iterator();
@@ -295,7 +293,7 @@ public class KerberosTicketRepository {
     private boolean canRunCleanup() {
 
         return ((_map.size() / CACHE_SIZE_LIMIT) > CACHE_THREASHOLD) &&
-               ((System.currentTimeMillis() - 300000L) < lastCleanupRun.getTime());
+               ((timeSource.currentTimeMillis() - 300000L) < lastCleanupRun.getTime());
     }
 
     /**
@@ -320,7 +318,7 @@ public class KerberosTicketRepository {
             this.tgTicket = tgTicket;
             this.privateKeys = privateKeys;
             this.loginContext = loginCtx;
-            this.lastAccessTime = System.currentTimeMillis();
+            this.lastAccessTime = timeSource.currentTimeMillis();
             this.principal = principal;
 
             // set the expiry for this cache entry -- smaller value of the configured lifetime vs TGT endTime
@@ -341,11 +339,11 @@ public class KerberosTicketRepository {
          * @return true if the expire time is greater than 1 minute from now, false otherwise.
          */
         private boolean checkExpiry( final long expireTime ) {
-            return (expireTime > System.currentTimeMillis() + EXPIRES_BUFFER);
+            return (expireTime > timeSource.currentTimeMillis() + KerberosUtils.EXPIRES_BUFFER);
         }        
 
         boolean isExpired() {
-            return (System.currentTimeMillis() > expires);
+            return (timeSource.currentTimeMillis() > expires);
         }
 
         long getLastAccessTime() {
@@ -399,5 +397,12 @@ public class KerberosTicketRepository {
             result = 31 * result + Arrays.hashCode(credhash);
             return result;
         }
+    }
+
+    /**
+     * Assigning this timesource so that It will be used instead of one instantiated inside static block for unit testing.
+     * */
+    public static void setTimeSource(TimeSource timeSource) {
+        KerberosTicketRepository.timeSource = timeSource;
     }
 }

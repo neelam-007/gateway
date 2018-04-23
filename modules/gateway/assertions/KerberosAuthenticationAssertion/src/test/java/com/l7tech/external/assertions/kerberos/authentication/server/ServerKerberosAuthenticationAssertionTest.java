@@ -1,9 +1,5 @@
 package com.l7tech.external.assertions.kerberos.authentication.server;
 
-import static org.mockito.Matchers.any;
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
-
 import com.l7tech.external.assertions.kerberos.authentication.KerberosAuthenticationAssertion;
 import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.identity.ldap.LdapUser;
@@ -26,6 +22,7 @@ import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.util.MockInjector;
 import com.l7tech.util.FileUtils;
 import com.l7tech.util.MockConfig;
+import com.l7tech.util.TestTimeSource;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -43,6 +40,10 @@ import javax.inject.Inject;
 import java.io.File;
 import java.util.*;
 import java.util.logging.Logger;
+
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.*;
 
 /**
  * Test the KerberosAuthenticationAssertion.
@@ -63,7 +64,6 @@ public class ServerKerberosAuthenticationAssertionTest {
     KerberosAuthenticationAssertion assertion;
     private GenericApplicationContext applicationContext;
 
-
     @Before
     public void setUp() throws Exception {
         applicationContext = new GenericApplicationContext();
@@ -77,18 +77,19 @@ public class ServerKerberosAuthenticationAssertionTest {
         assertionConstructors.addGenericArgumentValue(assertion);
         RootBeanDefinition serverKerberosAuthenticationAssertion = new RootBeanDefinition(TestServerKerberosAuthenticationAssertion.class, assertionConstructors, null);
         serverKerberosAuthenticationAssertion.addQualifier(new AutowireCandidateQualifier(Inject.class));
+        RootBeanDefinition timeSourceBean = new RootBeanDefinition(TestTimeSource.class);
 
         AnnotationConfigUtils.registerAnnotationConfigProcessors(applicationContext);
         applicationContext.registerBeanDefinition("auditFactory", new RootBeanDefinition(LoggingAudit.LoggingAuditFactory.class));
         applicationContext.registerBeanDefinition("injector", new RootBeanDefinition(MockInjector.class));
         applicationContext.registerBeanDefinition("serverKerberosAuthenticationAssertion", serverKerberosAuthenticationAssertion);
+        applicationContext.registerBeanDefinition("timeSource", timeSourceBean);
         applicationContext.refresh();
 
         File tmpDir = FileUtils.createTempDirectory("kerberos", null, null, true);
         KerberosTestSetup.init(tmpDir);
         KerberosTestSetup.setUp(tmpDir);
-       fixture = (TestServerKerberosAuthenticationAssertion) applicationContext.getBean("serverKerberosAuthenticationAssertion");
-
+        fixture = (TestServerKerberosAuthenticationAssertion) applicationContext.getBean("serverKerberosAuthenticationAssertion");
     }
 
     @Test
@@ -310,5 +311,4 @@ public class ServerKerberosAuthenticationAssertionTest {
             return "http/" + SSG_PRINCIPAL + "@" + realm;    //To change body of overridden methods use File | Settings | File Templates.
         }
     }
-
 }

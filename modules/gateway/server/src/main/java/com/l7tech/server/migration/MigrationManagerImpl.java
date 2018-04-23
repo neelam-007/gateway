@@ -309,7 +309,12 @@ public class MigrationManagerImpl implements MigrationManager {
 
         if (op.modifiesTarget()) {
             for (MigrationDependency dep : metadata.getDependencies(header)) {
-                upload(dep.getDependency(), bundle, entitiesFromTarget, result, overwriteExisting, enableServices, dryRun, true);
+                //During the upload if any exception comes catching at this level (i.e at dependency level) gives better idea, user can easily track the problematic entity
+                try {
+                    upload(dep.getDependency(), bundle, entitiesFromTarget, result, overwriteExisting, enableServices, dryRun, true);
+                } catch ( ObjectModelException ome ) {
+                    throw new MigrationApi.MigrationException(composeErrorMessage("Import failed when processing entity", dep.getDependency(), ome));
+                }
             }
         }
 

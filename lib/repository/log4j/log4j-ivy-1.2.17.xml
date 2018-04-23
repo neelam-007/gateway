@@ -30,7 +30,6 @@
         <artifact name="log4j" type="javadoc" ext="jar" conf="javadoc" m:classifier="javadoc"/>
     </publications>
     <dependencies>
-        <dependency org="javax.mail" name="mail" rev="1.4.3" force="true" conf="optional->compile(*),master(*)"/>
         <dependency org="oro" name="oro" rev="2.0.8" force="true" conf="test->runtime(*),master(*)"/>
         <dependency org="junit" name="junit" rev="3.8.2" force="true" conf="test->runtime(*),master(*)"/>
     </dependencies>

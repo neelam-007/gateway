@@ -11,6 +11,8 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 @RunWith(MockitoJUnitRunner.class)
 public class MessageProcessorInjectorImplTest {
 
@@ -48,6 +50,27 @@ public class MessageProcessorInjectorImplTest {
         continueProcessing = MessageProcessorInjectorImpl.executeInjections(serviceInjectionsRegistry, pec);
         Assert.assertFalse(continueProcessing);
 
+    }
+
+    @Test
+    public void testGlobalInjections() {
+        ServiceInjectionsRegistry serviceInjectionsRegistry = new ServiceInjectionsRegistry();
+
+        // Add two service injections, a global one and another one.
+        AtomicBoolean executedGlobalInjection = new AtomicBoolean(false);
+        AtomicBoolean executedOtherInjection = new AtomicBoolean(false);
+        serviceInjectionsRegistry.register("testGlobal", context -> {
+            executedGlobalInjection.set(true);
+            return true;
+        }, ServiceInjectionsRegistry.GLOBAL_TAG);
+        serviceInjectionsRegistry.register("testOther", context -> {
+            executedOtherInjection.set(true);
+            return true;
+        }, "other", "tags");
+        boolean continueProcessing = MessageProcessorInjectorImpl.executeInjections(serviceInjectionsRegistry, pec);
+        Assert.assertTrue(continueProcessing);
+        Assert.assertTrue(executedGlobalInjection.get());
+        Assert.assertFalse(executedOtherInjection.get());
     }
 
 }

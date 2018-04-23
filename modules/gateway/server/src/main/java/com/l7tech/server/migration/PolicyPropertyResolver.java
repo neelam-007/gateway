@@ -102,19 +102,20 @@ public class PolicyPropertyResolver extends DefaultEntityPropertyResolver {
         Assertion assertion = MigrationUtils.getAssertion(policy, propName);
 
         String assertionPropName;
+        String[] tokens;
         try {
-            String[] tokens = propName.split(":");
+            tokens = propName.split(":");
             assertionPropName = tokens[2];
         } catch (Exception e) {
             throw new PropertyResolverException("Error parsing property name: " + propName, e);
         }
 
         Method getter = MigrationUtils.getterForPropertyName(assertion, assertionPropName);
-        if (getter != null) {
+        if (null != getter) {
             PropertyResolver resolver = getResolver(getter);
             resolver.applyMapping(assertion, assertionPropName, targetHeader, targetValue, originalHeader);
         } else {
-            logger.log(Level.WARNING, "Property not found at assertion : [" + assertion + "] with property name [" + assertionPropName + "] in policy [" + policy.getName() + "]");
+            throw new PropertyResolverException("Cannot map the assertion at ordinal: " + tokens[1] + " in policy: " + policy.getName());
         }
 
         // The policy XML will be updated from the root assertion prior to being stored

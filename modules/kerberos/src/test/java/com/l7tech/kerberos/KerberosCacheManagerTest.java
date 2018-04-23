@@ -2,7 +2,10 @@ package com.l7tech.kerberos;
 
 import com.l7tech.kerberos.delegate.KerberosDelegateClient;
 import com.l7tech.util.FileUtils;
-import org.junit.*;
+import com.l7tech.util.TestTimeSource;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import sun.security.krb5.KrbException;
 import sun.security.krb5.PrincipalName;
 import sun.security.krb5.RealmException;
@@ -30,9 +33,11 @@ public class KerberosCacheManagerTest {
 
     private static File tmpDir;
     private static KerberosDelegateClient client;
+    private static TestTimeSource timeSource;
 
     @Before
     public void setup() throws IOException, KerberosException {
+        timeSource = new TestTimeSource();
         tmpDir = FileUtils.createTempDirectory(FOLDER_NAME_KERBEROS, null, null, true);
         KerberosTestSetup.init(tmpDir);
         MockKrb5LoginModule.setKeyTabBytes(KEYTAB);
@@ -76,6 +81,8 @@ public class KerberosCacheManagerTest {
                 return clientPrincipalName;
             }
         };
+        client.setTimeSource(timeSource);
+        KerberosClient.setTimeSource(timeSource);
         KerberosTestSetup.setUpLoginConfig(tmpDir);
     }
 
@@ -94,10 +101,22 @@ public class KerberosCacheManagerTest {
         setupMock(REALM_L7TECH_DEV);
         PrincipalName clientPrincipalName = client.getPrincipalName(KERBEROS_USER, REALM_L7TECH_DEV);
         KerberosServiceTicket serviceTicket = client.getKerberosSelfServiceTicket(KEYTAB_PRINCIPAL, KERBEROS_USER);
-        KerberosCacheManager.Key key = new KerberosCacheManager.Key(clientPrincipalName,
+        // set current time before ticket expiry
+        timeSource.setCurrentTimeMillis(serviceTicket.getDelegatedKerberosTicket().getEndTime().getTime() - 10000L);
+        KerberosCacheManager instance = KerberosCacheManager.getInstance();
+        KerberosCacheManager.Key key = instance.new Key(clientPrincipalName,
                 serviceTicket.getDelegatedKerberosTicket());
-        assertTrue(key.toString() != null && !key.toString().contains(TICKET_EXPIRED));
+
+        String toString = key.toString();
+        assertTrue(toString != null && !toString.contains(TICKET_EXPIRED));
+
+//        timeSource.setCurrentTimeMillis(serviceTicket.getDelegatedKerberosTicket().getEndTime().getTime() + 10000L);
+//        toString = key.toString();
+//        assertTrue(toString != null && toString.contains(TICKET_EXPIRED));
+
+        timeSource.setCurrentTimeMillis(serviceTicket.getDelegatedKerberosTicket().getEndTime().getTime() - 10000L);
         serviceTicket.getDelegatedKerberosTicket().destroy();
-        assertTrue(key.toString() != null && key.toString().contains(TICKET_EXPIRED));
+        toString = key.toString();
+        assertTrue(toString != null && toString.contains(TICKET_EXPIRED));
     }
 }

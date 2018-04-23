@@ -112,6 +112,30 @@ public class KerberosTicketDecodeTest extends TestCase {
                     "PjLwLOk7luh9BxYXIHaZkguUFWo0hK3lWmTBknqnbT/8RrB+UfZauvTL/u9wEtxWODd5rFaO" +
                     "GwYM3/bZOqcZtfr4jFr5rnyYgx4cwqoIrvhi64LgjvZbBjW2tJPEc0pTl7kp";
 
+    public static final String SPNEGO_TICKET =
+            "YIIE+wYGKwYBBQUCoIIE7zCCBOugDTALBgkqhkiG9xIBAgKhBAMCATaiggTSBIIEzmCCBMoGCSqGSIb3\n" +
+            "EgECAgEAboIEuTCCBLWgAwIBBaEDAgEOogcDBQAAAAAAo4ID3mGCA9owggPWoAMCAQWhDxsNU0VBVFRM\n" +
+            "RS5MT0NBTKIjMCGgAwIBAKEaMBgbBEhUVFAbEHNwbmVnbzEudGVzdC5jb22jggOXMIIDk6ADAgEXoQMC\n" +
+            "AQSiggOFBIIDgcvuUIfyYa5i71sngE0PEfuzn1NBJxXdEEgQJugcvXGJVDlB4fC4AYE5P4tXLsx6ImBp\n" +
+            "E9zaju6cA+/YyQ7R4bW6Dc59KEvivszKrg+Cei7vEBJYPnIh72M3Fv3rJEQ6+dArn7edyV8FueLBmWje\n" +
+            "cWCHne02GBtRtxxpKd+erEwSgWqIdhj4CyB8iqwjOF9iUYgGQjtcWRg8a64WuoPeYsCgJvl+yN1Kzlte\n" +
+            "PV222w19SeHnFYwsWpnBky89c2rl2ibbxaRdkstGfYnPeBYS/+jC8yRporQz58SOf51svDo6t34JqQsp\n" +
+            "0imV/keCl6+QXsg7mUCOijxSleq9XaPzv7epsJaGV44n6oxF3WtR6DrDtL5QSqT4m6bYfzh4OPX34yN4\n" +
+            "ATE5mYZhjpZ658p9aICL9/P2UbMBZnfZ9/Mk96SUYQVfXuXvmxgfSpSZELy/q3zvWErIap9LU21W6Ftr\n" +
+            "PtQtpRMA0Bzk/ANhE7XiNWBNnJ0Qhol3s3dhJ7UevrdqgfkyNdOkIsXgwwUKvypXh3WOTQC3CEa86+jG\n" +
+            "Pxr6FcMjaxdVCn+KAdvcxTGq3LsgtnG/Lh1rfeW4RHTVuufN1BeWJhvR+Thoa/AIKMQsni4OdkEjfuBT\n" +
+            "X8lVAaYDXKDf+eiEkCFTbJo4HhbUGrM9XHlKsboC9TwPCLVlWnfsXyTAyE7sU5G1c2VVS9X8FlXym5oV\n" +
+            "nU9vvRUgC59OdTBdOvoyloAcCc4CuGF6+f4+eUYalI/VXrSin2dANOQwxqBJiS2qZlaDt3+M2lOhlmG9\n" +
+            "xMhrqzwXdakThN16zUr3OcXlW4BoJVOLXTq/xsw4yzJ+PuUzM3++CTiCW6mnTxt6kQSMpWPHtisvuufN\n" +
+            "XOQftbFiq4htSNwTkZzyJVAI9WxrA/cIXTqJlM+NJ+fdRPemrzFlxVilDmE0oh3qMv+gRQGRgj7H2AXd\n" +
+            "co4HEV0U6Hqwav+NR+9wmsHNjr3lo+lpFq7HqtVHMMuFAP2GIkUguXvJVe6Y28nu+X/x7szMEYJqfyOk\n" +
+            "N0b9bMNMrWo1oxXV1lGV8bVmLfRLXlh/VvlvsIz5NDFpg2kPxn8VfAPKpRouVtmXs5LoncUcAcwEREKw\n" +
+            "PqpFW6kNJ5i0nrrwoTaF9y0FoUeBesIB2QQCrOx/kY4Di5eogqAupdim3mK0eKAlhVijraUc7aV4oF30\n" +
+            "MQhVsoU6x6SBvTCBuqADAgEXooGyBIGvFYt1hPLfKqJtgk2tMrCEkUy/e3YJcKhG0XozVtq/Cj1TE96h\n" +
+            "BuwT+MBHuyNpeizxgqCYn249ldkosAsb3DQ8PBLwEBG7nv9ZnbUUaEMgKH5K4gwI+45OM+419RL7Q3yk\n" +
+            "cjk790jdlPuV/NZdig3KKATF2wj0gAdVyPTm/ZaZoUxgKjdJYnGtW3AakVLS1S0fM5UTwizR8hjUO1aE\n" +
+            "sUh34wCNaDjbqJR5ibTxQ+HvUg==";
+
     @Rule
     public final ExpectedException exception = ExpectedException.none();
 
@@ -144,6 +168,15 @@ public class KerberosTicketDecodeTest extends TestCase {
         assertTrue(success);
     }
 
+    @Test
+    public void testSpnegoTicketParsing() {
+        try {
+            Krb5ApReq krb5ApReq = new Krb5ApReq(HexUtils.decodeBase64(SPNEGO_TICKET));
+            assertEquals(krb5ApReq.getSpn(), "HTTP/spnego1.test.com@SEATTLE.LOCAL");
+        } catch (Krb5ApReqException e) {
+            fail("The SPNEGO token must have been successfully parsed.");
+        }
+    }
 //    @Test
 //    public void doSpeedTest() {
 //        long start = System.currentTimeMillis();

@@ -58,7 +58,9 @@ public class ServerSiteMinderCheckProtectedAssertion extends AbstractServerSiteM
         String action = SiteMinderAssertionUtil.extractContextVarValue(assertion.getAction(), variableMap, getAudit());
         String userIpAddress = SiteMinderAssertionUtil.extractContextVarValue(assertion.getSourceIpAddress(), variableMap, getAudit());
         String serverName = SiteMinderAssertionUtil.extractContextVarValue(assertion.getServerName(), variableMap, getAudit());
+        String acoName = SiteMinderAssertionUtil.extractContextVarValue(assertion.getAcoName(), variableMap, getAudit());
         SiteMinderContext smContext = null;
+
         try {
             smContext = (SiteMinderContext) context.getVariable(varPrefix + "." + SiteMinderAssertionUtil.SMCONTEXT);
         } catch (NoSuchVariableException e) {
@@ -80,6 +82,7 @@ public class ServerSiteMinderCheckProtectedAssertion extends AbstractServerSiteM
             smContext.setSourceIpAddress(userIpAddress);
         }
 
+        smContext.setAcoName(acoName);
         smContext.setConfig(getSmConfig(assertion.getAgentGoid()));
 
         try {

@@ -196,8 +196,9 @@ public class MigrationUtils {
             assertion = (Assertion) iter.next();
         }
 
-        if (!(assertion.getOrdinal() == targetOrdinal))
-            throw new PropertyResolverException("Assertion with ordinal " + targetOrdinal + " not found in poilcy.");
+        if (!(assertion.getOrdinal() == targetOrdinal)) {
+            throw new PropertyResolverException("Assertion with ordinal: " + targetOrdinal + " not found in policy: " + policy.getName());
+        }
 
         return assertion;
     }

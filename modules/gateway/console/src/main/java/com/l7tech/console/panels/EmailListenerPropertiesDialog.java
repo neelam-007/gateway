@@ -515,7 +515,7 @@ public class EmailListenerPropertiesDialog extends JDialog {
  	 	}
 
         String maxResponseSize = props.getProperty(EmailListener.PROP_REQUEST_SIZE_LIMIT);
-        byteLimit.setValue(maxResponseSize,Registry.getDefault().getEmailAdmin().getXmlMaxBytes());
+        byteLimit.setValue(maxResponseSize,Registry.getDefault().getEmailListenerAdmin().getXmlMaxBytes());
 
         if (allServices != null) {
  	 	    ComboItem[] comboitems = new ComboItem[allServices.length];

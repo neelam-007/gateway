@@ -3,6 +3,8 @@
                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.2.xsd"
                    logicalFilePath="upgrade_9.4.00.xml">
+    <property name="kerberos.cwp.condition" value="propvalue = '-1'" dbms="mysql"/>
+    <property name="kerberos.cwp.condition" value="CAST(propvalue AS VARCHAR(20)) = '-1'" dbms="derby"/>
     <changeSet author="gateway" id="update_ssg_version">
         <update tableName="ssg_version">
             <column name="current_version" value="9.4.00"/>
@@ -10,6 +12,20 @@
         <rollback>
             <update tableName="ssg_version">
                 <column name="current_version" value="9.3.00"/>
+            </update>
+        </rollback>
+    </changeSet>
+    <changeSet author="gateway" id="update_cwp_kerberos_timetolive">
+        <update tableName="cluster_properties">
+            <column name="propvalue" value="2147483647" />
+            <column name="${properties.column.name}" value=""/>
+            <where>propkey = 'kerberos.cache.timeToLive' and ${kerberos.cwp.condition}</where>
+        </update>
+        <rollback>
+            <update tableName="cluster_properties">
+                <column name="propvalue" value="-1"/>
+                <column name="${properties.column.name}" value=""/>
+                <where>propkey = 'kerberos.cache.timeToLive'</where>
             </update>
         </rollback>
     </changeSet>

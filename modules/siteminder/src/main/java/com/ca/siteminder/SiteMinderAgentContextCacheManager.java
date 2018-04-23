@@ -1,7 +1,10 @@
 package com.ca.siteminder;
 
+import com.ca.siteminder.SiteMinderAgentContextCache.AgentContextSubCache;
 import com.l7tech.objectmodel.Goid;
 import com.sun.istack.NotNull;
+
+import java.util.List;
 
 /**
  * @author Jamie Williams - jamie.williams2@ca.com
@@ -16,15 +19,14 @@ public interface SiteMinderAgentContextCacheManager {
     SiteMinderAgentContextCache getCache(@NotNull Goid smConfigGoid, @NotNull String smAgentName);
 
     /**
-     * Get cache.  Cache is created if it does not exist.
-     * @param smConfigGoid siteminder config goid
-     * @param smAgentName agent name
-     * @param resourceMaxEntries the maximum number of entries allowed in the resource cache
-     * @return existing cache or new cache
+     * Creates Agent Context cache with all the sub-cache details.
+     * @param smConfigGoid SiteMinder config goid
+     * @param smAgentName Agent name
+     * @param subCaches list of Sub-cache
+     * @return existing or new cache
      */
     SiteMinderAgentContextCache createCache(@NotNull Goid smConfigGoid, @NotNull String smAgentName,
-                                            int resourceMaxEntries, long resourceMaxAge, int authenticationMaxEntries,
-                                            long authenticationMaxAge, int authorizationMaxEntries, long authorizationMaxAge);
+                                            @NotNull List<AgentContextSubCache> subCaches);
 
     /**
      * Remove the caches associated with the specified Goid.

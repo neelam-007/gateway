@@ -15,6 +15,7 @@ import com.l7tech.gateway.common.security.keystore.SsgKeyMetadata;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.security.password.SecurePassword.SecurePasswordType;
 import com.l7tech.objectmodel.*;
+import com.l7tech.security.cert.BouncyCastleCertUtils;
 import com.l7tech.security.cert.TrustedCert;
 import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.security.keys.PemUtils;
@@ -32,10 +33,7 @@ import com.l7tech.server.security.keystore.SsgKeyMetadataManager;
 import com.l7tech.server.security.keystore.SsgKeyStore;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.security.password.SecurePasswordManager;
-import com.l7tech.util.ArrayUtils;
-import com.l7tech.util.Background;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.*;
 import org.apache.commons.lang.ObjectUtils;
 import org.bouncycastle.asn1.pkcs.CertificationRequestInfo;
 import org.bouncycastle.asn1.x509.X509Name;
@@ -735,9 +733,9 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
     }
 
     @Override
-    public Map<String, String> getCsrProperties(byte[] csrBytes) {
+    public Map<String, Object> getCsrProperties(byte[] csrBytes) {
         // The details array will store three pieces of information: Subject DN, Public Key Brief Details, Public Key Full Details
-        Map<String, String> csrProps = new HashMap<String, String>();
+        Map<String, Object> csrProps = new HashMap<>();
 
         byte[] decodedCsrBytes;
         try {
@@ -752,6 +750,20 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
 
         // Subject DN:
         csrProps.put(CSR_PROP_SUBJECT_DN, certReqInfo.getSubject().toString(true, X509Name.DefaultSymbols));
+        // Subject Alternative Names
+        try {
+            List<X509GeneralName> sANs = BouncyCastleCertUtils.extractSubjectAlternativeNamesFromCsrInfoAttr(certReqInfo.getAttributes());
+            if(sANs.size() > 0) {
+                List<NameValuePair> sansList = new ArrayList<>();
+                for (X509GeneralName san : sANs) {
+                    sansList.add(CertUtils.convertFromX509GeneralName(san));
+                }
+                csrProps.put(CSR_PROP_SUBJECT_ALTERNATIVE_NAMES, sansList);
+            }
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Unable to get Subject Alternative Names from CSR");
+            return csrProps;
+        }
 
         // Public Key:
         final PublicKey publicKey;
