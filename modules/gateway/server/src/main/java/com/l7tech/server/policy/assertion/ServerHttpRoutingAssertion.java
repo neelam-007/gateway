@@ -522,6 +522,9 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 routedRequestParams.addExtraHeader( new GenericHttpHeader( "Authorization", headerValue ) );
             }
 
+            //set the omitHostHeader value in the routedRequstParams
+            routedRequestParams.setOmitHostHeader(assertion.isOmitHostHeader());
+
             return reallyTryUrl(context, requestMessage, routedRequestParams, url, true, vars);
         } catch (MalformedURLException mfe) {
             thrown = mfe;
