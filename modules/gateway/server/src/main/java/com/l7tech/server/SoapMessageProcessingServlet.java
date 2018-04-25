@@ -50,7 +50,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.SocketTimeoutException;
-import java.net.URI;
+import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.*;
 import java.util.concurrent.Callable;
@@ -439,7 +439,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
      */
     private Collection<Pair<String, Object>> getPassThroughHeaders(PolicyEnforcementContext context, final HttpRequestKnob reqKnob, final HeadersKnob headersKnob) {
         final List<Pair<String, Object>> passThroughHeaders = new ArrayList<>();
-        URI url = URI.create(reqKnob.getRequestUrl());
+        final URL url = reqKnob.getRequestURL(); // url is never null.
         //SSG-8033 Determine to overwrite the path and/or domain using the SSG request path and/or host.
         String domain = context.isOverwriteResponseCookieDomain() ? url.getHost() : null;
         String path = context.isOverwriteResponseCookiePath() ? CookieUtils.trimLastSubPath(url.getPath()) : null;
@@ -645,7 +645,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             }
 
             if ( !faultEncoding.canEncode() ) {
-                faultEncoding = Charsets.UTF8; // fallback to UTF-8 rather than failing    
+                faultEncoding = Charsets.UTF8; // fallback to UTF-8 rather than failing
             }
 
             if ( !hresp.isCommitted() ) {

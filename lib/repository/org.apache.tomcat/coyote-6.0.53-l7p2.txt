@@ -6,7 +6,7 @@ As of this change it contains the cumulative changes to tomcat-6.0.53 for the fo
 1  BUG - SSG-9059 Icefish: Upgrade Tomcat from 6.0.35 to 6.0.41
    -------------------------------------------------------------------------
 
-This patch includes changes from coyote-6.0.53-l7p1.patch and coyote-6.0.53-l7p2.patch.
+This patch includes changes from coyote-6.0.53-l7p2.patch.
 ================================================================================
 
 
