@@ -4,82 +4,79 @@ import com.whirlycott.cache.Cache;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 /**
  * SiteMinderAgentContextCache holds the resource and session caches for a SiteMinder agent
  */
 public class SiteMinderAgentContextCache {
 
-    private final Cache resourceCache;
-    private final Cache authenticationCache;
-    private final Cache authorizationCache;
+    public enum AgentContextSubCacheType {
 
-    private final int resourceCacheSize;
-    private final long resourceCacheMaxAge;
-    private final int authorizationCacheSize;
-    private final long authorizationCacheMaxAge;
-    private final int authenticationCacheSize;
-    private final long authenticationCacheMaxAge;
+        AGENT_CACHE_RESOURCE("resource"),
+        AGENT_CACHE_AUTHENTICATION("authentication"),
+        AGENT_CACHE_AUTHORIZATION("authorization"),
+        AGENT_CACHE_ACO("aco");
 
-    public SiteMinderAgentContextCache(@Nullable Cache resourceCache, int resourceCacheSize, long resourceCacheMaxAge,
-                                       @Nullable Cache authenticationCache, int authenticationCacheSize, long authenticationCacheMaxAge,
-                                       @Nullable Cache authorizationCache, int authorizationCacheSize, long authorizationCacheMaxAge) {
-        this.resourceCache = resourceCache;
-        this.resourceCacheSize = resourceCacheSize;
-        this.resourceCacheMaxAge = resourceCacheMaxAge;
-        this.authenticationCache = authenticationCache;
-        this.authenticationCacheSize = authenticationCacheSize;
-        this.authenticationCacheMaxAge = authenticationCacheMaxAge;
-        this.authorizationCache = authorizationCache;
-        this.authorizationCacheSize = authorizationCacheSize;
-        this.authorizationCacheMaxAge = authorizationCacheMaxAge;
+        private String name;
+
+        AgentContextSubCacheType(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        @Override
+        public String toString() {
+            return getName();
+        }
     }
 
-    /**
-     * Get the resource cache
-     * @return the resource cache
-     */
-    public Cache getResourceCache() {
-        return resourceCache;
+    public static class AgentContextSubCache {
+
+        private AgentContextSubCacheType cacheType;
+        private final Cache cache;
+        private final int maxSize;
+        private final long maxAge;
+
+        public AgentContextSubCache(@Nullable Cache cache, AgentContextSubCacheType cacheType, int maxSize, long maxAge) {
+            this.cache = cache;
+            this.cacheType = cacheType;
+            this.maxSize = maxSize;
+            this.maxAge = maxAge;
+        }
+
+        public AgentContextSubCacheType getCacheType() {
+            return cacheType;
+        }
+
+        public Cache getCache() {
+            return cache;
+        }
+
+        public int getMaxSize() {
+            return maxSize;
+        }
+
+        public long getMaxAge() {
+            return maxAge;
+        }
     }
 
-    /**
-     * Get the authentication cache
-     * @return the authentication cache
-     */
-    public Cache getAuthenticationCache() {
-        return authenticationCache;
+    private final Map<AgentContextSubCacheType, AgentContextSubCache> subCacheMap = new HashMap<>();
+
+    public SiteMinderAgentContextCache(@NotNull final List<AgentContextSubCache> subCaches) {
+        for (AgentContextSubCache subCache : subCaches) {
+            subCacheMap.put(subCache.getCacheType(), subCache);
+        }
     }
 
-    /**
-     * Get the authorization cache
-     * @return the authorization cache
-     */
-    public Cache getAuthorizationCache() {
-        return authorizationCache;
-    }
-
-    public int getResourceCacheSize() {
-        return resourceCacheSize;
-    }
-
-    public long getResourceCacheMaxAge() {
-        return resourceCacheMaxAge;
-    }
-
-    public int getAuthorizationCacheSize() {
-        return authorizationCacheSize;
-    }
-
-    public long getAuthorizationCacheMaxAge() {
-        return authorizationCacheMaxAge;
-    }
-
-    public int getAuthenticationCacheSize() {
-        return authenticationCacheSize;
-    }
-
-    public long getAuthenticationCacheMaxAge() {
-        return authenticationCacheMaxAge;
+    public AgentContextSubCache getSubCache(AgentContextSubCacheType type) {
+        return subCacheMap.get(type);
     }
 
     public static class ResourceCacheKey {

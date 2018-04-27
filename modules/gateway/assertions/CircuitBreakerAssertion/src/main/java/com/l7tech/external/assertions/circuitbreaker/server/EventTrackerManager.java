@@ -12,10 +12,7 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.context.ApplicationListener;
 
 import javax.inject.Inject;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.TimerTask;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -33,13 +30,13 @@ import static com.l7tech.external.assertions.circuitbreaker.CircuitBreakerConsta
  */
 class EventTrackerManager {
 
-    private static final Logger logger = Logger.getLogger(EventTrackerManager.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(EventTrackerManager.class.getName());
     private final ConcurrentHashMap<String, EventTracker> eventTrackerMap = new ConcurrentHashMap<>();
     private final Object lock = new Object();
     private final AtomicBoolean started = new AtomicBoolean(false);
 
-    private final AtomicReference<TimerTask> cleanupTask = new AtomicReference<>(null);
-    private static List<String> forcedOpenEventTrackerList;
+    private final AtomicReference<TimerTaskWithGoid> cleanupTask = new AtomicReference<>(null);
+    private final List<String> forcedOpenEventTrackerList = new ArrayList<>();
 
     @Inject
     private TimeSource timeSource;
@@ -68,10 +65,10 @@ class EventTrackerManager {
     }
 
     boolean isCircuitForcedOpen(String eventTrackerId) {
-        return forcedOpenEventTrackerList != null && forcedOpenEventTrackerList.contains(eventTrackerId);
+        return forcedOpenEventTrackerList.contains(eventTrackerId);
     }
 
-    synchronized void start() {
+    synchronized void start() throws FindException {
         if (!started.get()) {
             initialize();
         }
@@ -85,33 +82,75 @@ class EventTrackerManager {
         }
     }
 
-    private void initialize() {
+    private void initialize() throws FindException {
         scheduleEventCleanupTask(getEventCleanupInterval());
         started.set(true);
         loadForcedOpenEventTrackerList();
     }
 
-    private synchronized void rescheduleEventCleanupTask(final long eventCleanupInterval) {
+    protected void rescheduleEventCleanupTask(final long eventCleanupInterval) throws FindException {
         if (started.get()) {
-            logger.log(Level.FINE, "Rescheduling Event Tracker clean up task");
+            LOGGER.log(Level.FINE, "Rescheduling Event Tracker clean up task");
             stopEventCleanupTask();
             scheduleEventCleanupTask(eventCleanupInterval);
         }
     }
 
-    private void scheduleEventCleanupTask(final long eventCleanupInterval) {
+    private void scheduleEventCleanupTask(final long eventCleanupInterval) throws FindException {
         if (cleanupTask.get() == null) {
-            logger.log(Level.FINE, "Scheduling Event Tracker clean up task");
-            cleanupTask.set(new TimerTask() {
-                @Override
-                public void run() {
-                    cleanupEvents(eventCleanupInterval);
-                }
-            });
+            LOGGER.log(Level.FINE, "Scheduling Event Tracker clean up task");
+            cleanupTask.set(new TimerTaskWithGoid(eventCleanupInterval));
 
             Background.scheduleRepeated(cleanupTask.get(), eventCleanupInterval, eventCleanupInterval);
         } else {
-            logger.log(Level.FINE, "Failed to schedule Event Tracker clean up task; a task is already scheduled");
+            LOGGER.log(Level.FINE, "Failed to schedule Event Tracker clean up task; a task is already scheduled");
+        }
+    }
+
+    protected class TimerTaskWithGoid extends TimerTask {
+        protected final long interval;
+        private Goid cleanupIntervalGoid;
+        private Goid eventTrackerListGoid;
+
+        TimerTaskWithGoid(long cleanupInterval) throws FindException {
+            this.interval = cleanupInterval;
+            setCleanupIntervalGoid();
+            setEventTrackerListlGoid();
+        }
+
+        @Override
+        public void run() {cleanupEvents(interval);}
+
+        protected synchronized void setCleanupIntervalGoid () throws FindException {
+            this.cleanupIntervalGoid = getCleanupIntervalCWPGoid();
+        }
+
+        protected synchronized void setEventTrackerListlGoid () throws FindException {
+            this.eventTrackerListGoid = getEventTrackerListCWPGoid();
+        }
+
+        protected Goid getCleanupIntervalGoid () { return cleanupIntervalGoid; }
+
+        protected Goid getEventTrackerListlGoid () {
+            return eventTrackerListGoid;
+        }
+
+        private Goid getCleanupIntervalCWPGoid() throws FindException {
+            try{
+                return clusterPropertyManager.findByUniqueName(CB_EVENT_TRACKER_CLEANUP_INTERVAL_UI_PROPERTY).getGoid();
+            }
+            catch (NullPointerException | FindException e) {
+                return Goid.DEFAULT_GOID;
+            }
+        }
+
+        private Goid getEventTrackerListCWPGoid() throws FindException {
+            try{
+                return clusterPropertyManager.findByUniqueName(CB_FORCE_EVENT_TRACKER_LIST_CIRCUIT_OPEN_UI_PROPERTY).getGoid();
+            }
+            catch (NullPointerException | FindException e) {
+                return Goid.DEFAULT_GOID;
+            }
         }
     }
 
@@ -119,11 +158,11 @@ class EventTrackerManager {
         if (cleanupTask.get() != null) {
             Background.cancel(cleanupTask.get());
             cleanupTask.set(null);
-            logger.log(Level.FINE, "Stopping Event Tracker clean up task");
+            LOGGER.log(Level.FINE, "Stopping Event Tracker clean up task");
         }
     }
 
-    private long getEventCleanupInterval() {
+    protected long getEventCleanupInterval() {
         try {
             return Long.valueOf(clusterPropertyManager.getProperty(CB_EVENT_TRACKER_CLEANUP_INTERVAL_UI_PROPERTY));
         } catch (NumberFormatException | FindException e) {
@@ -134,7 +173,7 @@ class EventTrackerManager {
     private synchronized void cleanupEvents(long eventCleanupInterval) {
         long interval = TimeUnit.MILLISECONDS.toNanos(eventCleanupInterval);
         long cleanBeforeTimestamp = timeSource.nanoTime() - interval;
-        logger.log(Level.FINE, "Cleaning events older than " + eventCleanupInterval + " milliseconds");
+        LOGGER.log(Level.FINE, "Cleaning events older than " + eventCleanupInterval + " milliseconds");
         for (Map.Entry<String, EventTracker> entry : eventTrackerMap.entrySet()) {
             entry.getValue().clearTimestampBefore(cleanBeforeTimestamp);
         }
@@ -151,35 +190,39 @@ class EventTrackerManager {
         };
     }
 
-    private void handleClusterPropertyChange(EntityInvalidationEvent entityInvalidationEvent) {
+    protected void handleClusterPropertyChange(EntityInvalidationEvent entityInvalidationEvent) {
         for (Goid oid : entityInvalidationEvent.getEntityIds()) {
             try {
                 ClusterProperty clusterProperty = clusterPropertyManager.findByPrimaryKey(oid);
                 if (clusterProperty != null && CB_EVENT_TRACKER_CLEANUP_INTERVAL_UI_PROPERTY.equals(clusterProperty.getName())) {
-                    rescheduleEventCleanupTask(Long.valueOf(clusterProperty.getValue()));
-                } else if (clusterProperty == null && CB_EVENT_TRACKER_CLEANUP_INTERVAL_UI_PROPERTY.equals(((ClusterProperty) entityInvalidationEvent.getSource()).getName())) {// when cluster property is deleted
+                    rescheduleEventCleanupTask(Long.valueOf(clusterPropertyManager.getProperty(CB_EVENT_TRACKER_CLEANUP_INTERVAL_UI_PROPERTY)));
+                }
+                else if (clusterProperty == null && oid.equals(getCleanupTask().cleanupIntervalGoid)){
                     rescheduleEventCleanupTask(CB_EVENT_TRACKER_CLEANUP_INTERVAL_DEFAULT);
                 }
 
-                if (clusterProperty != null && CB_FORCE_EVENT_TRACKER_LIST_CIRCUIT_OPEN_UI_PROPERTY.equals(clusterProperty.getName()) && StringUtils.isNotEmpty(clusterProperty.getValue())) {
-                    forcedOpenEventTrackerList = Arrays.asList(clusterProperty.getValue().split("\n"));
-                } else if (clusterProperty == null && CB_FORCE_EVENT_TRACKER_LIST_CIRCUIT_OPEN_UI_PROPERTY.equals(((ClusterProperty) entityInvalidationEvent.getSource()).getName())) {// when cluster property is deleted
-                    forcedOpenEventTrackerList = null;
+                if ((clusterProperty != null && CB_FORCE_EVENT_TRACKER_LIST_CIRCUIT_OPEN_UI_PROPERTY.equals(clusterProperty.getName())) ||
+                        (clusterProperty == null && oid.equals(getCleanupTask().eventTrackerListGoid) )) {
+                    loadForcedOpenEventTrackerList();
                 }
             } catch (FindException e) {
-                logger.log(Level.FINE, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                LOGGER.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             }
         }
     }
 
-    private void loadForcedOpenEventTrackerList() {
+    protected void loadForcedOpenEventTrackerList() {
         try {
             String eventTrackerIds = clusterPropertyManager.getProperty(CB_FORCE_EVENT_TRACKER_LIST_CIRCUIT_OPEN_UI_PROPERTY);
+            TimerTaskWithGoid task = getCleanupTask();
             if (StringUtils.isNotEmpty(eventTrackerIds)) {
-                forcedOpenEventTrackerList = Arrays.asList(eventTrackerIds.split("\n"));
+                forcedOpenEventTrackerList.addAll(Arrays.asList(eventTrackerIds.split("\n")));
+            } else {
+                forcedOpenEventTrackerList.clear();
             }
+            task.setEventTrackerListlGoid();
         } catch (FindException e) {
-            logger.log(Level.FINE, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            LOGGER.log(Level.FINE, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
         }
     }
 
@@ -188,7 +231,7 @@ class EventTrackerManager {
     * These methods (getCleanupTask) are used for getting / setting values / objects for unit tests only.
     *
     * */
-    TimerTask getCleanupTask() {
+    TimerTaskWithGoid getCleanupTask() {
         return cleanupTask.get();
     }
 }

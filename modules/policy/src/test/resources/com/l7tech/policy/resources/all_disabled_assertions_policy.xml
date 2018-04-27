@@ -161,9 +161,6 @@
         <L7p:ThroughputQuotaQuery>
             <L7p:Enabled booleanValue="false"/>
         </L7p:ThroughputQuotaQuery>
-        <L7p:EmailAlert>
-            <L7p:Enabled booleanValue="false"/>
-        </L7p:EmailAlert>
         <L7p:CommentAssertion>
             <L7p:Enabled booleanValue="false"/>
         </L7p:CommentAssertion>
@@ -338,9 +335,6 @@
         <L7p:RaiseError>
             <L7p:Enabled booleanValue="false"/>
         </L7p:RaiseError>
-        <L7p:InvokePolicyAsync>
-            <L7p:Enabled booleanValue="false"/>
-        </L7p:InvokePolicyAsync>
         <L7p:Transaction L7p:Enabled="false" L7p:Usage="Required">
             <L7p:FalseAssertion/>
         </L7p:Transaction>

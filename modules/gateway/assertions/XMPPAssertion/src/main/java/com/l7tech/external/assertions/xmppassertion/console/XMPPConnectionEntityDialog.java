@@ -59,6 +59,7 @@ public class XMPPConnectionEntityDialog extends JDialog {
 
     private boolean confirmed = false;
 
+    private final String ALL_BIND_ADDRESS = "0.0.0.0";
     private final ImageIcon OK_ICON = new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/Check16.png"));
     private final ImageIcon WARNING_ICON = new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/Warning16.png"));
 
@@ -219,7 +220,7 @@ public class XMPPConnectionEntityDialog extends JDialog {
 
         InetAddress[] addrs = Registry.getDefault().getTransportAdmin().getAvailableBindAddresses();
         java.util.List<String> entries = new ArrayList<String>();
-        entries.add("0.0.0.0");
+        entries.add(ALL_BIND_ADDRESS);
         for (InetAddress addr : addrs) {
             entries.add(addr.getHostAddress());
         }
@@ -421,7 +422,9 @@ public class XMPPConnectionEntityDialog extends JDialog {
             return "The Bind Port cannot be empty.";
         }
 
-        int port = Integer.parseInt(bindPortField.getText());
+        final String bindAddress = (String) bindAddressComboBox.getSelectedItem();
+        final int port = Integer.parseInt(bindPortField.getText());
+        final boolean isAllBindAddressSelected = ALL_BIND_ADDRESS.equals(bindAddress);
 
         if(port < 1025 || port > 65535) {
             return "The Bind Port must be a number between 1025 and 65535.";
@@ -430,22 +433,23 @@ public class XMPPConnectionEntityDialog extends JDialog {
         // No need to check that port is not system reserved port. This is enforced by the Spinner.
         //
 
-        // Check that port is not already in use by existing XMPP inbound listeners.
+        // Check that port and bind address (interface) pair is not already in use by existing XMPP inbound listeners.
         //
         for (XMPPConnectionEntity existingEntity : existingEntities) {
-            if (existingEntity.isEnabled() &&
-                existingEntity.isInbound() &&
-                existingEntity.getPort() == port) {
-                return "The Bind Port is already in use.";
+            if (existingEntity.isEnabled() && existingEntity.isInbound() && existingEntity.getPort() == port) {
+                final String existingEntityBindAddress = existingEntity.getBindAddress();
+                if (isAllBindAddressSelected || ALL_BIND_ADDRESS.equals(existingEntityBindAddress) || bindAddress.equals(existingEntityBindAddress)) {
+                    return "The Bind Port is already in use.";
+                }
             }
         }
 
-        // Check that port is not already in use by the SSG.
+        // Check that port and bind address (interface) pair is not already in use by the SSG.
         //
         try {
             Collection<SsgConnector> connectors = Registry.getDefault().getTransportAdmin().findAllSsgConnectors();
             for (SsgConnector ssgConnector : connectors) {
-                if (ssgConnector.getPort() == port) {
+                if (ssgConnector.isPortUsed(port, false, bindAddress)) {
                     return "The Bind Port is already in use.";
                 }
             }

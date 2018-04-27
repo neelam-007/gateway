@@ -36,5 +36,5 @@
             </fileset>
         </jar>
     </target>-->
-    <import file="../assertion-build.xml"/>
+    <import file="../tactical-assertion-build.xml"/>
 </project>

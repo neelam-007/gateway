@@ -1977,9 +1977,19 @@
              </object>
             </void>
             <void method="add">
-             <object class="com.l7tech.policy.assertion.alert.EmailAlertAssertion">
-              <void property="targetEmailAddress">
-               <string>test</string>
+             <object class="com.l7tech.policy.assertion.UnknownAssertion">
+              <void property="detailMessage">
+               <string>Unknown assertion: EmailAlert</string>
+              </void>
+              <void property="originalXml">
+               <string>
+                &lt;L7p:EmailAlert&gt;
+                &lt;L7p:Base64message stringValue="SGVsbG8gV29ybGQh"/&gt;
+                &lt;L7p:SourceEmailAddress stringValue="donotreply@l7ssg.com"/&gt;
+                &lt;L7p:Subject stringValue="Hi"/&gt;
+                &lt;L7p:TargetEmailAddress stringValue="foo@example.com"/&gt;
+                &lt;/L7p:EmailAlert&gt;
+               </string>
               </void>
              </object>
             </void>

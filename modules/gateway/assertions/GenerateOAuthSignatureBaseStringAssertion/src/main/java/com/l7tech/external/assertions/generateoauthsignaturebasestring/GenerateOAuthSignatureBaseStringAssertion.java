@@ -32,6 +32,8 @@ public class GenerateOAuthSignatureBaseStringAssertion extends Assertion impleme
     public static final String HMAC_SHA1 = "HMAC-SHA1";
     public static final String RSA_SHA1 = "RSA-SHA1";
     public static final String PLAINTEXT = "PLAINTEXT";
+    public static final String RSA_SHA256 = "RSA-SHA256";
+    public static final String RSA_SHA512 = "RSA-SHA512";
 
     public static enum UsageMode {
         /**
@@ -249,6 +251,7 @@ public class GenerateOAuthSignatureBaseStringAssertion extends Assertion impleme
 
     // applies to CLIENT
     private boolean useOAuthVersion = true;
+    private boolean allowEmptyCallback = false;
     private String oauthConsumerKey;
     private String oauthSignatureMethod = HMAC_SHA1;
     private String oauthToken;
@@ -265,5 +268,13 @@ public class GenerateOAuthSignatureBaseStringAssertion extends Assertion impleme
             }
             return assertionName;
         }
+    }
+
+    public boolean isAllowEmptyCallback() {
+        return allowEmptyCallback;
+    }
+
+    public void setAllowEmptyCallback(boolean allowEmptyCallback) {
+        this.allowEmptyCallback = allowEmptyCallback;
     }
 }

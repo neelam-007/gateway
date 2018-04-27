@@ -1,15 +1,17 @@
 package com.l7tech.kerberos;
 
+import com.l7tech.util.HexUtils;
+import com.l7tech.util.SyspropUtil;
+import sun.security.krb5.internal.ktab.KeyTab;
+import sun.security.krb5.internal.ktab.KeyTabEntry;
+
+import javax.security.auth.kerberos.KerberosTicket;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.URL;
 import java.net.UnknownHostException;
-
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.SyspropUtil;
-import sun.security.krb5.internal.ktab.KeyTab;
-import sun.security.krb5.internal.ktab.KeyTabEntry;
+import java.util.Calendar;
 
 /**
  * Kerberos Utility class.
@@ -17,11 +19,15 @@ import sun.security.krb5.internal.ktab.KeyTabEntry;
  * <p>You would not usually create an instance of this class.</p>
  */
 public class KerberosUtils {
+    public static final String EXPIRED = "Expired";
 
 
     //- PUBLIC
 
     public static InetAddress inetAddress = null;
+    private static final long DEFAULT_EXPIRES_BUFFER = 60000L;  //Time in millis
+    private static final String SYSTEM_PROPERTY_KERBEROS_JBOSS_CACHE_EXPIREES_BUFFER = "com.l7tech.common.security.kerberos.delegate.jbosscache.expires.buffer";
+    public static final long EXPIRES_BUFFER = SyspropUtil.getLong(SYSTEM_PROPERTY_KERBEROS_JBOSS_CACHE_EXPIREES_BUFFER, DEFAULT_EXPIRES_BUFFER);
 
     /**
      * Check if Kerberos is enabled.
@@ -227,5 +233,15 @@ public class KerberosUtils {
      * Namespace for kerberos session identifiers (Kerberos Key IDentifier)
      */
     private static final String SESSION_NAMESPACE = "http://www.layer7tech.com/kkid/";
-    
+
+    public static Calendar getEndTimeInCalendar(KerberosTicket kerberosTicket) {
+        //Creating this Calendar instance, which will be copy of endTime from ticket, it is being used to store in JBoss cache key
+        if(kerberosTicket != null && !kerberosTicket.isDestroyed() && kerberosTicket.getEndTime() != null) {
+            Calendar endCal = Calendar.getInstance();
+            endCal.setTime(kerberosTicket.getEndTime());
+            return endCal;
+        } else {
+            return null;
+        }
+    }
 }

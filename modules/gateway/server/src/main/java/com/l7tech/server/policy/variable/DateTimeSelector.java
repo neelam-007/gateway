@@ -41,7 +41,7 @@ public class DateTimeSelector implements ExpandVariables.Selector<Date> {
             // perhaps it's a timezone + format
             if (name.contains(".")) {
                 // The '.' character is valid in a pattern so it may mean either a suffix separator or a pattern character
-                final int periodIndex = name.indexOf(".");
+                final int periodIndex = name.indexOf('.');
                 String maybeTimezone = name.substring(0, periodIndex);
                 final TimeZone isTzd = DateUtils.getTimeZone(maybeTimezone);
                 if (isTzd != null) {
@@ -56,8 +56,6 @@ public class DateTimeSelector implements ExpandVariables.Selector<Date> {
                 return new Selection(DateUtils.getFormattedString(context, DateUtils.getZuluTimeZone(), getPattern(name)));
             }
 
-        } catch (DateUtils.UnknownTimeZoneException e) {
-            errorMsg = ExceptionUtils.getMessage(e);
         } catch (DateUtils.InvalidPatternException e) {
             errorMsg = ExceptionUtils.getMessage(e);
         }
@@ -86,7 +84,7 @@ public class DateTimeSelector implements ExpandVariables.Selector<Date> {
     /**
      * All keys are in lower case
      */
-    final static Map<String, String> builtInSuffixFormats = CollectionUtils.<String, String>mapBuilder().
+    static final Map<String, String> builtInSuffixFormats = CollectionUtils.<String, String>mapBuilder().
             put(SUFFIX_FORMAT_ISO8601, DateUtils.ISO8601_PATTERN).
             put(SUFFIX_FORMAT_RFC1123, DateUtils.RFC1123_DEFAULT_PATTERN).
             put(SUFFIX_FORMAT_RFC850, DateUtils.RFC850_DEFAULT_PATTERN).

@@ -55,6 +55,7 @@ import org.apache.http.protocol.HTTP;
 import org.apache.http.protocol.HttpContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.apache.http.protocol.RequestTargetHost;
 
 import javax.net.ssl.*;
 import java.io.*;
@@ -725,6 +726,23 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
         } else if ( !proxyConfigured ) {
             client.getCredentialsProvider().clear();
             state.removeAttribute(ClientContext.AUTH_CACHE);
+        }
+        //SSG-12037: when the server does not support Host header we need to remove it by replacing the default RequestTargetHost interceptor
+        //with our custom one
+        if(params.isOmitHostHeader()) {
+            client.removeRequestInterceptorByClass(RequestTargetHost.class);
+            client.addRequestInterceptor(new HttpRequestInterceptor() {
+                @Override
+                public void process(HttpRequest request, HttpContext context) throws HttpException, IOException {
+                    if (request == null) {
+                        throw new IllegalArgumentException("HTTP request may not be null");
+                    }
+                    //remove the host headers if they exists
+                    if (request.containsHeader(HTTP.TARGET_HOST)) {
+                        request.removeHeaders(HTTP.TARGET_HOST);
+                    }
+                }
+            });
         }
     }
 

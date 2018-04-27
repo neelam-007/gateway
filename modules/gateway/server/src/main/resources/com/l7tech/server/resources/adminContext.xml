@@ -391,10 +391,6 @@
         <constructor-arg ref="clusterNodeId"/>
     </bean>
 
-    <bean id="emailAdmin" class="com.l7tech.server.transport.email.EmailAdminImpl">
-        <constructor-arg ref="serverConfig"/>
-    </bean>
-
     <!-- kerberos admin servant -->
     <bean id="kerberosAdmin" class="com.l7tech.server.KerberosAdminImpl">
         <constructor-arg ref="clusterPropertyManager"/>
@@ -477,12 +473,6 @@
     <!-- Policy debug admin impl -->
     <bean id="debugAdmin" class="com.l7tech.server.stepdebug.DebugAdminImpl">
 
-    </bean>
-
-    <bean id="workQueueAdmin" class="com.l7tech.server.workqueue.WorkQueueManagerAdminImpl">
-        <constructor-arg ref="workQueueEntityManager"/>
-        <constructor-arg ref="rbacServices"/>
-        <constructor-arg ref="workQueueExecutorManager"/>
     </bean>
 
     <!-- scheduled task admin impl -->

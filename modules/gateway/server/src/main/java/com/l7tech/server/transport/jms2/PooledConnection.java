@@ -8,8 +8,8 @@ import org.apache.commons.pool.PoolableObjectFactory;
 import org.apache.commons.pool.impl.GenericObjectPool;
 
 import javax.naming.NamingException;
+import javax.validation.constraints.NotNull;
 import java.util.NoSuchElementException;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -18,19 +18,19 @@ public class PooledConnection implements CachedConnection {
     private static final Logger logger = Logger.getLogger(PooledConnection.class.getName());
 
     private final GenericObjectPool.Config config;
-    private final GenericObjectPool<SessionHolder> pool;
+    protected final GenericObjectPool<SessionHolder> pool;
     private final JmsEndpointConfig endpoint;
     private final long createdTime = System.currentTimeMillis();
     private AtomicLong lastAccessTime = new AtomicLong(createdTime);
 
-    public PooledConnection(final JmsEndpointConfig endpointConfig, JmsResourceManagerConfig cacheConfig) throws  Exception{
+    public PooledConnection(@NotNull final JmsEndpointConfig endpointConfig, @NotNull JmsResourceManagerConfig cacheConfig) {
         logger.log(Level.FINE, "Creating new PooledConnection object...");
         this.endpoint = endpointConfig;
         //set pool config initial properties. They are used even if the pool size is 0
         config = new GenericObjectPool.Config();
         config.maxActive = Integer.parseInt(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_CONNECTION_POOL_SIZE,
                 String.valueOf(cacheConfig.getConnectionPoolSize())));
-        config.minEvictableIdleTimeMillis = Long.parseLong(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_CONNECTION_MAX_AGE,
+        config.minEvictableIdleTimeMillis = Long.parseLong(endpointConfig.getConnection().properties().getProperty(JmsConnection.PROP_CONNECTION_EVICTABLE_TIME,
                 String.valueOf(cacheConfig.getMaximumIdleTime())));
         //set other pool properties
         config.maxIdle = config.maxActive;
@@ -76,7 +76,7 @@ public class PooledConnection implements CachedConnection {
     }
 
     @Override
-    public synchronized SessionHolder borrowConnection() throws JmsRuntimeException {
+    public synchronized SessionHolder borrowConnection() throws JmsRuntimeException, JmsConnectionMaxWaitException {
         try {
             touch();
             SessionHolder sessionHolder = pool.borrowObject();
@@ -87,9 +87,9 @@ public class PooledConnection implements CachedConnection {
             return sessionHolder;
         } catch (NoSuchElementException nse) {
             logger.log(Level.FINE, "Max Wait expired!");
-            throw nse;
+            throw new JmsConnectionMaxWaitException("Max Wait Expired", nse);
         } catch ( Exception e ) {
-            logger.log(Level.FINEST, "Unable to borrow connection", e);
+            logger.log(Level.FINE, "Unable to borrow connection", e);
             throw new JmsRuntimeException(e);
         }
     }
@@ -104,7 +104,7 @@ public class PooledConnection implements CachedConnection {
                 logger.log(Level.FINE, "SessionHolder is null!");
             }
         } catch (Exception e) {
-            logger.log(Level.FINEST, "Unable to return connection", e);
+            logger.log(Level.FINE, "Unable to return connection", e);
             throw new JmsRuntimeException(e);
         }
     }
@@ -138,14 +138,14 @@ public class PooledConnection implements CachedConnection {
             return lastAccessTime;
     }
 
-    private SingleSessionHolder newConnection(final JmsEndpointConfig endpoint ) throws NamingException, JmsRuntimeException {
+    protected SessionHolder newConnection(final JmsEndpointConfig endpoint ) throws NamingException, JmsRuntimeException {
         try {
             // create the new JmsBag for the endpoint
             final JmsBag newBag = JmsUtil.connect(endpoint);
             newBag.getConnection().start();
 
             // create new cached connection wrapper
-            final SingleSessionHolder newConn = new SingleSessionHolder(endpoint, newBag);
+            final SingleSessionHolder newConn = (SingleSessionHolder) SessionHolderFactory.createSessionHolder(endpoint, newBag);
             newConn.ref(); // referenced by caller
 
             logger.log(Level.FINE, "New JMS connection created ({0}), {1}", new Object[] {

@@ -2,10 +2,7 @@ package com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.im
 
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.factories.impl.PrivateKeyAPIResourceFactory;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ChoiceParam;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.ParameterValidationUtils;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResource;
-import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.RestEntityResourceUtils;
+import com.l7tech.external.assertions.gatewaymanagement.server.rest.resource.*;
 import com.l7tech.external.assertions.gatewaymanagement.server.rest.transformers.impl.PrivateKeyTransformer;
 import com.l7tech.gateway.api.*;
 import com.l7tech.gateway.api.impl.*;
@@ -252,9 +249,9 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
 
     /**
      * Generate a certificate signing request for this private key.
-     *
      * @param id            The ID of the key to generate the CSR from
      * @param dn            The CSR subject dn to use. It defaults to the key's subject dn if none is specified.
+     * @param sans          The list of subject alternative names, in the form of &lt;type&gt;:&lt;value&gt;. The supported types are: Email, DNS Name, Directory Name, URI and IP Address. No subject alternative names are added to the CSR by default.
      * @param signatureHash The signature hash to use. Defaults to 'Automatic'
      * @return The CSR data.
      * @throws ResourceFactory.ResourceNotFoundException
@@ -262,8 +259,8 @@ public class PrivateKeyResource extends RestEntityResource<PrivateKeyMO, Private
      */
     @GET
     @Path("{id}/generateCSR")
-    public Item<PrivateKeyGenerateCsrResult> generateCSR(@PathParam("id") String id, @QueryParam("csrSubjectDN") String dn, @QueryParam("signatureHash") @ChoiceParam({"SHA1", "SHA256", "SHA384", "SHA512"}) String signatureHash) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
-        PrivateKeyGenerateCsrResult privateKeyGenerateCsrResult = factory.generateCSR(id, dn, signatureHash);
+    public Item<PrivateKeyGenerateCsrResult> generateCSR(@PathParam("id") String id, @QueryParam("csrSubjectDN") String dn, @Since(RestManVersion.VERSION_1_0_5) @QueryParam("subjectAlternativeName") List<String> sans, @QueryParam("signatureHash") @ChoiceParam({"SHA1", "SHA256", "SHA384", "SHA512"}) String signatureHash) throws ResourceFactory.ResourceNotFoundException, ResourceFactory.InvalidResourceException {
+        PrivateKeyGenerateCsrResult privateKeyGenerateCsrResult = factory.generateCSR(id, dn, sans, signatureHash);
         return new ItemBuilder<PrivateKeyGenerateCsrResult>(id + " CSR", id, "PrivateKeyGenerateCsrResult")
                 .setContent(privateKeyGenerateCsrResult)
                 .addLink(ManagedObjectFactory.createLink(Link.LINK_REL_SELF, uriInfo.getRequestUri().toString()))

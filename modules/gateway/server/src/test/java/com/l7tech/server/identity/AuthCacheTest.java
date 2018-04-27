@@ -1,8 +1,13 @@
 package com.l7tech.server.identity;
 
 import com.l7tech.identity.*;
+import com.l7tech.message.SshKnob;
+import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
+import com.l7tech.security.token.SecurityTokenType;
+import com.l7tech.security.token.SshSecurityToken;
+import com.l7tech.test.BugId;
 import com.l7tech.util.TimeSource;
 import com.l7tech.security.token.http.HttpBasicToken;
 
@@ -218,5 +223,72 @@ public class AuthCacheTest {
             LoginCredentials lc = LoginCredentials.makeLoginCredentials(new HttpBasicToken(userName, PASSWORD.toCharArray()), HttpBasic.class);
             Assert.assertNotNull(aC.getCachedAuthResult(lc, tIP, MAX_AGE, MAX_AGE));
         }
-    } 
+    }
+
+    @BugId("DE342376")
+    @Test(expected = AuthenticationException.class)
+    public void testSSHAuthentication_SameUsername_MustDenyUser2Authentication() throws Exception {
+        String user1SshKey = "-----BEGIN PUBLIC KEY-----MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA9avqjf+J3MzDLH9NkcT41Sya52m5afHn9U9BjRIZ6FXMtQqQP1wWAmuL8Q0aPUWYEzZ8ABKIRr7EvPQEg3iRrB8YipyHA0fR119O1hYrmBRenDmLfH3w5WYzj+gjaKxkCeCfIowQFVOB9H3Yw1I3L3Hw9pUvxT2OSmaZunvIMQUP3+SC3KfIZ3b+BusoeD8rTEFZe3yxupCvJvpOzObE+SC+j1ALwmEsnYol8o8IEpBSAu3zDjYiun2zEWjKi3lhsYS1S9JTr6cXDcAj+mZodJtCu5enYbU5y934gvf2+YEl9fX1q9HjBiGJjWBkZUxNgRcISy6I/PMvbpgt+pAQuQIDAQAB-----END PUBLIC KEY-----\n";
+
+        String user2SshKey = "-----BEGIN PUBLIC KEY-----MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAxqWVxdHcOIW5JGQO0eoS9tY9F4X2cpDK7akiFT/laKFesDegrbqOIwW3tVOBRClj8cQ9Rh3hGZS77WPxuLv37hVBDroQQaggYPod1KdStPwEjRWfA+FXHWm93YaHklOZrDqqWqeHDryzPVGUBuPNm1ZZwt7TGx9irAqqLeyImgf34mlL4Q7GvkANxO1l8YTSRghJHYbEpxNyzJ12wRVZr1mFOWEMLax6MC4SJkzyoMj5WAvR3nMLrlO+rQTsh0uzVzmqM4+4oggM7kHeAtFeJInc3f/crWbUAcUH+uVM+u7np0H9mYANJf8ZhsyyX/rXrRwcBfffeNMHsEoJLm0ULbVibf6fQo8TWbdxP0cr9KSUOKi/rw62uVq37KwVmyHSnk0yegPyFIcl8NdTEnjURxiwwMKyNi4M9iPm8mEgO4/SJnDNtwwBFJW7FPvy8Pnrp85OWD2PA1Hdc6ZIigZ7E2X+xEh2x2bGP9EQYMbE5/sqw4C/Zbxhs0e7cq6aQpPqwigEUK6SySQTlNYPNwPWZD1swb97G2FAEGWJKVe9wzQyd8U3o2zWkUEwpW01H2Iy4rEso5Cwea+TeCdRQIY6TMf4pgs8nWaNlTItZOdA+2PeEHEU91FqypKOMhMPkuQqs35xzvX1SNRaq+GJgpz469V943dmB6IjJYDkdW+HjPkCAwEAAQ==-----END PUBLIC KEY-----\n";
+
+        TestIdentityProvider tIP = setupSSHSessionTest("user1", user1SshKey, "user2", user2SshKey);
+        LoginCredentials user1Creds = createSSHLoginCredentials("user1", user1SshKey);
+        LoginCredentials user2Creds = createSSHLoginCredentials("user1", user2SshKey);
+
+        AuthCache authCache = new AuthCache();
+        AuthenticationResult user1Result = null;
+        try {
+            user1Result = authCache.getCachedAuthResult(user1Creds, tIP);
+        } catch (AuthenticationException e) {
+            Assert.fail("User1 must have been authenticated.");
+        }
+        Assert.assertNotNull(user1Result);
+        Assert.assertEquals(user1Result.getUser().getLogin(), "user1");
+
+        authCache.getCachedAuthResult(user2Creds, tIP); // This must throw AuthenticationException
+        Assert.fail("User2 should not have been authenticated.");
+    }
+
+    @BugId("DE342376")
+    @Test
+    public void testSSHAuthentication_DifferentUsername_MustPassUser2Authentication() throws Exception {
+        String user1SshKey = "-----BEGIN PUBLIC KEY-----MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA9avqjf+J3MzDLH9NkcT41Sya52m5afHn9U9BjRIZ6FXMtQqQP1wWAmuL8Q0aPUWYEzZ8ABKIRr7EvPQEg3iRrB8YipyHA0fR119O1hYrmBRenDmLfH3w5WYzj+gjaKxkCeCfIowQFVOB9H3Yw1I3L3Hw9pUvxT2OSmaZunvIMQUP3+SC3KfIZ3b+BusoeD8rTEFZe3yxupCvJvpOzObE+SC+j1ALwmEsnYol8o8IEpBSAu3zDjYiun2zEWjKi3lhsYS1S9JTr6cXDcAj+mZodJtCu5enYbU5y934gvf2+YEl9fX1q9HjBiGJjWBkZUxNgRcISy6I/PMvbpgt+pAQuQIDAQAB-----END PUBLIC KEY-----\n";
+
+        String user2SshKey = "-----BEGIN PUBLIC KEY-----MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAxqWVxdHcOIW5JGQO0eoS9tY9F4X2cpDK7akiFT/laKFesDegrbqOIwW3tVOBRClj8cQ9Rh3hGZS77WPxuLv37hVBDroQQaggYPod1KdStPwEjRWfA+FXHWm93YaHklOZrDqqWqeHDryzPVGUBuPNm1ZZwt7TGx9irAqqLeyImgf34mlL4Q7GvkANxO1l8YTSRghJHYbEpxNyzJ12wRVZr1mFOWEMLax6MC4SJkzyoMj5WAvR3nMLrlO+rQTsh0uzVzmqM4+4oggM7kHeAtFeJInc3f/crWbUAcUH+uVM+u7np0H9mYANJf8ZhsyyX/rXrRwcBfffeNMHsEoJLm0ULbVibf6fQo8TWbdxP0cr9KSUOKi/rw62uVq37KwVmyHSnk0yegPyFIcl8NdTEnjURxiwwMKyNi4M9iPm8mEgO4/SJnDNtwwBFJW7FPvy8Pnrp85OWD2PA1Hdc6ZIigZ7E2X+xEh2x2bGP9EQYMbE5/sqw4C/Zbxhs0e7cq6aQpPqwigEUK6SySQTlNYPNwPWZD1swb97G2FAEGWJKVe9wzQyd8U3o2zWkUEwpW01H2Iy4rEso5Cwea+TeCdRQIY6TMf4pgs8nWaNlTItZOdA+2PeEHEU91FqypKOMhMPkuQqs35xzvX1SNRaq+GJgpz469V943dmB6IjJYDkdW+HjPkCAwEAAQ==-----END PUBLIC KEY-----\n";
+
+        TestIdentityProvider tIP = setupSSHSessionTest("user1", user1SshKey, "user2", user2SshKey);
+        LoginCredentials user1Creds = createSSHLoginCredentials("user1", user1SshKey);
+        LoginCredentials user2Creds = createSSHLoginCredentials("user2", user2SshKey);
+
+        AuthCache authCache = new AuthCache();
+        AuthenticationResult user1Result = authCache.getCachedAuthResult(user1Creds, tIP);
+        Assert.assertNotNull(user1Result);
+        Assert.assertEquals(user1Result.getUser().getLogin(), "user1");
+
+        AuthenticationResult user2Result = authCache.getCachedAuthResult(user2Creds, tIP);
+        Assert.assertNotNull(user2Result);
+        Assert.assertEquals(user2Result.getUser().getLogin(), "user2");
+    }
+
+    private TestIdentityProvider setupSSHSessionTest(String user1, String user1Key, String user2, String user2Key) {
+        TestIdentityProvider tIP = new TestIdentityProvider(TestIdentityProvider.TEST_IDENTITY_PROVIDER_CONFIG){
+            @Override
+            public AuthenticationResult authenticate(LoginCredentials pc) throws AuthenticationException {
+                return super.authenticate(pc);
+            }
+        };
+        UserBean ub = new UserBean(tIP.getConfig().getGoid(), user1);
+        TestIdentityProvider.addUser(ub, user1, user1Key);
+
+        UserBean ub2 = new UserBean(tIP.getConfig().getGoid(), user2);
+        TestIdentityProvider.addUser(ub2, user2, user2Key);
+        return tIP;
+    }
+
+    private LoginCredentials createSSHLoginCredentials(String user, String userKey) {
+        return LoginCredentials.makeLoginCredentials(
+                new SshSecurityToken(SecurityTokenType.SSH_CREDENTIAL, new SshKnob.PublicKeyAuthentication(user, userKey)),
+                AllAssertion.class);
+    }
 }

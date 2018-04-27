@@ -67,15 +67,58 @@ public class ServerGetIncrementAssertionTest {
                 "  } ]\n" +
                 "}";
 
-        Map<String, List> results = buildResultsMap();
-
         when(queryingManager.performJdbcQuery(anyString(), anyString(), anyString(), anyInt(), anyInt(), anyListOf(Object.class)))
-                .thenReturn(results, results, buildCustomFieldsResults());
+                .thenReturn(buildDeletedAppResults(), new HashMap<>(), buildResultsMap(), buildCustomFieldsResults());
 
         String json = serverAssertion.getJsonMessage("conn", "1446501119477", "","");
         // remove timestamp for comparison
         assertEquals(json.replaceFirst("\\d{13}", "").replaceAll("\\s+", ""), ref.replaceAll("\\s+", ""));
     }
+
+  @Test
+  public void testGetJsonMessageWithAppWithNoApi() throws Exception {
+    final String ref = "{\n" +
+        "  \"incrementStart\" : ,\n" +
+        "  \"entityType\" : \"APPLICATION\",\n" +
+        "  \"bulkSync\" : \"false\",\n" +
+        "  \"deletedIds\" : [ \"app with no api\", \"3c2acfb5-8803-4c0c-8de3-a9224cad2595\", \"066f33d1-7e45-4434-be69-5aa7d20934e1\" ],\n" +
+        "  \"newOrUpdatedEntities\" : [ {\n" +
+        "    \"id\" : \"085f4526-9c23-416d-be73-eaba4da83249\",\n" +
+        "    \"key\" : \"l7xx2738fab70d824c059f28a922a1edab15\",\n" +
+        "    \"secret\" : \"6106dceac26844f0b1d9688bb565acf6\",\n" +
+        "    \"status\" : \"active\",\n" +
+        "    \"organizationId\" : \"4c35f9cd-8eb2-11e3-ae6b-000c2911a4db\",\n" +
+        "    \"organizationName\" : \"Sample Org\",\n" +
+        "    \"label\" : \"app1\",\n" +
+        "    \"oauthCallbackUrl\" : \"https://some-uri.com\",\n" +
+        "    \"oauthScope\" : \"\\\\\\\\\\\\\\\\\\\\\\\\%^&*()\",\n" +
+        "    \"apis\" : [ {\r\n" +
+        "      \"id\" : \"efb6f420-69da-49f6-bcd2-e283409e87fc\"\n" +
+        "    } ],\n" +
+        "    \"mag\" : {\n" +
+        "      \"scope\" : \"\\\\\\\\\\\\\\\\\\\\\\\\%^&*() msso openid\",\n" +
+        "      \"redirectUri\" : \"https://some-uri.com\",\n" +
+        "      \"masterKeys\" : [ {\n" +
+        "        \"masterKey\" : \"f08985a0-e164-11e5-b86d-9a79f06e9478\",\n" +
+        "        \"environment\" : \"all\"\n" +
+        "      } ]\n" +
+        "    },\n" +
+        "    \"createdBy\" : \"admin\",\n" +
+        "    \"modifiedBy\" : \"user1\",\n" +
+        "    \"custom\" : \"{\\\"TEST2\\\":\\\"1234\\\",\\\"TEST1\\\":\\\"123\\\"}\"" +
+        "  } ]\n" +
+        "}";
+
+    Map<String, List> appWithNoApiResults = new HashMap<>();
+    appWithNoApiResults.put("uuid", Arrays.asList("app with no api"));
+
+    when(queryingManager.performJdbcQuery(anyString(), anyString(), anyString(), anyInt(), anyInt(), anyListOf(Object.class)))
+        .thenReturn(buildDeletedAppResults(), appWithNoApiResults, buildResultsMap(), buildCustomFieldsResults());
+
+    String json = serverAssertion.getJsonMessage("conn", "1446501119477", "","");
+    // remove timestamp for comparison
+    assertEquals(json.replaceFirst("\\d{13}", "").replaceAll("\\s+", ""), ref.replaceAll("\\s+", ""));
+  }
 
     private Map<String, List> buildResultsMap() {
         List urlList = new ArrayList();
@@ -95,12 +138,17 @@ public class ServerGetIncrementAssertionTest {
         results.put("oauth_scope", Arrays.asList("\\\\\\\\\\\\%^&*()"));
         results.put("oauth_type", typeList);
         results.put("api_uuid", Arrays.asList("efb6f420-69da-49f6-bcd2-e283409e87fc"));
-        results.put("entity_uuid", Arrays.asList("3c2acfb5-8803-4c0c-8de3-a9224cad2595", "066f33d1-7e45-4434-be69-5aa7d20934e1"));
         results.put("mag_scope", Arrays.asList("msso openid"));
         results.put("mag_master_key", Arrays.asList("f08985a0-e164-11e5-b86d-9a79f06e9478"));
         results.put("created_by", Arrays.asList("admin"));
         results.put("modified_by", Arrays.asList("user1"));
         return results;
+    }
+
+    private Map<String, List> buildDeletedAppResults() {
+      Map<String, List> results = new HashMap<>();
+      results.put("entity_uuid", Arrays.asList("3c2acfb5-8803-4c0c-8de3-a9224cad2595", "066f33d1-7e45-4434-be69-5aa7d20934e1"));
+      return results;
     }
 
     private Map<String, List> buildCustomFieldsResults() {

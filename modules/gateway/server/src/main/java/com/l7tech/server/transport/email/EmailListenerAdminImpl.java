@@ -5,12 +5,15 @@ import com.l7tech.gateway.common.transport.email.EmailListenerAdmin;
 import com.l7tech.gateway.common.transport.email.EmailListener;
 import com.l7tech.gateway.common.transport.email.EmailServerType;
 import com.l7tech.objectmodel.*;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.policy.variable.GatewaySecurePasswordReferenceExpander;
 import com.l7tech.server.transport.http.SslClientHostnameAwareSocketFactory;
+import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
 import com.sun.mail.pop3.POP3Store;
 import com.sun.mail.imap.IMAPStore;
 
+import javax.inject.Inject;
 import javax.mail.Session;
 import javax.mail.URLName;
 import javax.mail.Folder;
@@ -28,6 +31,9 @@ public class EmailListenerAdminImpl implements EmailListenerAdmin {
 
     private final EmailListenerManager emailListenerManager;
     private final String clusterNodeId;
+
+    @Inject
+    private Config config;
 
     private static final String SOCKET_FACTORY_CLASSNAME = SslClientHostnameAwareSocketFactory.class.getName();
 
@@ -157,6 +163,13 @@ public class EmailListenerAdminImpl implements EmailListenerAdmin {
         } catch(Exception e) {
             return null;
         }
+    }
+
+    private static final long DEFAULT_MAX_SIZE = 5242880L;
+
+    @Override
+    public long getXmlMaxBytes() {
+        return config.getLongProperty(ServerConfigParams.PARAM_EMAIL_MESSAGE_MAX_BYTES, DEFAULT_MAX_SIZE);
     }
 
     private IMAPFolder getIMAPFolders(Folder folder) throws MessagingException {

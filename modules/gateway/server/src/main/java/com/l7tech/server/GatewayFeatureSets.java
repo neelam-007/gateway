@@ -3,7 +3,6 @@ package com.l7tech.server;
 import com.l7tech.gateway.common.licensing.FeatureSetExpander;
 import com.l7tech.policy.AllAssertions;
 import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.policy.assertion.composite.*;
 import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenExchange;
 import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
@@ -590,7 +589,7 @@ public class GatewayFeatureSets {
             fs(snmp),
             ass(AuditAssertion.class),
             ass(AuditDetailAssertion.class),
-            ass(EmailAlertAssertion.class),
+            mass("assertion:Email"),
             ass(AuditRecordToXmlAssertion.class),
             mass("assertion:MessageContext"));
 
@@ -611,8 +610,7 @@ public class GatewayFeatureSets {
             mass("assertion:HardcodedResponse"),
             mass("assertion:UUIDGenerator"),
             mass("assertion:ManipulateMultiValuedVariable"),
-            ass(MapValueAssertion.class),
-            ass(InvokePolicyAsyncAssertion.class));
+            ass(MapValueAssertion.class));
 
         GatewayFeatureSet threatIps =
         fsr("set:Threats:IPS", "SecureSpan XML IPS threat protection",
@@ -1430,7 +1428,6 @@ public class GatewayFeatureSets {
                 mass("assertion:UUIDGenerator"),
                 mass("assertion:ManipulateMultiValuedVariable"),
                 ass(MapValueAssertion.class),
-                ass(InvokePolicyAsyncAssertion.class),
                 fs(adaptiveLoadBalancingAssertions),
                 fs(splitJoinAssertions),
                 mass("assertion:IndexLookupByItem"),

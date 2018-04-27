@@ -37,6 +37,7 @@ public class ServerGetApiIncrementAssertionTest {
         "    \"ServiceEnabled\" : true,\n" +
         "    \"PortalPublished\" : true,\n" +
         "    \"SsgUrl\" : \"apitest\",\n" +
+        "    \"PortalModifyTS\" : 1522200783810,\n" +
         "    \"ApiLocationUrl\" : \"http://localhost:8080/echo\",\n" +
         "    \"CustomFields\" : [ {\n" +
         "        \"Name\" : \"test\",\n" +
@@ -94,6 +95,7 @@ public class ServerGetApiIncrementAssertionTest {
         "    \"ServiceEnabled\" : true,\n" +
         "    \"PortalPublished\" : false,\n" +
         "    \"SsgUrl\" : \"apitest2\",\n" +
+        "    \"PortalModifyTS\" : 1522200783811,\n" +
         "    \"ApiLocationUrl\" : \"http://localhost:8080/echo\",\n" +
         "    \"CustomFields\" : [ ],\n" +
         "    \"PolicyEntities\" : [ ]\n" +
@@ -116,6 +118,7 @@ public class ServerGetApiIncrementAssertionTest {
     results.put("api_location_url", Arrays.asList("http://localhost:8080/echo", "http://localhost:8080/echo"));
     results.put("published_by_portal", Arrays.asList(true, false));
     results.put("ssg_url", Arrays.asList("apitest", "apitest2"));
+    results.put("modify_ts", Arrays.asList(1522200783810L,1522200783811L));
     return results;
   }
 

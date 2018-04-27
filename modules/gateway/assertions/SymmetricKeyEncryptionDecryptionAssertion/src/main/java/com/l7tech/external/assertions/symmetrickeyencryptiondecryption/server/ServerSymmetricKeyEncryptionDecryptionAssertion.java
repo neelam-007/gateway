@@ -140,7 +140,7 @@ public class ServerSymmetricKeyEncryptionDecryptionAssertion extends AbstractSer
                         }
                         keyStream = new ByteArrayInputStream(keyBytes);
                     }
-                    PgpUtil.encrypt(is, out, "encrypt.pgp", new Date().getTime(), null, false, true, keyStream);
+                    PgpUtil.encrypt(is, out, "encrypt.pgp", new Date().getTime(), null, assertion.isAsciiArmourEnabled(), true, keyStream);
                 } else {
                     PgpUtil.encrypt(is, out, "encrypt.pgp", new Date().getTime(), passwordCharArray, false, true, null);
                 }
@@ -168,7 +168,7 @@ public class ServerSymmetricKeyEncryptionDecryptionAssertion extends AbstractSer
                     keyStream = new ByteArrayInputStream(keyBytes);
                     PgpUtil.decrypt(is,keyStream,out,passwordCharArray);
                 }
-                else
+                else //If key is not provided, use passpharse
                 {
                     PgpUtil.decrypt(is,out,passwordCharArray);
                 }

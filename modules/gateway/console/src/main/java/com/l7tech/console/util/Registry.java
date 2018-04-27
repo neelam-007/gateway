@@ -16,11 +16,9 @@ import com.l7tech.gateway.common.siteminder.SiteMinderAdmin;
 import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
 import com.l7tech.gateway.common.task.ScheduledTaskAdmin;
 import com.l7tech.gateway.common.transport.TransportAdmin;
-import com.l7tech.gateway.common.transport.email.EmailAdmin;
 import com.l7tech.gateway.common.transport.email.EmailListenerAdmin;
 import com.l7tech.gateway.common.transport.ftp.FtpAdmin;
 import com.l7tech.gateway.common.transport.jms.JmsAdmin;
-import com.l7tech.gateway.common.workqueue.WorkQueueManagerAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.GuidBasedEntityManager;
 import com.l7tech.objectmodel.HeaderBasedEntityFinder;
@@ -203,12 +201,6 @@ public abstract class Registry {
     public abstract EmailListenerAdmin getEmailListenerAdmin();
 
     /**
-     * @return the email admin interface implementation. Never null.
-     * @throws IllegalStateException if the AdminContext is not available. See isAdminContextPresent()
-     */
-    public abstract EmailAdmin getEmailAdmin();
-
-    /**
      * @return the Policy admin interface implementation. Never null.
      * @throws IllegalStateException if the AdminContext is not available. See isAdminContextPresent()
      */
@@ -281,12 +273,6 @@ public abstract class Registry {
      * @throws IllegalStateException if the AdminContext is not available. See isAdminContextPresent()
      */
     public abstract CustomKeyValueStoreAdmin getCustomKeyValueStoreAdmin();
-
-    /**
-     * @return the work queue manager
-     * @throws IllegalStateException if the AdminContext is not available. See isAdminContextPresent()
-     */
-    abstract public WorkQueueManagerAdmin getWorkQueueManagerAdmin();
 
     /**
      * Get the {@link ScheduledTaskAdmin} interface implementation.
@@ -458,11 +444,6 @@ public abstract class Registry {
         }
 
         @Override
-        public EmailAdmin getEmailAdmin() {
-            throw new IllegalStateException(ILLEGAL_STATE_MSG);
-        }
-
-        @Override
         public PolicyAdmin getPolicyAdmin() {
             throw new IllegalStateException(ILLEGAL_STATE_MSG);
         }
@@ -520,11 +501,6 @@ public abstract class Registry {
 
         @Override
         public ScheduledTaskAdmin getScheduledTaskAdmin() {
-            throw new IllegalStateException(ILLEGAL_STATE_MSG);
-        }
-
-        @Override
-        public WorkQueueManagerAdmin getWorkQueueManagerAdmin() {
             throw new IllegalStateException(ILLEGAL_STATE_MSG);
         }
 

@@ -63,6 +63,8 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
                         return LdapUtils.filterEscape( replacement );
                     }
                 });
+        final String dn = (LDAPConstants.OBJECT_SCOPE.equals(assertion.getSelectedScope())) ?
+                ExpandVariables.process(assertion.getDnText(), variableMap, getAudit()) : null;
 
         logAndAudit( AssertionMessages.LDAP_QUERY_SEARCH_FILTER, filterExpression );
 
@@ -73,7 +75,7 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
 
         if (cacheEntry == null || (System.currentTimeMillis() - cacheEntry.timestamp) > TimeUnit.MINUTES.toMillis(assertion.getCachePeriod())) {
             try {
-                cacheEntry = createNewCacheEntry(filterExpression, assertion.getAttrNames());
+                cacheEntry = createNewCacheEntry(filterExpression, dn, assertion.getAttrNames());
             } catch (FindException e) {
                 logAndAudit( AssertionMessages.LDAP_QUERY_ERROR, new String[]{ ExceptionUtils.getMessage( e ) }, ExceptionUtils.getDebugException( e ) );
                 return AssertionStatus.SERVER_ERROR;
@@ -141,6 +143,7 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
      * Search
      */
     protected int doSearch( final String filter,
+                            final String dn,
                             final String[] attributeNames,
                             final int maxResults,
                             final Functions.BinaryVoidThrows<QueryAttributeMapping,SimpleAttribute,Exception> resultCallback ) throws FindException {
@@ -172,7 +175,7 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
                 if (SearchControls.OBJECT_SCOPE != sc.getSearchScope()) {
                     answer = dirContext.search(LdapUtils.name(identityProvider.getConfig().getSearchBase()), filter, sc);
                 } else {
-                    answer = dirContext.search(assertion.getDnText(), filter, sc);
+                    answer = dirContext.search(dn, filter, sc);
                 }
 
                 // answer = dirContext.search(LdapUtils.name(identityProvider.getConfig().getSearchBase()), filter, sc);
@@ -222,6 +225,7 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
     }
 
     private CacheEntry createNewCacheEntry( final String filter,
+                                            final String dn,
                                             final String[] attributeNames ) throws FindException {
         final int maxResults;
         if ( !assertion.isAllowMultipleResults() ) {
@@ -231,7 +235,7 @@ public class ServerLDAPQueryAssertion extends AbstractServerAssertion<LDAPQueryA
         }
 
         final Map<String,List<String>> attributeValues = new HashMap<String,List<String>>();
-        final int availableResults = doSearch( filter, attributeNames, maxResults, new Functions.BinaryVoidThrows<QueryAttributeMapping,SimpleAttribute,Exception>(){
+        final int availableResults = doSearch(filter, dn, attributeNames, maxResults, new Functions.BinaryVoidThrows<QueryAttributeMapping,SimpleAttribute,Exception>(){
             @Override
             public void call( final QueryAttributeMapping attributeMapping,
                               final SimpleAttribute simpleAttribute ) throws Exception {

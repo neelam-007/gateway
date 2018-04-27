@@ -11,7 +11,6 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.security.Provider;
-import java.security.Security;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -81,10 +80,7 @@ public class SsmApplicationHeavy extends SsmApplication  {
      * @param lookAndFeel a string specifying the name of the class that implements
      *                    the look and feel
      */
-    protected void setLookAndFeel
-      (String
-      lookAndFeel)
-    {
+    protected void setLookAndFeel(String lookAndFeel) {
         if (!isSuppressAutoLookAndFeel()) {
             setAutoLookAndFeel();
             return;
@@ -100,8 +96,7 @@ public class SsmApplicationHeavy extends SsmApplication  {
         }
 
         try {
-            Object lafObject =
-              Class.forName(lookAndFeel).newInstance();
+            final Object lafObject = Class.forName(lookAndFeel).newInstance();
             UIManager.setLookAndFeel((LookAndFeel)lafObject);
         } catch (Exception e) {
             lfSet = false;
@@ -133,8 +128,7 @@ public class SsmApplicationHeavy extends SsmApplication  {
 
         final Provider provider = getCcjProvider();
         if (asFirstProvider) {
-            Security.removeProvider("WF");
-            Security.insertProviderAt(provider, 1);
+            ProviderUtil.configureCcjProvider(provider);
             log.info("Registering CryptoComply as most-preferred crypto provider");
         } else {
             log.info("Registering CryptoComply as additional crypto provider");

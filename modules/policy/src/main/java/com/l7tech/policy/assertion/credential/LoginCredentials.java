@@ -182,6 +182,8 @@ public final class LoginCredentials implements Disposable {
                     null );
         } else if (securityToken instanceof SshSecurityToken) {
             SshSecurityToken sshSecurityToken = (SshSecurityToken) securityToken;
+            /* Bug fix DE342376: Passing SSH Public as payload in constructor to differentiate user based on username
+             * and their SSH public key (similar to certificate authentication). */
             loginCredentials = new LoginCredentials(
                     sshSecurityToken.getUsername(),
                     null,
@@ -191,7 +193,7 @@ public final class LoginCredentials implements Disposable {
                     supportingSecurityTokens,
                     credentialSource,
                     null,
-                    null );
+                    sshSecurityToken.getPublicKey() );
         } else {
             throw new IllegalArgumentException("Unsupported security token '"+securityToken.getClass()+"' of type '"+securityToken.getType()+"'");
         }

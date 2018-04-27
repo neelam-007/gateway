@@ -21,7 +21,7 @@ import java.util.logging.Logger;
  * Developers can subscribe/unsubscribe themselves from the publisher. Events are published only if subscribers exist.
  * Subscribers are automatically unsubscribed when the monitoring assertion is unloaded.
  */
-public final class GatewayMetricsPublisher implements PostStartupApplicationListener {
+public class GatewayMetricsPublisher implements PostStartupApplicationListener {
     private static final Logger logger = Logger.getLogger(GatewayMetricsPublisher.class.getName());
 
     // don't care about the order in which an event will be published to subscribers

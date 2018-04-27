@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="TacticalModularAssertion">
+
+    <import file="./assertion-build.xml"/>
+
+    <!-- Generate saar and saar RESTman XML. -->
+    <property name="module.skarsigner.sign.archive" value="true"/>
+    <property name="module.skarsigner.generate.restman.xml" value="true"/>
+    <property name="module.skarsigner.keystore" value="etc/signer/gatewayKeyStore.p12"/>
+
+    <!-- Override this target to add Git commit hash to the manifest. -->
+    <target name="package.custom.post" depends="-aar, -clientJar">
+        <exec executable="git" outputproperty="modass.commit.hash">
+            <arg value="log" />
+            <arg value="-1" />
+            <arg value="--pretty=format:%H" />
+            <arg value="." />
+        </exec>
+        <echo message="Git commit hash for ${moduleName}: ${modass.commit.hash}"/>
+
+        <jar update="true" file="build/${moduleName}.${moduleFileExtension}">
+            <manifest>
+                <attribute name="SCM-Revision" value="${modass.commit.hash}"/>
+            </manifest>
+        </jar>
+    </target>
+
+    <!-- Override this target to append the build date to the published artifacts (aar, saar) -->
+    <target name="version" depends="ivy-new-version">
+        <tstamp>
+            <format property="modass.build.date" pattern="yyyyMMdd"/>
+        </tstamp>
+        <property name="version" value="${ivy.new.revision}-${modass.build.date}"/>
+    </target>
+
+</project>

@@ -8,8 +8,10 @@ import com.l7tech.security.xml.SimpleSecurityTokenResolver;
 import com.l7tech.security.xml.decorator.WssDecorator;
 import com.l7tech.server.audit.AuditContextFactoryStub;
 import com.l7tech.server.audit.MessageSummaryAuditFactory;
+import com.l7tech.server.extension.registry.processorinjection.ServiceInjectionsRegistry;
 import com.l7tech.server.log.TrafficLogger;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.messageprocessor.injection.MessageProcessorInjectorImpl;
 import com.l7tech.server.policy.PolicyCache;
 import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.server.secureconversation.InboundSecureConversationContextManager;
@@ -45,11 +47,12 @@ public class TestMessageProcessor extends MessageProcessor {
                 pc,
                 wssd,
                 new SimpleSecurityTokenResolver( TestDocuments.getDotNetServerCertificate(), TestDocuments.getDotNetServerPrivateKey()),
-                sccm, 
+                sccm,
                 new TestLicenseManager(),
                 new ServiceMetricsServicesImpl("yo"),
                 new AuditContextFactoryStub(ConfigFactory.getCachedConfig(), "testnode"),
                 new MessageSummaryAuditFactory("testnode"),
+                new MessageProcessorInjectorImpl(new ServiceInjectionsRegistry(), new ServiceInjectionsRegistry()),
                 ConfigFactory.getCachedConfig(),
                 new TrafficLogger(ConfigFactory.getCachedConfig(), null),
                 null);

@@ -539,6 +539,11 @@
                                 <value>ssh.session.pool.numTestsPerEvictionRun</value>
                             </list>
                         </entry>
+                        <entry key="serviceMetricsEventListenerProxy">
+                            <list>
+                                <value>serviceMetricsEventListener.maxPoolSize</value>
+                            </list>
+                        </entry>
                     </map>
                 </constructor-arg>
             </bean>
@@ -1283,7 +1288,6 @@
         <property name="keyValueStoreManager" ref="customKeyValueStoreManager"/>
         <property name="customAssertionsRegistrar" ref="customAssertionRegistrar"/>
         <property name="cassandraEntityManager" ref="cassandraEntityManager"/>
-        <property name="workQueueEntityManager" ref="workQueueEntityManager"/>
     </bean>
 
     <!-- server side policy filter manager  -->
@@ -1425,6 +1429,14 @@
         <property name="encryptedKeyCache" ref="encryptedKeyCache"/>
     </bean>
 
+    <bean id="preServiceInvocationInjectionsRegistry" class="com.l7tech.server.extension.registry.processorinjection.ServiceInjectionsRegistry"/>
+    <bean id="postServiceInvocationInjectionsRegistry" class="com.l7tech.server.extension.registry.processorinjection.ServiceInjectionsRegistry"/>
+
+    <bean id="messageProcessorInjector" class="com.l7tech.server.messageprocessor.injection.MessageProcessorInjectorImpl" >
+        <constructor-arg ref="preServiceInvocationInjectionsRegistry" />
+        <constructor-arg ref="postServiceInvocationInjectionsRegistry" />
+    </bean>
+
     <!-- server Message Processor -->
     <bean id="messageProcessor" class="com.l7tech.server.MessageProcessor">
         <constructor-arg ref="serviceCache"/>
@@ -1436,6 +1448,7 @@
         <constructor-arg ref="serviceMetricsServices"/>
         <constructor-arg ref="auditContextFactory"/>
         <constructor-arg ref="messageSummaryAuditFactory"/>
+        <constructor-arg ref="messageProcessorInjector"/>
         <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="trafficLogger"/>
         <constructor-arg ref="messageProcessingEventChannel"/>
@@ -1706,7 +1719,6 @@
                 <ref bean="serverModuleFileManager"/>
                 <ref bean="scheduledTaskManager"/>
                 <ref bean="cassandraEntityManager"/>
-                <ref bean="workQueueEntityManager"/>
                 <ref bean="solutionKitManager"/>
             </list>
         </property>
@@ -2295,7 +2307,6 @@
                 <ref bean="cassandraEntityManager"/>
                 <ref bean="serverModuleFileManager"/>
                 <ref bean="scheduledTaskManager"/>
-                <ref bean="workQueueEntityManager"/>
                 <ref bean="policyBackedServiceManager"/>
                 <ref bean="solutionKitManager"/>
                 <ref bean="auditConfigurationManager"/>
@@ -2312,7 +2323,6 @@
         <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="jdbcConnectionManager"/>
         <constructor-arg ref="cassandraEntityManager"/>
-        <!--constructor-arg ref="workQueueEntityManager"/-->
     </bean>
 
     <bean id="serviceExternalEntityHeaderEnhancer"
@@ -2620,12 +2630,6 @@
         <constructor-arg ref="stashManagerFactory"/>
     </bean>
 
-    <bean id="workQueueEntityManager" class="com.l7tech.server.workqueue.WorkQueueEntityManagerImpl" parent="hibernateBean"/>
-
-    <bean id="workQueueExecutorManager" class="com.l7tech.server.workqueue.WorkQueueExecutorManagerImpl">
-        <constructor-arg ref="workQueueEntityManager"/>
-    </bean>
-
     <bean id="solutionKitManager" class="com.l7tech.server.solutionkit.SolutionKitManagerImpl" parent="hibernateBean" />
 
     <bean id="protectedEntityTracker" class="com.l7tech.server.security.rbac.ProtectedEntityTracker" >
@@ -2647,4 +2651,24 @@
 
     <!-- An events publisher for GatewayMetricsEvent's. -->
     <bean id="gatewayMetricsPublisher" class="com.l7tech.server.message.metrics.GatewayMetricsPublisher"/>
+
+    <!-- Registry for event listeners-->
+    <bean id="eventListenerRegistry" class="com.l7tech.server.extension.registry.event.EventListenerRegistryImpl" />
+
+    <!-- Proxy for service metrics event -->
+    <bean id="serviceMetricsEventListenerProxy" class="com.l7tech.server.extension.event.metrics.ServiceMetricsEventListenerProxy"/>
+
+    <!-- Registries for sharing state -->
+    <bean id="sharedStateProviderRegistry" class="com.l7tech.server.extension.registry.sharedstate.SharedStateProviderRegistry">
+        <constructor-arg index="0" ref="serverConfig"/>
+    </bean>
+
+    <bean id="sharedCounterProviderRegistry" class="com.l7tech.server.extension.registry.sharedstate.SharedCounterProviderRegistry">
+        <constructor-arg index="0" ref="serverConfig"/>
+    </bean>
+
+    <bean id="sharedExecutorServiceProviderRegistry" class="com.l7tech.server.extension.registry.sharedstate.SharedExecutorProviderRegistry">
+        <constructor-arg index="0" ref="serverConfig"/>
+    </bean>
+    <!-- End of Registries for sharing state -->
 </beans>

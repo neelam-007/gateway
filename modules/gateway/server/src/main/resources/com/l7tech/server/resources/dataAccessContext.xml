@@ -206,8 +206,6 @@
                 <!-- Cassandra Connection -->
                 <value>com.l7tech.gateway.common.cassandra.CassandraConnection</value>
 
-                <value>com.l7tech.gateway.common.workqueue.WorkQueue</value>
-
                 <!-- Scheduled Task -->
                 <value>com.l7tech.gateway.common.task.ScheduledTask</value>
 

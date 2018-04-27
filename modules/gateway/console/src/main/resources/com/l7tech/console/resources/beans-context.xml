@@ -34,7 +34,6 @@
                 <ref bean="logSinkAdmin"/>
                 <ref bean="serviceAdmin"/>
                 <ref bean="folderAdmin"/>
-                <ref bean="emailAdmin"/>
                 <ref bean="uddiRegistryAdmin" />
                 <ref bean="encapsulatedAssertionAdmin" />
                 <ref bean="policyBackedServiceAdmin" />
@@ -42,7 +41,6 @@
                 <ref bean="customKeyValueStoreAdmin" />
                 <ref bean="debugAdmin" />
                 <ref bean="scheduledTaskAdmin" />
-                <ref bean="workQueueAdmin" />
                 <ref bean="solutionKitAdmin" />
                 <ref bean="trustedSignerCertsAdmin" />
             </list>
@@ -128,11 +126,6 @@
         <property name="serviceInterface" value="com.l7tech.gateway.common.transport.email.EmailListenerAdmin"/>
     </bean>
 
-    <bean id="emailAdmin" parent="invokerCommon" class="org.springframework.remoting.httpinvoker.HttpInvokerProxyFactoryBean">
-        <property name="serviceUrl" value="https://securespangateway/ssg/manager/EmailAdmin"/>
-        <property name="serviceInterface" value="com.l7tech.gateway.common.transport.email.EmailAdmin"/>
-    </bean>
-
     <bean id="scheduledTaskAdmin" parent="invokerCommon" class="org.springframework.remoting.httpinvoker.HttpInvokerProxyFactoryBean">
         <property name="serviceUrl" value="https://securespangateway/ssg/manager/ScheduledTaskAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.task.ScheduledTaskAdmin"/>
@@ -215,11 +208,6 @@
     <bean id="debugAdmin" parent="invokerCommon">
         <property name="serviceUrl" value="https://securespangateway/ssg/manager/DebugAdmin"/>
         <property name="serviceInterface" value="com.l7tech.gateway.common.stepdebug.DebugAdmin"/>
-    </bean>
-
-    <bean id="workQueueAdmin" parent="invokerCommon">
-        <property name="serviceUrl" value="https://securespangateway/ssg/manager/WorkQueueAdmin"/>
-        <property name="serviceInterface" value="com.l7tech.gateway.common.workqueue.WorkQueueManagerAdmin"/>
     </bean>
 
     <bean id="solutionKitAdmin" parent="invokerCommon">

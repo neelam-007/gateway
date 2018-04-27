@@ -20,11 +20,9 @@ import com.l7tech.gateway.common.siteminder.SiteMinderAdmin;
 import com.l7tech.gateway.common.solutionkit.SolutionKitAdmin;
 import com.l7tech.gateway.common.task.ScheduledTaskAdmin;
 import com.l7tech.gateway.common.transport.TransportAdmin;
-import com.l7tech.gateway.common.transport.email.EmailAdmin;
 import com.l7tech.gateway.common.transport.email.EmailListenerAdmin;
 import com.l7tech.gateway.common.transport.ftp.FtpAdmin;
 import com.l7tech.gateway.common.transport.jms.JmsAdmin;
-import com.l7tech.gateway.common.workqueue.WorkQueueManagerAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.GuidBasedEntityManager;
@@ -85,7 +83,6 @@ public final class RegistryImpl extends Registry
     private RbacAdmin rbacAdmin;
     private TransportAdmin transportAdmin;
     private EmailListenerAdmin emailListenerAdmin;
-    private EmailAdmin emailAdmin;
     private PolicyAdmin policyAdmin;
     private LogSinkAdmin logSinkAdmin;
     private UDDIRegistryAdmin uddiRegistryAdmin;
@@ -97,7 +94,6 @@ public final class RegistryImpl extends Registry
     private GuidBasedEntityManager<Policy> policyFinder;
     private PolicyPathBuilderFactory policyPathBuilderFactory;
     private EntityNameResolver entityNameResolver;
-    private WorkQueueManagerAdmin workQueueManagerAdmin;
     private SolutionKitAdmin solutionKitAdmin;
     // When you add an admin interface don't forget to
     // add it to the reset method
@@ -332,16 +328,6 @@ public final class RegistryImpl extends Registry
     }
 
     @Override
-    public EmailAdmin getEmailAdmin() {
-        checkAdminContext();
-        if (emailAdmin != null) {
-            return emailAdmin;
-        }
-        emailAdmin = adminContext.getEmailAdmin();
-        return emailAdmin;
-    }
-
-    @Override
     public PolicyAdmin getPolicyAdmin() {
         checkAdminContext();
         if (policyAdmin != null) {
@@ -442,16 +428,6 @@ public final class RegistryImpl extends Registry
         }
         scheduledTaskAdmin = adminContext.getAdminInterface(ScheduledTaskAdmin.class);
         return scheduledTaskAdmin;
-    }
-
-    @Override
-    public synchronized WorkQueueManagerAdmin getWorkQueueManagerAdmin() {
-        checkAdminContext();
-        if (workQueueManagerAdmin != null) {
-            return workQueueManagerAdmin;
-        }
-        workQueueManagerAdmin = adminContext.getWorkQueueAdmin();
-        return workQueueManagerAdmin;
     }
 
     @Override
@@ -573,11 +549,9 @@ public final class RegistryImpl extends Registry
         policyBackedServiceAdmin = null;
         customKeyValueStoreAdmin = null;
         emailListenerAdmin = null;
-        emailAdmin = null;
         entityNameResolver = null;
         siteMinderAdmin = null;
         cassandraConnectionAdmin = null;
-        workQueueManagerAdmin = null;
         scheduledTaskAdmin = null;
         solutionKitAdmin = null;
     }

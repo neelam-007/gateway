@@ -669,20 +669,21 @@ public class AssertionMessages extends Messages {
     public static final M XPATHCREDENTIAL_PASS_PARENT_NOT_ELEMENT = m(6615, Level.WARNING, "Cannot remove password element; parent is not an Element");
 
     // Email and SNMP alerts
-    public static final M EMAILALERT_MESSAGE_SENT = m(6700, Level.INFO, "Email message sent");
-    public static final M EMAILALERT_BAD_TO_ADDR = m(6701, Level.WARNING, "Bad destination email address(es)");
-    public static final M EMAILALERT_BAD_FROM_ADDR = m(6702, Level.WARNING, "Bad source email address");
+    public static final M EMAIL_MESSAGE_SENT = m(6700, Level.INFO, "Email message sent in {0} format with {1} attachment(s)");
+    public static final M EMAIL_BAD_TO_ADDR = m(6701, Level.WARNING, "Bad destination email address(es)");
+    public static final M EMAIL_BAD_FROM_ADDR = m(6702, Level.WARNING, "Bad source email address");
     public static final M SNMP_BAD_TRAP_OID = m(6703, Level.WARNING, "The OID ending with zero is reserved for the message field: Using .1 for the trap OID instead");
-    public static final M EMAILALERT_AUTH_FAIL = m(6704, Level.WARNING, "Authentication failure, message not sent");
-    public static final M EMAILALERT_SSL_FAIL = m(6705, Level.WARNING, "SSL connection failure, message not sent");
-    public static final M EMAILALERT_CONNECT_FAIL = m(6706, Level.WARNING, "Connection failure, message not sent");
-    public static final M EMAILALERT_BAD_PORT = m(6707, Level.WARNING, "Bad smtp port set, message not sent");
-    public static final M EMAILALERT_BAD_HOST = m(6708, Level.WARNING, "Bad smtp host set or not set at all, message not sent");
-    public static final M EMAILALERT_BAD_USER = m(6709, Level.WARNING, "Bad smtp user name set or not set at all, message not sent");
-    public static final M EMAILALERT_BAD_PWD = m(6710, Level.WARNING, "Bad smtp password set or not set at all, message not sent");
+    public static final M EMAIL_AUTH_FAIL = m(6704, Level.WARNING, "Authentication failure, message not sent");
+    public static final M EMAIL_SSL_FAIL = m(6705, Level.WARNING, "SSL connection failure, message not sent");
+    public static final M EMAIL_CONNECT_FAIL = m(6706, Level.WARNING, "Connection failure, message not sent");
+    public static final M EMAIL_BAD_PORT = m(6707, Level.WARNING, "Bad smtp port set, message not sent");
+    public static final M EMAIL_BAD_HOST = m(6708, Level.WARNING, "Bad smtp host set or not set at all, message not sent");
+    public static final M EMAIL_BAD_USER = m(6709, Level.WARNING, "Bad smtp user name set or not set at all, message not sent");
+    public static final M EMAIL_BAD_PWD = m(6710, Level.WARNING, "Bad smtp password set or not set at all, message not sent");
     public static final M SNMP_INVALID_TRAP_OID = m(6711, Level.WARNING, "Invalid OID (value={0}). Using .1 for the trap OID instead");
     public static final M SNMP_BAD_HOST = m(6712, Level.WARNING, "Bad smtp host set or not set at all (value={0})");
 
+    public static final M EMAIL_ATTACHMENT_INVALID = m(6713, Level.WARNING, "Invalid Email attachment; {0}");
 
     // HTTP Form POST
     public static final M HTTPFORM_WRONG_TYPE = m(6800, Level.WARNING, true, false, "Request does not appear to be an HTTP form submission ({0})");
@@ -1384,12 +1385,6 @@ public class AssertionMessages extends Messages {
     public static final M CASSANDRA_CANNOT_REMOVE_CONNECTION = m(10905, Level.WARNING, "Unable to remove Cassandra connection due to: {0}");
 
     public static final M HANDLE_ERRORS_MSG = m(11000, Level.WARNING, "Policy processing caught an exception: {0}");
-
-    // InvokePolicyAsync Assertion
-    public static final M WORK_QUEUE_EXECUTOR_NOT_AVAIL = m(11100, Level.WARNING, "Executor associated with work queue \"{0}\" not available due to {1}");
-    public static final M WORK_QUEUE_EXECUTOR_FINE = m(11101, Level.FINE, "Work Queue Executor Manager: {0}");
-    public static final M WORK_QUEUE_EXECUTOR_INFO_FINER = m(11102, Level.FINER, "Work queue name: {0}; queue size: {1}; active threads: {2}; threads in pool: {3}; reject policy: {4}.");
-    public static final M INVOKE_POLICY_ASYNC_ASSERTION_FAILED = m(11103, Level.WARNING, "\"Invoke Policy Async\" assertion failed due to: {0}");
 
     // PortalBootstrap Assertion
     public static final M PORTAL_BOOTSTRAP_ERROR = m(11200, Level.WARNING, "Error enrolling Gateway with Portal server: {0}");

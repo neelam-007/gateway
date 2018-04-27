@@ -68,7 +68,6 @@
         <constructor-arg index="18" ref="securePasswordManager" />
         <constructor-arg index="19" ref="customKeyValueStoreManager" />
         <constructor-arg index="20" ref="cassandraEntityManager" />
-        <constructor-arg index="21" ref="workQueueEntityManager" />
     </bean>
 
     <bean id="transactionManager" class="com.l7tech.server.PlatformTransactionManagerStub"/>
@@ -328,7 +327,6 @@
                 <ref bean="policyManager" />
                 <ref bean="genericEntityManager"/>
                 <ref bean="scheduledTaskManager"/>
-                <ref bean="workQueueEntityManager"/>
                 <ref bean="policyBackedServiceManager"/>
                 <ref bean="sinkManager"/>
             </list>
@@ -339,8 +337,6 @@
     </bean>
 
     <bean id="sinkManager" class="com.l7tech.server.log.SinkManagerStub"/>
-    
-    <bean id="workQueueEntityManager" class="com.l7tech.server.workqueue.WorkQueueEntityManagerStub"/>
 
     <bean id="scheduledTaskManager" class="com.l7tech.server.task.ScheduledTaskManagerStub"/>
 

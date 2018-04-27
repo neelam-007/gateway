@@ -35,6 +35,7 @@ public class SiteMinderCheckProtectedAssertion extends Assertion implements Mess
     private String serverName = "";//Default value is set to empty string
     private String prefix;
     private String sourceIpAddress;
+    private String acoName;
     protected final MessageTargetableSupport messageTargetableSupport;
 
     public SiteMinderCheckProtectedAssertion() {
@@ -111,10 +112,18 @@ public class SiteMinderCheckProtectedAssertion extends Assertion implements Mess
         this.sourceIpAddress = sourceIpAddress;
     }
 
+    public String getAcoName() {
+        return acoName;
+    }
+
+    public void setAcoName(String acoName) {
+        this.acoName = acoName;
+    }
+
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     @Override
     public String[] getVariablesUsed() {
-        return Syntax.getReferencedNames(action, protectedResource, smAgentName, sourceIpAddress, serverName);
+        return Syntax.getReferencedNames(action, protectedResource, smAgentName, sourceIpAddress, serverName, acoName);
     }
 
     @Migration(mapName = MigrationMappingSelection.REQUIRED, export = false, resolver = PropertyResolver.Type.ASSERTION)
@@ -147,10 +156,6 @@ public class SiteMinderCheckProtectedAssertion extends Assertion implements Mess
 
         // Cluster properties used by this assertion
         Map<String, String[]> props = new HashMap<>();
-        //props.put(NAME, new String[] {
-        //        DESCRIPTION,
-        //        DEFAULT
-        //});
         meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
 
         // Set description for GUI
@@ -272,10 +277,10 @@ public class SiteMinderCheckProtectedAssertion extends Assertion implements Mess
         return false;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    private final static String baseName = "Check Protected Resource Against CA Single Sign-On";
+    private static final String baseName = "Check Protected Resource Against CA Single Sign-On";
     private static final int MAX_DISPLAY_LENGTH = 120;
 
-    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<SiteMinderCheckProtectedAssertion>(){
+    static final AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<SiteMinderCheckProtectedAssertion>(){
         @Override
         public String getAssertionName( final SiteMinderCheckProtectedAssertion assertion, final boolean decorate) {
             if(!decorate) return baseName;

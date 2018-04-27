@@ -45,9 +45,11 @@ public class ContentTypeHeader extends MimeHeader {
     public static final ContentTypeHeader SOAP_1_2_DEFAULT; // application/soap+xml; charset=UTF-8
     public static final ContentTypeHeader APPLICATION_X_WWW_FORM_URLENCODED; // application/x-www-form-urlencoded
     public static final ContentTypeHeader APPLICATION_JSON; // application/json; charset=UTF-8
+    public static final ContentTypeHeader APPLICATION_GRAPHQL; // application/graphql; charset=UTF-8
     public static final String CHARSET = "charset";
     public static final String DEFAULT_CHARSET_MIME = "utf-8";
     public static final Charset DEFAULT_HTTP_ENCODING = findDefaultHttpEncoding();
+    public static final String APPLICATION = "application";
 
     private static final Pattern QUICK_CONTENT_TYPE_PARSER =
             Pattern.compile("^\\s*([a-zA-Z0-9!#\\$%&'\\*\\+\\-\\.\\^_`\\{\\|\\}~]+)(\\s*)/(\\s*)([a-zA-Z0-9!#\\$%&'\\*\\+\\-\\.\\^_`\\{\\|\\}~]+)\\s*(;.*?)?\\s*$", Pattern.DOTALL);
@@ -90,6 +92,8 @@ public class ContentTypeHeader extends MimeHeader {
             APPLICATION_X_WWW_FORM_URLENCODED.getEncoding();
             APPLICATION_JSON = parseValue("application/json; charset=utf-8");
             APPLICATION_JSON.getEncoding();
+            APPLICATION_GRAPHQL = parseValue("application/graphql; charset=utf-8");
+            APPLICATION_GRAPHQL.getEncoding();
         } catch (Throwable e) {
             throw new Error(e);
         }
@@ -162,7 +166,7 @@ public class ContentTypeHeader extends MimeHeader {
             }
             return ret;
         }
-        return new ContentTypeHeader("application", "x-invalid-content-type", false, Collections.<String, String>emptyMap(), contentTypeHeaderValue);
+        return new ContentTypeHeader(APPLICATION, "x-invalid-content-type", false, Collections.<String, String>emptyMap(), contentTypeHeaderValue);
     }
 
     public static ContentTypeHeader create(@NotNull final String contentTypeHeaderValue, final String charsetValue) {
@@ -225,7 +229,7 @@ public class ContentTypeHeader extends MimeHeader {
             String subtype = token.getValue();
 
             // Check for parameters
-            Map<String, String> params = new TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER);
+            Map<String, String> params = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
             for (;;) {
                 token = ht.next();
 
@@ -253,7 +257,7 @@ public class ContentTypeHeader extends MimeHeader {
                     throw new IOException("MIME Content-Type parameter name is not followed by an equals: " + contentTypeHeaderValue);
 
                 // Get value
-                StringBuffer value = new StringBuffer();
+                StringBuilder value = new StringBuilder();
                 boolean sawQuotedString = false;
                 for (;;) {
                     token = ht.peek();
@@ -358,7 +362,7 @@ public class ContentTypeHeader extends MimeHeader {
     @NotNull
     static Charset getDefaultJavaEncodingForMediaType( @Nullable String type, @Nullable String subtype ) {
         // TODO replace this hardcoded if/else with a configurable table of media types and their default encodings
-        if ( "application".equalsIgnoreCase( type ) && "json".equalsIgnoreCase( subtype ) ) {
+        if ( APPLICATION.equalsIgnoreCase( type ) && "json".equalsIgnoreCase( subtype ) ) {
             // Default character set for application/json media type
             return Charsets.UTF8;
         }
@@ -377,7 +381,7 @@ public class ContentTypeHeader extends MimeHeader {
      */
     public Charset getEncoding() {
         if (javaEncoding == null) {
-            this.mimeCharset = getParam("charset");
+            this.mimeCharset = getParam(CHARSET);
 
             if (mimeCharset == null) {
                 javaEncoding = getDefaultJavaEncodingForMediaType( getType(), getSubtype() );
@@ -430,14 +434,14 @@ public class ContentTypeHeader extends MimeHeader {
      * See if this content type can be represented as text. This only checks the type and possibly the subtype of
      * this content type. It is still possible that the first part of the mime knob is not text.
      * <p/>
-     * The build in textual types are text, XML, JSON and Application Form URL encoded data.
+     * The build in textual types are text, XML, JSON, Application Form URL encoded data and GraphQL.
      * Other types are configurable via static method {@link com.l7tech.common.mime.ContentTypeHeader#setConfigurableTextualContentTypes(ContentTypeHeader...)}
      *
      * @return true if content-type is textual, false otherwise. Decision is only based on the content type.
      */
     public boolean isTextualContentType() {
 
-        if (isText() || isXml() || isJson() || isApplicationFormUrlEncoded()) return true;
+        if (isText() || isXml() || isJson() || isApplicationFormUrlEncoded() || isGraphQl()) return true;
 
         final CopyOnWriteArrayList<ContentTypeHeader> textualContentTypes = refToContentTypes.get();
         for (ContentTypeHeader otherType : textualContentTypes) {
@@ -472,7 +476,7 @@ public class ContentTypeHeader extends MimeHeader {
     }
 
     public boolean isApplication() {
-        return "application".equalsIgnoreCase(getType());
+        return APPLICATION.equalsIgnoreCase(getType());
     }
 
     public boolean isApplicationFormUrlEncoded(){
@@ -480,7 +484,11 @@ public class ContentTypeHeader extends MimeHeader {
     }
 
     public boolean isJson() {
-        return "application".equalsIgnoreCase(getType()) && "json".equalsIgnoreCase(getSubtype());
+        return isApplication() && "json".equalsIgnoreCase(getSubtype());
+    }
+
+    public boolean isGraphQl() {
+        return isApplication() && "graphql".equalsIgnoreCase(getSubtype());
     }
 
     /** @return true if the type is "multipart" */
@@ -583,6 +591,7 @@ public class ContentTypeHeader extends MimeHeader {
     /**
      *
      */
+    @Override
     public String toString() {
         return "ContentTypeHeader()[type='"+type+"'; subtype='"+subtype+"']";
     }

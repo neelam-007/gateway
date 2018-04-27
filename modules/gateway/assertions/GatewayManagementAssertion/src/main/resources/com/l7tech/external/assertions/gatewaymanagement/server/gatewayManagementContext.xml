@@ -78,7 +78,6 @@
         <constructor-arg index="18" ref="securePasswordManager" />
         <constructor-arg index="19" ref="customKeyValueStoreManager" />
         <constructor-arg index="20" ref="cassandraEntityManager" />
-        <constructor-arg index="21" ref="workQueueEntityManager" />
     </bean>
 
     <bean id="securityFilter" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">

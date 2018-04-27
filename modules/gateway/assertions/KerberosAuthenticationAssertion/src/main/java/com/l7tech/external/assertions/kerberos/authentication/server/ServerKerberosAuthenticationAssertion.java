@@ -24,6 +24,7 @@ import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.policy.variable.ServerVariables;
 import com.l7tech.util.Config;
+import com.l7tech.util.TimeSource;
 import org.apache.commons.lang.StringUtils;
 import sun.security.krb5.PrincipalName;
 import sun.security.krb5.RealmException;
@@ -48,6 +49,9 @@ public class ServerKerberosAuthenticationAssertion extends AbstractServerAsserti
     @Inject
     private Config config;
 
+    @Inject
+    private TimeSource timeSource;
+
     public ServerKerberosAuthenticationAssertion(final KerberosAuthenticationAssertion assertion) throws PolicyAssertionException {
         super(assertion);
         this.variablesUsed = assertion.getVariablesUsed();
@@ -64,6 +68,7 @@ public class ServerKerberosAuthenticationAssertion extends AbstractServerAsserti
     @Override
     public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         KerberosDelegateClient delegateClient = new KerberosDelegateClient();
+        delegateClient.setTimeSource(timeSource);
         AuthenticationContext authContext = context.getDefaultAuthenticationContext();
         if (authContext.getCredentials().size() < 1 && authContext.getLastAuthenticatedUser() == null) {
             // No credentials have been found yet
@@ -250,10 +255,9 @@ public class ServerKerberosAuthenticationAssertion extends AbstractServerAsserti
 
     private boolean matchLoginCredentials(LoginCredentials pc, AuthenticationResult result) {
         boolean match = true;
-        for(SecurityToken securityToken : pc.getSecurityTokens())
+        for(SecurityToken securityToken : pc.getSecurityTokens()) {
             match &= result.matchesSecurityToken(securityToken);
-        if(match)
-            return true;
-        return false;
+        }
+        return match;
     }
 }

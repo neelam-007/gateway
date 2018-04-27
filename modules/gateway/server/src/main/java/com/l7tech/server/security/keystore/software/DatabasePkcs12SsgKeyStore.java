@@ -197,12 +197,14 @@ public class DatabasePkcs12SsgKeyStore extends JdkKeyStoreBackedSsgKeyStore impl
                             @Override
                             public void call(KeystoreFile keystoreFile) {
                                 try {
-                                    if (transactionCallback != null)
-                                        transactionCallback.run();
-
                                     cachedKeystore = bytesToKeyStore(keystoreFile.getDatabytes());
                                     lastLoaded = System.currentTimeMillis();
                                     out[0] = mutator.call();
+
+                                    if (transactionCallback != null) {
+                                        transactionCallback.run();
+                                    }
+
                                     keystoreFile.setDatabytes(keyStoreToBytes(cachedKeystore));
                                 } catch (Exception e) {
                                     throw new RuntimeException(e);

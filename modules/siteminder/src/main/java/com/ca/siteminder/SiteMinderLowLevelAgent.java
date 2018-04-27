@@ -21,6 +21,7 @@ public class SiteMinderLowLevelAgent {
     public static final int HTTP_COOKIE_VALUE = 231;
 
     private static final Logger logger = Logger.getLogger(SiteMinderLowLevelAgent.class.getName());
+    private static final Map<String, String> defaultAcoAttrMap = new HashMap<>();
 
     private boolean initialized = false;
 
@@ -30,6 +31,26 @@ public class SiteMinderLowLevelAgent {
     private boolean updateCookie;
     private SiteMinderConfig agentConfig;
 
+    static {
+        defaultAcoAttrMap.put(SiteMinderAgentConstants.ATTR_ACO_SSOZONE_NAME,
+                SiteMinderAgentConstants.ATTR_ACO_SSOZONE_NAME_DEFAULT_VALUE);
+        defaultAcoAttrMap.put(SiteMinderAgentConstants.ATTR_ACO_COOKIE_PATH,
+                SiteMinderAgentConstants.ATTR_ACO_COOKIE_PATH_DEFAULT_VALUE);
+        defaultAcoAttrMap.put(SiteMinderAgentConstants.ATTR_ACO_COOKIE_PATH_SCOPE,
+                SiteMinderAgentConstants.ATTR_ACO_COOKIE_PATH_SCOPE_DEFAULT_VALUE);
+        defaultAcoAttrMap.put(SiteMinderAgentConstants.ATTR_ACO_COOKIE_DOMAIN,
+                SiteMinderAgentConstants.ATTR_ACO_COOKIE_DOMAIN_DEFAULT_VALUE);
+        defaultAcoAttrMap.put(SiteMinderAgentConstants.ATTR_ACO_COOKIE_DOMAIN_SCOPE,
+                SiteMinderAgentConstants.ATTR_ACO_COOKIE_DOMAIN_SCOPE_DEFAULT_VALUE);
+        defaultAcoAttrMap.put(SiteMinderAgentConstants.ATTR_ACO_USE_SECURE_COOKIES,
+                SiteMinderAgentConstants.ATTR_ACO_USE_SECURE_COOKIES_DEFAULT_VALUE);
+        defaultAcoAttrMap.put(SiteMinderAgentConstants.ATTR_ACO_USE_HTTP_ONLY_COOKIES,
+                SiteMinderAgentConstants.ATTR_ACO_USE_HTTP_ONLY_COOKIES_DEFAULT_VALUE);
+        defaultAcoAttrMap.put(SiteMinderAgentConstants.ATTR_ACO_PERSISTENT_COOKIES,
+                SiteMinderAgentConstants.ATTR_ACO_PERSISTENT_COOKIES_DEFAULT_VALUE);
+        defaultAcoAttrMap.put(SiteMinderAgentConstants.ATTR_ACO_COOKIE_VALIDATION_PERIOD,
+                SiteMinderAgentConstants.ATTR_ACO_COOKIE_VALIDATION_PERIOD_DEFAULT_VALUE);
+    }
 
     public SiteMinderLowLevelAgent() {
     }
@@ -279,7 +300,6 @@ public class SiteMinderLowLevelAgent {
                 attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_DEVICENAME, agentConfig.getHostname()));
             }
             sessionDef.sessionLastTime = sessionLastTime; //correctly set the sessionLastTime on a successful authZ
-            //addSessionAttributes(attributes, sessionDef);
             //finally, set SessionDef in the SiteMinder context. This might be useful for the authorization
             context.setSessionDef(new SiteMinderContext.SessionDef(sessionDef.reason,
                     sessionDef.idleTimeout,
@@ -362,13 +382,20 @@ public class SiteMinderLowLevelAgent {
         if(context == null) throw new SiteMinderApiClassException("SiteMinderContext object is null!");
         int result = AgentAPI.FAILURE;
 
-        List<SiteMinderContext.Attribute> attributes = context.getAttrList();
         if(ssoToken != null) {
             AttributeList attrList = new AttributeList();
 
+            List<SiteMinderContext.Attribute> attributes = context.getAttrList();
             result = decodeSsoToken(ssoToken, attrList);
-
             storeAttributes(attributes, attrList);
+
+            for (int i = 0; i < attrList.getAttributeCount(); i++) {
+                final Attribute attribute = attrList.getAttributeAt(i);
+                if (attribute.id == AgentAPI.ATTR_SSOZONE) {
+                    context.setSsoZoneName(SiteMinderUtil.chopNull(new String(attribute.value)));
+                    break;
+                }
+            }
 
             if (result != AgentAPI.SUCCESS) {
                 logger.log(Level.FINE, "SiteMinder authorization attempt - SiteMinder is unable to decode the token '" + SiteMinderUtil.safeNull(ssoToken) + "'");
@@ -641,14 +668,12 @@ public class SiteMinderLowLevelAgent {
         return null;
     }
 
-
     protected void storeAttributes(List<SiteMinderContext.Attribute> attributes, AttributeList attrs) throws SiteMinderApiClassException {
         int attrCount = attrs.getAttributeCount();
 
         for (int i = 0; i < attrCount; i++) {
             Attribute attr = attrs.getAttributeAt(i);
             //Cannot assume that all attribute values are character data
-            //String value = new String(attr.value);
             logger.log(Level.FINE, "Attribute OID: " + attr.oid + " ID: " + attr.id + " Value: " + new String( attr.value ));
             switch(attr.id) {
                 case HTTP_HEADER_VARIABLE_ID: // HTTP Header Variable
@@ -728,9 +753,7 @@ public class SiteMinderLowLevelAgent {
                     break;
                 default:
                     attributes.add(new SiteMinderContext.Attribute("ATTR_" + Integer.toString(attr.id), attr.value, attr.flags, attr.id, attr.oid, attr.ttl, SiteMinderUtil.safeByteArrayCopy(attr.value)));
-
             }
-
         }
     }
 
@@ -805,6 +828,12 @@ public class SiteMinderLowLevelAgent {
         attrList.addAttribute(UserDN);
         Attribute ClientIP= new Attribute( AgentAPI.ATTR_CLIENTIP , 0, 0, "", SiteMinderUtil.getAttrValueByName(context.getAttrList(), "ATTR_CLIENTIP"));
         attrList.addAttribute(ClientIP);
+
+        final String ssoZoneName = context.getSsoZoneName();
+        if (StringUtils.isNotBlank(ssoZoneName)) {
+            attrList.addAttribute(new Attribute(AgentAPI.ATTR_SSOZONE, 0, 0, "", ssoZoneName.getBytes()));
+        }
+
         logger.log(Level.FINEST, "SiteMinder Authentication - Attempt to obtain a new SSO token for " + "UserName: "+ new String( UserName.value ) +" UserDN: "+ new String( UserDN.value ));
 
         int retCode = agentApi.createSSOToken( sessionDef, attrList, sb );
@@ -854,7 +883,6 @@ public class SiteMinderLowLevelAgent {
             if((credentials & AgentAPI.CRED_BASIC) == AgentAPI.CRED_BASIC ){
                 authSchemes.add(SiteMinderContext.AuthenticationScheme.BASIC);
             }
-            //TODO: replace the hard coded value with Agent constant once the siteminder patch is available
             if ((credentials & 0x40000) == 0x40000) {
                 authSchemes.add(SiteMinderContext.AuthenticationScheme.JWT);
             }
@@ -933,4 +961,106 @@ public class SiteMinderLowLevelAgent {
 
         return AgentAPI.SUCCESS;
     }
+
+    private SiteMinderContext.Attribute fromAcoAttribute(Attribute attr) {
+        String[] info = new String( attr.value ).split("=", 2);
+
+        if (info.length == 2) {
+            // Ignore commented attributes (starts with #)
+            // If the commented attributes are listed in default attribute map, add them to the list with default value
+            if (!info[0].startsWith("#")) {
+                return new SiteMinderContext.Attribute(SiteMinderContext.Attribute.ACO_ATTRIBUTE_PREFIX + info[0], info[1],
+                        attr.flags, attr.id, attr.oid, attr.ttl, SiteMinderUtil.safeByteArrayCopy(attr.value));
+            } else {
+                String name = SiteMinderContext.Attribute.ACO_ATTRIBUTE_PREFIX + info[0].substring(1);
+                if (defaultAcoAttrMap.containsKey(name)) {
+                    return new SiteMinderContext.Attribute(name, defaultAcoAttrMap.get(name),
+                            attr.flags, attr.id, attr.oid, attr.ttl, SiteMinderUtil.safeByteArrayCopy(attr.value));
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Retrieves the ACO details from SSO policy server
+     * @param smAgentName Agent name
+     * @param context SSO Context
+     * @return ACO details as attribute list
+     */
+    private AttributeList retrieveAcoDetails(String smAgentName, SiteMinderContext context) {
+        AttributeList attrList = new AttributeList();
+        String acoName = context.getAcoName();
+
+        if (StringUtils.isNotEmpty(acoName)) {
+            if (logger.isLoggable(Level.FINE)) {
+                logger.log(Level.FINE, String.format("Retrieving %s ACO details (%s)", smAgentName, acoName));
+            }
+
+            int retCode = agentApi.getAgentConfig(acoName, attrList);
+            if (retCode != AgentAPI.YES) {
+                logger.log(Level.WARNING, "Failed to retrieve ACO details for " + acoName + "; error code=" + retCode);
+            }
+        }
+
+        return attrList;
+    }
+
+    /**
+     * Returns the ACO attributes.
+     * To minimize changes (only to siteminder module alone), adding ACO attributes with ACO prefix to the existing SMCONTEXT atttrubtes list.
+     * @param smAgentName Agent name
+     * @param context SiteMinder Context
+     * @return ACO attribute list
+     */
+    protected List<SiteMinderContext.Attribute> getAcoAttributes(String smAgentName, SiteMinderContext context) {
+        AttributeList inAttribs = retrieveAcoDetails(smAgentName, context);
+        List<SiteMinderContext.Attribute> outAttribs = new ArrayList<>();
+        Enumeration<Attribute> iterator = inAttribs.attributes();
+
+        logger.log(Level.FINE, "Available ACO attributes: " + inAttribs.getAttributeCount());
+
+        while (iterator.hasMoreElements()) {
+            Attribute attr = iterator.nextElement();
+            SiteMinderContext.Attribute smAttr = fromAcoAttribute(attr);
+
+            if (smAttr != null) {
+                outAttribs.add(smAttr);
+                if (logger.isLoggable(Level.FINE)) {
+                    logger.log(Level.FINE, "ACO Attribute OID: " + attr.oid + " ID: " + attr.id + " Value: " + new String( attr.value ));
+                }
+            } else {
+                if (logger.isLoggable(Level.FINE)) {
+                    logger.log(Level.FINE, "Ignored ACO Attribute OID: " + attr.oid + " ID: " + attr.id + " Value: " + new String( attr.value ));
+                }
+            }
+        }
+
+        if (inAttribs.getAttributeCount() > 0) {
+            addMissingAcoAttributesWithDefaults(outAttribs);
+        }
+
+        return outAttribs;
+    }
+
+    private void addMissingAcoAttributesWithDefaults(final List<SiteMinderContext.Attribute> outAttribs) {
+        final Map<String, String> missingDefaultAcoAttrMap = new HashMap<>(defaultAcoAttrMap);
+
+        // remove the existing attributes from the missing map
+        for (SiteMinderContext.Attribute attr : outAttribs) {
+            if (missingDefaultAcoAttrMap.containsKey(attr.getName())) {
+                missingDefaultAcoAttrMap.remove(attr.getName());
+            }
+        }
+
+        // add the entries from missing map to the output attribute list
+        for (Map.Entry<String, String> entry : missingDefaultAcoAttrMap.entrySet()) {
+            outAttribs.add(new SiteMinderContext.Attribute(entry.getKey(), entry.getValue()));
+            if (logger.isLoggable(Level.FINE)) {
+                logger.log(Level.FINE, "ACO Attribute Value: " + entry.getKey() + "=" + entry.getValue());
+            }
+        }
+    }
+
 }

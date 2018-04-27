@@ -807,12 +807,6 @@
         <constructor-arg ref="stashManagerFactory"/>
     </bean>
 
-    <bean id="workQueueEntityManager" class="com.l7tech.server.workqueue.WorkQueueEntityManagerStub"/>
-
-    <bean id="workQueueExecutorManager" class="com.l7tech.server.workqueue.WorkQueueExecutorManagerImpl">
-        <constructor-arg ref="workQueueEntityManager"/>
-    </bean>
-
     <bean id="policyBackedServiceRegistry" class="com.l7tech.server.polback.PolicyBackedServiceRegistry" />
 
     <bean id="policyBackedServiceManager" class="com.l7tech.server.polback.PolicyBackedServiceManagerStub" />

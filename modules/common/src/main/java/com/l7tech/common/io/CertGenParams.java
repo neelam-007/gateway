@@ -105,6 +105,22 @@ public class CertGenParams implements Serializable {
         }        
     }
 
+    /**
+     * Convenience constructor that sets the subject DN, the days until expiry, and the CA flag.
+     * <p/>
+     * If the CA flag is set to true, this constructor will also set up with basic constraints with path length 1, and
+     * a key usage allowing cert and CRL signing but nothing else.
+     *
+     * @param subjectDn the subject dn, ie "cn=www.example.com".  Required.
+     * @param subjectAlternativeNames SANs, ie DNS=www1.example.com may be null
+     * @param expiryDays days from now until the cert shall expire, or 0 to use default.
+     * @param ca if true, the cert will be configured as a CA cert
+     */
+    public CertGenParams(X500Principal subjectDn, List<X509GeneralName> subjectAlternativeNames, int expiryDays, boolean ca, String sigAlg) {
+        this(subjectDn,expiryDays,ca,sigAlg);
+        setSubjectAlternativeNames(subjectAlternativeNames);
+    }
+
     public X500Principal getSubjectDn() {
         return subjectDn;
     }

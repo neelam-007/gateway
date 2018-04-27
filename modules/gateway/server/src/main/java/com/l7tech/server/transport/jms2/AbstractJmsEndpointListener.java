@@ -101,7 +101,7 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
      * Created from a single connection</li>
      * </ul>
      */
-    protected JmsBag getJmsBag() throws JMSException, NamingException, JmsConfigException, JmsRuntimeException {
+    protected JmsBag getJmsBag() throws JMSException, NamingException, JmsConnectionMaxWaitException, JmsRuntimeException {
         JmsBag bag;
 
         synchronized(sync) {
@@ -116,7 +116,7 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
         return bag;
     }
 
-    protected Destination getDestination() throws NamingException, JmsConfigException, JMSException, JmsRuntimeException {
+    protected Destination getDestination() throws NamingException, JmsConnectionMaxWaitException, JMSException, JmsRuntimeException {
         synchronized(sync) {
             if ( _destination == null ) {
                 _logger.finest( "Getting new destination" );
@@ -129,7 +129,7 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
         }
     }
 
-    protected Queue getFailureQueue() throws NamingException, JmsConfigException, JMSException, JmsRuntimeException {
+    protected Queue getFailureQueue() throws NamingException, JmsConnectionMaxWaitException, JMSException, JmsRuntimeException {
         synchronized(sync) {
             if ( _failureQueue == null &&
                     _endpointCfg.isTransactional() &&
@@ -153,7 +153,7 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
      * @throws JmsConfigException when a JmsBag could not be properly obtained
      * @throws JMSException when a JmsBag could not be properly obtained
      */
-    protected void ensureConnectionStarted() throws NamingException, JmsConfigException, JMSException, JmsRuntimeException {
+    protected void ensureConnectionStarted() throws NamingException, JmsConnectionMaxWaitException, JMSException, JmsRuntimeException {
         synchronized(sync) {
             boolean ok = false;
             String message = null;
@@ -168,7 +168,7 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
             } catch (NamingException e) {
                 message = ExceptionUtils.getMessage(e);
                 throw e;
-            } catch (JmsConfigException e) {
+            } catch (JmsConnectionMaxWaitException e) {
                 message = ExceptionUtils.getMessage(e);
                 throw e;
             } catch (RuntimeException e) {
@@ -416,7 +416,7 @@ public abstract class AbstractJmsEndpointListener implements JmsEndpointListener
             _thread.setDaemon(true);
         }
 
-        private void  createReceiver() throws NamingException, JmsRuntimeException, JMSException, JmsConfigException {
+        private void  createReceiver() throws NamingException, JmsRuntimeException, JMSException, JmsConnectionMaxWaitException {
             int noOfReveiver = DEFAULT_RECEIVER;
             String consumers = _endpointCfg.getConnection().properties().getProperty(JmsConnection.PROP_DEDICATED_CONSUMER_SIZE);
             if (consumers != null) {

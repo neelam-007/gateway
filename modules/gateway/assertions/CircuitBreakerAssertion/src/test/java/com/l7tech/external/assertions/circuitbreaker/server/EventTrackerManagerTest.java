@@ -1,6 +1,8 @@
 package com.l7tech.external.assertions.circuitbreaker.server;
 
 import com.l7tech.gateway.common.cluster.ClusterProperty;
+import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.ApplicationContexts;
@@ -11,14 +13,16 @@ import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.TestTimeSource;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.concurrent.TimeUnit;
 
-import static com.l7tech.external.assertions.circuitbreaker.CircuitBreakerConstants.CB_EVENT_TRACKER_CLEANUP_INTERVAL_UI_PROPERTY;
-import static com.l7tech.external.assertions.circuitbreaker.CircuitBreakerConstants.CB_FORCE_EVENT_TRACKER_LIST_CIRCUIT_OPEN_UI_PROPERTY;
+import static com.l7tech.external.assertions.circuitbreaker.CircuitBreakerConstants.*;
 import static org.junit.Assert.*;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
 
 /**
  * Created by agram03 on 2017-08-03.
@@ -41,10 +45,10 @@ public class EventTrackerManagerTest {
         timeSource = new TestTimeSource(startTime, TimeUnit.MILLISECONDS.toNanos(startTime));
         cleanupIntervalProperty = new ClusterProperty(CB_EVENT_TRACKER_CLEANUP_INTERVAL_UI_PROPERTY, Long.toString(CLEANUP_INTERVAL));
         cleanupIntervalProperty.setGoid(new Goid(1,1));
-        forcedOpenCircuitProperty = new ClusterProperty(CB_FORCE_EVENT_TRACKER_LIST_CIRCUIT_OPEN_UI_PROPERTY, "");
+        forcedOpenCircuitProperty = new ClusterProperty(CB_FORCE_EVENT_TRACKER_LIST_CIRCUIT_OPEN_UI_PROPERTY, "a\b");
         forcedOpenCircuitProperty.setGoid(new Goid(2,2));
-        clusterPropertyManager = new MockClusterPropertyManager(cleanupIntervalProperty, forcedOpenCircuitProperty);
-        eventTrackerManager = new EventTrackerManager();
+        clusterPropertyManager = Mockito.spy(new MockClusterPropertyManager(cleanupIntervalProperty, forcedOpenCircuitProperty));
+        eventTrackerManager = Mockito.spy(new EventTrackerManager());
         ApplicationContexts.inject(eventTrackerManager, CollectionUtils.<String, Object>mapBuilder()
                 .put("timeSource", timeSource)
                 .put("clusterPropertyManager", clusterPropertyManager)
@@ -145,9 +149,102 @@ public class EventTrackerManagerTest {
         Method method = getPrivateMethodInAccessibleMode(EventTrackerManager.class, "getEventCleanupInterval");
         long cleanupInterval = (long)method.invoke(eventTrackerManager);
         assertEquals(CLEANUP_INTERVAL, cleanupInterval);
+
         cleanupIntervalProperty.setValue(Long.toString(newCleanupInterval));
-        clusterPropertyManager.update(cleanupIntervalProperty);
-        assertEquals(newCleanupInterval, (long)method.invoke(eventTrackerManager, null));
+        assertEquals(newCleanupInterval, (long) method.invoke(eventTrackerManager, null));
+    }
+
+    @Test
+    public void testRescheduleEventWhenCleanupIntervalUpdates() throws FindException, InvocationTargetException, IllegalAccessException {
+        long newCleanupInterval = CLEANUP_INTERVAL + 1000L;
+
+        eventTrackerManager.createEventTracker(POLICY_FAILURE_TRACKER_ID);
+        cleanupIntervalProperty.setValue(Long.toString(newCleanupInterval));
+        EntityInvalidationEvent event = new EntityInvalidationEvent(cleanupIntervalProperty, ClusterProperty.class, new Goid[]{new Goid(1,1)}, new char[]{EntityInvalidationEvent.DELETE});
+        eventTrackerManager.getApplicationListener().onApplicationEvent(event);
+
+        Mockito.verify(eventTrackerManager, Mockito.times(1)).rescheduleEventCleanupTask(newCleanupInterval);
+    }
+
+    //DE351400 - CWP deletion causes Circuit Breaker to fail with clusterproperty cast
+    @Test
+    public void testClusterPropertyDeletion() throws InvocationTargetException, IllegalAccessException, DeleteException, UpdateException, FindException {
+        //Check the Circuit Breaker CWP are set and the Goids are the expected values
+        eventTrackerManager.createEventTracker(POLICY_FAILURE_TRACKER_ID);
+
+        Goid cleanupGoid = eventTrackerManager.getCleanupTask().getCleanupIntervalGoid();
+        Goid eventTrackerGoid = eventTrackerManager.getCleanupTask().getEventTrackerListlGoid();
+        assertEquals(cleanupGoid, cleanupIntervalProperty.getGoid());
+        assertEquals(eventTrackerGoid, forcedOpenCircuitProperty.getGoid());
+
+        //Remove the cleanup interval Circuit Breaker CWP
+        clusterPropertyManager.delete(cleanupIntervalProperty);
+
+        //Create EntityInvlidationEvents
+        EntityInvalidationEvent event = new EntityInvalidationEvent(cleanupIntervalProperty, ClusterProperty.class, new Goid[]{new Goid(1,1)}, new char[]{EntityInvalidationEvent.DELETE});
+        eventTrackerManager.getApplicationListener().onApplicationEvent(event);
+
+        //Re-acquiring the tracking Goid
+        cleanupGoid = eventTrackerManager.getCleanupTask().getCleanupIntervalGoid();
+        assertEquals(cleanupGoid, Goid.DEFAULT_GOID);//back to Goid.Default when CWP removed
+        Mockito.verify(eventTrackerManager, Mockito.atLeastOnce()).rescheduleEventCleanupTask(CB_EVENT_TRACKER_CLEANUP_INTERVAL_DEFAULT);
+
+        //Remove the tracker list Circuit Breaker CWP
+        clusterPropertyManager.delete(forcedOpenCircuitProperty);
+
+        //Create EntityInvlidationEvents
+        EntityInvalidationEvent event2 = new EntityInvalidationEvent(forcedOpenCircuitProperty, ClusterProperty.class, new Goid[]{new Goid(2,2)}, new char[]{EntityInvalidationEvent.DELETE});
+        eventTrackerManager.getApplicationListener().onApplicationEvent(event2);
+
+        //Re-acquiring the tracking Goid
+        eventTrackerGoid = eventTrackerManager.getCleanupTask().getEventTrackerListlGoid();
+        assertEquals(eventTrackerGoid, Goid.DEFAULT_GOID);
+    }
+
+    @Test
+    public void testHandlingFindExceptionDuringStart() throws FindException {
+        Mockito.when(clusterPropertyManager.getProperty(anyString())).thenThrow(new FindException());
+
+        eventTrackerManager.shutdown();//need to restart to make the clusterPropertyManager.getProperty throw
+        eventTrackerManager.start();
+
+        Mockito.verify(eventTrackerManager, Mockito.times(2)).getEventCleanupInterval();//once at setup, 2nd time inside this test
+
+        //When initialization failed, the cleanupInterval should be set to the default value
+        assertEquals(eventTrackerManager.getCleanupTask().interval, CB_EVENT_TRACKER_CLEANUP_INTERVAL_DEFAULT);
+    }
+
+    @Test
+    public void testHandleClusterPropertyChangeWhenFindByKeyThrows() throws FindException {
+        Mockito.when(clusterPropertyManager.findByPrimaryKey(any(Goid.class))).thenThrow(new FindException());
+
+        //update cleanup
+        long newCleanupInterval = CLEANUP_INTERVAL + 1000L;
+        eventTrackerManager.createEventTracker(POLICY_FAILURE_TRACKER_ID);
+        cleanupIntervalProperty.setValue(Long.toString(newCleanupInterval));
+        EntityInvalidationEvent event = new EntityInvalidationEvent(cleanupIntervalProperty, ClusterProperty.class, new Goid[]{new Goid(1,1)}, new char[]{EntityInvalidationEvent.DELETE});
+        eventTrackerManager.getApplicationListener().onApplicationEvent(event);
+
+        Mockito.verify(eventTrackerManager, Mockito.times(1)).handleClusterPropertyChange(event);//this method gets called
+        Mockito.verify(eventTrackerManager, Mockito.times(0)).rescheduleEventCleanupTask(any(long.class));//clusterpropertyManager threw so never get to reschedule
+        assertEquals(eventTrackerManager.getCleanupTask().interval, CLEANUP_INTERVAL);//since handleChange failed, interval should stay the same as default
+    }
+
+    @Test
+    public void testLoadForcedOpenEventTrackerListWhenGetPropertyThrows() throws FindException {
+        Mockito.when(clusterPropertyManager.getProperty(CB_FORCE_EVENT_TRACKER_LIST_CIRCUIT_OPEN_UI_PROPERTY)).thenThrow(new FindException());
+
+        eventTrackerManager.createEventTracker(POLICY_FAILURE_TRACKER_ID);
+
+        //update force list
+        forcedOpenCircuitProperty.setValue(POLICY_FAILURE_TRACKER_ID);
+
+        //Create EntityInvlidationEvents
+        EntityInvalidationEvent event2 = new EntityInvalidationEvent(forcedOpenCircuitProperty, ClusterProperty.class, new Goid[]{new Goid(2,2)}, new char[]{EntityInvalidationEvent.DELETE});
+        eventTrackerManager.getApplicationListener().onApplicationEvent(event2);
+
+        Mockito.verify(eventTrackerManager, Mockito.times(2)).loadForcedOpenEventTrackerList();//once at setup(), 2nd time inside this test
+        assertFalse(eventTrackerManager.isCircuitForcedOpen(POLICY_FAILURE_TRACKER_ID));//shows that updates to forcedOpenCircuitProperty failed
     }
 
     private Method getPrivateMethodInAccessibleMode(final Class<?> aClass, final String methodName) {
