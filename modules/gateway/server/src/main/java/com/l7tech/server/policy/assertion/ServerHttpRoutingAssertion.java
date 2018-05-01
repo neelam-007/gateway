@@ -60,6 +60,7 @@ import java.util.logging.Level;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
+import static com.l7tech.common.http.GenericHttpRequestParams.HttpVersion;
 import static com.l7tech.common.http.prov.apache.components.ClientConnectionManagerFactory.ConnectionManagerType.POOLING;
 
 /**
@@ -522,10 +523,10 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 routedRequestParams.addExtraHeader( new GenericHttpHeader( "Authorization", headerValue ) );
             }
 
-            //set the omitHostHeader value in the routedRequstParams.
+            // Set the omitHostHeader value in the routedRequstParams.
             // But "omit host header" happens only for HTTP/1.0, so add one more condition to check io.httpVersion is set 1.0
             routedRequestParams.setOmitHostHeader(
-                "1.0".equals(ConfigFactory.getProperty("ioHttpVersion")) &&
+                getHttpVersion() == HttpVersion.HTTP_VERSION_1_0 &&
                 assertion.isOmitHostHeader()
             );
 
@@ -605,7 +606,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 final Long cl;
                 // SSG-6682 - We were incorrectly reporting the content length when the original request message was edited.
                 // cannot trust getContentLengthFromHeaders so use chunked encoding when we can. We have no choice but to trust it for http 1.0
-                if(GenericHttpRequestParams.HttpVersion.HTTP_VERSION_1_0.equals(getHttpVersion())){
+                if (HttpVersion.HTTP_VERSION_1_0.equals(getHttpVersion())) {
                     // Avoiding using reqMime.getContentLength() since this may require stashing
                     cl = getContentLengthFromHeaders(requestMessage);
                 } else {
@@ -683,7 +684,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             if ( !assertion.isUseKeepAlives()) {
                 routedRequestParams.setUseKeepAlives(false); // note that server config property is for NO Keep-Alives
             }
-            GenericHttpRequestParams.HttpVersion httpVersion = getHttpVersion();
+            final HttpVersion httpVersion = getHttpVersion();
             if(httpVersion != null) {
                 routedRequestParams.setHttpVersion(httpVersion);
             }
@@ -925,10 +926,10 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         }
     }
 
-    private GenericHttpRequestParams.HttpVersion getHttpVersion(){
+    private HttpVersion getHttpVersion(){
         if (assertion.getHttpVersion() == null) {
             if ( "1.0".equals( ConfigFactory.getProperty( "ioHttpVersion", null ) ) ) {
-                return GenericHttpRequestParams.HttpVersion.HTTP_VERSION_1_0;
+                return HttpVersion.HTTP_VERSION_1_0;
             }
         }
         return assertion.getHttpVersion();
