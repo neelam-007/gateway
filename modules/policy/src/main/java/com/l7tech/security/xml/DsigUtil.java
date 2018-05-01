@@ -5,6 +5,7 @@
 package com.l7tech.security.xml;
 
 import com.ibm.xml.dsig.*;
+import com.ibm.xml.dsig.KeyInfo;
 import com.ibm.xml.enc.AlgorithmFactoryExtn;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.XmlUtil;
@@ -25,6 +26,7 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import javax.crypto.SecretKey;
+import javax.xml.crypto.dsig.keyinfo.*;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.security.*;
@@ -405,8 +407,13 @@ public class DsigUtil {
             X509Certificate cert = null;
             KeyInfo keyInfo = new KeyInfo(keyInfoElement);
             String[] keyNames = keyInfo.getKeyNames();
+            KeyInfo.X509Data[] x509Data = keyInfo.getX509Data();
+
+            // Check if KeyName or X509Data element is present
             if (keyNames != null && keyNames.length > 0) {
                 cert = securityTokenResolver.lookupByKeyName( CertUtils.formatDN(keyNames[0]) );
+            } else if (x509Data != null && x509Data.length > 0){
+                cert = x509Data[0].getCertificates()[0];
             }
 
             if (cert == null)

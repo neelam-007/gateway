@@ -31,21 +31,21 @@ public class LicenseRoundTripTest {
 
     @Test
     public void testSignedRoundTrip() throws Exception {
-        doTestSignedRoundTrip(LICENSE_PLAIN, false, 45, 359 );
+        doTestSignedRoundTrip(TestDocuments.LICENSE_PLAIN, false, 45, 359 );
     }
 
     @Test
     public void testSignedRoundTripWithFeatureSets() throws Exception {
-        doTestSignedRoundTrip(LICENSE_FEATS, true, 46, 117 );
+        doTestSignedRoundTrip(TestDocuments.LICENSE_FEATS, true, 46, 117 );
     }
 
-    public void doTestSignedRoundTrip( final String licenseXmlStr,
+    public void doTestSignedRoundTrip( final String licenseXmlPath,
                                        final boolean includeFeatureSets,
                                        final int licenseSecs,
                                        final int licenseMillis ) throws Exception {
         final X509Certificate signingCert = TestDocuments.getDotNetServerCertificate();
 
-        Document lic = XmlUtil.stringAsDocument( licenseXmlStr );
+        Document lic = TestDocuments.getTestDocument(licenseXmlPath);
 
         log.info("Generated signed license (raw): \n" + XmlUtil.nodeToString(lic));
 
@@ -99,7 +99,7 @@ public class LicenseRoundTripTest {
     @Test
     public void testExpiredLicense() throws Exception {
         final X509Certificate signingCert = TestDocuments.getDotNetServerCertificate();
-        Document lic = XmlUtil.stringAsDocument( LICENSE_EXPIRED );
+        Document lic = TestDocuments.getTestDocument(TestDocuments.LICENSE_EXPIRED);
         final String licenseXml = XmlUtil.nodeToFormattedString(lic);
         log.info("Testing expired signed license: " + licenseXml);
         License license = new License(licenseXml, new X509Certificate[] {signingCert}, GatewayFeatureSets.getFeatureSetExpander());
@@ -131,7 +131,7 @@ public class LicenseRoundTripTest {
     @Test
     public void testPostDatedLicense() throws Exception {
         final X509Certificate signingCert = TestDocuments.getDotNetServerCertificate();
-        Document lic = XmlUtil.stringAsDocument( LICENSE_POSTDATED );
+        Document lic = TestDocuments.getTestDocument(TestDocuments.LICENSE_POSTDATED);
         final String licenseXml = XmlUtil.nodeToFormattedString(lic);
         log.info("Testing postdated signed license: " + licenseXml);
         License license = new License(licenseXml, new X509Certificate[] {signingCert}, GatewayFeatureSets.getFeatureSetExpander());
@@ -144,9 +144,5 @@ public class LicenseRoundTripTest {
         }
     }
 
-    private static final String LICENSE_PLAIN = "<license xmlns=\"http://l7tech.com/license\" Id=\"1001\"><description>Layer 7 Internal Developer License</description><licenseAttributes></licenseAttributes><valid>2008-05-07T01:48:45.359Z</valid><expires>2101-01-02T02:48:45.359Z</expires><host name=\"*\"></host><ip address=\"*\"></ip><product name=\"Layer 7 SecureSpan Suite\"><version major=\"3\" minor=\"4\"></version></product><licensee contactEmail=\"developers@layer7tech.com\" name=\"Layer 7 Developer\"></licensee><eulatext>H4sIAAAAAAAAACvIKE3Ozk9LAwDHKYzMCAAAAA==</eulatext><ds:Signature xmlns:ds=\"http://www.w3.org/2000/09/xmldsig#\"><ds:SignedInfo><ds:CanonicalizationMethod Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"></ds:CanonicalizationMethod><ds:SignatureMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#rsa-sha1\"></ds:SignatureMethod><ds:Reference URI=\"#1001\"><ds:Transforms><ds:Transform Algorithm=\"http://www.w3.org/2000/09/xmldsig#enveloped-signature\"></ds:Transform><ds:Transform Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"></ds:Transform></ds:Transforms><ds:DigestMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#sha1\"></ds:DigestMethod><ds:DigestValue>mLwOQKJLNKyz6byUOrAjErd22vo=</ds:DigestValue></ds:Reference></ds:SignedInfo><ds:SignatureValue>VFt3rCcVAiJpa42aOfRCXGyekvok+syFL/eaA1cNfpkZRBtukwf/fdVgi6alluRh0UZNUJ9o9VnKLeg1nSyT2osL32l1BQ/sam5XTq32BB6LbaYcIZaDi/fsY2kzBXKq1i34l5RRkqM1oXrUMJgPBCsN9k+O8XXmTQpVWxVw0oE=</ds:SignatureValue><ds:KeyInfo><ds:KeyName>CN=Bob, OU=OASIS Interop Test Cert, O=OASIS</ds:KeyName></ds:KeyInfo></ds:Signature></license>";
-    private static final String LICENSE_FEATS = "<license xmlns=\"http://l7tech.com/license\" Id=\"1001\"><description>Layer 7 Internal Developer License</description><licenseAttributes></licenseAttributes><valid>2008-05-07T01:48:46.117Z</valid><expires>2101-01-02T02:48:46.117Z</expires><host name=\"*\"></host><ip address=\"*\"></ip><product name=\"Layer 7 SecureSpan Suite\"><version major=\"3\" minor=\"4\"></version><featureset name=\"set:Profile:IPS\"></featureset><featureset name=\"service:SnmpQuery\"></featureset><featureset name=\"assertion:JmsRouting\"></featureset></product><licensee contactEmail=\"developers@layer7tech.com\" name=\"Layer 7 Developer\"></licensee><eulatext>H4sIAAAAAAAAACvIKE3Ozk9LAwDHKYzMCAAAAA==</eulatext><ds:Signature xmlns:ds=\"http://www.w3.org/2000/09/xmldsig#\"><ds:SignedInfo><ds:CanonicalizationMethod Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"></ds:CanonicalizationMethod><ds:SignatureMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#rsa-sha1\"></ds:SignatureMethod><ds:Reference URI=\"#1001\"><ds:Transforms><ds:Transform Algorithm=\"http://www.w3.org/2000/09/xmldsig#enveloped-signature\"></ds:Transform><ds:Transform Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"></ds:Transform></ds:Transforms><ds:DigestMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#sha1\"></ds:DigestMethod><ds:DigestValue>18apgVE2e/gQAvnmsacDwh/pDIo=</ds:DigestValue></ds:Reference></ds:SignedInfo><ds:SignatureValue>Nptok2FGvWeXzHL/AZzQ/oVa/dSaq3VMpxRHdY7sil6jmeQMy609AHVgaR73fPhrEfbi5HkS8yOMKgmp2CGvmYXDLvO9zmxHlevJYNCHXQWn5pgVSdX+t9yQYmEPd3PNYSUKiVgWMpHOMC8BsdMJbLEYiaS16LbLpHbefR6LDVs=</ds:SignatureValue><ds:KeyInfo><ds:KeyName>CN=Bob, OU=OASIS Interop Test Cert, O=OASIS</ds:KeyName></ds:KeyInfo></ds:Signature></license>";
-    private static final String LICENSE_EXPIRED = "<license xmlns=\"http://l7tech.com/license\" Id=\"1001\"><description>Layer 7 Internal Developer License</description><licenseAttributes></licenseAttributes><valid>2008-05-07T02:07:33.980Z</valid><expires>2008-05-07T02:06:43.980Z</expires><host name=\"*\"></host><ip address=\"*\"></ip><product name=\"Layer 7 SecureSpan Suite\"><version major=\"3\" minor=\"4\"></version><featureset name=\"set:Profile:IPS\"></featureset><featureset name=\"service:SnmpQuery\"></featureset><featureset name=\"assertion:JmsRouting\"></featureset></product><licensee contactEmail=\"developers@layer7tech.com\" name=\"Layer 7 Developer\"></licensee><eulatext>H4sIAAAAAAAAACvIKE3Ozk9LAwDHKYzMCAAAAA==</eulatext><ds:Signature xmlns:ds=\"http://www.w3.org/2000/09/xmldsig#\"><ds:SignedInfo><ds:CanonicalizationMethod Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"></ds:CanonicalizationMethod><ds:SignatureMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#rsa-sha1\"></ds:SignatureMethod><ds:Reference URI=\"#1001\"><ds:Transforms><ds:Transform Algorithm=\"http://www.w3.org/2000/09/xmldsig#enveloped-signature\"></ds:Transform><ds:Transform Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"></ds:Transform></ds:Transforms><ds:DigestMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#sha1\"></ds:DigestMethod><ds:DigestValue>HR0zlPWhOF26iTo3pi2ku0x7Zu8=</ds:DigestValue></ds:Reference></ds:SignedInfo><ds:SignatureValue>obO3tpeJ+rA7FaYjg0eH6JgJkic7tcg4CyqfGtAGTfXG/mdg5kXW3boqHHDCvdplTpCKU47zCsGdsN9FqXRp9c7KoyG9gGBkQdzUfQX4Ok5U7mve0o5inACsh8BeDkgHsp3uCs0OCOALQaOxlvTjNtj9C0YsUiNbMcrC1sTWavc=</ds:SignatureValue><ds:KeyInfo><ds:KeyName>CN=Bob, OU=OASIS Interop Test Cert, O=OASIS</ds:KeyName></ds:KeyInfo></ds:Signature></license>";
     private static final String LICENSE_UNSIGNED = "<license xmlns=\"http://l7tech.com/license\" Id=\"1001\"><description>Layer 7 Internal Developer License</description><licenseAttributes></licenseAttributes><valid>2008-05-07T02:07:34.016Z</valid><expires>2101-01-02T03:07:34.016Z</expires><host name=\"*\"></host><ip address=\"*\"></ip><product name=\"Layer 7 SecureSpan Suite\"><version major=\"3\" minor=\"4\"></version><featureset name=\"set:Profile:IPS\"></featureset><featureset name=\"service:SnmpQuery\"></featureset><featureset name=\"assertion:JmsRouting\"></featureset></product><licensee contactEmail=\"developers@layer7tech.com\" name=\"Layer 7 Developer\"></licensee><eulatext>H4sIAAAAAAAAACvIKE3Ozk9LAwDHKYzMCAAAAA==</eulatext></license>";
-    private static final String LICENSE_POSTDATED = "<license xmlns=\"http://l7tech.com/license\" Id=\"1001\"><description>Layer 7 Internal Developer License</description><licenseAttributes></licenseAttributes><valid>2024-03-11T03:00:54.025Z</valid><expires>2101-01-02T03:07:34.025Z</expires><host name=\"*\"></host><ip address=\"*\"></ip><product name=\"Layer 7 SecureSpan Suite\"><version major=\"3\" minor=\"4\"></version><featureset name=\"set:Profile:IPS\"></featureset><featureset name=\"service:SnmpQuery\"></featureset><featureset name=\"assertion:JmsRouting\"></featureset></product><licensee contactEmail=\"developers@layer7tech.com\" name=\"Layer 7 Developer\"></licensee><eulatext>H4sIAAAAAAAAACvIKE3Ozk9LAwDHKYzMCAAAAA==</eulatext><ds:Signature xmlns:ds=\"http://www.w3.org/2000/09/xmldsig#\"><ds:SignedInfo><ds:CanonicalizationMethod Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"></ds:CanonicalizationMethod><ds:SignatureMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#rsa-sha1\"></ds:SignatureMethod><ds:Reference URI=\"#1001\"><ds:Transforms><ds:Transform Algorithm=\"http://www.w3.org/2000/09/xmldsig#enveloped-signature\"></ds:Transform><ds:Transform Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"></ds:Transform></ds:Transforms><ds:DigestMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#sha1\"></ds:DigestMethod><ds:DigestValue>A3d+w/89n4c7qV9Pr9cSUhQnUiQ=</ds:DigestValue></ds:Reference></ds:SignedInfo><ds:SignatureValue>eRO2hraQ/3DYEGvjpFEbIHVQEhm1uqJ2lv9a7FG+KgT1rYSmb9GL93MC7Vm1LeweR+zX7gopY/6hqb3/Y1BF0Yo/hp1hbbTgGriqT6f2615bfGDyddYRbxmz+qL5TXnhSGeKwTH7au1/o6Cqr9pkH0PGPB7WQWiM4gXEsULW0eQ=</ds:SignatureValue><ds:KeyInfo><ds:KeyName>CN=Bob, OU=OASIS Interop Test Cert, O=OASIS</ds:KeyName></ds:KeyInfo></ds:Signature></license>";
 }

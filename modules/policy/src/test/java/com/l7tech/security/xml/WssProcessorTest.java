@@ -464,7 +464,7 @@ public class WssProcessorTest {
     @BugNumber(11320)
     public void testAes128GcmDecryption() throws Exception {
         doTest(new TestDocument("testAes128GcmDecryption", TestDocuments.getTestDocument(TestDocuments.DIR + "placeOrder_encrypted_aes128gcm.xml"), null, null, null, null,
-                new SimpleSecurityTokenResolver(TestDocuments.getDotNetServerCertificate(), TestDocuments.getDotNetServerPrivateKey())),  new WssProcessorImpl(), new Functions.UnaryVoid<ProcessorResult>() {
+                new SimpleSecurityTokenResolver(TestDocuments.getFrancoOldCertificate(), TestDocuments.getFrancoOldPrivateKey())),  new WssProcessorImpl(), new Functions.UnaryVoid<ProcessorResult>() {
             @Override
             public void call(ProcessorResult processorResult) {
                 final EncryptedElement[] encryptedElements = processorResult.getElementsThatWereEncrypted();
@@ -485,7 +485,7 @@ public class WssProcessorTest {
     @BugNumber(11320)
     public void testAes256GcmDecryption() throws Exception {
         doTest(new TestDocument("testAes256GcmDecryption", TestDocuments.getTestDocument(TestDocuments.DIR + "placeOrder_encrypted_aes256gcm.xml"), null, null, null, null,
-                new SimpleSecurityTokenResolver(TestDocuments.getDotNetServerCertificate(), TestDocuments.getDotNetServerPrivateKey())),  new WssProcessorImpl(), new Functions.UnaryVoid<ProcessorResult>() {
+                new SimpleSecurityTokenResolver(TestDocuments.getFrancoOldCertificate(), TestDocuments.getFrancoOldPrivateKey())),  new WssProcessorImpl(), new Functions.UnaryVoid<ProcessorResult>() {
             @Override
             public void call(ProcessorResult processorResult) {
                 final EncryptedElement[] encryptedElements = processorResult.getElementsThatWereEncrypted();
@@ -639,7 +639,7 @@ public class WssProcessorTest {
 
     private TestDocument makeAliceTestDocument( final String testname, final String docname ) {
         try {
-            return makeTestDocument( testname, docname, new SimpleSecurityTokenResolver(TestDocuments.getWssInteropAliceCert(), TestDocuments.getWssInteropAliceKey()) );
+            return makeTestDocument( testname, docname, new SimpleSecurityTokenResolver(TestDocuments.getWssInteropAliceOldCert(), TestDocuments.getWssInteropAliceOldKey()) );
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -1201,8 +1201,8 @@ public class WssProcessorTest {
         // Make sure an old OAEP test document can still be decrypted after the SSG-9994 fix.
         Document d = TestDocuments.getTestDocument( "com/l7tech/common/resources/wssInterop/msRequest_nosig.xml" );
         TestDocument td = new TestDocument("testMsOaep", d,
-                TestDocuments.getWssInteropBobKey(),
-                TestDocuments.getWssInteropBobCert(),
+                TestDocuments.getWssInteropBobOldKey(),
+                TestDocuments.getWssInteropBobOldCert(),
                 null, null, null );
         doTest( td, new WssProcessorImpl(), new Functions.UnaryVoid<ProcessorResult>() {
             @Override

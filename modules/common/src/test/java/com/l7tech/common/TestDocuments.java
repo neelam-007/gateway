@@ -79,6 +79,7 @@ public final class TestDocuments {
     public static final String WAREHOUSE_REQUEST_SAML11_DERIVED_KEYS_NO_TOKEN = DIR + "warehouseRequestSAML11DerivedKeysNoToken.xml";
     public static final String WAREHOUSE_REQUEST_SAML20_DERIVED_KEYS = DIR + "warehouseRequestSAML20DerivedKeys.xml";
     public static final String WAREHOUSE_REQUEST_SAML20_DERIVED_KEYS_NO_TOKEN = DIR + "warehouseRequestSAML20DerivedKeysNoToken.xml";
+    public static final String WAREHOUSE_REQUEST_COMBINED_SIGNATURE = DIR + "request_combined_signature.xml";
 
     public static final String WRAPED_L7ACTOR = DIR + "soapRequestWithUsernameTokenAndWrappedL7Actors.xml";
     public static final String MULTIPLE_WRAPED_L7ACTOR = DIR + "soapRequestWithUsernameTokenAndMultipleL7Actors.xml";
@@ -97,6 +98,8 @@ public final class TestDocuments {
     public static final String WSSKEYSTORE_ALICE = DIR + "wssInterop/alice.pfx";
     public static final String WSSKEYSTORE_BOB   = DIR + "wssInterop/bob.pfx";
     public static final String WSSKEYSTORE_WSSIP   = DIR + "wssInterop/wssip.pfx";
+    public static final String WSSKEYSTORE_ALICE_OLD = DIR + "wssInterop/alice_old.pfx";
+    public static final String WSSKEYSTORE_BOB_OLD   = DIR + "wssInterop/bob_old.pfx";
 
     public static final String GOOGLESPELLREQUEST_SIGNED_ISSUERSERIAL = DIR + "googleSpellRequestWithIssuerSerialSignature.xml";
 
@@ -112,6 +115,10 @@ public final class TestDocuments {
 
     public static final String BUG_7685_SPLOIT_XML = DIR + "bug7685_sploit_xml.dat";
     
+    public static final String LICENSE_EXPIRED = DIR + "license_expired.xml";
+    public static final String LICENSE_FEATS = DIR + "license_feats.xml";
+    public static final String LICENSE_PLAIN = DIR + "license_plain.xml";
+    public static final String LICENSE_POSTDATED = DIR + "license_postdated.xml";
 
     public static class SecurityPolicies {
         private final String ROUND3_MS_WSDL = "wssp_interop_apr_2006/round3_ms.wsdl";
@@ -191,13 +198,23 @@ public final class TestDocuments {
     private static X509Certificate[] wssInteropBobChain = null;
     private static X509Certificate wssInteropWssIpCert = null;
     private static PrivateKey wssInteropWssIpKey = null;
+    private static X509Certificate wssInteropAliceOldCert = null;
+    private static PrivateKey wssInteropAliceOldKey = null;
+    private static X509Certificate[] wssInteropAliceOldChain = null;
+    private static X509Certificate wssInteropBobOldCert = null;
+    private static PrivateKey wssInteropBobOldKey = null;
+    private static X509Certificate[] wssInteropBobOldChain = null;
     private static synchronized void initWssInteropCerts() throws Exception {
         if (wssInteropAliceCert != null &&
             wssInteropAliceKey != null &&
             wssInteropBobCert != null &&
             wssInteropBobKey != null &&
             wssInteropWssIpCert != null &&
-            wssInteropWssIpKey != null)
+            wssInteropWssIpKey != null &&
+            wssInteropAliceOldCert != null &&
+            wssInteropAliceOldKey != null &&
+            wssInteropBobOldCert != null &&
+            wssInteropBobOldKey != null)
             return;
 
         KeyStore ks = KeyStore.getInstance("PKCS12");
@@ -218,12 +235,28 @@ public final class TestDocuments {
         wssInteropWssIpCert = (X509Certificate)ks.getCertificate(wssIpAlias);
         wssInteropWssIpKey = (PrivateKey)ks.getKey(wssIpAlias, "password".toCharArray());
 
+        ks.load(getInputStream(WSSKEYSTORE_ALICE_OLD), "password".toCharArray());
+        final String aliceOldAlias = ks.aliases().nextElement();
+        wssInteropAliceOldCert = (X509Certificate)ks.getCertificate(aliceOldAlias);
+        wssInteropAliceOldKey = (PrivateKey)ks.getKey(aliceOldAlias, "password".toCharArray());
+        wssInteropAliceOldChain = toX509Certificate(ks.getCertificateChain(aliceOldAlias));
+
+        ks.load(getInputStream(WSSKEYSTORE_BOB_OLD), "password".toCharArray());
+        final String bobOldAlias = ks.aliases().nextElement();
+        wssInteropBobOldCert = (X509Certificate)ks.getCertificate(bobOldAlias);
+        wssInteropBobOldKey = (PrivateKey)ks.getKey(bobOldAlias, "password".toCharArray());
+        wssInteropBobOldChain = toX509Certificate(ks.getCertificateChain(bobOldAlias));
+
         if (wssInteropAliceCert == null ||
             wssInteropAliceKey == null ||
             wssInteropBobCert == null ||
             wssInteropBobKey == null ||
             wssInteropWssIpCert == null ||
-            wssInteropWssIpKey == null)
+            wssInteropWssIpKey == null ||
+            wssInteropAliceOldCert == null ||
+            wssInteropAliceOldKey == null ||
+            wssInteropBobOldCert == null ||
+            wssInteropBobOldKey == null)
             throw new IOException("Unable to find all keys and certs in the wss interop keystores");
     }
 
@@ -273,6 +306,36 @@ public final class TestDocuments {
     public static X509Certificate getWssInteropIpCert() throws Exception {
         initWssInteropCerts();
         return wssInteropWssIpCert;
+    }
+
+    public static X509Certificate getWssInteropAliceOldCert() throws Exception {
+        initWssInteropCerts();
+        return wssInteropAliceOldCert;
+    }
+
+    public static PrivateKey getWssInteropAliceOldKey() throws Exception {
+        initWssInteropCerts();
+        return wssInteropAliceOldKey;
+    }
+
+    public static X509Certificate[] getWssInteropAliceOldChain() throws Exception {
+        initWssInteropCerts();
+        return wssInteropAliceOldChain;
+    }
+
+    public static X509Certificate getWssInteropBobOldCert() throws Exception {
+        initWssInteropCerts();
+        return wssInteropBobOldCert;
+    }
+
+    public static PrivateKey getWssInteropBobOldKey() throws Exception {
+        initWssInteropCerts();
+        return wssInteropBobOldKey;
+    }
+
+    public static X509Certificate[] getWssInteropBobOldChain() throws Exception {
+        initWssInteropCerts();
+        return wssInteropBobOldChain;
     }
 
     private static Properties ettkKeystoreProperties = null;
@@ -389,6 +452,20 @@ public final class TestDocuments {
         return francoCertificate = CertUtils.decodeCert(certbytes);
     }
 
+    private static X509Certificate francoOldCertificate = null;
+    public static synchronized X509Certificate getFrancoOldCertificate() throws Exception {
+        if (francoOldCertificate != null) return francoOldCertificate;
+        InputStream fis = getInputStream(DIR + "franco_old.cer");
+        byte[] certbytes;
+        try {
+            certbytes = IOUtils.slurpStream(fis, 16384);
+        } finally {
+            fis.close();
+        }
+        // construct the x509 based on the bytes
+        return francoOldCertificate = CertUtils.decodeCert(certbytes);
+    }
+
     // Old one expired -- use Franco one instead now
     public static PrivateKey getDotNetServerPrivateKey() throws Exception {
         return getFrancoPrivateKey();
@@ -405,6 +482,18 @@ public final class TestDocuments {
         //final String alias = "tomcat";
         PrivateKey output = (PrivateKey)keyStore.getKey("tomcat", passwd.toCharArray());
         return francoPrivateKey = output;
+    }
+
+    private static PrivateKey francoOldPrivateKey = null;
+    public static synchronized PrivateKey getFrancoOldPrivateKey() throws Exception {
+        if (francoOldPrivateKey != null) return francoOldPrivateKey;
+        KeyStore keyStore = KeyStore.getInstance("PKCS12");
+        InputStream fis = getInputStream(DIR + "franco_old.ks");
+        final String passwd = "password";
+        keyStore.load(fis, passwd.toCharArray());
+        fis.close();
+        PrivateKey output = (PrivateKey)keyStore.getKey("tomcat", passwd.toCharArray());
+        return francoOldPrivateKey = output;
     }
 
     /** @return the SecretKey used in the .NET WS-SC derived key token examples. */

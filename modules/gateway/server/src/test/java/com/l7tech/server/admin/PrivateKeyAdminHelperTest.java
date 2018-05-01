@@ -43,7 +43,7 @@ public class PrivateKeyAdminHelperTest {
     private static final Goid GOID = new Goid(0,1234L);
     private static final String KEY_STORE_TYPE = "PKCS12";
     private static final char[] password = "password".toCharArray();
-    private static final String alias = "6e0e88f36ebb8744d470f62f604d03ea4ebe5094";
+    private static final String alias = "alice";
     @Mock
     private SsgKeyMetadataManager metadataManager;
     @Mock

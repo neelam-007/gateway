@@ -5476,8 +5476,8 @@ public class ServerGatewayManagementAssertionTest {
         Config serverConfig = new MockConfig( new Properties() );
         applicationContext.getBeanFactory().registerSingleton( "serverConfig", serverConfig );
         final TestTrustedCertManager testTrustedCertManager = new TestTrustedCertManager(
-                cert(new Goid(0, 1L), "Alice", TestDocuments.getWssInteropAliceCert()),
-                cert(new Goid(0, 2L), "Bob", TestDocuments.getWssInteropBobCert()));
+                cert(new Goid(0, 1L), "Alice", TestDocuments.getWssInteropAliceOldCert()),
+                cert(new Goid(0, 2L), "Bob", TestDocuments.getWssInteropBobOldCert()));
         applicationContext.getBeanFactory().registerSingleton( "trustedCertManager", testTrustedCertManager);
         applicationContext.getBeanFactory().registerSingleton( "clusterPropertyCache", new ClusterPropertyCache(){{ setClusterPropertyManager( clusterPropertyManager ); }});
         applicationContext.getBeanFactory().registerSingleton( "clusterPropertyManager", clusterPropertyManager);
@@ -5527,7 +5527,7 @@ public class ServerGatewayManagementAssertionTest {
                 policy( new Goid(0,2L), PolicyType.INCLUDE_FRAGMENT, "Test Policy For Move", true, POLICY),
                 policy( new Goid(0,3L), PolicyType.INCLUDE_FRAGMENT, "Test Policy For Encass Import", true, POLICY)));
         applicationContext.getBeanFactory().registerSingleton("ssgKeyStoreManager", new SsgKeyStoreManagerStub(new SsgKeyFinderStub(Arrays.asList(
-                key(new Goid(0, 0), "bob", TestDocuments.getWssInteropBobCert(), TestDocuments.getWssInteropBobKey())))));
+                key(new Goid(0, 0), "bob", TestDocuments.getWssInteropBobOldCert(), TestDocuments.getWssInteropBobOldKey())))));
         rbacService = mock( RbacServicesStub.class);
         when(rbacService.isPermittedForAnyEntityOfType(any(User.class),any(OperationType.class),any(EntityType.class))).thenReturn(true);
         when(rbacService.isPermittedForEntitiesOfTypes(any(User.class), any(OperationType.class), anySetOf(EntityType.class))).thenReturn(true);
