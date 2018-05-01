@@ -522,8 +522,12 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 routedRequestParams.addExtraHeader( new GenericHttpHeader( "Authorization", headerValue ) );
             }
 
-            //set the omitHostHeader value in the routedRequstParams
-            routedRequestParams.setOmitHostHeader(assertion.isOmitHostHeader());
+            //set the omitHostHeader value in the routedRequstParams.
+            // But "omit host header" happens only for HTTP/1.0, so add one more condition to check io.httpVersion is set 1.0
+            routedRequestParams.setOmitHostHeader(
+                "1.0".equals(ConfigFactory.getProperty("ioHttpVersion")) &&
+                assertion.isOmitHostHeader()
+            );
 
             return reallyTryUrl(context, requestMessage, routedRequestParams, url, true, vars);
         } catch (MalformedURLException mfe) {

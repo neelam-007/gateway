@@ -1,6 +1,5 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.common.http.GenericHttpRequestParams;
 import com.l7tech.common.http.HttpMethod;
 import com.l7tech.console.action.BaseAction;
 import com.l7tech.console.event.PolicyEvent;
@@ -51,6 +50,8 @@ import java.util.*;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.common.http.GenericHttpRequestParams.HttpVersion;
 
 /**
  * <code>HttpRoutingAssertionDialog</code> is the protected service
@@ -202,8 +203,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
             public void actionPerformed(ActionEvent e) {
                 final Object selectedItem = httpVersionComboBox.getSelectedItem();
                 if (selectedItem != null) {
-                    final GenericHttpRequestParams.HttpVersion httpVersion =
-                        (GenericHttpRequestParams.HttpVersion) ((ComboBoxItem) httpVersionComboBox.getSelectedItem()).getValue();
+                    final HttpVersion httpVersion = (HttpVersion) ((ComboBoxItem) httpVersionComboBox.getSelectedItem()).getValue();
 
                     // If HTTP version is chosen as 1.0, enable the checkbox, "Omit Host Header".
                     // Otherwise, disable it and clean the selection on it.
@@ -837,7 +837,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         if (assertion.getHttpVersion() == null) {
             httpVersionComboBox.setSelectedItem(item);
         }
-        GenericHttpRequestParams.HttpVersion versions[] = GenericHttpRequestParams.HttpVersion.values();
+        HttpVersion versions[] = HttpVersion.values();
         for (int i = 0; i < versions.length; i++) {
             item = new ComboBoxItem(versions[i], versions[i].getValue());
             httpVersionComboBox.addItem(item);
@@ -1029,7 +1029,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
 
         assertion.setRequestMsgSrc((String)((ComboBoxItem) reqMsgSrcComboBox.getSelectedItem()).getValue());
 
-        final GenericHttpRequestParams.HttpVersion httpVersion = (GenericHttpRequestParams.HttpVersion) ((ComboBoxItem) httpVersionComboBox.getSelectedItem()).getValue();
+        final HttpVersion httpVersion = (HttpVersion) ((ComboBoxItem) httpVersionComboBox.getSelectedItem()).getValue();
         assertion.setHttpVersion(httpVersion);
 
         assertion.setResponseSize(byteLimitPanel.getValue());
@@ -1134,22 +1134,22 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
     /**
      * Check if the selected HTTP version is 1.0.
      * @param httpVersion the selected HTTP version from the combo box.
-     * @return true if the version is selected as 1.0 or Default is chosen but the cluster property "ioHttpVersion" is
+     * @return true if the version is selected as 1.0 or Default is chosen and the cluster property "io.httpVersion" is
      *         set 1.0.  Otherwise return false.
      */
-    private boolean isHTTP10(@Nullable final GenericHttpRequestParams.HttpVersion httpVersion) {
+    private boolean isHTTP10(@Nullable final HttpVersion httpVersion) {
         // Check if the version is 1.0 first
-        boolean isHttp10 = httpVersion == GenericHttpRequestParams.HttpVersion.HTTP_VERSION_1_0;
+        boolean isHttp10 = httpVersion == HttpVersion.HTTP_VERSION_1_0;
 
         // If the selected option is Default, then check if io.httpVersion is set as 1.0.
         if (!isHttp10 && httpVersion == null) {
             try {
-                final ClusterProperty property = Registry.getDefault().getClusterStatusAdmin().findPropertyByName("io.httpVersion");
-                if (property != null) {
-                    isHttp10 = "1.0".equals(property.getValue());
+                final ClusterProperty defaultHttpVersionProp = Registry.getDefault().getClusterStatusAdmin().findPropertyByName("io.httpVersion");
+                if (defaultHttpVersionProp != null) {
+                    isHttp10 = "1.0".equals(defaultHttpVersionProp.getValue());
                 }
             } catch (FindException e) {
-                throw new RuntimeException("Error on finding cluster property 'io.httpVersion'");
+                log.log(Level.WARNING, "Error on finding cluster property 'io.httpVersion'", ExceptionUtils.getDebugException(e));
             }
         }
 
@@ -1283,7 +1283,11 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
 
         overrideContentTypeCheckBox.setSelected(assertion.isOverrideContentType());
 
-        omitHostHeaderCheckBox.setSelected(assertion.isOmitHostHeader());
+        final HttpVersion httpVersion = (HttpVersion) ((ComboBoxItem) httpVersionComboBox.getSelectedItem()).getValue();
+        omitHostHeaderCheckBox.setSelected(
+            isHTTP10(httpVersion) &&  // If the version is not 1.0, then omitHostHeaderCheckBox cannot be selected, because non-1.0 should not omit host header.
+            assertion.isOmitHostHeader()
+        );
 
         String host = assertion.getProxyHost();
         if (host == null || host.trim().length() < 1) {
