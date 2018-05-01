@@ -198,6 +198,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
 
         this.formParamsDialog = new HttpRoutingParamsDialog( this, assertion );
 
+        // DE360787: Disable omitHostHeaderCheckBox when the version is not 1.0.
         httpVersionComboBox.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -837,7 +838,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         if (assertion.getHttpVersion() == null) {
             httpVersionComboBox.setSelectedItem(item);
         }
-        HttpVersion versions[] = HttpVersion.values();
+        final HttpVersion versions[] = HttpVersion.values();
         for (int i = 0; i < versions.length; i++) {
             item = new ComboBoxItem(versions[i], versions[i].getValue());
             httpVersionComboBox.addItem(item);
@@ -1088,7 +1089,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
         assertion.setOverrideContentType(overrideContentTypeCheckBox.isSelected());
 
         // Host header can be omitted only for HTTP/1.0.
-        // More info: DE213587, SSG-12037, and DE337924.
+        // More info: DE213587, SSG-12037, DE337924, and DE360787.
         // RFC: https://tools.ietf.org/html/rfc7230#section-5.4
         // "A client MUST send a Host header field in all HTTP/1.1 request messages.  "
         assertion.setOmitHostHeader(isHTTP10(httpVersion) && omitHostHeaderCheckBox.isSelected());
@@ -1133,6 +1134,8 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
 
     /**
      * Check if the selected HTTP version is 1.0.
+     * This method wss introduced when DE360787 was fixed.
+     *
      * @param httpVersion the selected HTTP version from the combo box.
      * @return true if the version is selected as 1.0 or Default is chosen and the cluster property "io.httpVersion" is
      *         set 1.0.  Otherwise return false.
@@ -1285,7 +1288,7 @@ public class HttpRoutingAssertionDialog extends LegacyAssertionPropertyDialog {
 
         final HttpVersion httpVersion = (HttpVersion) ((ComboBoxItem) httpVersionComboBox.getSelectedItem()).getValue();
         omitHostHeaderCheckBox.setSelected(
-            isHTTP10(httpVersion) &&  // If the version is not 1.0, then omitHostHeaderCheckBox cannot be selected, because non-1.0 should not omit host header.
+            isHTTP10(httpVersion) &&  // For DE360787: if the version is not 1.0, then omitHostHeaderCheckBox cannot be selected, because non-1.0 should not omit host header.
             assertion.isOmitHostHeader()
         );
 

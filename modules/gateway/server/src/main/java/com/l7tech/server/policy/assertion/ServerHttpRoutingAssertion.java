@@ -524,7 +524,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             }
 
             // Set the omitHostHeader value in the routedRequstParams.
-            // But "omit host header" happens only for HTTP/1.0, so add one more condition to check io.httpVersion is set 1.0
+            // For DE360787: Notice that "omit host header" happens only for HTTP/1.0, so add one more condition to check io.httpVersion is set 1.0
             routedRequestParams.setOmitHostHeader(
                 getHttpVersion() == HttpVersion.HTTP_VERSION_1_0 &&
                 assertion.isOmitHostHeader()
@@ -606,7 +606,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 final Long cl;
                 // SSG-6682 - We were incorrectly reporting the content length when the original request message was edited.
                 // cannot trust getContentLengthFromHeaders so use chunked encoding when we can. We have no choice but to trust it for http 1.0
-                if (HttpVersion.HTTP_VERSION_1_0.equals(getHttpVersion())) {
+                if (HttpVersion.HTTP_VERSION_1_0 == getHttpVersion()) {
                     // Avoiding using reqMime.getContentLength() since this may require stashing
                     cl = getContentLengthFromHeaders(requestMessage);
                 } else {
@@ -685,7 +685,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 routedRequestParams.setUseKeepAlives(false); // note that server config property is for NO Keep-Alives
             }
             final HttpVersion httpVersion = getHttpVersion();
-            if(httpVersion != null) {
+            if (httpVersion != null) {
                 routedRequestParams.setHttpVersion(httpVersion);
             }
 
@@ -926,9 +926,19 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         }
     }
 
-    private HttpVersion getHttpVersion(){
+    /**
+     * Get the HTTP version of the assertion depending on the combination of the option chosen by user and the cluster
+     * property "io.httpVersion"
+     * - If user chooses a non-default version, then this method will return whatever user chooses.
+     * - If user chooses a default version, then this method will get the version from the cluster property "io.httpVersion".
+     * Further for this case, if the cluster property is not set, then the version will be null.  Then GenericHttpRequestParams
+     * will use the hard-coded HttpVersion.HTTP_VERSION_1_1 as version.
+     *
+     * @return a HttpVersion enum value according the above logic.
+     */
+    private HttpVersion getHttpVersion() {
         if (assertion.getHttpVersion() == null) {
-            if ( "1.0".equals( ConfigFactory.getProperty( "ioHttpVersion", null ) ) ) {
+            if ("1.0".equals(ConfigFactory.getProperty("ioHttpVersion"))) {
                 return HttpVersion.HTTP_VERSION_1_0;
             }
         }
