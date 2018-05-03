@@ -9,7 +9,6 @@ import com.l7tech.policy.assertion.PrivateKeyable;
 import com.l7tech.policy.assertion.xmlsec.WsSecurity;
 import com.l7tech.policy.assertion.xmlsec.WssConfigurationAssertion;
 import com.l7tech.policy.assertion.xmlsec.WssDecorationConfig;
-import com.l7tech.security.xml.KeyReference;
 
 import java.util.ArrayList;
 import java.util.List;
