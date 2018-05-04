@@ -1,4 +1,0 @@
-#!/bin/sh
-. /opt/SecureSpan/Appliance/libexec/envclean
-
-/opt/SecureSpan/Controller/bin/patch.sh "${@}"
