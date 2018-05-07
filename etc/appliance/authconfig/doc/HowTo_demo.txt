@@ -1,0 +1,281 @@
+This is the final form of the information that I put together for a demo about Radius+LDAP integration of the SSG.
+
+The 2 VMs that I used to set this up have all scripts and all other settings already in place.
+ 
+This setup will make use of the LDAP server already in place on an SDE; the schema however was changed to accommodate posix accounts.
+
+Our clients interested in this feature will need the followings:
+- Objects in the LDAP server defined with these minimum details:
+????
+????
+????
+- A search filter for LDAP queries defined in Radius server’s configuration capable of returning the appropriate response regarding
+the group membership of the user requesting access to SSG.
+- All network communication necessary for SSG to communicate with LDAP and Radius servers
+
+
+SERVER (SDE)
+
+Setup de SDE in order to act as an LDAP server and RADIUS server:
+
+Step 1: install the necessary packages:
+- make yum available
+- install freeRadius server version 1 or 2 as preferred as both work in the same way:
+
+yum install freeradius2.x86_64 (or freeradius.x86_64)
+
+(both versions have been tested with the same pam_radius module on the client and work in the same way)
+
+These packages are already installed on the latest version of SDE (L7_demo_environment-v2.2.2c) so they don’t need to be installed:
+openldap.x86_64, nss_ldap.x86_64, openldap-servers.x86_64, openldap-clients.x86_64
+
+LDAP database needs to be modified to accommodate entries for posix accounts/groups.
+In order to achieve that take the following steps:
+- stop ldap server:
+/etc/init.d/ldap stop
+
+- remove the current database loaded while the SSG was transformed in an SDE:
+rm –rf /var/lib/ldap/*
+
+- start ldap server:
+/etc/init.d/ldap start
+
+- load the new database containing the necessary entries to test the authentication via radius with users located in LDAP only:
+ldapadd -x -D "cn=manager,dc=l7tech,dc=com" -w 7layer –f layer7-demo-posix.ldif
+
+
+Step 2: edit the configuration section of the script that will configure LDAP server and Radius server:
+cd /root/
+vim radius_ldap_srv_setup.sh
+
+LDAP_SRV="localhost"
+LDAP_BASE_DN="dc=l7tech,dc=com"
+LDAP_ROOT_DN="cn=Manager,$LDAP_BASE_DN"
+
+# the below hashed password is: “7layer” (without the double quotes)
+LDAP_ROOT_PW=" {SSHA}NnxI+WpJrEwctK3ZtvDthhd4kei91wM6”
+# to get the value for the above parameter use this command:
+slappasswd -u -h {SSHA} -s 7layer 
+
+LDAP_DIRECTORY="/var/lib/ldap"
+CLIENT_IP="10.7.48.51"
+CLIENT_SECRET="testing123"
+
+Step 3: run the script:
+./radius_ldap_srv_setup.sh
+
+- there should be no errors.
+
+===============================================================================
+
+CLIENT (SSG 6.1)
+
+Setup an SSG 6.1 in order to act as a client for centralized authentication via RADIUS + LDAP service provided by the above setup of the SDE.
+
+Step 1: Make sure the following packages are installed:
+openldap.x86_64
+openldap-clients.x86_64
+nss_ldap.x86_64
+freeradius2.x86_64 (or freeradius.x86_64)
+freeradius2-utils.x86_64
+pam_radius-1.3.17-2.el5 (this is not available in the official RHEL repository!)
+
+rpm -qa --qf '%{NAME}-%{VERSION}-%{RELEASE}.%{ARCH}\n' openldap* nss_ldap freeradius nss_ldap
+
+Step 2: Edit the configuration file for the script that will configure the client:
+vi /opt/SecureSpan/Appliance/config/configfiles/radius_ldap_setup.conf
+
+- relevant parameters in this case are:
+CFG_TYPE="radius_and_ldap"
+RADIUS_SRV_IP="10.7.48.50"
+RADIUS_SECRET="testing123"
+LDAP_TYPE="ldap"
+LDAP_SRV="10.7.48.50"
+LDAP_BASE="dc=l7tech,dc=com"
+LDAP_PORT="389"
+LDAP_ANONYM="yes"
+
+Step 3: run the script with the configuration file as parameter, as follows (this will be accomplished via the interactive menu):
+/opt/SecureSpan/Appliance/config/authconfig/radius_ldap_setup.sh -–configfile /opt/SecureSpan/Appliance/config/configfiles/radius_ldap_setup.conf
+
+Step 4: create home directories for the users from LDAP:
+mkdir /home/testuser{1,2,3}
+cp –a /home/ssgconfig/.bash* /home/testuser1
+cp –a /home/ssgconfig/.bash* /home/testuser2
+cp –a /home/ssgconfig/.bash* /home/testuser3
+groupadd –g 4000 ssgusers
+chmod 700 /home/testuser1 /home/testuser2 /home/testuser3
+
+At this point we will change the ownership of each of these directories; if the chown command will not complain it means that this system (the SSG)
+was capable to communicate with the LDAP in order to retrieve information about the user invoked and so it was able to set the new owner for each folder:
+chown –R testuser1:ssgusers /home/testuser1
+chown –R testuser2:ssgusers /home/testuser2
+chown –R testuser3:ssgusers /home/testuser3
+
+This can be considered the first test.
+Note: GID 4000 was chosen to make sure there are plenty of GID values to be used for local groups on the SSG system so that the chance of overlapping
+will be minimum.
+
+We now have 3 users for which the SSG Configuration Menu will be presented automatically at successful login.
+At this point however, the menu will not be actually functional as we have not yet setup the access level for these users.
+We can see in LDAP that they all belong to ssgusers group.
+
+Step 5: configure sudoers to control the access level of the users that are members of ssgusers group:
+On the SSG system:
+cd /root
+./modify_sudoers.sh
+
+What the above script does is allowing the same level of access that ssgconfig user has to all users that are in the ssgusers group.
+
+Step 6: remote real-time logging of all users’ commands (all command line activity) or via SSG Configuration Menu:
+On the SSG system:
+cd /dir/where/the/script/is/
+./configure_rsyslog_for_remote_logging.sh SYSLOG_SRV_HOST SYSLOG_SRV_PORT
+
+In our case will be:
+./configure_rsyslog_for_remote_logging.sh 10.7.48.50 514
+
+And then restart rsyslog to make it aware of the changes:
+/etc/init.d/rsyslog restart
+
+====================================================================
+
+Testing the setup:
+
+1. Commands on local system can use the user id / name that exists on LDAP but not on the system:
+To see that there is no testuser1, 2 or 3 defined on the local system:
+cat /etc/passwd | grep testuser
+To see that we can use these users despite the fact they are not defined on the local system:
+mkdir /tmp/testuser{1,2,3}
+chown testuser1 /tmp/testuser1
+chown testuser2 /tmp/testuser2
+chown testuser3 /tmp/testuser3
+- there should be no error – the chown command will make a call to the system for this user and the system will reply with the appropriate details
+if the user is found on the LDAP server
+
+ls –l /tmp
+- there should be no complaints from the ls command; it will be able to display the content of the /tmp directory including the above mentioned
+directories with complete ownership information
+
+2. Auth via console:
+At the console use the username and its password to login; whoami command can then be used to confirm the username of the user currently logged in.
+
+3. Auth via SSH:
+Using a ssh client, login using the correct credentials. Again, the whoami command can be used for confirmation.
+
+4. During the login attempts we can watch the bash_commands.log file on the client (SSG) to see how bash is tracking the commands and actions of an user:
+tail –f /var/log/bash_commands.log
+
+5. Change the group membership of one of these users in order to see that it will not be granted access anymore to the SSG:
+???
+
+To add the "host" attribute to a user, he should have an objectClass that supports this. The "account" objectClass has the attribute, but is not
+compatible with the "inetOrgPerson" objectClass.
+Finally, take care that the hostname of the server is resolvable. pam_ldap will try to resolve the hostname, to find any aliasses (such as listed in /etc/hosts).
+If the hostname is not resolvable, access is denied.
+http://wiki.debian.org/LDAP/PAM
+
+We can now see that tesuser1 and testuser2 still have access to the SSG and are also capable of utilizing the SSG Configuration Menu while testuser3
+is not even allowed to login.
+
+6. Observe how all commands ran from command line or via the menu are recorded in the /var/log/bash_commands.log file in real time and in the same time
+are sent to the remote logserver (in our case the SDE configured configured to get log messages from remote hosts and store them in a directory structure
+dynamically created based on remote host’s hostname:
+
+On the SDE:
+tail -f /var/log/syslog-ng/ssg-client/messages
+
+Output similar to the following should be observed:
+Aug 19 16:32:19 ssg-client/10.7.48.51 bash: user: testuser1 as testuser1 from ip: 10.7.48.51:pts/0 execs: 'ls –l /home'
+Aug 19 16:32:19 ssg-client/10.7.48.51 bash: user: testuser1 as testuser1 from ip: 10.7.48.51:pts/0 execs: 'cat /etc/passwd'
+
+====================================================
+
+Notes - a few things that we should be aware of:
+- As long as the filter used by Radius is capable of finding if the user has that required property (groupname) set in LDAP or not, access will be granted
+or not for that user. A more granular access level can be configured via sudoers directly on the SSG system. At this point we do not support the configuration
+of sudoers via the Configuration Menu.
+
+- There is no need for an administrator to create home directories on the SSG system for the users defined in LDAP; PAM will create the home directories as
+necessary at the first successful login for that user. These directories will not be removed at logout or at any other moment.
+
+- There is no need for an administrator to create the group used to allow access to SSG (in our example above, the ssgusers group) on the SSG system; sudoers is
+capable of using group information retrieved via from LDAP, for example, so even if the group is not created on the SSG system users pertaining to this group will
+have the required access.
+
+- It does not make sense to have a third type of users that will only be granted access but they are not capable of utilizing the SSG Configurartion Menu. However,
+if this is necessary, there can be created users in LDAP with a different membership and then altered the filter used by Radius server so that it will also match
+that groupname. Radius will grant access but sudoers will not let them run commands only available for higher access level – they will receive a shell but they will
+be just normal restricted users. Basically, all these modifications are on the server side so it is more.
+
+- Even if the SSG appliance (client) is setup to allow authentication via Radius for users defined in an LDAP directory, it will NOT ONLY communicates with the
+Radius server. As there is no support in Name Service Switch (nsswitch) for radius, the SSG client will have to query the LDAP server directly. If we need to extend
+NSS we may be able to do it by writing our own module for that (http://www.gnu.org/software/libc/manual/html_node/Extending-NSS.html#Extending-NSS).
+
+- Securing the communication between Radius server and LDAP server or enabling other features related to this part was not in scope of this project.
+
+- If the SSG appliance (client) is setup  to allow authentication for users defined in a Radius server only (without LDAP), the only encrypted part of the
+communication with the server is the “secret” mentioned in plain text in configuration files on both the client and the server. All other details travelling through
+the network are not encrypted – this is a limitation of the radius protocol. To overcome this one can use technologies like tunnelling or VPN.
+
+=====================================================================
+
+Troubleshooting:
+
+- Daemons running:
+ps axuf | grep ldap
+ps axuf | grep radius
+
+- Network communication details:
+netstat –patunel | grep radius
+netstat –patunel | grep slapd
+
+tcpdump –nn –i ethX src CLIENT_IP and port 389
+tcpdump –nn –i ethX src CLIENT_IP and port 1812
+tcpdump –nn –i ethX src CLIENT_IP and port 1813
+
+telnet LDAP_SRV 389
+
+(radius is only listening on UDP so telnet is not useful)
+
+
+- LDAP testing:
+*** if there is no user to be searched for in LDAP directory:
+ldapsearch -x -h LDAP_SRV -b 'dc=example,dc=com' '(objectclass=*)'
+
+*** if a user was added to the LDAP directory:
+ldapsearch -x -h LDAP_SRV -b 'uid=testuser3,ou=People,dc=example,dc=com' '(objectclass=*)'
+
+*** Make LDAP server log to syslog and send the log messages to a file and watch the log file:
+
+1. add this line to /etc/syslog.conf
+local4.*                     /var/log/slapd.log
+
+2. add this line to /etc/openldap/slapd.conf
+loglevel 256
+
+3.	/etc/init.d/syslog restart
+
+4.	/etc/init.d/ldap restart
+
+5.	tail –f /var/log/slapd.log
+
+
+- Radius testing:
+
+*** run radius server in foreground:
+/usr/sbin/radiusd –X –A
+
+*** test the Radius server:
+radtest testuser3 "testuser3pass" localhost 2 testing123
+
+-where:
+
+testuser3	is the username
+“testuser3pass”	is the password of the user testuser3
+localhost	is the Radius server; can be replaced by an IP or name
+2		is the value of the NAS-Port attribute; it does not matter what number is used here (between 0 and 2^31) but it has to exist
+testing123	is the secret set in Radius server’s /etc/raddb/clients.conf file for this client
+
+-Important: for the above command to work the client system should be able to find its own IP address (have an entry in the /etc/hosts file).
+

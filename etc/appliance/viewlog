@@ -1,0 +1,44 @@
+#!/bin/sh
+#
+# Lists and displays log files
+#
+. /opt/SecureSpan/Appliance/libexec/envclean
+
+#
+# Array of all viewable/listable log files
+#
+LOGFILES=(
+    /var/log/messages{,.{1..9}}
+    /var/log/secure{,.{1..9}}
+    /var/log/bash_commands.log{,.{1..9}}
+    /var/log/mysqld.log
+    /opt/SecureSpan/Gateway/node/default/var/logs/ssg_{0..9}_0.log
+    /opt/SecureSpan/Controller/var/logs/sspc_{0..9}_0.log
+    /opt/SecureSpan/Controller/var/logs/patches.log
+    /opt/SecureSpan/Controller/var/logs/patch_cli_{0..9}_0.log
+    /opt/SecureSpan/Controller/var/logs/patch_verifier_{0..9}_0.log
+    /opt/SecureSpan/EnterpriseManager/var/logs/ssem_{0..9}_0.log
+)
+
+#
+# Match log file for viewing
+#
+LOG_TO_VIEW=""
+for LOGFILE in "${LOGFILES[@]}"; do
+    if [ "${LOGFILE}" == "${1}" ] ; then
+        LOG_TO_VIEW="${LOGFILE}"
+    fi
+done
+
+if [ ! -z "${LOG_TO_VIEW}" ] ; then
+    # Display the specified log using less in secure mode
+    export LESSSECURE=1
+    /usr/bin/less "${LOG_TO_VIEW}"
+elif [ "list" == "${1}" ] ; then
+    # List log files matching the given prefix
+    /bin/ls -1 "${LOGFILES[@]}" 2>/dev/null | grep "^${2}" 2>/dev/null
+else
+    echo "Not permitted to access file ${1}"
+    echo "Press [Enter] to continue"
+    read
+fi

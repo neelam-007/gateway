@@ -1,0 +1,53 @@
+#!/bin/sh
+#
+# This script will be executed *after* all the other init scripts.
+# You can put your own initialization stuff in here if you don't
+# want to do the full Sys V style init stuff.
+
+# Stuff we want to do once at launch and never again:
+if [ -f "/root/firstrun" ]; then
+    # Randomise root password to avoid common password across instances:
+    dd if=/dev/urandom count=50|md5sum|passwd --stdin root
+
+    # Update AMI tools to the latest version:
+#    [ -x "/usr/local/sbin/update-tools.sh" ] && /usr/local/sbin/update-tools.sh
+
+    # Try to find kernel modules matching current kernel:
+    [ -x "/usr/local/sbin/update-modules.sh" ] && /usr/local/sbin/update-modules.sh
+
+    # Some kernels use xvc0 as their serial console device:
+    if [ -c /dev/xvc0 ]; then
+	if ! grep 'co:2345:respawn:/sbin/agetty xvc0 9600' /etc/inittab; then
+	        echo 'co:2345:respawn:/sbin/agetty xvc0 9600 vt100' >> /etc/inittab
+	        echo 'xvc0' >> /etc/securetty
+	        kill -1 1
+	fi
+    fi
+
+    # Ensure devpts is mounted to prevent ssh hang-ups
+    mount | grep devpts > /dev/null
+    if [ $? -ne 0 ] ; then
+        devpts="none   /dev/pts   devpts  gid=5,mode=620 0 0"
+        ( grep -v "\#" /etc/fstab | grep devpts > /dev/null ) || echo $devpts >> /etc/fstab
+        mount -a
+    fi
+    rm -f /root/firstrun
+fi
+
+touch /var/lock/subsys/local
+# Get your chosen keypair credentials
+/usr/local/sbin/get-credentials.sh
+# Update the ec2-ami-tools
+#/usr/local/sbin/update-tools.sh
+
+# =*Output ssh host keys to console*=
+[ -f /etc/ssh/ssh_host_key ] || (ssh-keygen -f /etc/ssh/ssh_host_key -t rsa1 -C 'host' -N '' | logger -s -t "ec2")
+[ -f /etc/ssh/ssh_host_rsa_key ] || (ssh-keygen -f /etc/ssh/ssh_host_rsa_key -t rsa  -C 'host' -N '' | logger -s -t "ec2")
+[ -f /etc/ssh/ssh_host_dsa_key ] || (ssh-keygen -f /etc/ssh/ssh_host_dsa_key -t dsa  -C 'host' -N '' | logger -s -t "ec2")
+
+echo "-----BEGIN SSH HOST KEY FINGERPRINTS-----" |logger -s -t "ec2" 
+ssh-keygen -l -f /etc/ssh/ssh_host_key.pub |logger -s -t "ec2" 
+ssh-keygen -l -f /etc/ssh/ssh_host_rsa_key.pub |logger -s -t "ec2"
+ssh-keygen -l -f /etc/ssh/ssh_host_dsa_key.pub |logger -s -t "ec2"
+echo "-----END SSH HOST KEY FINGERPRINTS-----"   |logger -s -t "ec2" 
+
