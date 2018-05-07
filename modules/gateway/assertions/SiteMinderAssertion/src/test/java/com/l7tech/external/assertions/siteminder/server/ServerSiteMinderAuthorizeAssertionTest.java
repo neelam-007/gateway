@@ -207,7 +207,7 @@ public class ServerSiteMinderAuthorizeAssertionTest {
         pec.setVariable(assertion.getPrefix() + ".smcontext", mockContext);
         pec.setVariable("test", SSO_TOKEN);
         when(mockContext.getAgent()).thenReturn(mockLla);
-        when(mockHla.processAuthorizationRequest(anyString(), eq(SSO_TOKEN), eq(mockContext), eq(false))).thenReturn(AbstractServerSiteMinderAssertion.SM_YES);
+        when(mockHla.processAuthorizationRequest(anyString(), eq(SSO_TOKEN), eq(mockContext), eq(true))).thenReturn(AbstractServerSiteMinderAssertion.SM_YES);
         fixture = new ServerSiteMinderAuthorizeAssertion(assertion, mockAppCtx);
         assertEquals(AssertionStatus.FALSIFIED, fixture.checkRequest(pec));
     }
