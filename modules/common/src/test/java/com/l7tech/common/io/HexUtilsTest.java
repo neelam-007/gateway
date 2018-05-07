@@ -255,6 +255,30 @@ public class HexUtilsTest {
     }
 
     @Test
+    public void testBase64url_slashReplacedWithUnderscore() throws Exception {
+        final String str = "j1lk34slkjf{}f[3[-{]32pp[2lpfdp-30430989458989899ioijdfioj89``#(9080*(())((**#290240g89348593io\n" +
+                "ertwkoropk]:;b,,c.<>?.rept3";
+        final String expUnderscore = "ajFsazM0c2xramZ7fWZbM1ste10zMnBwWzJscGZkcC0zMDQzMDk4OTQ1ODk4OTg5OWlvaWpkZmlvajg5YGAjKDkwODAqKCgpKSgoKiojMjkwMjQwZzg5MzQ4NTkzaW8KZXJ0d2tvcm9wa106O2IsLGMuPD4_LnJlcHQz";
+        assertEquals( expUnderscore, HexUtils.encodeBase64Url(str.getBytes(), true) );
+    }
+
+    @Test
+    public void testBase64url_plusReplacedWithDash_paddingRemoved() throws Exception {
+        final String str = "j1lk34slkjf{}f[3[-{]32pp[2lpfdp-30430989458989899ioijdfioj89``#(9080*(())((**#290240g89348593io\r\n" +
+                "ertwkoropk]:;b,,c.<>?.rept3";
+        final String expDash = "ajFsazM0c2xramZ7fWZbM1ste10zMnBwWzJscGZkcC0zMDQzMDk4OTQ1ODk4OTg5OWlvaWpkZmlvajg5YGAjKDkwODAqKCgpKSgoKiojMjkwMjQwZzg5MzQ4NTkzaW8NCmVydHdrb3JvcGtdOjtiLCxjLjw-Py5yZXB0Mw";
+        assertEquals( expDash, HexUtils.encodeBase64Url(str.getBytes(), true) );
+    }
+
+    @Test
+    public void testBase64url_isChunkedFlagIsFalse_pass() throws Exception {
+        final String str = "j1lk34slkjf{}f[3[-{]32pp[2lpfdp-30430989458989899ioijdfioj89``#(9080*(())((**#290240g89348593io\n" +
+                "ertwkoropk]:;b,,c.<>?.rept3";
+        final String expSlash = "ajFsazM0c2xramZ7fWZbM1ste10zMnBwWzJscGZkcC0zMDQzMDk4OTQ1ODk4OTg5OWlvaWpkZmlvajg5YGAjKDkwODAqKCgpKSgoKiojMjkwMjQwZzg5MzQ4NTkzaW8KZXJ0d2tvcm9wa106O2IsLGMuPD4_LnJlcHQz";
+        assertEquals( expSlash, HexUtils.encodeBase64Url(str.getBytes(), false) );
+    }
+
+    @Test
     public void testUnbase64url() throws Exception {
         assertTrue( Arrays.equals( b( "" ), HexUtils.decodeBase64Url( "" ) ) );
         assertTrue( Arrays.equals( b( "a" ), HexUtils.decodeBase64Url( "YQ" ) ) );

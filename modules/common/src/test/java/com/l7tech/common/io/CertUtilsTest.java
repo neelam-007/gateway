@@ -1070,6 +1070,23 @@ public class CertUtilsTest {
     public void testConvertToX509GeneralNameIpv6Address_InvalidFormat3() throws Exception {
         CertUtils.convertToX509GeneralName(new NameValuePair("IP Address","2001:1111"));
     }
+
+    @BugId("DE356626")
+    @Test
+    public void testGetThumbprintSHA1_beforeFix_base64() throws Exception {
+        X509Certificate testCert = TestKeys.getCert( TestKeys.DSA_1024_CERT_X509_B64 );
+        String thumbprintBase64 = "oMQ3f/0E/byjDFXMYQ8aGaRFoqA=";
+        assertEquals(thumbprintBase64, CertUtils.getThumbprintSHA1(testCert));//Existing method
+    }
+
+    @BugId("DE356626")
+    @Test
+    public void testGetThumbprintSHA1_afterFix_base64url() throws Exception {
+        X509Certificate testCert = TestKeys.getCert( TestKeys.DSA_1024_CERT_X509_B64 );
+        String thumbprintBase64url = "oMQ3f_0E_byjDFXMYQ8aGaRFoqA";
+        assertEquals(thumbprintBase64url, CertUtils.getThumbprintSHA1(testCert, CertUtils.FINGERPRINT_BASE64URL));//New method
+    }
+
     /**
      * Test certificate with CRL and OCSP URLS and a CRT URL
      */
