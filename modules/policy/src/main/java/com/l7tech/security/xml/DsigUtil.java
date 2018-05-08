@@ -47,7 +47,7 @@ import static com.l7tech.security.xml.SupportedDigestMethods.*;
  */
 public class DsigUtil {
     public static final String DIGSIG_URI = "http://www.w3.org/2000/09/xmldsig#";
-    public static final String PROP_DIGSIG_INCLUSIVE_NAMESPACES_PREFIX = "com.l7tech.security.xml.decorator.digsig.inclusiveNamespacesPrefix";
+    static final String PROP_DIGSIG_INCLUSIVE_NAMESPACES_PREFIX = "com.l7tech.security.xml.decorator.digsig.inclusiveNamespacesPrefix";
 
     /**
      * Get the identifier attribute for the given element.

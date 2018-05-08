@@ -39,6 +39,12 @@ public class DsigUtilTest {
         rsaPublicKey = new TestCertificateGenerator().generate().getPublicKey();
     }
 
+    @Before
+    public void setup() {
+        // Remove the system property "com.l7tech.security.xml.decorator.digsig.inclusiveNamespacesPrefix".
+        SyspropUtil.clearProperty(PROP_DIGSIG_INCLUSIVE_NAMESPACES_PREFIX);
+    }
+
     @Test(expected = SignatureException.class)
     @BugNumber(7526)
     public void testHmacOutputLength_missingSignedInfo() throws Exception {
@@ -189,23 +195,45 @@ public class DsigUtilTest {
 
     @BugId("DE338973")
     @Test
+    public void testNotAddInclusiveNamespace() throws TooManyChildElementsException, MissingRequiredElementException {
+        final Element signatureElement = createSignatureElementAndAddInclusiveNamespaces();
+
+        // By default, the system property "com.l7tech.security.xml.decorator.digsig.inclusiveNamespacesPrefix" is not set.
+        // Since the prefix list is not specified, InclusiveNamespaces will not be created.
+        assertTrue("should not find any InclusiveNamespaces elements",
+            DomUtils.findChildElementsByName(signatureElement, DomUtils.findAllNamespaces(signatureElement).values().toArray(new String[]{}), "InclusiveNamespaces").isEmpty()
+        );
+    }
+
+    @BugId("DE338973")
+    @Test
     public void testAddInclusiveNamespace() throws TooManyChildElementsException, MissingRequiredElementException {
+        // Set the system property "com.l7tech.security.xml.decorator.digsig.inclusiveNamespacesPrefix" to specify a prefix list.
+        SyspropUtil.setProperty(PROP_DIGSIG_INCLUSIVE_NAMESPACES_PREFIX, "dummy_prefix");
+
+        final Element signatureElement = createSignatureElementAndAddInclusiveNamespaces();
+
+        // The system property "com.l7tech.security.xml.decorator.digsig.inclusiveNamespacesPrefix" is set to a dummy single-element list.
+        // Since the prefix list is specified, InclusiveNamespaces will be created and added.
+        assertNotNull("should find one InclusiveNamespaces element",
+            DomUtils.findExactlyOneChildElementByName(signatureElement, Canonicalizer.EXCLUSIVE, "InclusiveNamespaces")
+        );
+    }
+
+    /**
+     * Create a new dummy Signature element.
+     * Add InclusiveNamespaces to the above signature element depending on the prefix list is specified or not.
+     * If the prefix list is specified, then InclusiveNamespaces will be added.  Otherwise, InclusiveNamespaces won't be added.
+     *
+     * @return a Signature element with or without an InclusiveNamespaces element.
+     */
+    private Element createSignatureElementAndAddInclusiveNamespaces() {
         final TemplateGenerator template = new TemplateGenerator(XmlUtil.createEmptyDocument(), XSignature.SHA1, Canonicalizer.EXCLUSIVE, SignatureMethod.RSA);
         template.addReference(template.createReference("#dummy_id"));
         final Element signatureElement = template.getSignatureElement();
 
-        // Case: if prefix list is not specified, then InclusiveNamespaces will not be created.
-        SyspropUtil.clearProperty(PROP_DIGSIG_INCLUSIVE_NAMESPACES_PREFIX);
         DsigUtil.addInclusiveNamespacesToElement(signatureElement);
-        assertTrue("should not find any InclusiveNamespaces elements",
-            DomUtils.findChildElementsByName(signatureElement, DomUtils.findAllNamespaces(signatureElement).values().toArray(new String[]{}), "InclusiveNamespaces").isEmpty()
-        );
 
-        // Case: if prefix list is specified, then InclusiveNamespaces will be created and added.
-        SyspropUtil.setProperty(PROP_DIGSIG_INCLUSIVE_NAMESPACES_PREFIX, "dummy_prefix");
-        DsigUtil.addInclusiveNamespacesToElement(signatureElement);
-        assertNotNull("should find one InclusiveNamespaces element",
-            DomUtils.findExactlyOneChildElementByName(signatureElement, Canonicalizer.EXCLUSIVE, "InclusiveNamespaces")
-        );
+        return signatureElement;
     }
 }
