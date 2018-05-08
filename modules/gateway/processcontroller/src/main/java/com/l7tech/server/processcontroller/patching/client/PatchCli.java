@@ -100,7 +100,7 @@ public class PatchCli {
         }
 
         if (thrown != null) {
-            logger.log(Level.WARNING, errPrefix + ExceptionUtils.getMessage(thrown), thrown instanceof PatchException ? null : thrown);
+            logger.log(Level.WARNING, errPrefix + ExceptionUtils.getMessage(thrown), ExceptionUtils.getDebugException(thrown));
             System.out.println(errPrefix + ExceptionUtils.getMessage(thrown) + "\n");
             System.exit(PATCH_API_ERROR);
         }
@@ -131,7 +131,7 @@ public class PatchCli {
         // configure logging if the logs directory is found, else leave console output
         final File logsDir = new File("/opt/SecureSpan/Controller/var/logs");
         if ( logsDir.exists() && logsDir.canWrite() ) {
-            JdkLoggerConfigurator.configure("com.l7tech.server.processcontroller.patching.client", "com/l7tech/server/processcontroller/patching/client/resources/logging.properties", "etc/conf/patchinglogging.properties");
+            JdkLoggerConfigurator.configure("com.l7tech.server.processcontroller.patching.client", "com/l7tech/server/processcontroller/patching/client/resources/logging.properties", "etc/conf/patcher.properties");
         } else if ( !SyspropUtil.getBoolean( "com.l7tech.server.log.console", false ) ){
             final Logger rootLogger = Logger.getLogger( "" );
             for ( final Handler handler : rootLogger.getHandlers() ) {
