@@ -16,12 +16,13 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.event.system.Started;
-import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.PolicyCache;
 import com.l7tech.server.policy.ServerPolicyHandle;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
+import com.l7tech.server.policy.module.AssertionModuleRegistrationEvent;
+import com.l7tech.server.policy.module.AssertionModuleUnregistrationEvent;
 import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.ResourceUtils;
@@ -82,6 +83,32 @@ public class PolicyBackedServiceRegistry implements PostStartupApplicationListen
             EncapsulatedAssertionConfig[] operations = new PolicyBackedInterfaceIntrospector().getInterfaceDescription( annotatedInterface );
 
             policyBackedInterfaces.put( className, new Template( annotatedInterface,  operations ) );
+            return true;
+
+        } finally {
+            rwlock.writeLock().unlock();
+        }
+    }
+
+    /**
+     * Unregister a policy-backed service interface.
+     * <p/>
+     * It is safe to call this method on an interface that might already be unregistered.
+     *
+     * @param annotatedInterface interface class to unregister, annotated with @PolicyBacked.  Required.
+     * @return true if un-registration was successful, or false if the specified interface is already unregistered and ready to use.
+     * @throws IllegalArgumentException if the specified class lacks @PolicyBacked/@PolicyBackedMethod annotations, or if there is
+     *                                  some other problem with using it as a policy-backed service interface.
+     */
+    public boolean unregisterPolicyBackedServiceTemplate( @NotNull Class<?> annotatedInterface ) {
+        rwlock.writeLock().lock();
+        try {
+            final String className = annotatedInterface.getName();
+            if ( !policyBackedInterfaces.keySet().contains( className ) ) {
+                return false;
+            }
+
+            policyBackedInterfaces.remove( className );
             return true;
 
         } finally {
@@ -511,7 +538,9 @@ public class PolicyBackedServiceRegistry implements PostStartupApplicationListen
                 // TODO figure out which service was changed and (de)(re)register it (for D/U/C)
                 flushAndReRegisterAllImplementations();
             }
-        } else if ( event instanceof Started ) {
+        } else if ( event instanceof Started ||
+                event instanceof AssertionModuleRegistrationEvent ||
+                event instanceof AssertionModuleUnregistrationEvent ) {
             flushAndReRegisterAllImplementations();
         }
     }

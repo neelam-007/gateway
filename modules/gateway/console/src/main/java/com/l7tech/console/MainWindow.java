@@ -13,10 +13,7 @@ import com.l7tech.console.panels.identity.finder.Options;
 import com.l7tech.console.panels.licensing.ManageLicensesDialog;
 import com.l7tech.console.panels.policydiff.PolicyDiffContext;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
-import com.l7tech.console.security.AuthenticationProvider;
-import com.l7tech.console.security.LogonListener;
-import com.l7tech.console.security.PermissionRefreshListener;
-import com.l7tech.console.security.SecurityProvider;
+import com.l7tech.console.security.*;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.tree.identity.IdentitiesRootNode;
 import com.l7tech.console.tree.identity.IdentityProvidersTree;
@@ -25,8 +22,8 @@ import com.l7tech.console.tree.servicesAndPolicies.AlterFilterAction;
 import com.l7tech.console.tree.servicesAndPolicies.FolderNode;
 import com.l7tech.console.tree.servicesAndPolicies.RootNode;
 import com.l7tech.console.util.*;
+import com.l7tech.console.util.CustomAssertionRMIClassLoaderSpi;
 import com.l7tech.gateway.common.Authorizer;
-import com.l7tech.gateway.common.VersionException;
 import com.l7tech.gateway.common.audit.LogonEvent;
 import com.l7tech.gateway.common.cluster.ClusterStatusAdmin;
 import com.l7tech.gateway.common.custom.CustomAssertionsRegistrar;
@@ -102,9 +99,6 @@ public class MainWindow extends JFrame implements SheetHolder {
     public static final String CONNECTION_PREFIX = " [connected to node: ";
 
     private static final long PING_INTERVAL = ConfigFactory.getLongProperty( "com.l7tech.console.sessionPingInterval", 50000L );
-
-    // TODO SSG-11880 hide in GUI for now
-    private static final boolean OFFER_MANAGE_WORK_QUEUES = SyspropUtil.getBoolean( "com.l7tech.console.enableManageWorkQueues", false );
 
     /**
      * the resource bundle name
@@ -230,7 +224,6 @@ public class MainWindow extends JFrame implements SheetHolder {
     private ManageSecurityZonesAction manageSecurityZonesAction = null;
     private ManageSiteMinderConfigurationAction manageSiteMinderConfigurationAction = null;
     private ManageServerModuleFilesAction manageServerModuleFilesAction = null;
-    private ManageWorkQueuesAction manageWorkQueuesAction = null;
     private ManageSolutionKitsAction manageSolutionKitsAction = null;
 
     private JPanel frameContentPane = null;
@@ -1281,9 +1274,6 @@ public class MainWindow extends JFrame implements SheetHolder {
         globalSettingsSubMenu.add(getManageScheduledTasksAction());
         globalSettingsSubMenu.add(getManageGlobalResourcesMenuItem());
 
-        if (OFFER_MANAGE_WORK_QUEUES)
-            globalSettingsSubMenu.add(getManageWorkQueuesAction());
-
         globalSettingsSubMenu.add(getManageUDDIRegistriesAction());
     }
 
@@ -1782,6 +1772,7 @@ public class MainWindow extends JFrame implements SheetHolder {
                         // no matter what, if service tree exists, always refresh it
                         if (servicesAndPoliciesTree != null) {
                             servicesAndPoliciesTree.refresh(rootNode);
+                            servicesAndPoliciesTree.setSelectionPath(null);
                             alreadyRefreshed.add(servicesAndPoliciesTree);
                         }
 
@@ -2592,25 +2583,17 @@ public class MainWindow extends JFrame implements SheetHolder {
     }
 
     private Action getManageServerModuleFilesAction() {
-        if ( manageServerModuleFilesAction == null ) {
+        if (manageServerModuleFilesAction == null) {
             manageServerModuleFilesAction = new ManageServerModuleFilesAction();
-            disableUntilLogin( manageServerModuleFilesAction );
+            disableUntilLogin(manageServerModuleFilesAction);
         }
         return manageServerModuleFilesAction;
     }
 
-    private Action getManageWorkQueuesAction() {
-        if (manageWorkQueuesAction == null) {
-            manageWorkQueuesAction = new ManageWorkQueuesAction();
-            disableUntilLogin(manageWorkQueuesAction);
-        }
-        return manageWorkQueuesAction;
-    }
-
     private Action getManageSecurityZonesAction() {
-        if (manageSecurityZonesAction == null) {
+        if ( manageSecurityZonesAction == null ) {
             manageSecurityZonesAction = new ManageSecurityZonesAction();
-            disableUntilLogin(manageSecurityZonesAction);
+            disableUntilLogin( manageSecurityZonesAction );
         }
         return manageSecurityZonesAction;
     }
@@ -3062,6 +3045,12 @@ public class MainWindow extends JFrame implements SheetHolder {
     }
 
     /**
+     +     * @return true if we are running as Web Start
+     +     */
+    public boolean isWebStart() {
+        return ssmApplication.isWebStart();
+    }
+    /**
      * @return true if we are running as an Applet
      */
     public boolean isApplet() {
@@ -3354,7 +3343,7 @@ public class MainWindow extends JFrame implements SheetHolder {
 
                 @Override
                 public Icon call(AbstractTreeNode abstractTreeNode) {
-                    return new ImageIcon(abstractTreeNode.getIcon());
+                    return abstractTreeNode.getImageIcon();
                 }
             };
 
@@ -3430,8 +3419,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             final Functions.Unary<Icon, AbstractLeafPaletteNode> iconAccessorFunction = new Functions.Unary<Icon, AbstractLeafPaletteNode>() {
                 @Override
                 public Icon call(AbstractLeafPaletteNode abstractTreeNode) {
-                    Image icon = abstractTreeNode.getIcon();
-                    return icon == null ? null : new ImageIcon(icon);
+                    return abstractTreeNode.getImageIcon();
                 }
             };
 
@@ -3816,7 +3804,7 @@ public class MainWindow extends JFrame implements SheetHolder {
 
         setName("MainWindow");
         setJMenuBar(isApplet() ? null : getMainJMenuBar());
-        setTitle( resapplication.getString("SSG") + " " + BuildInfo.getProductVersion() );
+        setTitle( resapplication.getString("SSG") + " " + PolicyManagerBuildInfo.getInstance().getProductVersion() );
 
         ImageIcon smallIcon =
                 new ImageIcon(ImageCache.getInstance().getIcon(RESOURCE_PATH + "/CA_Logo_Black_16x16.png"));
@@ -4277,8 +4265,8 @@ public class MainWindow extends JFrame implements SheetHolder {
         // extract the node name from the status message
         int startIndex = getStatusMsgLeft().getText().indexOf(CONNECTION_PREFIX);
         if (startIndex > 0) {
-            String nodeName = getStatusMsgLeft().getText().substring(startIndex + CONNECTION_PREFIX.length(), getStatusMsgLeft().getText().length() - 1);
-
+            String nodeName = getStatusMsgLeft().getText().substring(startIndex + CONNECTION_PREFIX.length(), getStatusMsgLeft().getText().length());
+            nodeName = nodeName.substring(nodeName.indexOf(']'));
             if (nodeName.equals(oldName)) {
                 // update the node name only when the nodeName mataches with the oldName
                 String newStatus = connectionID + connectionContext + getNodeNameMsg(newName);
@@ -4294,7 +4282,7 @@ public class MainWindow extends JFrame implements SheetHolder {
 
         String nodeNameMsg = "";
         if (nodeName != null) {
-            nodeNameMsg = CONNECTION_PREFIX + nodeName + "]";
+            nodeNameMsg = CONNECTION_PREFIX + nodeName + "] Gateway Version: " + GatewayInfoHolder.getInstance().getGatewayVersion();
         }
         return nodeNameMsg;
     }
@@ -4322,6 +4310,7 @@ public class MainWindow extends JFrame implements SheetHolder {
             ConsoleGoidUpgradeMapper.updatePrefixesFromGateway();
 
             final boolean isApplet = isApplet();
+            final boolean isWebStart = isWebStart();
 
             if (isApplet) {
                 User user = Registry.getDefault().getSecurityProvider().getUser();
@@ -4340,8 +4329,19 @@ public class MainWindow extends JFrame implements SheetHolder {
             auditSigningCert = null;
 
             /* init rmi cl */
-            if (!isApplet)
+            if (!isApplet && !isWebStart)
                 RMIClassLoader.getDefaultProviderInstance();
+
+
+            if (isWebStart) {
+                try {
+                    Thread.currentThread().getContextClassLoader().loadClass("com.l7tech.console.util.CustomAssertionRMIClassLoaderSpi").newInstance();
+                } catch (Exception e) {
+                    log.log(Level.WARNING, "Unable to load  class com.l7tech.console.util.CustomAssertionRMIClassLoaderSpi " + ExceptionUtils.getMessage(e) + ".",
+                            ExceptionUtils.getDebugException(e));
+                }
+            }
+
 
             /* set the preferences */
             try {
@@ -4658,11 +4658,14 @@ public class MainWindow extends JFrame implements SheetHolder {
 
                 if (!l.hasTrustedIssuer()) {
                     message.append(" was not signed by a trusted issuer.");
-                } else if (!l.isProductEnabled(BuildInfo.getProductName()) ||
-                        !l.isVersionEnabled(BuildInfo.getProductVersionMajor(), BuildInfo.getProductVersionMinor())) {
-                    message.append(" does not grant access to this version of this product.");
-                } else if (!l.isLicensePeriodStartBefore(System.currentTimeMillis())) {
-                    message.append(" is not yet valid.");
+                } else {
+                    Version gatewayVersion = GatewayInfoHolder.getInstance().getGatewayVersion();
+                    if (!l.isProductEnabled(PolicyManagerBuildInfo.getInstance().getProductName()) ||
+                            (gatewayVersion != null && !l.isVersionEnabled(String.valueOf(gatewayVersion.getMajor()), String.valueOf(gatewayVersion.getMinor())))) {
+                        message.append(" does not grant access to this version of this product.");
+                    } else if (!l.isLicensePeriodStartBefore(System.currentTimeMillis())) {
+                        message.append(" is not yet valid.");
+                    }
                 }
 
                 message.append("\n");
@@ -4808,7 +4811,7 @@ public class MainWindow extends JFrame implements SheetHolder {
     }
 
     public void showHelpTopicsRoot() {
-        ssmApplication.showHelpTopicsRoot();
+        ssmApplication.showHelpTopicsRoot(GatewayInfoHolder.getInstance().getGatewayVersion());
     }
 
     public void showNoPrivilegesErrorMessage() {

@@ -12,7 +12,6 @@ public interface ServerConfigParams {
     String PARAM_HTTP_SESSION_NAME = "httpSessionName";
     String PARAM_SYSTEMPROPS = "systemPropertiesPath";
     String PARAM_MULTICAST_ADDRESS = "multicastAddress";
-    String PARAM_MULTICAST_ENABLED = "cluster.replayProtection.multicast.enabled";
     String PARAM_DATA_GRID_PROTOCOL = "dataGrid.protocol";
     String PARAM_DATA_GRID_TCPIP_CONNECTION_TIMEOUT = "dataGrid.tcpip.connectionTimeout";
     String PARAM_SSG_HOME_DIRECTORY = "ssgHome";
@@ -171,6 +170,7 @@ public interface ServerConfigParams {
     String PARAM_JDBC_QUERY_MAXRECORDS_DEFAULT = "jdbcQuery.maxRecords.defaultValue";
     String PARAM_JDBC_QUERY_MAX_CLOB_SIZE_OUT = "jdbcQuery.maxClobSizeOut";
     String PARAM_JDBC_QUERY_MAX_BLOB_SIZE_OUT = "jdbcQuery.maxBlobSizeOut";
+    String PARAM_RELAY_GATEWAY_METRICS_ENABLE = "relayGatewayMetrics.enable";
 
     String PARAM_JDBC_QUERY_MANAGER_CACHE_METADATA_ENABLED = "jdbcQueryManager.cacheMetaData.enable";
     String PARAM_JDBC_QUERY_MANAGER_CACHE_METADATA_TASK_ENABLED = "jdbcQueryManager.cacheMetaDataTask.enable";

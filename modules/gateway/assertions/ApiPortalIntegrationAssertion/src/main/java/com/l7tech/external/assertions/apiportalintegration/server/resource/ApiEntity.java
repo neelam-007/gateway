@@ -12,6 +12,7 @@ public class ApiEntity {
   private Boolean serviceEnabled;
   private Boolean portalPublished;
   private String ssgUrl;
+  private long portalModifyTS;
   private String apiLocationUrl;
   private List<CustomFieldValueEntity> customFieldValueEntities = new ArrayList<>();
   private List<PolicyEntity> policyEntities = new ArrayList<>();
@@ -32,6 +33,15 @@ public class ApiEntity {
 
   public void setSsgUrl(String ssgUrl) {
     this.ssgUrl = ssgUrl;
+  }
+
+  @JsonProperty( value = "PortalModifyTS" )
+  public long getPortalModifyTS() {
+    return portalModifyTS;
+  }
+
+  public void setPortalModifyTS(long portalModifyTS) {
+    this.portalModifyTS = portalModifyTS;
   }
 
   @JsonProperty( value = "Uuid")

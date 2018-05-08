@@ -154,6 +154,7 @@ public class SwaggerAssertion extends Assertion implements UsesVariables, SetsVa
         meta.put(GLOBAL_ACTION_CLASSNAMES,
                 new String[] {"com.l7tech.external.assertions.swagger.console.PublishSwaggerServiceAction"});
 
+        meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }

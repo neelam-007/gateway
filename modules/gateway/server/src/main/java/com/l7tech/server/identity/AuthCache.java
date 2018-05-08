@@ -2,6 +2,7 @@ package com.l7tech.server.identity;
 
 import com.l7tech.common.io.WhirlycacheFactory;
 import com.l7tech.identity.AuthenticationException;
+import com.l7tech.identity.BadCredentialsException;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
@@ -151,7 +152,9 @@ public final class AuthCache {
      * @param maxSuccessAge the maximum age, in milliseconds, to cache successful authentications
      * @param maxFailAge    the maximum age, in milliseconds, to cache failed authentications
      * @return the cached AuthenticationResult if one was available from cache, or null if not.
-     * @throws AuthenticationException if the authentication could not be performed for some low-level reason
+     * @throws AuthenticationException if the authentication could not be performed for some low-level reason.
+     *         If the authentication failed because the password was incorrect, or password expired, etc it will
+     *         throw a BadCredentialsException.
      */
     public AuthenticationResult getCachedAuthResult(LoginCredentials creds, IdentityProvider idp,
                                                     int maxSuccessAge, int maxFailAge)
@@ -162,7 +165,9 @@ public final class AuthCache {
         final CacheKey ckey = new CacheKey(providerOid, creds);
         Object cached = getCacheEntry(ckey, credString, idp, maxSuccessAge, maxFailAge);
         if (cached instanceof AuthenticationResult) {
-            return new AuthenticationResult((AuthenticationResult)cached, creds.getSecurityTokens());
+            return new AuthenticationResult((AuthenticationResult) cached, creds.getSecurityTokens());
+        } else if (cached instanceof AuthenticationResultFailure) {
+            throw new BadCredentialsException(((AuthenticationResultFailure) cached).getFailureReason());
         } else if (cached != null) {
             return null;
         }
@@ -184,10 +189,10 @@ public final class AuthCache {
                 // Recheck successCache now that we have the username lock
                 cached = getCacheEntry(ckey, credString, idp, maxSuccessAge, maxFailAge);
                 if (cached instanceof AuthenticationResult) {
-                    // Someone else got there first with a success
-                    return new AuthenticationResult((AuthenticationResult)cached, creds.getSecurityTokens());
+                    return new AuthenticationResult((AuthenticationResult) cached, creds.getSecurityTokens());
+                } else if (cached instanceof AuthenticationResultFailure) {
+                    throw new BadCredentialsException(((AuthenticationResultFailure) cached).getFailureReason());
                 } else if (cached != null) {
-                    // Someone else got there first with a failure
                     return null;
                 }
                 return getAndCacheNewResult(creds, credString, ckey, idp);
@@ -197,6 +202,7 @@ public final class AuthCache {
         // Either AUTH_ONE_AT_A_TIME specifically or all caching in general is disabled.  Skip locking and Just Do It.
         return getAndCacheNewResult(creds, credString, ckey, idp);
     }
+
 
     // If caller wants only one thread at a time to authenticate any given username,
     // caller is responsible for ensuring that only one thread at a time calls this per username,
@@ -216,7 +222,8 @@ public final class AuthCache {
 
         if (!failureCacheDisabled && result == null) {
             which = "failed";
-            failureCache.store(ckey, currentTimeMillis());
+            AuthenticationResultFailure authFailure = new AuthenticationResultFailure(currentTimeMillis(),thrown != null ? thrown.getMessage() : null);
+            failureCache.store(ckey, authFailure);
         }else if(!successCacheDisabled){
             which = "successful";
             successCache.store(ckey, result);
@@ -243,7 +250,7 @@ public final class AuthCache {
      * Fails fast by returning null when both the successCache and the failureCache are disabled.
      * In the case when one is disabled, it will proceed with the lookup and then return null when not found
      * , null will always be found for the cache entry which is disabled
-     * @return Object either an AuthenticationResult on a success hit, or a Long on a failure hit, null when both caches
+     * @return Object either an AuthenticationResult on a success hit, or a AuthenticationResultFailure on a failure hit, null when both caches
      * miss OR there was a hit but the cache values have expired and have not yet been cleaned from the cache
      */
     private Object getCacheEntry(CacheKey ckey, String credString, IdentityProvider idp, int maxSuccessAge, int maxFailAge) {
@@ -260,14 +267,18 @@ public final class AuthCache {
                 cachedAuthResult = (AuthenticationResult)cachedObj;
             }
         }
+
+        AuthenticationResultFailure cacheAuthFailureResult=null;
         //it doesn't have it or it's disabled
         if(cachedAuthResult == null){
             //If no success cache and failure cache is enabled, check it
             if(!failureCacheDisabled){
                 //check if it's a fail for these creds
                 Object cachedObj = failureCache.retrieve(ckey);
-                if(cachedObj != null && cachedObj instanceof Long){
-                    cachedFailureTime = (Long)cachedObj;
+                if(cachedObj != null && cachedObj instanceof AuthenticationResultFailure){
+                    cacheAuthFailureResult = (AuthenticationResultFailure) cachedObj;
+                    cachedFailureTime = cacheAuthFailureResult.getCacheFailureTime();
+
                 }else{
                     //as miss in failureCache also, return null
                     return null;
@@ -286,7 +297,7 @@ public final class AuthCache {
             cacheAddedTime = cachedFailureTime;
             log = "failure";
             maxAge = maxFailAge;
-            returnValue = cachedFailureTime;
+            returnValue = cacheAuthFailureResult;
         } else {
             cacheAddedTime = cachedAuthResult.getTimestamp();
             log = "success";

@@ -1,6 +1,8 @@
 package com.l7tech.external.assertions.websocket.server;
 
+import com.l7tech.common.http.HttpCookie;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.external.assertions.websocket.InvalidRangeException;
 import com.l7tech.external.assertions.websocket.WebSocketConnectionEntity;
 import com.l7tech.external.assertions.websocket.WebSocketConstants;
 import com.l7tech.gateway.common.audit.Audit;
@@ -14,13 +16,16 @@ import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.util.Pair;
 import com.l7tech.util.ResourceUtils;
 import org.apache.commons.lang.StringUtils;
+import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.server.HttpConnection;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.websocket.api.extensions.ExtensionFactory;
 import org.eclipse.jetty.websocket.common.extensions.compress.PerMessageDeflateExtension;
 import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.servlet.ServletException;
@@ -145,7 +150,7 @@ public class WebSocketInboundHandler extends WebSocketHandlerBase {
 					if (processMessageResults.getOutboundUrl() != null ){
 						request.setAttribute(WebSocketConstants.OUTBOUND_URL, processMessageResults.getOutboundUrl());
 					}
-                    
+
                     request.setAttribute(WebSocketConstants.AUTHENTICATION_CONTEXT_REQ_ATTRIB, processMessageResults.getWebSocketMsg().getAuthCtx());
                     if (AssertionStatus.AUTH_REQUIRED.getMessage().equals(processMessageResults.getWebSocketMsg().getStatus())) {
                         if (response.containsHeader("WWW-Authenticate")) {
@@ -178,6 +183,7 @@ public class WebSocketInboundHandler extends WebSocketHandlerBase {
                     sendResponseErrorAndSetHandled(request, response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, null);
                 }
             }
+            copyWebSocketProtocolsToHttpServletResponse(request, response);
         }
         super.handle(target, baseRequest, request, response);
     }
@@ -281,6 +287,8 @@ public class WebSocketInboundHandler extends WebSocketHandlerBase {
             } else {
                 if (requestKnob != null) {
                     request.attachHttpRequestKnob(requestKnob);
+                    // - DE299429-WebSocket - (Inbound) Ensure the HTTP Upgrade Request headers are copied to the request message/policy modifiable
+                    copyHttpServletRequestHeadersToRequestMessage(requestKnob, request);
                 }
                 if (responseKnob != null) {
                     response.attachHttpResponseKnob(responseKnob);
@@ -325,7 +333,12 @@ public class WebSocketInboundHandler extends WebSocketHandlerBase {
 
             message.setStatus(status.getMessage());
             processMessageResults.setWebSocketMsg(message);
-
+            // - DE299429-WebSocket - Set the HTTP Response code to OK_200, as Assertion processing has passed successfully.
+            if (AssertionStatus.NONE.equals(status)){
+                responseKnob.setStatus(HttpStatus.OK_200);
+            }
+            // - DE299429-WebSocket - (Inbound) Place any modified HTTP Upgrade Transport Headers back into the Response Servlet.
+            copyMessageHeadersToHttpServletResponseKnob(response, responseKnob);
             return processMessageResults;
 
         } catch (Exception e) {
@@ -335,6 +348,38 @@ public class WebSocketInboundHandler extends WebSocketHandlerBase {
                 ResourceUtils.closeQuietly(context);
         }
         return null;
+    }
+
+    protected void copyHttpServletRequestHeadersToRequestMessage(HttpServletRequestKnob requestKnob, Message message){
+        final String[] headers = requestKnob.getHeaderNames();
+        for(String header : headers) {
+            final String[] vals = requestKnob.getHeaderValues(header);
+            for(String value : vals ) {
+                message.getHeadersKnob().addHeader(header, value, HeadersKnob.HEADER_TYPE_HTTP);
+            }
+        }
+        logger.log(Level.FINE, "Upgrade HTTP Request Headers: "+ Arrays.toString(message.getHeadersKnob().getHeaders().toArray()));
+    }
+
+    protected void copyMessageHeadersToHttpServletResponseKnob(Message message, @NotNull HttpServletResponseKnob httpServletResponseKnob){
+        if (!WebSocketConstants.getBooleanClusterProperty(WebSocketConstants.INBOUND_COPY_UPGRADE_REQUEST_SUBPROTOCOL_HEADER_KEY)) {
+            final Iterator<Header> httpHeaders = message.getHeadersKnob().getHeaders().iterator();
+            Collection<Pair<String, Object>> httpHeadersCollection = new ArrayList<Pair<String, Object>>();
+            while (httpHeaders.hasNext()){
+                final Header header = httpHeaders.next();
+                httpHeadersCollection.add(new Pair<>(header.getKey(), header.getValue()));
+            }
+            httpServletResponseKnob.beginResponse(httpHeadersCollection,  Collections.<HttpCookie>emptyList());
+        }
+    }
+
+    protected void copyWebSocketProtocolsToHttpServletResponse(@NotNull HttpServletRequest request, @NotNull HttpServletResponse httpServletResponse){
+        if (WebSocketConstants.getBooleanClusterProperty(WebSocketConstants.INBOUND_COPY_UPGRADE_REQUEST_SUBPROTOCOL_HEADER_KEY)) {
+            final Enumeration protocols = request.getHeaders(WebSocketConstants.SECURITY_WEBSOCKET_PROTOCOL_KEY);
+            while (protocols.hasMoreElements()) {
+                httpServletResponse.addHeader(WebSocketConstants.SECURITY_WEBSOCKET_PROTOCOL_KEY, (String) protocols.nextElement());
+            }
+        }
     }
 
     public void registerClientId(String clientId, String webSocketId) {
@@ -401,4 +446,63 @@ public class WebSocketInboundHandler extends WebSocketHandlerBase {
         }
     }
 
+    protected static class WebSocketInboundHandlerBuilder {
+
+        private MessageProcessor messageProcessor;
+        private WebSocketConnectionEntity connectionEntity;
+        private AuditFactory auditFactory;
+
+       public WebSocketInboundHandlerBuilder(){
+            connectionEntity = new WebSocketConnectionEntity();
+        }
+
+        public WebSocketInboundHandlerBuilder withConnectionEntity(final WebSocketConnectionEntity newConnectionEntity) {
+            this.connectionEntity = newConnectionEntity;
+            return this;
+        }
+
+        public WebSocketInboundHandlerBuilder withMessageProcessor(final MessageProcessor newMessageProcessor) {
+            this.messageProcessor = newMessageProcessor;
+            return this;
+        }
+
+        public WebSocketInboundHandlerBuilder withHandlerId(final String newHandlerId) {
+            this.connectionEntity.setId(newHandlerId);
+            return this;
+        }
+
+        public WebSocketInboundHandlerBuilder withConnectionPolicyGoid(final Goid newConnectionPolicyGoid) {
+            this.connectionEntity.setConnectionPolicyGOID(newConnectionPolicyGoid);
+            return this;
+        }
+
+        public WebSocketInboundHandlerBuilder withInboundPolicyGoid(final Goid newInboundPolicyGoid) {
+            this.connectionEntity.setInboundPolicyOID(newInboundPolicyGoid);
+            return this;
+        }
+
+        public WebSocketInboundHandlerBuilder withMaxIdleTime(final int newMaxIdleTime) {
+            this.connectionEntity.setInboundMaxIdleTime(newMaxIdleTime);
+            return this;
+        }
+
+        public WebSocketInboundHandlerBuilder withMaxConnections(final int newMaxConnections) throws InvalidRangeException {
+            this.connectionEntity.setInboundMaxConnections(newMaxConnections);
+            return this;
+        }
+
+        public WebSocketInboundHandlerBuilder withOutboundUrl(final String newOutboundUrl) {
+            this.connectionEntity.setOutboundUrl(newOutboundUrl);
+            return this;
+        }
+
+        public WebSocketInboundHandlerBuilder withAuditFactory(final AuditFactory newAuditFactory) {
+            this.auditFactory = newAuditFactory;
+            return this;
+        }
+
+        public WebSocketInboundHandler build() {
+            return new WebSocketInboundHandler(messageProcessor, connectionEntity, auditFactory);
+        }
+    }
 }

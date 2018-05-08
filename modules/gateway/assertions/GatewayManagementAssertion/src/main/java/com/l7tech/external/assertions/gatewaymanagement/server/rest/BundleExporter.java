@@ -35,6 +35,7 @@ public class BundleExporter {
     public static final String EncassAsPolicyDependencyOption = "EncassAsPolicyDependency";
     public static final String IncludeOnlyServicePolicyOption = "IncludeOnlyServicePolicy";
     public static final String IncludeOnlyDependenciesOption = "IncludeOnlyDependencies";
+    public static final String IncludeGatewayConfigurationOption = "IncludeGatewayConfiguration";
     @Inject
     private EntityBundleExporter entityBundleExporter;
     @Inject

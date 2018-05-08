@@ -189,7 +189,7 @@ public class JdkKeyStoreBackedSsgKeyStoreTest {
      */
     private class KeyStoreStub extends KeyStore {
         protected KeyStoreStub() {
-            super(keyStoreSpi, null, null);
+            super(keyStoreSpi, null, "PKCS12");
             try {
                 load(null);
             } catch (Exception e) {

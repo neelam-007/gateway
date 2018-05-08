@@ -53,9 +53,7 @@ import static com.ibm.mq.constants.MQConstants.*;
 import static com.l7tech.external.assertions.mqnative.MqNativeConstants.*;
 import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.REPLY_AUTOMATIC;
 import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.REPLY_SPECIFIED_QUEUE;
-import static com.l7tech.external.assertions.mqnative.server.MqNativeEndpointConfig.DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_ACTIVE;
-import static com.l7tech.external.assertions.mqnative.server.MqNativeEndpointConfig.DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_IDLE;
-import static com.l7tech.external.assertions.mqnative.server.MqNativeEndpointConfig.DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_WAIT;
+import static com.l7tech.external.assertions.mqnative.server.MqNativeEndpointConfig.*;
 import static com.l7tech.external.assertions.mqnative.server.MqNativeUtils.*;
 import static com.l7tech.gateway.common.audit.AssertionMessages.*;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
@@ -95,6 +93,7 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
     private ApplicationEventProxy applicationEventProxy;
     private MqNativeResourceManager mqNativeResourceManager;
     private MqNativeSsgActiveConnectorInvalidator invalidator = new MqNativeSsgActiveConnectorInvalidator(this);
+    private MqNativeEndPointConfigInvalidator endPointConfigInvalidator = new MqNativeEndPointConfigInvalidator(this);
     private AtomicInteger connectionAttempts = new AtomicInteger(0);
     private final AtomicBoolean needsUpdate = new AtomicBoolean(false);
     private MqNativeEndpointConfig endpointConfig;
@@ -110,6 +109,11 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
         this.applicationEventProxy = applicationEventProxy;
         mqNativeResourceManager = MqNativeResourceManager.getInstance( config, applicationEventProxy );
         applicationEventProxy.addApplicationListener( invalidator );
+        //Add MQ cluster properties to the property change listener
+        ConfigFactory.addListener(endPointConfigInvalidator,
+                MQ_CONNECTION_POOL_MAX_ACTIVE_PROPERTY,
+                MQ_CONNECTION_POOL_MAX_IDLE_PROPERTY,
+                MQ_CONNECTION_POOL_MAX_WAIT_PROPERTY);
     }
 
     @Override
@@ -177,7 +181,7 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
                                 MQException mqException = (MQException) mqre.getCause();
                                 logger.log(Level.WARNING, format("At least 10 connections failed trying to connect to MQ.  MQ server is not available.  Falsifying assertion and returning completion code {0}.",mqException.getReason()) , getDebugExceptionForExpectedReasonCode(mqException));
                             }  else {
-                                logger.log(Level.WARNING, "At least 10 connections failed trying to connect to MQ.  MQ server is not available.  Falsifying assertion.", mqre);
+                                logger.log(Level.WARNING, "At least 10 connections failed trying to connect to MQ.  MQ server is not available.  Falsifying assertion.", ExceptionUtils.getDebugException(mqre));
                             }
                             context.setVariable(ServerMqNativeRoutingAssertion.completionCodeString, MQCC_FAILED);
                             context.setVariable(ServerMqNativeRoutingAssertion.reasonCodeString, MQRC_Q_MGR_NOT_AVAILABLE);
@@ -758,12 +762,20 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
         return needsUpdate.compareAndSet(!value, value);
     }
 
-    private void resetEndpointInfo() {
-        synchronized ( endpointConfigSync ) {
-            if (markedForUpdate()) {
+    private void resetEndpointInfo(boolean hardReset) {
+        synchronized (endpointConfigSync) {
+            if (hardReset || markedForUpdate()) {
                 endpointConfig = null;
             }
         }
+    }
+
+    private void resetEndpointInfo() {
+        resetEndpointInfo(false);
+    }
+
+    private void hardResetEndpointInfo() {
+        resetEndpointInfo(true);
     }
 
     private boolean isValidRequest( final com.l7tech.message.Message message, final TargetMessageType targetMessageType ) throws IOException {
@@ -1058,6 +1070,25 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
     }
 
     /**
+     * Property change listener for below MQ cluster properties
+     * MQ_CONNECTION_POOL_MAX_ACTIVE_PROPERTY
+     * MQ_CONNECTION_POOL_MAX_IDLE_PROPERTY
+     * MQ_CONNECTION_POOL_MAX_WAIT_PROPERTY
+     */
+    private static final class MqNativeEndPointConfigInvalidator implements ConfigFactory.ConfigurationListener {
+        private final ServerMqNativeRoutingAssertion serverMqNativeRoutingAssertion;
+
+        private MqNativeEndPointConfigInvalidator(@NotNull final ServerMqNativeRoutingAssertion serverMqNativeRoutingAssertion) {
+            this.serverMqNativeRoutingAssertion = serverMqNativeRoutingAssertion;
+        }
+
+        @Override
+        public void notifyPropertyChanged(String properyName) {
+            serverMqNativeRoutingAssertion.hardResetEndpointInfo();
+        }
+    }
+
+    /**
      * Invalidation listener for MQ endpoint (SsgActiveConnector) updates.
      */
     private static final class MqNativeSsgActiveConnectorInvalidator implements ApplicationListener {
@@ -1087,16 +1118,14 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
                             }
                         }
                     }
-                } else if (ClusterProperty.class.isAssignableFrom(eie.getEntityClass())) {
+                } else if (ClusterProperty.class.isAssignableFrom(eie.getSource().getClass())) {
                     final String propName = ((ClusterProperty) eie.getSource()).getName();
                     if (MqNativeConstants.MQ_CONNECTION_POOL_MAX_ACTIVE_UI_PROPERTY.equals(propName) ||
                             MqNativeConstants.MQ_CONNECTION_POOL_MAX_IDLE_UI_PROPERTY.equals(propName) ||
                             MqNativeConstants.MQ_CONNECTION_POOL_MAX_WAIT_UI_PROPERTY.equals(propName)) {
-
-                        synchronized (serverMqRoutingAssertion.endpointConfigSync) {
-                            serverMqRoutingAssertion.endpointConfig = null;
-                        }
+                        serverMqRoutingAssertion.hardResetEndpointInfo();
                     }
+
                 }
             }
         }

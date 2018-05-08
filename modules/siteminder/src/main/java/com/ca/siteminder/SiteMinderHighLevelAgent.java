@@ -30,10 +30,6 @@ public class SiteMinderHighLevelAgent {
     public static final int CHALLENGE = 3;
 
     private static final Logger logger = Logger.getLogger(SiteMinderHighLevelAgent.class.getName());
-
-    //TODO: token reuse value needs to be moved into the configuration gui.
-    private int tokenReuseFactor = 25;
-
     private final SiteMinderAgentContextCacheManager cacheManager;
     private final Config config;
 
@@ -52,24 +48,26 @@ public class SiteMinderHighLevelAgent {
                                   final String resource,
                                   final String action,
                                   SiteMinderContext context) throws SiteMinderApiClassException {
-        if(context == null) throw new SiteMinderApiClassException("SiteMinderContext object is null!");//should never happen
+        if (context == null)
+            throw new SiteMinderApiClassException("SiteMinderContext object is null!");//should never happen
 
         SiteMinderLowLevelAgent agent = context.getAgent();
-        if(agent == null) throw new SiteMinderApiClassException("Unable to find CA Single Sign-On Agent");
+        if (agent == null) throw new SiteMinderApiClassException("Unable to find CA Single Sign-On Agent");
 
         boolean isProtected = false;
 
         SiteMinderResourceDetails resourceDetails;
         final SiteMinderAgentContextCache agentCache = getCache(context.getConfig(), smAgentName);
-        if(agentCache.getResourceCacheSize() > 0) {
-            final Cache cache = agentCache.getResourceCache();
+        final AgentContextSubCache resourceSubCache = agentCache.getSubCache(AgentContextSubCacheType.AGENT_CACHE_RESOURCE);
+        if (resourceSubCache.getMaxSize() > 0) {
+            final Cache cache = resourceSubCache.getCache();
             final ResourceCacheKey resourceCacheKey = new ResourceCacheKey(resource, action, serverName != null ? serverName : "");
             //Check the cache or call isProtected to initialize the Resource and Realm Definition in the context (SMContext) in the event a cache miss occurs
 
             if ((resourceDetails = (SiteMinderResourceDetails) cache.retrieve(resourceCacheKey)) != null) {
                 //now check if the cached entry exceeded the max cached time then remove from cache
                 logger.log(Level.FINE, "Found resource cache entry: " + resourceCacheKey);
-                if (System.currentTimeMillis() - resourceDetails.getTimeStamp() <= agentCache.getResourceCacheMaxAge()) {
+                if (System.currentTimeMillis() - resourceDetails.getTimeStamp() <= resourceSubCache.getMaxAge()) {
                     final String transactionId = UUID.randomUUID().toString();//generate SiteMinder transaction id.
                     //generate a new SiteMinder TransactionID as this is a per-request value
                     context.setTransactionId(transactionId);
@@ -104,19 +102,23 @@ public class SiteMinderHighLevelAgent {
             isProtected = agent.isProtected(userIp, smAgentName, serverName, resource, action, context);
         }
 
-
         if (!isProtected) {
             logger.log(Level.INFO, "The resource/action '" + resource + "/" + action + "' is not protected by CA Single Sign-On. Access cannot be authorized.");
+        }
+
+        if (StringUtils.isNotEmpty(context.getAcoName())) {
+            retrieveAcoDetails(smAgentName, context, agent, agentCache);
         }
 
         return isProtected;
     }
 
-    public int processAuthorizationRequest( final String userIp, final String ssoCookie, final SiteMinderContext context, final boolean useSMCookie ) throws SiteMinderApiClassException {
-        if(context == null) throw new SiteMinderApiClassException("SiteMinderContext object is null!");//should never happen
+    public int processAuthorizationRequest(final String userIp, final String ssoCookie, final SiteMinderContext context, final boolean useSMCookie) throws SiteMinderApiClassException {
+        if (context == null)
+            throw new SiteMinderApiClassException("SiteMinderContext object is null!");//should never happen
 
         SiteMinderLowLevelAgent agent = context.getAgent();
-        if(agent == null) throw new SiteMinderApiClassException("Unable to find CA Single Sign-On Agent");
+        if (agent == null) throw new SiteMinderApiClassException("Unable to find CA Single Sign-On Agent");
 
         final String smAgentName = context.getResContextDef().getAgent();
         final String reqResource = context.getResContextDef().getResource();
@@ -137,10 +139,10 @@ public class SiteMinderHighLevelAgent {
          * SSG-13325: SiteMinder: Authorization assertion ignores invalid or non-existing context
          * variable if a valid token exists in smcontext
          */
-        if ( useSMCookie ) {
-         if (null != ssoCookie && ssoCookie.trim().length() > 0) {
+        if (useSMCookie) {
+            if (null != ssoCookie && ssoCookie.trim().length() > 0) {
                 //Always decode the ssoToken
-                result = agent.decodeSessionToken( context, ssoCookie);
+                result = agent.decodeSessionToken(context, ssoCookie);
 
                 if (result != SUCCESS) {
                     logger.log(Level.FINE, "CA Single Sign-On  Authorization attempt - CA Single Sign-On  is unable to decode the token '" + SiteMinderUtil.safeNull(ssoCookie) + "'");
@@ -158,10 +160,11 @@ public class SiteMinderHighLevelAgent {
         String sessionId = sessionDef.getId();
         AuthorizationCacheKey cacheKey = new AuthorizationCacheKey(sessionId, reqResource, action);
         final SiteMinderAgentContextCache agentCache = getCache(context.getConfig(), smAgentName);
-        final Cache cache = agentCache.getAuthorizationCache();
+        final AgentContextSubCache authzSubCache = agentCache.getSubCache(AgentContextSubCacheType.AGENT_CACHE_AUTHORIZATION);
+        final Cache cache = authzSubCache.getCache();
 
         //Perform Session Validation
-        if ( !validateDecodedSession( context.getSessionDef(), currentAgentTimeSeconds )){
+        if (!validateDecodedSession(context.getSessionDef(), currentAgentTimeSeconds)) {
             logger.log(Level.WARNING, "Session validation failed for the following SsoToken: " + ssoCookie);
 
             if (null != cache) {
@@ -171,19 +174,15 @@ public class SiteMinderHighLevelAgent {
             return CHALLENGE;
         }
 
-        // TODO: Implement a tokenReuse threshold check, as a full SiteMinder Agent is expected to perform this operation
-        // updateSsoToken = tokenReuseThresholdExceeded( context.getSessionDef().getSessionLastTime(),
-        //        context.getSessionDef().getIdleTimeout(),
-        //        currentAgentTimeSeconds );
         updateSsoToken = true;
 
         //check if we have the agent authorization cache disabled
-        if(agentCache.getAuthorizationCacheSize() > 0) {
+        if (authzSubCache.getMaxSize() > 0) {
 
             SiteMinderContext cachedContext;
             //lookup in cache
             SiteMinderAuthResponseDetails cachedAuthResponseDetails =
-                    getAuthorizationCacheEntry(cache, cacheKey, agentCache.getAuthorizationCacheMaxAge());
+                    getAuthorizationCacheEntry(cache, cacheKey, authzSubCache.getMaxAge());
 
             if (cachedAuthResponseDetails == null) {
                 // The context will contain attributes from the decode ( UserDn, UserName, ClientIP )
@@ -228,8 +227,7 @@ public class SiteMinderHighLevelAgent {
                 attrList.addAll(updatedAttributes);
                 context.getAttrList().addAll(new ArrayList<>(attrList));
             }
-        }
-        else {
+        } else {
             // The context will contain attributes from the decode ( UserDn, UserName, ClientIP )
             // Note: Only the ClientIP (dotted-quad notation) is needed, by the authorize API call.
             result = agent.authorize(ssoCookie, userIp, context.getTransactionId(), context);
@@ -242,32 +240,31 @@ public class SiteMinderHighLevelAgent {
             context.getAttrList().addAll(attrList);
         }
 
-        if ( ( agent.getUpdateCookieStatus() && updateSsoToken ) && null == context.getSsoToken() ){ // create a new ssoToken
+        if ((agent.getUpdateCookieStatus() && updateSsoToken) && null == context.getSsoToken()) { // create a new ssoToken
 
             logger.log(Level.FINEST, "SiteMinder Authorization - Setting Session and Attributes for new SsoToken.");
             //Update the SmContext.SessionDef CurrentServerTime, as this will become the lastSessionTime value
-            context.getSessionDef().setCurrentServerTime( currentAgentTimeSeconds );
+            context.getSessionDef().setCurrentServerTime(currentAgentTimeSeconds);
 
             logger.log(Level.FINE, "SiteMinder Authorization - Attempt to obtain a new SSO token.");
             result = agent.getSsoToken(context);
-            if ( result != YES ){
-                logger.log(Level.FINE, "Unable to create a new SsoToken for the following SessionId: " + sessionDef.getId() );
+            if (result != YES) {
+                logger.log(Level.FINE, "Unable to create a new SsoToken for the following SessionId: " + sessionDef.getId());
                 return FAILURE;
             }
             //Update the currentServerTime within the context, allowing for session validation within policy
             //Note: SessionDef object is modified by the getSsoToken call and could update the current serverTime.
-            context.getSessionDef().setCurrentServerTime( sessionDef.getCurrentServerTime() );
-
+            context.getSessionDef().setCurrentServerTime(sessionDef.getCurrentServerTime());
+            buildSessionCookieStringAttribute(context);
         } else {
             //Handle when the ssoToken is passed in, and not obtained from the context, but the context's
             // ssoToken was updated by isAuthN.
-            if (! "".equals( ssoCookie ) && ssoCookie != null ){
-                if (null == context.getSsoToken() ) {
-                    context.setSsoToken( ssoCookie );
+            if (!"".equals(ssoCookie) && ssoCookie != null) {
+                if (null == context.getSsoToken()) {
+                    context.setSsoToken(ssoCookie);
                 }
                 logger.log(Level.FINE, "Authorized user using cookie: " + ssoCookie);
-            }
-            else {
+            } else {
                 logger.log(Level.FINE, "Authorized user via SessionDef object from the context");
             }
             //ensure the sessionDef values are used to update the Attribute list contained within the context
@@ -277,15 +274,14 @@ public class SiteMinderHighLevelAgent {
         }
 
         //Remove possible duplicate attributes
-        context.setAttrList( SiteMinderUtil.removeDuplicateAttributes(context.getAttrList(), new Comparator<SiteMinderContext.Attribute>() {
+        context.setAttrList(SiteMinderUtil.removeDuplicateAttributes(context.getAttrList(), new Comparator<SiteMinderContext.Attribute>() {
             @Override
             public int compare(SiteMinderContext.Attribute o1, SiteMinderContext.Attribute o2) {
-                    if(o1.getId() != SiteMinderLowLevelAgent.HTTP_HEADER_VARIABLE_ID ) {
-                        return o1.getName().compareTo(o2.getName());
-                    }
-                    else {
-                        return 1;
-                    }
+                if (o1.getId() != SiteMinderLowLevelAgent.HTTP_HEADER_VARIABLE_ID) {
+                    return o1.getName().compareTo(o2.getName());
+                } else {
+                    return 1;
+                }
             }
         }));
         return result;
@@ -294,9 +290,9 @@ public class SiteMinderHighLevelAgent {
     protected int updateCachedAttributes(String userIp, SiteMinderContext context, long cacheCreatedTimeStamp, List<SiteMinderContext.Attribute> cachedAttributes, List<SiteMinderContext.Attribute> updatedAttributes) throws SiteMinderApiClassException {
         List<SiteMinderContext.Attribute> validAttributes = new ArrayList<>();
         List<SiteMinderContext.Attribute> attributesToUpdate = new ArrayList<>();
-        long elapsedTime = (System.currentTimeMillis() - cacheCreatedTimeStamp)/1000;
+        long elapsedTime = (System.currentTimeMillis() - cacheCreatedTimeStamp) / 1000;
 
-        for(SiteMinderContext.Attribute attr : cachedAttributes) {
+        for (SiteMinderContext.Attribute attr : cachedAttributes) {
             if (attr.getTtl() > 0 && elapsedTime > attr.getTtl()) {
                 attributesToUpdate.add(attr);
             } else {
@@ -325,11 +321,10 @@ public class SiteMinderHighLevelAgent {
     /**
      * Perform authentication if required, and authorize the session against the specified resource.
      *
-     *
      * @param credentials the user credentials
-     * @param userIp    the client IP address
-     * @param ssoCookie the SiteMinder SSO Token cookie
-     * @param context the SiteMinder context
+     * @param userIp      the client IP address
+     * @param ssoCookie   the SiteMinder SSO Token cookie
+     * @param context     the SiteMinder context
      * @param createToken
      * @return the value of new (or updated) SiteMinder SSO Token cookie
      * @throws SiteMinderApiClassException
@@ -338,17 +333,23 @@ public class SiteMinderHighLevelAgent {
                                             final String userIp,
                                             @Nullable final String ssoCookie,
                                             final SiteMinderContext context, boolean createToken)
-        throws SiteMinderApiClassException {
-        if(context == null) throw new SiteMinderApiClassException("SiteMinderContext object is null!");//should never happen
+            throws SiteMinderApiClassException {
+        if (context == null)
+            throw new SiteMinderApiClassException("SiteMinderContext object is null!");//should never happen
 
         SiteMinderLowLevelAgent agent = context.getAgent();
-        if(agent == null) throw new SiteMinderApiClassException("Unable to find CA Single Sign-On Agent");
+        if (agent == null) throw new SiteMinderApiClassException("Unable to find CA Single Sign-On Agent");
 
         final SiteMinderAgentContextCache agentCache = getCache(context.getConfig(), context.getResContextDef().getAgent());
-        final Cache cache = agentCache.getAuthenticationCache();
+        final AgentContextSubCache authnSubCache = agentCache.getSubCache(AgentContextSubCacheType.AGENT_CACHE_AUTHENTICATION);
+        final Cache cache = authnSubCache.getCache();
 
-       //Obtain the AttributeList encase isAuthN was called before
+        //Obtain the AttributeList encase isAuthN was called before
         List<SiteMinderContext.Attribute> attrList = context.getAttrList();
+
+        // Don't forget to add ACO attributes if SSO Cookie is not already created
+        List<SiteMinderContext.Attribute> acoAttrList = context.getAcoAttrList();
+
         // Ensure that the Attribute List is empty, as the
         // context could contain cached attributes from an isAuthN call
         context.setAttrList(new ArrayList<SiteMinderContext.Attribute>());
@@ -356,27 +357,27 @@ public class SiteMinderHighLevelAgent {
         boolean updateSsoToken;
         // check for some kind of credential
         int result = agent.checkUserCredentials(credentials, ssoCookie);
-        if(result == CHALLENGE) {
+        if (result == CHALLENGE) {
             return result;
         }
 
         final int currentAgentTimeSeconds = SiteMinderUtil.safeLongToInt(System.currentTimeMillis() / 1000);
-        if ( null != ssoCookie && ssoCookie.trim().length() > 0 ) {
+        if (null != ssoCookie && ssoCookie.trim().length() > 0) {
             // Attempt to authenticate with an existing cookie/SsoToken
             // Decode the SSO token and ensure the session has not expired by
             // checking for idle timeout and max timeout based on the last session/access time.
 
             result = agent.decodeSessionToken(context, ssoCookie);
 
-            if ( result != SUCCESS ) {
-                    logger.log(Level.FINE, "CA Single Sign-On Authentication attempt - CA Single Sign-On is unable to decode the token '" + SiteMinderUtil.safeNull(ssoCookie) + "'");
-                    return result;
+            if (result != SUCCESS) {
+                logger.log(Level.FINE, "CA Single Sign-On Authentication attempt - CA Single Sign-On is unable to decode the token '" + SiteMinderUtil.safeNull(ssoCookie) + "'");
+                return result;
             }
 
             final AuthenticationCacheKey cacheKey =
                     new AuthenticationCacheKey(context.getSessionDef().getId(), context.getRealmDef().getOid());
 
-            if ( ! validateDecodedSession( context.getSessionDef(), currentAgentTimeSeconds ) ){
+            if (!validateDecodedSession(context.getSessionDef(), currentAgentTimeSeconds)) {
                 logger.log(Level.WARNING, "Session validation failed for the following SsoToken: " + ssoCookie);
 
                 if (null != cache) {
@@ -386,17 +387,13 @@ public class SiteMinderHighLevelAgent {
                 return CHALLENGE;
             }
 
-            // TODO: Implement a tokenReuse threshold check, as a full SiteMinder Agent is expected to perform this operation
-            // updateSsoToken = tokenReuseThresholdExceeded( context.getSessionDef().getSessionLastTime(),
-            //        context.getSessionDef().getIdleTimeout(),
-            //        currentAgentTimeSeconds );
             updateSsoToken = true;
 
             SiteMinderContext.SessionDef sessionDef;
-            if(agentCache.getAuthenticationCacheSize() > 0) {
+            if (authnSubCache.getMaxSize() > 0) {
                 //lookup in cache
                 SiteMinderAuthResponseDetails authResponseDetails =
-                        getAuthenticationCacheEntry(cache, cacheKey, agentCache.getAuthenticationCacheMaxAge());
+                        getAuthenticationCacheEntry(cache, cacheKey, authnSubCache.getMaxAge());
 
                 if (authResponseDetails == null) {
                     // Cache miss occurred we need to Validate the decoded ssoToken/session
@@ -450,35 +447,36 @@ public class SiteMinderHighLevelAgent {
 
             //create a new SsoToken, with the lastSessionTime, and CurrentServerTime Attributes
             // updated to the current server/agent Time.
-            if ( ( agent.getUpdateCookieStatus() && updateSsoToken ) && null == context.getSsoToken() ){
+            if ((agent.getUpdateCookieStatus() && updateSsoToken) && null == context.getSsoToken()) {
                 //Validation of the session passed or cacheHit, we need to create a new token and cache the result
                 //Assuming that if a cacheHit occurs that this is equal to a login call, and we simply create a new ssoToken
                 //In the case of a cacheMiss we must call AgentApi.login
 
                 //Update the context.SessionDef CurrentServerTime, as this will be come the lastSessionTime value
-                context.getSessionDef().setCurrentServerTime( currentAgentTimeSeconds );
+                context.getSessionDef().setCurrentServerTime(currentAgentTimeSeconds);
                 //Init a sessionDef object from the current context which was populated by the Token Decode method
                 sessionDef = context.getSessionDef();
 
                 logger.log(Level.FINE, "SiteMinder Authentication - Attempt to obtain a new SSO token.");
 
                 result = agent.getSsoToken(context);
-                if ( result != YES ){
-                    logger.log(Level.FINE, "Unable to create a new SsoToken for the following SessionId: " + sessionDef.getId() );
+                if (result != YES) {
+                    logger.log(Level.FINE, "Unable to create a new SsoToken for the following SessionId: " + sessionDef.getId());
                     return FAILURE;
                 }
-                logger.log(Level.FINEST, "SiteMinder Authentication - Issued new ssoToken:" + context.getSsoToken() );
+                logger.log(Level.FINEST, "SiteMinder Authentication - Issued new ssoToken:" + context.getSsoToken());
 
-                context.getSessionDef().setCurrentServerTime( sessionDef.getCurrentServerTime() );
+                context.getSessionDef().setCurrentServerTime(sessionDef.getCurrentServerTime());
+                buildSessionCookieStringAttribute(context);
 
-                context.setSessionDef(new SiteMinderContext.SessionDef( context.getSessionDef().getReason(),
+                context.setSessionDef(new SiteMinderContext.SessionDef(context.getSessionDef().getReason(),
                         context.getSessionDef().getIdleTimeout(),
                         context.getSessionDef().getMaxTimeout(),
                         context.getSessionDef().getCurrentServerTime(),
                         context.getSessionDef().getSessionStartTime(),
                         context.getSessionDef().getSessionLastTime(),
                         context.getSessionDef().getId(),
-                        context.getSessionDef().getSpec() ));
+                        context.getSessionDef().getSpec()));
 
                 logger.log(Level.FINE, "Authentication user using cookie:" + ssoCookie);
             } else {
@@ -487,7 +485,7 @@ public class SiteMinderHighLevelAgent {
                 }
                 //ensure the sessionDef is updated in the context
                 //set currentServerTime
-                context.getSessionDef().setCurrentServerTime( currentAgentTimeSeconds );
+                context.getSessionDef().setCurrentServerTime(currentAgentTimeSeconds);
             }
 
             //Currently the sessionDef and sessionAttributes associated with the token obtained from the request message
@@ -498,14 +496,17 @@ public class SiteMinderHighLevelAgent {
 
         } else {
             // authenticate user using credentials
-            result = agent.authenticate( credentials, userIp, context.getTransactionId(), context, createToken );
-            if(result != YES) {
-               logger.log(Level.FINE, "Unable to authenticate user: " + SiteMinderUtil.getCredentialsAsString(credentials));
+            result = agent.authenticate(credentials, userIp, context.getTransactionId(), context, createToken);
+            if (result != YES) {
+                logger.log(Level.FINE, "Unable to authenticate user: " + SiteMinderUtil.getCredentialsAsString(credentials));
             } else {
                 logger.log(Level.FINE, "Authenticated user via user credentials: " + SiteMinderUtil.getCredentialsAsString(credentials));
 
-                if(agentCache.getAuthenticationCacheSize() > 0) {
-                    final AuthenticationCacheKey  cacheKey =
+                context.getAttrList().addAll(acoAttrList);
+                buildSessionCookieStringAttribute(context);
+
+                if (authnSubCache.getMaxSize() > 0) {
+                    final AuthenticationCacheKey cacheKey =
                             new AuthenticationCacheKey(context.getSessionDef().getId(), context.getRealmDef().getOid());
 
                     //store the smContext to the isAuth Cache
@@ -518,42 +519,103 @@ public class SiteMinderHighLevelAgent {
                 }
             }
         }
+
         //remove any duplicate attributes accumulated in the context
-        context.setAttrList( SiteMinderUtil.removeDuplicateAttributes( context.getAttrList(), new Comparator<SiteMinderContext.Attribute>() {
+        context.setAttrList(SiteMinderUtil.removeDuplicateAttributes(context.getAttrList(), new Comparator<SiteMinderContext.Attribute>() {
             @Override
             public int compare(SiteMinderContext.Attribute o1, SiteMinderContext.Attribute o2) {
-                if(o1.getId() != SiteMinderLowLevelAgent.HTTP_HEADER_VARIABLE_ID ) {
+                if (o1.getId() != SiteMinderLowLevelAgent.HTTP_HEADER_VARIABLE_ID) {
                     return o1.getName().compareTo(o2.getName());
-                }
-                else {
+                } else {
                     return 1;
                 }
             }
-        } ));
+        }));
         return result;
     }
 
     /**
      * Perform session validation against a decoded SessionDef
      *
-     * @param sessionDef the SiteMinderContext SessionDef
+     * @param sessionDef        the SiteMinderContext SessionDef
      * @param serverTimeSeconds is the current server time in seconds
      * @return true if both idleTimeOut and MaxTimeOut conditions have not been met
      */
-    private boolean validateDecodedSession( SiteMinderContext.SessionDef sessionDef, final int serverTimeSeconds ) {
+    private boolean validateDecodedSession(SiteMinderContext.SessionDef sessionDef, final int serverTimeSeconds) {
 
-        if ( sessionDef == null ) { return false;}
-
-        boolean validSession = true;
-        final int maxTimeOut = sessionDef.getMaxTimeout();
-        final int sessionStartTime = sessionDef.getSessionStartTime();
-
-        if ( ( serverTimeSeconds - sessionStartTime ) >= maxTimeOut ){ //MaxTimeOut Check
-            validSession = false;
-            logger.log( Level.FINEST, "Session validation failed, Reason: MaxTimeOut reached" );
+        if (sessionDef == null) {
+            return false;
         }
 
-        return validSession;
+        final int maxTimeOut = sessionDef.getMaxTimeout();
+        final int sessionStartTime = sessionDef.getSessionStartTime();
+        final int idleTimeOut = sessionDef.getIdleTimeout();
+        final int lastSessionTime = sessionDef.getSessionLastTime();
+
+        // Avoid validation if idle / max timeout are not defined.
+        if (idleTimeOut > 0 && (serverTimeSeconds - lastSessionTime) >= idleTimeOut) { //IdleTimeOut Check
+            logger.log(Level.FINE, "Session validation failed, Reason: IdleTimeOut reached");
+            return false; // Session validation failed;
+        }
+
+        // Enforce maxtimeout validation even if idletimeout validation turned positive        
+        if (maxTimeOut > 0 && (serverTimeSeconds - sessionStartTime) >= maxTimeOut) { //MaxTimeOut Check
+            logger.log(Level.FINE, "Session validation failed, Reason: MaxTimeOut reached");
+            return false; // Session validation failed;
+        }
+
+        return true;
+    }
+
+    /**
+     * Retrieve Agent Configuration Object details from a given agent/agent cache
+     * @param smAgentName Agent Name
+     * @param context SiteMinder Context
+     * @param agent SiteMinderLowLevelAgent
+     * @param agentCache Agent Cache
+     */
+    private void retrieveAcoDetails(final String smAgentName, final SiteMinderContext context,
+                                    final SiteMinderLowLevelAgent agent, final SiteMinderAgentContextCache agentCache) {
+        AgentContextSubCache acoSubCache = agentCache.getSubCache(AgentContextSubCacheType.AGENT_CACHE_ACO);
+        SiteMinderAcoDetails acoDetails;
+
+        if (acoSubCache.getMaxSize() > 0) {
+            final Cache cache = acoSubCache.getCache();
+            final String cacheKey = context.getAcoName();
+
+            acoDetails = getAcoCacheEntry(cache, cacheKey, acoSubCache.getMaxAge());
+            if (acoDetails == null) {
+                acoDetails = new SiteMinderAcoDetails(context.getAcoName(),
+                        agent.getAcoAttributes(smAgentName, context));
+                cache.store(cacheKey, acoDetails);
+            }
+        } else {
+            acoDetails = new SiteMinderAcoDetails(context.getAcoName(),
+                    agent.getAcoAttributes(smAgentName, context));
+        }
+
+        context.getAttrList().addAll(acoDetails.getAttrList());
+    }
+
+    private SiteMinderAcoDetails getAcoCacheEntry(Cache cache, Object cacheKey, long entryMaxAge) {
+        SiteMinderAcoDetails cachedAcoDetails =
+                (SiteMinderAcoDetails) cache.retrieve(cacheKey);
+
+        if (null != cachedAcoDetails) {
+            logger.log(Level.FINE, "Found SiteMinder ACO cache entry: " + cacheKey);
+
+            //now check if the cached entry exceeded the max cached time then remove from cache
+            if (System.currentTimeMillis() - cachedAcoDetails.getCreatedTimeStamp() > entryMaxAge) {
+                cache.remove(cacheKey);
+                logger.log(Level.FINE, "Maximum ACO cache age exceeded. Removed expired entry: " +
+                        cacheKey + " from ACO cache");
+                return null;
+            }
+        } else {
+            logger.log(Level.FINE, "SiteMinder ACO - cache missed");
+        }
+
+        return cachedAcoDetails;
     }
 
     private SiteMinderAuthResponseDetails getAuthorizationCacheEntry(Cache cache, Object cacheKey, long entryMaxAge) {
@@ -601,7 +663,7 @@ public class SiteMinderHighLevelAgent {
     /**
      * Get the SiteMinderAgentContextCache
      *
-     * @param smConfig the SiteMinderConfiguration
+     * @param smConfig  the SiteMinderConfiguration
      * @param agentName the agent name
      * @return the cache
      */
@@ -611,14 +673,25 @@ public class SiteMinderHighLevelAgent {
         SiteMinderAgentContextCache cache = cacheManager.getCache(smConfig.getGoid(), agentName);
         //create cache if the entry is not found
         if (cache == null) {
-            cache = cacheManager.createCache(smConfig.getGoid(), agentName,
+            List<AgentContextSubCache> subCaches = new ArrayList<>();
+
+            subCaches.add(new AgentContextSubCache(null, AgentContextSubCacheType.AGENT_CACHE_RESOURCE,
                     getAgentPropertyInteger(smConfig, SiteMinderConfig.AGENT_RESOURCE_CACHE_SIZE_PROPNAME, 10),
-                    getAgentPropertyLong(smConfig, SiteMinderConfig.AGENT_RESOURCE_CACHE_MAX_AGE_PROPNAME, 300000),
+                    getAgentPropertyLong(smConfig, SiteMinderConfig.AGENT_RESOURCE_CACHE_MAX_AGE_PROPNAME, 300000)));
+
+            subCaches.add(new AgentContextSubCache(null, AgentContextSubCacheType.AGENT_CACHE_AUTHENTICATION,
                     getAgentPropertyInteger(smConfig, SiteMinderConfig.AGENT_AUTHENTICATION_CACHE_SIZE_PROPNAME, 10),
-                    getAgentPropertyLong(smConfig, SiteMinderConfig.AGENT_AUTHENTICATION_CACHE_MAX_AGE_PROPNAME, 300000),
+                    getAgentPropertyLong(smConfig, SiteMinderConfig.AGENT_AUTHENTICATION_CACHE_MAX_AGE_PROPNAME, 300000)));
+
+            subCaches.add(new AgentContextSubCache(null, AgentContextSubCacheType.AGENT_CACHE_AUTHORIZATION,
                     getAgentPropertyInteger(smConfig, SiteMinderConfig.AGENT_AUTHORIZATION_CACHE_SIZE_PROPNAME, 10),
-                    getAgentPropertyLong(smConfig, SiteMinderConfig.AGENT_AUTHORIZATION_CACHE_MAX_AGE_PROPNAME, 300000)
-            );
+                    getAgentPropertyLong(smConfig, SiteMinderConfig.AGENT_AUTHORIZATION_CACHE_MAX_AGE_PROPNAME, 300000)));
+
+            subCaches.add(new AgentContextSubCache(null, AgentContextSubCacheType.AGENT_CACHE_ACO,
+                    getAgentPropertyInteger(smConfig, SiteMinderConfig.AGENT_ACO_CACHE_SIZE_PROPNAME, 10),
+                    getAgentPropertyLong(smConfig, SiteMinderConfig.AGENT_ACO_CACHE_MAX_AGE_PROPNAME, 300000)));
+
+            cache = cacheManager.createCache(smConfig.getGoid(), agentName, subCaches);
         }
 
         return cache;
@@ -630,19 +703,18 @@ public class SiteMinderHighLevelAgent {
         if (StringUtils.isNotEmpty(str)) {
             value = transform.call(str);
         }
-        if(value == null) {
+        if (value == null) {
             str = config.getProperty(SYSTEM_PROP_PREFIX + propName);
             if (StringUtils.isNotEmpty(str)) {
                 value = transform.call(str);
-            }
-            else {
+            } else {
                 value = defaultValue;
             }
         }
         return value;
     }
 
-    private  Integer getAgentPropertyInteger(final SiteMinderConfiguration smConfig, final String propName, int defaultValue) {
+    private Integer getAgentPropertyInteger(final SiteMinderConfiguration smConfig, final String propName, int defaultValue) {
         return getAgentProperty(smConfig, propName, defaultValue, new Functions.Unary<Integer, String>() {
             @Override
             public Integer call(String str) {
@@ -684,5 +756,12 @@ public class SiteMinderHighLevelAgent {
         });
     }
 
+    private void buildSessionCookieStringAttribute(SiteMinderContext context) {
+        if (StringUtils.isNotEmpty(context.getSsoToken()) && config.getBooleanProperty(GENERATE_SESSION_COOKIE_STRING_PROPERTY, false)) {
+            context.getAttrList().add(new SiteMinderContext.Attribute(
+                    SiteMinderAgentConstants.ATTR_SESSION_COOKIE_STRING,
+                    new SiteMinderSessionCookieStringBuilder().build(context)));
+        }
+    }
 
 }

@@ -11,7 +11,9 @@ public enum RestManVersion implements Comparable<RestManVersion> {
     VERSION_1_0(1, 0, 0),
     VERSION_1_0_1(1, 0, 1),
     VERSION_1_0_2(1, 0, 2),
-    VERSION_1_0_3(1, 0, 3);
+    VERSION_1_0_3(1, 0, 3),
+    VERSION_1_0_4(1, 0, 4),
+    VERSION_1_0_5(1, 0, 5);
 
     private final int major;
     private final int minor;

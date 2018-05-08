@@ -16,7 +16,7 @@ public class MockSinkManagerImpl extends SinkManagerImpl {
     private Collection<SinkConfiguration> sinkConfigurationCollection;
 
     public MockSinkManagerImpl(final ServerConfig serverConfig, final SyslogManager syslogManager, final TrafficLogger trafficLogger, final ApplicationEventProxy eventProxy) {
-        super(serverConfig, syslogManager, trafficLogger, eventProxy, null, null, null);
+        super(serverConfig, syslogManager, trafficLogger, eventProxy, null, null);
 
         sinkConfigurationCollection = new ArrayList<SinkConfiguration>();
     }

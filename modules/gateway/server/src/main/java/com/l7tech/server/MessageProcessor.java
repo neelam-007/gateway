@@ -30,9 +30,14 @@ import com.l7tech.server.audit.*;
 import com.l7tech.server.event.MessageProcessed;
 import com.l7tech.server.event.MessageReceived;
 import com.l7tech.server.log.TrafficLogger;
-import com.l7tech.server.message.*;
+import com.l7tech.server.message.HttpSessionPolicyContextCache;
+import com.l7tech.server.message.PolicyContextCache;
+import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.message.metrics.GatewayMetricsPublisher;
 import com.l7tech.server.message.metrics.GatewayMetricsUtils;
+import com.l7tech.server.message.metrics.LatencyMetrics;
+import com.l7tech.server.messageprocessor.injection.MessageProcessorInjector;
 import com.l7tech.server.policy.PolicyCache;
 import com.l7tech.server.policy.PolicyMetadata;
 import com.l7tech.server.policy.PolicyVersionException;
@@ -81,6 +86,7 @@ import java.util.logging.Logger;
 import static com.l7tech.gateway.common.log.GatewayDiagnosticContextKeys.FOLDER_ID;
 import static com.l7tech.gateway.common.log.GatewayDiagnosticContextKeys.SERVICE_ID;
 import static com.l7tech.objectmodel.EntityUtil.id;
+import static com.l7tech.server.ServerConfigParams.PARAM_RELAY_GATEWAY_METRICS_ENABLE;
 import static com.l7tech.util.Functions.map;
 
 /**
@@ -91,8 +97,8 @@ import static com.l7tech.util.Functions.map;
 @SuppressWarnings({ "ThrowableResultOfMethodCallIgnored" })
 public class MessageProcessor extends ApplicationObjectSupport implements InitializingBean {
     private static final int SETTINGS_RECHECK_MILLIS = 7937;
-    private static final String CLUSTER_PROP_RELAY_GATEWAY_METRICS_ENABLE = "relayGatewayMetrics.enable";
     private static final boolean CLUSTER_PROP_RELAY_GATEWAY_METRICS_ENABLE_DEFAULT_VALUE = true;
+
     private final ServiceCache serviceCache;
     private final PolicyCache policyCache;
     private final WssDecorator wssDecorator;
@@ -100,6 +106,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
     private final SecurityContextFinder securityContextFinder;
     private final LicenseManager licenseManager;
     private final ServiceMetricsServices serviceMetricsServices;
+    private final MessageProcessorInjector messageProcessorInjector;
     private final AuditContextFactory auditContextFactory;
     private final MessageSummaryAuditFactory messageSummaryAuditFactory;
     private final Config config;
@@ -111,11 +118,11 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
 
     @Inject
     @Named("debugManager")
-    private DebugManager debugManager;
+    DebugManager debugManager;
 
     @Inject
     @Named("gatewayMetricsPublisher")
-    private GatewayMetricsPublisher gatewayMetricsEventsPublisher;
+    GatewayMetricsPublisher gatewayMetricsEventsPublisher;
 
     /**
      * Create the new <code>MessageProcessor</code> instance with the service
@@ -132,22 +139,23 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
      * @param messageSummaryAuditFactory factory for producing message summary audit records after each request
      * @param config          config provider
      * @param trafficLogger   traffic logger
-     * @param messageProcessingEventChannel   channel on which to publish the message processed event (for auditing)
+     * @param messageProcessingEventChannel   channel on which to publish the message processed event (for auditing and metrics)
      * @throws IllegalArgumentException if any of the arguments is null
      */
-    public MessageProcessor( final ServiceCache sc,
-                             final PolicyCache pc,
-                             final WssDecorator wssd,
-                             final SecurityTokenResolver securityTokenResolver,
-                             final SecurityContextFinder securityContextFinder,
-                             final LicenseManager licenseManager,
-                             final ServiceMetricsServices metricsServices,
-                             final AuditContextFactory auditContextFactory,
-                             final MessageSummaryAuditFactory messageSummaryAuditFactory,
-                             final Config config,
-                             final TrafficLogger trafficLogger,
-                             ApplicationEventPublisher messageProcessingEventChannel )
-      throws IllegalArgumentException {
+    public MessageProcessor(final ServiceCache sc,
+                            final PolicyCache pc,
+                            final WssDecorator wssd,
+                            final SecurityTokenResolver securityTokenResolver,
+                            final SecurityContextFinder securityContextFinder,
+                            final LicenseManager licenseManager,
+                            final ServiceMetricsServices metricsServices,
+                            final AuditContextFactory auditContextFactory,
+                            final MessageSummaryAuditFactory messageSummaryAuditFactory,
+                            final MessageProcessorInjector messageProcessorInjector,
+                            final Config config,
+                            final TrafficLogger trafficLogger,
+                            ApplicationEventPublisher messageProcessingEventChannel)
+            throws IllegalArgumentException {
         if (sc == null) throw new IllegalArgumentException("Service Cache is required");
         if (pc == null) throw new IllegalArgumentException("Policy Cache is required");
         if (wssd == null) throw new IllegalArgumentException("Wss Decorator is required");
@@ -157,6 +165,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         if (config == null) throw new IllegalArgumentException("Server Config is required");
         if (trafficLogger == null) throw new IllegalArgumentException("Traffic Logger is required");
         if (messageProcessingEventChannel == null) messageProcessingEventChannel = new EventChannel();
+        if (messageProcessorInjector == null) throw new IllegalArgumentException("Message Processor Injector is required");
         this.serviceCache = sc;
         this.policyCache = pc;
         this.wssDecorator = wssd;
@@ -166,6 +175,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
         this.serviceMetricsServices = metricsServices;
         this.auditContextFactory = auditContextFactory;
         this.messageSummaryAuditFactory = messageSummaryAuditFactory;
+        this.messageProcessorInjector = messageProcessorInjector;
         this.config = config;
         this.trafficLogger = trafficLogger;
         this.messageProcessingEventChannel = messageProcessingEventChannel;
@@ -194,7 +204,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             config.getBooleanProperty( ServerConfigParams.PARAM_WSS_PROCESSOR_STRICT_SIG_CONFIRMATION, true)
         ) );
 
-        relayGatewayMetricsEnable.set(config.getBooleanProperty(CLUSTER_PROP_RELAY_GATEWAY_METRICS_ENABLE, CLUSTER_PROP_RELAY_GATEWAY_METRICS_ENABLE_DEFAULT_VALUE));
+        relayGatewayMetricsEnable.set(config.getBooleanProperty(PARAM_RELAY_GATEWAY_METRICS_ENABLE, CLUSTER_PROP_RELAY_GATEWAY_METRICS_ENABLE_DEFAULT_VALUE));
     }
 
     /**
@@ -374,6 +384,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
 
         updateServiceStatisticsAndMetrics( context );
         notifyTrafficMonitors(context, status);
+        GatewayMetricsUtils.publishServiceFinish(context, new LatencyMetrics(context.getStartTime(), context.getEndTime()));
 
         publishMessageProcessedEvent(context, status);
 
@@ -604,7 +615,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             if (context.getRequest().isHttpRequest())
                 processRequestHttpHeaders(context);
 
-           publishMessageReceivedEvent(context);
+            publishMessageReceivedEvent(context);
 
             // Get the server policy
             lookupServerPolicy();
@@ -615,9 +626,16 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             if (ensureSecurityProcessingIfEnabledForService())
                 return securityProcessingAssertionStatus;
 
+            // Execute pre service extensions
+            boolean continueProcessing = messageProcessorInjector.executePreServiceInjections(context);
+            if (!continueProcessing) {
+                logger.log(Level.FINE, "Stopping message processing due to pre-service injection response");
+                return AssertionStatus.NONE;
+            }
+
             AssertionStatus status = processPreServicePolicies();
             if ( status != AssertionStatus.NONE ) {
-                return status;            
+                return status;
             }
 
             // Run the policy
@@ -636,6 +654,15 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
             }
 
             context.setPolicyResult(status);
+
+            // Execute post service extensions
+            if (status == AssertionStatus.NONE) {
+                boolean maintainAssertionStatus = messageProcessorInjector.executePostServiceInjections(context);
+                if (!maintainAssertionStatus) {
+                    logger.log(Level.FINE, "Message processing falsified due to post-service injection response");
+                    status = AssertionStatus.FALSIFIED;
+                }
+            }
 
             // Run post service global policies
             if ( status == AssertionStatus.NONE ) {

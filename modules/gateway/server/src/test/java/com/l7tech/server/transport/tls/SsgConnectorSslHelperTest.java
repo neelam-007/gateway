@@ -29,7 +29,6 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
-import java.util.Collections;
 
 /**
  * Add additional SsgConnectorSslHelper tests here
@@ -61,8 +60,7 @@ public class SsgConnectorSslHelperTest {
                 defaultKey,
                 licenseManager,
                 connectorManager,
-                trustedCertServices,
-                Collections.emptySet()
+                trustedCertServices
         ));
 
         final Pair<X509Certificate, PrivateKey> keys = new TestCertificateGenerator().basicConstraintsCa(1).subject("cn=test1").keySize(1024).generateWithKey();
@@ -95,6 +93,38 @@ public class SsgConnectorSslHelperTest {
         Assert.assertThat(helper.getEnabledCiphers(), Matchers.arrayContaining(recommendedCiphers.split(",")));
 
         connector.putProperty(SsgConnector.PROP_TLS_CIPHERLIST, "UNSUPPORTED_CIPHER_TEST1, UNSUPPORTED_CIPHER_TEST2");
+        try {
+            new SsgConnectorSslHelper(module, connector);
+            Assert.fail("should have failed with ListenerException");
+        } catch (final ListenerException ex) {
+            Assert.assertThat(ExceptionUtils.getMessage(ex), Matchers.equalTo("Unable to open listen port with the specified SSL configuration: None of the selected cipher suites are supported by the underlying TLS provider"));
+        }
+    }
+
+    @Test
+    @BugId("DE361605")//with JDK1.8.0_171 and above
+    public void testForSupportedAndUnsupportedCiphers() throws Exception {
+        connector.putProperty(SsgConnector.PROP_TLS_CIPHERLIST, "TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA," + recommendedCiphers +
+                ",TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA" +
+                ",SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA" +
+                ",TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA" +
+                ",TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA" +
+                ",SSL_RSA_WITH_3DES_EDE_CBC_SHA");
+
+        SsgConnectorSslHelper helper = new SsgConnectorSslHelper(module, connector);
+        Assert.assertThat(helper.getEnabledCiphers(), Matchers.arrayContaining(recommendedCiphers.split(",")));
+    }
+
+    @Test
+    @BugId("DE361605")//with JDK1.8.0_171 and above
+    public void testForListenPortOpenWithJustUnsupportedCiphers_3DES() throws Exception {
+        connector.putProperty(SsgConnector.PROP_TLS_CIPHERLIST,
+                "TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA," +
+                ",TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA" +
+                ",SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA" +
+                ",TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA" +
+                ",TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA" +
+                ",SSL_RSA_WITH_3DES_EDE_CBC_SHA");
         try {
             new SsgConnectorSslHelper(module, connector);
             Assert.fail("should have failed with ListenerException");

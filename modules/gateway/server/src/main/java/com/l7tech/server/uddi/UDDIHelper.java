@@ -13,13 +13,17 @@ import com.l7tech.objectmodel.GoidRange;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.policy.variable.ServerVariables;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
-import com.l7tech.server.transport.SsgConnectorActivationListener;
+import com.l7tech.server.transport.SsgConnectorActivationEvent;
+import com.l7tech.server.transport.SsgConnectorDeactivationEvent;
+import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.uddi.*;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.InetAddressUtil;
 import org.apache.cxf.configuration.jsse.TLSClientParameters;
 import org.apache.cxf.jaxws.JaxWsClientProxy;
 import org.apache.cxf.transport.http.HTTPConduit;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationListener;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.KeyManager;
@@ -37,7 +41,7 @@ import java.util.logging.Logger;
 /**
  * UDDI utility methods.
  */
-public class UDDIHelper implements SsgConnectorActivationListener {
+public class UDDIHelper implements PostStartupApplicationListener {
 
     //- PUBLIC
 
@@ -384,7 +388,17 @@ public class UDDIHelper implements SsgConnectorActivationListener {
     }
 
     @Override
-    public void notifyActivated( final SsgConnector connector ) {
+    public void onApplicationEvent( ApplicationEvent applicationEvent ) {
+        if ( applicationEvent instanceof SsgConnectorActivationEvent ) {
+            SsgConnectorActivationEvent event  = ( SsgConnectorActivationEvent )applicationEvent;
+            notifyActivated( event.getConnector() );
+        } else if ( applicationEvent instanceof SsgConnectorDeactivationEvent ) {
+            SsgConnectorDeactivationEvent event = (SsgConnectorDeactivationEvent) applicationEvent;
+            notifyDeactivated( event.getConnector() );
+        }
+    }
+
+    private void notifyActivated( final SsgConnector connector ) {
         if ( connector.offersEndpoint( SsgConnector.Endpoint.MESSAGE_INPUT ) ) {
             synchronized( activeConnectorProtocols ) {
                 activeConnectorProtocols.put( connector.getGoid(), connector.getScheme() );
@@ -392,8 +406,7 @@ public class UDDIHelper implements SsgConnectorActivationListener {
         }
     }
 
-    @Override
-    public void notifyDeactivated( final SsgConnector connector ) {
+    private void notifyDeactivated( final SsgConnector connector ) {
         synchronized( activeConnectorProtocols ) {
             activeConnectorProtocols.remove( connector.getGoid() );
         }

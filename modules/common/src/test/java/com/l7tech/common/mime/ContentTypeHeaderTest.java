@@ -141,6 +141,7 @@ public class ContentTypeHeaderTest {
         assertEquals("utf-8", ContentTypeHeader.TEXT_DEFAULT.getParam("charset"));
         assertEquals("utf-8", ContentTypeHeader.SOAP_1_2_DEFAULT.getParam("charset"));
         assertEquals("utf-8", ContentTypeHeader.APPLICATION_JSON.getParam("charset"));
+        assertEquals("utf-8", ContentTypeHeader.APPLICATION_GRAPHQL.getParam("charset"));
     }
 
     @Test
@@ -167,5 +168,36 @@ public class ContentTypeHeaderTest {
         out.write( (HttpConstants.HEADER_CONTENT_TYPE + ": " + contentType).getBytes( MimeUtil.ENCODING ) );
         out.write( MimeHeader.CRLF );
         return out.toByteArray();
+    }
+
+    /*
+        Test to give the charset in content type if response does not have charset
+     */
+    @Test
+    @BugId( "DE294968" )
+    public void testNoCharsetInHeader() throws Exception {
+        //If response does not have charset in content type user can give choice of charset as a second parameter
+        assertEquals("UTF-8", ContentTypeHeader.create("application/xml", "UTF-8").getEncoding().toString() );
+        assertEquals("ISO-8859-1", ContentTypeHeader.create("application/json", "ISO-8859-1").getEncoding().toString() );
+        //If response contains a charset in content type, no change in content type header
+        assertEquals("UTF-8", ContentTypeHeader.create("application/xml; charset=UTF-8", "ISO-8859-1").getEncoding().toString() );
+    }
+
+    @Test
+    @BugId("DE327512")
+    public void testGraphQl() throws Exception {
+        String cType = "application/graphql";
+        final ContentTypeHeader cTypeHeader = ContentTypeHeader.parseValue(cType);
+        assertTrue( "ContentType is incorrect", cTypeHeader.isGraphQl() );
+        assertTrue("Type should be found in list of textual types", cTypeHeader.isTextualContentType());
+
+        String ctypeWithCharset = "application/graphql; charset=utf-8";
+        final ContentTypeHeader ctypeHeaderWithCharset = ContentTypeHeader.parseValue(ctypeWithCharset);
+        assertTrue( "ContentType is incorrect", ctypeHeaderWithCharset.isGraphQl() );
+        assertTrue("Type should be found in list of textual types", ctypeHeaderWithCharset.isTextualContentType());
+
+        String incorrectCtype = "application/graphqi";
+        final ContentTypeHeader incorrectCTypeHeader = ContentTypeHeader.parseValue(incorrectCtype);
+        assertFalse("Type should not be graphql as it is unknown", incorrectCTypeHeader.isGraphQl());
     }
 }

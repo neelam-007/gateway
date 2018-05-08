@@ -1,19 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ivy-module version="1.0">
-	<info organisation="com.l7tech"
-		module="Sha2AliaserAssertion"
-        status="integration"
-	>
-	</info>
-	<configurations>
+    <info organisation="com.l7tech"
+        module="Sha2AliaserAssertion"
+        status="integration">
+    </info>
+    <configurations>
         <include file="../assertion-ivyconfiguration.xml"/>
-	</configurations>
-	<publications>
-		<artifact name="Sha2AliaserAssertion" type="aar" ext="aar" conf="master"/>
-	</publications>
-	<dependencies>
+    </configurations>
+    <publications>
+        <artifact type="aar" ext="aar" conf="master"/>
+        <artifact type="pom" ext="pom" conf="pom"/>
+    </publications>
+    <dependencies>
         <dependency name="layer7-modular-assertions" rev="latest.integration"
                     conf="compile->compile;runtime->runtime;test->test"/>
-                
-	</dependencies>
+    </dependencies>
 </ivy-module>

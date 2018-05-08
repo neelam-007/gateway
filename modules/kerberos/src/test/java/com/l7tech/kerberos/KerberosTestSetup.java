@@ -1,6 +1,8 @@
 package com.l7tech.kerberos;
 
 import com.l7tech.util.SyspropUtil;
+import com.l7tech.util.TestTimeSource;
+import com.l7tech.util.TimeSource;
 import org.apache.commons.codec.binary.Base64;
 import org.ietf.jgss.GSSManager;
 
@@ -12,6 +14,7 @@ import java.io.*;
 public class KerberosTestSetup {
 
     public static KerberosClient client;
+    public static TimeSource TIME_SOURCE;
 
     public static void init(File tmpDir) throws IOException, KerberosException {
         SyspropUtil.setProperty(KerberosConfigConstants.SYSPROP_SSG_HOME, tmpDir.getPath());
@@ -20,6 +23,7 @@ public class KerberosTestSetup {
     }
 
     public static void setUp(File tmpDir) throws Exception {
+         TIME_SOURCE = new TestTimeSource();
         if (MockKrb5LoginModule.getUsesRainier()) {
             client = new KerberosClient() {
                 @Override
@@ -35,6 +39,8 @@ public class KerberosTestSetup {
                 }
             };
         }
+        KerberosClient.setTimeSource(TIME_SOURCE);
+        KerberosTicketRepository.setTimeSource(TIME_SOURCE);
         setUpLoginConfig(tmpDir);
         SyspropUtil.setProperty(KerberosConfigConstants.SYSPROP_KRB5CFG_PATH, tmpDir.getPath() + File.separator + "krb5.conf");
     }

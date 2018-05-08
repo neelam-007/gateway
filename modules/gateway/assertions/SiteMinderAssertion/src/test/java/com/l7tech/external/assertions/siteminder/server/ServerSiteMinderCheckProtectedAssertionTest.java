@@ -4,22 +4,24 @@ import com.ca.siteminder.SiteMinderContext;
 import com.ca.siteminder.SiteMinderHighLevelAgent;
 import com.ca.siteminder.SiteMinderLowLevelAgent;
 import com.l7tech.external.assertions.siteminder.SiteMinderCheckProtectedAssertion;
+import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.gateway.common.audit.TestAudit;
 import com.l7tech.message.HttpRequestKnobStub;
 import com.l7tech.message.Message;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.siteminder.SiteMinderConfigurationManager;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.context.ApplicationContext;
+
+import java.util.Collections;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
@@ -54,6 +56,7 @@ public class ServerSiteMinderCheckProtectedAssertionTest {
     private Message responseMsg;
     private Message requestMsg;
     private PolicyEnforcementContext pec;
+    private TestAudit testAudit;
 
     @BeforeClass
     public static void setUpBeforeClass() {
@@ -62,14 +65,15 @@ public class ServerSiteMinderCheckProtectedAssertionTest {
 
     @Before
     public void setUp() throws Exception {
-
         System.setProperty(AbstractServerSiteMinderAssertion.SYSTEM_PROPERTY_SITEMINDER_ENABLED, "true");
+
         when(mockAppCtx.getBean("siteMinderHighLevelAgent", SiteMinderHighLevelAgent.class)).thenReturn(mockHla);
         when(mockAppCtx.getBean("siteMinderConfigurationManager", SiteMinderConfigurationManager.class)).thenReturn(mockSiteMinderConfigurationManager);
         when(mockSiteMinderConfigurationManager.getSiteMinderLowLevelAgent(Goid.DEFAULT_GOID)).thenReturn(mockLla);
         when(mockLla.isInitialized()).thenReturn(true);
         when(mockHla.checkProtected(eq(REQUEST_IP_ADDRESS), eq("agent"), isNull(String.class), eq("/protected"), eq("POST"), any(SiteMinderContext.class))).thenReturn(true);
         when(mockHla.checkProtected(eq(REQUEST_IP_ADDRESS), eq("agent"), isNull(String.class), eq("/unprotected"), eq("POST"), any(SiteMinderContext.class))).thenReturn(false);
+
         assertion = new SiteMinderCheckProtectedAssertion();
         //Setup Context
         requestMsg = new Message();
@@ -82,8 +86,7 @@ public class ServerSiteMinderCheckProtectedAssertionTest {
         requestMsg.attachHttpRequestKnob(httpRequestKnobStub);
         responseMsg = new Message();
         pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(requestMsg, responseMsg);
-
-
+        testAudit = new TestAudit();
     }
 
     @After
@@ -237,7 +240,12 @@ public class ServerSiteMinderCheckProtectedAssertionTest {
         assertion.setAction("POST");
         when(mockLla.isInitialized()).thenReturn(false);
         fixture = new ServerSiteMinderCheckProtectedAssertion(assertion, mockAppCtx);
+        ApplicationContexts.inject(fixture, Collections.singletonMap("auditFactory", testAudit.factory()));
+
         assertEquals(AssertionStatus.FALSIFIED, fixture.checkRequest(pec));
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.SINGLE_SIGN_ON_ERROR));
+        assertTrue("CA Single Sign-On Agent Initialization Error",
+                testAudit.isAuditPresentContaining("Unable to initialize CA Single Sign-On Agent"));
     }
 
     @Test

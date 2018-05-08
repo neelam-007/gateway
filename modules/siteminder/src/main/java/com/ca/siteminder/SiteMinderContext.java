@@ -1,8 +1,6 @@
 package com.ca.siteminder;
 
 import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
-import com.l7tech.objectmodel.Goid;
-import com.l7tech.util.Pair;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -14,9 +12,8 @@ import java.util.*;
  */
 public class SiteMinderContext {
 
-
     public enum AuthenticationScheme {
-        NONE, ALLOWSAVE, BASIC, FORM, DIGEST, METADATA, NTCHALLENGE, SAML, SSL, X509CERT, X509CERTISSUEDN, X509CERTUSERDN, XMLDOC, XMLDSIG, XKMS, XMLWSSEC;
+        NONE, ALLOWSAVE, BASIC, FORM, DIGEST, METADATA, NTCHALLENGE, SAML, SSL, X509CERT, X509CERTISSUEDN, X509CERTUSERDN, XMLDOC, XMLDSIG, XKMS, XMLWSSEC, JWT;
 
         public static AuthenticationScheme findValue(String s) {
            for(AuthenticationScheme val : values()) {
@@ -27,8 +24,6 @@ public class SiteMinderContext {
 
     }
 
-
-
     private ResourceContextDef resContextDef;
     private RealmDef realmDef;
     private SessionDef sessionDef;
@@ -36,8 +31,10 @@ public class SiteMinderContext {
     private List<Attribute> attrList = new ArrayList<>();
     private List<AuthenticationScheme> authSchemes = new ArrayList<>();
     private String ssoToken;
+    private String ssoZoneName;
     private SiteMinderLowLevelAgent agent;
     private String sourceIpAddress;
+    private String acoName;
     private SiteMinderConfiguration config;
     private boolean resourceProtected;
 
@@ -58,6 +55,10 @@ public class SiteMinderContext {
         this.sourceIpAddress = context.getSourceIpAddress();
         this.transactionId = context.getTransactionId();
         this.ssoToken = context.getSsoToken();
+
+        // TODO : did we miss this?
+        this.ssoZoneName = context.getSsoZoneName();
+        this.acoName = context.getAcoName();
 
         this.sessionDef = new SessionDef( sessionDef.getReason(), sessionDef.getIdleTimeout() ,
                 sessionDef.getMaxTimeout(), sessionDef.getCurrentServerTime(), sessionDef.getSessionStartTime(),
@@ -88,6 +89,14 @@ public class SiteMinderContext {
 
     public void setSsoToken(@Nullable String ssoToken) {
         this.ssoToken = ssoToken;
+    }
+
+    public String getSsoZoneName() {
+        return ssoZoneName;
+    }
+
+    public void setSsoZoneName(String ssoZoneName) {
+        this.ssoZoneName = ssoZoneName;
     }
 
     public ResourceContextDef getResContextDef() {
@@ -146,6 +155,14 @@ public class SiteMinderContext {
         this.sourceIpAddress = sourceIpAddress;
     }
 
+    public String getAcoName() {
+        return acoName;
+    }
+
+    public void setAcoName(String acoName) {
+        this.acoName = acoName;
+    }
+
     public SiteMinderConfiguration getConfig() {
         return config;
     }
@@ -162,6 +179,27 @@ public class SiteMinderContext {
         this.resourceProtected = resourceProtected;
     }
 
+    public List<Attribute> getAcoAttrList() {
+        List<Attribute> acoAttrList = new ArrayList<>();
+
+        for (Attribute attr : attrList) {
+            if (attr.getName().startsWith(Attribute.ACO_ATTRIBUTE_PREFIX)) {
+                acoAttrList.add(attr);
+            }
+        }
+
+        return acoAttrList;
+    }
+
+    public Map<String, Attribute> getAttrMap() {
+        final Map<String, Attribute> attrMap = new HashMap<>();
+
+        for (SiteMinderContext.Attribute attr : attrList) {
+            attrMap.put(attr.getName(), attr);
+        }
+
+        return attrMap;
+    }
 
     public static class SessionDef  {
         private int reason;
@@ -256,7 +294,6 @@ public class SiteMinderContext {
         public void setSpec(String spec) {
             this.spec = spec;
         }
-
 
     }
 
@@ -371,6 +408,9 @@ public class SiteMinderContext {
 
     public static class Attribute {
 
+        public static final String COMMON_ATTRIBUTE_PREFIX = "ATTR_";
+        public static final String ACO_ATTRIBUTE_PREFIX = COMMON_ATTRIBUTE_PREFIX + "ACO_";
+
         private String name;
         private Object value;
         private final int ttl;//time to live in seconds
@@ -403,6 +443,19 @@ public class SiteMinderContext {
 
         public Object getValue() {
             return value;
+        }
+
+        public String getValueAsString() {
+            return (String) getValue();
+        }
+
+        public int getValueAsInt() {
+            try {
+                return Integer.parseInt(getValueAsString());
+            } catch (Exception ex) {
+                // TODO: Could have been better to return attribute's default value
+                return 0;
+            }
         }
 
         public void setValue(Object value) {

@@ -1,5 +1,6 @@
 package com.l7tech.server.bundling;
 
+import com.l7tech.gateway.common.audit.AuditConfiguration;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.module.ServerModuleFile;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
@@ -64,6 +65,8 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
     public static final String IncludeOnlyServicePolicy = "false";
     public static final String IncludeOnlyDependenciesOption = "IncludeOnlyDependencies";
     public static final String IncludeOnlyDependencies = "false";
+    public static final String IncludeGatewayConfigurationOption = "IncludeGatewayConfiguration";
+    public static final String IncludeGatewayConfiguration = "false";
     /**
      * The mapping action for read-only entities owned by {@code SolutionKit}'s.
      */
@@ -100,6 +103,7 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
         optionBuilder.put(DependencyAnalyzer.ReturnAssertionsAsDependenciesOptionKey, false);
         optionBuilder.put("IncludeOnlyServicePolicyOption",Boolean.parseBoolean(bundleExportProperties.getProperty(IncludeOnlyServicePolicyOption, IncludeOnlyServicePolicy)));
         optionBuilder.put("IncludeOnlyDependenciesOption",Boolean.parseBoolean(bundleExportProperties.getProperty(IncludeOnlyDependenciesOption, IncludeOnlyDependencies)));
+        optionBuilder.put("IncludeGatewayConfiguration",Boolean.parseBoolean(bundleExportProperties.getProperty(IncludeGatewayConfigurationOption, IncludeGatewayConfiguration)));
         return optionBuilder.map();
     }
 
@@ -351,6 +355,14 @@ public class EntityBundleExporterImpl implements EntityBundleExporter {
                     new EntityMappingInstructions.TargetMapping(EntityMappingInstructions.TargetMapping.Type.MODULE_SHA265),
                     calcAction(entity, readOnlyEntities, (defaultAction.equals(EntityMappingInstructions.MappingAction.Ignore) ? defaultAction : EntityMappingInstructions.MappingAction.NewOrExisting)),
                     false,
+                    false);
+        } else if(entity instanceof AuditConfiguration) {
+            //make audit configuration update by default
+            mapping = new EntityMappingInstructions(
+                    dependentObject.getEntityHeader(),
+                    new EntityMappingInstructions.TargetMapping(EntityMappingInstructions.TargetMapping.Type.ID),
+                    EntityMappingInstructions.MappingAction.NewOrExisting,
+                    true,
                     false);
         } else {
             //create the default mapping instructions

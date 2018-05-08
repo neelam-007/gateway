@@ -74,10 +74,11 @@ public @interface Dependency {
         ASSERTION_ACCESS(EntityType.ASSERTION_ACCESS),
         SCHEDULED_TASK(EntityType.SCHEDULED_TASK),
         INTERFACE_TAG(EntityType.INTERFACE_TAG),
-        WORK_QUEUE(EntityType.WORK_QUEUE),
         SERVER_MODULE_FILE(EntityType.SERVER_MODULE_FILE),
         POLICY_BACKED_SERVICE(EntityType.POLICY_BACKED_SERVICE),
-        SOLUTION_KIT(EntityType.SOLUTION_KIT);
+        SOLUTION_KIT(EntityType.SOLUTION_KIT),
+        LOG_SINK(EntityType.LOG_SINK),
+        AUDIT_CONFIG(EntityType.AUDIT_CONFIG);
 //        SERVICE_DOCUMENT(EntityType.SERVICE_DOCUMENT);
 
         private EntityType entityType;

@@ -93,7 +93,12 @@ public class ServerDecodeJsonWebTokenAssertion extends AbstractServerAssertion<D
             context.setVariable(assertion.getTargetVariablePrefix() + ".authentication_tag", parts[4]);
         } else if (parts.length == JsonWebSignature.COMPACT_SERIALIZATION_PARTS) {
             context.setVariable(assertion.getTargetVariablePrefix() + ".type", "JWS");
-            context.setVariable(assertion.getTargetVariablePrefix() + ".payload", new String(BaseEncoding.base64Url().decode(parts[1])));
+            try {
+                context.setVariable(assertion.getTargetVariablePrefix() + ".payload", new String(BaseEncoding.base64Url().decode(parts[1])));
+            } catch (IllegalArgumentException e) {
+                logAndAudit(AssertionMessages.JWT_DECODE_ERROR, ExceptionUtils.getMessage(e));
+                return AssertionStatus.FAILED;
+            }
             context.setVariable(assertion.getTargetVariablePrefix() + ".signature", parts[2]);
 
         }
@@ -220,20 +225,32 @@ public class ServerDecodeJsonWebTokenAssertion extends AbstractServerAssertion<D
     }
 
     private AssertionStatus expandHeaders(final PolicyEnforcementContext context, final String header) {
+        final String decoded;
+
         try {
-            final String decoded = new String(BaseEncoding.base64Url().decode(header));
-            final Map<String, Object> headers = new ObjectMapper().reader(Map.class).readValue(decoded);
-            final List<String> names = Lists.newArrayList();
-            context.setVariable(assertion.getTargetVariablePrefix() + ".header", decoded);
-            for (Map.Entry<String, Object> ent : headers.entrySet()) {
-                names.add(ent.getKey());
-                context.setVariable(assertion.getTargetVariablePrefix() + ".header." + ent.getKey(), ent.getValue());
-            }
-            context.setVariable(assertion.getTargetVariablePrefix() + ".header.names", names);
+            decoded = new String(BaseEncoding.base64Url().decode(header));
+        } catch (IllegalArgumentException e) {
+            logAndAudit(AssertionMessages.JWT_DECODE_ERROR);
+            return AssertionStatus.FAILED;
+        }
+
+        final Map<String, Object> headers;
+
+        try {
+            headers = new ObjectMapper().reader(Map.class).readValue(decoded);
         } catch (IOException e) {
             logAndAudit(AssertionMessages.JWT_GENERAL_DECODE_ERROR, "could not parse headers.");
             return AssertionStatus.FAILED;
         }
+
+        final List<String> names = Lists.newArrayList();
+        context.setVariable(assertion.getTargetVariablePrefix() + ".header", decoded);
+        for (Map.Entry<String, Object> ent : headers.entrySet()) {
+            names.add(ent.getKey());
+            context.setVariable(assertion.getTargetVariablePrefix() + ".header." + ent.getKey(), ent.getValue());
+        }
+        context.setVariable(assertion.getTargetVariablePrefix() + ".header.names", names);
+
         return AssertionStatus.NONE;
     }
 

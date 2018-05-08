@@ -1,4 +1,4 @@
-# Assertion Mappings
+# Assertion Mappings (alphabetically ordered)
 
 AuditDetail:
   externalName: AuditDetail
@@ -8,10 +8,12 @@ AuditDetail:
     LoggingOnly: LoggingOnly
     Level: Level
   samplePayload: |
-    "AuditDetail": {
-      "Detail": "A log message",
-      "LoggingOnly": true,
-      "Level" : "INFO"
+    {
+      "AuditDetail": {
+        "Detail": "A log message",
+        "LoggingOnly": true,
+        "Level" : "INFO"
+      }
     }
   jsonSchema: |
     {
@@ -31,7 +33,7 @@ AuditDetail:
               "type": "string",
               "enum": [ "WARNING", "INFO", "FINE", "FINER", "FINEST" ]
             }
-          }
+          },
           "required": [ "Detail" ]
         }
       },
@@ -42,13 +44,15 @@ Authentication:
   externalName: Authentication
   className: com.l7tech.policy.assertion.identity.AuthenticationAssertion
   properties:
-    IdentityProviderOid: IdentityProviderOid
+    IdentityProviderName: IdentityProviderOid
+  propertiesNameToIdEntityType:
+    IdentityProviderName: ID_PROVIDER_CONFIG
   samplePayload: |
-      {
-        "Authentication" : {
-          "IdentityProviderOid" : "0000000000000000fffffffffffffffe"
-        }
-      },
+    {
+      "Authentication" : {
+        "IdentityProviderName" : "Internal Identity Provider"
+      }
+    }
   jsonSchema: |
     {
       "$schema": "http://json-schema.org/draft-04/schema#",
@@ -57,11 +61,11 @@ Authentication:
         "Authentication": {
           "type": "object",
           "properties": {
-            "IdentityProviderOid": {
+            "IdentityProviderName": {
               "type" : "string"
             }
-          }
-          "required": [ "IdentityProviderOid" ]
+          },
+          "required": [ "IdentityProviderName" ]
         }
       },
       "required": [ "Authentication" ]
@@ -75,12 +79,16 @@ CodeInjectionProtection:
     IncludeUrlPath: IncludeUrlPath
     IncludeUrlQueryString: IncludeUrlQueryString
     Protections: Protections
+    Target: Target
   samplePayload: |
-    "CodeInjectionProtection": {
-      "IncludeBody": true,
-      "IncludeUrlPath": false,
-      "IncludeUrlQueryString": false,
-      "Protections": [ "htmlJavaScriptInjection", "shellInjection" ]
+    {
+      "CodeInjectionProtection": {
+        "IncludeBody": true,
+        "IncludeUrlPath": false,
+        "IncludeUrlQueryString": false,
+        "Protections": [ "htmlJavaScriptInjection", "shellInjection" ],
+        "Target": "REQUEST",
+      }
     }
   jsonSchema: |
     {
@@ -105,7 +113,11 @@ CodeInjectionProtection:
                 "type": "string",
                 "enum": [ "htmlJavaScriptInjection", "phpEvalInjection", "shellInjection", "ldapDnInjection", "ldapSearchInjection", "xpathInjection"  ]
               }
-            }
+            },
+            "Target": {
+              "type": "string",
+              "enum": [ "REQUEST","RESPONSE"  ]
+           }
           }
         }
       },
@@ -116,7 +128,9 @@ CORS:
   externalName: CORS
   className: com.l7tech.external.assertions.cors.CORSAssertion
   samplePayload: |
-    "CORS": {
+    {
+      "CORS": {
+      }
     }
   jsonSchema: |
     {
@@ -143,9 +157,11 @@ HardcodedResponse:
   propertiesIsBase64Encoded:
     ResponseBody: true
   samplePayload: |
-    "HardcodedResponse": {
-      "ResponseContentType": "Content-Type: text/html; charset=utf-8"
-      "ResponseBody": "Hello!"
+    {
+      "HardcodedResponse": {
+        "ResponseContentType": "Content-Type: text/html; charset=utf-8",
+        "ResponseBody": "Hello!"
+      }
     }
   jsonSchema: |
     {
@@ -178,7 +194,9 @@ HttpBasic:
   externalName: HttpBasic
   className: com.l7tech.policy.assertion.credential.http.HttpBasic
   samplePayload: |
-    "HttpBasic": {
+    {
+      "HttpBasic": {
+      }
     }
   jsonSchema: |
     {
@@ -194,38 +212,44 @@ HttpBasic:
       "required": [ "HttpBasic" ]
     }
 
-HttpRouting:
-  externalName: HttpRouting
-  className: com.l7tech.policy.assertion.HttpRoutingAssertion
+RemoteIpRange:
+  externalName: RemoteIpRange
+  className: com.l7tech.policy.assertion.RemoteIpRange
   properties:
-    ProtectedServiceUrl: ProtectedServiceUrl
-    HttpMethod: HttpMethodAsString
+    AllowRange: AllowRange
+    NetworkMask: NetworkMask
+    StartIp: StartIp
   samplePayload: |
-    "HttpMethod": {
-      "ProtectedServiceUrl": https://myservice.com,
-      "HttpMethod": DELETE
+    {
+      "RemoteIpRange": {
+        "AllowRange" : false,
+        "NetworkMask" : "24",
+        "StartIp" : "192.168.1.0"
+     }
     }
   jsonSchema: |
     {
       "$schema": "http://json-schema.org/draft-04/schema#",
       "type": "object",
       "properties": {
-        "HttpRouting": {
+        "RemoteIpRange": {
           "type": "object",
           "properties": {
-            "ProtectedServiceUrl": {
+            "AllowRange": {
+              "type": "boolean"
+            },
+            "NetworkMask": {
               "type": "string"
             },
-            "HttpMethod": {
-              "type": "string",
-              "enum": [ "GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS", "OTHER" ]
+            "StartIp": {
+              "type": "string"
             }
-          },
-          "required": [ "ProtectedServiceUrl", "HttpMethod" ]
+          }
         }
       },
-      "required": [ "HttpRouting" ]
+      "required": [ "RemoteIpRange" ]
     }
+
 
 RateLimit:
   externalName: RateLimit
@@ -235,10 +259,12 @@ RateLimit:
     HardLimit: HardLimit
     CounterName: CounterName
   samplePayload: |
-    "RateLimit": {
-      "MaxRequestsPerSecond": 25,
-      "HardLimit": true,
-      "CounterName": "RateLimit-${request.clientId}-b0938b7ad6ff"
+    {
+      "RateLimit": {
+        "MaxRequestsPerSecond": 25,
+        "HardLimit": true,
+        "CounterName": "RateLimit-${request.clientId}-b0938b7ad6ff"
+      }
     }
   jsonSchema: |
     {
@@ -272,9 +298,11 @@ SetVariable:
   propertiesIsBase64Encoded:
     Expression: true
   samplePayload: |
-    "SetVariable": {
-      "VariableToSet": "myVariable",
-      "Expression": "myValue"
+    {
+      "SetVariable": {
+        "VariableToSet": "myVariable",
+        "Expression": "myValue"
+      }
     }
   jsonSchema: |
     {
@@ -304,8 +332,10 @@ Ssl:
     Option: Option
     RequireClientAuthentication: RequireClientAuthentication
   samplePayload: |
-    "Ssl": {
-      "Option": "Optional"
+    {
+      "Ssl": {
+        "Option": "Optional"
+      }
     }
   jsonSchema: |
     {
@@ -319,7 +349,7 @@ Ssl:
               "type": "string",
               "enum": [ "Required", "Optional", "Forbidden" ]
             },
-            "RequireClientAuthentication" {
+            "RequireClientAuthentication": {
               "type": "boolean"
             }
           },
@@ -328,33 +358,3 @@ Ssl:
       },
       "required": [ "Ssl" ]
     }
-
-ThroughputQuota:
-  externalName: ThroughputQuota
-  className: com.l7tech.policy.assertion.sla.ThroughputQuota
-  properties:
-    CounterName: CounterName
-  samplePayload: |
-    "ThroughputQuota": {
-      "CounterName": "ThroughputQuota-${request.clientId}-b0938b7ad6fe"
-    }
-  jsonSchema: |
-    {
-      "$schema": "http://json-schema.org/draft-04/schema#",
-      "type": "object",
-      "properties": {
-        "ThroughputQuota": {
-          "type": "object",
-          "properties": {
-            "CounterName": {
-              "type": "string"
-            }
-          },
-          "required": [ "CounterName" ]
-        }
-      },
-      "required": [ "ThroughputQuota" ]
-    }
-
-# TODO: add more mappings here
-...

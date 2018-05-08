@@ -6,28 +6,37 @@ import com.jgoodies.plaf.plastic.PlasticLookAndFeel;
 import com.jgoodies.plaf.plastic.PlasticXPLookAndFeel;
 import com.jgoodies.plaf.plastic.theme.SkyBluerTahoma;
 import com.jgoodies.plaf.windows.ExtWindowsLookAndFeel;
-import com.l7tech.util.BuildInfo;
+
+import com.l7tech.console.logging.ErrorManager;
+import com.l7tech.console.security.ManagerTrustProvider;
+import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.SplashScreen;
+import com.l7tech.console.util.SsmPreferences;
+
+import com.l7tech.console.security.PolicyManagerBuildInfo;
+
 import com.l7tech.gui.util.DialogDisplayer;
+import com.l7tech.util.BuildInfo;
 import com.l7tech.util.FileUtils;
 import com.l7tech.util.JdkLoggerConfigurator;
 import com.l7tech.util.SyspropUtil;
-import com.l7tech.console.util.SplashScreen;
-import com.l7tech.console.util.SsmPreferences;
-import com.l7tech.console.util.Registry;
-import com.l7tech.console.security.ManagerTrustProvider;
-import com.l7tech.console.logging.ErrorManager;
-
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
+import javax.jnlp.DownloadService;
+import javax.jnlp.DownloadService2;
+import javax.jnlp.ServiceManager;
 import javax.swing.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.security.Security;
+import java.util.Hashtable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.security.Security;
+import com.l7tech.console.security.PolicyManagerBuildInfo;
+import javax.jnlp.DownloadService2.ResourceSpec;
 
 /**
  * This class is the SSG console Main entry point.
@@ -46,13 +55,17 @@ public class Main {
      */
     public void run() {
         try {
+            if (isWebStart()) {
+                //Delete the old versions of webstart jar from cache, otherwise it contains multiple versions of same jar file
+                deleteOldVersionsOfJar();
+            }
             setInitialEnvironment();
             final SplashScreen screen = new SplashScreen("/com/l7tech/console/resources/CA_Policy_Manager_Splash.jpg");
             try {
                 screen.splash();
                 JdkLoggerConfigurator.configure("com.l7tech.console", "com/l7tech/console/resources/logging.properties");
                 // create logger after logging is configured
-                Logger.getLogger( Main.class.getName() ).info("Starting " + BuildInfo.getLongBuildString());
+                Logger.getLogger( Main.class.getName() ).info("Starting " + PolicyManagerBuildInfo.getInstance().getLongBuildString());
 
                 configureSecurity();
 
@@ -80,7 +93,70 @@ public class Main {
         }
     }
 
+    /*
+        Deletes the old versions of webstart jar from the java cache
+     */
+    private void deleteOldVersionsOfJar() {
+        try {
+            DownloadService2 service2 = (DownloadService2)
+                    ServiceManager.lookup("javax.jnlp.DownloadService2");
+            DownloadService service = (DownloadService) ServiceManager.lookup("javax.jnlp.DownloadService");
+            ResourceSpec spec = new ResourceSpec(".*ssg/webstart.*", ".*", DownloadService2.JAR);
+            ResourceSpec[] results = service2.getCachedResources(spec);
 
+            Hashtable<String,Integer> duplicateEntry = new Hashtable();
+            int index = 0;
+            for (ResourceSpec result : results) {
+                String strUrl = result.getUrl();
+                Integer returnedindex = duplicateEntry.get(strUrl);
+
+                if (returnedindex == null) {
+                    duplicateEntry.put(strUrl, new Integer(index));
+                }
+                else {
+                    String strVersion = results[returnedindex].getVersion();
+                    String strcurrentIndexversion = result.getVersion();
+
+                    if (strVersion == null && strcurrentIndexversion == null) {
+                        break;
+                    }
+                    else {
+                        int firstDotIndex = strVersion.indexOf(".");
+                        int majorversion = Integer.parseInt(strVersion.substring(0, firstDotIndex));
+                        int currentfirstDotIndex = strcurrentIndexversion.indexOf(".");
+                        int majorcurrentIndexversion = Integer.parseInt(strcurrentIndexversion.substring(0,currentfirstDotIndex));
+
+                        if (majorcurrentIndexversion > majorversion) {
+                            duplicateEntry.put(strUrl, new Integer(index));
+                            service.removeResource(new URL(strUrl), strVersion);
+                        }
+                        else if (majorcurrentIndexversion == majorversion) {
+                            float minorversion = Float.parseFloat(strVersion.substring(firstDotIndex + 1,strVersion.length()));
+                            float minorcurrentIndexversion = Float.parseFloat(strcurrentIndexversion.substring(currentfirstDotIndex + 1,strcurrentIndexversion.length()));
+
+                            if (minorcurrentIndexversion > minorversion) {
+                                duplicateEntry.put(strUrl, new Integer(index));
+                                service.removeResource(new URL(strUrl), strVersion);
+                            }
+                            else {
+                                service.removeResource(new URL(strUrl), strcurrentIndexversion);
+                            }
+                        }
+                        else {
+                            service.removeResource(new URL(strUrl), strcurrentIndexversion);
+                        }
+                    }
+                }
+                index++;
+            }
+
+
+        }
+        catch (Exception e)
+        {
+            ErrorManager.getDefault().notify( Level.WARNING, e, "Error while trying to remove earlier versions of jar from Java cache" );
+        }
+    }
     private void installLookAndFeel(final SsmPreferences prefs) {
         // register L&F
         new KunststoffLookAndFeel();
@@ -151,8 +227,8 @@ public class Main {
         System.setProperty("sun.awt.exception.handler", com.l7tech.console.logging.AwtErrorHandler.class.getName());
 
         // Build information
-        System.setProperty("com.l7tech.buildstring", BuildInfo.getBuildString());
-        System.setProperty("com.l7tech.builddate", BuildInfo.getBuildDate() + BuildInfo.getBuildTime());
+        System.setProperty("com.l7tech.buildstring", PolicyManagerBuildInfo.getInstance().getBuildString());
+        System.setProperty("com.l7tech.builddate", PolicyManagerBuildInfo.getInstance().getBuildDate() + PolicyManagerBuildInfo.getInstance().getBuildTime());
 
         // Software-only TransformerFactory to ignore the alluring Tarari impl, even if tarari_raxj.jar is sitting right there
         System.setProperty("javax.xml.transform.TransformerFactory", "org.apache.xalan.processor.TransformerFactoryImpl");
@@ -203,7 +279,14 @@ public class Main {
         if (ctxName == null) {
             ctxName = "com/l7tech/console/resources/beans-context.xml";
         }
-        String ctxHeavy = "com/l7tech/console/resources/beans-application.xml";
+        String ctxHeavy = null;
+
+        if (isWebStart()) {
+            ctxHeavy = "com/l7tech/console/resources/beans-webstart.xml";
+        }
+        else {
+            ctxHeavy = "com/l7tech/console/resources/beans-application.xml";
+        }
         ApplicationContext context = new ClassPathXmlApplicationContext(new String[]{ctxHeavy, ctxName});
 
         Registry.setDefault( context.getBean("registry", Registry.class) );
@@ -212,6 +295,10 @@ public class Main {
     }
 
 
+    private static boolean isWebStart() {
+
+        return System.getProperty("javawebstart.version", null) != null;
+    }
     /**
      * Starts the application. The applicaiton is started
      * as a <code>PrivilegedAction</code> to provide the security

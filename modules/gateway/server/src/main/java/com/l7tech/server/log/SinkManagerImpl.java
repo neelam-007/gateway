@@ -26,6 +26,7 @@ import com.l7tech.util.*;
 import com.l7tech.util.Functions.Unary;
 import com.l7tech.util.Functions.UnaryThrows;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.transaction.annotation.Propagation;
@@ -72,7 +73,6 @@ public class SinkManagerImpl
                             final TrafficLogger trafficLogger,
                             final ApplicationEventProxy eventProxy,
                             final ClusterInfoManager clusterInfoManager,
-                            final ClusterContextFactory clusterContextFactory,
                             final RoleManager roleManager ) {
         if ( serverConfig == null ) throw new IllegalArgumentException("serverConfig must not be null");
         if ( syslogManager == null ) throw new IllegalArgumentException("syslogManager must not be null");
@@ -81,7 +81,6 @@ public class SinkManagerImpl
         this.syslogManager = syslogManager;
         this.trafficLogger = trafficLogger;
         this.clusterInfoManager = clusterInfoManager;
-        this.clusterContextFactory = clusterContextFactory;
         this.roleManager = roleManager;
 
         eventProxy.addApplicationListener(new ApplicationListener() {
@@ -251,7 +250,6 @@ public class SinkManagerImpl
     public Goid save(SinkConfiguration entity) throws SaveException {
         Goid goid =  super.save(entity);
         entity.setGoid(goid);
-        createRoles(entity);
         return goid;
     }
 
@@ -447,6 +445,11 @@ public class SinkManagerImpl
     protected void initDao() {
         logger.info("Redirecting logging to configured log sinks.");
 
+        // The clusterContextFactory may not exist in all gateway modes
+        if(applicationContext.containsBean("clusterContextFactory")){
+            clusterContextFactory = applicationContext.getBean("clusterContextFactory", ClusterContextFactory.class);
+        }
+
         installHandlers();
         updateLogLevels(null, null);
         installLogConfigurationListener();
@@ -482,7 +485,7 @@ public class SinkManagerImpl
     private final SyslogManager syslogManager;
     private final TrafficLogger trafficLogger;
     private final ClusterInfoManager clusterInfoManager;
-    private final ClusterContextFactory clusterContextFactory;
+    private ClusterContextFactory clusterContextFactory;
     private final RoleManager roleManager;
     @SuppressWarnings({ "MismatchedQueryAndUpdateOfCollection" })
     private final Collection<Logger> configuredLoggers = new ArrayList<Logger>(); // hold a reference to prevent GC

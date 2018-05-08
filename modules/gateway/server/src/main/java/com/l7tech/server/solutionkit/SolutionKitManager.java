@@ -3,6 +3,7 @@ package com.l7tech.server.solutionkit;
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gateway.common.solutionkit.SolutionKitException;
 import com.l7tech.gateway.common.solutionkit.SolutionKitHeader;
+import com.l7tech.gateway.common.solutionkit.SolutionKitImportInfo;
 import com.l7tech.objectmodel.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -29,6 +30,18 @@ public interface SolutionKitManager extends EntityManager<SolutionKit, SolutionK
     @NotNull
     String importBundle(@NotNull final String bundle, @NotNull final SolutionKit metadata, final boolean isTest) throws Exception;
 
+    /**
+     * Import the given bundles. This method will persist entities that are installed / upgraded / uninstalled, but will not
+     * persist solution kit entity to the database.
+     *
+     * @param solutionKitImportInfo The information needed for multi bundle import such as delete bundles and install bundles.
+     *                        Also holds solution kits metadata
+     * @param isTest true if this is a test installation, no changes will be persisted; false otherwise
+     * @return the resulting mappings XML
+     * @throws Exception A variety of exceptions from solution kits and restman
+     */
+    @NotNull
+    String importBundles(@NotNull final SolutionKitImportInfo solutionKitImportInfo, final boolean isTest) throws Exception;
     /**
      * Find a list of Solution Kits by a given GUID.
      * @param solutionKitGuid Solution Kit's globally unique identifier (author specified)

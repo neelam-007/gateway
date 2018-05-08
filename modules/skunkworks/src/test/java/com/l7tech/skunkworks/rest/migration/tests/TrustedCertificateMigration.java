@@ -1456,4 +1456,36 @@ public class TrustedCertificateMigration extends com.l7tech.skunkworks.rest.tool
         assertNotFoundResponse(response);
     }
 
+    @Test
+    public void testExportImportTrustedCertWithSpacesInCN() throws Exception {
+        //create trusted cert with spaces in CN
+        X509Certificate certificate = new TestCertificateGenerator().subject("CN=ssl.layer7tech.com,O=\"CA Technologies,Inc\",L=Hyd,ST=HYD    State,C=IN").generate();
+        TrustedCertificateMO trustedCertificateMO = ManagedObjectFactory.createTrustedCertificate();
+        trustedCertificateMO.setName("Source Cert With Spaces");
+        trustedCertificateMO.setCertificateData(ManagedObjectFactory.createCertificateData(certificate));
+
+        RestResponse response = getSourceEnvironment().processRequest("trustedCertificates", HttpMethod.POST, ContentType.APPLICATION_XML.toString(), XmlUtil.nodeToString(ManagedObjectFactory.write(trustedCertificateMO)));
+        assertOkCreatedResponse(response);
+
+        Item<TrustedCertificateMO> trustedCertItemWithSpace = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+        trustedCertItemWithSpace.setContent(trustedCertificateMO);
+        try {
+            //export the bundle
+            response = getSourceEnvironment().processRequest("bundle?trustedCertificate=" + trustedCertItemWithSpace.getId(), HttpMethod.GET, null, "");
+            assertOkResponse(response);
+
+            Item<Bundle> bundleItem = MarshallingUtils.unmarshal(Item.class, new StreamSource(new StringReader(response.getBody())));
+            //import the bundle
+            response = getTargetEnvironment().processRequest("bundle", HttpMethod.PUT, ContentType.APPLICATION_XML.toString(), objectToString(bundleItem.getContent()));
+            assertOkResponse(response);
+        } finally {
+            //delete certificate
+            response = getSourceEnvironment().processRequest("trustedCertificates/" + trustedCertItemWithSpace.getId(), HttpMethod.DELETE, null, "");
+            assertOkEmptyResponse(response);
+
+            response = getTargetEnvironment().processRequest("trustedCertificates/" + trustedCertItemWithSpace.getId(), HttpMethod.DELETE, null, "");
+            assertOkEmptyResponse(response);
+        }
+    }
+
 }

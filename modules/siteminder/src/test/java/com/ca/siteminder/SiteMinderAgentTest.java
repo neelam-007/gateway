@@ -38,7 +38,29 @@ public class SiteMinderAgentTest {
         cacheManager = new SiteMinderAgentContextCacheManagerImpl();
         fixture = new SiteMinderHighLevelAgent(new MockConfig(new HashMap<String, String>()), cacheManager);
         smConfig = new SiteMinderConfiguration();
-        cacheManager.createCache(smConfig.getGoid(), AGENT_NAME, 10, 300000, 10, 300000, 10, 300000);
+        cacheManager.createCache(smConfig.getGoid(), AGENT_NAME,
+                buildSubCaches(10, 300000,
+                        10, 300000,
+                        10, 300000,
+                        10, 300000));
+    }
+
+    private List<SiteMinderAgentContextCache.AgentContextSubCache> buildSubCaches(int resMaxSize, long resMaxAge,
+                                                                                  int authnMaxSize, long authnMaxAge,
+                                                                                  int authzMaxSize, long authzMaxAge,
+                                                                                  int acoMaxSize, long acoMaxAge) {
+        List<SiteMinderAgentContextCache.AgentContextSubCache> subCaches = new ArrayList<>();
+
+        subCaches.add(new SiteMinderAgentContextCache.AgentContextSubCache(null, SiteMinderAgentContextCache.AgentContextSubCacheType.AGENT_CACHE_RESOURCE,
+                resMaxSize, resMaxAge));
+        subCaches.add(new SiteMinderAgentContextCache.AgentContextSubCache(null, SiteMinderAgentContextCache.AgentContextSubCacheType.AGENT_CACHE_AUTHENTICATION,
+                authnMaxSize, authnMaxAge));
+        subCaches.add(new SiteMinderAgentContextCache.AgentContextSubCache(null, SiteMinderAgentContextCache.AgentContextSubCacheType.AGENT_CACHE_AUTHORIZATION,
+                authzMaxSize, authzMaxAge));
+        subCaches.add(new SiteMinderAgentContextCache.AgentContextSubCache(null, SiteMinderAgentContextCache.AgentContextSubCacheType.AGENT_CACHE_ACO,
+                acoMaxSize, acoMaxAge));
+
+        return subCaches;
     }
 
     @After

@@ -8,13 +8,14 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.variable.VariableMetadata;
+import org.apache.commons.lang.StringUtils;
 
 import java.util.*;
 
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 
 /**
- * 
+ *
  */
 public class SiteMinderAuthenticateAssertion extends Assertion implements MessageTargetable, UsesVariables, SetsVariables {
 
@@ -26,10 +27,13 @@ public class SiteMinderAuthenticateAssertion extends Assertion implements Messag
     private boolean isLastCredential = true;
     private String namedUser;
     private String namedCertificate;
+    private String ssoZoneName;
     protected final MessageTargetableSupport messageTargetableSupport;
     private boolean sendUsernamePasswordCredential = true;
     private boolean sendX509CertificateCredential = false;
     private boolean createSsoToken = true;
+    private String namedJsonWebToken;
+    private boolean sendJWT = false;
 
     public SiteMinderAuthenticateAssertion() {
         this( TargetMessageType.REQUEST );
@@ -87,6 +91,29 @@ public class SiteMinderAuthenticateAssertion extends Assertion implements Messag
 
     public void setNamedCertificate(String certificateName) { this.namedCertificate = certificateName; }
 
+    public boolean isSendJWT() {
+        return this.sendJWT;
+    }
+
+    public void setSendJWT(boolean sendJWT) {
+        this.sendJWT = sendJWT;
+    }
+
+    public String getNamedJsonWebToken() {
+        return this.namedJsonWebToken;
+    }
+
+    public void setNamedJsonWebToken(String jsonWebToken) {
+        this.namedJsonWebToken = jsonWebToken;
+    }
+
+    public String getSsoZoneName() {
+        return ssoZoneName;
+    }
+
+    public void setSsoZoneName(String ssoZoneName) {
+        this.ssoZoneName = ssoZoneName;
+    }
 
     // For compatibility: read old policy with Login element
     public void setLogin(String login) { setNamedUser(login); }
@@ -107,7 +134,7 @@ public class SiteMinderAuthenticateAssertion extends Assertion implements Messag
         List<String> varsUsed = new ArrayList<>();
         varsUsed.add(prefix + ".smcontext");
 
-        if (useSMCookie && cookieSourceVar != null && !cookieSourceVar.isEmpty()) {
+        if (useSMCookie && StringUtils.isNotEmpty(cookieSourceVar)) {
             varsUsed.add(cookieSourceVar);
         }
 
@@ -116,6 +143,11 @@ public class SiteMinderAuthenticateAssertion extends Assertion implements Messag
             varsUsed.addAll(Arrays.asList(refNames));
             refNames = Syntax.getReferencedNames(namedCertificate);
             varsUsed.addAll(Arrays.asList(refNames));
+            varsUsed.addAll(Arrays.asList(Syntax.getReferencedNames(namedJsonWebToken)));
+        }
+
+        if (createSsoToken && StringUtils.isNotEmpty(ssoZoneName)) {
+            varsUsed.addAll(Arrays.asList(Syntax.getReferencedNames(ssoZoneName)));
         }
 
         return varsUsed.toArray(new String[varsUsed.size()]);

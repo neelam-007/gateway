@@ -97,7 +97,6 @@
         <L7p:UnknownAssertion/>
         <L7p:ThroughputQuota/>
         <L7p:ThroughputQuotaQuery/>
-        <L7p:EmailAlert/>
         <L7p:CommentAssertion/>
         <L7p:SqlAttackProtection/>
         <L7p:OversizedText/>
@@ -172,7 +171,6 @@
         <L7p:LookupTrustedCertificate/>
         <L7p:MapValue/>
         <L7p:RaiseError/>
-        <L7p:InvokePolicyAsync/>
         <L7p:Transaction L7p:Usage="Required">
             <L7p:FalseAssertion/>
         </L7p:Transaction>

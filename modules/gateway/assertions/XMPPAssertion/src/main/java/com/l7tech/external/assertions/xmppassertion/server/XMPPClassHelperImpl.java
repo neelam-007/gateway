@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.xmppassertion.server;
 
 import com.l7tech.external.assertions.xmppassertion.server.xmlstreamcodec.XMPPMinaClassException;
+import com.l7tech.util.ExceptionUtils;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
@@ -42,6 +43,7 @@ public class XMPPClassHelperImpl implements XMPPClassHelper {
     private Class nioSocketAcceptorClass;
     private Constructor nioSocketAcceptorConstructor;
     private Method nioSocketAcceptorGetFilterChainMethod;
+    private Method nioSocketAcceptorSetReuseAddressMethod;
 
     private Class ioFilterClass;
 
@@ -138,6 +140,7 @@ public class XMPPClassHelperImpl implements XMPPClassHelper {
             nioSocketAcceptorClass = Class.forName("org.apache.mina.transport.socket.nio.NioSocketAcceptor", true, classLoader);
             nioSocketAcceptorConstructor = nioSocketAcceptorClass.getConstructor();
             nioSocketAcceptorGetFilterChainMethod = nioSocketAcceptorClass.getMethod("getFilterChain");
+            nioSocketAcceptorSetReuseAddressMethod = nioSocketAcceptorClass.getMethod("setReuseAddress", Boolean.TYPE);
 
             ioFilterClass = Class.forName("org.apache.mina.core.filterchain.IoFilter", true, classLoader);
 
@@ -265,6 +268,18 @@ public class XMPPClassHelperImpl implements XMPPClassHelper {
         checkInitialized();
         try {
             return nioSocketAcceptorGetFilterChainMethod.invoke(service);
+        } catch(IllegalAccessException e) {
+            throw new XMPPMinaClassException("Failure with Apache Mina components.", e);
+        } catch(InvocationTargetException e) {
+            throw new XMPPMinaClassException("Failure with Apache Mina components.", e);
+        }
+    }
+
+    @Override
+    public void nioSocketAcceptorSetReuseAddress(Object acceptor, boolean reuseAddress) throws XMPPClassHelperNotInitializedException, XMPPMinaClassException {
+        checkInitialized();
+        try {
+            nioSocketAcceptorSetReuseAddressMethod.invoke(acceptor, reuseAddress);
         } catch(IllegalAccessException e) {
             throw new XMPPMinaClassException("Failure with Apache Mina components.", e);
         } catch(InvocationTargetException e) {
@@ -502,6 +517,7 @@ public class XMPPClassHelperImpl implements XMPPClassHelper {
         } catch(IllegalAccessException e) {
             throw new XMPPMinaClassException("Failure with Apache Mina components.", e);
         } catch(InvocationTargetException e) {
+            logger.log(Level.WARNING, "Failed to bind to address '" + address.toString() + "': " + ExceptionUtils.getMessageWithCause(e));
             throw new XMPPMinaClassException("Failure with Apache Mina components.", e);
         }
     }

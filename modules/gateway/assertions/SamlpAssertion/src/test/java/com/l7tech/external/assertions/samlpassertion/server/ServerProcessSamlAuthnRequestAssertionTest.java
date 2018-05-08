@@ -36,8 +36,12 @@ public class ServerProcessSamlAuthnRequestAssertionTest {
     private static final String REQUEST_INVALID_SIG =
             "<samlp:AuthnRequest\n" +
             "    AssertionConsumerServiceURL=\"https://www.google.com/a/g.feide.no/acs\"\n" +
+            "    AssertionConsumerServiceIndex=\"3\"\n" +
+            "    AttributeConsumingServiceIndex=\"5\"\n" +
             "    Consent=\"consent\" Destination=\"destination\"\n" +
-            "    ID=\"djikeehkdinmglljlaeianmgabajfnplkldoamkl\" IsPassive=\"false\"\n" +
+            "    ID=\"djikeehkdinmglljlaeianmgabajfnplkldoamkl\"\n" +
+            "    IsPassive=\"true\"\n" +
+            "    ForceAuthn=\"true\"\n" +
             "    IssueInstant=\"2008-05-27T08:19:29Z\"\n" +
             "    ProtocolBinding=\"urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST\"\n" +
             "    ProviderName=\"google.com\" Version=\"2.0\" xmlns:samlp=\"urn:oasis:names:tc:SAML:2.0:protocol\">\n" +
@@ -110,16 +114,57 @@ public class ServerProcessSamlAuthnRequestAssertionTest {
             assertEquals( "none", AssertionStatus.NONE, status );
         }
 
-        // Failure, missing ACS URL
+        // Success, AssertionConsumerServiceURL is optional
         {
+            // AssertionConsumerServiceURL by default is set to true (unless altered by the Advice)
+            processSamlAuthnRequestAssertion.setRequiredAssertionConsumerServiceURL(false);
             final PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(
                     new Message( XmlUtil.parse( REQUEST_INVALID_SIG.replace( "AssertionConsumerServiceURL=\"https://www.google.com/a/g.feide.no/acs\"", "" )) ),
                     null );
 
             AssertionStatus status = evaluateAndClose( serverProcessSamlAuthnRequestAssertion, pec );
-            assertEquals( "failure acs url missing", AssertionStatus.FALSIFIED, status );
+            assertEquals( "AssertionConsumerServiceURL is optional", AssertionStatus.NONE, status );
         }
 
+        // Success, AssertionConsumerServiceIndex is optional
+        {
+            final PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(
+                    new Message( XmlUtil.parse( REQUEST_INVALID_SIG.replace( "AssertionConsumerServiceIndex=\"3\"", "" )) ),
+                    null );
+
+            AssertionStatus status = evaluateAndClose( serverProcessSamlAuthnRequestAssertion, pec );
+            assertEquals( "AssertionConsumerServiceIndex is optional", AssertionStatus.NONE, status );
+        }
+
+        // Success, AttributeConsumingServiceIndex is optional
+        {
+            final PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(
+                    new Message( XmlUtil.parse( REQUEST_INVALID_SIG.replace( "AttributeConsumingServiceIndex=\"5\"", "" )) ),
+                    null );
+
+            AssertionStatus status = evaluateAndClose( serverProcessSamlAuthnRequestAssertion, pec );
+            assertEquals( "AttributeConsumingServiceIndex is optional", AssertionStatus.NONE, status );
+        }
+
+        // Success, ProtocolBinding is optional
+        {
+            final PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(
+                    new Message( XmlUtil.parse( REQUEST_INVALID_SIG.replace( "ProtocolBinding=\"urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST\"", "" )) ),
+                    null );
+
+            AssertionStatus status = evaluateAndClose( serverProcessSamlAuthnRequestAssertion, pec );
+            assertEquals( "ProtocolBinding is optional", AssertionStatus.NONE, status );
+        }
+
+        // Success, ProviderName is optional
+        {
+            final PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(
+                    new Message( XmlUtil.parse( REQUEST_INVALID_SIG.replace( "ProviderName=\"google.com\"", "" )) ),
+                    null );
+
+            AssertionStatus status = evaluateAndClose( serverProcessSamlAuthnRequestAssertion, pec );
+            assertEquals( "ProviderName is optional", AssertionStatus.NONE, status );
+        }
         // Failure, missing ID
         {
             final PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(
@@ -172,12 +217,10 @@ public class ServerProcessSamlAuthnRequestAssertionTest {
 
         final ServerProcessSamlAuthnRequestAssertion serverProcessSamlAuthnRequestAssertion =
                 buildServerAssertion( processSamlAuthnRequestAssertion );
-
-        final PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(
-                new Message( XmlUtil.parse(REQUEST_INVALID_SIG)),
-                null );
         
-        try {
+        try (final PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(
+                new Message( XmlUtil.parse(REQUEST_INVALID_SIG)),
+                null )) {
             AssertionStatus status = serverProcessSamlAuthnRequestAssertion.checkRequest( pec );
             assertEquals( "success", AssertionStatus.NONE, status );
             assertEquals( "subject", "subject", pec.getVariable( "authnRequest.subject" ) );
@@ -198,8 +241,12 @@ public class ServerProcessSamlAuthnRequestAssertionTest {
             assertEquals( "issuer.spNameQualifier", "spNameQualifier", pec.getVariable( "authnRequest.issuer.spNameQualifier" ) );
             assertEquals( "issuer.format", "urn:oasis:names:tc:SAML:2.0:nameid-format:entity", pec.getVariable( "authnRequest.issuer.format" ) );
             assertEquals( "issuer.spProvidedId", "spProvidedId", pec.getVariable( "authnRequest.issuer.spProvidedId" ) );
-        } finally {
-            pec.close();
+            assertEquals( "acsIndex", 3, pec.getVariable("authnRequest.acsIndex") );
+            assertEquals( "attrcsIndex", 5, pec.getVariable("authnRequest.attrcsIndex") );
+            assertEquals( "protocolBinding", "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST", pec.getVariable("authnRequest.protocolBinding"));
+            assertEquals( "providerName", "google.com", pec.getVariable("authnRequest.providerName"));
+            assertEquals( "forceAuthn", true, pec.getVariable("authnRequest.forceAuthn"));
+            assertEquals( "isPassive", true, pec.getVariable("authnRequest.isPassive"));
         }
     }
 
@@ -303,6 +350,93 @@ public class ServerProcessSamlAuthnRequestAssertionTest {
 
             AssertionStatus status = evaluateAndClose( serverProcessSamlAuthnRequestAssertion, pec );
             assertEquals( "none", AssertionStatus.NONE, status );
+        }
+    }
+
+    @Test
+    public void testRequiredOptionalAttribute() throws Exception {
+        final ProcessSamlAuthnRequestAssertion processSamlAuthnRequestAssertion =
+                new ProcessSamlAuthnRequestAssertion();
+        processSamlAuthnRequestAssertion.setVerifySignature( false );
+
+        final ServerProcessSamlAuthnRequestAssertion serverProcessSamlAuthnRequestAssertion =
+                buildServerAssertion( processSamlAuthnRequestAssertion );
+
+        // Success, AssertionConsumerServiceURL is required
+        {
+            processSamlAuthnRequestAssertion.setRequiredAssertionConsumerServiceURL(true);
+            final PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(
+                    new Message( XmlUtil.parse( REQUEST_INVALID_SIG.replace( "AssertionConsumerServiceURL=\"https://www.google.com/a/g.feide.no/acs\"", "" )) ),
+                    null );
+
+            AssertionStatus status = evaluateAndClose( serverProcessSamlAuthnRequestAssertion, pec );
+            assertEquals( "AssertionConsumerServiceURL is required", AssertionStatus.FALSIFIED, status );
+        }
+
+        // Success, AssertionConsumerServiceIndex is required
+        {
+            processSamlAuthnRequestAssertion.setRequiredAssertionConsumerServiceIndex(true);
+            final PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(
+                    new Message( XmlUtil.parse( REQUEST_INVALID_SIG.replace( "AssertionConsumerServiceIndex=\"3\"", "" )) ),
+                    null );
+
+            AssertionStatus status = evaluateAndClose( serverProcessSamlAuthnRequestAssertion, pec );
+            assertEquals( "AssertionConsumerServiceIndex is required", AssertionStatus.FALSIFIED, status );
+        }
+
+        // Success, AttributeConsumingServiceIndex is optional
+        {
+            processSamlAuthnRequestAssertion.setRequiredAttributeConsumingServiceIndex(true);
+            final PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(
+                    new Message( XmlUtil.parse( REQUEST_INVALID_SIG.replace( "AttributeConsumingServiceIndex=\"5\"", "" )) ),
+                    null );
+
+            AssertionStatus status = evaluateAndClose( serverProcessSamlAuthnRequestAssertion, pec );
+            assertEquals( "AttributeConsumingServiceIndex is required", AssertionStatus.FALSIFIED, status );
+        }
+
+        // Success, ProtocolBinding is optional
+        {
+            processSamlAuthnRequestAssertion.setRequiredProtocolBinding(true);
+            final PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(
+                    new Message( XmlUtil.parse( REQUEST_INVALID_SIG.replace( "ProtocolBinding=\"urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST\"", "" )) ),
+                    null );
+
+            AssertionStatus status = evaluateAndClose( serverProcessSamlAuthnRequestAssertion, pec );
+            assertEquals( "ProtocolBinding is required", AssertionStatus.FALSIFIED, status );
+        }
+
+        // Success, ProviderName is optional
+        {
+            processSamlAuthnRequestAssertion.setRequiredProviderName(true);
+            final PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(
+                    new Message( XmlUtil.parse( REQUEST_INVALID_SIG.replace( "ProviderName=\"google.com\"", "" )) ),
+                    null );
+
+            AssertionStatus status = evaluateAndClose( serverProcessSamlAuthnRequestAssertion, pec );
+            assertEquals( "Provider name is required", AssertionStatus.FALSIFIED, status );
+        }
+    }
+
+    /**
+     * Ensure the optional attributes when not specified, return the default value as specify in the spec
+     */
+    @Test
+    public void testOptionalAttributesDefaults() throws Exception {
+        final ProcessSamlAuthnRequestAssertion processSamlAuthnRequestAssertion =
+                new ProcessSamlAuthnRequestAssertion();
+        processSamlAuthnRequestAssertion.setVerifySignature( false );
+
+        final ServerProcessSamlAuthnRequestAssertion serverProcessSamlAuthnRequestAssertion =
+                buildServerAssertion( processSamlAuthnRequestAssertion );
+
+        try (final PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(
+                new Message( XmlUtil.parse( REQUEST_INVALID_SIG.replace( "ForceAuthn=\"true\"", "" ).replace( "IsPassive=\"true\"", "" )) ),
+                null )) {
+            AssertionStatus status = serverProcessSamlAuthnRequestAssertion.checkRequest( pec );
+            assertEquals( "success", AssertionStatus.NONE, status );
+            assertEquals( "forceAuthn", false, pec.getVariable("authnRequest.forceAuthn"));
+            assertEquals( "isPassive", false, pec.getVariable("authnRequest.isPassive"));
         }
     }
 

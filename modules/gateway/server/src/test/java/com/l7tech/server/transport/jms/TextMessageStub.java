@@ -1,5 +1,7 @@
 package com.l7tech.server.transport.jms;
 
+import com.l7tech.server.policy.assertion.ServerJmsRoutingAssertionCallbackTest;
+
 import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.TextMessage;

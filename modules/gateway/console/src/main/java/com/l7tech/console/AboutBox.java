@@ -1,6 +1,7 @@
 package com.l7tech.console;
 
-import com.l7tech.util.BuildInfo;
+import com.l7tech.console.security.GatewayInfoHolder;
+import com.l7tech.console.security.PolicyManagerBuildInfo;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.util.DialogDisplayer;
@@ -35,7 +36,8 @@ public class AboutBox extends JDialog implements ActionListener {
 
     JPanel infoPanel = new JPanel(new GridBagLayout());
     String product = "Policy Manager";
-    String version = BuildInfo.getProductVersion() + " build " + BuildInfo.getBuildNumber();
+    String policyManagerVersion = PolicyManagerBuildInfo.getInstance().getProductVersion() + " build " + PolicyManagerBuildInfo.getInstance().getBuildNumber();
+    String gatewayVersion = GatewayInfoHolder.getInstance().getGatewayVersion() == null ? "Unavailable" : GatewayInfoHolder.getInstance().getGatewayVersion().toString();
     ResourceThread rThread = new ResourceThread();
     JProgressBar resourceMeter = new JProgressBar();
     JTable systemProperties = new
@@ -62,12 +64,6 @@ public class AboutBox extends JDialog implements ActionListener {
             String whitelistPropName = whitelistPropNames[i];
             String prop = SyspropUtil.getProperty(whitelistPropName);
             if (prop != null) {
-                // Tentatively add an if-statement to change the product name to "CA API Gateway" for Gateway Re-branding Phase 1 (Bug SSM-4601).
-                // In future phase, the if-statement should be removed after the field "productName" is changed in BuildInfo.
-                if (prop.startsWith(BuildInfo.getProductName())) {
-                    prop = prop.replace(BuildInfo.getProductName(), "CA API Gateway");
-                }
-
                 whitelist.setProperty(whitelistPropName, prop);
             }
         }
@@ -118,8 +114,12 @@ public class AboutBox extends JDialog implements ActionListener {
                                              GridBagConstraints.CENTER,
                                              GridBagConstraints.HORIZONTAL, ins, 0, 0));
 
-        infoPanel.add(new JLabel("Version: " + version),
+        infoPanel.add(new JLabel("Policy Manager Version: " + policyManagerVersion),
                       new GridBagConstraints(0, 2, 1, 1, 0d, 0d,
+                                             GridBagConstraints.WEST,
+                                             GridBagConstraints.NONE, ins, 0, 0));
+        infoPanel.add(new JLabel("Gateway Version: " + gatewayVersion),
+                      new GridBagConstraints(0, 3, 1, 1, 0d, 0d,
                                              GridBagConstraints.WEST,
                                              GridBagConstraints.NONE, ins, 0, 0));
         infoPanel.add(resourceMeter,
@@ -129,16 +129,16 @@ public class AboutBox extends JDialog implements ActionListener {
 
 
         infoPanel.add(new JLabel("System Properties:", JLabel.LEFT),
-                      new GridBagConstraints(0, 3, 3, 1, 1d, 0d,
+                      new GridBagConstraints(0, 4, 3, 1, 1d, 0d,
                                              GridBagConstraints.CENTER,
                                              GridBagConstraints.HORIZONTAL, ins, 0, 0));
 
         infoPanel.add(jsp,
-                      new GridBagConstraints(0, 4, 3, 1, 1d, 1d,
+                      new GridBagConstraints(0, 5, 3, 1, 1d, 1d,
                                              GridBagConstraints.CENTER,
                                              GridBagConstraints.BOTH, new Insets(1, 1, 1, 1), 0, 0));
         infoPanel.add(urlLabel,
-                      new GridBagConstraints(0, 5, 3, 1, 0d, 0d,
+                      new GridBagConstraints(0, 6, 3, 1, 0d, 0d,
                                              GridBagConstraints.CENTER,
                                              GridBagConstraints.NONE, ins, 0, 0));
 

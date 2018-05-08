@@ -11,7 +11,9 @@ import com.l7tech.policy.assertion.AuditDetailAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.server.ApplicationContexts;
+import com.l7tech.server.cluster.ClusterMasterStub;
 import com.l7tech.server.event.system.Started;
+import com.l7tech.test.BugId;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.FileUtils;
 import com.l7tech.util.HexUtils;
@@ -40,6 +42,7 @@ public class ServiceTemplateBootstrapServiceTest {
     private ServiceManager serviceManager;
     private ServiceTemplateBootstrapService bootstrapService;
     private ServiceTemplateManager serviceTemplateManager;
+    private ClusterMasterStub clusterMasterStub;
     private ServiceTemplate serviceTemplate;
     private File tmpDir;
 
@@ -59,6 +62,8 @@ public class ServiceTemplateBootstrapServiceTest {
         bootstrapService = applicationContext.getBean("serviceTemplateBootstrapService", ServiceTemplateBootstrapService.class);
         bootstrapService.loadFolder();
         serviceTemplateManager = applicationContext.getBean("serviceTemplateManager", ServiceTemplateManager.class);
+        clusterMasterStub = applicationContext.getBean("clusterMaster", ClusterMasterStub.class);
+
 
         final Assertion allAss = new AllAssertion( Arrays.asList(
                 new AuditDetailAssertion("detail")
@@ -75,6 +80,11 @@ public class ServiceTemplateBootstrapServiceTest {
                 null);
 
         serviceTemplateManager.register(serviceTemplate, templateName);
+    }
+
+    @Before
+    public void before() throws Exception {
+        clusterMasterStub.isMaster = true;
     }
 
     @After
@@ -104,6 +114,18 @@ public class ServiceTemplateBootstrapServiceTest {
         bootstrapService.init();
         bootstrapService.onApplicationEvent(new Started(this, Component.GATEWAY, "Test"));
 
+        assertEquals(0, serviceManager.findByRoutingUri(serviceTemplate.getDefaultUriPrefix()).size());
+        assertNull(serviceManager.findByUniqueName(serviceTemplate.getName()));
+    }
+
+    @BugId("DE324129")
+    @Test
+    public void testNoLoadServiceTemplateNotMasterNode() throws Exception {
+        clusterMasterStub.isMaster = false;
+        bootstrapService.init();
+        bootstrapService.onApplicationEvent(new Started(this, Component.GATEWAY, "Test"));
+
+        assertEquals(0,serviceManager.findAll().size());
         assertEquals(0, serviceManager.findByRoutingUri(serviceTemplate.getDefaultUriPrefix()).size());
         assertNull(serviceManager.findByUniqueName(serviceTemplate.getName()));
     }

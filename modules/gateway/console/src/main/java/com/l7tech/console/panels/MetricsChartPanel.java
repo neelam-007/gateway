@@ -12,13 +12,12 @@ import com.l7tech.console.GatewayAuditWindow;
 import com.l7tech.console.panels.dashboard.ServiceMetricsPanel;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.jfree.*;
+import com.l7tech.gateway.common.service.ServiceHeader;
 import com.l7tech.gui.util.Utilities;
-import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.gateway.common.service.MetricsBin;
 import com.l7tech.gateway.common.service.MetricsSummaryBin;
 import com.l7tech.util.CollectionUtils;
-import com.l7tech.util.Either;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
 import org.jfree.chart.axis.DateAxis;
@@ -43,7 +42,6 @@ import java.awt.event.MouseEvent;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.io.InvalidObjectException;
-import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
@@ -52,10 +50,6 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import static com.l7tech.console.util.AdminGuiUtils.doAsyncAdmin;
-import static com.l7tech.util.Either.left;
-import static com.l7tech.util.Either.right;
 
 /**
  * Chart panel containing plots of metrics bins data. The chart contains 3 plots
@@ -1061,13 +1055,20 @@ public class MetricsChartPanel extends ChartPanel {
         if (registry.isAdminContextPresent()) {
             final AuditAdmin auditAdmin = registry.getAuditAdmin();
             final ClusterNodeInfo nodeSelected = _serviceMetricsPanel.getClusterNodeSelected();
-            final EntityHeader serviceSelected = _serviceMetricsPanel.getPublishedServiceSelected();
-
+            /**
+             * DE326622 : Dashboard - No Audit Event shown with "Show Audits Events" Option for specific service
+             *
+             * This fails due to the criteria value - serviceName mismatch. When serviceName is assigned with serviceSelected.getName(), it returns just the name of service (eg: "test")
+             * but the service name is stored in the database as service name + routung URI (eg: test [/test]). Hence it fails to get the audit record for a particular service.
+             * Fix is to replace serviceSelected.getName() with serviceSelected.getDisplayName()
+             *
+             */
+            final ServiceHeader serviceSelected = _serviceMetricsPanel.getPublishedServiceSelected();
             final AuditSearchCriteria criteria = new AuditSearchCriteria.Builder().
                     fromTime(startDate).
                     toTime(endDate).
                     nodeId(nodeSelected == null ? null : nodeSelected.getId()).
-                    serviceName(serviceSelected == null ? null : serviceSelected.getName()).build();
+                    serviceName(serviceSelected == null ? null : serviceSelected.getDisplayName()).build();
             try {
                 AuditRecordHeader[] records =  getHeaders(auditAdmin, criteria);
 

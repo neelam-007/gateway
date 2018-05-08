@@ -329,12 +329,14 @@ public class LogMessageToSysLogAssertionDialog extends AssertionPropertiesOkCanc
             public void mouseMoved(MouseEvent e) {
                 Point p = e.getPoint();
                 int row = table.rowAtPoint(p);
-                int column = table.columnAtPoint(p);
-                final String tipText = String.valueOf(table.getValueAt(row, column)).trim();
-                if (tipText.length() > 0 && !"null".equals(tipText))
-                    table.setToolTipText(tipText);
-                else
-                    table.setToolTipText("key - value pairs");
+                if (row >= 0) {
+                    int column = table.columnAtPoint(p);
+                    final String tipText = String.valueOf(table.getValueAt(row, column)).trim();
+                    if (tipText.length() > 0 && !"null".equals(tipText))
+                        table.setToolTipText(tipText);
+                    else
+                        table.setToolTipText("key - value pairs");
+                }
             }//end MouseMoved
         }); // end MouseMotionAdapter
         packColumn(table, 2);

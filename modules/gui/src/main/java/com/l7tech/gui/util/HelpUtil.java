@@ -12,6 +12,7 @@ import edu.stanford.ejalbert.BrowserLauncher;
 import edu.stanford.ejalbert.BrowserLauncherRunner;
 import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;
 import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
@@ -29,7 +30,8 @@ public class HelpUtil {
      * the default help URL.  May be overridden once we connect to the Gateway.
      */
     private static final String PROP_DEFAULT_HELP_URL = "com.l7tech.gui.util.HelpUtil.defaultHelpUrl";
-    private static final String DEFAULT_DEFAULT_HELP_URL = "http://docops.ca.com/display/gateway" + BuildInfo.getProductVersionMajor() + BuildInfo.getProductVersionMinor();
+    private static final String DEFAULT_DEFAULT_HELP_URL = "https://docops.ca.com/gateway";
+    private static final String DEFAULT_VERSIONED_HELP_URL = "https://docops.ca.com/display/gateway";
     private static final String XVC_HELP_URI = "https://docops.ca.com/xvc";
     public static final String DEFAULT_HELP_URL = SyspropUtil.getString( PROP_DEFAULT_HELP_URL, DEFAULT_DEFAULT_HELP_URL );
     private static BrowserLauncher browserLauncher;
@@ -62,8 +64,8 @@ public class HelpUtil {
     /**
      * @return the currently active help URL, which may be the default help URL.
      */
-    public static String getHelpUrl() {
-        return (helpUrl != null && helpUrl.trim().length() > 0) ? helpUrl : DEFAULT_HELP_URL;
+    public static String getHelpUrl(@Nullable final String gatewayVersion) {
+        return (helpUrl != null && helpUrl.trim().length() > 0) ? helpUrl : (StringUtils.isEmpty(gatewayVersion) ? DEFAULT_HELP_URL : (DEFAULT_VERSIONED_HELP_URL + gatewayVersion));
     }
 
     /**
@@ -74,15 +76,21 @@ public class HelpUtil {
      * @param parentComponent  parent component if an error dialog must be displayed, or null to use the default
      *                         frame (same as JOptionPane)
      */
+    //TODO: Refactor when the XVC is no longer supported/released
     public static void showHelpTopicsRoot( Frame parentComponent, boolean isXVChelp ) {
+        showHelpTopicsRoot(parentComponent, isXVChelp, null);
+    }
+
+    public static void showHelpTopicsRoot( Frame parentComponent, boolean isXVChelp, @Nullable final String gatewayVersion ) {
         Exception problem = null;
 
+        String url = helpUrl;
         try {
-            if ( helpUrl == null )
-                helpUrl = isXVChelp ? XVC_HELP_URI : DEFAULT_HELP_URL;
+            if ( url == null )
+                url = isXVChelp ? XVC_HELP_URI : (gatewayVersion == null ? DEFAULT_HELP_URL : (DEFAULT_VERSIONED_HELP_URL + gatewayVersion));
 
-            logger.info("Launching web help URL: " + helpUrl);
-            BrowserLauncherRunner runner = new BrowserLauncherRunner(getBrowserLauncher(), helpUrl, null);
+            logger.info("Launching web help URL: " + url);
+            BrowserLauncherRunner runner = new BrowserLauncherRunner(getBrowserLauncher(), url, null);
             Thread launcherThread = new Thread(runner);
             launcherThread.start();
         } catch (Exception e) {
@@ -93,7 +101,7 @@ public class HelpUtil {
             logger.log(Level.WARNING, "Unable to launch browser for help: " + ExceptionUtils.getMessage(problem), problem);
             JOptionPane.showMessageDialog(parentComponent,
                                           "Unable to open the help system. To view the help system, open the following URL\n" +
-                                                  "in your preferred web browser: \n\n  " + helpUrl,
+                                                  "in your preferred web browser: \n\n  " + url,
                                           "Cannot Open Help",
                                           JOptionPane.WARNING_MESSAGE);
         }

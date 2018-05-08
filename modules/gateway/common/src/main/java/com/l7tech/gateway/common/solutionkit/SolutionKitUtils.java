@@ -1,10 +1,8 @@
 package com.l7tech.gateway.common.solutionkit;
 
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.gateway.api.CassandraConnectionMO;
-import com.l7tech.gateway.api.EncapsulatedAssertionMO;
-import com.l7tech.gateway.api.JDBCConnectionMO;
-import com.l7tech.gateway.api.StoredPasswordMO;
+import com.l7tech.gateway.api.*;
+import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.cassandra.CassandraConnection;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.security.password.SecurePassword;
@@ -21,8 +19,11 @@ import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import javax.xml.transform.dom.DOMResult;
+import java.io.IOException;
 import java.util.*;
 
+import static com.l7tech.gateway.common.solutionkit.SolutionKit.*;
 import static com.l7tech.util.DomUtils.findExactlyOneChildElementByName;
 import static com.l7tech.util.DomUtils.getTextValue;
 import static java.text.MessageFormat.format;
@@ -38,13 +39,18 @@ public final class SolutionKitUtils {
     public static final String SK_ELE_ID = "Id";
     public static final String SK_ELE_VERSION = "Version";
     public static final String SK_ELE_NAME = "Name";
-    public static final String SK_ELE_DESC = SolutionKit.SK_PROP_DESC_KEY;
-    public static final String SK_ELE_TIMESTAMP = SolutionKit.SK_PROP_TIMESTAMP_KEY;
-    public static final String SK_ELE_IS_COLLECTION = SolutionKit.SK_PROP_IS_COLLECTION_KEY;
-    public static final String SK_ELE_FEATURE_SET = SolutionKit.SK_PROP_FEATURE_SET_KEY;
+    public static final String SK_ELE_DESC = SK_PROP_DESC_KEY;
+    public static final String SK_ELE_TIMESTAMP = SK_PROP_TIMESTAMP_KEY;
+    public static final String SK_ELE_IS_COLLECTION = SK_PROP_IS_COLLECTION_KEY;
+    public static final String SK_ELE_FEATURE_SET = SK_PROP_FEATURE_SET_KEY;
     public static final String SK_ELE_CUSTOM_UI = "CustomUI";   // note the uppercase "I"
-    public static final String SK_ELE_CUSTOM_CALLBACK = SolutionKit.SK_PROP_CUSTOM_CALLBACK_KEY;
-    public static final String SK_ELE_ALLOW_ADDENDUM = SolutionKit.SK_PROP_ALLOW_ADDENDUM_KEY;
+    public static final String SK_ELE_CUSTOM_CALLBACK = SK_PROP_CUSTOM_CALLBACK_KEY;
+    public static final String SK_ELE_ALLOW_ADDENDUM = SK_PROP_ALLOW_ADDENDUM_KEY;
+
+    private static final String MSG_UNABLE_UPGRADE_PARENT_GUIDS_MISMATCH = "Unable to upgrade: The parent Solution Kits " +
+        "involved in the upgrade do not have matching GUIDs. Consider installing instead.";
+    private static final String MSG_UNABLE_UPGRADE_SK_GUIDS_MISMATCH = "Unable to upgrade: The Solution Kits involved " +
+        "in the upgrade do not have matching GUIDs. Consider installing instead.";
 
     //TODO when Dependencies is implemented
     // public static final String SK_ELE_DEPENDENCIES = "Dependencies";
@@ -263,38 +269,38 @@ public final class SolutionKitUtils {
         if (isEmpty(skDescription)) {
             throw new BadRequestException(format(requiredElementMessage, SK_NS_PREFIX, SK_ELE_DESC));
         }
-        solutionKit.setProperty(SolutionKit.SK_PROP_DESC_KEY, skDescription);
+        solutionKit.setProperty(SK_PROP_DESC_KEY, skDescription);
 
         final String skTimestamp = getTextValue(findExactlyOneChildElementByName(docEle, SK_NS, SK_ELE_TIMESTAMP));
         if (isEmpty(skTimestamp)) {
             throw new BadRequestException(format(requiredElementMessage, SK_NS_PREFIX, SK_ELE_TIMESTAMP));
         }
-        solutionKit.setProperty(SolutionKit.SK_PROP_TIMESTAMP_KEY, skTimestamp);
+        solutionKit.setProperty(SK_PROP_TIMESTAMP_KEY, skTimestamp);
 
         final String skIsCollection = getTextValue(findExactlyOneChildElementByName(docEle, SK_NS, SK_ELE_IS_COLLECTION));
         if (isEmpty(skIsCollection)) {
             throw new BadRequestException(format(requiredElementMessage, SK_NS_PREFIX, SK_ELE_IS_COLLECTION));
         }
-        solutionKit.setProperty(SolutionKit.SK_PROP_IS_COLLECTION_KEY, skIsCollection);
+        solutionKit.setProperty(SK_PROP_IS_COLLECTION_KEY, skIsCollection);
 
         final Element featureSet = DomUtils.findFirstChildElementByName(docEle, SK_NS, SK_ELE_FEATURE_SET);
         if (featureSet != null) {
-            solutionKit.setProperty(SolutionKit.SK_PROP_FEATURE_SET_KEY, DomUtils.getTextValue(featureSet));
+            solutionKit.setProperty(SK_PROP_FEATURE_SET_KEY, DomUtils.getTextValue(featureSet));
         }
 
         final Element customUiEle = DomUtils.findFirstChildElementByName(docEle, SK_NS, SK_ELE_CUSTOM_UI);
         if (customUiEle != null) {
-            solutionKit.setProperty(SolutionKit.SK_PROP_CUSTOM_UI_KEY, DomUtils.getTextValue(customUiEle));
+            solutionKit.setProperty(SK_PROP_CUSTOM_UI_KEY, DomUtils.getTextValue(customUiEle));
         }
 
         final Element customCallbackEle = DomUtils.findFirstChildElementByName(docEle, SK_NS, SK_ELE_CUSTOM_CALLBACK);
         if (customCallbackEle != null) {
-            solutionKit.setProperty(SolutionKit.SK_PROP_CUSTOM_CALLBACK_KEY, DomUtils.getTextValue(customCallbackEle));
+            solutionKit.setProperty(SK_PROP_CUSTOM_CALLBACK_KEY, DomUtils.getTextValue(customCallbackEle));
         }
 
         final Element allowAddendumEle = DomUtils.findFirstChildElementByName(docEle, SK_NS, SK_ELE_ALLOW_ADDENDUM);
         if (allowAddendumEle != null) {
-            solutionKit.setProperty(SolutionKit.SK_PROP_ALLOW_ADDENDUM_KEY, DomUtils.getTextValue(allowAddendumEle));
+            solutionKit.setProperty(SK_PROP_ALLOW_ADDENDUM_KEY, DomUtils.getTextValue(allowAddendumEle));
         }
 
         //TODO - Copying over of Dependencies element and its child elements
@@ -314,28 +320,76 @@ public final class SolutionKitUtils {
         DomUtils.createAndAppendElement(docEle, SK_ELE_ID).setTextContent(solutionKit.getSolutionKitGuid());
         DomUtils.createAndAppendElement(docEle, SK_ELE_VERSION).setTextContent(solutionKit.getSolutionKitVersion());
         DomUtils.createAndAppendElement(docEle, SK_ELE_NAME).setTextContent(solutionKit.getName());
-        DomUtils.createAndAppendElement(docEle, SK_ELE_DESC).setTextContent(solutionKit.getProperty(SolutionKit.SK_PROP_DESC_KEY));
-        DomUtils.createAndAppendElement(docEle, SK_ELE_TIMESTAMP).setTextContent(solutionKit.getProperty(SolutionKit.SK_PROP_TIMESTAMP_KEY));
-        DomUtils.createAndAppendElement(docEle, SK_ELE_IS_COLLECTION).setTextContent(solutionKit.getProperty(SolutionKit.SK_PROP_IS_COLLECTION_KEY));
+        DomUtils.createAndAppendElement(docEle, SK_ELE_DESC).setTextContent(solutionKit.getProperty(SK_PROP_DESC_KEY));
+        DomUtils.createAndAppendElement(docEle, SK_ELE_TIMESTAMP).setTextContent(solutionKit.getProperty(SK_PROP_TIMESTAMP_KEY));
+        DomUtils.createAndAppendElement(docEle, SK_ELE_IS_COLLECTION).setTextContent(solutionKit.getProperty(SK_PROP_IS_COLLECTION_KEY));
 
-        final String featureSet = solutionKit.getProperty(SolutionKit.SK_PROP_FEATURE_SET_KEY);
+        final String featureSet = solutionKit.getProperty(SK_PROP_FEATURE_SET_KEY);
         if (featureSet != null) {
             DomUtils.createAndAppendElement(docEle, SK_ELE_FEATURE_SET).setTextContent(featureSet);
         }
-        final String customCallback = solutionKit.getProperty(SolutionKit.SK_PROP_CUSTOM_CALLBACK_KEY);
+        final String customCallback = solutionKit.getProperty(SK_PROP_CUSTOM_CALLBACK_KEY);
         if (customCallback != null) {
             DomUtils.createAndAppendElement(docEle, SK_ELE_CUSTOM_CALLBACK).setTextContent(customCallback);
         }
-        final String customUi = solutionKit.getProperty(SolutionKit.SK_PROP_CUSTOM_UI_KEY);
+        final String customUi = solutionKit.getProperty(SK_PROP_CUSTOM_UI_KEY);
         if (customUi != null) {
             DomUtils.createAndAppendElement(docEle, SK_ELE_CUSTOM_UI).setTextContent(customUi);
         }
-        final String allowAddendum = solutionKit.getProperty(SolutionKit.SK_PROP_ALLOW_ADDENDUM_KEY);
+        final String allowAddendum = solutionKit.getProperty(SK_PROP_ALLOW_ADDENDUM_KEY);
         if (allowAddendum != null) {
             DomUtils.createAndAppendElement(docEle, SK_ELE_ALLOW_ADDENDUM).setTextContent(allowAddendum);
         }
 
         return doc;
+    }
+
+    /**
+     * Method to generate a list of delete bundles containing the uninstall bundles of old solution kits.
+     * @param oldSks The selected installed solution kits that should be removed.
+     *               oldSks will either:
+     *              - be empty in the case of installs
+     *              - or contain a single non-parent solution kit for upgrade
+     *              - or contain a single solution kit and parent for upgrade.
+     *              - or contain a collection of solution kits with the parent being the first item in the list
+     *               *Note: SK without a delete bundle is not allowed and an exception will be thrown
+     * @return the bundle list solution kits with uninstall bundles
+     * @throws SolutionKitException Occurs when a solution kit cannot be upgraded
+     */
+    public static List<SolutionKit> generateListOfDeleteBundles(@NotNull final List<SolutionKit> oldSks) throws SolutionKitException {
+        final List<SolutionKit> solutionKitsToDelete = new ArrayList<>();
+        //The first item in the oldSks is the parent if a parent is selected for upgrade
+        for (final SolutionKit solutionKit : oldSks) {
+            //Skip the parent
+            if (!isParentSolutionKit(solutionKit)) {
+                // Since v9.3, a solution kit is only upgradable if it has an uninstall bundle
+                final String uninstallBundle = solutionKit.getUninstallBundle();
+                if (StringUtils.isNotBlank(uninstallBundle)) {
+                    solutionKitsToDelete.add(solutionKit);
+                } else {
+                    throw new SolutionKitException("The solution kit " + solutionKit.getName() + " with guid " + solutionKit.getId() + " cannot be upgraded.");
+                }
+            }
+        }
+        return solutionKitsToDelete;
+    }
+
+    /**
+     * Generate a string payload for solution kit installation/upgrade
+     * @param deleteBundles List of uninstall bundles of old solution kits
+     * @param installBundles List of install bundles of new solution kits
+     * @return the payload
+     * @throws IOException Exceptions in parsing bundleList
+     */
+    public static String generateBundleListPayload(final List<Bundle> deleteBundles, final List<Bundle> installBundles) throws IOException{
+        final BundleList bundleList = ManagedObjectFactory.createBundleList();
+        final List<Bundle> bundlesHolder = new ArrayList<>();
+        bundlesHolder.addAll(deleteBundles);
+        bundlesHolder.addAll(installBundles);
+        bundleList.setBundles(bundlesHolder);
+        final DOMResult result = new DOMResult();
+        MarshallingUtils.marshal(bundleList, result, false);
+        return XmlUtil.nodeToString(result.getNode());
     }
 
     /**
@@ -348,7 +402,7 @@ public final class SolutionKitUtils {
 
         for (SolutionKit solutionKit: selectedSolutionKits) {
             String guid = solutionKit.getSolutionKitGuid();
-            String instanceModifier = solutionKit.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY);
+            String instanceModifier = solutionKit.getProperty(SK_PROP_INSTANCE_MODIFIER_KEY);
             if (StringUtils.isEmpty(instanceModifier)) instanceModifier = "";
 
             Map<String, Integer> instanceModifierAmountMap = duplicateSKs.get(guid);
@@ -395,7 +449,7 @@ public final class SolutionKitUtils {
             if (instanceModifierSet == null) {
                 instanceModifierSet = new HashSet<>();
             }
-            instanceModifierSet.add(solutionKitToUpgrade.getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY));
+            instanceModifierSet.add(solutionKitToUpgrade.getProperty(SK_PROP_INSTANCE_MODIFIER_KEY));
 
             guidInstanceModifierMapFromUpgrade.put(guid, instanceModifierSet);
         }
@@ -408,7 +462,176 @@ public final class SolutionKitUtils {
     }
 
     public static boolean isCollectionOfSkars(@NotNull final SolutionKit candidate) {
-        return Boolean.parseBoolean(candidate.getProperty(SolutionKit.SK_PROP_IS_COLLECTION_KEY));
+        return Boolean.parseBoolean(candidate.getProperty(SK_PROP_IS_COLLECTION_KEY));
+    }
+
+    /**
+     * Copy the metadata of a parent solution kit object to make another parent solution kit object.
+     *
+     * Be careful when using a loaded solutions kit from a .sskar file as the sourceSK because they have the default instance modifier,
+     * which will overwrite the instance modifier in the resultSK.
+     *
+     * This is mainly used to create new instances of parent solution kits.
+     * @param sourceSK The SolutionKit source to copy from
+     * @param resultSK The solution kit to hold the result.
+     * @return resultSK is the copied solution kit
+     */
+    public static SolutionKit copyParentSolutionKit(@NotNull final SolutionKit sourceSK, @NotNull final SolutionKit resultSK) {
+        resultSK.setSolutionKitGuid(sourceSK.getSolutionKitGuid());
+        resultSK.setSolutionKitVersion(sourceSK.getSolutionKitVersion());
+        resultSK.setName(sourceSK.getName());
+        resultSK.setMappings(sourceSK.getMappings());
+        resultSK.setLastUpdateTime(sourceSK.getLastUpdateTime());
+        resultSK.setXmlProperties(sourceSK.getXmlProperties());
+        resultSK.setInstallationXmlProperties(sourceSK.getInstallationXmlProperties());
+        return resultSK;
+    }
+
+    /**
+     * Compares the required metadata between two solution kits.
+     * @param one first solution kit
+     * @param two second solution kit
+     * @return true if both solution kits have the same metadata
+     */
+    public static boolean hasSameMetaData(@NotNull SolutionKit one, @NotNull SolutionKit two) {
+        return StringUtils.equals(one.getProperty(SK_PROP_DESC_KEY), two.getProperty(SK_PROP_DESC_KEY)) &&
+                StringUtils.equals(one.getProperty(SK_PROP_IS_COLLECTION_KEY), two.getProperty(SK_PROP_IS_COLLECTION_KEY)) &&
+                StringUtils.equals(one.getProperty(SK_PROP_TIMESTAMP_KEY), two.getProperty(SK_PROP_TIMESTAMP_KEY)) &&
+                StringUtils.equals(one.getProperty(SK_PROP_FEATURE_SET_KEY), two.getProperty(SK_PROP_FEATURE_SET_KEY)) &&
+                StringUtils.equals(one.getProperty(SK_PROP_ALLOW_ADDENDUM_KEY), two.getProperty(SK_PROP_ALLOW_ADDENDUM_KEY)) &&
+                StringUtils.equals(one.getProperty(SK_PROP_CUSTOM_CALLBACK_KEY), two.getProperty(SK_PROP_CUSTOM_CALLBACK_KEY)) &&
+                StringUtils.equals(one.getProperty(SK_PROP_CUSTOM_UI_KEY), two.getProperty(SK_PROP_CUSTOM_UI_KEY)) &&
+                StringUtils.equals(one.getSolutionKitGuid(), two.getSolutionKitGuid()) &&
+                StringUtils.equals(one.getName(), two.getName()) &&
+                StringUtils.equals(one.getSolutionKitVersion(), two.getSolutionKitVersion());
+    }
+
+    /**
+     * Check whether upgrade is eligible by verifying the selection solution kit has an uninstall bundle or not.
+     *
+     * @param solutionKitsConfig containing all upgrade information.
+     * @throws SolutionKitException thrown if no uninstall bundle exists and some internal errors happen.
+     */
+    public static void checkUninstallBundleExistenceForUpgrade(@NotNull final SolutionKitsConfig solutionKitsConfig) throws SolutionKitException {
+        if (! solutionKitsConfig.isUpgrade()) return;
+
+        final boolean parentSelectedForUpgrade = solutionKitsConfig.isParentSelectedForUpgrade();
+        final List<SolutionKit> solutionKitsToUpgrade = solutionKitsConfig.getSolutionKitsToUpgrade();
+
+        if (solutionKitsToUpgrade.isEmpty()) {
+            throw new SolutionKitException("Unable to upgrade: The number of solution kits selected for upgrade " +
+                "must be greater than or equal to one.");
+        }
+
+        List<SolutionKit> candidates = new ArrayList<>();
+        final int size = solutionKitsToUpgrade.size();
+        int indexToStartChecking;
+        if (parentSelectedForUpgrade) { // parent sk selection
+            indexToStartChecking = 1;
+        } else if (size == 2) { // child sk selection
+            indexToStartChecking = 1;
+        } else if (size == 1) { // standalone sk selection
+            indexToStartChecking = 0;
+        } else {
+            throw new SolutionKitException("Unable to upgrade: Incorrect number of Solution Kits for upgrade.");
+        }
+
+        for (int i = indexToStartChecking; i < size; i++) {
+            final SolutionKit solutionKit = solutionKitsToUpgrade.get(i);
+            if (StringUtils.isBlank(solutionKit.getUninstallBundle())) {
+                throw new SolutionKitException("The selected Solution Kit '" + solutionKit.getName() + "' (GUID: '" + solutionKit.getSolutionKitGuid() + "') is not eligible for upgrade because it does not contain an uninstall bundle.");
+            }
+        }
+    }
+
+    /**
+     * Check whether upgrade is eligible by matching solution kits' GUIDs from the database and the uploaded skar.
+     * Please see more details about all implemented cases related to checking GUID match.
+     *
+     * @param solutionKitsConfig provide upgrade information.
+     * @throws SolutionKitException thrown if any violation of upgrade is found.
+     */
+    public static void checkGuidsMatchForUpgrade(@NotNull final SolutionKitsConfig solutionKitsConfig) throws SolutionKitException {
+        final List<SolutionKit> solutionKitsToUpgrade = solutionKitsConfig.getSolutionKitsToUpgrade();
+        final Set<SolutionKit> loadedSolutionKits = solutionKitsConfig.getLoadedSolutionKits().keySet();
+
+        // After the below two conditions are passed, two lists are guaranteed as not empty.
+        if (solutionKitsToUpgrade.isEmpty()) {
+            throw new SolutionKitException("Unable to upgrade: The number of Solution Kits selected for upgrade " +
+                "must be greater than or equal to one.");
+        }
+        if (loadedSolutionKits.isEmpty()) {
+            throw new SolutionKitException("Unable to upgrade: The number of loaded Solution Kits from a skar " +
+                "must be greater than or equal to one.");
+        }
+
+        final SolutionKit parentToUpgrade = solutionKitsToUpgrade.size() > 1? solutionKitsToUpgrade.get(0) : null;
+        final SolutionKit parentLoaded = solutionKitsConfig.getParentSolutionKitLoaded();
+
+        // Case: selecting a parent and loading a regular skar, but their GUIDs are not matched.
+        final boolean parentSelectedForUpgrade = solutionKitsConfig.isParentSelectedForUpgrade();
+        if (parentSelectedForUpgrade && parentLoaded == null &&
+            !parentToUpgrade.getSolutionKitGuid().equals(loadedSolutionKits.toArray(new SolutionKit[]{})[0].getSolutionKitGuid())) {
+            throw new SolutionKitException(MSG_UNABLE_UPGRADE_SK_GUIDS_MISMATCH);
+        }
+
+        // Case: selecting a standalone and loading a skar of skars, but their GUIDs are not matched.
+        final boolean standaloneSelection = (!parentSelectedForUpgrade) && (solutionKitsToUpgrade.size() == 1);
+        if (standaloneSelection && parentLoaded != null &&
+            !solutionKitsToUpgrade.get(0).getSolutionKitGuid().equals(parentLoaded.getSolutionKitGuid())) {
+            throw new SolutionKitException(MSG_UNABLE_UPGRADE_SK_GUIDS_MISMATCH);
+        }
+
+        // Case: selecting either a parent or a child and loading a skar of skars, but parent GUIDs are not matched.
+        if (parentToUpgrade != null && parentLoaded != null && // "parentToUpgrade != null" could be from either selecting a parent or a child.
+            !parentToUpgrade.getSolutionKitGuid().equals(parentLoaded.getSolutionKitGuid())) {
+            throw new SolutionKitException(MSG_UNABLE_UPGRADE_PARENT_GUIDS_MISMATCH);
+        }
+
+        // Case: selecting a child and loading a skar of skars, but child GUIDs are not matched.
+        final boolean childSelection = (!parentSelectedForUpgrade) && (solutionKitsToUpgrade.size() == 2);
+        if (childSelection && parentLoaded != null) {
+            final String childGuid = solutionKitsToUpgrade.get(1).getSolutionKitGuid();
+
+            boolean matched = false;
+            for (final SolutionKit solutionKit: loadedSolutionKits) {
+                if (solutionKit.getSolutionKitGuid().equals(childGuid)) {
+                    matched = true;
+                    break;
+                }
+            }
+            if (!matched) {
+                throw new SolutionKitException(MSG_UNABLE_UPGRADE_SK_GUIDS_MISMATCH);
+            }
+        }
+
+        // Case: selecting either a child or a standalone and loading a regular skar, but their GUIDs are not matched.
+        final SolutionKit skForUpgrade = childSelection? solutionKitsToUpgrade.get(1) : solutionKitsToUpgrade.get(0);
+        if (!parentSelectedForUpgrade && parentLoaded == null &&
+            !skForUpgrade.getSolutionKitGuid().equals(loadedSolutionKits.toArray(new SolutionKit[]{})[0].getSolutionKitGuid())) {
+            throw new SolutionKitException(MSG_UNABLE_UPGRADE_SK_GUIDS_MISMATCH);
+        }
+    }
+
+    /**
+     * For multibundle import, the solutionKit to display for restman or for errors will either be a parent
+     * SK, or an individual SK
+     * @param sksToInstall set of solution kits to install, should contain an individual SK
+     * @param parentSK parentSK to check if it should be displayed
+     * @return either a parent SK or an individual SK
+     * @throws SolutionKitConflictException If for some reason multiple solution kits are selected to install.
+     */
+    public static SolutionKit solutionKitToDisplayForUpgrade(Set<SolutionKit> sksToInstall, SolutionKit parentSK) throws SolutionKitConflictException {
+        if (parentSK != null) {
+            //Install/upgrading a collection of skars;
+            return parentSK;
+        } else {
+            //Install/upgrading a single skar;
+            if (sksToInstall.size() != 1) {
+                throw new SolutionKitConflictException("Expected a single Solution Kit for upgrade but found: " + sksToInstall.size() );
+            }
+            return sksToInstall.iterator().next();
+        }
     }
 
     private SolutionKitUtils() {}

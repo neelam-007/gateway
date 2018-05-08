@@ -98,10 +98,13 @@
                 <L7p:Target target="RESPONSE"/>
             </L7p:Properties>
         </wsse:SecurityToken>
-        <L7p:Authentication>
+        <L7p:SpecificUser>
             <L7p:IdentityProviderOid longValue="9898"/>
             <L7p:Target target="RESPONSE"/>
-        </L7p:Authentication>
+            <L7p:UserLogin stringValue="Alice"/>
+            <L7p:UserName stringValue="Alice"/>
+            <L7p:UserUid stringValue="4718592"/>
+        </L7p:SpecificUser>
         <L7p:RequireWssSignedElement>
             <L7p:IdentityTarget IdentityTarget="included">
                 <L7p:IdentityId stringValue="4718592"/>

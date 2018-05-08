@@ -145,8 +145,8 @@ public class NodeConfigurationManager {
             testDBConfig( databaseConfig.some() );
 
             String dbVersion = dbActions.checkDbVersion( databaseConfig.some() );
-            if ( dbVersion != null && !dbVersion.equals(BuildInfo.getFormalProductVersion()) ) {
-                throw new NodeConfigurationException("Database version mismatch '"+dbVersion+"'.");
+            if ( dbVersion != null && !BuildInfo.isGatewayVersionCompatibleWithDBVersion(BuildInfo.getFormalProductVersion(), dbVersion) ) {
+                throw new NodeConfigurationException("Database version is incompatible with product version. Database version: '" + dbVersion + "'. Product version: '" + BuildInfo.getFormalProductVersion() + "'");
             } else if ( dbVersion == null ) {
                 throw new NodeConfigurationException("Cannot connect to database.");
             }

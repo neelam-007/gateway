@@ -55,7 +55,6 @@ public class SiteMinderConfigurationResourceFactory extends SecurityZoneableEnti
         smResource.setUpdateSsoToken( siteMinderCfg.isUpdateSSOToken() );
         smResource.setEnabled( siteMinderCfg.isEnabled() );
         smResource.setNonClusterFailover( siteMinderCfg.isNonClusterFailover() );
-        smResource.setIpCheck( siteMinderCfg.isIpcheck() );
         smResource.setFipsMode( siteMinderCfg.getFipsmode() );
         smResource.setClusterThreshold( siteMinderCfg.getClusterThreshold() );
 
@@ -108,7 +107,6 @@ public class SiteMinderConfigurationResourceFactory extends SecurityZoneableEnti
         smConfiguration.setUpdateSSOToken( smResource.getUpdateSsoToken() );
         smConfiguration.setEnabled( smResource.getEnabled() );
         smConfiguration.setNonClusterFailover( smResource.getNonClusterFailover() );
-        smConfiguration.setIpcheck( smResource.getEnabled() );
         smConfiguration.setFipsmode( smResource.getFipsMode() );
         smConfiguration.setClusterThreshold( smResource.getClusterThreshold() );
 
@@ -142,7 +140,6 @@ public class SiteMinderConfigurationResourceFactory extends SecurityZoneableEnti
         oldEntity.setUpdateSSOToken( newEntity.isUpdateSSOToken() );
         oldEntity.setEnabled( newEntity.isEnabled() );
         oldEntity.setNonClusterFailover( newEntity.isNonClusterFailover() );
-        oldEntity.setIpcheck( newEntity.isIpcheck() );
         oldEntity.setFipsmode( newEntity.getFipsmode() );
         oldEntity.setClusterThreshold( newEntity.getClusterThreshold() );
         oldEntity.setSecurityZone( newEntity.getSecurityZone() );

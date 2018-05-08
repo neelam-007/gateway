@@ -1,22 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ivy-module version="1.0">
+<ivy-module version="2.0" xmlns:m="http://ant.apache.org/ivy/maven">
     <info organisation="com.l7tech"
           module="layer7-kerberos"
-          status="integration"
-            >
+          status="integration">
     </info>
     <configurations>
         <include file="../../etc/build/ivyconfigurations.xml"/>
     </configurations>
     <publications>
-        <artifact name="layer7-kerberos" type="jar" ext="jar" conf="master"/>
-		<artifact name="layer7-kerberos" type="pom" ext="pom" conf="pom"/>
-        <artifact name="layer7-kerberos-test" type="jar" ext="jar" conf="test"/>
+        <artifact type="jar" ext="jar" conf="master"/>
+        <artifact type="pom" ext="pom" conf="pom"/>
+        <artifact type="test" ext="jar" conf="test" m:classifier="test"/>
     </publications>
     <dependencies>
-        <dependency name="layer7-utility" rev="latest.integration" conf="core"/>
+        <dependency name="layer7-utility" rev="latest.integration" conf="core;test->test"/>
         <dependency org="bouncycastle" name="bcprov-jdk16" rev="1.46" force="true" conf="core"/>
-	    <dependency org="org.jaaslounge" name="jaaslounge-decoding" rev="2.0-l7p1-SNAPSHOT" force="true" conf="core"/>
+	    <dependency org="org.jaaslounge" name="jaaslounge-decoding" rev="2.0-l7p2-SNAPSHOT" force="true" conf="core"/>
         <dependency org="org.apache.directory.server" name="apacheds-kerberos-codec" rev="2.0.0-M21" force="true" conf="core"/>
         <dependency org="org.apache.directory.server" name="apacheds-i18n" rev="2.0.0-M21" force="true" conf="core"/>
         <dependency org="org.apache.directory.api" name="api-asn1-api" rev="1.0.0-M33" force="true" conf="core"/>

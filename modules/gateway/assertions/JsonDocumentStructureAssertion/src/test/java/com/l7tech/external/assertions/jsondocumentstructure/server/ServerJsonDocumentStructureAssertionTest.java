@@ -15,6 +15,8 @@ import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.boot.GatewayPermissiveLoggingSecurityManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.test.BenchmarkRunner;
+import com.l7tech.test.BugId;
 import com.l7tech.util.CollectionUtils;
 import org.jetbrains.annotations.Nullable;
 import org.junit.After;
@@ -33,6 +35,7 @@ import java.io.IOException;
 import static com.l7tech.external.assertions.jsondocumentstructure.server.JsonDocumentStructureTestHelper.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Test the JsonDocumentStructureAssertion.
@@ -415,6 +418,51 @@ public class ServerJsonDocumentStructureAssertionTest {
 
         // expect no audit messages
         checkAuditPresence(false, false, false, false, false, false, false);
+    }
+
+    /**
+     * Ensure that concurrent requests for JSON validation do not re-use an existing JsonDocumentStructureValidator object,
+     * should pass and will not audit any messages.
+     */
+    @Test
+    @BugId("DE333386")
+    public void doCheckRequest_EnsureNewJsonValidatorObjectIsCreated() throws Exception {
+
+        JsonDocumentStructureAssertion assertion = new JsonDocumentStructureAssertion();
+        assertion.setMaxContainerDepth(20);
+        assertion.setCheckContainerDepth(true);
+        assertion.setMaxArrayEntryCount(20);
+        assertion.setCheckArrayEntryCount(true);
+        assertion.setMaxObjectEntryCount(20);
+        assertion.setCheckObjectEntryCount(true);
+        assertion.setMaxEntryNameLength(20);
+        assertion.setCheckEntryNameLength(true);
+        assertion.setMaxStringValueLength(20);
+        assertion.setCheckStringValueLength(true);
+
+        Runnable r = new Runnable(){
+
+            ServerJsonDocumentStructureAssertion serverAssertion = createServer(assertion);
+
+            private void validate(JsonDocumentStructureAssertion assertion){
+                try {
+                    PolicyEnforcementContext pec = createPolicyEnforcementContext(TargetMessageType.REQUEST, SINGLE_OBJECT_DOCUMENT);
+                    AssertionStatus status = serverAssertion.doCheckRequest(pec, pec.getRequest(),
+                            assertion.getTargetName(), pec.getAuthenticationContext(pec.getRequest()));
+                    assertEquals( AssertionStatus.NONE, status );
+                    // expect no audit messages
+                    checkAuditPresence(false, false, false, false, false, false, false);
+                } catch ( Exception e ) {
+                    fail("test failed: " + e);
+                }
+            }
+
+            @Override
+            public void run() {
+                validate( assertion );
+            }
+        };
+        new BenchmarkRunner( r, 10000, 100, "EnsureNewJsonValidatorObjectIsCreated").run();
     }
 
     /**

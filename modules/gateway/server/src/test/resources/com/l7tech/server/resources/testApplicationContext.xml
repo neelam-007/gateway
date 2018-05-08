@@ -77,6 +77,11 @@
         <constructor-arg index="0" ref="folderManager"/>
     </bean>
 
+    <bean id="auditConfigurationManager" class="com.l7tech.server.audit.AuditConfigurationManagerStub">
+        <constructor-arg index="0" ref="policyManager"/>
+        <constructor-arg index="1" ref="clusterPropertyManager"/>
+    </bean>
+
     <!-- service cache -->
     <bean id="serviceCache" class="com.l7tech.server.service.ServiceCacheStub" depends-on="wsdlStrategyServiceDocumentsInitializer">
         <constructor-arg index="0" ref="policyCache"/>
@@ -220,6 +225,33 @@
         <constructor-arg ref="inboundSecureConversationContextManager"/>
     </bean>
 
+    <!-- Old franco certificate -->
+    <bean id="francoOldCertificate" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="targetClass" value="com.l7tech.common.TestDocuments"/>
+        <property name="targetMethod" value="getFrancoOldCertificate"/>
+    </bean>
+
+    <!-- Old franco private key -->
+    <bean id="francoOldPrivateKey" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="targetClass" value="com.l7tech.common.TestDocuments"/>
+        <property name="targetMethod" value="getFrancoOldPrivateKey"/>
+    </bean>
+
+    <!-- Simple security token resolver using old franco cert and key -->
+    <bean id="francoSstr" class="com.l7tech.security.xml.SimpleSecurityTokenResolver">
+        <constructor-arg ref="francoOldCertificate"/>
+        <constructor-arg ref="francoOldPrivateKey"/>
+    </bean>
+
+    <!-- server Message Processor with SimpleSecurityTokenResolver set to francoSstr -->
+    <bean id="messageProcessorFrancoSstr" class="com.l7tech.server.TestMessageProcessor">
+        <constructor-arg ref="serviceCache"/>
+        <constructor-arg ref="policyCache"/>
+        <constructor-arg ref="wssDecorator"/>
+        <constructor-arg ref="francoSstr"/>
+        <constructor-arg ref="inboundSecureConversationContextManager"/>
+    </bean>
+
     <!-- server side policy filter manager  -->
     <bean id="policyFilterManager" class="com.l7tech.server.policy.filter.FilterManager">
         <constructor-arg ref="identityProviderFactory"/>
@@ -267,7 +299,10 @@
         <constructor-arg index="2" ref="serviceDocumentManager"/>
         <constructor-arg index="3" ref="policyVersionManager"/>
         <constructor-arg index="4" ref="serviceTemplateManager"/>
+        <constructor-arg index="5" ref="clusterMaster"/>
     </bean>
+
+    <bean id="clusterMaster" class="com.l7tech.server.cluster.ClusterMasterStub"/>
 
     <bean id="serviceTemplateManager" class="com.l7tech.server.service.ServiceTemplateManagerImpl"/>
 
@@ -636,6 +671,7 @@
                 <ref bean="policyManager" />
                 <ref bean="genericEntityManager"/>
                 <ref bean="policyBackedServiceManager"/>
+                <ref bean="auditConfigurationManager"/>
             </list>
         </constructor-arg>
     </bean>
@@ -733,6 +769,10 @@
                     <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.POLICY_BACKED_SERVICE"/></key>
                     <bean class="com.l7tech.server.search.processors.PolicyBackedServiceDependencyProcessor"/>
                 </entry>
+              <entry>
+                <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.LOG_SINK"/></key>
+                <bean class="com.l7tech.server.search.processors.LogSinkDependencyProcessor"/>
+              </entry>
             </map>
         </constructor-arg>
     </bean>
@@ -792,12 +832,6 @@
 
     <bean id="ssgCustomMessageFormatRegistry" class="com.l7tech.server.custom.format.CustomMessageFormatRegistry" depends-on="stashManagerFactory">
         <constructor-arg ref="stashManagerFactory"/>
-    </bean>
-
-    <bean id="workQueueEntityManager" class="com.l7tech.server.workqueue.WorkQueueEntityManagerStub"/>
-
-    <bean id="workQueueExecutorManager" class="com.l7tech.server.workqueue.WorkQueueExecutorManagerImpl">
-        <constructor-arg ref="workQueueEntityManager"/>
     </bean>
 
     <bean id="policyBackedServiceRegistry" class="com.l7tech.server.polback.PolicyBackedServiceRegistry" />

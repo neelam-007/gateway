@@ -6,7 +6,9 @@
 package com.l7tech.console;
 
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.security.Version;
 import com.l7tech.xml.SaxonUtils;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationEvent;
 
 /**
@@ -32,15 +34,19 @@ public class SsmApplicationApplet extends SsmApplication {
         SaxonUtils.setEnableByteCodeGeneration(false);
     }
 
+    public boolean isWebStart() {
+        return false;
+    }
+
     public boolean isApplet() {
         return true;
     }
 
-    public void showHelpTopicsRoot() {
+    public void showHelpTopicsRoot(@Nullable final Version gatewayVersion) {
         AppletMain appletMain = (AppletMain)TopComponents.getInstance().getComponent(AppletMain.COMPONENT_NAME);
         if (appletMain == null)
             throw new IllegalStateException("In applet mode but no appletMain registered");
-        appletMain.showHelpTopicsRoot();
+        appletMain.showHelpTopicsRoot(gatewayVersion);
     }
 
     public void onApplicationEvent(ApplicationEvent event) {

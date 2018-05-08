@@ -33,6 +33,28 @@ public interface SiteMinderAgentConstants {
     public static final String ATTR_ONACCEPTREDIRECT = "ATTR_ONACCEPTREDIRECT";
     public static final String ATTR_HTTP_COOKIE_VALUE = "ATTR_HTTP_COOKIE_VALUE";
     public static final String ATTR_DENIED_REDIRECT_NAME = "ATTR_227";
+    public static final String ATTR_SSOZONE = "ATTR_SSOZONE";
+    public static final String ATTR_SESSION_COOKIE_STRING = "ATTR_SESSION_COOKIE_STRING";
+
+    public static final String ATTR_ACO_SSOZONE_NAME = "ATTR_ACO_SSOZoneName";
+    public static final String ATTR_ACO_COOKIE_PATH = "ATTR_ACO_CookiePath";
+    public static final String ATTR_ACO_COOKIE_PATH_SCOPE = "ATTR_ACO_CookiePathScope";
+    public static final String ATTR_ACO_COOKIE_DOMAIN = "ATTR_ACO_CookieDomain";
+    public static final String ATTR_ACO_COOKIE_DOMAIN_SCOPE = "ATTR_ACO_CookieDomainScope";
+    public static final String ATTR_ACO_USE_SECURE_COOKIES = "ATTR_ACO_UseSecureCookies";
+    public static final String ATTR_ACO_USE_HTTP_ONLY_COOKIES = "ATTR_ACO_UseHttpOnlyCookies";
+    public static final String ATTR_ACO_PERSISTENT_COOKIES = "ATTR_ACO_PersistentCookies";
+    public static final String ATTR_ACO_COOKIE_VALIDATION_PERIOD = "ATTR_ACO_CookieValidationPeriod";
+
+    public static final String ATTR_ACO_SSOZONE_NAME_DEFAULT_VALUE = "SM";
+    public static final String ATTR_ACO_COOKIE_PATH_DEFAULT_VALUE = "/";
+    public static final String ATTR_ACO_COOKIE_PATH_SCOPE_DEFAULT_VALUE = "0";
+    public static final String ATTR_ACO_COOKIE_DOMAIN_DEFAULT_VALUE = ".";
+    public static final String ATTR_ACO_COOKIE_DOMAIN_SCOPE_DEFAULT_VALUE = "0";
+    public static final String ATTR_ACO_USE_SECURE_COOKIES_DEFAULT_VALUE = "no";
+    public static final String ATTR_ACO_USE_HTTP_ONLY_COOKIES_DEFAULT_VALUE = "no";
+    public static final String ATTR_ACO_PERSISTENT_COOKIES_DEFAULT_VALUE = "no";
+    public static final String ATTR_ACO_COOKIE_VALIDATION_PERIOD_DEFAULT_VALUE = "0";
 
     public static final int SM_AGENT_API_INVALID_SESSIONID = -57;
     public static final int ATTR_CURRENTAGENTTIME = 153; //Added as the AgentAPI list of constants do not include the ATTR_CURRENTSERVERTIME;

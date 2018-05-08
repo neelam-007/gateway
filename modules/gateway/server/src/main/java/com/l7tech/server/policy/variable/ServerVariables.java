@@ -663,7 +663,7 @@ public class ServerVariables {
 
                     for (Header header : headers) {
                         propertyValuesMap.put(header.getKey(),
-                                header.getKey() + delimiter + header.getValue().toString());
+                                header.getKey() + delimiter + (header.getValue() == null ? "" : header.getValue().toString()));
                     }
 
                     return propertyValuesMap.values().toArray();

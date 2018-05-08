@@ -104,7 +104,7 @@ configure_my_cnf() {
     sed -in -e "s/^#\(server-id=$DB_NODE_ID\)/\1/g" \
         -e 's/^#log-bin/log-bin/g' \
         -e 's/^#log_bin_trust_function_creators/log_bin_trust_function_creators/g' \
-        -e 's/^#log-slave-update/log-slave-update/g' /etc/my.cnf
+        -e 's/^#log-slave-updates\?/log-slave-updates/g' /etc/my.cnf
 
     if test $? -ne 0 ; then
         echo "Error updating /etc/my.cnf"

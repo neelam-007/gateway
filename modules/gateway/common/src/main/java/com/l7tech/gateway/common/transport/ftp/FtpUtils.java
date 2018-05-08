@@ -8,6 +8,7 @@
  */
 package com.l7tech.gateway.common.transport.ftp;
 
+import com.l7tech.util.HexUtils;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -19,6 +20,7 @@ import com.jscape.inet.ftp.FtpAdapter;
 import com.jscape.inet.ftp.FtpUploadEvent;
 import com.jscape.inet.ftp.FtpResponseEvent;
 import com.l7tech.util.ResourceUtils;
+import org.jetbrains.annotations.Nullable;
 
 public class FtpUtils {
 
@@ -243,5 +245,24 @@ public class FtpUtils {
         public void upload( final FtpUploadEvent ftpUploadEvent ) {
             size = ftpUploadEvent.getSize();
         }
+    }
+
+    public static String serialize(FtpClientConfig ftpConfig) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ObjectOutputStream out = new ObjectOutputStream(baos);
+        out.writeObject(ftpConfig);
+        out.flush();
+        return HexUtils.encodeBase64(baos.toByteArray());
+    }
+
+    public static FtpClientConfig deserialize(@Nullable String configString) throws IOException, ClassNotFoundException {
+
+        if (configString == null || configString.isEmpty()) {
+            return null;
+        }
+
+        // actual deserialization
+        ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(HexUtils.decodeBase64(configString)));
+        return (FtpClientConfig) in.readObject();
     }
 }

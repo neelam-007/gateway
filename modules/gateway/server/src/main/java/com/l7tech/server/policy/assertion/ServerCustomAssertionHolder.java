@@ -443,13 +443,17 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
                 this.document = (Document) pec.getResponse().getXmlKnob().getDocumentReadOnly().cloneNode(true);
             } catch (Exception e) {
                 this.document = null;
-                logger.log(Level.FINE, "cannot get response xml", e);
+                // This is safe to ignore, since not all custom assertions need to set response documents.
+                // Document retrieval has also changed since Halibut release. See {@link com.l7tech.policy.assertion.ext.message.CustomMessage}
+                logger.log(Level.FINE, "Cannot get response xml: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             }
             try {
                 this.requestDocument = (Document) pec.getRequest().getXmlKnob().getDocumentReadOnly().cloneNode(true);
             } catch (Exception e) {
                 this.requestDocument = null;
-                logger.log(Level.FINE, "cannot get request xml", e);
+                // This is safe to ignore, since not all custom assertions need to set request documents.
+                // Document retrieval has also changed since Halibut release. See {@link com.l7tech.policy.assertion.ext.message.CustomMessage}
+                logger.log(Level.FINE, "Cannot get response xml: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             }
 
             this.context = defaultContextMap;
@@ -537,7 +541,9 @@ public class ServerCustomAssertionHolder extends AbstractServerAssertion impleme
             try {
                 this.document = (Document) pec.getRequest().getXmlKnob().getDocumentReadOnly().cloneNode(true);
             } catch (Exception e) {
-                logger.log(Level.FINE, "This request may not be XML", e);
+                // This is safe to ignore, since not all custom assertions need to set request documents.
+                // Document retrieval has also changed since Halibut release. See {@link com.l7tech.policy.assertion.ext.message.CustomMessage}
+                logger.log(Level.FINE, "This request may not be XML: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                 this.document = null;
             }
 

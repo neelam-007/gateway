@@ -11,6 +11,7 @@ idea-classes/
 
 # Build directories/files
 build
+!etc/build
 .idea
 **/.grunt/**
 **/target/**
@@ -25,3 +26,8 @@ UneasyRooster.ipr
 
 # Application specific
 *.env
+
+# Derby files
+derby.log
+hs_err*.log
+dataSources/

@@ -26,7 +26,8 @@ public class XMPPStartTLSAssertionPropertiesDialog extends AssertionPropertiesOk
 
     private static final String TO_SERVER = "To Server";
     private static final String TO_CLIENT = "To Client";
-    
+    private static final String[] TLS_Version = {"TLSv1", "TLSv1.1","TLSv1.2"};
+
     private JPanel mainPanel;
     private JTextField sessionIdField;
     private JComboBox directionComboBox;
@@ -36,6 +37,7 @@ public class XMPPStartTLSAssertionPropertiesDialog extends AssertionPropertiesOk
     private PrivateKeysComboBox privateKeyComboBox;
     private JLabel clientAuthTypeLabel;
     private JComboBox clientAuthTypeComboBox;
+    private JComboBox TLScombobox;
 
     public XMPPStartTLSAssertionPropertiesDialog(Window owner, XMPPStartTLSAssertion assertion) {
         super(assertion.getClass(), owner, assertion, true);
@@ -52,6 +54,8 @@ public class XMPPStartTLSAssertionPropertiesDialog extends AssertionPropertiesOk
             }
         });
 
+        TLScombobox.setModel(new DefaultComboBoxModel(TLS_Version));
+
         clientAuthEnabledCheckBox.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -64,7 +68,7 @@ public class XMPPStartTLSAssertionPropertiesDialog extends AssertionPropertiesOk
         super.initComponents();
         pack();
     }
-    
+
     private void enableDisableComponents() {
         if(TO_SERVER.equals(directionComboBox.getSelectedItem())) {
             clientAuthLabel.setVisible(true);
@@ -95,7 +99,7 @@ public class XMPPStartTLSAssertionPropertiesDialog extends AssertionPropertiesOk
         if(sessionIdField.getText().trim().isEmpty()) {
             throw new ValidationException("The session ID is required.");
         }
-        
+
         if(TO_SERVER.equals(directionComboBox.getSelectedItem())) {
             if(clientAuthEnabledCheckBox.isSelected() && privateKeyComboBox.getSelectedItem() == null) {
                 throw new ValidationException("The private key is required when client authentication is enabled.");
@@ -105,9 +109,11 @@ public class XMPPStartTLSAssertionPropertiesDialog extends AssertionPropertiesOk
                 throw new ValidationException("The private key is required.");
             }
         }
-        
+
         assertion.setSessionId(sessionIdField.getText().trim());
-        
+
+        assertion.setTLSSelectedVersion((String) TLScombobox.getSelectedItem());
+
         if(TO_SERVER.equals(directionComboBox.getSelectedItem())) {
             assertion.setToServer(true);
             if(clientAuthEnabledCheckBox.isSelected()) {
@@ -130,7 +136,8 @@ public class XMPPStartTLSAssertionPropertiesDialog extends AssertionPropertiesOk
     @Override
     public void setData(XMPPStartTLSAssertion assertion) throws ValidationException {
         sessionIdField.setText(assertion.getSessionId() == null ? "" : assertion.getSessionId());
-        
+        TLScombobox.setSelectedItem(assertion.getTLSSelectedVersion());
+
         if(assertion.isToServer()) {
             directionComboBox.setSelectedItem(TO_SERVER);
             clientAuthEnabledCheckBox.setSelected(assertion.isProvideClientCert());

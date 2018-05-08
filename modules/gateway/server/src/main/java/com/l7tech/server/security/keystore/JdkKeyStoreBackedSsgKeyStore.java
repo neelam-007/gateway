@@ -12,13 +12,18 @@ import com.l7tech.server.event.system.Stopped;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.NotFuture;
+import com.l7tech.util.PoolByteArrayOutputStream;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.security.*;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -119,7 +124,7 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
                 privateKey = (PrivateKey) key;
 
         } catch (NoSuchAlgorithmException e) {
-            getLogger().log(Level.WARNING, "Unsupported key type in cert entry in " + "Keystore " + getName() + " with alias " + alias + ": " + ExceptionUtils.getMessage(e), e);
+            getLogger().log(Level.WARNING, "Unsupported key type in cert entry in " + "JDK Keystore " + getName() + " with alias " + alias + ": " + ExceptionUtils.getMessage(e), e);
             // Fallthrough and do without
         } catch (UnrecoverableKeyException e) {
             getLogger().log(Level.WARNING, "Unrecoverable key in cert entry in " + "Keystore " + getName() + " with alias " + alias + ": " + ExceptionUtils.getMessage(e), e);
@@ -169,10 +174,37 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
         }
 
         KeyStore keystore = keyStore();
+        tryKeyBeforeInserting(key, chain, keystore.getType());
         if (!overwriteExisting && keystore.containsAlias(alias))
             throw new KeyStoreException("Keystore already contains an entry with the alias '" + alias + '\'');
 
         keystore.setKeyEntry(alias, key, getEntryPassword(), chain);
+    }
+
+    /**
+     * Creates a fake store to insert this key into, then reloads it to see if three's anything wrong with the key.
+     * Unfortunately sometimes broken keys can be imported into a key store, breaking it permanently.
+     * This is to prevent a bad key from corrupting the real store permamently.
+     *
+     * @param key the key you're trying to insert
+     * @param chain your key's certificate chain
+     * @throws KeyStoreException
+     */
+    private void tryKeyBeforeInserting(PrivateKey key, X509Certificate[] chain, String type) throws KeyStoreException {
+        try  {
+            KeyStore testKeyStore = KeyStore.getInstance(type);
+            testKeyStore.load(null, null);
+            testKeyStore.setKeyEntry("alias", key, getEntryPassword(), chain);
+            ByteArrayOutputStream testBytes = new ByteArrayOutputStream();
+            testKeyStore.store(testBytes, getEntryPassword());
+
+            final KeyStore reloadKeyStore = KeyStore.getInstance(type);
+            reloadKeyStore.load(new ByteArrayInputStream(testBytes.toByteArray()), getEntryPassword());
+
+        } catch (CertificateException | NoSuchAlgorithmException | IOException e) {
+            logger.info("Unable to import key: " + e.getMessage());
+            throw new KeyStoreException(e);
+        }
     }
 
     /**

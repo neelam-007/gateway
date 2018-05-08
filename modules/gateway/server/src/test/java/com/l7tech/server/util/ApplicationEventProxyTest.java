@@ -3,14 +3,16 @@ package com.l7tech.server.util;
 import com.l7tech.util.Functions;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.Pair;
-import static org.junit.Assert.*;
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Test;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.junit.Assert.*;
 
 /**
  *
@@ -20,6 +22,7 @@ public class ApplicationEventProxyTest {
 
     private final Listener la = new Listener();
     private final Listener lb = new Listener();
+    private final Listener lc = new Listener();
     private final Event e1 = new Event();
     private final Event e2 = new Event();
 
@@ -118,6 +121,12 @@ public class ApplicationEventProxyTest {
         }
     }
 
+    public static class TestFailureListener implements org.springframework.context.ApplicationListener {
+        public void onApplicationEvent(ApplicationEvent event) {
+            throw new RuntimeException();//This class throws runtimeException to trigger a scenario
+        }
+    }
+
     @Test
     public void testRemoveListenersFromClassLoader() throws Exception {
         final String classname = TestListener.class.getName();
@@ -152,6 +161,23 @@ public class ApplicationEventProxyTest {
         delivery(0, e1, lt);
         delivery(1, e1, la);
         delivery(2, e2, la);
-    }  
+    }
+
+    //DE351400 - Subscriber failure does not stop the chain
+    @Test
+    public void testSubscriberFailure() throws Exception{
+
+        final ApplicationListener lt = new TestFailureListener();
+
+        proxy.addApplicationListener(la);
+        proxy.addApplicationListener(lb);
+        proxy.addApplicationListener(lt);// bad subscriber
+        proxy.addApplicationListener(lc);
+        proxy.onApplicationEvent(e1);
+        delivered(3);
+        delivery(0, e1, la);
+        delivery(1, e1, lb);
+        delivery(2, e1, lc);
+    }
 }
 

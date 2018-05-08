@@ -1,8 +1,10 @@
 package com.l7tech.server.search;
 
+import com.l7tech.gateway.common.audit.AuditConfiguration;
 import com.l7tech.gateway.common.cassandra.CassandraConnection;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
+import com.l7tech.gateway.common.log.SinkConfiguration;
 import com.l7tech.gateway.common.module.ServerModuleFile;
 import com.l7tech.gateway.common.resources.HttpConfiguration;
 import com.l7tech.gateway.common.resources.ResourceEntry;
@@ -23,7 +25,6 @@ import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.gateway.common.transport.email.EmailListener;
 import com.l7tech.gateway.common.transport.firewall.SsgFirewallRule;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
-import com.l7tech.gateway.common.workqueue.WorkQueue;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.IdentityProviderConfig;
@@ -110,9 +111,10 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
             SampleMessage.class,
             ResourceEntry.class,
             ScheduledTask.class,
-            WorkQueue.class,
+            SinkConfiguration.class,
             ServerModuleFile.class,
-            SolutionKit.class
+            SolutionKit.class,
+            AuditConfiguration.class
     );
     @Inject
     private EntityCrud entityCrud;
@@ -172,6 +174,11 @@ public class DependencyAnalyzerImpl implements DependencyAnalyzer {
         } else {
             headerLists = new ArrayList<>();
             headerLists.add(entityHeaders);
+            if(PropertiesUtil.getOption("IncludeGatewayConfiguration", Boolean.class, false, searchOptions)){
+                List<EntityHeader> gatewayConfigHeaders = new ArrayList<>();
+                gatewayConfigHeaders.add(AuditConfiguration.getDefaultEntityHeader());
+                headerLists.add(gatewayConfigHeaders);
+            }
         }
 
         //create a new dependency finder to perform the search

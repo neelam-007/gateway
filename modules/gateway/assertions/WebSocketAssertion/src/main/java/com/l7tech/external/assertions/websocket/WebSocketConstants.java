@@ -1,6 +1,8 @@
 package com.l7tech.external.assertions.websocket;
 
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Created with IntelliJ IDEA.
@@ -16,7 +18,8 @@ public class WebSocketConstants {
         Outbound
     }
 
-    private static ConcurrentHashMap<String, Integer> clusterprops = new ConcurrentHashMap<String, Integer>();
+    protected static final Logger logger = Logger.getLogger(WebSocketConstants.class.getName());
+    private static ConcurrentHashMap<String, Object> clusterprops = new ConcurrentHashMap<>();
 
     //General
     public static final String ACTION_MENU_NAME = "Manage WebSocket Connections";
@@ -38,6 +41,8 @@ public class WebSocketConstants {
     public static final String MAX_INBOUND_THREADS_KEY = "websocket.max.inbound.threads";
     public static final String MIN_INBOUND_THREADS_KEY = "websocket.min.inbound.threads";
     public static final String ACCEPT_QUEUE_SIZE_KEY = "websocket.accept.queue.size";
+    public static final String OUTBOUND_ONLY_CONNECTION_RECONNECT_INTERVAL_KEY = "websocket.outbound.only.connection.reconnect.interval";
+    public static final String INBOUND_COPY_UPGRADE_REQUEST_SUBPROTOCOL_HEADER_KEY = "websocket.inbound.copy.upgrade.request.subprotocol.header";
 
     //Defaults
     public static final int BUFFER_SIZE = 4096;
@@ -52,9 +57,12 @@ public class WebSocketConstants {
     public static final int MAX_INBOUND_THREADS = 25;
     public static final int MIN_INBOUND_THREADS = 10;
     public static final int ACCEPT_QUEUE_SIZE = 100;
+    public static final int OUTBOUND_ONLY_CONNECTION_RECONNECT_INTERVAL = 300000; // milliseconds
+    public static final boolean INBOUND_COPY_UPGRADE_REQUEST_SUBPROTOCOL_HEADER = true;
 
     public static final int MIN_LISTEN_PORT = 1025;
     public static final int MAX_LISTEN_PORT = 65535;
+    public static final String SECURITY_WEBSOCKET_PROTOCOL_KEY = "Sec-WebSocket-Protocol";
 
     //GUI
     public static final String DELETE_CONN_CHALLENGE = "Delete Connection ";
@@ -74,8 +82,26 @@ public class WebSocketConstants {
         clusterprops.put(key, value);
     }
 
-    public static int getClusterProperty(String key) {
-        return clusterprops.get(key);
+    public static void setClusterProperty(String key, boolean value) {
+        clusterprops.put(key, value);
     }
 
+    public static int getClusterProperty(String key) {
+        Object prop = clusterprops.get(key);
+        if (prop instanceof Integer) {
+            return (Integer) prop;
+        }
+        logger.log(Level.FINE, "Unable to get Cluster Property for key: "+ key);
+        throw new IllegalArgumentException("Cluster Property for key: "+ key + " is not an Integer");
+
+    }
+
+    public static boolean getBooleanClusterProperty(String key) {
+        Object prop = clusterprops.get(key);
+        if (prop instanceof Boolean) {
+            return (Boolean) prop;
+        }
+        logger.log(Level.FINE, "Unable to get Cluster Property for key: "+ key);
+        throw new IllegalArgumentException("Cluster Property for key: "+ key +" is not a Boolean");
+    }
 }

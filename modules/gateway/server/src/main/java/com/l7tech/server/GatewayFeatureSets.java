@@ -3,7 +3,6 @@ package com.l7tech.server;
 import com.l7tech.gateway.common.licensing.FeatureSetExpander;
 import com.l7tech.policy.AllAssertions;
 import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.policy.assertion.composite.*;
 import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenExchange;
 import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
@@ -141,6 +140,8 @@ public class GatewayFeatureSets {
 
     //Mobile App Services Extension
     public static final String PROFILE_MAS_EXTENSION = "set:Profile:MAS";
+
+    public static final String PROFILE_MICROSERVICES = "set:Profile:Microservices";
 
     public static final String PROFILE_DEVELOPMENT = "set:Profile:Development";
     public static final String FS_WEBSOCKETS = "set:WebSocket:Assertions";
@@ -588,7 +589,7 @@ public class GatewayFeatureSets {
             fs(snmp),
             ass(AuditAssertion.class),
             ass(AuditDetailAssertion.class),
-            ass(EmailAlertAssertion.class),
+            mass("assertion:Email"),
             ass(AuditRecordToXmlAssertion.class),
             mass("assertion:MessageContext"));
 
@@ -609,8 +610,7 @@ public class GatewayFeatureSets {
             mass("assertion:HardcodedResponse"),
             mass("assertion:UUIDGenerator"),
             mass("assertion:ManipulateMultiValuedVariable"),
-            ass(MapValueAssertion.class),
-            ass(InvokePolicyAsyncAssertion.class));
+            ass(MapValueAssertion.class));
 
         GatewayFeatureSet threatIps =
         fsr("set:Threats:IPS", "SecureSpan XML IPS threat protection",
@@ -754,6 +754,10 @@ public class GatewayFeatureSets {
                 fsr("set:EvaluateJsonPathExpressionAssertion:Assertions", "The necessary assertions to enable the Evaluate Json Path Expression functionality",
                         mass("assertion:EvaluateJsonPathExpression"));
 
+        GatewayFeatureSet evaluateJsonPathExpressionV2 =
+                fsr("set:EvaluateJsonPathExpressionV2Assertion:Assertions", "The necessary assertions to enable the Evaluate Json Path Expression V2 functionality",
+                        mass("assertion:EvaluateJsonPathExpressionV2"));
+
         GatewayFeatureSet lookupDynamicContextVariables = fsr("set:LookupDynamicContextVariablesAssertion:Assertions",
                 "The necessary assertions to enable the Look Up Dynamic Context Variables functionality",
                 mass("assertion:LookupDynamicContextVariables"));
@@ -771,6 +775,12 @@ public class GatewayFeatureSets {
                 fsr("set:KerberosAuthenticationAssertion:Assertions",
                  "The necessary assertions to enable Kerberos authentication and constrained delegation functionality",
                  mass("assertion:KerberosAuthentication"));
+
+        GatewayFeatureSet qstAssertion =
+                fsr("set:QuickStartTemplateAssertion:Assertions",
+                        "The necessary assertions to enable Quick Start Template functionality",
+                        mass("assertion:QuickStartTemplate"),
+                        mass("assertion:QuickStartDocumentation"));
 
         /**
          * This assertion requires the policy bundle installer assertion so it cannot be added to a license without
@@ -826,6 +836,14 @@ public class GatewayFeatureSets {
         GatewayFeatureSet swaggerAssertion = fsr("set:Swagger:Assertions",
                 "The necessary assertions to validate messages against Swagger document",
                 mass("assertion:Swagger"));
+
+        GatewayFeatureSet circuitBreakerAssertion = fsr("set:CircuitBreaker:Assertions",
+                "The necessary assertions to enable Circuit Breaker pattern functionality",
+                mass("assertion:CircuitBreaker"));
+
+        GatewayFeatureSet corsAssertion = fsr("set:CORS:Assertions",
+                "The necessary assertions to enable CORS functionality",
+                mass("assertion:CORS"));
 
         GatewayFeatureSet apiPortalIntegration = fsr("set:ApiPortalIntegration:Assertions",
                 "The necessary assertions to enable API Portal integration features",
@@ -972,6 +990,7 @@ public class GatewayFeatureSets {
             fs(esmAssertions),
             fs(generateSecurityHashAssertion),
             fs(evaluateJsonPathExpression),
+            fs(evaluateJsonPathExpressionV2),
             fs(lookupDynamicContextVariables),
             fs(generateOAuthSignatureBaseString),
             fs(splitJoinAssertions),
@@ -995,6 +1014,7 @@ public class GatewayFeatureSets {
             fs(uddiNotificationAssertions),
             fs(esmAssertions),
             fs(evaluateJsonPathExpression),
+            fs(evaluateJsonPathExpressionV2),
             fs(lookupDynamicContextVariables),
             fs(generateOAuthSignatureBaseString),
             fs(splitJoinAssertions),
@@ -1031,6 +1051,7 @@ public class GatewayFeatureSets {
             fs(samlpInboundAssertions),
             fs(generateSecurityHashAssertion),
             fs(evaluateJsonPathExpression),
+            fs(evaluateJsonPathExpressionV2),
             fs(lookupDynamicContextVariables),
             fs(generateOAuthSignatureBaseString),
             fs(ntlmAuthenticationAssertion),
@@ -1043,6 +1064,7 @@ public class GatewayFeatureSets {
             fs(cassandraAssertions),
             fs(oDataValidationAssertion),
             fs(swaggerAssertion),
+            fs(circuitBreakerAssertion),
             fs(concurrentAllAssertion),
             fs(caWsdmAssertions),
             fs(adaptiveLoadBalancingAssertions),
@@ -1053,6 +1075,8 @@ public class GatewayFeatureSets {
             fs(jsonTransformationAssertion),
             fs(siteMinderAssertions),
             fs(sophosAssertions),
+            fs(corsAssertion),
+            fs(bulkJdbcInsertAssertions),
             fs(modularAssertions),
             fs(csrfProtectionAssertion),
             fs(retrieveServiceWsdlAssertion),
@@ -1106,6 +1130,7 @@ public class GatewayFeatureSets {
             fs(jsonTransformationAssertion),
             fs(generateSecurityHashAssertion),
             fs(evaluateJsonPathExpression),
+            fs(evaluateJsonPathExpressionV2),
             fs(lookupDynamicContextVariables),
             fs(generateOAuthSignatureBaseString),
             fs(ntlmAuthenticationAssertion),
@@ -1118,6 +1143,7 @@ public class GatewayFeatureSets {
             fs(cassandraAssertions),
             fs(oDataValidationAssertion),
             fs(swaggerAssertion),
+            fs(circuitBreakerAssertion),
             fs(concurrentAllAssertion),
             fs(caWsdmAssertions),
             fs(adaptiveLoadBalancingAssertions),
@@ -1131,6 +1157,7 @@ public class GatewayFeatureSets {
             fs(radiusAssertions),
             fs(retrieveServiceWsdlAssertion),
             fs(jwtAssertion),
+            fs(corsAssertion),
             mass("assertion:ValidateCertificate"));
             mass("assertion:PortalBootstrap");
 
@@ -1190,6 +1217,7 @@ public class GatewayFeatureSets {
             fs(uiFw),
             fs(generateSecurityHashAssertion),
             fs(evaluateJsonPathExpression),
+            fs(evaluateJsonPathExpressionV2),
             fs(lookupDynamicContextVariables),
             fs(generateOAuthSignatureBaseString),
             fs(ntlmAuthenticationAssertion),
@@ -1202,6 +1230,7 @@ public class GatewayFeatureSets {
             fs(cassandraAssertions),
             fs(oDataValidationAssertion),
             fs(swaggerAssertion),
+            fs(circuitBreakerAssertion),
             fs(concurrentAllAssertion),
             fs(caWsdmAssertions),
             fs(adaptiveLoadBalancingAssertions),
@@ -1213,6 +1242,7 @@ public class GatewayFeatureSets {
             fs(siteMinderAssertions),
             fs(sophosAssertions),
             fs(csrfProtectionAssertion),
+            fs(corsAssertion),
             fs(retrieveServiceWsdlAssertion),
             mass("assertion:ValidateCertificate"));
 
@@ -1259,6 +1289,8 @@ public class GatewayFeatureSets {
                 fs(cassandraAssertions),
                 fs(oDataValidationAssertion),
                 fs(swaggerAssertion),
+                fs(circuitBreakerAssertion),
+                fs(corsAssertion),
                 fs(concurrentAllAssertion),
                 fs(caWsdmAssertions),
                 fs(adaptiveLoadBalancingAssertions),
@@ -1345,6 +1377,99 @@ public class GatewayFeatureSets {
                 fs(moduleLoader));
 
         /**
+         * Microservice Gateway
+         *
+         * The Microservices feature set
+         */
+        GatewayFeatureSet microserviceFeaturePack = fsp(PROFILE_MICROSERVICES,
+                "Microservice Gateway",
+                "Includes series of assertions required to support the Microservices gateway functionality.",
+                fs(core),
+                fs(branching),
+                fs(admin),
+                fs(encass),
+                fs(polback),
+                fs(seczones),
+                fs(trustStore),
+                fs(securePassword),
+                fs(keyStore),
+                ass(AuthenticationAssertion.class),
+                ass(MemberOfGroup.class),
+                fs(jdbcQueryAssertions),
+                fs(corsAssertion),
+                ass(HttpBasic.class),
+                ass(SslAssertion.class),
+                fs(jwtAssertion),
+                // decode id token  (custom)
+                mass("assertion:EncodeDecode"),
+                fs(evaluateJsonPathExpression),
+                ass(Regex.class),
+                ass(RequestXpathAssertion.class),
+                ass(ResponseXpathAssertion.class),
+                // generate id token  (custom)
+                ass(AddHeaderAssertion.class),
+                ass(HttpRoutingAssertion.class),
+                mass("assertion:RateLimitQuery"),
+                mass("assertion:RateLimit"),
+                ass(RemoteIpRange.class),
+                mass("assertion:CacheLookup"),
+                mass("assertion:CacheStorage"),
+                ass(AuditDetailAssertion.class),
+                ass(AuditAssertion.class),
+                ass(CustomizeErrorResponseAssertion.class),
+                ass(CommentAssertion.class),
+                mass("assertion:Comparison"),
+                ass(TrueAssertion.class),
+                ass(FalseAssertion.class),
+                ass(SetVariableAssertion.class),
+                ass(Include.class),
+                ass(ExportVariablesAssertion.class),
+                mass("assertion:HardcodedResponse"),
+                mass("assertion:UUIDGenerator"),
+                mass("assertion:ManipulateMultiValuedVariable"),
+                ass(MapValueAssertion.class),
+                fs(adaptiveLoadBalancingAssertions),
+                fs(splitJoinAssertions),
+                mass("assertion:IndexLookupByItem"),
+                mass("assertion:ItemLookupByIndex"),
+                fs(lookupDynamicContextVariables),
+                fs(concurrentAllAssertion),
+                ass(RequestSizeLimit.class),
+                ass(CodeInjectionProtectionAssertion.class),
+                fs(circuitBreakerAssertion),
+                ass(XpathCredentialSource.class),
+                ass(CustomAssertionHolder.class),
+                mass("assertion:ValidateCertificate"),
+                fs(uiPublishXmlWizard),
+                fs(uiPublishServiceWizard),
+                fs(uiAuditWindow),
+                fs(uiDashboardWindow),
+                fs(uiWsdlCreateWizard),
+                fs(uiLogSinksDialog),
+                fs(uiAuditSinkDialog),
+                srv(SERVICE_HTTP_MESSAGE_INPUT, "Accept incoming messages over HTTP"),
+                fs(generateSecurityHashAssertion),
+                ass(XslTransformation.class),
+                fs(swaggerAssertion),
+                fs(jsonSchemaAssertion),
+                ass(ContentTypeAssertion.class),
+                ass(SchemaValidation.class),
+                ass(MessageBufferingAssertion.class),
+                fs(csrfProtectionAssertion),
+                fs(jsonDocumentStructureAssertion),
+                ass(SqlAttackAssertion.class),
+                fs(jsonSchemaAssertion),
+                ass(ContentTypeAssertion.class),
+                fs(qstAssertion),
+                mass("assertion:RESTGatewayManagement"),
+                mass("assertion:LDAPQuery"),
+                mass("assertion:JsonJolt"),
+                ass(HtmlFormDataAssertion.class),
+                ass(RemoveElement.class),
+                fs(moduleLoader));
+
+
+        /**
          * ### FEATURE PACK DEFINITIONS END ###
          */
 
@@ -1361,7 +1486,8 @@ public class GatewayFeatureSets {
                 fs(salesforceFeaturePack),
                 fs(ncesFeaturePack),
                 fs(mobileFeaturePack),
-                fs(masFeaturePack));
+                fs(masFeaturePack),
+                fs(microserviceFeaturePack));
     }
 
     /** @return All registered FeatureSets, including product profiles, building blocks, and twig and leaf features. */

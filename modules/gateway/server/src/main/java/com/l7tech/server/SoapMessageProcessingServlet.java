@@ -28,9 +28,6 @@ import com.l7tech.server.audit.MessageSummaryAuditFactory;
 import com.l7tech.server.event.FaultProcessed;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
-import com.l7tech.server.message.metrics.GatewayMetricsPublisher;
-import com.l7tech.server.message.metrics.GatewayMetricsUtils;
-import com.l7tech.server.message.metrics.LatencyMetrics;
 import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.transport.http.HttpTransportModule;
@@ -53,7 +50,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.SocketTimeoutException;
-import java.net.URI;
+import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.*;
 import java.util.concurrent.Callable;
@@ -83,6 +80,8 @@ public class SoapMessageProcessingServlet extends HttpServlet {
     private static final Charset SOAP_1_2_CONTENT_ENCODING = Charsets.UTF8;
     private static final String PARAM_POLICYSERVLET_URI = "PolicyServletUri";
     private static final String DEFAULT_POLICYSERVLET_URI = "/policy/disco?serviceoid=";
+    private static final String ALLOW_GZIP_COMPRESSED_REQUEST = "request.compress.gzip.allow";
+    private static final String ALLOW_GZIP_COMPRESSED_RESPONSE = "response.compress.gzip.allow";
 
     private final Logger logger = Logger.getLogger(getClass().getName());
 
@@ -95,9 +94,6 @@ public class SoapMessageProcessingServlet extends HttpServlet {
     private Auditor auditor;
     AuditContextFactory auditContextFactory;
     MessageSummaryAuditFactory messageSummaryAuditFactory;
-
-    private GatewayMetricsPublisher publisher;
-    private final TimeSource timeSource = new TimeSource();
 
     @Override
     public void init(ServletConfig servletConfig) throws ServletException {
@@ -115,7 +111,6 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         auditContextFactory = applicationContext.getBean("auditContextFactory", AuditContextFactory.class);
         messageSummaryAuditFactory = applicationContext.getBean("messageSummaryAuditFactory", MessageSummaryAuditFactory.class);
         auditor = new Auditor(this, applicationContext, logger);
-        publisher = applicationContext.getBean("gatewayMetricsPublisher", GatewayMetricsPublisher.class);
     }
 
     /**
@@ -134,39 +129,26 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         final Message response = new Message();
         final Message request = new Message();
         try ( final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext( request, response, true ) ) {
-            GatewayMetricsUtils.setPublisher(context, isRelayGatewayMetricsEnable() ? getPublisher() : null);
-            final long startTime = timeSource.currentTimeMillis();
-            try {
-                final AssertionStatus[] status = {null};
+            final AssertionStatus[] status = {null};
 
-                auditContextFactory.doWithNewAuditContext(new Callable<Object>() {
-                    @Override
-                    public Object call() throws Exception {
-                        status[0] = serviceNoAudit(hrequest, hresponse, context);
-                        return null;
-                    }
-                }, new Functions.Nullary<AuditRecord>() {
-                    @Override
-                    public AuditRecord call() {
-                        AssertionStatus s = status[0] == null ? AssertionStatus.UNDEFINED : status[0];
-                        return messageSummaryAuditFactory.makeEvent(context, s);
-                    }
-                });
-            } finally {
-                GatewayMetricsUtils.publishServiceFinish(context, new LatencyMetrics(startTime, timeSource.currentTimeMillis()));
-            }
+            auditContextFactory.doWithNewAuditContext(new Callable<Object>() {
+                @Override
+                public Object call() throws Exception {
+                    status[0] = serviceNoAudit(hrequest, hresponse, context);
+                    return null;
+                }
+            }, new Functions.Nullary<AuditRecord>() {
+                @Override
+                public AuditRecord call() {
+                    AssertionStatus s = status[0] == null ? AssertionStatus.UNDEFINED : status[0];
+                    return messageSummaryAuditFactory.makeEvent(context, s);
+                }
+            });
         } catch ( ServletException | IOException e ) {
             throw e;
         } catch ( Exception e ) {
             throw new ServletException( e );
         }
-    }
-
-    /**
-     * Proxy {@code relayGatewayMetrics.enable} cluster property through the message processor.
-     */
-    private boolean isRelayGatewayMetricsEnable() {
-        return messageProcessor != null && messageProcessor.isRelayGatewayMetricsEnable();
     }
 
     private AssertionStatus serviceNoAudit(HttpServletRequest hrequest, HttpServletResponse hresponse, final PolicyEnforcementContext context)
@@ -201,15 +183,21 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         String maybegzipencoding = hrequest.getHeader(HEADER_CONTENT_ENCODING);
         boolean gzipEncodedTransaction = false;
         boolean gzipResponse = false;
-        final boolean allowGzipResponse = config.getBooleanProperty("response.compress.gzip.allow", true);
+        final boolean allowGzipResponse = config.getBooleanProperty(ALLOW_GZIP_COMPRESSED_RESPONSE, true);
         if ( maybegzipencoding != null ) {
             if (maybegzipencoding.toLowerCase().contains("gzip")) {
-                if( !config.getBooleanProperty("request.compress.gzip.allow", true) ) {
+                if( !config.getBooleanProperty(ALLOW_GZIP_COMPRESSED_REQUEST, true) ) {
                     logger.log( Level.INFO, "Rejecting GZIP compressed request.");
                     rejectGzipRequest( hrequest, hresponse, STATUS_UNSUPPORTED_MEDIA_TYPE, "Rejecting GZIP compressed request" );
                     return null;
                 }
-                if (hrequest.getContentLength() != 0) {
+                /**
+                 * DE218036 : Request to Gateway with Content-Encoding header set to gzip fails when body is empty
+                 *
+                 * The below condition check (for empty content) fails because hrequest.getContentLength() returns -1 for empty body.
+                 * So, changing from (hrequest.getContentLength() != 0) to (hrequest.getContentLength() > 0)
+                 */
+                if (hrequest.getContentLength() > 0) {
                     gzipEncodedTransaction = true;
                     gzipResponse = allowGzipResponse;
                     logger.fine("request with gzip content-encoding detected " + hrequest.getContentLength());
@@ -223,7 +211,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                         return null;
                     }
                 } else {
-                    logger.fine("content-encoding is gzip but content-length is zero");
+                    logger.fine("content-encoding is gzip, but either content-length is zero or no content is present");
                 }
             } else {
                 logger.fine("content-encoding not gzip " + maybegzipencoding);
@@ -451,7 +439,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
      */
     private Collection<Pair<String, Object>> getPassThroughHeaders(PolicyEnforcementContext context, final HttpRequestKnob reqKnob, final HeadersKnob headersKnob) {
         final List<Pair<String, Object>> passThroughHeaders = new ArrayList<>();
-        URI url = URI.create(reqKnob.getRequestUrl());
+        final URL url = reqKnob.getRequestURL(); // url is never null.
         //SSG-8033 Determine to overwrite the path and/or domain using the SSG request path and/or host.
         String domain = context.isOverwriteResponseCookieDomain() ? url.getHost() : null;
         String path = context.isOverwriteResponseCookiePath() ? CookieUtils.trimLastSubPath(url.getPath()) : null;
@@ -657,7 +645,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             }
 
             if ( !faultEncoding.canEncode() ) {
-                faultEncoding = Charsets.UTF8; // fallback to UTF-8 rather than failing    
+                faultEncoding = Charsets.UTF8; // fallback to UTF-8 rather than failing
             }
 
             if ( !hresp.isCommitted() ) {
@@ -860,10 +848,4 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         }
     }
 
-    /**
-     * Restricted visibility - overridden in unit tests.
-     */
-    GatewayMetricsPublisher getPublisher() {
-        return publisher;
-    }
 }

@@ -427,6 +427,21 @@ public class SoapFaultManagerTest {
     }
 
     @Test
+    public void testTemplateFaultWithSoapDetailvar() throws Exception {
+        SoapFaultManager sfm = buildSoapFaultManager();
+        SoapFaultLevel level = new SoapFaultLevel();
+        level.setLevel(SoapFaultLevel.TEMPLATE_FAULT);
+        level.setFaultTemplate( "${"+SoapFaultManager.SOAPFAULT_DETAIL_VAR+"}" );
+        level.setFaultTemplateHttpStatus( "555" );
+        level.setFaultTemplateContentType( "text/plain" );
+        final SoapFaultManager.FaultResponse fault = sfm.constructExceptionFault( new Throwable("Error Message"), level, getSoap11PEC(false ));
+        System.out.println(fault);
+        assertEquals( "Http Status", 555, fault.getHttpStatus() );
+        assertTrue( "Text/Plain Content Type", ContentTypeHeader.create( "text/plain" ).matches(fault.getContentType()) );
+        assertEquals( "Fault contents", "Error Message", fault.getContent() );
+    }
+
+    @Test
     public void testNonSoapTemplateFault() throws Exception {
         SoapFaultManager sfm = buildSoapFaultManager();
         SoapFaultLevel level = new SoapFaultLevel();
@@ -439,6 +454,44 @@ public class SoapFaultManagerTest {
         assertEquals( "Http Status", 555, fault.getHttpStatus() );
         assertTrue( "Text/Plain Content Type", ContentTypeHeader.create( "text/plain" ).matches(fault.getContentType()) );
         assertEquals( "Fault contents", "Server Error", fault.getContent() );
+    }
+
+    @Test
+    public void testJsonTemplateFault() throws Exception {
+        SoapFaultManager sfm = buildSoapFaultManager();
+        SoapFaultLevel level = new SoapFaultLevel();
+        level.setLevel(SoapFaultLevel.TEMPLATE_FAULT);
+        level.setFaultTemplate( "{\n" +
+                "            \"JsonFault\": {\n" +
+                "            \"error\": \"test error\",\n" +
+                "        }\n" +
+                "        }" );
+        level.setFaultTemplateCustomContentType("application/json");
+
+        final SoapFaultManager.FaultResponse fault = sfm.constructReturningFault( level, getSoap11PEC(false) );
+        System.out.println(fault);
+        assertEquals( "Http Status", 500, fault.getHttpStatus() );
+        assertTrue( "Application/Json Content Type", ContentTypeHeader.create( "application/json" ).matches(fault.getContentType()) );
+        assertEquals( "Fault contents", level.getFaultTemplate(), fault.getContent() );
+    }
+
+    @Test
+    public void testBadContentTypeForJsonTemplateFault() throws Exception {
+        SoapFaultManager sfm = buildSoapFaultManager();
+        SoapFaultLevel level = new SoapFaultLevel();
+        level.setLevel(SoapFaultLevel.TEMPLATE_FAULT);
+        level.setFaultTemplate( "{\n" +
+                "            \"JsonFault\": {\n" +
+                "            \"error\": \"test error\",\n" +
+                "        }\n" +
+                "        }" );
+        level.setFaultTemplateCustomContentType(" ");
+
+        final SoapFaultManager.FaultResponse fault = sfm.constructReturningFault( level, getSoap11PEC(false) );
+        System.out.println(fault);
+        assertEquals( "Http Status", 500, fault.getHttpStatus() );
+        assertTrue( "Text/Xml Content Type", ContentTypeHeader.create( "text/xml" ).matches(fault.getContentType()) );
+        assertEquals( "Fault contents", level.getFaultTemplate(), fault.getContent() );
     }
 
 

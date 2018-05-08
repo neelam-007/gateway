@@ -1,7 +1,6 @@
 package com.l7tech.console.tree.policy.advice;
 
 import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
 import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
 import com.l7tech.policy.assertion.sla.ThroughputQuota;
@@ -83,7 +82,6 @@ public class Advices {
                 put(Regex.class, ary(RegexAdvice.class));
                 put(HttpFormPost.class, ary(HttpFormPostAdvice.class));
                 put(InverseHttpFormPost.class, ary(InverseHttpFormPostAdvice.class));
-                put(EmailAlertAssertion.class, ary(AddEmailAlertAssertionAdvice.class));
                 put(ThroughputQuota.class, ary(AddThroughputQuotaAssertionAdvice.class));
                 put(CommentAssertion.class, ary(CommentAssertionAdvice.class));
                 put(RequestSizeLimit.class, ary(RequestSizeLimitAdvice.class));

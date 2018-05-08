@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<l7:Bundle xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management">
+    <l7:References>
+        <l7:Item>
+            <l7:Name>folder1</l7:Name>
+            <l7:Id>f4ce2cb557379c7bf7113246fe818387</l7:Id>
+            <l7:Type>FOLDER</l7:Type>
+            <l7:TimeStamp>2014-09-16T14:03:05.899-07:00</l7:TimeStamp>
+            <l7:Resource>
+                <l7:Folder folderId="0000000000000000ffffffffffffec76" id="f4ce2cb557379c7bf7113246fe818387" version="0">
+                    <l7:Name>folder1</l7:Name>
+                </l7:Folder>
+            </l7:Resource>
+        </l7:Item>
+        <l7:Item>
+            <l7:Name>folder2</l7:Name>
+            <l7:Id>6ea174937afc1eb5d394c0ad2c2ba1d7</l7:Id>
+            <l7:Type>FOLDER</l7:Type>
+            <l7:TimeStamp>2014-09-16T14:03:05.899-07:00</l7:TimeStamp>
+            <l7:Resource>
+                <l7:Folder folderId="0000000000000000ffffffffffffec76" id="6ea174937afc1eb5d394c0ad2c2ba1d7" version="0">
+                    <l7:Name>folder2</l7:Name>
+                </l7:Folder>
+            </l7:Resource>
+        </l7:Item>
+    </l7:References>
+    <l7:Mappings>
+        <l7:Mapping action="NewOrExisting" srcId="0000000000000000ffffffffffffec76" srcUri="https://127.0.0.1:8443/restman/1.0/folders/0000000000000000ffffffffffffec76" type="FOLDER">
+            <l7:Properties>
+                <l7:Property key="FailOnNew">
+                    <l7:BooleanValue>true</l7:BooleanValue>
+                </l7:Property>
+            </l7:Properties>
+        </l7:Mapping>
+        <l7:Mapping action="NewOrExisting" srcId="f4ce2cb557379c7bf7113246fe818387" srcUri="https://127.0.0.1:8443/restman/1.0/folders/f4ce2cb557379c7bf7113246fe818387" type="FOLDER"/>
+        <l7:Mapping action="NewOrExisting" srcId="6ea174937afc1eb5d394c0ad2c2ba1d7" srcUri="https://127.0.0.1:8443/restman/1.0/folders/6ea174937afc1eb5d394c0ad2c2ba1d7" type="FOLDER"/>
+    </l7:Mappings>
+</l7:Bundle>

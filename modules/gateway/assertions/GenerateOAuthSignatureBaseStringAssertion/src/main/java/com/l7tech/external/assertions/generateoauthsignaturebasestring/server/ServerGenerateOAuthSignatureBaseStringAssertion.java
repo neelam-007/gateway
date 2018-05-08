@@ -344,10 +344,16 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
         for (final Map.Entry<String, List<String>> entry : parameterMap.entrySet()) {
             final Iterator<String> iterator = entry.getValue().iterator();
             while (iterator.hasNext()) {
-                sb.append(percentEncode(entry.getKey()));
+                String key = entry.getKey();
+                String value = iterator.next();
+                if (key.equals(OAUTH_CALLBACK) && StringUtils.isBlank(value)) {
+                    // Omitting empty callback from signature
+                    continue;
+                }
+                sb.append(percentEncode(key));
                 // equals symbol
                 sb.append(EQUALS_ENCODED);
-                sb.append(percentEncode(iterator.next()));
+                sb.append(percentEncode(value));
                 sb.append(AMPERSAND_ENCODED);
             }
         }
@@ -414,7 +420,8 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
             throw new ParameterException("Cannot have oauth_verifier without oauth_token");
         }
         // callback is required if there is no token or token is empty
-        if ((!sortedParameters.containsKey(OAUTH_TOKEN) || sortedParameters.get(OAUTH_TOKEN).get(0).isEmpty()) && !sortedParameters.containsKey(OAUTH_CALLBACK)) {
+        if (!assertion.isAllowEmptyCallback() &&
+                ((!sortedParameters.containsKey(OAUTH_TOKEN) || sortedParameters.get(OAUTH_TOKEN).get(0).isEmpty()) && !sortedParameters.containsKey(OAUTH_CALLBACK))) {
             throw new ParameterException("Must specify oauth_callback if no oauth_token is provided");
         }
         // version is not required
@@ -430,7 +437,8 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
         // callback must be oob or start with http/https and be a max of 200 characters
         if (sortedParameters.get(OAUTH_CALLBACK) != null) {
             final String foundCallback = sortedParameters.get(OAUTH_CALLBACK).iterator().next();
-            if (!foundCallback.matches("oob|http[s]?[^\"]{1,200}")) {
+            if (!(assertion.isAllowEmptyCallback() && StringUtils.isBlank(foundCallback)) &&
+                    !foundCallback.matches("oob|http[s]?[^\"]{1,200}")) {
                 throw new InvalidParameterException(OAUTH_CALLBACK, foundCallback, OAUTH_CALLBACK + " is invalid: " + foundCallback);
             }
         }
@@ -497,9 +505,11 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
         OAUTH_PARAMETERS.add(OAUTH_VERSION);
         OAUTH_PARAMETERS.add(OAUTH_SIGNATURE);
 
-        SIGNATURE_METHODS = new ArrayList<String>(3);
+        SIGNATURE_METHODS = new ArrayList<String>(5);
         SIGNATURE_METHODS.add(HMAC_SHA1);
         SIGNATURE_METHODS.add(RSA_SHA1);
+        SIGNATURE_METHODS.add(RSA_SHA256);
+        SIGNATURE_METHODS.add(RSA_SHA512);
         SIGNATURE_METHODS.add(PLAINTEXT);
     }
 }

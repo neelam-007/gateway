@@ -1,9 +1,6 @@
 package com.l7tech.external.assertions.gatewaymanagement.server;
 
-import com.l7tech.common.io.AliasNotFoundException;
-import com.l7tech.common.io.CertGenParams;
-import com.l7tech.common.io.CertUtils;
-import com.l7tech.common.io.KeyGenParams;
+import com.l7tech.common.io.*;
 import com.l7tech.external.assertions.gatewaymanagement.server.ResourceFactory.InvalidResourceException.ExceptionType;
 import com.l7tech.gateway.api.CertificateData;
 import com.l7tech.gateway.api.ManagedObjectFactory;
@@ -419,11 +416,14 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
                         final SsgKeyStore ssgKeyStore = getSsgKeyStore( entry.getKeystoreId() );
                         final Map<String, Object> properties = resource.getProperties();
                         final Option<String> signatureHashAlgorithm = getProperty( properties, PrivateKeyGenerateCsrContext.PROP_SIGNATURE_HASH, Option.<String>none(), String.class );
-
+                        //add Subject Alternative names to CSR
+                        final List<String> sansList = (List<String>) properties.get(PrivateKeyGenerateCsrContext.PROP_SANS);
+                        List<X509GeneralName> csrSAN = CertUtils.extractX509GeneralNamesFromList(sansList);
                         final CertificateRequest res = ssgKeyStore.makeCertificateSigningRequest(
                                 entry.getAlias(),
                                 new CertGenParams(
                                         principal,
+                                        csrSAN,
                                         config.getIntProperty( "pkix.csr.defaultExpiryAge", DEFAULT_CSR_EXPIRY_DAYS ),
                                         false,
                                         signatureHashAlgorithm.map( getSignatureAlgorithmMapper( entry.getPrivateKey().getAlgorithm() ) ).toNull() ) );
@@ -436,6 +436,10 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
                         throw new ResourceAccessException( ExceptionUtils.getMessage( e ), e );
                     } catch ( UnrecoverableKeyException e ) {
                         throw new ResourceAccessException( ExceptionUtils.getMessage( e ), e );
+                    } catch ( IllegalArgumentException e) {
+                        throw new InvalidResourceException(ExceptionType.INVALID_VALUES, ExceptionUtils.getMessage(e));
+                    } catch ( UnsupportedX509GeneralNameException e) {
+                        throw new InvalidResourceException(ExceptionType.UNEXPECTED_TYPE, "Unsupported Subject Alternative Name Type");
                     }
 
                     final PrivateKeyGenerateCsrResult result = new PrivateKeyGenerateCsrResult();

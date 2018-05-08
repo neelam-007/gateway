@@ -20,6 +20,7 @@ import com.l7tech.server.message.AuthenticationContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractMessageTargetableServerAssertion;
 import com.l7tech.util.ExceptionUtils;
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationContext;
@@ -43,6 +44,9 @@ public class ServerQuickStartTemplateAssertion extends AbstractMessageTargetable
     private QuickStartParser parser = new QuickStartParser();
     private QuickStartServiceBuilder serviceBuilder;
 
+    // this is used to hold version from qs.version
+    private String versionFromContext;
+
     public ServerQuickStartTemplateAssertion(final QuickStartTemplateAssertion assertion, final ApplicationContext applicationContext) throws PolicyAssertionException {
         super(assertion);
         this.serviceBuilder = QuickStartAssertionModuleLifecycle.getServiceBuilder();
@@ -60,16 +64,17 @@ public class ServerQuickStartTemplateAssertion extends AbstractMessageTargetable
         try {
             final ServiceContainer serviceContainer;
             try {
+                setCurrentVersion(context);
                 serviceContainer = parser.parseJson(message.getMimeKnob().getEntireMessageBodyAsInputStream(false));
             } catch (final Exception e) {
                 final IllegalArgumentException arg = ExceptionUtils.getCauseIfCausedBy(e, IllegalArgumentException.class);
                 if (arg != null) {
                     logger.log(Level.WARNING, ExceptionUtils.getMessage(arg), ExceptionUtils.getDebugException(arg));
-                    context.setVariable(QuickStartTemplateAssertion.QS_WARNINGS, ExceptionUtils.getMessage(arg));
+                    context.setVariable(QuickStartTemplateAssertion.QS_WARNINGS, StringEscapeUtils.escapeJava(ExceptionUtils.getMessage(arg)));
                     return AssertionStatus.FALSIFIED;
                 } else {
                     logger.log(Level.WARNING, "Unable to parse JSON payload: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                    context.setVariable(QuickStartTemplateAssertion.QS_WARNINGS, "Unable to parse JSON payload: " + ExceptionUtils.getMessage(e));
+                    context.setVariable(QuickStartTemplateAssertion.QS_WARNINGS, "Unable to parse JSON payload");
                     return AssertionStatus.FALSIFIED;
                 }
             }
@@ -148,7 +153,7 @@ public class ServerQuickStartTemplateAssertion extends AbstractMessageTargetable
     @NotNull
     private PublishedService createPublishedService(@NotNull final ServiceContainer serviceContainer) throws QuickStartPolicyBuilderException, FindException {
         final PublishedService publishedService = serviceBuilder.createService(serviceContainer);
-        publishedService.putProperty(PROPERTY_QS_REGISTRAR_TMS, String.valueOf(System.currentTimeMillis()));
+        publishedService.putProperty(PROPERTY_QS_REGISTRAR_TMS, getLatestServiceVersion());
         // TODO: perhaps add PROPERTY_QS_CREATE_METHOD property and set it to QuickStartTemplateAssertion.QsServiceCreateMethod.SCALAR:
         //publishedService.putProperty(PROPERTY_QS_CREATE_METHOD, String.valueOf(QuickStartTemplateAssertion.QsServiceCreateMethod.SCALAR));
         return publishedService;
@@ -168,15 +173,23 @@ public class ServerQuickStartTemplateAssertion extends AbstractMessageTargetable
     ) throws QuickStartPolicyBuilderException, FindException {
         final PublishedService publishedService = serviceBuilder.updateService(goid, serviceContainer);
         // update PROPERTY_QS_REGISTRAR_TMS
-        final String registrarTime = publishedService.getProperty(PROPERTY_QS_REGISTRAR_TMS);
-        if (StringUtils.isNotEmpty(registrarTime)) {
-            publishedService.putProperty(PROPERTY_QS_REGISTRAR_TMS, String.valueOf(Long.valueOf(registrarTime) + 1));
-        } else {
-            publishedService.putProperty(PROPERTY_QS_REGISTRAR_TMS, String.valueOf(System.currentTimeMillis()));
-        }
-        // TODO: perhaps make sure PROPERTY_QS_CREATE_METHOD property is added and its value is QuickStartTemplateAssertion.QsServiceCreateMethod.SCALAR:
-        //publishedService.putProperty(PROPERTY_QS_CREATE_METHOD, String.valueOf(QuickStartTemplateAssertion.QsServiceCreateMethod.SCALAR));
+        publishedService.putProperty(PROPERTY_QS_REGISTRAR_TMS, getLatestServiceVersion());
+
         return publishedService;
+    }
+
+    @VisibleForTesting
+    private String getLatestServiceVersion() {
+
+        return StringUtils.isBlank(versionFromContext) ? String.valueOf(System.currentTimeMillis()) : versionFromContext;
+
+    }
+
+    @VisibleForTesting
+    private void setCurrentVersion(PolicyEnforcementContext context) {
+        try {
+            versionFromContext = (String)context.getVariable(QuickStartTemplateAssertion.QS_VERSION);
+        } catch(Throwable e) {} // do nothing
     }
 
     @VisibleForTesting

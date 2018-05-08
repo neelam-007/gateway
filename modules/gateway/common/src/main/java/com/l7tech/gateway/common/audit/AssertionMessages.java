@@ -576,6 +576,7 @@ public class AssertionMessages extends Messages {
     public static final M JMS_ROUTING_ERROR_SENDING_MESSAGE = m(6033, Level.WARNING, "Unable to send JMS message to destination ''{0}'' : {1}.");
     public static final M JMS_ROUTING_NOT_SUPPORTED_JMS_HEADER =  m(6034,Level.WARNING, "JMS Header ''{0}'' is not supported.");
     public static final M JMS_ROUTING_NOT_SETTABLE_JMS_HEADER =  m(6035,Level.WARNING, "JMS Header ''{0}'' is not settable.");
+    public static final M JMS_ROUTING_NOT_SETTABLE_JMS_PROPERTY =  m(6036,Level.WARNING, "Cannot set JMS Property ''{0}'' to value ''{1}''. {2}");
 
     // ServerFtpRoutingAssertion
     @Deprecated
@@ -668,20 +669,21 @@ public class AssertionMessages extends Messages {
     public static final M XPATHCREDENTIAL_PASS_PARENT_NOT_ELEMENT = m(6615, Level.WARNING, "Cannot remove password element; parent is not an Element");
 
     // Email and SNMP alerts
-    public static final M EMAILALERT_MESSAGE_SENT = m(6700, Level.INFO, "Email message sent");
-    public static final M EMAILALERT_BAD_TO_ADDR = m(6701, Level.WARNING, "Bad destination email address(es)");
-    public static final M EMAILALERT_BAD_FROM_ADDR = m(6702, Level.WARNING, "Bad source email address");
+    public static final M EMAIL_MESSAGE_SENT = m(6700, Level.INFO, "Email message sent in {0} format with {1} attachment(s)");
+    public static final M EMAIL_BAD_TO_ADDR = m(6701, Level.WARNING, "Bad destination email address(es)");
+    public static final M EMAIL_BAD_FROM_ADDR = m(6702, Level.WARNING, "Bad source email address");
     public static final M SNMP_BAD_TRAP_OID = m(6703, Level.WARNING, "The OID ending with zero is reserved for the message field: Using .1 for the trap OID instead");
-    public static final M EMAILALERT_AUTH_FAIL = m(6704, Level.WARNING, "Authentication failure, message not sent");
-    public static final M EMAILALERT_SSL_FAIL = m(6705, Level.WARNING, "SSL connection failure, message not sent");
-    public static final M EMAILALERT_CONNECT_FAIL = m(6706, Level.WARNING, "Connection failure, message not sent");
-    public static final M EMAILALERT_BAD_PORT = m(6707, Level.WARNING, "Bad smtp port set, message not sent");
-    public static final M EMAILALERT_BAD_HOST = m(6708, Level.WARNING, "Bad smtp host set or not set at all, message not sent");
-    public static final M EMAILALERT_BAD_USER = m(6709, Level.WARNING, "Bad smtp user name set or not set at all, message not sent");
-    public static final M EMAILALERT_BAD_PWD = m(6710, Level.WARNING, "Bad smtp password set or not set at all, message not sent");
+    public static final M EMAIL_AUTH_FAIL = m(6704, Level.WARNING, "Authentication failure, message not sent");
+    public static final M EMAIL_SSL_FAIL = m(6705, Level.WARNING, "SSL connection failure, message not sent");
+    public static final M EMAIL_CONNECT_FAIL = m(6706, Level.WARNING, "Connection failure, message not sent");
+    public static final M EMAIL_BAD_PORT = m(6707, Level.WARNING, "Bad smtp port set, message not sent");
+    public static final M EMAIL_BAD_HOST = m(6708, Level.WARNING, "Bad smtp host set or not set at all, message not sent");
+    public static final M EMAIL_BAD_USER = m(6709, Level.WARNING, "Bad smtp user name set or not set at all, message not sent");
+    public static final M EMAIL_BAD_PWD = m(6710, Level.WARNING, "Bad smtp password set or not set at all, message not sent");
     public static final M SNMP_INVALID_TRAP_OID = m(6711, Level.WARNING, "Invalid OID (value={0}). Using .1 for the trap OID instead");
     public static final M SNMP_BAD_HOST = m(6712, Level.WARNING, "Bad smtp host set or not set at all (value={0})");
 
+    public static final M EMAIL_ATTACHMENT_INVALID = m(6713, Level.WARNING, "Invalid Email attachment; {0}");
 
     // HTTP Form POST
     public static final M HTTPFORM_WRONG_TYPE = m(6800, Level.WARNING, true, false, "Request does not appear to be an HTTP form submission ({0})");
@@ -1205,7 +1207,7 @@ public class AssertionMessages extends Messages {
     public static final Messages.M EVALUATE_JSON_PATH_INVALID_EXPRESSION     = m(9646, Level.WARNING, "Invalid JSON Path expression: ''{0}''");
     public static final Messages.M EVALUATE_JSON_PATH_INVALID_EVALUATOR     = m(9647, Level.WARNING, "Invalid evaluator: ''{0}''");
     public static final Messages.M EVALUATE_JSON_PATH_ERROR     = m(9648, Level.WARNING, "Error occurred evaluating JSON Path: ''{0}''");
-    public static final Messages.M EVALUATE_JSON_PATH_NOT_FOUND     = m(9649, Level.WARNING, "Could not find any matching result; assertion therefore fails; Expression is ''{0}''.");
+    public static final Messages.M EVALUATE_JSON_PATH_NOT_FOUND     = m(9649, Level.INFO, "Could not find any matching result; assertion therefore fails; Expression is ''{0}''.");
 
     public static final Messages.M LOOKUP_DYNAMIC_VARIABLE_NOT_FOUND     = m(9655, Level.INFO, "Context variable ''{0}'' is not found.");
     public static final Messages.M LOOKUP_DYNAMIC_VARIABLE_MISSING_SOURCE     = m(9656, Level.WARNING, "Source variable is not set.");
@@ -1384,12 +1386,6 @@ public class AssertionMessages extends Messages {
 
     public static final M HANDLE_ERRORS_MSG = m(11000, Level.WARNING, "Policy processing caught an exception: {0}");
 
-    // InvokePolicyAsync Assertion
-    public static final M WORK_QUEUE_EXECUTOR_NOT_AVAIL = m(11100, Level.WARNING, "Executor associated with work queue \"{0}\" not available due to {1}");
-    public static final M WORK_QUEUE_EXECUTOR_FINE = m(11101, Level.FINE, "Work Queue Executor Manager: {0}");
-    public static final M WORK_QUEUE_EXECUTOR_INFO_FINER = m(11102, Level.FINER, "Work queue name: {0}; queue size: {1}; active threads: {2}; threads in pool: {3}; reject policy: {4}.");
-    public static final M INVOKE_POLICY_ASYNC_ASSERTION_FAILED = m(11103, Level.WARNING, "\"Invoke Policy Async\" assertion failed due to: {0}");
-
     // PortalBootstrap Assertion
     public static final M PORTAL_BOOTSTRAP_ERROR = m(11200, Level.WARNING, "Error enrolling Gateway with Portal server: {0}");
 
@@ -1420,6 +1416,12 @@ public class AssertionMessages extends Messages {
     public static final M SWAGGER_INVALID_SECURITY_DEFINITION = m(11405, Level.WARNING, "Invalid security definition {0} for method {1} on {2}");
     public static final M SWAGGER_CREDENTIALS_CHECK_FAILED = m(11406, Level.WARNING, "Required security credentials are missing or invalid for method {0} on {1}");
     public static final M SWAGGER_MISSING_SECURITY_DEFINITION = m(11407, Level.WARNING, "Swagger security definition missing for requirement {0}");
+
+    // Circuit Breaker Assertion
+    public static final M CB_CIRCUIT_TRIPPED = m(11500, Level.WARNING, "{0} Circuit tripped; open until {1}");
+    public static final M CB_FORCED_CIRCUIT_TRIPPED = m(11501, Level.INFO, "This {0} Circuit has been forced open based on Event Tracker ID: {1}");
+    public static final M CB_CIRCUIT_INVALID_CONFIGURATION = m(11502, Level.WARNING, "Value for {0} Circuit {1} is invalid: {2}");
+    public static final M CB_CIRCUIT_OPEN = m(11503, Level.INFO, "{0} Circuit open until {1}");
 
     //BulkJdbcInsertAssertion
     //public static final M BULKJDBCINSERT_WARNING = m(11500, Level.WARNING, "Bulk JDBC Insert Assertion failed due to {0}");

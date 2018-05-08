@@ -1,3 +1,3 @@
 <project name="AMQPAssertion" default="compile">
-    <import file="../assertion-build.xml"/>
+    <import file="../tactical-assertion-build.xml"/>
 </project>

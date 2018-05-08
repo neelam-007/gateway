@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.amqpassertion.server;
 
+import com.l7tech.common.io.SSLSocketFactoryWrapper;
 import com.l7tech.common.io.SingleCertX509KeyManager;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.external.assertions.amqpassertion.AMQPDestination;
@@ -29,20 +30,16 @@ import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.service.ServiceCache;
 import com.l7tech.server.transport.SsgActiveConnectorManager;
 import com.l7tech.server.util.EventChannel;
-import com.l7tech.util.Config;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.IOUtils;
-import com.l7tech.util.TimeUnit;
+import com.l7tech.util.*;
 import com.rabbitmq.client.*;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationListener;
 
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
+import javax.net.ssl.*;
 import java.io.IOException;
+import java.net.Socket;
 import java.security.*;
 import java.text.ParseException;
 import java.util.*;
@@ -53,6 +50,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.security.prov.JceProvider.SERVICE_TLS10;
 
 
 /**
@@ -104,7 +103,7 @@ public class ServerAMQPDestinationManager implements ApplicationListener {
         INSTANCE = instance;
     }
 
-    public static ServerAMQPDestinationManager getInstance(ApplicationContext context) {
+    public static synchronized ServerAMQPDestinationManager getInstance(ApplicationContext context) {
         if (INSTANCE == null) {
             ServerConfig config = context.getBean("serverConfig", ServerConfig.class);
             INSTANCE = new ServerAMQPDestinationManager(config, context);
@@ -728,14 +727,9 @@ public class ServerAMQPDestinationManager implements ApplicationListener {
             clientChannel, and destinations with that.*/
             for (Map.Entry<Goid, AMQPDestination> toRemoveDestinations : oldDestinations.entrySet()) {
                 destinations.remove(toRemoveDestinations.getKey());
-                if (toRemoveDestinations.getValue().isInbound()) {
-                    //It was a server channel, Remove from server channel.
-                    deactivateDestination(toRemoveDestinations.getValue());
-                } else {
-                    //It was a client channel, remove from client channels.
-                    deactivateDestination(toRemoveDestinations.getValue());
-                }
+                deactivateDestination(toRemoveDestinations.getValue());
             }
+
         } catch (FindException e) {
             logger.log(Level.WARNING, "Something went wrong while fetching AMQP destinations", e);
         }
@@ -877,10 +871,10 @@ public class ServerAMQPDestinationManager implements ApplicationListener {
         ConnectionFactory connectionFactory = createNewConnectionFactory();
         if (destination.getUsername() != null) {
             connectionFactory.setUsername(destination.getUsername());
-
-            connectionFactory.setPassword(new String(securePasswordManager.decryptPassword(
-                    securePasswordManager.findByPrimaryKey(destination.getPasswordGoid()).getEncodedPassword())));
-
+            if (destination.getPasswordGoid() !=null ){
+                connectionFactory.setPassword(new String(securePasswordManager.decryptPassword(
+                        securePasswordManager.findByPrimaryKey(destination.getPasswordGoid()).getEncodedPassword())));
+            }
         }
         if (destination.getVirtualHost() != null) {
             connectionFactory.setVirtualHost(destination.getVirtualHost());
@@ -924,11 +918,31 @@ public class ServerAMQPDestinationManager implements ApplicationListener {
                 keyManagers = new KeyManager[0];
             }
 
-            Provider provider = JceProvider.getInstance().getProviderFor("SSLContext.TLSv1");
-            SSLContext sslContext = SSLContext.getInstance("TLSv1", provider);
+            Provider provider = JceProvider.getInstance().getProviderFor(SERVICE_TLS10);
+            SSLContext rawSslContext = SSLContext.getInstance(AMQPDestination.PROTOCOL_TLS12, provider);
+            SSLContext sslContext = new SSLContext(
+                    new DelegatingSslContextSpi(rawSslContext) {
+                        @Override
+                        protected SSLSocketFactory engineGetSocketFactory() {
+                            SSLSocketFactory socketFactory = super.engineGetSocketFactory();
+                            return new SSLSocketFactoryWrapper(socketFactory) {
+                                @Override
+                                protected Socket notifySocket(final Socket socket) {
+                                    if (!(socket instanceof SSLSocket)) {
+                                        return socket;
+                                    }
+                                    SSLSocket sslSocket = (SSLSocket) socket;
+                                    sslSocket.setEnabledProtocols(destination.getTlsProtocols());
+                                    return socket;
+                                }
+                            };
+                        }
+                    },
+                    provider, AMQPDestination.PROTOCOL_TLS12){};
             sslContext.init(keyManagers, new TrustManager[]{trustManager}, secureRandom);
 
             factory.useSslProtocol(sslContext);
+
         } catch (IOException | FindException | KeyStoreException | NoSuchAlgorithmException |
                 KeyManagementException | UnrecoverableKeyException e) {
             logger.log(Level.WARNING, e.getMessage(), e);
@@ -946,5 +960,56 @@ public class ServerAMQPDestinationManager implements ApplicationListener {
         }
         return addresses;
     }
+
+    private static class DelegatingSslContextSpi extends SSLContextSpi {
+        private final SSLContext sslContext;
+
+        private DelegatingSslContextSpi( final SSLContext sslContext ) {
+            this.sslContext = sslContext;
+        }
+
+        @Override
+        protected SSLEngine engineCreateSSLEngine() {
+            return sslContext.createSSLEngine();
+        }
+
+        @Override
+        protected SSLEngine engineCreateSSLEngine( final String s, final int i ) {
+            return sslContext.createSSLEngine( s, i );
+        }
+
+        @Override
+        protected SSLSocketFactory engineGetSocketFactory() {
+            return new SSLSocketFactoryWrapper(new Functions.Nullary<SSLSocketFactory>(){
+                @Override
+                public SSLSocketFactory call() {
+                    return sslContext.getSocketFactory();
+                }
+            } );
+        }
+
+        @Override
+        protected SSLServerSocketFactory engineGetServerSocketFactory() {
+            return sslContext.getServerSocketFactory();
+        }
+
+        @Override
+        protected SSLSessionContext engineGetServerSessionContext() {
+            return sslContext.getServerSessionContext();
+        }
+
+        @Override
+        protected SSLSessionContext engineGetClientSessionContext() {
+            return sslContext.getClientSessionContext();
+        }
+
+        @Override
+        protected void engineInit( final KeyManager[] keyManagers,
+                                   final TrustManager[] trustManagers,
+                                   final SecureRandom secureRandom ) throws KeyManagementException {
+            sslContext.init( keyManagers, trustManagers, secureRandom );
+        }
+    }
+
 
 }

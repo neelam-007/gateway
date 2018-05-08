@@ -44,6 +44,16 @@ public class ServerConfig extends DefaultConfig implements ClusterPropertyListen
 
     //- PUBLIC
 
+    /**
+     * @return The ServerConfig instance
+     * @deprecated The {@link Config} should not be retrieved in this way. Instead retrieve it from the application context. Either retrieve it from the application context or Inject it:
+     * <pre>
+     * {@code @Inject private Config config;}
+     * </pre>
+     * The reason for this deprecation is to encourage more modular code. When the config is retrieved from the
+     * application context it is simpler for us to make changes to the underlying implementation. It is also simpler to mock in unit tests.
+     */
+    @Deprecated
     public static ServerConfig getInstance() {
         return InstanceHolder.INSTANCE;
     }
@@ -84,7 +94,7 @@ public class ServerConfig extends DefaultConfig implements ClusterPropertyListen
         registerServerConfigProperties( map( asList( newProps ), new Unary<PropertyRegistrationInfo,String[]>(){
             @Override
             public PropertyRegistrationInfo call( final String[] tuple ) {
-                return new PropertyRegistrationInfo( tuple[0], tuple[1], tuple[2], tuple[3] );
+                return new PropertyRegistrationInfo( tuple[0], tuple[1], tuple[2], tuple[3], tuple.length > 4 ? tuple[4] : null );
             }
         } ) );
     }

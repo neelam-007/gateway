@@ -1,0 +1,63 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                            http://www.springframework.org/schema/beans/spring-beans-2.5.xsd">
+
+    <bean id="zoneUpdateSecurityChecker" class="com.l7tech.server.security.rbac.ZoneUpdateSecurityCheckerImpl"/>
+
+    <!--
+Administrative pointcut is on any bean that implements an @Administrative interface.
+-->
+    <bean id="adminPointcut" class="com.l7tech.server.util.AnnotationPointcut">
+        <constructor-arg index="0">
+            <list>
+                <value>com.l7tech.gateway.common.admin.Administrative</value>
+            </list>
+        </constructor-arg>
+        <constructor-arg index="1">
+            <list/>
+        </constructor-arg>
+        <constructor-arg index="2" value="true"/>
+        <constructor-arg index="3" value="30000"/>
+        <!-- inside transaction -->
+    </bean>
+
+    <!--
+      RBAC pointcut is on any @Secured method of a bean that implements an @Administrative interface.
+    -->
+    <bean id="rbacPointcut" class="com.l7tech.server.util.AnnotationPointcut">
+        <constructor-arg index="0">
+            <list>
+                <value>com.l7tech.gateway.common.admin.Administrative</value>
+            </list>
+        </constructor-arg>
+        <constructor-arg index="1">
+            <list>
+                <value>com.l7tech.gateway.common.security.rbac.Secured</value>
+            </list>
+        </constructor-arg>
+        <constructor-arg index="2" value="true"/>
+        <constructor-arg index="3" value="30000"/>
+        <!-- inside transaction -->
+    </bean>
+
+    <bean id="rbacAdvisor" class="org.springframework.aop.support.DefaultPointcutAdvisor">
+        <property name="pointcut" ref="rbacPointcut"/>
+        <property name="advice" ref="rbacAdvice"/>
+    </bean>
+
+
+    <bean id="rbacAdvice" class="com.l7tech.server.security.rbac.SecuredMethodInterceptor">
+        <constructor-arg ref="rbacServices"/>
+        <constructor-arg ref="entityFinder"/>
+    </bean>
+
+
+    <bean id="unsupportedExceptionThrowsAdvice" class="com.l7tech.server.util.UnsupportedExceptionsThrowsAdvice"/>
+    <bean id="unsupportedExceptionAdvisor" class="org.springframework.aop.support.DefaultPointcutAdvisor">
+        <property name="pointcut" ref="adminPointcut"/>
+        <property name="advice" ref="unsupportedExceptionThrowsAdvice"/>
+        <property name="order" value="5001"/>
+    </bean>
+
+</beans>

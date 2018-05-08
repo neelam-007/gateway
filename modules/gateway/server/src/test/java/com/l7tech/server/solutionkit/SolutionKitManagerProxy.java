@@ -2,6 +2,7 @@ package com.l7tech.server.solutionkit;
 
 import com.l7tech.gateway.common.solutionkit.SolutionKit;
 import com.l7tech.gateway.common.solutionkit.SolutionKitHeader;
+import com.l7tech.gateway.common.solutionkit.SolutionKitImportInfo;
 import com.l7tech.objectmodel.*;
 import com.l7tech.util.Functions;
 import org.jetbrains.annotations.NotNull;
@@ -49,6 +50,14 @@ public class SolutionKitManagerProxy implements SolutionKitManager {
     @Override
     public String importBundle(@NotNull String bundle, @NotNull SolutionKit metadata, boolean isTest) throws Exception {
         final String mappings = solutionKitManager.importBundle(bundle, metadata, isTest);
+        flushSession();
+        return mappings;
+    }
+
+    @Override
+    @NotNull
+    public String importBundles(@NotNull SolutionKitImportInfo solutionKitImportInfo, boolean isTest) throws Exception {
+        final String mappings = solutionKitManager.importBundles(solutionKitImportInfo, isTest);
         flushSession();
         return mappings;
     }

@@ -37,19 +37,26 @@ public class WebSocketAssertion extends Assertion implements UsesVariables {
 
         // Cluster properties used by this assertion
         Map<String, String[]> props = new HashMap<>();
-        props.put(WebSocketConstants.MAX_TEXT_MSG_SIZE_KEY, new String[] { "This property sets the maximum text message size in bytes. (Default: 1048576 bytes). Requires gateway restart.", "1048576" });
-        props.put(WebSocketConstants.MAX_BINARY_MSG_SIZE_KEY, new String[] { "This property sets the maximum binary message size in bytes. (Default: 1048576 bytes). Requires gateway restart.", "1048576" });
-        props.put(WebSocketConstants.BUFFER_SIZE_KEY, new String[] { "This property sets the outbound client buffer size in bytes. (Default: 4096 bytes). Requires gateway restart.", "4096" });
-        props.put(WebSocketConstants.MAX_INBOUND_IDLE_TIME_MS_KEY, new String[] { "This property sets the idle time for all inbound connections in milliseconds. (Default: 60000 milliseconds). Requires gateway restart.", "60000" });
-        props.put(WebSocketConstants.MAX_OUTBOUND_IDLE_TIME_MS_KEY, new String[] { "This property sets the idle time for all outbound client connections in milliseconds. (Default: 60000 milliseconds). Requires gateway restart.", "60000" });
+        props.put(WebSocketConstants.MAX_TEXT_MSG_SIZE_KEY, new String[] { "This property sets the maximum text message size in bytes. (Default: 1048576 bytes). Requires gateway restart.", "1048576", "integer" });
+        props.put(WebSocketConstants.MAX_BINARY_MSG_SIZE_KEY, new String[] { "This property sets the maximum binary message size in bytes. (Default: 1048576 bytes). Requires gateway restart.", "1048576", "integer"});
+        props.put(WebSocketConstants.BUFFER_SIZE_KEY, new String[] { "This property sets the outbound client buffer size in bytes. (Default: 4096 bytes). Requires gateway restart.", "4096", "integer" });
+        props.put(WebSocketConstants.MAX_INBOUND_IDLE_TIME_MS_KEY, new String[] { "This property sets the idle time for all inbound connections in milliseconds. (Default: 60000 milliseconds). Requires gateway restart.", "60000", "timeUnit" });
+        props.put(WebSocketConstants.MAX_OUTBOUND_IDLE_TIME_MS_KEY, new String[] { "This property sets the idle time for all outbound client connections in milliseconds. (Default: 60000 milliseconds). Requires gateway restart.", "60000", "timeUnit" });
         props.put(WebSocketConstants.MAX_INBOUND_CONNECTIONS_KEY, new String[] { "This property sets the maximum connections for a single connection definition. The connection definition " +
-                "can set a lower value if desired. (Default: 4096 connections). Requires gateway restart.", "4096" });
-        props.put(WebSocketConstants.CONNECT_TIMEOUT_KEY, new String[] { "This property sets the timeout in seconds an outbound connection will wait before erroring out. (Default: 20 seconds). Requires gateway restart.", "20" });
-        props.put(WebSocketConstants.MIN_INBOUND_THREADS_KEY, new String[] { "This property sets the minimum threads available for a single inbound connection definition. (Default: 10 threads). Requires gateway restart.", "10" });
-        props.put(WebSocketConstants.MAX_INBOUND_THREADS_KEY, new String[] { "This property sets the maximum threads available for a single inbound connection definition. Should correspond to number of maximum connections. Each resolved dynamic outbound connection counts as a connection definition. Suggested value range: 25-500. (Default: 25 threads). Requires gateway restart.", "25" });
-        props.put(WebSocketConstants.MIN_OUTBOUND_THREADS_KEY, new String[] { "This property sets the minimum threads available for a single outbound connection definition. (Default: 10 threads). Requires gateway restart.", "10" });
-        props.put(WebSocketConstants.MAX_OUTBOUND_THREADS_KEY, new String[] { "This property sets the maximum threads available for a single outbound connection definition. Should correspond to number of maximum connections. Each resolved dynamic outbound connection counts as a connection definition. Suggested value range: 25-500. (Default: 25 threads). Requires gateway restart.", "25" });
-        props.put(WebSocketConstants.ACCEPT_QUEUE_SIZE_KEY, new String[] { "This property sets the maximum requests that can be buffered. (Default: 100 requests). Requires gateway restart.", "100" });
+                "can set a lower value if desired. (Default: 4096 connections). Requires gateway restart.", "4096", "integer" });
+        props.put(WebSocketConstants.CONNECT_TIMEOUT_KEY, new String[] { "This property sets the timeout in seconds an outbound connection will wait before erroring out. (Default: 20 seconds). Requires gateway restart.", "20", "timeUnit" });
+        props.put(WebSocketConstants.MIN_INBOUND_THREADS_KEY, new String[] { "This property sets the minimum threads available for a single inbound connection definition. (Default: 10 threads). Requires gateway restart.", "10", "integer" });
+        props.put(WebSocketConstants.MAX_INBOUND_THREADS_KEY, new String[] { "This property sets the maximum threads available for a single inbound connection definition. Should correspond to number of maximum connections. Each resolved dynamic outbound connection counts as a connection definition. Suggested value range: 25-500. (Default: 25 threads). Requires gateway restart.", "25", "integer" });
+        props.put(WebSocketConstants.MIN_OUTBOUND_THREADS_KEY, new String[] { "This property sets the minimum threads available for a single outbound connection definition. (Default: 10 threads). Requires gateway restart.", "10", "integer" });
+        props.put(WebSocketConstants.MAX_OUTBOUND_THREADS_KEY, new String[] { "This property sets the maximum threads available for a single outbound connection definition. Should correspond to number of maximum connections. Each resolved dynamic outbound connection counts as a connection definition. Suggested value range: 25-500. (Default: 25 threads). Requires gateway restart.", "25", "integer" });
+        props.put(WebSocketConstants.ACCEPT_QUEUE_SIZE_KEY, new String[] { "This property sets the maximum requests that can be buffered. (Default: 100 requests). Requires gateway restart.", "100", "integer" });
+        props.put(WebSocketConstants.OUTBOUND_ONLY_CONNECTION_RECONNECT_INTERVAL_KEY,
+            new String[] {"This property sets the retry interval for reconnecting outbound only connections to WebSocket server. (Default: " + WebSocketConstants.OUTBOUND_ONLY_CONNECTION_RECONNECT_INTERVAL +" milliseconds).  Requires gateway restart.",
+            Integer.toString(WebSocketConstants.OUTBOUND_ONLY_CONNECTION_RECONNECT_INTERVAL), "timeUnit" });
+        props.put(WebSocketConstants.INBOUND_COPY_UPGRADE_REQUEST_SUBPROTOCOL_HEADER_KEY,
+            new String[] {"This property copies the upgrade request header \"sec-websocket-protocol\" values to the response header of the same name.  By setting this property to false, modifications to this header are possible within a connection policy. " +
+            "(Default: " + Boolean.toString( WebSocketConstants.INBOUND_COPY_UPGRADE_REQUEST_SUBPROTOCOL_HEADER ) +").  Requires gateway restart.",
+            Boolean.toString( WebSocketConstants.INBOUND_COPY_UPGRADE_REQUEST_SUBPROTOCOL_HEADER )});
         meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
 
         // Add to palette folder(s)

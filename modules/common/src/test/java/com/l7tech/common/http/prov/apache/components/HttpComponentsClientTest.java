@@ -3,16 +3,18 @@ package com.l7tech.common.http.prov.apache.components;
 import com.l7tech.common.http.*;
 import com.l7tech.common.http.prov.apache.IdentityBindingHttpConnectionManager;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.test.BugId;
 import com.l7tech.util.IOUtils;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.Ignore;
+import org.apache.http.client.CircularRedirectException;
+import org.junit.*;
 
 import java.io.*;
 import java.net.URL;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.zip.GZIPInputStream;
 
 import static junit.framework.Assert.assertEquals;
@@ -256,6 +258,99 @@ public class HttpComponentsClientTest {
             if (request != null) {
                 request.close();
             }
+        }
+    }
+
+    @BugId("DE329111")
+    @Test
+    public void testCreateRequestWith301FollowRedirect() throws Exception {
+        final String[] sawRequestMethod = { null };
+        MockHttpServer httpServer = new MockHttpServer(17801);
+        String api1 = "/api1";
+        String api2 = "/api2";
+        String serverUrl = "http://localhost:" + httpServer.getPort();
+
+        httpServer.setHttpHandler(new HttpHandler() {
+            private Map<String, List<String>> responseHeaders = new HashMap<String, List<String>>();
+            @Override
+            public void handle(HttpExchange exchange) throws IOException {
+                sawRequestMethod[0] = exchange.getRequestMethod();
+                // Redirect api1 to api2
+                if (api1.equalsIgnoreCase(exchange.getRequestURI().getPath())) {
+                    exchange.getResponseHeaders().set("location", serverUrl + api2);
+                    exchange.sendResponseHeaders(301, 0);
+                }
+                if (api2.equalsIgnoreCase(exchange.getRequestURI().getPath())) {
+                    exchange.sendResponseHeaders(200, 0);
+                }
+                exchange.close();
+            }
+        });
+        httpServer.start();
+
+        try {
+            GenericHttpRequestParams requestParams = new GenericHttpRequestParams();
+
+            requestParams.setFollowRedirects(true);
+            requestParams.setMethodAsString("GET");
+            requestParams.setTargetUrl(new URL(serverUrl + api1));
+            RerunnableHttpRequest request = (RerunnableHttpRequest) fixture.createRequest(HttpMethod.OTHER, requestParams);
+            request.setInputStream(new ByteArrayInputStream(("<test>test message</test>").getBytes()));
+            request.getResponse();
+
+            request = (RerunnableHttpRequest) fixture.createRequest(HttpMethod.OTHER, requestParams);
+            request.setInputStream(new ByteArrayInputStream(("<test>test message</test>").getBytes()));
+            request.getResponse();
+
+        } finally {
+            httpServer.stop();
+        }
+        assertEquals(sawRequestMethod[0], "GET");
+    }
+
+    @BugId("DE329111")
+    @Test
+    public void testCreateRequestWith301CircularRedirect() throws Exception {
+        final String[] sawRequestMethod = { null };
+        MockHttpServer httpServer = new MockHttpServer(17801);
+        String api1 = "/api1";
+        String api2 = "/api2";
+        String serverUrl = "http://localhost:" + httpServer.getPort();
+
+        httpServer.setHttpHandler(new HttpHandler() {
+            @Override
+            public void handle(HttpExchange exchange) throws IOException {
+                sawRequestMethod[0] = exchange.getRequestMethod();
+                //Circular Redirect api1 will redirect to api2
+                if (api1.equalsIgnoreCase(exchange.getRequestURI().getPath())) {
+                    exchange.getResponseHeaders().set("location", serverUrl + api2);
+                    exchange.sendResponseHeaders(301, 0);
+                }
+                //Circular Redirect api2 will redirect back to api1
+                if (api2.equalsIgnoreCase(exchange.getRequestURI().getPath())) {
+                    exchange.getResponseHeaders().set("location", serverUrl + api1);
+                    exchange.sendResponseHeaders(301, 0);
+                }
+                exchange.close();
+            }
+        });
+        httpServer.start();
+
+        try {
+            GenericHttpRequestParams requestParams = new GenericHttpRequestParams();
+
+            requestParams.setFollowRedirects(true);
+            requestParams.setMethodAsString("GET");
+            requestParams.setTargetUrl(new URL(serverUrl + api1));
+            RerunnableHttpRequest request = (RerunnableHttpRequest) fixture.createRequest(HttpMethod.OTHER, requestParams);
+            request.setInputStream(new ByteArrayInputStream(("<test>test message</test>").getBytes()));
+            request.getResponse();
+        } catch (Exception e) {
+            if(!(e.getCause().getCause() instanceof CircularRedirectException)){
+                Assert.fail("unexpected exception");
+            }
+        }finally {
+            httpServer.stop();
         }
     }
 }

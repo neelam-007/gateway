@@ -1,6 +1,8 @@
 package com.l7tech.server.solutionkit;
 
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.gateway.api.Bundle;
+import com.l7tech.gateway.api.impl.MarshallingUtils;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.solutionkit.*;
 import com.l7tech.objectmodel.*;
@@ -19,7 +21,6 @@ import com.l7tech.server.policy.bundle.ssgman.GatewayManagementInvoker;
 import com.l7tech.server.policy.bundle.ssgman.restman.RestmanInvoker;
 import com.l7tech.server.policy.bundle.ssgman.restman.RestmanMessage;
 import com.l7tech.server.security.rbac.ProtectedEntityTracker;
-import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.server.util.PostStartupTransactionalApplicationListener;
 import com.l7tech.server.util.ReadOnlyHibernateCallback;
 import com.l7tech.util.*;
@@ -41,7 +42,9 @@ import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import javax.inject.Inject;
+import javax.xml.transform.stream.StreamSource;
 import java.io.IOException;
+import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.sql.SQLException;
@@ -65,6 +68,9 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
             "</L7p:RESTGatewayManagement>" +
             "</wsp:All>" +
             "</wsp:Policy>";
+
+    private final String DELETE_BUNDLE = "Delete Bundle";
+    private final String INSTALL_BUNDLE = "Install Bundle";
 
     private final String HQL_FIND_BY_SOLUTION_KIT_GUID = "FROM " + getTableName() + " IN CLASS " + getImpClass().getName() + " WHERE " + getTableName() + ".solutionKitGuid = ?";
     private final String HQL_FIND_BY_PARENT_GOID = "FROM " + getTableName() + " IN CLASS " + getImpClass().getName() + " WHERE " + getTableName() + ".parentGoid = ?";
@@ -154,6 +160,87 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
 
         protectedEntityTracker.bulkUpdateReadOnlyEntitiesList(solutionKitOwnedEntities);
     }
+    /**
+     * This method's transactional propagation is set to NOT_SUPPORTED because the RESTMAN bundle/batch importer code will import within
+     * its own transaction and rollback if necessary.
+     */
+    @NotNull
+    @Override
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    public String importBundles(@NotNull SolutionKitImportInfo solutionKitImportInfo,
+                                boolean isTest) throws Exception {
+        final RestmanInvoker restmanInvoker = getRestmanInvoker();
+        final List<SolutionKit> solutionKitsToDelete = solutionKitImportInfo.getSolutionKitsToDelete();
+        final Map<SolutionKit, String> solutionKitsToInstallMap = solutionKitImportInfo.getSolutionKitsToInstall();
+        // set restman query parameters including test and versionComment
+        final SolutionKit solutionKitForRestMan = SolutionKitUtils.solutionKitToDisplayForUpgrade(solutionKitsToInstallMap.keySet(), solutionKitImportInfo.getParentSolutionKit());
+        try {
+            //Process delete bundles
+            final List<Bundle> processedDeleteBundles = new ArrayList<>();
+            for (final SolutionKit solutionKit : solutionKitsToDelete) {
+                final Bundle bundle = MarshallingUtils.unmarshal(Bundle.class, new StreamSource(new StringReader(solutionKit.getUninstallBundle())), true);
+                bundle.setName(solutionKit.getName() + " " + DELETE_BUNDLE);
+                processedDeleteBundles.add(bundle);
+            }
+
+            //Process install bundles
+            final List<Bundle> processedInstallBundles = new ArrayList<>();
+            for (Map.Entry<SolutionKit, String> skWithInstall : solutionKitsToInstallMap.entrySet()) {
+                final String instanceModifier = skWithInstall.getKey().getProperty(SolutionKit.SK_PROP_INSTANCE_MODIFIER_KEY);
+                String bundleXml = skWithInstall.getValue();
+                if (InstanceModifier.isValidVersionModifier(instanceModifier)) {
+                    logger.fine("Applied instance modifier (" + instanceModifier + ") modifications for " + skWithInstall.getKey().getName());
+                    final RestmanMessage requestMessage = new RestmanMessage(bundleXml);
+                    new InstanceModifier(requestMessage.getBundleReferenceItems(), requestMessage.getMappings(), instanceModifier).apply();
+                    bundleXml = requestMessage.getAsString();
+                }
+                final Bundle bundle = MarshallingUtils.unmarshal(Bundle.class, new StreamSource(new StringReader(bundleXml)), true);
+                bundle.setName(skWithInstall.getKey().getName() + " " + INSTALL_BUNDLE);
+                processedInstallBundles.add(bundle);
+            }
+
+            final String requestXml = SolutionKitUtils.generateBundleListPayload(processedDeleteBundles, processedInstallBundles);
+
+            final PolicyEnforcementContext pec = restmanInvoker.getContext(requestXml);
+
+            pec.setVariable(VAR_RESTMAN_URI, URL_1_0_BUNDLE_BATCH  + getRestmanQueryParameters(solutionKitForRestMan, isTest));
+
+            // Allow solution kit installation/upgrade to "punch through" read-only entities
+            final Pair<AssertionStatus, RestmanMessage> result;
+            try {
+                result = protectedEntityTracker.doWithEntityProtectionDisabled(getProtectedEntityTrackerCallable(restmanInvoker, pec, requestXml));
+            } catch (GatewayManagementDocumentUtilities.AccessDeniedManagementResponse |
+                    GatewayManagementDocumentUtilities.UnexpectedManagementResponse |
+                    InterruptedException e) {
+                throw e;
+            } catch ( Exception e ) {
+                throw new RuntimeException( e );
+            }
+
+            if (AssertionStatus.NONE != result.left) {
+                String msg = "Unable to install bundles. Failed to invoke REST Gateway Management assertion: " + result.left.getMessage();
+                logger.log(Level.WARNING, msg);
+                throw new SolutionKitException(result.left.getMessage());
+            }
+
+            if (!isTest && result.right.hasMappingErrorFromBundles()) {
+                String msg = "Unable to install bundles due to mapping errors:\n" + result.right.getAsString();
+                logger.log(Level.WARNING, msg);
+                throw new BadRequestException(result.right.getAsString());
+            }
+            return result.right.getAsString();
+        } catch (GatewayManagementDocumentUtilities.AccessDeniedManagementResponse | IOException | SAXException e) {
+            logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            throw new SolutionKitException(ExceptionUtils.getMessage(e), e);
+        } catch (GatewayManagementDocumentUtilities.UnexpectedManagementResponse e) {
+            logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            throw getRestmanErrorDetail(e);
+        } catch (InterruptedException e) {
+            // do nothing.
+        }
+
+        return "";
+    }
 
     /**
      * This method's transactional propagation is set to NOT_SUPPORTED because the RESTMAN bundle importer code will import within
@@ -179,7 +266,7 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
             final PolicyEnforcementContext pec = restmanInvoker.getContext(requestXml);
 
             // set restman query parameters including test and versionComment
-            pec.setVariable(VAR_RESTMAN_URI, getRestmanQueryParameters(metadata, isTest));
+            pec.setVariable(VAR_RESTMAN_URI, URL_1_0_BUNDLE + getRestmanQueryParameters(metadata, isTest));
 
             // Allow solution kit installation/upgrade to "punch through" read-only entities
             Pair<AssertionStatus, RestmanMessage> result;
@@ -474,6 +561,6 @@ public class SolutionKitManagerImpl extends HibernateEntityManager<SolutionKit, 
             restmanQueryParams.append("&test=true");
         }
 
-        return URL_1_0_BUNDLE + restmanQueryParams;
+        return restmanQueryParams.toString();
     }
 }

@@ -141,8 +141,6 @@ public class HL7Codec implements ProtocolCodecFactory, ExtensibleSocketConnector
                     }
                 }
 
-                in.clear();
-
                 ioSession.setAttribute("currentMessageState", state);
             }
 

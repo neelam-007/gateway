@@ -47,7 +47,7 @@ public class EntityCrudImplTest {
     @Before
     public void setup() {
         entityCrud = new EntityCrudImpl(entityFinder,
-                new ReadOnlyEntityManager[]{new StubPolicyEntityManager(), new StubSecurityZoneEntityManager(), new StubServiceManager(), new StudJdbcConnectionManager()});
+                Arrays.asList(new ReadOnlyEntityManager[]{new StubPolicyEntityManager(), new StubSecurityZoneEntityManager(), new StubServiceManager(), new StudJdbcConnectionManager()}));
         ids = new ArrayList<>();
         zone = new SecurityZone();
     }

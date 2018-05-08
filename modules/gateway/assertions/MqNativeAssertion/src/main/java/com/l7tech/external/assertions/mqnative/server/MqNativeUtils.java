@@ -33,9 +33,7 @@ import javax.net.ssl.SSLSocketFactory;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.GregorianCalendar;
-import java.util.Hashtable;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -56,6 +54,25 @@ public class MqNativeUtils {
     public static final String PREIFX = "mqnative";
     public static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd-HH.mm.ss.SSSSSS");
     private static final Logger logger = Logger.getLogger(MqNativeUtils.class.getName());
+
+    // Some expected reason codes (see more from http://publib.boulder.ibm.com/infocenter/wmqv7/v7r1/topic/com.ibm.mq.doc/fm12030_.htm)
+    static final List<Integer> EXPECTED_REASON_CODES = Arrays.asList(new Integer[] {
+            MQRC_CONNECTION_BROKEN,
+            MQRC_NOT_AUTHORIZED,
+            MQRC_Q_MGR_NAME_ERROR,
+            MQRC_Q_MGR_NOT_AVAILABLE,
+            MQRC_UNKNOWN_OBJECT_NAME,
+            MQRC_JSSE_ERROR,
+            MQRC_EXPIRY_ERROR,
+            MQRC_FEEDBACK_ERROR,
+            MQRC_PERSISTENCE_ERROR,
+            MQRC_PRIORITY_EXCEEDS_MAXIMUM,
+            MQRC_PRIORITY_ERROR,
+            MQRC_PROPERTY_NAME_ERROR,
+            MQRC_MD_ERROR,
+            MQRC_OFFSET_ERROR,
+            MQRC_Q_FULL
+    });
 
     public static Pair<byte[], byte[]> parseHeaderPayload(@NotNull final MQMessage msg) throws IOException, MQDataException {
         byte[] headerBytes;
@@ -354,43 +371,14 @@ public class MqNativeUtils {
     }
 
     /**
-     *  Expected reason codes:
-     *      2009: MQRC_CONNECTION_BROKEN
-     *      2035: MQRC_NOT_AUTHORIZED
-     *      2058: MQRC_Q_MGR_NAME_ERROR
-     *      2059: MQRC_Q_MGR_NOT_AVAILABLE
-     *      2085: MQRC_UNKNOWN_OBJECT_NAME
-     *      2397: MQRC_JSSE_ERROR
-     *      2013: MQRC_EXPIRY_ERROR
-     *      2014: MQRC_FEEDBACK_ERROR
-     *      2047: MQRC_PERSISTENCE_ERROR
-     *      2049: MQRC_PRIORITY_EXCEEDS_MAXIMUM
-     *      2050: MQRC_PRIORITY_ERROR
-     *      2442: MQRC_PROPERTY_NAME_ERROR
-     *      2026: MQRC_MD_ERROR
-     *      2251: MQRC_OFFSET_ERROR
-     *
-     *      http://publib.boulder.ibm.com/infocenter/wmqv7/v7r1/topic/com.ibm.mq.doc/fm12030_.htm
+     * Get debug exception based on a given expected reason code.
      *
      * @param e MQ exception
      * @return original exception or if expected reason code, return exception only if in debug mode
      */
     static MQException getDebugExceptionForExpectedReasonCode(MQException e) {
-        int reasonCode = e.getReason();
-        if ( reasonCode == MQRC_CONNECTION_BROKEN
-                || reasonCode == MQRC_NOT_AUTHORIZED
-                || reasonCode == MQRC_Q_MGR_NAME_ERROR
-                || reasonCode == MQRC_Q_MGR_NOT_AVAILABLE
-                || reasonCode == MQRC_UNKNOWN_OBJECT_NAME
-                || reasonCode == MQRC_JSSE_ERROR
-                || reasonCode == MQRC_EXPIRY_ERROR
-                || reasonCode == MQRC_FEEDBACK_ERROR
-                || reasonCode == MQRC_PERSISTENCE_ERROR
-                || reasonCode == MQRC_PRIORITY_EXCEEDS_MAXIMUM
-                || reasonCode == MQRC_PRIORITY_ERROR
-                || reasonCode == MQRC_PROPERTY_NAME_ERROR
-                || reasonCode == MQRC_MD_ERROR
-                || reasonCode == MQRC_OFFSET_ERROR) {
+        final int reasonCode = e.getReason();
+        if (EXPECTED_REASON_CODES.contains(reasonCode)) {
             return ExceptionUtils.getDebugException(e);
         }
         return e;

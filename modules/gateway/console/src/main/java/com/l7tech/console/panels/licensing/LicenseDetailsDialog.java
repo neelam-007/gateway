@@ -1,5 +1,7 @@
 package com.l7tech.console.panels.licensing;
 
+import com.l7tech.console.security.GatewayInfoHolder;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.licensing.FeatureLicense;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
@@ -35,7 +37,7 @@ public class LicenseDetailsDialog extends JDialog {
 
         licenseDetailsPanelHolder.setLayout(new BorderLayout());
 
-        FeatureLicenseDetailsPanel licenseDetailsPanel = new FeatureLicenseDetailsPanel(featureLicense);
+        FeatureLicenseDetailsPanel licenseDetailsPanel = new FeatureLicenseDetailsPanel(featureLicense, GatewayInfoHolder.getInstance(), TopComponents.getInstance().ssgURL().getHost());
 
         licenseDetailsPanelHolder.add(licenseDetailsPanel);
 

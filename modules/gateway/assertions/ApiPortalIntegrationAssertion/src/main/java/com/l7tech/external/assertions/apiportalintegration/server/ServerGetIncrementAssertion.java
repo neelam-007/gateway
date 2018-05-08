@@ -41,6 +41,24 @@ import java.util.logging.Logger;
 public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncrementAssertion> {
     private static final Logger logger = Logger.getLogger(ServerGetIncrementAssertion.class.getName());
 
+    /**
+     * 1. Get all the APIs that are directly added to applications or indirectly added through API groups.
+     * 2. Filter results that have an API key, by tenant ID, and an application status of enabled, disabled, or pending approval.
+     * 3. Remove duplicate APIs
+     */
+    private static final String BULK_SYNC_SELECT =
+        "SELECT DISTINCT(aaagx.API_UUID), a.UUID, concat(a.NAME,'-',o.NAME) AS NAME, a.API_KEY, a.KEY_SECRET, " +
+               "coalesce (r.PREVIOUS_STATE, a.STATUS) AS STATUS, a.ORGANIZATION_UUID, o.NAME AS ORGANIZATION_NAME, " +
+               "a.OAUTH_CALLBACK_URL, a.OAUTH_SCOPE, a.OAUTH_TYPE, a.MAG_SCOPE, a.MAG_MASTER_KEY, a.CREATED_BY, a.MODIFIED_BY, r.LATEST_REQ " +
+        "FROM APPLICATION_API_API_GROUP_XREF aaagx " +
+        "JOIN (SELECT * FROM APPLICATION " +
+            "WHERE API_KEY IS NOT NULL AND TENANT_ID ='%s' AND STATUS IN ('ENABLED','DISABLED','EDIT_APPLICATION_PENDING_APPROVAL')) a ON aaagx.APPLICATION_UUID = a.UUID AND aaagx.TENANT_ID = a.TENANT_ID " +
+        "JOIN ORGANIZATION o on a.ORGANIZATION_UUID = o.UUID AND a.TENANT_ID = o.TENANT_ID " +
+        "LEFT JOIN API_GROUP ag ON ag.UUID = aaagx.API_GROUP_UUID AND ag.TENANT_ID = aaagx.TENANT_ID " +
+        "LEFT JOIN (SELECT ENTITY_UUID, PREVIOUS_STATE, max(CREATE_TS) AS LATEST_REQ, TENANT_ID " +
+            "FROM REQUEST GROUP BY ENTITY_UUID, PREVIOUS_STATE, CREATE_TS, TENANT_ID) r ON a.UUID = r.ENTITY_UUID AND a.TENANT_ID = r.TENANT_ID " +
+        "WHERE aaagx.API_UUID IS NOT NULL ";
+
     private static final String STATUS_ENABLED = "ENABLED";
     private static final String STATUS_ACTIVE = "active";
     private static final String STATUS_SUSPEND = "suspend";
@@ -137,32 +155,47 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
 
         if (since != null) {
             appJsonObj.setBulkSync(ServerIncrementalSyncCommon.BULK_SYNC_FALSE);
-            // get deleted IDs
+            // Get deleted IDs - there are two parts to this:
+            // 1. Include applications that are actually deleted by the user
+            // 2. Include applications that have empty API groups (disabled API can be removed from a group even if it's used by an app) and no directly associated APIs
+            // A new feature was introduced and the side effect of it is that an app is now possible to have zero API associated to it, which caused sync to break.
+            // The fix is to treat apps with no API as "deleted" in the payload so that OTK will remove it from their db.
+
+            // Get deleted apps
             results = (Map<String, List>) queryJdbc(connName, ServerIncrementalSyncCommon.getSyncDeletedEntities(ServerIncrementalSyncCommon.ENTITY_TYPE_APPLICATION, tenantId), CollectionUtils.list(since, incrementStart));
             List<String> deletedIds = results.get("entity_uuid");
-            if (deletedIds == null || deletedIds.isEmpty()) {
-                appJsonObj.setDeletedIds(new ArrayList<String>());
+
+            // Get apps that are not associated to any API, either directly or indirectly
+            results = (Map<String, List>) queryJdbc(connName, ServerIncrementalSyncCommon.SELECT_APP_WITH_NO_API_SQL,
+                CollectionUtils.list(tenantId, tenantId, nodeId, since, incrementStart, since, incrementStart, since, incrementStart, since, incrementStart));
+            List<String> appIdsWithNoApi = results.get("uuid");
+
+            // Merge the app uuids
+            Set mergedAppUuids = new HashSet<String>();
+            if (deletedIds != null && !deletedIds.isEmpty()) {
+                mergedAppUuids.addAll(deletedIds);
+            }
+            if (appIdsWithNoApi != null && !appIdsWithNoApi.isEmpty()) {
+                mergedAppUuids.addAll(appIdsWithNoApi);
+            }
+
+            if (mergedAppUuids.isEmpty()) {
+                appJsonObj.setDeletedIds(new ArrayList<>());
             } else {
-                appJsonObj.setDeletedIds(deletedIds);
+                appJsonObj.setDeletedIds(new ArrayList<>(mergedAppUuids));
             }
 
             // get new or updated or last sync error apps
-            results = (Map<String, List>) queryJdbc(connName,
-                    ServerIncrementalSyncCommon.getSyncUpdatedAppEntities(Lists.newArrayList("a.UUID", "concat(a.NAME,'-',o.NAME) as NAME", "a.API_KEY", "a.KEY_SECRET", "coalesce (r.PREVIOUS_STATE,a.STATUS) as STATUS", "a.ORGANIZATION_UUID", "o.NAME as ORGANIZATION_NAME",
-                            "a.OAUTH_CALLBACK_URL", "a.OAUTH_SCOPE", "a.OAUTH_TYPE", "a.MAG_SCOPE", "a.MAG_MASTER_KEY", "ax.API_UUID", "a.CREATED_BY", "a.MODIFIED_BY"), tenantId),
-                        CollectionUtils.list(since, incrementStart, since, incrementStart, since, incrementStart, nodeId));
+            results = (Map<String, List>) queryJdbc(
+                    connName,
+                    ServerIncrementalSyncCommon.getSyncUpdatedAppEntities(
+                            Lists.newArrayList("DISTINCT aaagx.API_UUID", "a.UUID", "concat(a.NAME, '-', o.NAME) as NAME", "a.API_KEY", "a.KEY_SECRET", "coalesce(r.PREVIOUS_STATE, a.STATUS) as STATUS", "a.ORGANIZATION_UUID", "o.NAME as ORGANIZATION_NAME", "a.OAUTH_CALLBACK_URL", "a.OAUTH_SCOPE", "a.OAUTH_TYPE", "a.MAG_SCOPE", "a.MAG_MASTER_KEY", "a.CREATED_BY", "a.MODIFIED_BY"),
+                            tenantId),
+                    CollectionUtils.list(since, incrementStart, since, incrementStart, since, incrementStart, nodeId, since, incrementStart, since, incrementStart));
         } else {
             appJsonObj.setBulkSync(ServerIncrementalSyncCommon.BULK_SYNC_TRUE);
             // bulk, get everything
-            results = (Map<String, List>) queryJdbc(connName,
-                    "SELECT a.UUID, concat(a.NAME,'-',o.NAME) as NAME, a.API_KEY, a.KEY_SECRET, coalesce (r.PREVIOUS_STATE,a.STATUS) as STATUS, a.ORGANIZATION_UUID, o.NAME as ORGANIZATION_NAME, a.OAUTH_CALLBACK_URL, a.OAUTH_SCOPE, a.OAUTH_TYPE, a.MAG_SCOPE, \n" +
-                            "a.MAG_MASTER_KEY, ax.API_UUID, a.CREATED_BY, a.MODIFIED_BY, max(r.CREATE_TS) as LATEST_REQ \n" +
-                            "FROM APPLICATION a  \n" +
-                            "\tJOIN ORGANIZATION o on a.ORGANIZATION_UUID = o.UUID \n" +
-                            "\tJOIN APPLICATION_API_XREF ax on ax.APPLICATION_UUID = a.UUID\n" +
-                            "\tLEFT JOIN REQUEST r ON a.UUID = r.ENTITY_UUID" +
-                            "\tWHERE a.API_KEY IS NOT NULL AND a.TENANT_ID='"+tenantId+"' AND a.STATUS IN ('ENABLED','DISABLED','EDIT_APPLICATION_PENDING_APPROVAL')" +
-                            "\tGROUP BY a.UUID, ax.API_UUID", Collections.EMPTY_LIST);
+            results = (Map<String, List>) queryJdbc(connName, String.format(BULK_SYNC_SELECT, tenantId), Collections.EMPTY_LIST);
 
             // do not include deleted list in json response
             appJsonObj.setDeletedIds(null);
@@ -235,7 +268,7 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
     final String UUID_PARAM = "{{UUID_LIST}}";
     final String CF_QUERY = "SELECT ENTITY_UUID, SYSTEM_PROPERTY_NAME, VALUE \n" +
             "from CUSTOM_FIELD cf inner join CUSTOM_FIELD_VALUE cfv on cf.UUID = cfv.CUSTOM_FIELD_UUID \n" +
-            "where ENTITY_UUID in (" + UUID_PARAM + ") AND cf.STATUS=\"ENABLED\"";
+            "where ENTITY_UUID in (" + UUID_PARAM + ") AND cf.STATUS='ENABLED'";
 
     String app_uuids = "'"+StringUtils.join(((HashMap) values).keySet(), "','")+"'";
 

@@ -124,6 +124,7 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
     private boolean forceIncludeRequestBody = false;
     private String httpMethodAsString;
     private boolean overrideContentType = false;
+    private boolean omitHostHeader = false;
 
     public HttpRoutingAssertion() {
         this(null, null, null, null);
@@ -908,5 +909,13 @@ public class HttpRoutingAssertion extends RoutingAssertionWithSamlSV implements 
 
     public static String getVarHttpRoutingUrlBlacklist(){
         return VAR_HTTP_ROUTING_URL + "." + VAR_HTTP_ROUTING_URL_BLACKLIST;
+    }
+
+    public boolean isOmitHostHeader() {
+        return omitHostHeader;
+    }
+
+    public void setOmitHostHeader(boolean omitHostHeader) {
+        this.omitHostHeader = omitHostHeader;
     }
 }

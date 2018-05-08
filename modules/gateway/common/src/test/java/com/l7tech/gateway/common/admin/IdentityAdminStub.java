@@ -17,10 +17,6 @@ import java.util.*;
  * @author alex
  */
 public class IdentityAdminStub implements IdentityAdmin {
-    @Override
-    public String echoVersion() {
-        return SecureSpanConstants.ADMIN_PROTOCOL_VERSION;
-    }
 
     @Override
     public EntityHeader[] findAllIdentityProviderConfig() throws FindException {

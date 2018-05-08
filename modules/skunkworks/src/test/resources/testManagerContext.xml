@@ -90,6 +90,8 @@
     <bean id="securityZoneManager" class="com.l7tech.server.security.rbac.SecurityZoneManagerImpl"
           parent="hibernateBean"/>
 
+    <bean id="timeSource" class="com.l7tech.util.TimeSource"/>
+
     <bean id="policyManager" class="com.l7tech.server.policy.PolicyManagerImpl" parent="hibernateBean">
         <constructor-arg index="0" ref="roleManager"/>
         <constructor-arg index="1" ref="policyAliasManager"/>
@@ -170,7 +172,6 @@
                 <ref bean="identityProviderConfigManager"/>
                 <ref bean="customKeyValueStoreManager"/>
                 <ref bean="cassandraEntityManager"/>
-                <ref bean="workQueueEntityManager"/>
                 <ref bean="solutionKitManager"/>
             </list>
         </property>
@@ -572,6 +573,10 @@
                     <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.POLICY_BACKED_SERVICE"/></key>
                     <bean class="com.l7tech.server.search.processors.PolicyBackedServiceDependencyProcessor"/>
                 </entry>
+                <entry>
+                    <key><util:constant static-field="com.l7tech.search.Dependency.DependencyType.LOG_SINK"/></key>
+                    <bean class="com.l7tech.server.search.processors.LogSinkDependencyProcessor"/>
+                </entry>
             </util:map>
         </constructor-arg>
     </bean>
@@ -762,9 +767,9 @@
                 <ref bean="genericEntityManager"/>
                 <ref bean="cassandraEntityManager"/>
                 <ref bean="serverModuleFileManager"/>
-                <ref bean="workQueueEntityManager"/>
                 <ref bean="scheduledTaskManager"/>
                 <ref bean="policyBackedServiceManager"/>
+                <ref bean="auditConfigurationManager"/>
             </list>
         </constructor-arg>
     </bean>
@@ -796,7 +801,6 @@
         <property name="keyValueStoreManager" ref="customKeyValueStoreManager"/>
         <property name="customAssertionsRegistrar" ref="customAssertionRegistrar"/>
         <property name="cassandraEntityManager" ref="cassandraEntityManager"/>
-        <property name="workQueueEntityManager" ref="workQueueEntityManager"/>
     </bean>
 
     <bean id="policyPathBuilderFactory" class="com.l7tech.policy.PolicyPathBuilderFactory">
@@ -1075,6 +1079,14 @@
         </constructor-arg>
     </bean>
 
+    <bean id="preServiceInvocationInjectionsRegistry" class="com.l7tech.server.extension.registry.processorinjection.ServiceInjectionsRegistry"/>
+    <bean id="postServiceInvocationInjectionsRegistry" class="com.l7tech.server.extension.registry.processorinjection.ServiceInjectionsRegistry"/>
+
+    <bean id="messageProcessorInjector" class="com.l7tech.server.messageprocessor.injection.MessageProcessorInjectorImpl" >
+        <constructor-arg ref="preServiceInvocationInjectionsRegistry" />
+        <constructor-arg ref="postServiceInvocationInjectionsRegistry" />
+    </bean>
+
     <bean id="messageProcessor" class="com.l7tech.server.MessageProcessor">
         <constructor-arg ref="serviceCache"/>
         <constructor-arg ref="policyCache"/>
@@ -1085,6 +1097,7 @@
         <constructor-arg ref="serviceMetricsServices"/>
         <constructor-arg ref="auditContextFactory"/>
         <constructor-arg ref="messageSummaryAuditFactory"/>
+        <constructor-arg ref="messageProcessorInjector"/>
         <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="trafficLogger"/>
         <constructor-arg ref="messageProcessingEventChannel"/>
@@ -1597,7 +1610,6 @@
         <constructor-arg ref="trafficLogger"/>
         <constructor-arg ref="applicationEventProxy"/>
         <constructor-arg ref="clusterInfoManager"/>
-        <constructor-arg ref="clusterContextFactory"/>
         <constructor-arg ref="roleManager"/>
     </bean>
 
@@ -1606,6 +1618,13 @@
         <constructor-arg ref="serverConfig"/>
         <constructor-arg ref="soapFaultManager"/>
     </bean>
+
+    <bean id="auditConfigurationManager" class="com.l7tech.server.audit.AuditConfigurationManagerImpl">
+        <constructor-arg index="0" ref="policyManager"/>
+        <constructor-arg index="1" ref="clusterPropertyManager"/>
+        <constructor-arg index="2" ref="transactionManager"/>
+    </bean>
+
     <bean id="applicationEventProxy" class="com.l7tech.server.util.ApplicationEventProxy" primary="true"/>
 
     <bean id="soapFaultManager" class="com.l7tech.server.util.SoapFaultManager" depends-on="clusterPropertyManager">
@@ -1751,9 +1770,6 @@
           class="com.l7tech.server.util.PostStartupApplicationListener$StartupListenerRegistration"/>
 
     <bean id="postStartupTransactionalApplicationListenerRegistration" class="com.l7tech.server.util.PostStartupTransactionalApplicationListener$StartupListenerRegistration"/>
-
-    <bean id="workQueueEntityManager" class="com.l7tech.server.workqueue.WorkQueueEntityManagerImpl"
-          parent="hibernateBean"/>
 
     <bean id="scheduledTaskManager" class="com.l7tech.server.task.ScheduledTaskManagerImpl" parent="hibernateBean"/>
 

@@ -20,6 +20,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.server.search.exceptions.CannotRetrieveDependenciesException;
 import com.l7tech.util.Functions;
+import org.apache.commons.lang.StringUtils;
 import org.glassfish.jersey.process.internal.RequestScoped;
 import org.glassfish.jersey.server.ContainerRequest;
 import org.jetbrains.annotations.NotNull;
@@ -121,7 +122,7 @@ public class BundleResource {
      * @param securityZoneIds                     Security Zones to export
      * @param serverModuleFileIds                 Server Modules Files to export
      * @param siteMinderConfigurationIds          Siteminder Configurations to export
-     * @param workQueueIds                        Work Queues to export
+     * @param logSinkIds                          Log Sinks to export
      * @param requiredActiveConnectorIds          Marks these Active Connectors as required in the bundle (does not
      *                                            export their dependencies and FailOnNew is set to true)
      * @param requiredCassandraConnectionIds      Marks these Cassandra Connections as required in the bundle (does not
@@ -184,8 +185,6 @@ public class BundleResource {
      *                                            export their dependencies and FailOnNew is set to true)
      * @param requiredSiteMinderConfigurationIds  Marks these Siteminder Configurations as required in the bundle (does
      *                                            not export their dependencies and FailOnNew is set to true)
-     * @param requiredWorkQueueIds                Marks these Work Queues as required in the bundle (does not export
-     *                                            their dependencies and FailOnNew is set to true)
      * @param requiredSolutionKitIds              Marks these Solution Kits as required in the bundle (does not export
      *                                            their dependencies and FailOnNew is set to true)
      * @param fullGateway                         True to export the full gateway. False by default
@@ -201,6 +200,7 @@ public class BundleResource {
      * @param encassAsPolicyDependency            True to include the encapsulated assertion entities when exporting policies.
      * @param includeOnlyServicePolicy            True to export only service policy. False by default.
      * @param includeOnlyDependencies             True to export only dependencies. False by default.
+     * @param includeGatewayConfiguration         True to include gateway configurations. Includes audit configuration. False by default.
      * @return The bundle for the resources
      */
     @GET
@@ -238,7 +238,7 @@ public class BundleResource {
                                      @Since(RestManVersion.VERSION_1_0_2) @QueryParam("securityZone") List<String> securityZoneIds,
                                      @Since(RestManVersion.VERSION_1_0_2) @QueryParam("serverModuleFile") List<String> serverModuleFileIds,
                                      @Since(RestManVersion.VERSION_1_0_2) @QueryParam("siteMinderConfiguration") List<String> siteMinderConfigurationIds,
-                                     @Since(RestManVersion.VERSION_1_0_2) @QueryParam("workQueue") List<String> workQueueIds,
+                                     @Since(RestManVersion.VERSION_1_0_4) @QueryParam("logSink") List<String> logSinkIds,
                                      //These are the entities that will be required on import
                                      @Since(RestManVersion.VERSION_1_0_2) @QueryParam("requireActiveConnector") List<String> requiredActiveConnectorIds,
                                      @Since(RestManVersion.VERSION_1_0_2) @QueryParam("requireCassandraConnection") List<String> requiredCassandraConnectionIds,
@@ -271,7 +271,6 @@ public class BundleResource {
                                      @Since(RestManVersion.VERSION_1_0_2) @QueryParam("requireSecurityZone") List<String> requiredSecurityZoneIds,
                                      @Since(RestManVersion.VERSION_1_0_2) @QueryParam("requireServerModuleFile") List<String> requiredServerModuleFileIds,
                                      @Since(RestManVersion.VERSION_1_0_2) @QueryParam("requireSiteMinderConfiguration") List<String> requiredSiteMinderConfigurationIds,
-                                     @Since(RestManVersion.VERSION_1_0_2) @QueryParam("requireWorkQueue") List<String> requiredWorkQueueIds,
                                      @Since(RestManVersion.VERSION_1_0_2) @QueryParam("requireSolutionKit") List<String> requiredSolutionKitIds,
 
                                      @QueryParam("all") @DefaultValue("false") @Since(RestManVersion.VERSION_1_0_1) Boolean fullGateway,
@@ -282,7 +281,8 @@ public class BundleResource {
                                      @HeaderParam("L7-key-passphrase") @Since(RestManVersion.VERSION_1_0_1) String encodedKeyPassphrase,
                                      @QueryParam("encassAsPolicyDependency") @DefaultValue("false") @Since(RestManVersion.VERSION_1_0_3) Boolean encassAsPolicyDependency,
                                      @QueryParam("includeOnlyServicePolicy") @DefaultValue("false") @Since(RestManVersion.VERSION_1_0_3) Boolean includeOnlyServicePolicy,
-                                     @QueryParam("includeOnlyDependencies") @DefaultValue("false") @Since(RestManVersion.VERSION_1_0_3) Boolean includeOnlyDependencies) throws IOException, ResourceFactory.ResourceNotFoundException, FindException, CannotRetrieveDependenciesException, GeneralSecurityException {
+                                     @QueryParam("includeOnlyDependencies") @DefaultValue("false") @Since(RestManVersion.VERSION_1_0_3) Boolean includeOnlyDependencies,
+                                     @QueryParam("includeGatewayConfiguration") @DefaultValue("false") @Since(RestManVersion.VERSION_1_0_4) Boolean includeGatewayConfiguration) throws IOException, ResourceFactory.ResourceNotFoundException, FindException, CannotRetrieveDependenciesException, GeneralSecurityException {
         rbacAccessService.validateFullAdministrator();
         ParameterValidationUtils.validateNoOtherQueryParams(uriInfo.getQueryParameters(), Arrays.asList("defaultAction", "exportGatewayRestManagementService",
                 "activeConnector",
@@ -316,7 +316,7 @@ public class BundleResource {
                 "securityZone",
                 "serverModuleFile",
                 "siteMinderConfiguration",
-                "workQueue",
+                "logSink",
 
                 "requireActiveConnector",
                 "requireCassandraConnection",
@@ -349,15 +349,14 @@ public class BundleResource {
                 "requireSecurityZone",
                 "requireServerModuleFile",
                 "requireSiteMinderConfiguration",
-                "requireWorkQueue",
                 "requireSolutionKit",
-                "all", "includeDependencies", "includeSolutionKits", "encryptSecrets", "encryptUsingClusterPassphrase", "encassAsPolicyDependency", "includeOnlyServicePolicy", "includeOnlyDependencies"));
+                "all", "includeDependencies", "includeSolutionKits", "encryptSecrets", "encryptUsingClusterPassphrase", "encassAsPolicyDependency", "includeOnlyServicePolicy", "includeOnlyDependencies", "includeGatewayConfiguration"));
         final String encodedPassphrase = getEncryptionPassphrase(encryptSecrets, encryptUsingClusterPassphrase, encodedKeyPassphrase);
         //validate that something is being exported
         if (activeConnectorIds.isEmpty() && cassandraConnectionIds.isEmpty() && trustedCertificateIds.isEmpty() && clusterPropertyIds.isEmpty() && customKeyValueIds.isEmpty() && emailListenerIds.isEmpty() && encapsulatedAssertionIds.isEmpty() &&
                 firewallRuleIds.isEmpty() && folderIds.isEmpty() && genericEntityIds.isEmpty() && httpConfigurationIds.isEmpty() && identityProviderIds.isEmpty() && interfaceTagIds.isEmpty() && jdbcConnectionIds.isEmpty() && jmsDestinationIds.isEmpty() &&
                 listenPortIds.isEmpty() && policyIds.isEmpty() && policyAliasIds.isEmpty() && policyBackedServiceIds.isEmpty() && privateKeyIds.isEmpty() && serviceIds.isEmpty() && serviceAliasIds.isEmpty() && resourceIds.isEmpty() && revocationCheckingPolicyIds.isEmpty() && roleIds.isEmpty() &&
-                sampleMessageIds.isEmpty() && scheduledTaskIds.isEmpty() && passwordIds.isEmpty() && securityZoneIds.isEmpty() && serverModuleFileIds.isEmpty() && siteMinderConfigurationIds.isEmpty() && workQueueIds.isEmpty() && !fullGateway) {
+                sampleMessageIds.isEmpty() && scheduledTaskIds.isEmpty() && passwordIds.isEmpty() && securityZoneIds.isEmpty() && serverModuleFileIds.isEmpty() && siteMinderConfigurationIds.isEmpty() && logSinkIds.isEmpty() && !fullGateway) {
             throw new InvalidArgumentException("Must specify at least one entity to export");
         }
 
@@ -394,7 +393,7 @@ public class BundleResource {
         buildEntityHeaders(securityZoneIds, entityHeadersToExport, EntityType.SECURITY_ZONE);
         buildEntityHeaders(serverModuleFileIds, entityHeadersToExport, EntityType.SERVER_MODULE_FILE);
         buildEntityHeaders(siteMinderConfigurationIds, entityHeadersToExport, EntityType.SITEMINDER_CONFIGURATION);
-        buildEntityHeaders(workQueueIds, entityHeadersToExport, EntityType.WORK_QUEUE);
+        buildEntityHeaders(logSinkIds, entityHeadersToExport, EntityType.LOG_SINK);
 
         List<EntityHeader> entityHeadersToIgnoreDependencies = new ArrayList<>();
         buildEntityHeaders(requiredActiveConnectorIds, entityHeadersToIgnoreDependencies, EntityType.SSG_ACTIVE_CONNECTOR);
@@ -428,7 +427,6 @@ public class BundleResource {
         buildEntityHeaders(requiredSecurityZoneIds, entityHeadersToIgnoreDependencies, EntityType.SECURITY_ZONE);
         buildEntityHeaders(requiredServerModuleFileIds, entityHeadersToIgnoreDependencies, EntityType.SERVER_MODULE_FILE);
         buildEntityHeaders(requiredSiteMinderConfigurationIds, entityHeadersToIgnoreDependencies, EntityType.SITEMINDER_CONFIGURATION);
-        buildEntityHeaders(requiredWorkQueueIds, entityHeadersToIgnoreDependencies, EntityType.WORK_QUEUE);
         buildEntityHeaders(requiredSolutionKitIds, entityHeadersToIgnoreDependencies, EntityType.SOLUTION_KIT);
 
         if (fullGateway && !entityHeadersToExport.isEmpty()) {
@@ -441,6 +439,7 @@ public class BundleResource {
                 encassAsPolicyDependency,
                 includeOnlyServicePolicy,
                 includeOnlyDependencies,
+                includeGatewayConfiguration,
                 entityHeadersToExport.toArray(new EntityHeader[entityHeadersToExport.size()]));
         return new ItemBuilder<>(transformer.convertToItem(bundle))
                 .addLink(ManagedObjectFactory.createLink(Link.LINK_REL_SELF, uriInfo.getRequestUri().toString()))
@@ -509,7 +508,7 @@ public class BundleResource {
 
         EntityHeader header = new EntityHeader(id, entityType, null, null);
         final Bundle bundle = createBundle(includeRequestFolder, Mapping.Action.valueOf(defaultAction), defaultMapBy,
-                exportGatewayRestManagementService, includeDependencies, encryptSecrets, encodedPassphrase, Collections.<EntityHeader>emptyList(), false /* do not include solution kits on partial export*/, false, includeOnlyServicePolicy, includeOnlyDependencies, header);
+                exportGatewayRestManagementService, includeDependencies, encryptSecrets, encodedPassphrase, Collections.<EntityHeader>emptyList(), false /* do not include solution kits on partial export*/, false, includeOnlyServicePolicy, includeOnlyDependencies, false, header);
         return new ItemBuilder<>(transformer.convertToItem(bundle))
                 .addLink(ManagedObjectFactory.createLink(Link.LINK_REL_SELF, uriInfo.getRequestUri().toString()))
                 .build();
@@ -521,28 +520,85 @@ public class BundleResource {
      * @param test                 If true the bundle import will be tested no changes will be made to the gateway
      * @param activate             False to not activate the updated services and policies.
      * @param versionComment       The comment to set for updated/created services and policies
-     * @param encodedKeyPassphrase The optional base-64 encoded passphrase to uadmimnse for the encryption key when
+     * @param encodedKeyPassphrase The optional base-64 encoded passphrase to use for the encryption key when
      *                             encrypting passwords.
      * @param bundle               The bundle to import
      * @return The mappings performed during the bundle import
      */
     @PUT
+    @NotNull
     public Response importBundle(@QueryParam("test") @DefaultValue("false") final boolean test,
                                  @QueryParam("activate") @DefaultValue("true") final boolean activate,
                                  @QueryParam("versionComment") final String versionComment,
                                  @HeaderParam("L7-key-passphrase") @Since(RestManVersion.VERSION_1_0_1) String encodedKeyPassphrase,
-                                 final Bundle bundle) throws Exception {
+                                 @NotNull final Bundle bundle) throws Exception {
+        final BundleList bundles = ManagedObjectFactory.createBundleList();
+        bundles.setBundles(Arrays.asList(new Bundle[]{bundle}));
+
+        final Response response = importBundles(test, activate, versionComment, encodedKeyPassphrase, bundles);
+        final Item<Mappings> item = ((ItemsList<Mappings>) response.getEntity()).getContent().get(0);  // Since there is only one bundle, the item list should have one item element.
+
+        return response.getStatus() == Response.Status.CONFLICT.getStatusCode()?
+            Response.status(Response.Status.CONFLICT).entity(item).build() : Response.ok(item).build();
+    }
+
+    /**
+     * This will import a batch of bundles.
+     *
+     * @param test                 If true the bundles import will be tested no changes will be made to the gateway
+     * @param activate             False to not activate the updated services and policies.
+     * @param versionComment       The comment to set for updated/created services and policies
+     * @param encodedKeyPassphrase The optional base-64 encoded passphrase to use for the encryption key when
+     *                             encrypting passwords.
+     * @param bundles              The batch of bundles to import
+     * @return The mappings performed during each bundle import
+     */
+    @PUT
+    @Path("batch")
+    @Since(RestManVersion.VERSION_1_0_4)
+    @NotNull
+    public Response importBundles(@QueryParam("test") @DefaultValue("false") final boolean test,
+                                 @QueryParam("activate") @DefaultValue("true") final boolean activate,
+                                 @QueryParam("versionComment") final String versionComment,
+                                 @HeaderParam("L7-key-passphrase") @Since(RestManVersion.VERSION_1_0_1) final String encodedKeyPassphrase,
+                                 @NotNull final BundleList bundles) throws Exception {
         rbacAccessService.validateFullAdministrator();
         ParameterValidationUtils.validateNoOtherQueryParams(uriInfo.getQueryParameters(), Arrays.asList("test", "activate", "versionComment"));
 
-        List<Mapping> mappings =
-                bundleImporter.importBundle(bundle, test, activate, versionComment, encodedKeyPassphrase);
+        final List<List<Mapping>> listMappings =
+            bundleImporter.importBundles(bundles, test, activate, versionComment, encodedKeyPassphrase);
 
-        Item<Mappings> item = new ItemBuilder<Mappings>("Bundle mappings", "BUNDLE MAPPINGS")
-                .addLink(ManagedObjectFactory.createLink(Link.LINK_REL_SELF, uriInfo.getRequestUri().toString()))
+        final List<Item<Mappings>> items = new ArrayList<>();
+        final String itemUri = uriInfo.getRequestUri().toString().replaceAll("/batch", "");
+        final List<Bundle> bundleList = bundles.getBundles();
+        boolean foundError = false;
+
+        for (int i = 0; i < listMappings.size(); i++) {
+            final List<Mapping> mappings = listMappings.get(i);
+            final String bundleName = bundleList.get(i).getName(); // bundle name will be assigned to Id element of Item element to identify the bundle.
+
+            // Find whether any error exists
+            if (!foundError && containsErrors(mappings)) {
+                foundError = true;
+            }
+
+            // Build one item to hold mappings, per bundle
+            final Item<Mappings> item = new ItemBuilder<Mappings>("Bundle mappings" + (StringUtils.isBlank(bundleName)? "" : " for '" + bundleName + "'"), "BUNDLE MAPPINGS")
+                .addLink(ManagedObjectFactory.createLink(Link.LINK_REL_SELF, itemUri))
                 .setContent(ManagedObjectFactory.createMappings(mappings))
                 .build();
-        return containsErrors(mappings) ? Response.status(Response.Status.CONFLICT).entity(item).build() : Response.ok(item).build();
+
+            items.add(item);
+        }
+
+        // Build the item list
+        final ItemsList<Mappings> itemsList = new ItemsListBuilder<Mappings>(transformer.getResourceType() + " List", "List")
+            .addLink(ManagedObjectFactory.createLink(Link.LINK_REL_SELF, uriInfo.getRequestUri().toString()))
+            .setContent(items)
+            .build();
+
+        // Return response with the item list
+        return foundError? Response.status(Response.Status.CONFLICT).entity(itemsList).build() : Response.ok(itemsList).build();
     }
 
     /**
@@ -568,6 +624,7 @@ public class BundleResource {
      * @param defaultMapBy         The default map by property
      * @param includeDependencies  true to include dependencies
      * @param includeSolutionKits  true to include Solution Kits entities during export.
+     * @param includeGatewayConfiguration   true to include gateway configuration entities during export
      * @param headers              The header to bundle a bundle for
      * @return The bundle from the headers
      */
@@ -585,6 +642,7 @@ public class BundleResource {
                                 boolean encassAsPolicyDependency,
                                 boolean includeOnlyServicePolicy,
                                 boolean includeOnlyDependencies,
+                                boolean includeGatewayConfiguration,
                                 @NotNull final EntityHeader... headers) throws FindException, CannotRetrieveDependenciesException, FileNotFoundException, GeneralSecurityException {
         //build the bundling properties
         final Properties bundleOptionsBuilder = new Properties();
@@ -596,6 +654,8 @@ public class BundleResource {
         bundleOptionsBuilder.setProperty(BundleExporter.EncassAsPolicyDependencyOption, Boolean.toString(encassAsPolicyDependency));
         bundleOptionsBuilder.setProperty(BundleExporter.IncludeOnlyServicePolicyOption, Boolean.toString(includeOnlyServicePolicy));
         bundleOptionsBuilder.setProperty(BundleExporter.IncludeOnlyDependenciesOption, Boolean.toString(includeOnlyDependencies));
+        bundleOptionsBuilder.setProperty(BundleExporter.IncludeGatewayConfigurationOption, Boolean.toString(includeGatewayConfiguration));
+
 
         //ignore the rest man service so it is not exported
         if (containerRequest.getProperty("ServiceId") != null && !exportGatewayRestManagementService) {

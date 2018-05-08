@@ -177,9 +177,9 @@ public class JsonWebToken {
 
     // This has been deprecated - there is no guarantee the payload is JSON data.
     @Deprecated
-    public JSONData getPayloadAsJsonData() {
+    public JSONData getPayloadAsJsonData() throws InvalidJsonException {
         if (payload != null) {
-            return JSONFactory.getInstance().newJsonData(payload);
+            return JSONFactory.INSTANCE.newJsonData(payload);
         } else return null;
     }
 
@@ -342,10 +342,10 @@ public class JsonWebToken {
         else return header;
     }
 
-    public JSONData getHeaderAsJsonData() {
+    public JSONData getHeaderAsJsonData() throws InvalidJsonException {
         String header = this.getHeader();
         if (header != null) {
-            return JSONFactory.getInstance().newJsonData(header);
+            return JSONFactory.INSTANCE.newJsonData(header);
         } else {
             return null;
         }
@@ -611,7 +611,7 @@ public class JsonWebToken {
     public void validateJsonPayload(String payload) throws InvalidJsonException {
 
         // Invalid JSON won't make it through this.
-        JSONData jsonHeader = JSONFactory.getInstance().newJsonData(payload);
+        JSONData jsonHeader = JSONFactory.INSTANCE.newJsonData(payload);
         // Mitigates MAG-65, also allows booleans to be used in the payload.
         try {
             Map<String, Object> objectMap = (Map<String, Object>) jsonHeader.getJsonObject();

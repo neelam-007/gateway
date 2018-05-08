@@ -7,6 +7,7 @@ import com.l7tech.console.table.AuditLogTableSorterModel;
 import com.l7tech.console.tree.PolicyEntityNode;
 import com.l7tech.console.util.*;
 import com.l7tech.console.util.jcalendar.TimeRangePicker;
+import com.l7tech.console.security.PolicyManagerBuildInfo;
 import com.l7tech.gateway.common.audit.*;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
@@ -2574,8 +2575,8 @@ public class LogPanel extends JPanel {
             out = new FileOutputStream(file);
             out.write(FILE_TYPE);
             oos = new ObjectOutputStream(new GZIPOutputStream(new BufferedOutputStream(out)));
-            oos.writeObject(BuildInfo.getProductVersion());
-            oos.writeObject(BuildInfo.getBuildNumber());
+            oos.writeObject(PolicyManagerBuildInfo.getInstance().getProductVersion());
+            oos.writeObject(PolicyManagerBuildInfo.getInstance().getBuildNumber());
             oos.writeObject(data);
         }
         finally {
@@ -2642,8 +2643,8 @@ public class LogPanel extends JPanel {
                 String fileProductVersion = (String) fileProductVersionObj;
                 String fileBuildNumber = (String) fileBuildNumberObj;
 
-                boolean buildMatch = fileBuildNumber.equals(BuildInfo.getBuildNumber());
-                boolean versionMatch = fileProductVersion.equals(BuildInfo.getProductVersion());
+                boolean buildMatch = fileBuildNumber.equals(PolicyManagerBuildInfo.getInstance().getBuildNumber());
+                boolean versionMatch = fileProductVersion.equals(PolicyManagerBuildInfo.getInstance().getProductVersion());
 
                 if (!buildMatch) {
                     String message;

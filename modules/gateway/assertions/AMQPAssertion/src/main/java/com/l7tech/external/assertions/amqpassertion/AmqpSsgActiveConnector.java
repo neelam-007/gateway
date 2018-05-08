@@ -19,6 +19,7 @@ public class AmqpSsgActiveConnector extends SsgActiveConnector {
     public static final String PROPERTY_KEY_AMQP_USERNAME = "AMQPUsername";
     public static final String PROPERTY_KEY_AMQP_PASSWORD_GOID = "AMQPPasswordGoid";
     public static final String PROPERTY_KEY_AMQP_USESSL = "AMQPUseSSL";
+    public static final String PROPERTY_KEY_AMQP_TLS_PROTOCOLS = "AMQPSSLProtocols";
     public static final String PROPERTY_KEY_AMQP_CIPHERSPEC = "AMQPCipherSpec";
     public static final String PROPERTY_KEY_AMQP_SSL_CLIENT_KEY_ID = "AMQPSslClientKeyId";
     public static final String PROPERTY_KEY_AMQP_QUEUE_NAME = "AMQPQueueName";

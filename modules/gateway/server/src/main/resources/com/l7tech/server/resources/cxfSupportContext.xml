@@ -17,18 +17,6 @@
     <bean id="org.apache.cxf.bus.spring.BusExtensionPostProcessor" class="com.l7tech.server.util.SafeCxfBusExtensionPostProcessor">
         <property name="bus" ref="cxf"/>
     </bean>
-    <!-- Override the ExtensionManagerBus with one that does not return a classloader extension. See EM-1020 -->
-    <bean id="cxf" class="com.l7tech.server.util.ClassLoaderDisablingExtensionManagerBus"/>
-
-    <!-- Process Controller -->
-    <jaxws:endpoint id="processControllerNodeApiEndpoint" implementor="#processControllerNodeApiImpl"
-                    address="/processControllerNodeApi" depends-on="processControllerNodeApiImpl">
-        <jaxws:inInterceptors>
-            <ref bean="streamValidationInterceptor"/>
-            <ref bean="xmlValidationInterceptor"/>
-        </jaxws:inInterceptors>
-    </jaxws:endpoint>
-
 
     <bean id="streamValidationInterceptor" class="com.l7tech.server.admin.ws.StreamValidationInterceptor"/>
     <bean id="xmlValidationInterceptor" class="com.l7tech.server.admin.ws.XMLValidationInterceptor"/>

@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.2.xsd">
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.2.xsd"
+                   logicalFilePath="upgrade_9.3.00.xml">
     <changeSet author="gateway" id="update_ssg_version">
         <update tableName="ssg_version">
             <column name="current_version" value="9.3.00"/>
@@ -11,5 +12,14 @@
                 <column name="current_version" value="9.2.00"/>
             </update>
         </rollback>
+    </changeSet>
+    <changeSet id="update_solution_kit_parents" author="gateway">
+        <comment>Iterate through the Solution Kit table and create a new Solution Kit parent for each unique instance modifier.</comment>
+        <insert tableName="cluster_properties">
+        <column name="goid" valueComputed="toGoid(0, -900303)"/>
+        <column name="version" valueNumeric="0"/>
+        <column name="propkey" value="upgrade.task.900301"/>
+        <column name="propvalue" value="com.l7tech.server.upgrade.Upgrade9200To9300SolutionKits"/>
+        </insert>
     </changeSet>
 </databaseChangeLog>

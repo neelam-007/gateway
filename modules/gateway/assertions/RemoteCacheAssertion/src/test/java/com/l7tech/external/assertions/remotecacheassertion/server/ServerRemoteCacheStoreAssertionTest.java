@@ -277,7 +277,7 @@ public class ServerRemoteCacheStoreAssertionTest {
         storeAssertion.setMaxEntrySizeBytes("2000");
         storeAssertion.setStoreSoapFaults(false);
 
-        RedisRemoteCache redisRemoteCache = new RedisRemoteCache(entity, redisClient, redisPool, redisCluster);
+        RedisRemoteCache redisRemoteCache = new RedisRemoteCache(entity, redisPool, redisCluster);
 
         when(rcManagerImpl.getRemoteCache(Mockito.any(Goid.class))).thenReturn(redisRemoteCache);
         when(redisCluster.set(anyString(), anyString())).thenReturn("OK");
@@ -312,7 +312,7 @@ public class ServerRemoteCacheStoreAssertionTest {
         storeAssertion.setMaxEntrySizeBytes("2000");
         storeAssertion.setStoreSoapFaults(false);
 
-        RedisRemoteCache redisRemoteCache = new RedisRemoteCache(entity, redisClient, redisPool, redisCluster);
+        RedisRemoteCache redisRemoteCache = new RedisRemoteCache(entity, redisPool, redisCluster);
 
         when(rcManagerImpl.getRemoteCache(Mockito.any(Goid.class))).thenReturn(redisRemoteCache);
         when(redisPool.getResource()).thenReturn(redisClient);

@@ -48,6 +48,7 @@ DependencyMO
 Item
 ItemsList
 Bundle
+BundleList
 Link
 PolicyVersionMO
 Mapping
@@ -59,7 +60,9 @@ GroupMO
 FirewallRuleMO
 SampleMessageMO
 ScheduledTaskMO
-WorkQueueMO
+LogSinkMO
 ServerModuleFileMO
 PolicyBackedServiceMO
 SolutionKitMO
+AuditConfigurationMO
+AuditFtpConfig

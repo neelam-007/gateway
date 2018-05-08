@@ -4,6 +4,9 @@ import com.l7tech.gateway.common.transport.jms.JmsAcknowledgementType;
 import com.l7tech.objectmodel.Goid;
 
 import java.io.Serializable;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
@@ -14,44 +17,35 @@ import java.io.Serializable;
  */
 public class AMQPDestination implements Serializable {
 
-    public boolean isInbound() {
-        return isInbound;
-    }
+    public static final String PROCOCOL_TLS1 = "TLSv1";
+    public static final String PROTOCOL_TLS11 = "TLSv1.1";
+    public static final String PROTOCOL_TLS12 = "TLSv1.2";
+    public static final List<String> DEFAULT_TLS_PROTOCOL_LIST = Collections.unmodifiableList(
+            Arrays.asList(PROCOCOL_TLS1, PROTOCOL_TLS11, PROTOCOL_TLS12));
 
-    public void setInbound(boolean inbound) {
-        isInbound = inbound;
-    }
-
-    public Goid getGoid() {
-        return goid;
-    }
-
-    public void setGoid(Goid goid) {
-        this.goid = goid;
-    }
-
-    public static enum InboundReplyBehaviour {
+    public enum InboundReplyBehaviour {
         AUTOMATIC,
         ONE_WAY,
         SPECIFIED_QUEUE
     }
 
-    public static enum InboundCorrelationBehaviour {
+    public enum InboundCorrelationBehaviour {
         CORRELATION_ID,
         MESSAGE_ID
     }
 
-    public static enum OutboundReplyBehaviour {
+    public enum OutboundReplyBehaviour {
         TEMPORARY_QUEUE,
         ONE_WAY,
         SPECIFIED_QUEUE
     }
 
-    public static enum OutboundCorrelationBehaviour {
+    public enum OutboundCorrelationBehaviour {
         GENERATE_CORRELATION_ID,
         USE_MESSAGE_ID
     }
 
+    private Goid goid = new Goid(0, -1);
     private String name;
     private boolean isInbound = false;
     private String virtualHost;
@@ -77,10 +71,26 @@ public class AMQPDestination implements Serializable {
     private OutboundReplyBehaviour outboundReplyBehaviour = OutboundReplyBehaviour.TEMPORARY_QUEUE;
     private String responseQueue = null;
     private OutboundCorrelationBehaviour outboundCorrelationBehaviour = OutboundCorrelationBehaviour.GENERATE_CORRELATION_ID;
+    private String[] tlsProtocols = DEFAULT_TLS_PROTOCOL_LIST.toArray(new String[]{});
     private int version = 1;
-    private Goid goid = new Goid(0, -1);
 
     public AMQPDestination() {
+    }
+
+    public Goid getGoid() {
+        return goid;
+    }
+
+    public void setGoid(Goid goid) {
+        this.goid = goid;
+    }
+
+    public boolean isInbound() {
+        return isInbound;
+    }
+
+    public void setInbound(boolean inbound) {
+        isInbound = inbound;
     }
 
     public String getName() {
@@ -277,6 +287,18 @@ public class AMQPDestination implements Serializable {
 
     public void setOutboundCorrelationBehaviour(OutboundCorrelationBehaviour outboundCorrelationBehaviour) {
         this.outboundCorrelationBehaviour = outboundCorrelationBehaviour;
+    }
+
+    public String[] getTlsProtocols() {
+        return tlsProtocols;
+    }
+
+    public void setTlsProtocols(String[] tlsProtocols) {
+        if (tlsProtocols == null || tlsProtocols.length < 1) {
+            this.tlsProtocols = DEFAULT_TLS_PROTOCOL_LIST.toArray(new String[]{});
+        } else {
+            this.tlsProtocols = tlsProtocols;
+        }
     }
 
     public int getVersion() {

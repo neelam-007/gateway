@@ -25,22 +25,9 @@ import static com.l7tech.external.assertions.jsondocumentstructure.server.JsonDo
  * @see com.l7tech.external.assertions.jsondocumentstructure.JsonDocumentStructureAssertion
  */
 public class ServerJsonDocumentStructureAssertion extends AbstractMessageTargetableServerAssertion<JsonDocumentStructureAssertion> {
-    private final JsonDocumentStructureValidator documentStructureValidator;
 
     public ServerJsonDocumentStructureAssertion(final JsonDocumentStructureAssertion assertion) {
         super(assertion);
-
-        documentStructureValidator = new JsonDocumentStructureValidator();
-        documentStructureValidator.setMaxContainerDepth(assertion.getMaxContainerDepth());
-        documentStructureValidator.setCheckContainerDepth(assertion.isCheckContainerDepth());
-        documentStructureValidator.setMaxArrayEntryCount(assertion.getMaxArrayEntryCount());
-        documentStructureValidator.setCheckArrayEntryCount(assertion.isCheckArrayEntryCount());
-        documentStructureValidator.setMaxObjectEntryCount(assertion.getMaxObjectEntryCount());
-        documentStructureValidator.setCheckObjectEntryCount(assertion.isCheckObjectEntryCount());
-        documentStructureValidator.setMaxEntryNameLength(assertion.getMaxEntryNameLength());
-        documentStructureValidator.setCheckEntryNameLength(assertion.isCheckEntryNameLength());
-        documentStructureValidator.setMaxStringValueLength(assertion.getMaxStringValueLength());
-        documentStructureValidator.setCheckStringValueLength(assertion.isCheckStringValueLength());
     }
 
     @Override
@@ -67,6 +54,17 @@ public class ServerJsonDocumentStructureAssertion extends AbstractMessageTargeta
         }
 
         try (InputStream messageBodyStream = mimeKnob.getEntireMessageBodyAsInputStream()) {
+            final JsonDocumentStructureValidator documentStructureValidator = new JsonDocumentStructureValidator();
+            documentStructureValidator.setMaxContainerDepth(assertion.getMaxContainerDepth());
+            documentStructureValidator.setCheckContainerDepth(assertion.isCheckContainerDepth());
+            documentStructureValidator.setMaxArrayEntryCount(assertion.getMaxArrayEntryCount());
+            documentStructureValidator.setCheckArrayEntryCount(assertion.isCheckArrayEntryCount());
+            documentStructureValidator.setMaxObjectEntryCount(assertion.getMaxObjectEntryCount());
+            documentStructureValidator.setCheckObjectEntryCount(assertion.isCheckObjectEntryCount());
+            documentStructureValidator.setMaxEntryNameLength(assertion.getMaxEntryNameLength());
+            documentStructureValidator.setCheckEntryNameLength(assertion.isCheckEntryNameLength());
+            documentStructureValidator.setMaxStringValueLength(assertion.getMaxStringValueLength());
+            documentStructureValidator.setCheckStringValueLength(assertion.isCheckStringValueLength());
             documentStructureValidator.validate(messageBodyStream);
         } catch (InvalidJsonException e) { // poorly-formed JSON
             logAndAudit(AssertionMessages.JSON_THREAT_PROTECTION_TARGET_INVALID_JSON, assertion.getTargetName());

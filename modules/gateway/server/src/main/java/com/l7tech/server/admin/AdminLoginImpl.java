@@ -6,7 +6,6 @@ package com.l7tech.server.admin;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.password.PasswordHasher;
 import com.l7tech.common.protocol.SecureSpanConstants;
-import com.l7tech.gateway.common.VersionException;
 import com.l7tech.gateway.common.admin.AdminLogin;
 import com.l7tech.gateway.common.admin.AdminLoginResult;
 import com.l7tech.gateway.common.audit.LogonEvent;
@@ -34,6 +33,7 @@ import com.l7tech.server.transport.http.HttpTransportModule;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.BuildInfo;
 import com.l7tech.util.Charsets;
+import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Config;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.support.ApplicationObjectSupport;
@@ -50,6 +50,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -146,7 +147,7 @@ public class AdminLoginImpl
                 cookie = sessionManager.createSession(user, null);
             }
 
-            return new AdminLoginResult(user, cookie, SecureSpanConstants.ADMIN_PROTOCOL_VERSION, BuildInfo.getProductVersion(), getLogonWarningBanner());
+            return new AdminLoginResult(user, cookie, config.getProperty("policyManager.version.minimum"), BuildInfo.getProductVersion(), getLogonWarningBanner());
         } catch (ObjectModelException e) {
             logger.log(Level.WARNING, "Authentication provider error", e);
             throw buildAccessControlException("Authentication failed", e);
@@ -154,8 +155,7 @@ public class AdminLoginImpl
     }
 
     public AdminLoginResult login(final String username, final String password) throws AccessControlException, LoginException {
-        VersionException ve = new VersionException( "The client Policy Manager version is too old to log in to this version of the Gateway." );
-        throw new RuntimeException( ve );
+        throw new RuntimeException( "The client Policy Manager version is too old to log in to this version of the Gateway." );
     }
 
     @Override
@@ -213,7 +213,7 @@ public class AdminLoginImpl
             throw new AuthenticationException("Authentication failed");
         }
 
-        return new AdminLoginResult(user, sessionId, SecureSpanConstants.ADMIN_PROTOCOL_VERSION, BuildInfo.getProductVersion(), getLogonWarningBanner());
+        return new AdminLoginResult(user, sessionId, config.getProperty("policyManager.version.minimum"), BuildInfo.getProductVersion(), getLogonWarningBanner());
     }
 
     @Override
@@ -225,6 +225,14 @@ public class AdminLoginImpl
 
     @Override
     public void ping() {
+    }
+
+    @Override
+    public Map<String, String> getGatewayInfo() {
+        return CollectionUtils.MapBuilder.<String,String>builder()
+                .put("gateway.product.name", BuildInfo.getProductName())
+                .put("gateway.product.legacyName", BuildInfo.getLegacyProductName())
+                .map();
     }
 
     public void setAdminSessionManager(AdminSessionManager sessionManager) {

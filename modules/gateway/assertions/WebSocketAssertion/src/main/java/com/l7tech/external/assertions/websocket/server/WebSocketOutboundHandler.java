@@ -36,7 +36,7 @@ public class WebSocketOutboundHandler extends WebSocketHandlerBase {
 
     // MAG-1603 "sec-websocket-version" header duplicated in websocket connection request.
     // TAC-1982 - omit sec-websocket-extensions. It will be added later through request.addExtensions().
-    private static final List<String> omitHeaders = Arrays.asList("get", "origin", "connection", "sec-websocket-key", "upgrade", "host", "sec-websocket-version", "sec-websocket-extensions");
+    private static final List<String> omitHeaders = Arrays.asList("get", "origin", "connection", "sec-websocket-key", "upgrade", "host", "sec-websocket-version", "sec-websocket-extensions", "sec-websocket-protocol");
 
     private final Map<String, SSGOutboundWebSocket> webSockets = new ConcurrentHashMap<>();
     private final Map<String, List<String>> socketReverseLookup = new ConcurrentHashMap<>();
@@ -91,16 +91,16 @@ public class WebSocketOutboundHandler extends WebSocketHandlerBase {
 
         if (connection.isOutboundSsl()) {
             createOutboundWebSocketClient(true, webSocketId, message.getClientId(), message.getOrigin(), message.getProtocol(), resolvedUrl,
-                    connection.getOutboundPolicyOID(), mockRequest, authContext);
+                    connection.getOutboundPolicyOID(), connection.getOutboundConnectionPolicyId(), mockRequest, authContext);
 
         } else {
 
             createOutboundWebSocketClient(false, webSocketId, message.getClientId(), message.getOrigin(), message.getProtocol(), resolvedUrl,
-                    connection.getOutboundPolicyOID(), mockRequest, authContext);
+                    connection.getOutboundPolicyOID(), connection.getOutboundConnectionPolicyId(), mockRequest, authContext);
         }
     }
 
-    private void createOutboundWebSocketClient(boolean isSsl, String webSocketId, String clientId, String origin, String protocol, URI uri, Goid serviceGoid, MockHttpServletRequest mockRequest, AuthenticationContext authContext) throws Exception {
+    private void createOutboundWebSocketClient(boolean isSsl, String webSocketId, String clientId, String origin, String protocol, URI uri, Goid serviceGoid, Goid connectionServiceId, MockHttpServletRequest mockRequest, AuthenticationContext authContext) throws Exception {
 
         if (uri == null || uri.toString().trim().isEmpty()) {
             logger.log(Level.SEVERE, "The outbound url is empty!");
@@ -109,7 +109,7 @@ public class WebSocketOutboundHandler extends WebSocketHandlerBase {
 
         try {
 
-            SSGOutboundWebSocket outboundWebSocket = new SSGOutboundWebSocket(this, webSocketId, uri.toString(), clientId, origin, protocol, serviceGoid, mockRequest, authContext);
+            SSGOutboundWebSocket outboundWebSocket = new SSGOutboundWebSocket(this, webSocketId, uri.toString(), clientId, origin, protocol, serviceGoid, connectionServiceId, mockRequest, authContext);
 
             ClientUpgradeRequest request = new ClientUpgradeRequest();
             addCustomerHeaders(request, mockRequest);
@@ -122,27 +122,37 @@ public class WebSocketOutboundHandler extends WebSocketHandlerBase {
                 wsClient = WebSocketConnectionManager.getInstance().getOutboundWebSocketClient(false, handlerId, uri.toString(), maxIdleTime, null);
             }
 
-            if (wsClient == null) {
+            if (wsClient == null && !connection.isOutboundOnly()) {
                 getInboundHandler(handlerId).closeInboundConnection(webSocketId, StatusCode.SERVER_ERROR ,"Could not get a websocketclient.  Cannot connect to outbound URL.");
                 return;
             }
 
-            addCustomerHeaders(request, mockRequest);
+            final Enumeration protocols = mockRequest.getHeaders("Sec-WebSocket-Protocol");
+            while (protocols.hasMoreElements()) {
+                request.setSubProtocols((String) protocols.nextElement());
+            }
+
             request.addExtensions("permessage-deflate"); // TAC-1982 Outbound message not being compressed.
             // Note: if the backend server does not request compression, then compression is not used.
 
             Future<Session> fut = wsClient.connect(outboundWebSocket, uri, request);
 
+            logger.log(Level.INFO, "Attempting to create WebSocket connection to: " + uri.toString());
+
             // fut.get() will return when websocket session object gets created.
             // Must wait for client to connect before continuing.  Otherwise will get timing issues with WebSocket handler.
             fut.get(WebSocketConstants.getClusterProperty(WebSocketConstants.CONNECT_TIMEOUT_KEY), TimeUnit.SECONDS);
 
-            if (WebSocketOutboundHandler.this.connection != null) {
-                logger.log(Level.INFO, "Created Websocket connection to: " + uri.toString());
+            if (outboundWebSocket.isConnected()) {
+                logger.log(Level.INFO, "Successfully created WebSocket connection to: " + uri.toString());
+            } else {
+                logger.log(Level.INFO, "Failed to create WebSocket connection to: " + uri.toString());
             }
         } catch (Exception e) {
 
-            getInboundHandler(handlerId).closeInboundConnection(webSocketId, StatusCode.SERVER_ERROR, "createOutboundWebSocketClient Exception:" + e.toString() + "Terminating WebSocketClient");
+            if(!connection.isOutboundOnly()) {
+                getInboundHandler(handlerId).closeInboundConnection(webSocketId, StatusCode.SERVER_ERROR, "createOutboundWebSocketClient Exception:" + e.toString() + "Terminating WebSocketClient");
+            }
         }
     }
 
@@ -234,7 +244,21 @@ public class WebSocketOutboundHandler extends WebSocketHandlerBase {
         webSockets.remove(webSocketId);
     }
 
+    /**
+     * Checks if specified socket exists in the socket map.
+     *
+     * @param webSocketId the web socket id
+     * @return true if the web socket exists in the socket map. false otherwise.
+     */
+    public boolean existsInSocketMap(String webSocketId) {
+        return webSockets.containsKey(webSocketId);
+    }
+
     public void closeInboundConnection(String websocketId, int codeStatus, String msg) {
+        if (connection.isOutboundOnly()) {
+            return;
+        }
+
         try {
             getInboundHandler(handlerId).closeInboundConnection(websocketId, codeStatus, msg);
         } catch (WebSocketConnectionManagerException e) {
@@ -243,6 +267,10 @@ public class WebSocketOutboundHandler extends WebSocketHandlerBase {
     }
 
     public void sendMessageToInboundConnection(String webSocketId, WebSocketMessage webSocketMessage) {
+        if (connection.isOutboundOnly()) {
+            return;
+        }
+
         try {
             getInboundHandler(handlerId).sendMessage(webSocketId, webSocketMessage);
         } catch (WebSocketConnectionManagerException e) {

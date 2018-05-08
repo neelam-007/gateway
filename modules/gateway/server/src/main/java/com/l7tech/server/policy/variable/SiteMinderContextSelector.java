@@ -8,6 +8,7 @@ import com.l7tech.util.HexUtils;
 import org.apache.commons.lang.StringUtils;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -36,10 +37,6 @@ public class SiteMinderContextSelector implements ExpandVariables.Selector<SiteM
 
         if(lname.startsWith("attributes")) {
             final List<SiteMinderContext.Attribute> attributes = getSiteMinderAttributes(ctx);
-
-            if (null == attributes) {
-                return null;
-            }
 
             Matcher m = ATTRUBUTES_PATTERN.matcher(lname);
             if(m.find()){
@@ -191,19 +188,20 @@ public class SiteMinderContextSelector implements ExpandVariables.Selector<SiteM
     }
 
     private List<SiteMinderContext.Attribute> getSiteMinderAttributes(SiteMinderContext ctx) {
-        if (null == ctx.getAttrList() || null == ctx.getSessionDef()) {
-            return null;
+        // We may expect few attributes (like ACO parameters) prior to the authentication
+        final List<SiteMinderContext.Attribute> attributes = (null != ctx.getAttrList()) ? new ArrayList<>(ctx.getAttrList()) : Collections.EMPTY_LIST;
+
+        if (null != ctx.getSessionDef()) {
+            //add session attributes to the list of attributes
+            attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_SESSIONID, ctx.getSessionDef().getId()));
+            attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_SESSIONSPEC, ctx.getSessionDef().getSpec()));
+            attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_STARTSESSIONTIME, ctx.getSessionDef().getSessionStartTime()));
+            attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_LASTSESSIONTIME, ctx.getSessionDef().getSessionLastTime()));
+            attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_MAXSESSIONTIMEOUT, ctx.getSessionDef().getMaxTimeout()));
+            attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_IDLESESSIONTIMEOUT, ctx.getSessionDef().getIdleTimeout()));
+            attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_CURRENTSERVERTIME, ctx.getSessionDef().getCurrentServerTime()));
         }
 
-        final List<SiteMinderContext.Attribute> attributes = new ArrayList<>(ctx.getAttrList());
-        //add session attributes to the list of attributes
-        attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_SESSIONID, ctx.getSessionDef().getId()));
-        attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_SESSIONSPEC, ctx.getSessionDef().getSpec()));
-        attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_STARTSESSIONTIME, ctx.getSessionDef().getSessionStartTime()));
-        attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_LASTSESSIONTIME, ctx.getSessionDef().getSessionLastTime()));
-        attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_MAXSESSIONTIMEOUT, ctx.getSessionDef().getMaxTimeout()));
-        attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_IDLESESSIONTIMEOUT, ctx.getSessionDef().getIdleTimeout()));
-        attributes.add(new SiteMinderContext.Attribute(SiteMinderAgentConstants.ATTR_CURRENTSERVERTIME, ctx.getSessionDef().getCurrentServerTime()));
         return attributes;
     }
 

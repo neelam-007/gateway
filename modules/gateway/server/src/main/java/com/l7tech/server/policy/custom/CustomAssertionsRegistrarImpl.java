@@ -36,6 +36,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.support.ApplicationObjectSupport;
 import org.springframework.core.io.ContextResource;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 
@@ -257,11 +258,23 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
 
         if (resources != null) {
             for (Resource resource : resources) {
-                pathSet.add(((ContextResource) resource).getPathWithinContext());
+                pathSet.add(getResourcePath(resource));
             }
         }
 
         return pathSet;
+    }
+
+    private static String getResourcePath(final Resource resource) {
+        if (resource instanceof ContextResource) {
+            return ((ContextResource) resource).getPathWithinContext();
+        } else if (resource instanceof FileSystemResource && ((FileSystemResource) resource).getPath().contains("com/l7tech")) {
+            // This case is needed in order to use jRebel. It loads updated classes from files instead of from memory.
+            final String path = ((FileSystemResource) resource).getPath();
+            return path.substring(path.indexOf("com/l7tech"));
+        } else {
+            return resource.getFilename();
+        }
     }
 
     private boolean isSameOrSubPackage(@NotNull final String path1, @NotNull final String path2) {

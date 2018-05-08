@@ -34,10 +34,15 @@ public class InetAddressUtil {
     private static final Pattern HOST_PATTERN = Pattern.compile( "([A-Za-z0-9_\\-\\.:]{1,1024})?/?([A-Za-z0-9_\\-\\.:]{1,1024}):[0-9]{1,5}" );
     /** Pattern that matches syntax (but not numeric sematics) of a valid IPv4 network address. */
     private static final Pattern IPV4_PAT = Pattern.compile("\\d{1,3}(?:\\.\\d{1,3}(?:\\.\\d{1,3}(?:\\.\\d{1,3})?)?)?(?:/\\d{1,2})?");
-    private static final Pattern validIpAddressPattern = Pattern.compile("^(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d+)$");
+    private static final Pattern depricatedIpAddressPattern = Pattern.compile("^(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d+)$");
+    private static final Pattern validIpAddressPattern = Pattern.compile("^(([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\.){3}([01]?\\d\\d?|2[0-4]\\d|25[0-5])$");
     // hostname pattern according to RFC 952/1123
     private static final Pattern validHostnamePattern = Pattern.compile("^(([a-zA-Z]|[a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z]|[A-Za-z0-9\\-]*[A-Za-z0-9])$");
     private static final Pattern mightBeIpv6AddressPattern = Pattern.compile("^\\[?[a-fA-F0-9]+\\:[a-fA-F0-9:]+(?:\\d+\\.\\d+\\.\\d+\\.\\d+)?\\]?$");
+
+    private static final Pattern ipv6StandardPattern =Pattern.compile("^(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$");
+    private static final Pattern ipv6HexCompressedPattern =Pattern.compile("^((?:[0-9A-Fa-f]{1,4}(?::[0-9A-Fa-f]{1,4})*)?)::((?:[0-9A-Fa-f]{1,4}(?::[0-9A-Fa-f]{1,4})*)?)$");
+
     private static final int NO_EXPLICIT_IPV6_PREFIX = 129;
 
     static {
@@ -154,7 +159,7 @@ public class InetAddressUtil {
 
         if (address == null) return false;
 
-        Matcher matcher = validIpAddressPattern.matcher(address);
+        Matcher matcher = depricatedIpAddressPattern.matcher(address);
 
         if (matcher.matches())
         {
@@ -422,14 +427,31 @@ public class InetAddressUtil {
      * @return true if the specified string looks like an IPv4 or IPv6 network address.
      */
     public static boolean looksLikeIpAddressV4OrV6(String str) {
-        return looksLikeIpv4Address(str) || looksLikeIpv6Address(str);
+        return looksLikeIpAddressV4OrV6(str, true);
     }
 
+    public static boolean looksLikeIpAddressV4OrV6(String str, boolean depricated) {
+        if(depricated)
+            return looksLikeIpv4Address(str) || looksLikeIpv6Address(str);
+        else
+            return looksLikeCorrectIpv4Address(str) || looksLikeCorrectIpv6Address(str);
+    }
+
+    @Deprecated
     public static boolean looksLikeIpv6Address(String str) {
         return mightBeIpv6AddressPattern.matcher(str).matches();
     }
 
+    public static boolean looksLikeCorrectIpv6Address(String str) {
+        return ipv6StandardPattern.matcher(str).matches() || ipv6HexCompressedPattern.matcher(str).matches();
+    }
+
+    @Deprecated
     public static boolean looksLikeIpv4Address(String str) {
+        return depricatedIpAddressPattern.matcher(str).matches();
+    }
+
+    public static boolean looksLikeCorrectIpv4Address(String str) {
         return validIpAddressPattern.matcher(str).matches();
     }
 

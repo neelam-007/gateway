@@ -9,9 +9,9 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import static com.l7tech.external.assertions.mqnative.server.MqNativeEndpointConfig.DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_ACTIVE;
-import static com.l7tech.external.assertions.mqnative.server.MqNativeEndpointConfig.DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_IDLE;
-import static com.l7tech.external.assertions.mqnative.server.MqNativeEndpointConfig.DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_WAIT;
+import static com.l7tech.external.assertions.mqnative.MqNativeConstants.DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_ACTIVE;
+import static com.l7tech.external.assertions.mqnative.MqNativeConstants.DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_IDLE;
+import static com.l7tech.external.assertions.mqnative.MqNativeConstants.DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_WAIT;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.anyString;

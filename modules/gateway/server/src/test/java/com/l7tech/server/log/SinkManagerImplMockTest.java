@@ -58,7 +58,7 @@ public class SinkManagerImplMockTest {
 
     private SinkManagerImpl createManager(final Properties configProperties) {
         return new SinkManagerImpl(new StubServerConfig(configProperties, 1000L), syslogManager, trafficLogger, applicationEventProxy,
-                clusterInfoManager, clusterContextFactory, roleManager);
+                clusterInfoManager, roleManager);
     }
 
     private class StubServerConfig extends ServerConfig {

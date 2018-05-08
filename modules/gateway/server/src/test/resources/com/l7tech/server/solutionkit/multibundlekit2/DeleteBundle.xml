@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<l7:Bundle xmlns:l7="http://ns.l7tech.com/2010/04/gateway-management">
+    <l7:Mappings>
+        <l7:Mapping action="Delete" srcId="f4ce2cb557379c7bf7113246fe818387" srcUri="https://127.0.0.1:8443/restman/1.0/folders/f4ce2cb557379c7bf7113246fe818387" type="FOLDER"/>
+        <l7:Mapping action="Delete" srcId="6ea174937afc1eb5d394c0ad2c2ba1d7" srcUri="https://127.0.0.1:8443/restman/1.0/folders/6ea174937afc1eb5d394c0ad2c2ba1d7" type="FOLDER"/>
+    </l7:Mappings>
+</l7:Bundle>

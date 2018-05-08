@@ -1,19 +1,18 @@
 package com.l7tech.kerberos;
 
-import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
+import com.l7tech.util.TimeSource;
 
 import javax.security.auth.Subject;
 import javax.security.auth.kerberos.KerberosKey;
 import javax.security.auth.kerberos.KerberosPrincipal;
 import javax.security.auth.kerberos.KerberosTicket;
 import javax.security.auth.login.LoginContext;
-import javax.security.auth.login.LoginException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -26,11 +25,6 @@ import java.util.logging.Logger;
 public class KerberosTicketRepository {
 
     private static final Logger logger = Logger.getLogger(KerberosTicketRepository.class.getName());
-
-    /**
-     * Amount of time prior to a ticket's expiry
-     */
-    private static final long EXPIRES_BUFFER = 1000L * 30L; // 30 seconds -- a bit arbitrary
 
     /**
      * Singleton instance for the KerberosTicketRepository class.
@@ -46,6 +40,8 @@ public class KerberosTicketRepository {
      * Hashmap used to store the cached credentials.
      */
     private final Map<Key, CachedCredential> _map;
+
+    private static TimeSource timeSource = new TimeSource();
 
     /**
      * Maintenance thread for removing old tickets.
@@ -112,7 +108,6 @@ public class KerberosTicketRepository {
             } else {
                 // toss cached credentials
                 _map.remove(key);
-                cred.discard();
             }
         }
 
@@ -120,7 +115,7 @@ public class KerberosTicketRepository {
     }
 
     /**
-     * Adds the Kerberos credentials into the cache.
+     * Adds or replaces the Kerberos credentials into the cache.
      *
      * @param key the key to use
      * @param tgTicket the Kerberos ticket to get the creds from
@@ -129,10 +124,7 @@ public class KerberosTicketRepository {
      */
     public void add(Key key, KerberosTicket tgTicket, List<KerberosKey> privKeys, LoginContext loginCtx, KerberosServiceTicket svcTicket) {
         // create a new cache value
-        CachedCredential oldCred = _map.put( key, new CachedCredential(tgTicket, privKeys, loginCtx, svcTicket.getServicePrincipalName(), kerberosTicketLifetime) );
-        if ( oldCred != null ) {
-            oldCred.discard();
-        }
+        _map.put( key, new CachedCredential(tgTicket, privKeys, loginCtx, svcTicket.getServicePrincipalName(), kerberosTicketLifetime) );
 
         // perform cleanup when necessary
         if (canRunCleanup())
@@ -140,7 +132,7 @@ public class KerberosTicketRepository {
     }
 
     /**
-     * Adds the Kerberos credentials into the cache.
+     * Adds or replaces the Kerberos credentials into the cache.
      *
      * @param key the key to use
      * @param subject the authenticated subject to extract the Kerberos ticket from
@@ -231,7 +223,7 @@ public class KerberosTicketRepository {
     private CachedCredential getElement(Key k) {
         CachedCredential cred;
         if ((cred = _map.get(k)) != null) {
-            cred.lastAccessTime = System.currentTimeMillis();
+            cred.lastAccessTime = timeSource.currentTimeMillis();
         }
         return cred;
     }
@@ -265,7 +257,7 @@ public class KerberosTicketRepository {
                     public void run() {
                         int counter = 0;
                         synchronized(_map) {
-                            long checkTime = System.currentTimeMillis() - THREASHOLD;
+                            long checkTime = timeSource.currentTimeMillis() - THREASHOLD;
 
                             // traverse map
                             Iterator<Key> it = _map.keySet().iterator();
@@ -280,7 +272,6 @@ public class KerberosTicketRepository {
                                     // the 2nd check is ensure the repository doesn't consume all the gateway resources
                                 {
                                     _map.remove(key);
-                                    cred.discard();
                                     counter++;
                                 }
                             }
@@ -302,7 +293,7 @@ public class KerberosTicketRepository {
     private boolean canRunCleanup() {
 
         return ((_map.size() / CACHE_SIZE_LIMIT) > CACHE_THREASHOLD) &&
-               ((System.currentTimeMillis() - 300000L) < lastCleanupRun.getTime());
+               ((timeSource.currentTimeMillis() - 300000L) < lastCleanupRun.getTime());
     }
 
     /**
@@ -327,7 +318,7 @@ public class KerberosTicketRepository {
             this.tgTicket = tgTicket;
             this.privateKeys = privateKeys;
             this.loginContext = loginCtx;
-            this.lastAccessTime = System.currentTimeMillis();
+            this.lastAccessTime = timeSource.currentTimeMillis();
             this.principal = principal;
 
             // set the expiry for this cache entry -- smaller value of the configured lifetime vs TGT endTime
@@ -348,26 +339,11 @@ public class KerberosTicketRepository {
          * @return true if the expire time is greater than 1 minute from now, false otherwise.
          */
         private boolean checkExpiry( final long expireTime ) {
-            return (expireTime > System.currentTimeMillis() + EXPIRES_BUFFER);
+            return (expireTime > timeSource.currentTimeMillis() + KerberosUtils.EXPIRES_BUFFER);
         }        
 
         boolean isExpired() {
-            return (System.currentTimeMillis() > expires);
-        }
-
-        void discard() {
-
-            tgTicket = null;
-            privateKeys = null;
-            try {
-                if (loginContext != null)
-                    loginContext.logout();
-                loginContext = null;
-            } catch (LoginException lex) {
-                if ( logger.isLoggable( Level.FINER ) ) {
-                    logger.log( Level.FINER, "Error closing login context '"+ ExceptionUtils.getMessage(lex)+"'.", ExceptionUtils.getDebugException(lex));
-                }
-            }
+            return (timeSource.currentTimeMillis() > expires);
         }
 
         long getLastAccessTime() {
@@ -421,5 +397,12 @@ public class KerberosTicketRepository {
             result = 31 * result + Arrays.hashCode(credhash);
             return result;
         }
+    }
+
+    /**
+     * Assigning this timesource so that It will be used instead of one instantiated inside static block for unit testing.
+     * */
+    public static void setTimeSource(TimeSource timeSource) {
+        KerberosTicketRepository.timeSource = timeSource;
     }
 }

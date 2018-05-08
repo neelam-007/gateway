@@ -10,6 +10,8 @@ Func Spec   | [Func Spec](https://cawiki.ca.com/display/AG/Functional+Specificat
 ## Checklist
 - [x] Pull Request Created
 - [ ] Code Review Completed
+- [ ] Veracode scan results addressed
+- [ ] SonarQube scan results addressed
 - [ ] TPSR has been submitted (if applicable) 
 - [ ] Unit tests have been added
 - [ ] Integration/Functional test cases have been written and automated

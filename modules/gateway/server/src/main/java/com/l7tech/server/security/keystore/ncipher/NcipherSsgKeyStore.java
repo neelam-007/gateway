@@ -7,6 +7,7 @@ import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.event.AdminInfo;
 import com.l7tech.server.security.keystore.*;
 import com.l7tech.util.*;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -29,7 +30,7 @@ public class NcipherSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements 
     static final String KF_PROP_INITIAL_KEYSTORE_ID = "initialKeystoreId";
     static final String KF_PROP_IGNORE_KEYSTORE_IDS = "ignoreKeystoreIds";
     private static final Logger logger = Logger.getLogger(NcipherSsgKeyStore.class.getName());
-    private static final String DB_FORMAT = "hsm.NcipherKeyStoreData";
+    static final String DB_FORMAT = "hsm.NcipherKeyStoreData";
     private static final String KEYSTORE_TYPE = "nCipher.sworld";
     private static final long refreshTime = 5 * 1000;
     private static final File KMDATA_LOCAL_DIR = new File( ConfigFactory.getProperty( "com.l7tech.server.security.keystore.ncipher.kmdataLocalPath", "/opt/nfast/kmdata/local" ) );
@@ -47,6 +48,28 @@ public class NcipherSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements 
         this.id = id;
         this.name = name;
         this.kem = kem;
+    }
+
+    @NotNull
+    KeystoreFile findKeystoreFile() throws KeyStoreException {
+        // In order to find the key store file, two parameters kem and goid must be initialized and not be null.
+        final Goid goid = getGoid();
+        if (kem == null || goid == null) {
+            throw new KeyStoreException("Invalid arguments used to look up keystore file");
+        }
+
+        final KeystoreFile keystoreFile;
+        try {
+            keystoreFile = kem.findByPrimaryKey(goid);
+        } catch (final FindException e) {
+            throw new KeyStoreException("Unable to load hardware keystore data from database for keystore named " + name + ": " + ExceptionUtils.getMessage(e), e);
+        }
+
+        if (keystoreFile == null) {
+            throw new KeyStoreException("No keystore_file found with goid " + goid);
+        }
+
+        return keystoreFile;
     }
 
     private static Set<String> findDeletedFiles(Set<String> filesBeforeDelete, Set<String> filesAfterDelete) {
@@ -176,32 +199,31 @@ public class NcipherSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements 
     protected synchronized KeyStore keyStore() throws KeyStoreException {
         if (keystore == null || System.currentTimeMillis() - lastLoaded > refreshTime) {
             try {
-                KeystoreFile keystoreFile = kem.findByPrimaryKey(getGoid());
-                if (keystoreFile == null)
-                    throw new KeyStoreException("No keystore_file found with goid " + getGoid());
-                int dbVersion = keystoreFile.getVersion();
+                final KeystoreFile keystoreFile = findKeystoreFile();
+                final int dbVersion = keystoreFile.getVersion();
                 if (keystore != null && keystoreVersion == dbVersion) {
                     // No changes since last time we checked.  Just use the one we've got.
                     return keystore;
                 }
 
-                byte[] bytes = keystoreFile.getDatabytes();
+                final byte[] bytes = keystoreFile.getDatabytes();
                 if (!keystoreFile.getFormat().equals(DB_FORMAT))
                     throw new KeyStoreException("Database key data format unrecognized for nCipher keystore named " + name +
                             "(expected \"" + DB_FORMAT + "\"; found \"" + keystoreFile.getFormat() + "\")");
 
                 if (bytes != null && bytes.length >= 1) {
                     // Load existing keystore data.
-                    Pair<NcipherKeyStoreData, KeyStore> ks = bytesToKeyStore(bytes);
+                    final Pair<NcipherKeyStoreData, KeyStore> ks = bytesToKeyStore(bytes);
                     this.keystore = ks.right;
+                    keystoreVersion = dbVersion;
                 } else {
                     // No existing keystore data present -- will need to create a new one.
                     // Begin a write transaction to create some (or to use existing in the unlikely event another node created some in the meantime).
-                    kem.mutateKeystoreFile(keystoreFile.getGoid(), new Functions.UnaryVoid<KeystoreFile>() {
+                    final KeystoreFile updated = kem.mutateKeystoreFile(keystoreFile.getGoid(), new Functions.UnaryVoid<KeystoreFile>() {
                         @Override
                         public void call(KeystoreFile keystoreFile) {
                             try {
-                                byte[] bytes = keystoreFile.getDatabytes();
+                                final byte[] bytes = keystoreFile.getDatabytes();
                                 final Pair<NcipherKeyStoreData, KeyStore> ks;
                                 if (bytes == null || bytes.length < 1) {
                                     ks = createNewKeyStore();
@@ -211,6 +233,7 @@ public class NcipherSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements 
 
                                 keystoreData = ks.left;
                                 keystore = ks.right;
+                                lastLoaded = System.currentTimeMillis();
                                 keystoreFile.setProperty(KF_PROP_INITIAL_KEYSTORE_ID, keystoreData.keystoreMetadata);
                                 keystoreFile.setDatabytes(keyStoreToBytes(keystoreData, keystore));
                             } catch (KeyStoreException e) {
@@ -218,10 +241,9 @@ public class NcipherSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements 
                             }
                         }
                     });
+                    keystoreVersion = updated.getVersion();
                 }
-            } catch (FindException e) {
-                throw new KeyStoreException("Unable to load hardware keystore data from database for keystore named " + name + ": " + ExceptionUtils.getMessage(e), e);
-            } catch (UpdateException e) {
+            } catch (final UpdateException e) {
                 throw new KeyStoreException("Unable to initialize hardware keystore data in database for keystore named " + name + ": " + ExceptionUtils.getMessage(e), e);
             }
         }
@@ -265,7 +287,7 @@ public class NcipherSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements 
         }));
     }
 
-    private synchronized Pair<NcipherKeyStoreData, KeyStore> bytesToKeyStore(byte[] bytes) throws KeyStoreException {
+    synchronized Pair<NcipherKeyStoreData, KeyStore> bytesToKeyStore(byte[] bytes) throws KeyStoreException {
         logger.info("Merging nCipher keystore data from database to local disk");
         try {
             NcipherKeyStoreData ksd = NcipherKeyStoreData.createFromBytes(bytes);
@@ -301,27 +323,18 @@ public class NcipherSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements 
     }
 
     private List<String> checkForConfiguredInitialKeystoreIdentifiers(List<String> identifiersToTry) throws KeyStoreException {
-        try {
-            // Check if we have a property telling us what ID to use
-            KeystoreFile keystoreFile = kem.findByPrimaryKey(getGoid());
-            String keystoreId = keystoreFile.getProperty(KF_PROP_INITIAL_KEYSTORE_ID);
-            if (keystoreId != null && keystoreId.trim().length() > 0)
-                identifiersToTry.add(keystoreId);
-        } catch (FindException e) {
-            throw new KeyStoreException("Unable to look up initial keystore ID: " + ExceptionUtils.getMessage(e), e);
+        // Check if we have a property telling us what ID to use
+        final String keystoreId = findKeystoreFile().getProperty(KF_PROP_INITIAL_KEYSTORE_ID);
+        if (keystoreId != null && keystoreId.trim().length() > 0) {
+            identifiersToTry.add(keystoreId);
         }
 
         if (identifiersToTry.isEmpty()) {
-            Set<String> toIgnore = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
-            try {
-                KeystoreFile keystoreFile = kem.findByPrimaryKey(getGoid());
-                String ignoreIds = keystoreFile.getProperty(KF_PROP_IGNORE_KEYSTORE_IDS);
-                if (ignoreIds != null && ignoreIds.trim().length() > 0) {
-                    String[] ids = ignoreIds.split("\\s*,\\s*");
-                    toIgnore.addAll(Arrays.asList(ids));
-                }
-            } catch (FindException e) {
-                throw new KeyStoreException("Unable to look up keystore IDs to ignore: " + ExceptionUtils.getMessage(e), e);
+            final Set<String> toIgnore = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
+            final String ignoreIds = findKeystoreFile().getProperty(KF_PROP_IGNORE_KEYSTORE_IDS);
+            if (ignoreIds != null && ignoreIds.trim().length() > 0) {
+                final String[] ids = ignoreIds.split("\\s*,\\s*");
+                toIgnore.addAll(Arrays.asList(ids));
             }
 
             identifiersToTry = NcipherKeyStoreData.readKeystoreIdentifiersFromLocalDisk(KMDATA_LOCAL_DIR, toIgnore);
@@ -365,6 +378,14 @@ public class NcipherSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements 
         } finally {
             ResourceUtils.closeQuietly(os);
         }
+    }
+
+    KeyStore getKeystoreObject() {
+        return keystore;
+    }
+
+    int getKeystoreVersion() {
+        return keystoreVersion;
     }
 
     @Override

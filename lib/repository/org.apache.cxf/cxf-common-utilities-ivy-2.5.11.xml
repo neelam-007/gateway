@@ -155,7 +155,6 @@
 		<m:dependency.management__org.codehaus.woodstox__woodstox-core-asl__exclusion_1>stax__stax-api</m:dependency.management__org.codehaus.woodstox__woodstox-core-asl__exclusion_1>
 		<m:dependency.management__junit__junit__scope>test</m:dependency.management__junit__junit__scope>
 		<m:dependency.management__org.codehaus.woodstox__woodstox-core-asl__exclusion_0>javax.xml.stream__stax-api</m:dependency.management__org.codehaus.woodstox__woodstox-core-asl__exclusion_0>
-		<m:properties__cxf.javax.mail.version>1.4.4</m:properties__cxf.javax.mail.version>
 		<m:properties__cxf.felix.framework.version>2.0.5</m:properties__cxf.felix.framework.version>
 		<m:dependency.management__asm__asm__version>3.3.1</m:dependency.management__asm__asm__version>
 		<m:properties__cxf.woodstox.core.version>4.2.0</m:properties__cxf.woodstox.core.version>

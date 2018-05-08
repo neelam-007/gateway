@@ -658,6 +658,7 @@ public class WorkSpacePanel extends JPanel {
     public Collection<Refreshable> refreshWorkspace() {
         final Collection<Refreshable> alreadyRefreshed = new ArrayList<>();
         final Component selectedComponent = tabbedPane.getSelectedComponent();
+        final int initComponentCount = tabbedPane.getComponentCount();
 
         for  (int i = 0; i < tabbedPane.getTabCount(); i++) {
             Component component = tabbedPane.getComponentAt(i);
@@ -684,7 +685,7 @@ public class WorkSpacePanel extends JPanel {
             }
         }
 
-        if (tabbedPane.getTabCount() > 0 && selectedComponent != null) {
+        if (tabbedPane.getTabCount() > 0 && selectedComponent != null && initComponentCount == tabbedPane.getComponentCount()) {
             tabbedPane.setSelectedComponent(selectedComponent);
         }
 

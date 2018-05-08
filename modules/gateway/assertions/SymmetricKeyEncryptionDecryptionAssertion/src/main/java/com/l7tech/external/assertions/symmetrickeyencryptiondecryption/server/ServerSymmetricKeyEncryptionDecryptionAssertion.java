@@ -10,6 +10,7 @@ import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.HexUtils;
+import com.l7tech.util.ResourceUtils;
 import org.springframework.context.ApplicationContext;
 
 import javax.crypto.*;
@@ -67,6 +68,7 @@ public class ServerSymmetricKeyEncryptionDecryptionAssertion extends AbstractSer
         final String pgpPassPhrase = (assertion.getPgpPassPhrase() != null ? ExpandVariables.process(assertion.getPgpPassPhrase(), vars, auditor, true) : "");
         final String variableName = assertion.getOutputVariableName();
         final boolean isEncrypt = assertion.getIsEncrypt();
+        final boolean isPgpKeyEncryption = assertion.getIsPgpKeyEncryption();
 
         // Verify data submission
         if (transformation == null || transformation.length() == 0) {
@@ -91,7 +93,7 @@ public class ServerSymmetricKeyEncryptionDecryptionAssertion extends AbstractSer
 
 
         if (transformation.equals(SymmetricKeyEncryptionDecryptionAssertion.TRANS_PGP)) {
-            return encryptDecryptWithPgp(context, inputBytes, pgpPassPhrase, isEncrypt, variableName, key);
+            return encryptDecryptWithPgp(context, inputBytes, pgpPassPhrase, isEncrypt, variableName, key, isPgpKeyEncryption);
         } else {
             return encryptDecryptWithoutPgp(context, inputBytes, transformation, isEncrypt, variableName, key, iv);
         }
@@ -102,34 +104,55 @@ public class ServerSymmetricKeyEncryptionDecryptionAssertion extends AbstractSer
      * Perform encryption/decryption with PGP transformation
      */
     private AssertionStatus encryptDecryptWithPgp(PolicyEnforcementContext context, byte[] inputBytes, String pgpPassPhrase,
-                                                  boolean isEncrypt, String variableName, String key) throws IOException {
+                                                  boolean isEncrypt, String variableName, String key, boolean isPgpKeyEncryption) throws IOException {
         byte[] output;
         InputStream is = new ByteArrayInputStream(inputBytes);
         ByteArrayOutputStream out = new ByteArrayOutputStream();
+        InputStream keyStream = null;
+        char[] passwordCharArray = null;
 
-        // Setup pass phrase
-        if (pgpPassPhrase.length() == 0) {
-            logger.log(Level.WARNING, "PGP PassPhrase is not set");
-            return AssertionStatus.FAILED;
-        }
+        //If PGP Encryption is not using Public Key, then get the PGP passphrase
+        if (!isPgpKeyEncryption) {
+            // Setup pass phrase
+            if (pgpPassPhrase.length() == 0) {
+                logger.log(Level.WARNING, "PGP PassPhrase is not set");
+                return AssertionStatus.FAILED;
+            }
 
-        byte[] pgpPassPhraseBytes = HexUtils.decodeBase64(pgpPassPhrase);
-        char[] passwordCharArray = new String(pgpPassPhraseBytes).toCharArray();
+            byte[] pgpPassPhraseBytes = HexUtils.decodeBase64(pgpPassPhrase);
+            passwordCharArray = new String(pgpPassPhraseBytes).toCharArray();
 
-        // Verify pgpPassPhraseBytes is properly decoded
-        if (pgpPassPhraseBytes.length <= 0) {
-            logger.log(Level.WARNING, "PGP PassPhrase  is not properly set");
-            return AssertionStatus.FAILED;
+            // Verify pgpPassPhraseBytes is properly decoded
+            if (pgpPassPhraseBytes.length <= 0) {
+                logger.log(Level.WARNING, "PGP PassPhrase  is not properly set");
+                return AssertionStatus.FAILED;
+            }
         }
 
         if (isEncrypt) {
             try {
-                PgpUtil.encrypt(is, out, "encrypt.pgp", new Date().getTime(), passwordCharArray, false, true);
+                if (isPgpKeyEncryption){
+                    if (key != null && !key.equals("")) {
+                        byte[] keyBytes = HexUtils.decodeBase64(key);
+                        if (keyBytes == null || keyBytes.length <= 0) {
+                            logger.log(Level.WARNING, "PGP Public Key is not set");
+                            return AssertionStatus.FAILED;
+                        }
+                        keyStream = new ByteArrayInputStream(keyBytes);
+                    }
+                    PgpUtil.encrypt(is, out, "encrypt.pgp", new Date().getTime(), null, assertion.isAsciiArmourEnabled(), true, keyStream);
+                } else {
+                    PgpUtil.encrypt(is, out, "encrypt.pgp", new Date().getTime(), passwordCharArray, false, true, null);
+                }
                 output = out.toByteArray();
                 return this.doFinalCheckAndFinishCrypto(output, variableName, context);
             } catch (PgpUtil.PgpException e) {
                 logger.log(Level.WARNING, "Error encrypting text", ExceptionUtils.getDebugException(e));
                 return AssertionStatus.FAILED;
+            } finally {
+                ResourceUtils.closeQuietly(keyStream);
+                ResourceUtils.closeQuietly(out);
+                ResourceUtils.closeQuietly(is);
             }
         } else {
             try {
@@ -142,10 +165,10 @@ public class ServerSymmetricKeyEncryptionDecryptionAssertion extends AbstractSer
                         logger.log(Level.WARNING, "Key is not properly set");
                         return AssertionStatus.FAILED;
                     }
-                    InputStream keyStream = new ByteArrayInputStream(keyBytes);
+                    keyStream = new ByteArrayInputStream(keyBytes);
                     PgpUtil.decrypt(is,keyStream,out,passwordCharArray);
                 }
-                else
+                else //If key is not provided, use passpharse
                 {
                     PgpUtil.decrypt(is,out,passwordCharArray);
                 }
@@ -154,6 +177,10 @@ public class ServerSymmetricKeyEncryptionDecryptionAssertion extends AbstractSer
             } catch (PgpUtil.PgpException e) {
                 logger.log(Level.WARNING, "Error decrypting text", ExceptionUtils.getDebugException(e));
                 return AssertionStatus.FAILED;
+            } finally {
+                ResourceUtils.closeQuietly(keyStream);
+                ResourceUtils.closeQuietly(out);
+                ResourceUtils.closeQuietly(is);
             }
         }
     }

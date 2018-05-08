@@ -1,6 +1,5 @@
 package com.l7tech.external.assertions.siteminder.console;
 
-import com.ca.siteminder.util.SiteMinderUtil;
 import com.l7tech.console.panels.AssertionPropertiesOkCancelSupport;
 import com.l7tech.console.panels.TargetVariablePanel;
 import com.l7tech.console.util.Registry;
@@ -21,8 +20,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Copyright: Layer 7 Technologies, 2013
@@ -42,6 +39,7 @@ public class SiteMinderCheckProtectedPropertiesDialog extends AssertionPropertie
     private JTextField smAgentTextField;
     private JTextField sourceIpAddressTextField;
     private JTextField serverNameTextField;
+    private JTextField acoTextField;
     private InputValidator inputValidator;
 
     public SiteMinderCheckProtectedPropertiesDialog(final Frame owner, final SiteMinderCheckProtectedAssertion assertion) {
@@ -168,6 +166,7 @@ public class SiteMinderCheckProtectedPropertiesDialog extends AssertionPropertie
         actionComboBox.getModel().setSelectedItem(assertion.getAction());
         serverNameTextField.setText(assertion.getServerName());
         sourceIpAddressTextField.setText(assertion.getSourceIpAddress());
+        acoTextField.setText(assertion.getAcoName());
 
         if (assertion.getPrefix() != null && !assertion.getPrefix().isEmpty()) {
             prefixTargetVariablePanel.setVariable(assertion.getPrefix());
@@ -202,6 +201,7 @@ public class SiteMinderCheckProtectedPropertiesDialog extends AssertionPropertie
         assertion.setAction(getSelectedAction());
         assertion.setServerName(serverNameTextField.getText().trim());
         assertion.setSourceIpAddress(sourceIpAddressTextField.getText().trim());
+        assertion.setAcoName(acoTextField.getText().trim());
         assertion.setPrefix(prefixTargetVariablePanel.getVariable());
 
         return assertion;

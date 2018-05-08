@@ -1,7 +1,6 @@
 package com.l7tech.console.tree.policy.advice;
 
 import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.assertion.alert.EmailAlertAssertion;
 import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
 import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
 import com.l7tech.policy.assertion.credential.XpathCredentialSource;
@@ -35,8 +34,7 @@ public class AdvicesTest {
             SamlBrowserArtifact.class,
             Regex.class,
             HttpFormPost.class,
-            InverseHttpFormPost.class, 
-            EmailAlertAssertion.class,
+            InverseHttpFormPost.class,
             ThroughputQuota.class,
             CommentAssertion.class,
             SqlAttackAssertion.class,

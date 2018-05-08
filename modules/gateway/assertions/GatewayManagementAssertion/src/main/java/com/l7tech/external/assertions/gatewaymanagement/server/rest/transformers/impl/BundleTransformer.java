@@ -25,16 +25,15 @@ import com.l7tech.server.search.objects.DependencySearchResults;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
+
+import java.util.*;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
 
 /**
  * This a the bundle transformer. It will transform a bundle to an internal EntityBundle and back. It is also used to
@@ -45,10 +44,10 @@ import java.util.Map;
 public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
 
     //Theses are the different properties that can be in a Mapping
-    private static final String FailOnNew = "FailOnNew";
-    private static final String FailOnExisting = "FailOnExisting";
-    private static final String MapBy = "MapBy";
-    private static final String MapTo = "MapTo";
+    private static final String FAIL_ON_NEW = "FailOnNew";
+    private static final String FAIL_ON_EXISTING = "FailOnExisting";
+    static final String MAP_TO = "MapTo";
+    static final String MAP_BY = "MapBy";
     @Inject
     private APIUtilityLocator apiUtilityLocator;
     @Inject
@@ -157,6 +156,26 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
     }
 
     /**
+     * This converts a list of bundles to a list of entity bundles.
+     *
+     * @param bundles The bundles to convert
+     * @param secretsEncryptor
+     * @return A list of the entity bundles created from the given bundles
+     * @throws ResourceFactory.InvalidResourceException
+     */
+    @NotNull
+    public List<EntityBundle> convertFromMO(@NotNull final BundleList bundles, SecretsEncryptor secretsEncryptor) throws ResourceFactory.InvalidResourceException {
+        final List<Bundle> bundleList = bundles.getBundles();
+        final List<EntityBundle> entityBundles = new ArrayList<>(bundleList.size());
+
+        for (final Bundle bundle: bundleList) {
+            entityBundles.add(convertFromMO(bundle, secretsEncryptor));
+        }
+
+        return entityBundles;
+    }
+
+    /**
      * This converts a bundle to an entity bundle.
      *
      * @param bundle The bundle to convert
@@ -191,20 +210,28 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
         });
 
         //Validate entityMap has the same number of elements as there are entityContainers
-        if (entityContainerMap.size() != entityContainers.size()) {
-            throw new IllegalStateException("Could not uniquely map EntityContainers by their id's.");
+        assert entityContainerMap.size() <= entityContainers.size();
+        if (entityContainerMap.size() < entityContainers.size()) {
+            List<EntityContainer> duplicates = new ArrayList<>(entityContainers);
+            duplicates.removeAll(entityContainerMap.values());
+            StringBuilder error = new StringBuilder("Could not uniquely map EntityContainers by their id's. Found these duplicates ids:\n");
+            for(EntityContainer e : duplicates) {
+                error.append(e.getId());
+                error.append("\n");
+            }
+            throw new IllegalStateException(error.toString());
         }
 
         //convert the mappings to entityMapping instruction.
         final List<EntityMappingInstructions> mappingInstructions = Functions.map(bundle.getMappings(), new Functions.UnaryThrows<EntityMappingInstructions, Mapping, ResourceFactory.InvalidResourceException>() {
             @Override
             public EntityMappingInstructions call(Mapping mapping) throws ResourceFactory.InvalidResourceException {
-                return convertEntityMappingInstructionsFromMappingAndEntity(mapping, entityContainerMap.get(new Pair<>(mapping.getSrcId(), EntityType.valueOf(mapping.getType()))));
+                return convertEntityMappingInstructionsFromMappingAndEntity(mapping, entityContainerMap);
             }
         });
 
         // not transform dependency results, not used by import
-        return new EntityBundle(entityContainers, mappingInstructions, new ArrayList<DependencySearchResults>() );
+        return new EntityBundle(bundle.getName(), entityContainers, mappingInstructions, new ArrayList<DependencySearchResults>() );
     }
 
     @Override
@@ -271,35 +298,39 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
         }
         mapping.setAction(convertAction(entityMappingInstructions.getMappingAction()));
         if (entityMappingInstructions.shouldFailOnNew() || forceFailOnNew.contains(entityMappingInstructions.getSourceEntityHeader())) {
-            mapping.addProperty(FailOnNew, Boolean.TRUE);
+            mapping.addProperty(FAIL_ON_NEW, Boolean.TRUE);
         }
         if (entityMappingInstructions.shouldFailOnExisting()) {
-            mapping.addProperty(FailOnExisting, Boolean.TRUE);
+            mapping.addProperty(FAIL_ON_EXISTING, Boolean.TRUE);
         }
         if (entityMappingInstructions.getTargetMapping() != null) {
             switch (entityMappingInstructions.getTargetMapping().getType()) {
                 case GUID:
-                    mapping.addProperty(MapBy, "guid");
+                    mapping.addProperty(MAP_BY, "guid");
                     break;
                 case NAME:
-                    mapping.addProperty(MapBy, "name");
+                    mapping.addProperty(MAP_BY, "name");
                     break;
                 case ID:
                     if (entityMappingInstructions.getTargetMapping().getTargetID() != null) {
                         //we only need to add map by ID if the target ID is given.
-                        mapping.addProperty(MapBy, "id");
+                        mapping.addProperty(MAP_BY, "id");
                     }
                     break;
                 case MAP_BY_ROLE_ENTITY:
-                    mapping.addProperty(MapBy, "mapByRoleEntity");
+                    mapping.addProperty(MAP_BY, "mapByRoleEntity");
                     break;
                 case MODULE_SHA265:
-                    mapping.addProperty(MapBy, "moduleSha256");
+                    mapping.addProperty(MAP_BY, "moduleSha256");
                     break;
             }
             if (entityMappingInstructions.getTargetMapping().getTargetID() != null) {
-                mapping.addProperty(MapTo, entityMappingInstructions.getTargetMapping().getTargetID());
+                mapping.addProperty(MAP_TO, entityMappingInstructions.getTargetMapping().getTargetID());
             }
+        }
+        
+        for(String propertyNames : entityMappingInstructions.getExtraMappings().stringPropertyNames()) {
+            mapping.addProperty(propertyNames, entityMappingInstructions.getExtraMappingProperty(propertyNames));
         }
         return mapping;
     }
@@ -326,7 +357,7 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
         } else {
             if (entityMappingResult.getException() != null) {
                 mapping.setErrorType(getErrorTypeFromException(entityMappingResult.getException()));
-                mapping.addProperty("ErrorMessage", getExceptionMessage(entityMappingResult.getException()));
+                mapping.addProperty("ErrorMessage", ExceptionUtils.getMessage(entityMappingResult.getException()));
             } else {
                 throw new IllegalStateException("This should never happen. If a EntityMappingResult is not successful an exception must exist.");
             }
@@ -335,38 +366,15 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
     }
 
     /**
-     * Return an exception message from a throwable exception.
-     *
-     * @param exception The exception to get the message from
-     * @return The message for the given exception
-     */
-    @NotNull
-    private String getExceptionMessage(@NotNull final Throwable exception) {
-        if (exception instanceof ObjectModelException && exception.getCause() != null
-                && exception.getCause() instanceof DataIntegrityViolationException && exception.getCause().getCause() != null
-                && exception.getCause().getCause() instanceof org.hibernate.exception.ConstraintViolationException) {
-            //Handle database exceptions with a nicer message
-            org.hibernate.exception.ConstraintViolationException constraintViolationException = (org.hibernate.exception.ConstraintViolationException) exception.getCause().getCause();
-            return ExceptionUtils.getMessage(constraintViolationException.getSQLException(), constraintViolationException.getMessage());
-        }else if (exception instanceof DataIntegrityViolationException && exception.getCause() != null
-                && exception.getCause() instanceof org.hibernate.exception.ConstraintViolationException) {
-            //Handle database exceptions with a nicer message
-            org.hibernate.exception.ConstraintViolationException constraintViolationException = (org.hibernate.exception.ConstraintViolationException) exception.getCause();
-            return ExceptionUtils.getMessage(constraintViolationException.getSQLException(), constraintViolationException.getMessage());
-        } else {
-            return ExceptionUtils.getMessage(exception);
-        }
-    }
-
-    /**
      * Creates entity mapping instructions given the mapping and entity.
      *
      * @param mapping         The mapping
-     * @param entityContainer The entity container
+     * @param entityContainerMap The entity container map
      * @return The entity mapping instruction for the given mapping and entity
      */
     @NotNull
-    private EntityMappingInstructions convertEntityMappingInstructionsFromMappingAndEntity(@NotNull final Mapping mapping, @Nullable final EntityContainer entityContainer) {
+    private EntityMappingInstructions convertEntityMappingInstructionsFromMappingAndEntity(@NotNull final Mapping mapping, @NotNull final Map<Pair<String, EntityType>, EntityContainer> entityContainerMap) {
+        final EntityContainer entityContainer = entityContainerMap.get(new Pair<>(mapping.getSrcId(), EntityType.valueOf(mapping.getType())));
         //Create the source header from the entity
         final EntityHeader sourceHeader;
         if (entityContainer == null) {
@@ -378,24 +386,51 @@ public class BundleTransformer implements APITransformer<Bundle, EntityBundle> {
             }
         } else {
             sourceHeader = EntityHeaderUtils.fromEntity(entityContainer.getEntity());
+            if (sourceHeader instanceof AliasHeader) {
+                // try to get the alias name from the bundle
+                final AliasHeader alias = (AliasHeader) sourceHeader;
+                if (alias.getAliasedEntityId() != null) {
+                    final EntityContainer aliasedEntity = entityContainerMap.get(new Pair<>(alias.getAliasedEntityId().toString(), alias.getAliasedEntityType()));
+                    if (aliasedEntity != null && aliasedEntity.getEntity() instanceof NamedEntity) {
+                        final NamedEntity named = (NamedEntity) aliasedEntity.getEntity();
+                        alias.setName(named.getName() + " alias");
+                    }
+                }
+            }
         }
         final EntityMappingInstructions.TargetMapping targetMapping;
-        if (mapping.getProperties() != null && "name".equals(mapping.getProperties().get(MapBy))) {
-            targetMapping = new EntityMappingInstructions.TargetMapping(EntityMappingInstructions.TargetMapping.Type.NAME, (String) mapping.getProperties().get(MapTo));
-        } else if (mapping.getProperties() != null && "guid".equals(mapping.getProperties().get(MapBy))) {
-            targetMapping = new EntityMappingInstructions.TargetMapping(EntityMappingInstructions.TargetMapping.Type.GUID, (String) mapping.getProperties().get(MapTo));
-        } else if (mapping.getProperties() != null && "mapByRoleEntity".equals(mapping.getProperties().get(MapBy))) {
+        if (matchesMapBy(mapping,"name")) {
+            targetMapping = new EntityMappingInstructions.TargetMapping(EntityMappingInstructions.TargetMapping.Type.NAME, (String) mapping.getProperties().get(MAP_TO));
+        } else if (matchesMapBy(mapping, "guid")) {
+            targetMapping = new EntityMappingInstructions.TargetMapping(EntityMappingInstructions.TargetMapping.Type.GUID, (String) mapping.getProperties().get(MAP_TO));
+        } else if (matchesMapBy(mapping, "routingUri")) {
+            targetMapping = new EntityMappingInstructions.TargetMapping(EntityMappingInstructions.TargetMapping.Type.ROUTING_URI, (String) mapping.getProperties().get(MAP_TO));
+        } else if (matchesMapBy(mapping, "path")) {
+            targetMapping = new EntityMappingInstructions.TargetMapping(EntityMappingInstructions.TargetMapping.Type.PATH, (String) mapping.getProperties().get(MAP_TO));
+        } else if (matchesMapBy(mapping, "mapByRoleEntity")) {
             targetMapping = new EntityMappingInstructions.TargetMapping(EntityMappingInstructions.TargetMapping.Type.MAP_BY_ROLE_ENTITY, mapping.getTargetId());
-        } else if (mapping.getProperties() != null && "moduleSha256".equals(mapping.getProperties().get(MapBy))) {
+        } else if (matchesMapBy(mapping, "moduleSha256")) {
             targetMapping = new EntityMappingInstructions.TargetMapping(EntityMappingInstructions.TargetMapping.Type.MODULE_SHA265, mapping.getTargetId());
         } else if (mapping.getTargetId() != null) {
             targetMapping = new EntityMappingInstructions.TargetMapping(EntityMappingInstructions.TargetMapping.Type.ID, mapping.getTargetId());
         } else {
             targetMapping = null;
         }
-        final Boolean isFailOnExisting = mapping.getProperty(FailOnExisting);
-        final Boolean isFailOnNew = mapping.getProperty(FailOnNew);
-        return new EntityMappingInstructions(sourceHeader, targetMapping, convertMappingAction(mapping.getAction()), isFailOnNew != null ? isFailOnNew : false, isFailOnExisting != null ? isFailOnExisting : false);
+
+        final Properties extraMappingProperties = new Properties();
+        if(mapping.getProperties() != null) {
+            for (String key : mapping.getProperties().keySet()) {
+                extraMappingProperties.setProperty(key, mapping.getProperties().get(key).toString());
+            }
+        }
+
+        final Boolean isFailOnExisting = mapping.getProperty(FAIL_ON_EXISTING);
+        final Boolean isFailOnNew = mapping.getProperty(FAIL_ON_NEW);
+        return new EntityMappingInstructions(sourceHeader, targetMapping, convertMappingAction(mapping.getAction()), isFailOnNew != null ? isFailOnNew : false, isFailOnExisting != null ? isFailOnExisting : false, extraMappingProperties);
+    }
+
+    private boolean matchesMapBy(@NotNull final Mapping mappingToCheck, @NotNull final String mapByToMatch) {
+        return (mappingToCheck.getProperties() != null && mapByToMatch.equals(mappingToCheck.getProperties().get(MAP_BY)));
     }
 
     /**

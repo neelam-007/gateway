@@ -38,6 +38,8 @@ public class SimpleRawTransportAssertionPropertiesDialog extends AssertionProper
     private JTextField receiveTimeoutField;
     private JTextField responseContentTypeField;
     private JPanel responseLimitHolderPanel;
+    private JCheckBox connectionTimeOutCheckBox;
+    private JTextField connectionTimeoutField;
     private ByteLimitPanel responseLimitPanel;
 
     private InputValidator validator;
@@ -53,6 +55,7 @@ public class SimpleRawTransportAssertionPropertiesDialog extends AssertionProper
 
         transmitTimeoutField.setDocument(new NumberField(9));
         receiveTimeoutField.setDocument(new NumberField(9));
+        connectionTimeoutField.setDocument(new NumberField(9));
 
 
         final Functions.Unary<String, MessageTargetable> nameAccessor = getMessageNameFunction("Default", null, "Context Variable: ");
@@ -81,6 +84,7 @@ public class SimpleRawTransportAssertionPropertiesDialog extends AssertionProper
 
         customTransmitTimeoutCheckBox.addActionListener(enableDisableListener);
         customReceiveTimeoutCheckBox.addActionListener(enableDisableListener);
+        connectionTimeOutCheckBox.addActionListener(enableDisableListener);
         defaultResponseRadioButton.addActionListener(enableDisableListener);
         saveAsContextVariableRadioButton.addActionListener(enableDisableListener);
         responseContextVariableField.addChangeListener(enableDisableListener);
@@ -126,10 +130,12 @@ public class SimpleRawTransportAssertionPropertiesDialog extends AssertionProper
         }
         validator.constrainTextFieldToNumberRange("Transmit timeout", transmitTimeoutField,0,Integer.MAX_VALUE);
         validator.constrainTextFieldToNumberRange("Receive timeout",receiveTimeoutField, 0, Integer.MAX_VALUE);
+        validator.constrainTextFieldToNumberRange("Connection timeout",connectionTimeoutField, 0, Integer.MAX_VALUE);
 
 
         Utilities.enableGrayOnDisabled(transmitTimeoutField);
         Utilities.enableGrayOnDisabled(receiveTimeoutField);
+        Utilities.enableGrayOnDisabled(connectionTimeoutField);
     }
 
     @Override
@@ -140,6 +146,7 @@ public class SimpleRawTransportAssertionPropertiesDialog extends AssertionProper
     private void enableOrDisableComponents() {
         transmitTimeoutField.setEnabled(customTransmitTimeoutCheckBox.isSelected());
         receiveTimeoutField.setEnabled(customReceiveTimeoutCheckBox.isSelected());
+        connectionTimeoutField.setEnabled(connectionTimeOutCheckBox.isSelected());
         responseContextVariableField.setEnabled(saveAsContextVariableRadioButton.isSelected());
     }
 
@@ -155,6 +162,10 @@ public class SimpleRawTransportAssertionPropertiesDialog extends AssertionProper
         responseContentTypeField.setText(assertion.getResponseContentType());
 
         populateAndUpdateRequestSourceComboBox(assertion);
+
+        int connectionTimeout = assertion.getConnectionTimeoutMillis();
+        connectionTimeOutCheckBox.setSelected(connectionTimeout != DEFAULT_CONNECTION_TIMEOUT);
+        connectionTimeoutField.setText(String.valueOf(connectionTimeout));
 
         int writeTimeout = assertion.getWriteTimeoutMillis();
         customTransmitTimeoutCheckBox.setSelected(writeTimeout != DEFAULT_WRITE_TIMEOUT);
@@ -207,6 +218,7 @@ public class SimpleRawTransportAssertionPropertiesDialog extends AssertionProper
         assertion.setMaxResponseBytesText( responseLimitPanel.isSelected() ? responseLimitPanel.getValue() : Long.toString( DEFAULT_RESPONSE_SIZE_LIMIT ) );
         assertion.setWriteTimeoutMillis(customTransmitTimeoutCheckBox.isSelected() ?  Integer.parseInt(transmitTimeoutField.getText()) : DEFAULT_WRITE_TIMEOUT);
         assertion.setReadTimeoutMillis(customReceiveTimeoutCheckBox.isSelected() ? Integer.parseInt(receiveTimeoutField.getText()) : DEFAULT_READ_TIMEOUT);
+        assertion.setConnectionTimeoutMillis(connectionTimeOutCheckBox.isSelected() ? Integer.parseInt(connectionTimeoutField.getText()): DEFAULT_CONNECTION_TIMEOUT);
 
         return assertion;
     }

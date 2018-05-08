@@ -15,6 +15,9 @@
     <!-- Enable aop automatic proxy generation for pointcuts -->
     <aop:config/>
 
+    <!-- The presence of this bean indicates that admin services have been loaded -->
+    <bean name="adminSubsystemPresent" class="java.lang.Object"/>
+
     <!-- the internal rmi/ssl trust failue handler that allows connection to self -->
     <bean id="clusterSslTrustFailureHandler"
           class="com.l7tech.gateway.common.spring.remoting.ssl.CertificateTrustedTrustFailureHandler">
@@ -102,54 +105,6 @@
     RBAC Enforcement and other interceptors
     -===============================================================-->
 
-    <!--
-      RBAC pointcut is on any @Secured method of a bean that implements an @Administrative interface.
-    -->
-    <bean id="rbacPointcut" class="com.l7tech.server.util.AnnotationPointcut">
-        <constructor-arg index="0">
-            <list>
-                <value>com.l7tech.gateway.common.admin.Administrative</value>
-            </list>
-        </constructor-arg>
-        <constructor-arg index="1">
-            <list>
-                <value>com.l7tech.gateway.common.security.rbac.Secured</value>
-            </list>
-        </constructor-arg>
-        <constructor-arg index="2" value="true"/>
-        <constructor-arg index="3" value="30000"/>
-        <!-- inside transaction -->
-    </bean>
-
-    <bean id="rbacAdvice" class="com.l7tech.server.security.rbac.SecuredMethodInterceptor">
-        <constructor-arg ref="rbacServices"/>
-        <constructor-arg ref="entityFinder"/>
-    </bean>
-
-    <bean id="rbacAdvisor" class="org.springframework.aop.support.DefaultPointcutAdvisor">
-        <property name="pointcut" ref="rbacPointcut"/>
-        <property name="advice" ref="rbacAdvice"/>
-    </bean>
-
-    <bean id="zoneUpdateSecurityChecker" class="com.l7tech.server.security.rbac.ZoneUpdateSecurityCheckerImpl"/>
-
-    <!--
-      Administrative pointcut is on any bean that implements an @Administrative interface.
-    -->
-    <bean id="adminPointcut" class="com.l7tech.server.util.AnnotationPointcut">
-        <constructor-arg index="0">
-            <list>
-                <value>com.l7tech.gateway.common.admin.Administrative</value>
-            </list>
-        </constructor-arg>
-        <constructor-arg index="1">
-            <list/>
-        </constructor-arg>
-        <constructor-arg index="2" value="true"/>
-        <constructor-arg index="3" value="30000"/>
-        <!-- inside transaction -->
-    </bean>
-
     <!-- This should not be an autowire candidate otherwise it will interfere with the server config -->
     <bean id="auditingThrowsAdviceSwitchedConfig" class="com.l7tech.util.SwitchedConfig" autowire-candidate="false">
         <constructor-arg index="0" ref="serverConfig"/>
@@ -201,13 +156,6 @@
         <property name="order" value="5000"/>
     </bean>
 
-    <bean id="unsupportedExceptionThrowsAdvice" class="com.l7tech.server.util.UnsupportedExceptionsThrowsAdvice"/>
-    <bean id="unsupportedExceptionAdvisor" class="org.springframework.aop.support.DefaultPointcutAdvisor">
-        <property name="pointcut" ref="adminPointcut"/>
-        <property name="advice" ref="unsupportedExceptionThrowsAdvice"/>
-        <property name="order" value="5001"/>
-    </bean>
-
     <bean id="mysqlFailureThrowsAdvice" class="com.l7tech.server.util.MySqlFailureThrowsAdvice"/>
     <bean id="mysqlFailureAdvisor" class="org.springframework.aop.support.DefaultPointcutAdvisor">
         <property name="pointcut" ref="adminPointcut"/>
@@ -226,6 +174,17 @@
     <bean id="adminLoginHelper" class="com.l7tech.server.admin.AdminLoginHelper">
         <constructor-arg ref="adminSessionManager"/>
         <constructor-arg ref="serverConfig"/>
+    </bean>
+
+
+    <bean id="roleManagerHelper" class="com.l7tech.server.util.TypedMethodInvokingFactoryBean">
+        <property name="targetClass" value="com.l7tech.server.security.rbac.RoleManagerImpl"/>
+        <property name="targetMethod" value="setIdentitySource"/>
+        <property name="arguments">
+            <list>
+                <ref bean="adminSessionManager"/>
+            </list>
+        </property>
     </bean>
 
     <!--==============================================================-
@@ -432,10 +391,6 @@
         <constructor-arg ref="clusterNodeId"/>
     </bean>
 
-    <bean id="emailAdmin" class="com.l7tech.server.transport.email.EmailAdminImpl">
-        <constructor-arg ref="serverConfig"/>
-    </bean>
-
     <!-- kerberos admin servant -->
     <bean id="kerberosAdmin" class="com.l7tech.server.KerberosAdminImpl">
         <constructor-arg ref="clusterPropertyManager"/>
@@ -518,12 +473,6 @@
     <!-- Policy debug admin impl -->
     <bean id="debugAdmin" class="com.l7tech.server.stepdebug.DebugAdminImpl">
 
-    </bean>
-
-    <bean id="workQueueAdmin" class="com.l7tech.server.workqueue.WorkQueueManagerAdminImpl">
-        <constructor-arg ref="workQueueEntityManager"/>
-        <constructor-arg ref="rbacServices"/>
-        <constructor-arg ref="workQueueExecutorManager"/>
     </bean>
 
     <!-- scheduled task admin impl -->

@@ -52,7 +52,12 @@ public class XMPPConnectionEntity extends GenericEntity {
     public void setThreadpoolSize(int threadpoolSize) {
         this.threadpoolSize = threadpoolSize;
     }
-    
+
+    /**
+     * Returns bind address used for the connection.
+     * Here, 0.0.0.0 or null represents any bind address.
+     * @return bind address string.
+     */
     public String getBindAddress() {
         return bindAddress;
     }

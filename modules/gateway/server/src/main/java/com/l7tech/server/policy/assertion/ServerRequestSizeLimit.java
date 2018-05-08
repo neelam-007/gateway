@@ -1,5 +1,6 @@
 package com.l7tech.server.policy.assertion;
 
+import com.l7tech.common.io.ByteLimitInputStream;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.message.Message;
 import com.l7tech.common.mime.NoSuchPartException;
@@ -33,7 +34,6 @@ public class ServerRequestSizeLimit extends AbstractMessageTargetableServerAsser
                                               final AuthenticationContext authContext )
         throws IOException, PolicyAssertionException {
 
-
         long limit;
         try {
             limit = getLimit(context);
@@ -47,10 +47,16 @@ public class ServerRequestSizeLimit extends AbstractMessageTargetableServerAsser
             try {
                 message.getMimeKnob().setContentLengthLimit(limit);
                 messlen = message.getMimeKnob().getContentLength();
-            } catch(IOException e) {
+
+            } catch (ByteLimitInputStream.DataSizeLimitExceededException e) {
                 logAndAudit(AssertionMessages.MESSAGE_BODY_TOO_LARGE, assertion.getTargetName());
                 return AssertionStatus.FALSIFIED;
+
+            } catch (IOException e) {
+                logAndAudit(AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO, new String[] {e.getMessage()}, e);
+                return AssertionStatus.SERVER_ERROR;
             }
+
             if (messlen > limit) {
                 logAndAudit(AssertionMessages.MESSAGE_BODY_TOO_LARGE, assertion.getTargetName());
                 return AssertionStatus.FALSIFIED;

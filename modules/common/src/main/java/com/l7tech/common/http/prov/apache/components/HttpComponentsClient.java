@@ -55,6 +55,7 @@ import org.apache.http.protocol.HTTP;
 import org.apache.http.protocol.HttpContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.apache.http.protocol.RequestTargetHost;
 
 import javax.net.ssl.*;
 import java.io.*;
@@ -98,6 +99,7 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
     public static final String PROP_NTLM_DEFAULT_FLAGS = "commons.httpclient.ntlm.flags";
     public static final String PROP_TERMINATE_CONNECTION_WITHOUT_FIN = COMMONS_HTTP_CLIENT + ".terminateConnection";
     public static final String PROP_KEEP_ALIVE_TIMEOUT = COMMONS_HTTP_CLIENT + ".keepAliveTimeout";
+    public static final String HTTP_PROTOCOL_REDIRECT_LOCATION = "http.protocol.redirect-locations";
 
     public static final String DEFAULT_CREDENTIAL_CHARSET = "ISO-8859-1"; // see bugzilla #5729
     public static final int DEFAULT_CONNECT_TIMEOUT = ConfigFactory.getIntProperty( PROP_DEFAULT_CONNECT_TIMEOUT, 30000 );
@@ -677,6 +679,9 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
         }
 
         clientParams.setParameter(ClientPNames.HANDLE_REDIRECTS, params.isFollowRedirects());
+        if (params.isFollowRedirects()) {
+            state.removeAttribute(HTTP_PROTOCOL_REDIRECT_LOCATION);
+        }
         clientParams.setParameter(CoreConnectionPNames.SO_TIMEOUT, params.getReadTimeout()>=0 ? params.getReadTimeout() : timeout);
         clientParams.setParameter(ClientPNames.CONN_MANAGER_TIMEOUT, (long) (params.getConnectionTimeout() >= 0 ? params.getConnectionTimeout() : connectionTimeout));
         clientParams.setParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, (params.getConnectionTimeout() >= 0 ? params.getConnectionTimeout() : connectionTimeout));
@@ -721,6 +726,23 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
         } else if ( !proxyConfigured ) {
             client.getCredentialsProvider().clear();
             state.removeAttribute(ClientContext.AUTH_CACHE);
+        }
+        //SSG-12037: when the server does not support Host header we need to remove it by replacing the default RequestTargetHost interceptor
+        //with our custom one
+        if(params.isOmitHostHeader()) {
+            client.removeRequestInterceptorByClass(RequestTargetHost.class);
+            client.addRequestInterceptor(new HttpRequestInterceptor() {
+                @Override
+                public void process(HttpRequest request, HttpContext context) throws HttpException, IOException {
+                    if (request == null) {
+                        throw new IllegalArgumentException("HTTP request may not be null");
+                    }
+                    //remove the host headers if they exists
+                    if (request.containsHeader(HTTP.TARGET_HOST)) {
+                        request.removeHeaders(HTTP.TARGET_HOST);
+                    }
+                }
+            });
         }
     }
 

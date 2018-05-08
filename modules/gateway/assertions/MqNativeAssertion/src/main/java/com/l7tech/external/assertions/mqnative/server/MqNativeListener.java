@@ -45,6 +45,9 @@ import static java.text.MessageFormat.format;
  * All request messages are delegated to the handleMessage() method.
  */
 public abstract class MqNativeListener {
+    public static final String PROPERTIES_KEY_MQ_NATIVE_INBOUND_IS_OPEN_OPTIONS_USED = "MqNativeInboundIsOpenOptionsUsed";
+    public static final String PROPERTIES_KEY_MQ_NATIVE_INBOUND_OPEN_OPTIONS = "MqNativeInboundOpenOptions";
+
     private static final Logger logger = Logger.getLogger(MqNativeListener.class.getName());
 
     protected static final int MAXIMUM_OOPSES = 5;

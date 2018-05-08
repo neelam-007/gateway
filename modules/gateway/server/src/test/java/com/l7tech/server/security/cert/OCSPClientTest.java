@@ -1,13 +1,12 @@
 package com.l7tech.server.security.cert;
 
 import com.l7tech.common.TestDocuments;
-import com.l7tech.common.http.GenericHttpHeader;
-import com.l7tech.common.http.GenericHttpHeaders;
-import com.l7tech.common.http.HttpHeader;
+import com.l7tech.common.http.*;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.security.MockGenericHttpClient;
 import com.l7tech.security.cert.TestCertificateGenerator;
 import com.l7tech.security.types.CertificateValidationResult;
+import com.l7tech.test.BugId;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.Pair;
 import com.l7tech.util.TimeUnit;
@@ -19,7 +18,12 @@ import org.bouncycastle.asn1.x509.X509Extension;
 import org.bouncycastle.asn1.x509.X509Extensions;
 import org.bouncycastle.ocsp.*;
 import static org.junit.Assert.*;
+
+import org.junit.After;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.mockito.runners.MockitoJUnitRunner;
 
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
@@ -32,7 +36,15 @@ import java.util.Vector;
 /**
  * Unit test for OCSPClient
  */
+@RunWith(MockitoJUnitRunner.class)
 public class OCSPClientTest {
+
+    private MockGenericHttpClient mockClient;
+
+    @After
+    public void tearDown() throws Exception {
+        mockClient = null;
+    }
 
     @Test
     public void testOcspClientBasic() throws Exception {
@@ -113,6 +125,52 @@ public class OCSPClientTest {
         assertEquals( "Not revoked", CertificateValidationResult.OK, status.getResult() );
     }
 
+    @BugId("DE303090")
+    @Test
+    public void testOcspCloseConnection() throws Exception {
+        final X509Certificate subjectCert = TestDocuments.getWssInteropAliceCert();
+
+        final OCSPClient client = buildClientWithMockResponse(subjectCert, null, null, false);
+
+        MockGenericHttpClient.MockGenericHttpRequest spyRequest = Mockito.spy(mockClient.new MockGenericHttpRequest());
+        MockGenericHttpClient.CreateRequestListener createRequestListener = (method, params, request) -> spyRequest;
+        mockClient.setCreateRequestListener(createRequestListener);
+
+        GenericHttpResponse spyResponse = Mockito.spy(mockClient.new MockGenericHttpResponse());
+        Mockito.doAnswer(invocationOnMock -> spyResponse).when(spyRequest).getResponse();
+
+        OCSPClient.OCSPStatus status = client.getRevocationStatus(subjectCert, false, false);
+        assertEquals("Not revoked", CertificateValidationResult.OK, status.getResult());
+        Mockito.verify(spyRequest, Mockito.times(1)).close();
+        Mockito.verify(spyResponse, Mockito.times(1)).close();
+    }
+
+    @BugId("DE303090")
+    @Test
+    public void testOcspCloseConnectionWhenIOException() throws Exception {
+        final X509Certificate subjectCert = TestDocuments.getWssInteropAliceCert();
+
+        final OCSPClient client = buildClientWithMockResponse(subjectCert, null, null, false);
+
+        MockGenericHttpClient.MockGenericHttpRequest spyRequest = Mockito.spy(mockClient.new MockGenericHttpRequest());
+        MockGenericHttpClient.CreateRequestListener createRequestListener = (method, params, request) -> spyRequest;
+        mockClient.setCreateRequestListener(createRequestListener);
+
+        GenericHttpResponse spyResponse = Mockito.spy(mockClient.new MockGenericHttpResponse());
+        Mockito.doThrow(new GenericHttpException()).when(spyResponse).getInputStream();
+        Mockito.doAnswer(invocationOnMock -> spyResponse).when(spyRequest).getResponse();
+
+        OCSPClient.OCSPClientException ocspClientException = null;
+        try {
+            client.getRevocationStatus(subjectCert, false, false);
+        } catch (OCSPClient.OCSPClientException e) {
+            ocspClientException = e;
+        }
+        assertNotNull("Expected an OCSPClientException to be thrown", ocspClientException);
+        Mockito.verify(spyRequest, Mockito.times(1)).close();
+        Mockito.verify(spyResponse, Mockito.times(1)).close();
+    }
+
     private OCSPClient buildClientWithMockResponse( final X509Certificate subjectCert,
                                                     final byte[] responseNonceBytes,
                                                     final byte[] requestNonceBytes,
@@ -155,7 +213,7 @@ public class OCSPClientTest {
                 new GenericHttpHeader("Content-Type", "application/octet-stream"),
         };
         GenericHttpHeaders headers = new GenericHttpHeaders(responseHeaders);
-        MockGenericHttpClient mockClient =  new MockGenericHttpClient(200,
+        mockClient =  new MockGenericHttpClient(200,
                                      headers,
                                      ContentTypeHeader.parseValue( "application/octet-stream" ),
                                      (long)body.length,

@@ -2,7 +2,6 @@ package com.l7tech.gateway.common.custom;
 
 import com.l7tech.json.JSONFactory;
 import com.l7tech.policy.assertion.ext.message.CustomJsonData;
-
 import org.junit.Before;
 import org.junit.Test;
 
@@ -36,7 +35,7 @@ public class JsonDataToCustomConverterTest {
 
     @Test
     public void test() throws Exception {
-        final CustomJsonData jsonData = new JsonDataToCustomConverter(JSONFactory.getInstance().newJsonData(JSON_SOURCE));
+        final CustomJsonData jsonData = new JsonDataToCustomConverter(JSONFactory.INSTANCE.newJsonData(JSON_SOURCE));
 
         assertNotNull(jsonData);
         assertEquals(jsonData.getJsonData(), JSON_SOURCE);

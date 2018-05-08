@@ -11,7 +11,6 @@ import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.gateway.common.transport.jms.JmsConnection;
 import com.l7tech.gateway.common.transport.jms.JmsEndpoint;
-import com.l7tech.gateway.common.workqueue.WorkQueue;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.User;
@@ -102,6 +101,4 @@ public interface ExternalReferenceFinder {
     KeyValueStore getCustomKeyValueStore();
 
     CustomEntitySerializer getCustomKeyValueEntitySerializer(final String entitySerializerClassName);
-
-    WorkQueue getWorkQueue(Goid id) throws FindException;
 }

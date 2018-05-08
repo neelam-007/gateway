@@ -1,15 +1,16 @@
 package com.l7tech.console;
 
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.security.Version;
 import com.l7tech.gui.util.HelpUtil;
 import com.l7tech.security.prov.ProviderUtil;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.Pair;
 import com.l7tech.util.SyspropUtil;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.security.Provider;
-import java.security.Security;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -44,7 +45,9 @@ public class SsmApplicationHeavy extends SsmApplication  {
             throw new IllegalStateException("Policy Manager already running");
         }
 
-        installAdditionalSecurityProviders();
+        if (!isWebStart()) {
+            installAdditionalSecurityProviders();
+        }
 
         if (!isSuppressAutoLookAndFeel()) setAutoLookAndFeel();
         mainWindow = new MainWindow(this);
@@ -62,6 +65,11 @@ public class SsmApplicationHeavy extends SsmApplication  {
         });
     }
 
+    public boolean isWebStart() {
+
+        return false;
+    }
+
     public boolean isApplet() {
         return false;
     }
@@ -72,10 +80,7 @@ public class SsmApplicationHeavy extends SsmApplication  {
      * @param lookAndFeel a string specifying the name of the class that implements
      *                    the look and feel
      */
-    protected void setLookAndFeel
-      (String
-      lookAndFeel)
-    {
+    protected void setLookAndFeel(String lookAndFeel) {
         if (!isSuppressAutoLookAndFeel()) {
             setAutoLookAndFeel();
             return;
@@ -91,8 +96,7 @@ public class SsmApplicationHeavy extends SsmApplication  {
         }
 
         try {
-            Object lafObject =
-              Class.forName(lookAndFeel).newInstance();
+            final Object lafObject = Class.forName(lookAndFeel).newInstance();
             UIManager.setLookAndFeel((LookAndFeel)lafObject);
         } catch (Exception e) {
             lfSet = false;
@@ -115,8 +119,8 @@ public class SsmApplicationHeavy extends SsmApplication  {
      * The "Help Topics".
      * This procedure displays the help contents in the preferred browser for the system on which the SSM is running.
      */
-    public void showHelpTopicsRoot() {
-        HelpUtil.showHelpTopicsRoot( TopComponents.getInstance().getTopParent(), false );
+    public void showHelpTopicsRoot(@Nullable final Version gatewayVersion) {
+        HelpUtil.showHelpTopicsRoot(TopComponents.getInstance().getTopParent(), false, (gatewayVersion == null ? null : gatewayVersion.getMajor() + "" + gatewayVersion.getMinor()));
     }
 
     private void installAdditionalSecurityProviders() {
@@ -124,8 +128,7 @@ public class SsmApplicationHeavy extends SsmApplication  {
 
         final Provider provider = getCcjProvider();
         if (asFirstProvider) {
-            Security.removeProvider("WF");
-            Security.insertProviderAt(provider, 1);
+            ProviderUtil.configureCcjProvider(provider);
             log.info("Registering CryptoComply as most-preferred crypto provider");
         } else {
             log.info("Registering CryptoComply as additional crypto provider");

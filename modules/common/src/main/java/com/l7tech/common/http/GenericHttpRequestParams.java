@@ -58,6 +58,7 @@ public class GenericHttpRequestParams {
     private SSLContext sslContext;
     private String methodAsString;
     private boolean enableAutoChallenge = false;
+    private boolean omitHostHeader = false;
 
     // NOTE: Add any new fields to the copy constructor
 
@@ -646,4 +647,20 @@ public class GenericHttpRequestParams {
         this.enableAutoChallenge = enableAutoChallenge;
     }
 
+    /**
+     * check if the target should not receive the Host header. Host header is required according to HTTP 1.1 however
+     * it might be omitted in HTTP 1.0.
+     * @return
+     */
+    public boolean isOmitHostHeader() {
+        return omitHostHeader;
+    }
+
+    /**
+     * sets omit Host header condition
+     * @param omitHostHeader
+     */
+    public void setOmitHostHeader(boolean omitHostHeader) {
+        this.omitHostHeader = omitHostHeader;
+    }
 }

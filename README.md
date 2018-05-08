@@ -16,9 +16,9 @@ For example:
 The [UneasyRooster PR Validation](https://apim-teamcity.l7tech.com:8443/viewType.html?buildTypeId=ApiGateway_Utilities_PullRequestValidation_UneasyRoosterPrValidation)
 build is used to verify that any pull request targeting develop has it's referenced rally issue in an engineering completed state before the pull request can be closed. 
 Engineering completed state means the following:
-* Defects must have the defect state `Closed`
-* User Stories must have the schedule state `Accepted` or `Released`
-* Features must have the state `Done` or `Shipped`
+* Defects must have the Defect State `Closed` and Schedule State `Accepted` or `Released`. If the Ready flag is true the Schedule State `Completed` is accepted.
+* User Stories must have the Schedule State `Accepted` or `Released`. If the Ready flag is true the Schedule State `Completed` is accepted.
+* Features must have the State `Done` or `Shipped`. If the Ready flag is true the State `Developing` is accepted.
 
 ## Rerun a Pull Request Validation
 These are instructions if you need to rerun a pull request validation after a Rally Issue has been closed.

@@ -77,8 +77,6 @@ public enum EntityType implements Comparable<EntityType> {
 
     SERVICE_TEMPLATE("Service Template", true, true),
 
-    WORK_QUEUE("Work Queue", true, true),
-
     TRUSTED_ESM("Trusted ESM", true, true),
     TRUSTED_ESM_USER("Trusted ESM User", true, true),
 
@@ -107,6 +105,7 @@ public enum EntityType implements Comparable<EntityType> {
     POLICY_BACKED_SERVICE("Policy Backed Service", true, true),
     SERVER_MODULE_FILE("Server Module File", "Server Module Files", true, true),
     INTERFACE_TAG("Interface Tag", "Interface Tags", false, false),
+    AUDIT_CONFIG("Audit Configuration", "Audit Configuration", false, false),
     SOLUTION_KIT("Solution Kit", false, false),
     ;
 

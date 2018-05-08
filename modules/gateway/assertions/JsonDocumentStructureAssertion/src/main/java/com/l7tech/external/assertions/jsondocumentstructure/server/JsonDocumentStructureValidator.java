@@ -10,6 +10,7 @@ import static com.l7tech.external.assertions.jsondocumentstructure.server.JsonDo
 
 /**
  * @author Jamie Williams - jamie.williams2@ca.com
+ * @NotThreadSafe JsonDocumentStructureValidator
  */
 public class JsonDocumentStructureValidator {
     private long maxContainerDepth = Long.MAX_VALUE;
@@ -24,7 +25,11 @@ public class JsonDocumentStructureValidator {
     private boolean checkEntryNameLength = false;
     private boolean checkStringValueLength = false;
 
-    int currContainerDepth = 0;
+    /**
+     * @NotThreadSafe currContainerDepth object is modified by
+     * multiple methods during the process of JSON validation
+     */
+    private int currContainerDepth = 0;
 
     public void validate(InputStream inputStream)
             throws JsonDocumentStructureValidationException, InvalidJsonException, IOException {

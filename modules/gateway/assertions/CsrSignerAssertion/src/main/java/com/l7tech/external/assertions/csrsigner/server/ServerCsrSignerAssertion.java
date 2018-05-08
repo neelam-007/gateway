@@ -16,6 +16,7 @@ import com.l7tech.server.DefaultKey;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
+import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
@@ -27,7 +28,9 @@ import java.io.IOException;
 import java.security.PrivateKey;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.X509Certificate;
+import java.util.Map;
 import java.util.logging.Level;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * Server side implementation of the CsrSignerAssertion.
@@ -37,6 +40,7 @@ import java.util.logging.Level;
 public class ServerCsrSignerAssertion extends AbstractServerAssertion<CsrSignerAssertion> {
 
     private static final int MAX_CSR_SIZE = SyspropUtil.getInteger(ServerCsrSignerAssertion.class.getName() + ".maxCsrBytes", 200 * 1024);
+    private final String[] variablesUsed;
 
     @Inject
     SsgKeyStoreManager ssgKeyStoreManager;
@@ -47,10 +51,12 @@ public class ServerCsrSignerAssertion extends AbstractServerAssertion<CsrSignerA
 
     public ServerCsrSignerAssertion( final CsrSignerAssertion assertion ) throws PolicyAssertionException {
         super(assertion);
+        variablesUsed = assertion.getVariablesUsed();
     }
 
     public ServerCsrSignerAssertion( final CsrSignerAssertion assertion, final AuditFactory auditFactory ) throws PolicyAssertionException {
         super(assertion, auditFactory);
+        variablesUsed = assertion.getVariablesUsed();
     }
 
     public AssertionStatus checkRequest( final PolicyEnforcementContext context ) throws IOException, PolicyAssertionException {
@@ -82,16 +88,63 @@ public class ServerCsrSignerAssertion extends AbstractServerAssertion<CsrSignerA
 
             RsaSignerEngine signerEngine = JceProvider.getInstance().createRsaSignerEngine(caKey, caChain);
 
-            // TODO allow certificate generation parameters to be customized, particularly things like DN, expiry date, and digest algorithm
+            // Set the days until expiry of the certificate.
             CertGenParams params = new CertGenParams();
-            String certDNVariableName = assertion.getCertDNVariableName();
-            if (certDNVariableName != null && certDNVariableName.trim().length() > 0) {
-                final String certDN =  (String)context.getVariable(certDNVariableName);
-                if (certDN != null && certDN.trim().length() > 0) {
-                    params = new CertGenParams(new X500Principal(certDN), 365, false, null);
+            final Map<String, Object> varMap = context.getVariableMap(variablesUsed, getAudit());
+            final String daysUntilExpiry = assertion.getExpiryAgeDays();
+            int resolvedExpiryAge;
+
+            // Check if expiryAgeDays has been previously set.
+            if (StringUtils.isEmpty(daysUntilExpiry)) {
+                // daysUntilExpiry is a newly introduced field and will be null for policies saved with
+                // older version of this assertion.  For previously saved policies that have null values,
+                // populate the expiry age based on the original default logic.
+                if (StringUtils.isEmpty(assertion.getCertDNVariableName())) {
+                    resolvedExpiryAge = CsrSignerAssertion.DEFAULT_EXPIRY_AGE_DAYS_NO_DN_OVERRIDE;
+                } else {
+                    resolvedExpiryAge = CsrSignerAssertion.DEFAULT_EXPIRY_AGE_DAYS_DN_OVERRIDE;
+                }
+                params.setDaysUntilExpiry(resolvedExpiryAge);
+
+            } else {
+                // The expiry age was previously populated.  If context variable is present, resolve.
+                final String expiryAgeFromContextVar = ExpandVariables.process(assertion.getExpiryAgeDays(), varMap, getAudit());
+                if (StringUtils.isBlank(expiryAgeFromContextVar)) {
+                    // Could not resolve the context variable.
+                    logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, "Could not resolve the context variable "
+                            + "in the Expiry Age field or the resolved content is blank.");
+                    return AssertionStatus.FAILED;
+                } else {
+                    if (StringUtils.isNumeric(expiryAgeFromContextVar)) {
+                        resolvedExpiryAge = Integer.parseInt(expiryAgeFromContextVar);
+
+                        if ((resolvedExpiryAge < CsrSignerAssertion.MIN_CSR_AGE) || (resolvedExpiryAge > CsrSignerAssertion.MAX_CSR_AGE)) {
+                            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, CsrSignerAssertion.ERR_EXPIRY_AGE_MUST_BE_IN_RANGE);
+                            return AssertionStatus.FAILED;
+                        }
+                        params.setDaysUntilExpiry(resolvedExpiryAge);
+                    } else {
+                        logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, CsrSignerAssertion.ERR_EXPIRY_AGE_MUST_BE_IN_RANGE);
+                        return AssertionStatus.FAILED;
+                    }
                 }
             }
-            X509Certificate cert = (X509Certificate)signerEngine.createCertificate(csrBytes, params);
+
+            // TODO allow certificate generation parameters to be customized, particularly things like DN, expiry date, and digest algorithm
+            String certDNVariableName = assertion.getCertDNVariableName();
+            if (!StringUtils.isBlank(certDNVariableName)) {
+                final String certDN = (String) context.getVariable(certDNVariableName);
+                if (!StringUtils.isBlank(certDN)) {
+                    params = new CertGenParams(new X500Principal(certDN), resolvedExpiryAge, false, null); // input expiry age calculated in previous section.
+                    // In regular flow where the Override DN is not specified, the CertGetparam's notAfter was never set and
+                    // daysUntilExpiry was used to calculate the expiry date.
+                    // When the Overide Dn is specified, the CertGetparam's notAfter is set by the CertGenParams() constructor
+                    // and is used to calculate the certificate expiry date.   Therefore, in this flow,
+                    // params.setDaysUntilExpiry(resolvedExpiryAge) is not required.
+                }
+            }
+
+            X509Certificate cert = (X509Certificate) signerEngine.createCertificate(csrBytes, params);
 
             X509Certificate[] fullChain = new X509Certificate[caChain.length + 1];
             fullChain[0] = cert;
@@ -102,6 +155,9 @@ public class ServerCsrSignerAssertion extends AbstractServerAssertion<CsrSignerA
 
             return AssertionStatus.NONE;
 
+        } catch (NumberFormatException e) {
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, CsrSignerAssertion.ERR_EXPIRY_AGE_MUST_BE_IN_RANGE);
+            return AssertionStatus.FAILED;
         } catch (UnrecoverableKeyException e) {
             logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] { "Unable to access private key material: " + ExceptionUtils.getMessage(e) }, ExceptionUtils.getDebugException(e));
             return AssertionStatus.SERVER_ERROR;

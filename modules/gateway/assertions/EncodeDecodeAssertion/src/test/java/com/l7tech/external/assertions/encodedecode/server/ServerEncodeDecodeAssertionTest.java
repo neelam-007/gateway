@@ -8,9 +8,12 @@ import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.PartInfo;
 import com.l7tech.external.assertions.encodedecode.EncodeDecodeAssertion;
+import com.l7tech.gateway.common.audit.AssertionMessages;
+import com.l7tech.gateway.common.audit.TestAudit;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.variable.DataType;
+import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
@@ -18,12 +21,12 @@ import com.l7tech.test.BugId;
 import com.l7tech.util.Functions;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.IOUtils;
-import org.apache.commons.codec.binary.Base32;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.security.cert.X509Certificate;
+import java.util.Collections;
 
 /**
  * Test the EncodeDecodeAssertion.
@@ -75,6 +78,13 @@ public class ServerEncodeDecodeAssertionTest{
                     "EzU+0C10fM5Alxp13A8DPl8lvEOH98+YTJHRby67ZCdJnrxsOvDwWhkaqNG+Qq+s" +
                     "/LVuNWjFVXShZQWwgHXz03dQVR02bZUIZ86gxEHFwlHe7sd7CcGx+f7C3vKh+em3" +
                     "MtjdYVLpNqakCA==";
+
+    private TestAudit testAudit;
+
+    @Before
+    public void setup(){
+        testAudit = new TestAudit();
+    }
 
     @Test
     public void testEncodeMimePart() throws Exception {
@@ -340,6 +350,22 @@ public class ServerEncodeDecodeAssertionTest{
         assertNotNull( "Message output decode", outputDec );
     }
 
+    @Test
+    public void testUrlDecodeWithInvalidChars() throws Exception{
+        final String inputMsg = "{\"msg\": \"Hello Wo%rld\"}";
+
+        oneWayTest(AssertionStatus.FAILED, inputMsg, new Functions.UnaryVoid<EncodeDecodeAssertion>(){
+            @Override
+            public void call( final EncodeDecodeAssertion assertion ) {
+                assertion.setTransformType( EncodeDecodeAssertion.TransformType.URL_DECODE );
+                assertion.setTargetDataType( DataType.MESSAGE );
+            }
+        } );
+
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.ENCODE_DECODE_ERROR));
+        assertTrue(testAudit.isAuditPresentContaining("Error encoding or decoding: URLDecoder: Illegal hex characters in escape (%) pattern - For input string:"));
+    }
+
     private void roundTripTest( final EncodeDecodeAssertion.TransformType encode,
                                 final EncodeDecodeAssertion.TransformType decode,
                                 final boolean strict ) throws Exception {
@@ -399,23 +425,26 @@ public class ServerEncodeDecodeAssertionTest{
                                final Object data,
                                final Functions.UnaryVoid<EncodeDecodeAssertion> configCallback ) throws Exception {
         final EncodeDecodeAssertion assertion = new EncodeDecodeAssertion();
-        assertion.setSourceVariableName( "source" );
-        assertion.setTargetVariableName( "target" );
-        assertion.setTargetDataType( DataType.STRING );
-        if ( configCallback!=null ) configCallback.call( assertion );
+        assertion.setSourceVariableName("source");
+        assertion.setTargetVariableName("target");
+        assertion.setTargetDataType(DataType.STRING);
 
-        final PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext( null, null );
-        pec.setVariable( "source", data );
 
-        final ServerEncodeDecodeAssertion serverEncodeDecodeAssertion = new ServerEncodeDecodeAssertion( assertion );
+        if (configCallback != null) configCallback.call(assertion);
+
+        final PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(null, null);
+        pec.setVariable("source", data);
+
+        final ServerEncodeDecodeAssertion serverEncodeDecodeAssertion = new ServerEncodeDecodeAssertion(assertion);
+        ApplicationContexts.inject(serverEncodeDecodeAssertion, Collections.singletonMap("auditFactory", testAudit.factory()));
         AssertionStatus status;
         try {
-            status = serverEncodeDecodeAssertion.checkRequest( pec );
-        } catch ( AssertionStatusException e ) {
+            status = serverEncodeDecodeAssertion.checkRequest(pec);
+        } catch (AssertionStatusException e) {
             status = e.getAssertionStatus();
         }
-        assertEquals( "Decode status", expectedStatus, status );
+        assertEquals("Decode status", expectedStatus, status);
 
-        return status==AssertionStatus.NONE ? pec.getVariable( "target" ) : null;
+        return status == AssertionStatus.NONE ? pec.getVariable("target") : null;
     }
 }

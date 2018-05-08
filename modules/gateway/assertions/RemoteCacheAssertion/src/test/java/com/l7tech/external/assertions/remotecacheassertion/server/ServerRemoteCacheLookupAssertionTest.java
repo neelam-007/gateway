@@ -75,7 +75,7 @@ public class ServerRemoteCacheLookupAssertionTest {
 
         PolicyEnforcementContext context = makeContext("<redis_test/>", "<response />");
 
-        RedisRemoteCache redisRemoteCache = new RedisRemoteCache(entity, redisClient, redisPool, redisCluster);
+        RedisRemoteCache redisRemoteCache = new RedisRemoteCache(entity, redisPool, redisCluster);
 
         when(rcManagerImpl.getRemoteCache(Mockito.any(Goid.class))).thenReturn(redisRemoteCache);
         when(redisPool.getResource()).thenReturn(redisClient);
@@ -104,7 +104,7 @@ public class ServerRemoteCacheLookupAssertionTest {
         properties.put(RedisRemoteCache.PROPERTY_PASSWORD, null);
         entity.setProperties(properties);
 
-        RedisRemoteCache redisRemoteCache = new RedisRemoteCache(entity, redisClient, redisPool, redisCluster);
+        RedisRemoteCache redisRemoteCache = new RedisRemoteCache(entity, redisPool, redisCluster);
 
         PolicyEnforcementContext context = makeContext("<redis_test/>", "<response />");
 

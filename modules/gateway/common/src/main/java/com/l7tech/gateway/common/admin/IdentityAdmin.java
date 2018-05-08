@@ -33,16 +33,6 @@ public interface IdentityAdmin {
     String ROLE_NAME_PATTERN = RbacAdmin.ROLE_NAME_PREFIX + " {0} " + ROLE_NAME_TYPE_SUFFIX + RbacAdmin.ROLE_NAME_OID_SUFFIX;
 
     /**
-     * Retrieve the server admin protocol version string.
-     *
-     * @return the server admin protocol version string, ie "20040603".  Never null
-     */
-    @Transactional(propagation = Propagation.SUPPORTS)
-    @Administrative(licensed = false)
-    @Secured(stereotype = UNCHECKED_WIDE_OPEN)
-    String echoVersion();
-
-    /**
      * Retrieve all available identity provider configurations.  Every {@link com.l7tech.identity.IdentityProvider} has one and only one
      * {@link com.l7tech.identity.IdentityProviderConfig}, and each identity provider configuration belongs to one and only one
      * identity provider.

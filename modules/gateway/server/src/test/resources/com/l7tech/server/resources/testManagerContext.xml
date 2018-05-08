@@ -187,4 +187,11 @@
     </bean>
 
     <bean id="solutionKitManager" class="com.l7tech.server.solutionkit.SolutionKitManagerImpl" parent="hibernateBean" />
+
+    <bean id="jdbcConnectionManager" class="com.l7tech.server.jdbc.JdbcConnectionManagerImpl" parent="hibernateBean"/>
+
+    <bean id="postStartupApplicationListenerRegistration" class="com.l7tech.server.util.PostStartupApplicationListener$StartupListenerRegistration" init-method="start"/>
+
+    <bean id="postStartupTransactionalApplicationListenerRegistration" class="com.l7tech.server.util.PostStartupTransactionalApplicationListener$StartupListenerRegistration" init-method="start"/>
+
 </beans>

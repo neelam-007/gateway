@@ -1,5 +1,6 @@
 package com.l7tech.server.siteminder;
 
+import com.ca.siteminder.SiteMinderApiClassException;
 import com.ca.siteminder.SiteMinderLowLevelAgent;
 import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
 import com.l7tech.objectmodel.FindException;
@@ -83,6 +84,20 @@ public class SiteMinderConfigurationManagerImplTest {
         assertEquals("10.7.34.34", smConfig.getServers().get(1).serverIpAddress);
         assertEquals("10.7.34.33", smConfig.getServers().get(2).serverIpAddress);
 
+    }
+
+    @Ignore("Requires SiteMinder connection")
+    @Test
+    public void testValidSiteMinderAgentConfig() throws FindException, SiteMinderApiClassException {
+        manager.validateSiteMinderConfiguration(manager.getSiteMinderConfiguration("aw80"));
+    }
+
+    @Ignore("Requires SiteMinder connection")
+    @Test (expected = SiteMinderApiClassException.class)
+    public void testInvalidSiteMinderAgentConfig() throws FindException, SiteMinderApiClassException {
+        SiteMinderConfiguration smConfig = manager.getSiteMinderConfiguration("aw80");
+        smConfig.setSecret("This is invalid secret");
+        manager.validateSiteMinderConfiguration(smConfig);
     }
 
 }

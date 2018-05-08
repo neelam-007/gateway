@@ -47,7 +47,6 @@
         <dependency org="opensymphony" name="quartz" rev="1.6.2" force="true" conf="optional->compile(*),master(*)"/>
         <dependency org="hsqldb" name="hsqldb" rev="1.8.0.10" force="true" conf="test->runtime(*),master(*)"/>
         <dependency org="javax.activation" name="activation" rev="1.1" force="true" conf="provided->compile(*),provided(*),runtime(*),master(*)"/>
-        <dependency org="javax.mail" name="mail" rev="1.4" force="true" conf="optional->compile(*),master(*)"/>
         <dependency org="net.sf.ehcache" name="ehcache" rev="1.6.2" force="true" conf="optional->compile(*),master(*)"/>
         <dependency org="jasperreports" name="jasperreports" rev="2.0.5" force="true" conf="optional->compile(*),master(*)">
             <exclude org="bouncycastle" module="bctsp-jdk14" name="*" type="*" ext="*" conf="" matcher="exact"/>

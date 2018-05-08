@@ -56,13 +56,12 @@ public class RedisRemoteCacheTest {
         when(redisClient.isConnected()).thenReturn(Boolean.TRUE);
         when(redisClient.del(cacheKey)).thenReturn(1L);
 
-        redisRemoteCache = new RedisRemoteCache(clientEntity, redisClient, redisPool, redisCluster);
+        redisRemoteCache = new RedisRemoteCache(clientEntity, redisPool, redisCluster);
         redisRemoteCache.remove(cacheKey);
 
         verify(redisClient).del(cacheKey);
         verify(redisCluster, times(0)).del(cacheKey);
-        verify(redisClient).disconnect();
-        verify(redisPool).returnResourceObject(redisClient);
+        verify(redisClient).close();
     }
 
     /**
@@ -72,13 +71,12 @@ public class RedisRemoteCacheTest {
     public void testRemoveFromRedisCluster() throws Exception {
         when(redisCluster.del(cacheKey)).thenReturn(1L);
 
-        redisRemoteCache = new RedisRemoteCache(clusterEntity, redisClient, redisPool, redisCluster);
+        redisRemoteCache = new RedisRemoteCache(clusterEntity, redisPool, redisCluster);
         redisRemoteCache.remove(cacheKey);
 
         verify(redisCluster).del(cacheKey);
         verify(redisClient, times(0)).del(cacheKey);
-        verify(redisClient, times(0)).disconnect();
-        verify(redisPool, times(0)).returnResourceObject(redisClient);
+        verify(redisClient, times(0)).close();
     }
 
     /**
@@ -86,13 +84,9 @@ public class RedisRemoteCacheTest {
      */
     @Test
     public void testRedisCacheShutdown() throws Exception {
-        when(redisClient.isConnected()).thenReturn(Boolean.TRUE);
-
-        redisRemoteCache = new RedisRemoteCache(clientEntity, redisClient, redisPool, redisCluster);
+        redisRemoteCache = new RedisRemoteCache(clientEntity, redisPool, redisCluster);
         redisRemoteCache.shutdown();
 
-        verify(redisClient).disconnect();
-        verify(redisPool).returnResourceObject(redisClient);
         verify(redisCluster).close();
         verify(redisPool).close();
     }
@@ -107,14 +101,13 @@ public class RedisRemoteCacheTest {
         when(redisCluster.set(anyString(), anyString())).thenReturn("OK");
         when(redisCluster.expire(anyString(), anyInt())).thenReturn(0L);
 
-        redisRemoteCache = new RedisRemoteCache(clusterEntity, redisClient, redisPool, redisCluster);
+        redisRemoteCache = new RedisRemoteCache(clusterEntity, redisPool, redisCluster);
         redisRemoteCache.set(cacheKey, data, 0);
 
         verify(redisCluster).set(anyString(), anyString());
         verify(redisCluster).expire(anyString(), anyInt());
         verify(redisPool, times(0)).getResource();
         verify(redisClient, times(0)).get(cacheKey);
-        verify(redisPool, times(0)).returnResourceObject(redisClient);
         verify(redisClient, times(0)).disconnect();
     }
 
@@ -129,15 +122,14 @@ public class RedisRemoteCacheTest {
         when(redisClient.set(anyString(), anyString())).thenReturn("OK");
         when(redisClient.expire(anyString(), anyInt())).thenReturn(0L);
 
-        redisRemoteCache = new RedisRemoteCache(clientEntity, redisClient, redisPool, redisCluster);
+        redisRemoteCache = new RedisRemoteCache(clientEntity, redisPool, redisCluster);
         redisRemoteCache.set(cacheKey, data, 0);
 
         verify(redisPool).getResource();
         verify(redisClient).set(anyString(), anyString());
         verify(redisClient).expire(anyString(), anyInt());
         verify(redisClient).set(anyString(), anyString());
-        verify(redisPool).returnResourceObject(redisClient);
-        verify(redisClient).disconnect();
+        verify(redisClient).close();
     }
 
     /**
@@ -149,13 +141,12 @@ public class RedisRemoteCacheTest {
         when(redisClient.isConnected()).thenReturn(Boolean.TRUE);
         when(redisClient.get(cacheKey)).thenReturn("\u0000\u0000\u0000\u0016text/xml;charset=UTF-8<redis_test/>");
 
-        redisRemoteCache = new RedisRemoteCache(clientEntity, redisClient, redisPool, redisCluster);
+        redisRemoteCache = new RedisRemoteCache(clientEntity, redisPool, redisCluster);
         redisRemoteCache.get(cacheKey);
 
         verify(redisClient).get(cacheKey);
         verify(redisPool).getResource();
-        verify(redisPool).returnResourceObject(redisClient);
-        verify(redisClient).disconnect();
+        verify(redisClient).close();
         verify(redisCluster, times(0)).get(cacheKey);
     }
 
@@ -166,14 +157,13 @@ public class RedisRemoteCacheTest {
     public void testRedisClusterCacheLookupSuccess() throws Exception {
         when(redisCluster.get(cacheKey)).thenReturn("\u0000\u0000\u0000\u0016text/xml;charset=UTF-8<redis_test/>");
 
-        redisRemoteCache = new RedisRemoteCache(clusterEntity, redisClient, redisPool, redisCluster);
+        redisRemoteCache = new RedisRemoteCache(clusterEntity, redisPool, redisCluster);
         redisRemoteCache.get(cacheKey);
 
         verify(redisCluster).get(cacheKey);
         verify(redisClient, times(0)).get(cacheKey);
         verify(redisPool, times(0)).getResource();
-        verify(redisPool, times(0)).returnResourceObject(redisClient);
-        verify(redisClient, times(0)).disconnect();
+        verify(redisClient, times(0)).close();
     }
 
     /**

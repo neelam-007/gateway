@@ -216,8 +216,10 @@ public class ManageWebSocketConnectionsDialog extends JDialog {
                     if (ws.getName().equals(connection.getName())) { //can't have a matching name
                         return false;
                     }
-                    if (ws.getInboundListenPort() == connection.getInboundListenPort()) {
-                        return false;
+                    if (!connection.isOutboundOnly()) {
+                        if (ws.getInboundListenPort() == connection.getInboundListenPort()) {
+                            return false;
+                        }
                     }
                 }
             }

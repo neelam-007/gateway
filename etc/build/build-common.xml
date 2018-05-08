@@ -28,10 +28,10 @@
     <property name="ivy.file" value="${basedir}/ivy.xml"/>
 
 	<property name="file.extension" value="jar"/>
-    <property name="jar.sign.pattern" value="*.${file.extension}"/>
-    <property name="jar.file" value="${build.dir}/${ant.project.name}.${file.extension}"/>
-    <property name="jar.file.unsigned" value="${build.dir}/${ant.project.name}-unsigned.${file.extension}"/>
-    <property name="jar.file.test" value="${build.dir}/${ant.project.name}-test.${file.extension}"/>
+    <property name="jar.sign.pattern" value="unsigned/*.${file.extension}"/>
+    <property name="jar.file" value="${build.dir}/jar/${ant.project.name}.${file.extension}"/>
+    <property name="jar.file.unsigned" value="${build.dir}/unsigned/${ant.project.name}.${file.extension}"/>
+    <property name="jar.file.test" value="${build.dir}/test/${ant.project.name}.${file.extension}"/>
     <property name="main.class.name" value="${ant.project.name}.Main"/>
 
     <property name="module.version.default.target" value="1.0"/>
@@ -112,7 +112,12 @@
                 <compilerarg value="-Xlint${module.compile.xlint}" compiler="modern"/>
                 <compilerarg value="-Xlint:-serial" compiler="modern"/>
                 <compilerarg value="-Xlint:-path" compiler="modern"/>
-                <classpath refid="lib.path.id"/>
+                <classpath >
+					<path>
+						<fileset dir="${java.home}/lib" includes="javaws.jar" />
+					</path>
+                    <path refid="lib.path.id"/>
+				</classpath>
             </javac>
         </presetdef>
 
@@ -178,6 +183,7 @@
                     <fileset dir="${java.home}/lib/ext">
                         <include name="*.jar"/>
                     </fileset>
+					<fileset dir="${java.home}/lib" includes="javaws.jar" />
                     <path refid="lib.obfuscate.path.id"/>
                 </path>
                 <pathconvert property="lib.obfuscate.path.text" targetos="unix" pathsep="&quot;${line.separator}&quot;" refid="full.obfuscate.path.id"/>
@@ -210,7 +216,7 @@
           Modules JAR signing task with presets
         -->
         <presetdef name="sign-jar">
-            <signjar keystore="${src.root}/etc/ssgKeyStore" alias="signer6" storepass="password" jar="${jar.file}">
+            <signjar keystore="${src.root}/etc/ssgKeyStore" alias="signer7" storepass="password" jar="${jar.file}">
                 <path>
                     <fileset dir="${build.dir}" includes="${jar.sign.pattern}" />
                 </path>
@@ -226,11 +232,12 @@
 			<attribute name="access.password" default="szN3UvJzG-E.vddYvZ1L9WThnMe4D2ijVw"/>
 			<attribute name="load.password" default="szN3UvJzG-E.vddYvZ1L9WThnMe4D2ijVw"/>
 			<attribute name="skarSigner" default="${src.root}/modules/internal/build/SkarSigner.jar"/>
-			<attribute name="input" default="${build.dir}/${ant.project.name}.${file.extension}"/>
-			<attribute name="output" default="${build.dir}/${ant.project.name}.s${file.extension}"/>
+			<attribute name="input" default="${build.dir}/${file.extension}/${ant.project.name}.${file.extension}"/>
+			<attribute name="output" default="${build.dir}/s${file.extension}/${ant.project.name}.s${file.extension}"/>
 			<sequential>
 				<echo level="info">Signing @{input} as @{output} using key @{keystore}</echo>
-				<java jar="@{skarSigner}" fork="true" failonerror="true">
+                <mkdir dir="${build.dir}/s${file.extension}" />
+                <java jar="@{skarSigner}" fork="true" failonerror="true">
 					<arg line="sign"/>
 					<arg line="-f &quot;@{keystore}&quot;"/>
 					<arg line="-p &quot;@{access.password}&quot;"/>
@@ -248,10 +255,11 @@
 			<!-- Defaults that could be overridden -->
 			<attribute name="skarSigner" default="${src.root}/modules/internal/build/SkarSigner.jar"/>
 			<attribute name="assertion" default="${ant.project.name}"/>
-			<attribute name="input" default="${build.dir}/${ant.project.name}.s${file.extension}"/>
-			<attribute name="output" default="${build.dir}/${ant.project.name}.s${file.extension}.xml"/>
+			<attribute name="input" default="${build.dir}/s${file.extension}/${ant.project.name}.s${file.extension}"/>
+			<attribute name="output" default="${build.dir}/s${file.extension}.xml/${ant.project.name}.s${file.extension}.xml"/>
 			<sequential>
 				<echo level="info">Generate RESTman XML for @{input} as @{output}</echo>
+                <mkdir dir="${build.dir}/s${file.extension}.xml" />
 				<java jar="@{skarSigner}" fork="true" failonerror="true">
 					<arg line="genSmfXml"/>
 					<arg line="-n &quot;@{assertion}&quot;"/>
@@ -364,7 +372,7 @@
     <target name="retrieve" depends="init">
         <ivy-resolve conf="*"/>
         <ivy:retrieve
-                pattern="${build.dir}/repository/[organisation]/[artifact]-[revision].[ext]"
+                pattern="${build.dir}/repository/[organisation]/[artifact]-[revision](-[classifier]).[ext]"
                 ivypattern="${build.dir}/repository/[organisation]/[module]-ivy-[revision].xml"/>
     </target>
 
@@ -442,7 +450,14 @@
         <module-javac srcdir="${src.main.java.dir}" destdir="${classes.main.dir}"/>
     </target>
     <target name="compile-main-forms" if="module.source.available" unless="module.skip.forms" depends="compile-main-init, compile-main-java">
-        <module-javac2 srcdir="${src.main.java.dir}" destdir="${classes.main.dir}" classpathref="lib.path.id"/>
+        <module-javac2 srcdir="${src.main.java.dir}" destdir="${classes.main.dir}">
+		<classpath >
+			<path>
+				<fileset dir="${java.home}/lib" includes="javaws.jar" />
+			</path>
+			<path refid="lib.path.id"/>
+		</classpath>
+		</module-javac2>
     </target>
     <target name="compile-main-jasper" if="module.jasper.available" depends="compile-main-init, compile-main-java">
         <module-jrc srcdir="${src.main.java.dir}" destdir="${classes.main.dir}" classpathref="lib.path.id"/>
@@ -516,7 +531,7 @@
 
 		<jacoco:coverage destfile="build/jacoco.exec">
 			<junit printsummary="yes"
-				   haltonfailure="yes"
+				   haltonfailure="no"
 				   fork="on"
 				   forkmode="once"
 				   errorproperty="test.error"
@@ -546,7 +561,7 @@
 					 Example: -Dtest.migration.waitTimeMinutes=15 -->
 					<propertyref name="test.migration.waitTimeMinutes"/>
 					<!-- use this property to set the current code signing certificate inside /etc/ssgKeyStore
-					 Example: -Dcode.signer.cert.alias=signer6 -->
+					 Example: -Dcode.signer.cert.alias=signer7 -->
 					<propertyref name="code.signer.cert.alias"/>
 					<!-- use this property to tweak the code signing certificate expiry period (in days) threshold
 					nightly builds will fail when the current code signing certificate already expired or will expire within the specified threshold
@@ -562,9 +577,9 @@
 			</junit>
 		</jacoco:coverage>
 
-        <!-- Fail on error or failure -->
-        <fail if="test.failure">One or more JUnit tests failed.</fail>
-        <fail if="test.error">One or more JUnit tests exited due to error.</fail>
+        <!-- Does not fail on runtime error and test failure -->
+        <!-- <fail if="test.failure">One or more JUnit tests failed.</fail> -->
+        <!-- <fail if="test.error">One or more JUnit tests exited due to error.</fail> -->
     </target>
 
     <!--
@@ -604,14 +619,14 @@
     </target>
     <target name="package.alt.dependencies.retrieve" depends="package.alt.dependencies.resolve" if="module.resolve.alternatives" unless="module.package.dependencies.skip">
         <mkdir dir="${deps.alt.dir}"/>
-        <ivy:retrieve pattern="${deps.alt.dir}/[artifact]-[revision].[ext]"/>
+        <ivy:retrieve pattern="${deps.alt.dir}/[artifact]-[revision](-[classifier]).[ext]"/>
     </target>
     <target name="package.dependencies.resolve" depends="init">
         <ivy-resolve conf="runtime"/>
     </target>
     <target name="package.dependencies.retrieve" depends="package.dependencies.resolve" unless="module.package.dependencies.skip">
         <mkdir dir="${deps.dir}"/>
-        <ivy:retrieve pattern="${deps.dir}/[artifact]-[revision].[ext]"/>
+        <ivy:retrieve pattern="${deps.dir}/[artifact]-[revision](-[classifier]).[ext]"/>
     </target>
     <target name="package.dependencies" depends="package.alt.dependencies.retrieve, package.dependencies.retrieve" unless="module.package.dependencies.skip"/>
     <target name="package.classpath" if="module.main">
@@ -730,7 +745,7 @@
         <!--pubrevision="${module.version.target}"-->
         <!--status="integration"-->
         <!--/>-->
-        <ivy:publish artifactspattern="${build.dir}/[artifact].[ext]"
+        <ivy:publish artifactspattern="${build.dir}/[type]/[artifact].[ext]"
                      resolver="idea"
                      haltonmissing="false"
                      warnonmissing="false"
@@ -765,7 +780,14 @@
             <param name="scope" expression="${module.idea.dependencies.scope}"/>
         </xslt>
     </target>
-	
+
+    <target name="enable-m2local-snapshot" description="Enable publish of jars and rpms to local m2 repository">
+        <echo level="info">Enabling publishing of integration (snapshot) to local m2 repo.</echo>
+        <property name="publish.jar.target" value="local-m2"/>
+        <property name="publish.status" value="integration"/>
+        <property name="suffix.snapshot" value="-SNAPSHOT"/>
+    </target>
+
 	<!--
 	-->
     <target name="enable-snapshot" description="Enable publish of jars and rpms to Artifactory">
@@ -791,27 +813,27 @@
     <!--
 		Run package, then publish locally
     -->
-    <target name="publish" depends="info, clean, package" description="Publish this project to the local Ivy repository">
-        <!-- specify conf to publish and skip the test conf -->
-        <ivy:publish artifactspattern="${build.dir}/[artifact].[ext]"
+    <target name="publish" depends="info, clean, package, packagetests" description="Publish this project to the local Ivy repository">
+        <!-- specify conf to publish -->
+        <ivy:publish artifactspattern="${build.dir}/[type]/[artifact].[ext]"
                      module="${ant.project.name}"
-                     conf="default, master, master-unsigned, compile, runtime, optional, core, client, skarsigner"
+                     conf="default, master, master-unsigned, compile, test, runtime, optional, core, client, skarsigner"
                      resolver="shared"
                      pubrevision="${version}"
                      overwrite="true"
 					 haltonmissing="false"/>
         <echo message="project ${ant.project.name} local published with version ${version}"/>
     </target>
-    
+
 	<!--
 		Assume that package is ready. Publish locally, then try to publish to artifactory
     -->
     <target name="publish-only" depends="version" description="Publish this project to the local Ivy repository">
         <antcall target="publish-artifactory-init"/>
-        <!-- specify conf to publish and skip the test conf -->
-        <ivy:publish artifactspattern="${build.dir}/[artifact].[ext]"
+        <!-- specify conf to publish conf -->
+        <ivy:publish artifactspattern="${build.dir}/[type]/[artifact].[ext]"
                      module="${ant.project.name}"
-                     conf="default, master, master-unsigned, compile, runtime, optional, core, client, skarsigner"
+                     conf="default, master, master-unsigned, compile, test, runtime, optional, core, client, skarsigner"
                      resolver="shared"
                      pubrevision="${version}${suffix.snapshot}"
                      overwrite="true"
@@ -825,18 +847,27 @@
     -->
     <target name="publish-artifactory-init" if="publish.jar.target" description="Resolve ivy dependencies and create pom file to prepare for publishing to Artifactory">
         <property name="publish.status" value="integration"/> <!-- if publish.status is not set from "enable-snapshot or enable-release", use default value of integration -->
-        <ivy:resolve file="ivy.xml" conf="default, master, compile, runtime, optional, core, pom, skarsigner"/>
-        <ivy:deliver deliverpattern="${build.dir}/ivy.xml" pubrevision="${version}${suffix.snapshot}" status="${publish.status}"/>
-        <ivy:makepom ivyfile="${build.dir}/ivy.xml" pomfile="${build.dir}/${ant.project.name}.pom" />
+        <ivy:resolve file="ivy.xml" conf="default, master, compile, test, runtime, optional, core, pom, skarsigner"/>
+        <ivy:deliver deliverpattern="${build.dir}/ivy/ivy.xml" pubrevision="${version}${suffix.snapshot}" status="${publish.status}"/>
+        <ivy:makepom ivyfile="${build.dir}/ivy/ivy.xml" pomfile="${build.dir}/pom/${ivy.module}.pom">
+            <mapping conf="default" scope="compile"/>
+            <mapping conf="master" scope="compile"/>
+            <mapping conf="compile" scope="compile"/>
+            <mapping conf="test" scope="test"/>
+            <mapping conf="runtime" scope="runtime"/>
+            <mapping conf="optional" scope="optional"/>
+            <mapping conf="core" scope="compile"/>
+            <mapping conf="skarsigner" scope="compile"/>
+        </ivy:makepom>
     </target>
 
     <!--
 		Publish to artifactory if publish.jar.target is set to an artifactory resolver
     -->
     <target name="publish-artifactory" if="publish.jar.target" description="Publish this project to Artifactory repository">
-        <ivy:publish artifactspattern="${build.dir}/[artifact].[ext]"
+        <ivy:publish artifactspattern="${build.dir}/[type]/[artifact].[ext]"
                      module="${ant.project.name}"
-                     conf="default, master, optional, core, pom, skarsigner"
+                     conf="default, master, pom, core, skarsigner, optional, test"
                      resolver="${publish.jar.target}"
                      pubrevision="${version}"
                      overwrite="true"
@@ -844,41 +875,7 @@
                      publishivy="false"/>
         <echo message="project ${ant.project.name} artifactory published with version ${version}"/>
     </target>
-	
-    <!--
-    -->
-    <target name="publish-all" depends="info, clean, package, packagetests"
-            description="Publish all artifacts for this project in the Ivy repository">
-        <ivy:publish artifactspattern="${build.dir}/[artifact].[ext]"
-                     module="${ant.project.name}"
-                     conf="default, master, master-unsigned, compile, test, runtime, optional, core, client, skarsigner"
-                     resolver="shared"
-                     pubrevision="${version}"
-                     overwrite="true"
-					 haltonmissing="false"/>
-        <echo message="project ${ant.project.name} released with version ${version}"/>
-		<!-- <antcall target="publish-skarsigner"/> -->
-    </target>
 
-    <target name="skiptests">
-        <property name="module.skip.tests" value="true"/>
-    </target>
-
-    <!--
-    -->
-    <target name="publish-all-quick" depends="info, clean, skiptests, package, packagetests"
-            description="Publish all artifacts for this project in the Ivy repository (Skip tests)">
-        <ivy:publish artifactspattern="${build.dir}/[artifact].[ext]"
-                     module="${ant.project.name}"
-                     conf="default, master, master-unsigned, compile, test, runtime, optional, core, client, skarsigner"
-                     resolver="shared"
-                     pubrevision="${version}"
-                     overwrite="true"
-					 haltonmissing="false"/>
-        <echo message="project ${ant.project.name} released with version ${version}"/>
-		<!-- <antcall target="publish-skarsigner"/> -->
-    </target>
-	
     <!--
     -->
     <target name="clean" description="Clean the project">

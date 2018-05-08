@@ -5,6 +5,7 @@ import com.l7tech.gateway.common.mapping.MessageContextMapping;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.PersistentEntity;
+import com.l7tech.util.NonObfuscatable;
 
 import java.util.logging.Logger;
 import java.util.List;
@@ -156,6 +157,7 @@ class ServiceMetrics {
         return new MetricsCollectorSet( PersistentEntity.DEFAULT_GOID, startTime, endTime, collector, Collections.<MetricsDetailKey,MetricsCollector>emptyMap() );
     }
 
+    @NonObfuscatable
     static class MetricsDetailKey {
         private final String operation;
         private final Goid userProviderId;
@@ -290,6 +292,7 @@ class ServiceMetrics {
         }
     }
 
+    @NonObfuscatable
     static class MetricsCollector {
         private final long startTime;
         private int _numAttemptedRequest;

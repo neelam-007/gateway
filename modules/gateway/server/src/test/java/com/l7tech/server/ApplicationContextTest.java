@@ -49,10 +49,13 @@ public class ApplicationContextTest  {
 
     private static final String[] CONTEXTS = {
         "com/l7tech/server/resources/adminContext.xml",
+        "com/l7tech/server/resources/rbacContext.xml",
         "com/l7tech/server/resources/dataAccessContext.xml",
         "com/l7tech/server/resources/standardDbContext.xml",
         "com/l7tech/server/resources/ssgApplicationContext.xml" ,
-        "com/l7tech/server/resources/admin-servlet.xml"
+        "com/l7tech/server/resources/admin-servlet.xml",
+        // TODO: remove the component specific contexts
+        "com/l7tech/server/resources/uddiRuntimeContext.xml"
     };
 
     private static final Set<String> NON_ADMIN_PROXY_BEANS = Collections.emptySet();
@@ -61,7 +64,7 @@ public class ApplicationContextTest  {
     private static final Set<String> NON_SECURED_BEANS = set( "customAssertionRegistrar" );
     private static final Set<String> TRANSACTIONAL_GETTER_BLACKLIST = set( "auditAdmin", "serviceAdmin", "trustedCertAdmin", "emailListenerAdmin", "clusterStatusAdmin", "jdbcAdmin", "siteMinderAdmin", "cassandraAdmin", "solutionKitAdmin");
     //This is a set of getter methods to ignore when checking for getter read only transactional. The format is 'beanId.methodName'
-    private static final Set<String> TRANSACTIONAL_GETTER_METHOD_BLACKLIST = set("resourceAdmin.getJobStatus", "resourceAdmin.getJobResult", "workQueueAdmin.getJobStatus", "workQueueAdmin.getJobResult");
+    private static final Set<String> TRANSACTIONAL_GETTER_METHOD_BLACKLIST = set("resourceAdmin.getJobStatus", "resourceAdmin.getJobResult");
     private static final Set<String> TRANSACTION_ROLLBACK_WHITELIST = set( "adminLogin", "clusterIDManager", "counterManager", "debugAdmin", "messageIdManager", "ftpAdmin", "kerberosAdmin", "schemaEntryManager", "trustedSignerCertsAdmin");
     private static final Set<String> SECURED_RETURNTYPE_WHITELIST = set(
             "com.l7tech.gateway.common.audit.AuditAdmin.getDigestsForAuditRecords",

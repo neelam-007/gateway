@@ -170,8 +170,8 @@ public class LDAPQueryAssertion extends Assertion implements UsesEntities, UsesV
     @Override
     @Migration(mapName = MigrationMappingSelection.NONE, mapValue = MigrationMappingSelection.REQUIRED, export = false, valueType = TEXT_ARRAY, resolver = PropertyResolver.Type.SERVER_VARIABLE)
     public String[] getVariablesUsed() {
-        // parse out of searchFilter
-        return Syntax.getReferencedNames(searchFilter);
+        // parse out of searchFilter, and dnText
+        return Syntax.getReferencedNames(searchFilter, dnText);
     }
 
     @Override

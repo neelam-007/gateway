@@ -15,6 +15,7 @@ import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.message.HasHeaders;
+import com.l7tech.message.Message;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AddHeaderAssertion;
@@ -26,6 +27,7 @@ import com.l7tech.server.audit.AuditContextFactoryStub;
 import com.l7tech.server.audit.MessageSummaryAuditFactory;
 import com.l7tech.server.event.FaultProcessed;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.server.policy.assertion.ServerAddHeaderAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
@@ -33,7 +35,9 @@ import com.l7tech.server.policy.variable.MessageSelector;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.transport.ListenerException;
 import com.l7tech.server.util.ThreadPoolBean;
+import com.l7tech.test.BugId;
 import com.l7tech.util.*;
+import com.l7tech.xml.SoapFaultLevel;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -677,8 +681,8 @@ public class MqNativeModuleTest extends AbstractJUnit4SpringContextTests {
         when(ssgActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_QUEUE_MANAGER_NAME)).thenReturn(queueManagerName);
         when(ssgActiveConnector.getEnumProperty(PROPERTIES_KEY_MQ_NATIVE_REPLY_TYPE, REPLY_AUTOMATIC, MqNativeReplyType.class)).thenReturn(MqNativeReplyType.REPLY_SPECIFIED_QUEUE);
         when(ssgActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_SPECIFIED_REPLY_QUEUE_NAME)).thenReturn(replyQueueName);
-        when(ssgActiveConnector.getBooleanProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_IS_REPLY_QUEUE_PUT_MESSAGE_OPTIONS_USED)).thenReturn(true);
-        when(ssgActiveConnector.getIntegerProperty(eq(PROPERTIES_KEY_MQ_NATIVE_INBOUND_REPLY_QUEUE_PUT_MESSAGE_OPTIONS), anyInt())).thenReturn(7654321);
+        when(ssgActiveConnector.getBooleanProperty(MqNativeModule.PROPERTIES_KEY_MQ_NATIVE_INBOUND_IS_REPLY_QUEUE_PUT_MESSAGE_OPTIONS_USED)).thenReturn(true);
+        when(ssgActiveConnector.getIntegerProperty(eq(MqNativeModule.PROPERTIES_KEY_MQ_NATIVE_INBOUND_REPLY_QUEUE_PUT_MESSAGE_OPTIONS), anyInt())).thenReturn(7654321);
 
         @SuppressWarnings("unchecked")
         NullaryThrows<Hashtable, MqNativeConfigException>  queueManagerProperties =
@@ -763,8 +767,8 @@ public class MqNativeModuleTest extends AbstractJUnit4SpringContextTests {
         when(ssgActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_QUEUE_MANAGER_NAME)).thenReturn(queueManagerName);
         when(ssgActiveConnector.getBooleanProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_IS_FAILED_QUEUE_USED)).thenReturn(true);
         when(ssgActiveConnector.getProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_FAILED_QUEUE_NAME)).thenReturn("failureQueueName");
-        when(ssgActiveConnector.getBooleanProperty(PROPERTIES_KEY_MQ_NATIVE_INBOUND_IS_FAILED_QUEUE_PUT_MESSAGE_OPTIONS_USED)).thenReturn(true);
-        when(ssgActiveConnector.getIntegerProperty(eq(PROPERTIES_KEY_MQ_NATIVE_INBOUND_FAILED_QUEUE_PUT_MESSAGE_OPTIONS), anyInt())).thenReturn(7654321);
+        when(ssgActiveConnector.getBooleanProperty(MqNativeModule.PROPERTIES_KEY_MQ_NATIVE_INBOUND_IS_FAILED_QUEUE_PUT_MESSAGE_OPTIONS_USED)).thenReturn(true);
+        when(ssgActiveConnector.getIntegerProperty(eq(MqNativeModule.PROPERTIES_KEY_MQ_NATIVE_INBOUND_FAILED_QUEUE_PUT_MESSAGE_OPTIONS), anyInt())).thenReturn(7654321);
 
         @SuppressWarnings("unchecked")
         NullaryThrows<Hashtable, MqNativeConfigException>  queueManagerProperties =
@@ -798,6 +802,45 @@ public class MqNativeModuleTest extends AbstractJUnit4SpringContextTests {
         ArgumentCaptor<MQPutMessageOptions> pmoCaptor = ArgumentCaptor.forClass(MQPutMessageOptions.class);
         verify(failureQueue, times(1)).put(any(MQMessage.class), pmoCaptor.capture());
         assertEquals(7654321, pmoCaptor.getValue().options);
+    }
+
+    @BugId("DE341493")
+    @Test
+    public void testGenerateFaultTemplateUsesTemplate() throws IOException, MqNativeException {
+        final PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
+        SoapFaultLevel faultLevel = new SoapFaultLevel();
+        final String expectedFaultTemplate = "EXPECTED FAULT TEMPLATE";
+        faultLevel.setFaultTemplate(expectedFaultTemplate);
+        faultLevel.setLevel(SoapFaultLevel.TEMPLATE_FAULT);
+        context.setFaultlevel(faultLevel);
+
+        //Test
+        assertEquals(mqNativeModule.generateFaultTemplate("dummy msg","dummy code",context), expectedFaultTemplate);
+    }
+
+    @Test
+    public void testGenerateFaultTemplateDefaultSoapFault() throws IOException, MqNativeException {
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
+        final String faultMessage = "fault Message";
+        final String faultCode = "this is the fault code";
+
+        final String lineSeperator = System.lineSeparator();
+        final String expectedFaultTemplate = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + lineSeperator  +
+                "<soapenv:Envelope" + lineSeperator  +
+                "    xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"" + lineSeperator  +
+                "    xmlns:wsse=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\"" + lineSeperator  +
+                "    xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">" + lineSeperator  +
+                "    <soapenv:Body>" + lineSeperator  +
+                "        <soapenv:Fault>" + lineSeperator  +
+                "            <faultcode>"+ faultCode +"</faultcode>" + lineSeperator  +
+                "            <faultstring>" + faultMessage + "</faultstring>" + lineSeperator  +
+                "            <faultactor/>" + lineSeperator  +
+                "            <detail/>" + lineSeperator  +
+                "        </soapenv:Fault>" + lineSeperator  +
+                "    </soapenv:Body>" + lineSeperator  +
+                "</soapenv:Envelope>" + lineSeperator;
+        //Test
+        assertEquals(mqNativeModule.generateFaultTemplate(faultMessage,faultCode,context), expectedFaultTemplate);
     }
 
     private void addHeader(PolicyEnforcementContext context, TargetMessageType targetMessageType, String name, String value) throws IOException, PolicyAssertionException {

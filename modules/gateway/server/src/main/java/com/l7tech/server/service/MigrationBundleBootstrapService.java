@@ -3,6 +3,7 @@ package com.l7tech.server.service;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.gateway.common.LicenseException;
+import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
 import com.l7tech.message.AbstractHttpResponseKnob;
@@ -16,6 +17,7 @@ import com.l7tech.security.token.OpaqueSecurityToken;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.event.AdminInfo;
 import com.l7tech.server.identity.AuthenticationResult;
+import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.ServerAssertionRegistry;
@@ -55,6 +57,9 @@ public class MigrationBundleBootstrapService implements PostStartupApplicationLi
     @Inject
     private ServerAssertionRegistry serverAssertionRegistry;
 
+    @Inject
+    private IdentityProviderFactory identityProviderFactory;
+
     // TODO find some way to detect when bundles should not be loaded on startup perhaps because they are already loaded
     private boolean shouldLoadBundles = true;
 
@@ -80,8 +85,9 @@ public class MigrationBundleBootstrapService implements PostStartupApplicationLi
                 return;
             }
 
-            // TODO have a way to look up or configure admin user instead of hardcoding "admin" from internal ID provider
-            final UserBean adminUser = new UserBean( new Goid( 0, -2 ), "admin" );
+            // Use THE ADMIN user
+            final String adminLogin = identityProviderFactory.getProvider(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID).getUserManager().findByPrimaryKey(new Goid( 0, 3 ).toString()).getLogin();
+            final UserBean adminUser = new UserBean( IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_GOID, adminLogin );
             adminUser.setUniqueIdentifier( new Goid( 0, 3 ).toString() );
 
             AdminInfo.find( false ).wrapCallable( new Callable<Boolean>() {

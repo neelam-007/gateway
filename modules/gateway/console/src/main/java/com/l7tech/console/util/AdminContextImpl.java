@@ -17,11 +17,9 @@ import com.l7tech.gateway.common.spring.remoting.http.ConfigurableHttpInvokerReq
 import com.l7tech.gateway.common.spring.remoting.http.RemotingContext;
 import com.l7tech.gateway.common.task.ScheduledTaskAdmin;
 import com.l7tech.gateway.common.transport.TransportAdmin;
-import com.l7tech.gateway.common.transport.email.EmailAdmin;
 import com.l7tech.gateway.common.transport.email.EmailListenerAdmin;
 import com.l7tech.gateway.common.transport.ftp.FtpAdmin;
 import com.l7tech.gateway.common.transport.jms.JmsAdmin;
-import com.l7tech.gateway.common.workqueue.WorkQueueManagerAdmin;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
@@ -146,11 +144,6 @@ public class AdminContextImpl extends RemotingContext implements AdminContext {
     }
 
     @Override
-    public EmailAdmin getEmailAdmin() throws SecurityException {
-        return this.getRemoteInterfaceForEndpoint(EmailAdmin.class);
-    }
-
-    @Override
     public ScheduledTaskAdmin getScheduledTaskAdmin() throws SecurityException {
         return this.getRemoteInterfaceForEndpoint(ScheduledTaskAdmin.class);
     }
@@ -158,11 +151,6 @@ public class AdminContextImpl extends RemotingContext implements AdminContext {
     @Override
     public UDDIRegistryAdmin getUDDIRegistryAdmin() throws SecurityException {
         return this.getRemoteInterfaceForEndpoint(UDDIRegistryAdmin.class);
-    }
-
-    @Override
-    public WorkQueueManagerAdmin getWorkQueueAdmin() throws SecurityException {
-        return this.getRemoteInterfaceForEndpoint(WorkQueueManagerAdmin.class);
     }
 
     @Override

@@ -31,6 +31,9 @@ public class QuickStartTemplateAssertion extends MessageTargetableAssertion impl
 
     public static final String ENABLE_ALL_ASSERTIONS_FLAG_KEY = "quickStart.allAssertions.enabled";
 
+
+    public static final String QS_VERSION = "qs.version";
+
     /**
      * Possible values for {@link #PROPERTY_QS_CREATE_METHOD}
      */
@@ -74,7 +77,9 @@ public class QuickStartTemplateAssertion extends MessageTargetableAssertion impl
     protected VariablesSet doGetVariablesSet() {
         return super.doGetVariablesSet().withVariables(
                 new VariableMetadata(QS_WARNINGS, true, true, null, false, DataType.STRING),
-                new VariableMetadata(QS_BUNDLE, true, true, null, false, DataType.MESSAGE)
+                new VariableMetadata(QS_BUNDLE, true, true, null, false, DataType.MESSAGE),
+                new VariableMetadata(QS_VERSION, true, false, null, true, DataType.STRING)
+
         );
     }
 
@@ -119,7 +124,7 @@ public class QuickStartTemplateAssertion extends MessageTargetableAssertion impl
 
         // request default feature set name for our class name, since we are a known optional module
         // that is, we want our required feature set to be "assertion:QuickStartTemplate" rather than "set:modularAssertions"
-        meta.put(AssertionMetadata.FEATURE_SET_NAME, "set:modularAssertions");  // TODO change back to "(fromClass)" and add to license feature set
+        meta.put(AssertionMetadata.FEATURE_SET_NAME, "(fromClass)");
 
         meta.put(MODULE_LOAD_LISTENER_CLASSNAME, "com.l7tech.external.assertions.quickstarttemplate.server.QuickStartAssertionModuleLifecycle");
 

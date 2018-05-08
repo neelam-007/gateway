@@ -27,9 +27,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.logging.Logger;
 
-import static org.junit.Assert.fail;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
@@ -254,6 +252,157 @@ public class ServerSymmetricKeyEncryptionDecryptionAssertionTest {
         System.out.println("Final Output: " + finaloutput + "   B64Decoded: " + new String(HexUtils.decodeBase64(finaloutput)));
     }
 
+    //helper method used for PGP Public Key Encryption
+    private ServerSymmetricKeyEncryptionDecryptionAssertion pgpPublicKeyEncryptionHelper(String msg, String msgVar, boolean isAsciiArmourEnabled) throws Exception {
+         final String algorithm = "PGP";
+
+        //the following public key was created using gpg 1.4.5 (https://blogs.oracle.com/wssfc/how-to-generate-pgp-keys-using-gpg-145-on-linux)
+         final String publicKey = "-----BEGIN PGP PUBLIC KEY BLOCK-----\n" +
+                "Version: BCPG C# v1.6.1.0\n" +
+                "\n" +
+                "mQENBFmB670BCACMBdid8VQoUCNZYu9h/cdLf15sKIzYl9vJoLqWwTwW5uoOwkuZ\n" +
+                "u8SnnJBODVfL7QX9YLev8ipGD8zGXobFEPiIdCtBMpecxDKkzCEDpJm5NyCOaSCu\n" +
+                "mv06nqbpViEEh6+ecOjWeK/UP5zFyqmISF1JMFkrIlcISKjWTBD7evf0m2TjbSN+\n" +
+                "wC4eToL14Hvk+l9g0hGR2JB/QHKDiKmgeJuPgk+bQFwMawRWd1zxJQsBYC8vRI7h\n" +
+                "5AxyC+D/ufwiELbALyZHj0KZvnltBBph8lpd1k3OiLX04RRYT3DJmN0XpPzaaAys\n" +
+                "lUq/uY7xNlDLn61quHrKIMXeTGpAd5wb2CzbABEBAAG0AIkBHAQQAQIABgUCWYHr\n" +
+                "vQAKCRB0dcaNnb8TxskRB/92KphE1KPX8LWPNcuaAKeFA8FNjUhrK5RIhv7i/mF6\n" +
+                "29nJGk7Ey9XYrvycFjMT2VkOo3WWw6xwGsopgcR7LnfUmk/otrx7fHHJpLbLKOQv\n" +
+                "7lhOvaEHoUTrBlkgHeb0GkA7jkLe2novd2J3w9NaFL7WNYQ79BNH+Owdvgr9jaUH\n" +
+                "E4hYACiiUUHaUng1SoUuwUjO3up9B1xhgQAliWK73kUBXLLnoTdf7yEUqGSVDSLq\n" +
+                "TYZz8M7UVODsyVzlap0HBRLQUY1bKWuNWWS9sL7+g/q7bnOiBuK1PAJdABigt4sP\n" +
+                "xsiD2Vx90tBcjpLlcnTQl3jwkpMO4n7mHH7uN6Gprhth\n" +
+                "=3o0r\n" +
+                "-----END PGP PUBLIC KEY BLOCK-----";
+         final String publicKeyb64 = HexUtils.encodeBase64(publicKey.getBytes(Charsets.UTF8));
+
+        SymmetricKeyEncryptionDecryptionAssertion encryptAssertion = new SymmetricKeyEncryptionDecryptionAssertion();
+        setUpAssertion(encryptAssertion, msg, publicKeyb64, msgVar, algorithm, true,null, true, isAsciiArmourEnabled);
+
+        ServerSymmetricKeyEncryptionDecryptionAssertion encryptServerAssertion = new ServerSymmetricKeyEncryptionDecryptionAssertion(encryptAssertion, mockApplicationContext);
+
+        return encryptServerAssertion;
+    }
+
+    //helper method used for PGP Public Key Decryption
+    private ServerSymmetricKeyEncryptionDecryptionAssertion pgpPublicKeyDecryptionHelper(String msg, String msgVar) throws PolicyAssertionException {
+        final String algorithm = "PGP";
+
+        final  String passphrase = "7layer";
+        final  String passphraseb64 = HexUtils.encodeBase64(passphrase.getBytes(Charsets.UTF8));
+
+        //the following private key was created using gpg 1.4.5 (https://blogs.oracle.com/wssfc/how-to-generate-pgp-keys-using-gpg-145-on-linux)
+        final String PRIVATE_KEY="-----BEGIN PGP PRIVATE KEY BLOCK-----\n" +
+                "Version: BCPG C# v1.6.1.0\n" +
+                "\n" +
+                "lQOsBFmB670BCACMBdid8VQoUCNZYu9h/cdLf15sKIzYl9vJoLqWwTwW5uoOwkuZ\n" +
+                "u8SnnJBODVfL7QX9YLev8ipGD8zGXobFEPiIdCtBMpecxDKkzCEDpJm5NyCOaSCu\n" +
+                "mv06nqbpViEEh6+ecOjWeK/UP5zFyqmISF1JMFkrIlcISKjWTBD7evf0m2TjbSN+\n" +
+                "wC4eToL14Hvk+l9g0hGR2JB/QHKDiKmgeJuPgk+bQFwMawRWd1zxJQsBYC8vRI7h\n" +
+                "5AxyC+D/ufwiELbALyZHj0KZvnltBBph8lpd1k3OiLX04RRYT3DJmN0XpPzaaAys\n" +
+                "lUq/uY7xNlDLn61quHrKIMXeTGpAd5wb2CzbABEBAAH/AwMCoo5UhK7zrsxginQv\n" +
+                "jQs6cnu5PhhqYeMiLhwyjnzbdiWdfFW8SfcG32UHUo38DpZi38Oa1xowxzi4Gsdv\n" +
+                "XGTWQdrNBYNkKQRuWGADboisVCNrFPCPwDpaK6xyG7oTeqmUts5qOupnqnx0rxgc\n" +
+                "0zy6s7/xQZnswDYbaW5LzeVE7VfCyYMpHUKMU65XoPa4OW1vKTMWgwK1rHhQUXn7\n" +
+                "b1mRraeMLMmjVkPGg0rztwXPMMvCUI2ZfAy6pUVgvAg1QIi6P+BjfEyiFdv1irv8\n" +
+                "6SWs7OJaE1Er/8/hSkvgsShNH8ZO+l1hKZLEVuNz8+AaEllfaZoG8uYCyYWbIl5p\n" +
+                "dny5onbP3lITg4wURny7Pz+aJ70qrIQr21r+ZyOZiJVPl0gBmtP03Jqji3gaCsjD\n" +
+                "iySViLrlQ4tU8VFIPRJxqkvMbtWT9bCKfk8E5+3ni8Q+IVKytNW9kfgWiuJwBnzx\n" +
+                "jivCrJ1zu+mqJYtnxMvfXFNfmtnvmYEcPiVeohvaXdz7dGIT/Q+mQEiSxVDaQ/AW\n" +
+                "kqlczrXqoR9IPT9Sx/+Tuzd+uFoNpFowodMl9UxB/1vo44wRxiMuaKKW7O/pi3Bl\n" +
+                "g80Gx68eCi3Tvas4gvwcm855+spPdbJmYge0+1LcRioMmp2E9oyr+VRFeIBqxL3T\n" +
+                "HR++ylDvlTBeke49Q5n79AyNkr0zdMURcidsZp3Eu2bi28slsb/zCg7yN1Zhmxx8\n" +
+                "eXKWif0MOjfYdJxaIdbS5zBd0tW5+VSadhkGr5ilqecvETV0h9383e8Qe5OY+VCb\n" +
+                "xeLly5jn8GMUWsEoua0wrfJy8Av7mXRZA7Y5v2l7raIq8vs0Bea3N2b2DjQs1f3t\n" +
+                "rKcCjGfDEpdc3EWZ2GsgvL/ufgH/PtBrnPv2DtYLx7QAiQEcBBABAgAGBQJZgeu9\n" +
+                "AAoJEHR1xo2dvxPGyREH/3YqmETUo9fwtY81y5oAp4UDwU2NSGsrlEiG/uL+YXrb\n" +
+                "2ckaTsTL1diu/JwWMxPZWQ6jdZbDrHAayimBxHsud9SaT+i2vHt8ccmktsso5C/u\n" +
+                "WE69oQehROsGWSAd5vQaQDuOQt7aei93YnfD01oUvtY1hDv0E0f47B2+Cv2NpQcT\n" +
+                "iFgAKKJRQdpSeDVKhS7BSM7e6n0HXGGBACWJYrveRQFcsuehN1/vIRSoZJUNIupN\n" +
+                "hnPwztRU4OzJXOVqnQcFEtBRjVspa41ZZL2wvv6D+rtuc6IG4rU8Al0AGKC3iw/G\n" +
+                "yIPZXH3S0FyOkuVydNCXePCSkw7ifuYcfu43oamuG2E=\n" +
+                "=MKxg\n" +
+                "-----END PGP PRIVATE KEY BLOCK-----";
+
+        final String privateKeyb64 = HexUtils.encodeBase64(PRIVATE_KEY.getBytes(Charsets.UTF8));
+
+
+        SymmetricKeyEncryptionDecryptionAssertion decryptionAssertion = new SymmetricKeyEncryptionDecryptionAssertion();
+        setUpAssertion(decryptionAssertion, msg, privateKeyb64, msgVar, algorithm, false, passphraseb64);
+
+        ServerSymmetricKeyEncryptionDecryptionAssertion decryptServerAssertion = new ServerSymmetricKeyEncryptionDecryptionAssertion(decryptionAssertion, mockApplicationContext);
+
+        return decryptServerAssertion;
+
+    }
+
+    @Test
+    public void testPgpPublicKeyEncryption() throws Exception{
+        final String encryptVar = "encryptMsg";
+
+        final String input = "This is what I am encrypting using PGP public key";
+        final String inputb64 = HexUtils.encodeBase64(input.getBytes(Charsets.UTF8));
+
+
+        ServerSymmetricKeyEncryptionDecryptionAssertion encryptServerAssertion = pgpPublicKeyEncryptionHelper(inputb64, encryptVar, false);
+        AssertionStatus status = encryptServerAssertion.checkRequest(mockPolicyEnforcementContext);
+        String output = getOutputString(encryptVar);
+
+        Assert.assertNotNull(status);
+        Assert.assertEquals("First Check", AssertionStatus.NONE.getMessage(), status.getMessage());
+        Assert.assertTrue("Second Check - Make sure a cipher is produced", (output).length() > 0);
+
+        //decrypt the message that was encrypted earlier
+        final String decryptVar = "decryptMsg";
+
+        ServerSymmetricKeyEncryptionDecryptionAssertion decryptServerAssertion = pgpPublicKeyDecryptionHelper(output, decryptVar);
+        status = decryptServerAssertion.checkRequest(mockPolicyEnforcementContext);
+        output = getOutputString(decryptVar);
+
+        Assert.assertNotNull(status);
+        Assert.assertEquals("First Check", AssertionStatus.NONE.getMessage(), status.getMessage());
+        Assert.assertTrue("Second Check - Make sure a cipher is produced", (output).length() > 0);
+
+        Assert.assertTrue(inputb64.equals(output));
+    }
+
+    @Test
+    public void testPgpPublicKeyEncryptionWithAsciiArmour() throws Exception{
+
+        //encrypt the input using PGP public key
+        final String encryptVar = "encryptMsg";
+
+        final String input = "This is what I am encrypting using PGP public key";
+        final String inputb64 = HexUtils.encodeBase64(input.getBytes(Charsets.UTF8));
+
+        final String pgpHeader ="-----BEGIN PGP MESSAGE-----\n";
+        final String pgpFooter="-----END PGP MESSAGE-----\n";
+
+        ServerSymmetricKeyEncryptionDecryptionAssertion encryptServerAssertion = pgpPublicKeyEncryptionHelper(inputb64, encryptVar, true);
+        AssertionStatus status = encryptServerAssertion.checkRequest(mockPolicyEnforcementContext);
+        String output = getOutputString(encryptVar);
+
+        Assert.assertNotNull(status);
+        Assert.assertEquals("First Check", AssertionStatus.NONE.getMessage(), status.getMessage());
+        Assert.assertTrue("Second Check - Make sure a cipher is produced", (output).length() > 0);
+
+        String decodedMessage = new String (HexUtils.decodeBase64(output));
+        Assert.assertTrue(decodedMessage.startsWith(pgpHeader));
+        Assert.assertTrue(decodedMessage.endsWith(pgpFooter));
+
+        //decrypt the message that was encrypted earlier
+        final String decryptVar = "decryptMsg";
+
+        ServerSymmetricKeyEncryptionDecryptionAssertion decryptServerAssertion = pgpPublicKeyDecryptionHelper(output, decryptVar);
+        status = decryptServerAssertion.checkRequest(mockPolicyEnforcementContext);
+        output = getOutputString(decryptVar);
+
+        Assert.assertNotNull(status);
+        Assert.assertEquals("First Check", AssertionStatus.NONE.getMessage(), status.getMessage());
+        Assert.assertTrue("Second Check - Make sure a cipher is produced", (output).length() > 0);
+
+        Assert.assertTrue(inputb64.equals(output));
+    }
     @Test
     public void testPGPDecrypt() throws Exception {
 
@@ -392,14 +541,19 @@ public class ServerSymmetricKeyEncryptionDecryptionAssertionTest {
         Assert.assertEquals("First Check", AssertionStatus.FAILED.getMessage(), status.getMessage());
     }
 
-    private void setUpAssertion(SymmetricKeyEncryptionDecryptionAssertion assertion, String data, String key, String outputVariable, String algorithm, boolean isEncrypt, String pgpPassPhrase) {
+    private void setUpAssertion(SymmetricKeyEncryptionDecryptionAssertion assertion, String data, String key, String outputVariable, String algorithm, boolean isEncrypt, String pgpPassPhrase, boolean isPgpPublicEncryption, boolean isAsciiArmourEnabled) {
         assertion.setText(data);
         assertion.setKey(key);
         assertion.setOutputVariableName(outputVariable);
         assertion.setAlgorithm(algorithm);
         assertion.setIsEncrypt(isEncrypt);
         assertion.setPgpPassPhrase(pgpPassPhrase);
+        assertion.setIsPgpKeyEncryption(isPgpPublicEncryption);
+        assertion.setAsciiArmourEnabled(isAsciiArmourEnabled);
+    }
 
+    private void setUpAssertion(SymmetricKeyEncryptionDecryptionAssertion assertion, String data, String key, String outputVariable, String algorithm, boolean isEncrypt, String pgpPassPhrase) {
+        setUpAssertion(assertion, data, key, outputVariable, algorithm, isEncrypt, pgpPassPhrase, false, false);
     }
 
     @Ignore
@@ -433,7 +587,8 @@ public class ServerSymmetricKeyEncryptionDecryptionAssertionTest {
                 123000, // milliseconds not preserved
                 "password".toCharArray(),
                 asciiArmoured,
-                integrityProtected
+                integrityProtected,
+                null
         );
 
         final ByteArrayOutputStream out2 = new ByteArrayOutputStream();

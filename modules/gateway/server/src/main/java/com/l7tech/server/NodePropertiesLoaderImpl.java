@@ -3,6 +3,7 @@ package com.l7tech.server;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.SyspropUtil;
+import java.util.UUID;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.*;
@@ -32,6 +33,7 @@ public class NodePropertiesLoaderImpl implements NodePropertiesLoader {
     private static final String ENV_VAR_DEFINITIONS_FILE = "resources/nodePropsEnvVarDefs.properties";
     private static final String VARIABLE_SUFFIX = "variable";
     private static final String DEFAULT_SUFFIX = "default";
+    private static final String OPTIONAL_SUFFIX = "optional";
     private static final String GENERATE_SPECIAL_DEFAULT = "GENERATE";
 
     private static NodePropertiesLoader INSTANCE = null;
@@ -59,6 +61,7 @@ public class NodePropertiesLoaderImpl implements NodePropertiesLoader {
 
             HashMap<String,String> variables = new HashMap<>();
             HashMap<String,String> defaults = new HashMap<>();
+            HashMap<String,String> optionals = new HashMap<>();
 
             // add all node properties from environment variables
             for (String propertyName : envVarDefs.stringPropertyNames()) {
@@ -75,6 +78,8 @@ public class NodePropertiesLoaderImpl implements NodePropertiesLoader {
                     case DEFAULT_SUFFIX:
                         defaults.put(nodePropertyName, value);
                         break;
+                    case OPTIONAL_SUFFIX:
+                        optionals.put(nodePropertyName, value);
                     default:
                         logger.fine("Unrecognized node property definition: " + propertyName);
                         break;
@@ -99,7 +104,9 @@ public class NodePropertiesLoaderImpl implements NodePropertiesLoader {
                         }
 
                         properties.setProperty(variableDef.getKey(), defaultValue);
-                    } else { // otherwise this is a required property and we can't start
+                    } else if(!Boolean.parseBoolean(optionals.get(variableDef.getKey()))) {
+                        // otherwise if this is not an optional property and no value is provided
+                        // this is a required property and we can't start
                         throw new IllegalStateException("The '" + variableDef.getValue() +
                                 "' environment variable must be defined for the '" + variableDef.getKey() +
                                 "' node property when using diskless config mode");
@@ -129,7 +136,7 @@ public class NodePropertiesLoaderImpl implements NodePropertiesLoader {
     private String generateRandomNodeId() {
         byte[] nodeIdBytes = new byte[32];
         new SecureRandom().nextBytes(nodeIdBytes);
-        return HexUtils.encodeBase64(nodeIdBytes, true);
+        return HexUtils.encodeBase64(nodeIdBytes, true).substring(0,32);
     }
 
     @Override

@@ -83,7 +83,7 @@ public class AdminLoginHelper extends ApplicationObjectSupport {
                 cookie = sessionManager.createSession(user, null);
             }
 
-            return new AdminLoginResult(user, cookie, SecureSpanConstants.ADMIN_PROTOCOL_VERSION, BuildInfo.getProductVersion(), getLogonWarningBanner());
+            return new AdminLoginResult(user, cookie, config.getProperty("policyManager.version.minimum"), BuildInfo.getProductVersion(), getLogonWarningBanner());
         } catch (ObjectModelException e) {
             logger.log(Level.WARNING, "Authentication provider error", e);
             throw buildAccessControlException("Authentication failed", e);

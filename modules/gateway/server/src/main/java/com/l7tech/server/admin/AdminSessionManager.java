@@ -482,7 +482,7 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
                 }
             } else {
                 logger.info("Expiring administrative session for user '" + holder.getUser().getName() + "'.");
-                sessionMap.remove(session);
+                destroySession(session);
             }
         }
 
@@ -615,11 +615,13 @@ public class AdminSessionManager extends RoleManagerIdentitySourceSupport implem
                     final long now = System.currentTimeMillis();
                     for (final Iterator i = values.iterator(); i.hasNext();) {
                         final SessionHolder holder = (SessionHolder) i.next();
-                        final long age = now - holder.getLastUsed();
-                        if (age > sessionExpiryMillis.get()) {
-                            if (logger.isLoggable(Level.INFO))
-                                logger.log(Level.INFO, "Expiring administrative session for user '" + holder.getUser().getName() + "'.");
-                            i.remove();
+                        if (holder != null) {
+                            final long age = now - holder.getLastUsed();
+                            if (age > sessionExpiryMillis.get()) {
+                                if (logger.isLoggable(Level.INFO))
+                                    logger.log(Level.INFO, "Expiring administrative session for user '" + holder.getUser().getName() + "'.");
+                                i.remove();
+                            }
                         }
                     }
                 }

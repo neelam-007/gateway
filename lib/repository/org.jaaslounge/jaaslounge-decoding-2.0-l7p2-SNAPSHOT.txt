@@ -1,0 +1,9 @@
+Related ticket - DE303707: SR: 00776585 - The smart-card login does not work
+ anymore, since the customer upgraded from 8.3 into 9.2. So removing length
+ check "credentialType.length < MINIMAL_BUFFER_SIZE" from PacCredentialType.java"
+
+---
+ README.md                                                     |  2 +-
+ pom.xml                                                       |  2 +-
+ .../java/org/jaaslounge/decoding/pac/PacCredentialType.java   | 11 ++++++++++-
+ 3 files changed, 12 insertions(+), 3 deletions(-)

@@ -9,6 +9,7 @@ import net.sf.saxon.TransformerFactoryImpl;
 import net.sf.saxon.expr.Expression;
 import net.sf.saxon.expr.StringLiteral;
 import net.sf.saxon.expr.instruct.GlobalVariable;
+import net.sf.saxon.lib.FeatureKeys;
 import net.sf.saxon.om.StructuredQName;
 import org.apache.xalan.templates.ElemVariable;
 import org.apache.xalan.templates.StylesheetRoot;
@@ -26,11 +27,15 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.text.ParseException;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Utility methods for working with XSL transformations.
  */
 public class XsltUtil {
+    private static final Logger logger = Logger.getLogger(XsltUtil.class.getName());
+
     /**
      * Get the variables used by the specified XSLT transformation, expressed as an XML string.
      *
@@ -122,6 +127,11 @@ public class XsltUtil {
 
         if (useSaxon) {
             SaxonUtils.configureSecureSaxonTransformerFactory(transfactory, useSharedConfiguration);
+
+            if (logger.isLoggable(Level.FINE)) {
+                logger.log(Level.FINE, "Bytecode generation enabled: {0}",
+                        transfactory.getAttribute(FeatureKeys.GENERATE_BYTE_CODE));
+            }
         }
 
         transfactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);

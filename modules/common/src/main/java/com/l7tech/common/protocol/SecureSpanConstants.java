@@ -117,12 +117,6 @@ public class SecureSpanConstants {
      */
     public static final String TOKEN_SERVICE_FILE = SSG_RESERVEDURI_PREFIX + "/token";
 
-    /**
-     * The console compares this value with the value returned by IdentityAdmin.echoVersion()
-     * this ensures that the console can talk to the server.
-     */
-    public static final String ADMIN_PROTOCOL_VERSION = "20060228";
-
     public static final String CERT_INVALID = "invalid";
     public static final String CERT_VALID = "valid";
 

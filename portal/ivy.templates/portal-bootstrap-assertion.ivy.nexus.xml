@@ -1,0 +1,10 @@
+<ivy-module version="2.0">
+    <info organisation="com.layer7.portal" module="portal-bootstrap-assertion${ssg.version}" revision="@REVISION_NO@" status="release"/>
+    <publications>
+        <artifact name="portal-bootstrap-assertion${ssg.version}" type="pom" ext="pom"/>
+        <artifact name="portal-bootstrap-assertion${ssg.version}" type="aar" ext="aar"/>
+        <artifact name="portal-bootstrap-assertion${ssg.version}" type="saar" ext="saar"/>
+        <artifact name="portal-bootstrap-assertion${ssg.version}" type="saar-xml" ext="saar-xml"/>
+        <artifact name="portal-bootstrap-assertion${ssg.version}" type="bundle-xml" ext="bundle-xml"/>
+    </publications>
+</ivy-module>

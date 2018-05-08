@@ -15,6 +15,7 @@ import java.util.Collections;
  * Bean for configuring outbound raw TCP (and someday TLS) single-shot message.
  */
 public class SimpleRawTransportAssertion extends RoutingAssertion implements UsesVariables, SetsVariables {
+    public static final int DEFAULT_CONNECTION_TIMEOUT = ConfigFactory.getIntProperty( "com.l7tech.external.assertions.rawtcp.defaultConnectionTimeout", 30000 );
     public static final int DEFAULT_WRITE_TIMEOUT = ConfigFactory.getIntProperty( "com.l7tech.external.assertions.rawtcp.defaultWriteTimeout", 2000 );
     public static final int DEFAULT_READ_TIMEOUT = ConfigFactory.getIntProperty( "com.l7tech.external.assertions.rawtcp.defaultReadTimeout", 2000 );
     public static final long DEFAULT_RESPONSE_SIZE_LIMIT = ConfigFactory.getLongProperty( "com.l7tech.external.assertions.rawtcp.defaultResponseSizeLimit", -1 );
@@ -32,6 +33,7 @@ public class SimpleRawTransportAssertion extends RoutingAssertion implements Use
     private String responseContentType = "text/xml; charset=UTF-8";
     private int writeTimeoutMillis = DEFAULT_WRITE_TIMEOUT;
     private int readTimeoutMillis = DEFAULT_READ_TIMEOUT;
+    private int connectionTimeoutMillis = DEFAULT_CONNECTION_TIMEOUT;
     private String targetHost = null;
     private String targetPort = "13224";
 
@@ -123,6 +125,14 @@ public class SimpleRawTransportAssertion extends RoutingAssertion implements Use
         if ( maxResponseBytes >= 0L ) {
             this.maxResponseBytesText = Long.toString( maxResponseBytes );
         }
+    }
+
+    public int getConnectionTimeoutMillis() {
+        return connectionTimeoutMillis;
+    }
+
+    public void setConnectionTimeoutMillis(int connectionTimeoutMillis) {
+        this.connectionTimeoutMillis = connectionTimeoutMillis;
     }
 
     public int getWriteTimeoutMillis() {

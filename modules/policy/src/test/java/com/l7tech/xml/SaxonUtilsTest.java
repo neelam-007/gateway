@@ -1,7 +1,9 @@
 package com.l7tech.xml;
 
 import com.l7tech.util.CollectionUtils;
+import com.l7tech.util.ConfigFactory;
 import net.sf.saxon.Configuration;
+import net.sf.saxon.lib.FeatureKeys;
 import org.junit.Test;
 
 import java.util.Map;
@@ -57,5 +59,14 @@ public class SaxonUtilsTest {
             .map();
 
         SaxonUtils.validateSyntaxAndNamespacePrefixes("(//foo:bar, //baz:quux//bleet2blof", XPATH_2_0, nsmap);
+    }
+
+    /**
+     * Backwards compatibility test to ensure bytecode generation is enabled
+     */
+    @Test
+    public void testGenerateBytecodeEnabledByDefault() {
+        assertTrue("Generate bytecode should be enabled by default",
+                (Boolean) SaxonUtils.getConfiguration().getConfigurationProperty(FeatureKeys.GENERATE_BYTE_CODE));
     }
 }

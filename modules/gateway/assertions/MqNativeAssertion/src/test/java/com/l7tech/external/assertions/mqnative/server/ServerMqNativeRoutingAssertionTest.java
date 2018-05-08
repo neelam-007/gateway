@@ -7,10 +7,7 @@ import com.ibm.mq.headers.MQHeaderList;
 import com.ibm.mq.headers.MQRFH;
 import com.ibm.mq.headers.MQRFH2;
 import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.external.assertions.mqnative.MqNativeMessageHeaderType;
-import com.l7tech.external.assertions.mqnative.MqNativeMessagePropertyRuleSet;
-import com.l7tech.external.assertions.mqnative.MqNativeReplyType;
-import com.l7tech.external.assertions.mqnative.MqNativeRoutingAssertion;
+import com.l7tech.external.assertions.mqnative.*;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.gateway.common.audit.LoggingAudit;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
@@ -810,7 +807,7 @@ public class ServerMqNativeRoutingAssertionTest {
     public void testConnectionPoolingWithMaxConnectionsAndSimpleMessages() throws Exception {
         // setup a stubbed version of task callback
         final AtomicReference<MqNativeEndpointConfig.MqNativeEndpointKey> key = new AtomicReference<>();
-        final CountDownLatch latch = new CountDownLatch(MqNativeEndpointConfig.DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_ACTIVE);
+        final CountDownLatch latch = new CountDownLatch(MqNativeConstants.DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_ACTIVE);
         final MqNativeResourceManager.MqTaskCallback mqrc = new MqNativeResourceManager.MqTaskCallback() {
             @Override
             public void doWork(MQQueueManager queueManager) throws MQException {
@@ -874,8 +871,8 @@ public class ServerMqNativeRoutingAssertionTest {
 
         Collection<Future> futures = new ArrayList<>();
 
-        final ExecutorService pool = Executors.newFixedThreadPool(MqNativeEndpointConfig.DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_ACTIVE);
-        for (int i = 0; i < MqNativeEndpointConfig.DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_ACTIVE; i++) {
+        final ExecutorService pool = Executors.newFixedThreadPool(MqNativeConstants.DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_ACTIVE);
+        for (int i = 0; i < MqNativeConstants.DEFAULT_MQ_NATIVE_CONNECTION_POOL_MAX_ACTIVE; i++) {
             futures.add(pool.submit(() -> {
                 try {
                     MQMessage mqMessage = createSimpleMessage();
@@ -1126,8 +1123,8 @@ public class ServerMqNativeRoutingAssertionTest {
         SsgActiveConnectorManager connectorManager = (SsgActiveConnectorManager) applicationContext.getBean("ssgActiveConnectorManager");
         SsgActiveConnector connector = connectorManager.findByPrimaryKey(assertion.getSsgActiveConnectorId());
         //noinspection ConstantConditions
-        connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_IS_REPLY_QUEUE_GET_MESSAGE_OPTIONS_USED, Boolean.toString(true));
-        connector.setProperty(PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_REPLY_QUEUE_GET_MESSAGE_OPTIONS, "1234567");
+        connector.setProperty(MqNativeEndpointConfig.PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_IS_REPLY_QUEUE_GET_MESSAGE_OPTIONS_USED, Boolean.toString(true));
+        connector.setProperty(MqNativeEndpointConfig.PROPERTIES_KEY_MQ_NATIVE_OUTBOUND_REPLY_QUEUE_GET_MESSAGE_OPTIONS, "1234567");
 
         MQMessage mqMessage = createSimpleMessage();
         context = makeContext(mqMessage);

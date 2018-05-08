@@ -171,4 +171,21 @@ public class FtpClientConfigImpl implements FtpClientConfig, Cloneable {
     public Object clone() throws CloneNotSupportedException{
         return super.clone();
     }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+
+        result = 31 * result + security.hashCode();
+        result = 31 * result + host.hashCode();
+        result = 31 * result + port;
+        result = 31 * result + timeout;
+        result = 31 * result + (user != null ? user.hashCode() : 0);
+        result = 31 * result + pass.hashCode();
+        result = 31 * result + (directory != null ? directory.hashCode() : 0);
+        result = 31 * result + (isVerifyServerCert? 1: 0);
+        result = 31 * result + (enabled? 1: 0);
+        return result;
+    }
+
 }

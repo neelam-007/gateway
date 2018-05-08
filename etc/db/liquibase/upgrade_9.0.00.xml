@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.2.xsd">
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.2.xsd"
+                   logicalFilePath="upgrade_9.0.00.xml">
     <changeSet author="gateway" id="update_ssg_version">
         <update tableName="ssg_version">
             <column name="current_version" value="9.0.00"/>
@@ -56,7 +57,7 @@
             <column name="security_zone_goid" type="${goid.type}"/>
         </createTable>
     </changeSet>
-	<changeSet id="create-index-work-queue-name" author="gateway">
+    <changeSet id="create-index-work-queue-name" author="gateway">
         <createIndex indexName="index_work_queue_name" tableName="work_queue" unique="true">
             <column name="name"/>
         </createIndex>
@@ -66,7 +67,7 @@
                                  constraintName="work_queue_security_zone" referencedTableName="security_zone"
                                  referencedColumnNames="goid" onDelete="SET NULL" onUpdate="NO ACTION"/>
     </changeSet>
-	<changeSet id="create-manage-work-queue-role" author="gateway">
+    <changeSet id="create-manage-work-queue-role" author="gateway">
         <comment>Manage Work Queue</comment>
         <insert tableName="rbac_role">
             <column name="goid" valueComputed="toGoid(0, -1700)"/>

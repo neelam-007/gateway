@@ -1,18 +1,24 @@
 package com.l7tech.server.licensing;
 
 import com.l7tech.gateway.common.licensing.LicenseDocument;
+import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.server.event.AdminInfo;
 import com.l7tech.server.event.system.Initialized;
 import com.l7tech.server.util.PostStartupApplicationListener;
-import com.l7tech.util.*;
+import com.l7tech.util.ConfigFactory;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.HexUtils;
+import com.l7tech.util.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.context.ApplicationEvent;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.GZIPInputStream;
 
@@ -39,60 +45,73 @@ public class BootstrapLicenseService implements PostStartupApplicationListener {
 
     @Override
     public void onApplicationEvent(ApplicationEvent event) {
-        if (event instanceof Initialized ) {
-            loadLicenseFromFile();
+        if (event instanceof Initialized) {
+            loadLicenses();
         }
     }
 
-    private void loadLicenseFromFile() {
+    private void loadLicenses() {
         try {
-            if ( licenseDocumentManager.findAll().isEmpty() ) {
-                if ( ConfigFactory.getBooleanProperty( "bootstrap.env.license.enable", false ) &&
-                        licenseFromEnv != null && licenseFromEnv.trim().length() > 0 )
-                {
-                    // Check for single license in environment variable
-                    byte[] bytes = HexUtils.decodeBase64( licenseFromEnv, true );
-                    try ( InputStream is = new GZIPInputStream( new ByteArrayInputStream( bytes ) ) ) {
-                        final byte[] docBytes = IOUtils.slurpStream( is );
-                        AdminInfo.find(false).wrapCallable(new Callable<LicenseDocument>() {
-                            @Override
-                            public LicenseDocument call() throws Exception {
-                                // attempt to load license from file
-                                logger.info( "Installing license from " + ENV_LICENSE_VAR + " environment variable" );
-                                final LicenseDocument licenseDocument = new LicenseDocument(new String(docBytes));
-                                licenseDocumentManager.saveWithImmediateFlush(licenseDocument);
-                                return licenseDocument;
-                            }
-                        }).call();
-                    }
-                }
+            if (!licenseDocumentManager.findAll().isEmpty()) {
+                //there are already existing licenses. in this case do not load any from environment variables of the bootstrap folder
+                logger.fine("License already installed. Skipping.");
+                return;
+            }
+        } catch (ObjectModelException e) {
+            throw new IllegalStateException("Unable to load licenses: " + ExceptionUtils.getMessageWithCause(e), e);
+        }
 
-                if ( BOOTSTRAP_LICENSE_FOLDER != null ) {
-                    // Might be license files on the filesystem
-                    File licenseFolder = new File(BOOTSTRAP_LICENSE_FOLDER);
-                    if (!licenseFolder.exists()) return;
-                    if (!licenseFolder.isDirectory()) return;
+        final List<LicenseDocument> loadedLicenses = new ArrayList<>();
+        try {
+            if (ConfigFactory.getBooleanProperty("bootstrap.env.license.enable", false) &&
+                    StringUtils.isNotBlank(licenseFromEnv)) {
+                // Check for single license in environment variable
+                byte[] bytes = HexUtils.decodeBase64(licenseFromEnv, true);
+                logger.info("Installing license from " + ENV_LICENSE_VAR + " environment variable");
+                loadedLicenses.add(loadLicense(new GZIPInputStream(new ByteArrayInputStream(bytes))));
+            }
+
+            if (BOOTSTRAP_LICENSE_FOLDER != null) {
+                // Might be license files on the filesystem
+                File licenseFolder = new File(BOOTSTRAP_LICENSE_FOLDER);
+                if (licenseFolder.exists() && licenseFolder.isDirectory()) {
                     File[] licenseFiles = licenseFolder.listFiles();
-                    if (licenseFiles == null || licenseFiles.length == 0) return;
-                    for (final File licenseFile : licenseFiles) {
-                        AdminInfo.find(false).wrapCallable(new Callable<LicenseDocument>() {
-                            @Override
-                            public LicenseDocument call() throws Exception {
-                                // attempt to load license from file
+                    if (licenseFiles != null && licenseFiles.length > 0) {
+                        for (final File licenseFile : licenseFiles) {
+                            if(licenseFile.isFile()) {
                                 logger.info("Installing license from: " + licenseFile.getCanonicalPath());
-                                try ( InputStream is = new FileInputStream( licenseFile ) ) {
-                                    byte[] docBytes = IOUtils.slurpStream( is );
-                                    final LicenseDocument licenseDocument = new LicenseDocument( new String( docBytes ) );
-                                    licenseDocumentManager.saveWithImmediateFlush( licenseDocument );
-                                    return licenseDocument;
-                                }
+                                loadedLicenses.add(loadLicense(new FileInputStream(licenseFile)));
+                            }else {
+                                logger.info("Skipped loading from: " + licenseFile.getPath());
                             }
-                        }).call();
+                        }
                     }
+                }else {
+                    logger.info("License directory not found: "+ licenseFolder.getPath());
                 }
             }
         } catch (Exception e) {
-            logger.log( Level.WARNING, "Unable to install license: " + ExceptionUtils.getMessageWithCause(e), ExceptionUtils.getDebugException( e ) );
+            throw new IllegalStateException("Fail to install license: " + ExceptionUtils.getMessageWithCause(e), e);
+        }
+        if (loadedLicenses.isEmpty() && ConfigFactory.getBooleanProperty("bootstrap.license.require", false)) {
+            throw new IllegalStateException("No license loaded. Exiting.");
+        }
+    }
+
+    private LicenseDocument loadLicense(InputStream licenseStream) throws Exception {
+        try {
+            return AdminInfo.find(false).wrapCallable(new Callable<LicenseDocument>() {
+                @Override
+                public LicenseDocument call() throws Exception {
+                    // attempt to load license from file
+                    byte[] docBytes = IOUtils.slurpStream(licenseStream);
+                    final LicenseDocument licenseDocument = new LicenseDocument(new String(docBytes));
+                    licenseDocumentManager.saveWithImmediateFlush(licenseDocument);
+                    return licenseDocument;
+                }
+            }).call();
+        } finally {
+            licenseStream.close();
         }
     }
 }

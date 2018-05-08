@@ -163,8 +163,8 @@ public class MqNativeListenerThreadTest extends AbstractJUnit4SpringContextTests
         when(mqNativeListener.doWithMqNativeClient(
                 (Functions.UnaryThrows<Object, MqNativeClient.ClientBag, MQException>) argThat(new CallBackMatcher())))
                 .thenReturn(mqMessage);
-        when(mqNativeListener.getConnectorBooleanProperty(eq(PROPERTIES_KEY_MQ_NATIVE_INBOUND_IS_GET_MESSAGE_OPTIONS_USED))).thenReturn(true);
-        when(mqNativeListener.getConnectorIntegerProperty(eq(PROPERTIES_KEY_MQ_NATIVE_INBOUND_GET_MESSAGE_OPTIONS), anyInt())).thenReturn(1234567);
+        when(mqNativeListener.getConnectorBooleanProperty(eq(MqNativeListenerThread.PROPERTIES_KEY_MQ_NATIVE_INBOUND_IS_GET_MESSAGE_OPTIONS_USED))).thenReturn(true);
+        when(mqNativeListener.getConnectorIntegerProperty(eq(MqNativeListenerThread.PROPERTIES_KEY_MQ_NATIVE_INBOUND_GET_MESSAGE_OPTIONS), anyInt())).thenReturn(1234567);
 
         MqNativeListenerThread mqNativeListenerThread = new MqNativeListenerThread(mqNativeListener, "test-thread");
         mqNativeListenerThread.run();
