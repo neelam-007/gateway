@@ -1,5 +1,6 @@
 package com.l7tech.security.xml;
 
+import com.ibm.xml.dsig.Canonicalizer;
 import com.l7tech.common.TestDocuments;
 import com.l7tech.common.TestKeys;
 import com.l7tech.common.io.XmlUtil;
@@ -24,6 +25,7 @@ import com.l7tech.security.xml.decorator.DecoratorException;
 import com.l7tech.security.xml.decorator.WssDecorator;
 import com.l7tech.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.security.xml.processor.X509BinarySecurityTokenImpl;
+import com.l7tech.test.BugId;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.*;
 import com.l7tech.xml.DomElementCursor;
@@ -57,6 +59,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.l7tech.security.xml.KeyInfoInclusionType.*;
+import static com.l7tech.security.xml.decorator.WssDecoratorImpl.PROPERTY_DIGSIG_CANONICALIZATION_METHOD;
 import static org.junit.Assert.*;
 
 /**
@@ -675,6 +678,25 @@ public class WssDecoratorTest {
             }
         }
     }
+
+    @BugId("DE338973")
+    @Test
+    public void testSigningOnly_SpecifyDifferentCanonicalizationMethod() throws Exception {
+        // Case: use the default method "http://www.w3.org/2001/10/xml-exc-c14n#" as canonicalization method
+        SyspropUtil.clearProperties(PROPERTY_DIGSIG_CANONICALIZATION_METHOD);
+        runTest(getSigningOnlyTestDocument(), canonicalizationMethodVerifier(Canonicalizer.EXCLUSIVE));
+
+        // Case: use "http://www.w3.org/TR/2001/REC-xml-c14n-20010315" as canonicalization method
+        SyspropUtil.setProperty(PROPERTY_DIGSIG_CANONICALIZATION_METHOD, Canonicalizer.W3C2);
+        runTest(getSigningOnlyTestDocument(), canonicalizationMethodVerifier(Canonicalizer.W3C2));
+    }
+
+    private Functions.UnaryVoid<Document> canonicalizationMethodVerifier(final String c14nURI) {
+        final HashMap<String, String> nsMap = makeDefaultNsMap();
+        nsMap.put("ds", "http://www.w3.org/2000/09/xmldsig#");
+        return xpathVerifier("1=count(//ds:CanonicalizationMethod[@Algorithm='" + c14nURI + "'])", nsMap);
+    }
+
 
     @Test
 	public void testEncryptionOnly() throws Exception {

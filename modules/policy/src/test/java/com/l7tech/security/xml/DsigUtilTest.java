@@ -1,12 +1,19 @@
 package com.l7tech.security.xml;
 
+import com.ibm.xml.dsig.Canonicalizer;
+import com.ibm.xml.dsig.SignatureMethod;
+import com.ibm.xml.dsig.TemplateGenerator;
+import com.ibm.xml.dsig.XSignature;
 import com.l7tech.common.io.NullOutputStream;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.security.cert.TestCertificateGenerator;
 import com.l7tech.test.BenchmarkRunner;
+import com.l7tech.test.BugId;
 import com.l7tech.test.BugNumber;
-import com.l7tech.util.Pair;
+import com.l7tech.util.*;
 import com.l7tech.xml.soap.SoapUtil;
+
+import static com.l7tech.security.xml.DsigUtil.PROP_DIGSIG_INCLUSIVE_NAMESPACES_PREFIX;
 import static org.junit.Assert.*;
 import org.junit.*;
 import org.w3c.dom.Document;
@@ -179,5 +186,26 @@ public class DsigUtilTest {
             }
         }
     }
-}
 
+    @BugId("DE338973")
+    @Test
+    public void testAddInclusiveNamespace() throws TooManyChildElementsException, MissingRequiredElementException {
+        final TemplateGenerator template = new TemplateGenerator(XmlUtil.createEmptyDocument(), XSignature.SHA1, Canonicalizer.EXCLUSIVE, SignatureMethod.RSA);
+        template.addReference(template.createReference("#dummy_id"));
+        final Element signatureElement = template.getSignatureElement();
+
+        // Case: if prefix list is not specified, then InclusiveNamespaces will not be created.
+        SyspropUtil.clearProperty(PROP_DIGSIG_INCLUSIVE_NAMESPACES_PREFIX);
+        DsigUtil.addInclusiveNamespacesToElement(signatureElement);
+        assertTrue("should not find any InclusiveNamespaces elements",
+            DomUtils.findChildElementsByName(signatureElement, DomUtils.findAllNamespaces(signatureElement).values().toArray(new String[]{}), "InclusiveNamespaces").isEmpty()
+        );
+
+        // Case: if prefix list is specified, then InclusiveNamespaces will be created and added.
+        SyspropUtil.setProperty(PROP_DIGSIG_INCLUSIVE_NAMESPACES_PREFIX, "dummy_prefix");
+        DsigUtil.addInclusiveNamespacesToElement(signatureElement);
+        assertNotNull("should find one InclusiveNamespaces element",
+            DomUtils.findExactlyOneChildElementByName(signatureElement, Canonicalizer.EXCLUSIVE, "InclusiveNamespaces")
+        );
+    }
+}
