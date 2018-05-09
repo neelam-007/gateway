@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.jwt.server;
 
+import com.l7tech.common.TestKeys;
 import com.l7tech.external.assertions.jwt.CreateJsonWebKeyAssertion;
 import com.l7tech.external.assertions.jwt.JwkKeyInfo;
 import com.l7tech.gateway.common.audit.AssertionMessages;
@@ -208,6 +209,39 @@ public class ServerCreateJsonWebKeyAssertionTest {
 
         JSONData jsonData = JSONFactory.INSTANCE.newJsonData(jwks);
         assertKeyObject(jsonData, 1);
+    }
+
+    @Test
+    public void test_SingleKey_base64url_encoding() throws Exception {
+        X509Certificate[] certChain = new X509Certificate[]{ TestKeys.getCert( TestKeys.RSA_3072_CERT_X509_B64 )};
+        PrivateKey privateKey = TestKeys.getKey( "RSA", TestKeys.RSA_3072_KEY_PKCS8_B64 );
+        SsgKeyEntry ssgKeyEntry = new SsgKeyEntry(KEYSTORE_ID, KEY_ALIAS, certChain, privateKey);
+        when(defaultKey.lookupKeyByKeyAlias(eq(KEY_ALIAS), eq(KEYSTORE_ID))).thenReturn(ssgKeyEntry);
+
+        PolicyEnforcementContext context = getContext();
+        JwkKeyInfo key1 = getJwkKeyInfo(keyList.get(0), publicKeyUses.get(0));
+
+        List<JwkKeyInfo> keys = new ArrayList<>();
+        keys.add(key1);
+
+        CreateJsonWebKeyAssertion ass = new CreateJsonWebKeyAssertion();
+        ass.setTargetVariable("result");
+        ass.setKeys(keys);
+
+        ServerCreateJsonWebKeyAssertion sass = createServerAssertion(ass);
+        AssertionStatus status = sass.checkRequest(context);
+        Assert.assertEquals(AssertionStatus.NONE, status);
+
+        String jwks = (String) context.getVariable("result");
+        assertNotNull(jwks);
+
+        JSONData jsonData = JSONFactory.INSTANCE.newJsonData(jwks);
+
+        Map<String, Object> objectMap = (Map<String, Object>) jsonData.getJsonObject();
+        List<Map<String, String>> keyObjectMapList = (List<Map<String, String>>) objectMap.get("keys");
+        assertEquals(1, keyObjectMapList.size());
+        Map<String, String> keyOneObjectMap = keyObjectMapList.get(0);
+        assertEquals("5pnG6l8FrCkbS-4ayoArXLYqqxc", keyOneObjectMap.get("x5t"));
     }
 
     @Test
