@@ -207,17 +207,24 @@ public class DsigUtilTest {
 
     @BugId("DE338973")
     @Test
-    public void testAddInclusiveNamespace() throws TooManyChildElementsException, MissingRequiredElementException {
+    public void testAddInclusiveNamespace() {
         // Set the system property "com.l7tech.security.xml.decorator.digsig.inclusiveNamespacesPrefix" to specify a prefix list.
-        SyspropUtil.setProperty(PROP_DIGSIG_INCLUSIVE_NAMESPACES_PREFIX, "dummy_prefix");
+        final String dummyPrefixList = "dummy_prefix_1 dummy_prefix_2";  // Prefixes are sperated by space.
+        SyspropUtil.setProperty(PROP_DIGSIG_INCLUSIVE_NAMESPACES_PREFIX, dummyPrefixList);
 
         final Element signatureElement = createSignatureElementAndAddInclusiveNamespaces();
 
         // The system property "com.l7tech.security.xml.decorator.digsig.inclusiveNamespacesPrefix" is set to a dummy single-element list.
         // Since the prefix list is specified, InclusiveNamespaces will be created and added.
-        assertNotNull("should find one InclusiveNamespaces element",
-            DomUtils.findExactlyOneChildElementByName(signatureElement, Canonicalizer.EXCLUSIVE, "InclusiveNamespaces")
-        );
+        try {
+            final Element inclusiveNamespaces = DomUtils.findExactlyOneChildElementByName(signatureElement, Canonicalizer.EXCLUSIVE, "InclusiveNamespaces");
+            assertNotNull("should find exactly only one InclusiveNamespaces element", inclusiveNamespaces);
+
+            // Verify the attribute, "PrefixList" in the element 'InclusiveNamespaces'.
+            assertEquals("", dummyPrefixList, inclusiveNamespaces.getAttribute("PrefixList"));
+        } catch (final TooManyChildElementsException | MissingRequiredElementException e) {
+            fail("Should not happen here.");
+        }
     }
 
     /**
