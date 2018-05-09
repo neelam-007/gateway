@@ -18,6 +18,7 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.util.*;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
@@ -679,6 +680,25 @@ public class SsgConnectorPropertiesDialog extends JDialog {
             public void run() {
                 if (dlg.isConfirmed()) {
                     final Pair<String, String> property = dlg.getData();
+
+                    if (StringUtils.isEmpty(property.getKey())) {
+                        JOptionPane.showMessageDialog(SsgConnectorPropertiesDialog.this,
+                                "The Name field must not be empty.",
+                                "Possible Input Error", JOptionPane.ERROR_MESSAGE);
+
+                        editProperty(origPair);
+                        return;
+                    }
+
+                    if (StringUtils.isEmpty(property.getValue())) {
+                        JOptionPane.showMessageDialog(SsgConnectorPropertiesDialog.this,
+                                "The Value field must not be empty.",
+                                "Possible Input Error", JOptionPane.ERROR_MESSAGE);
+
+                        editProperty(property);
+                        return;
+                    }
+
                     List<Pair<String,String>> elms = (List<Pair<String,String>>)Collections.list(propertyListModel.elements());
                     for (Pair<String, String> elm : elms)
                         if (elm.left.equals(property.left)) propertyListModel.removeElement(elm);

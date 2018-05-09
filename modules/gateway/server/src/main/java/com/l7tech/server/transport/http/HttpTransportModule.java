@@ -1,5 +1,6 @@
 package com.l7tech.server.transport.http;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.l7tech.gateway.common.LicenseManager;
 import com.l7tech.gateway.common.audit.SystemMessages;
 import com.l7tech.gateway.common.transport.SsgConnector;
@@ -61,9 +62,15 @@ import static com.l7tech.gateway.common.Component.GW_HTTPRECV;
 import static com.l7tech.gateway.common.transport.SsgConnector.Endpoint.*;
 import static com.l7tech.gateway.common.transport.SsgConnector.*;
 import static com.l7tech.server.GatewayFeatureSets.SERVICE_HTTP_MESSAGE_INPUT;
+import static com.l7tech.util.BuildInfo.getProductVersionMajor;
 import static com.l7tech.util.CollectionUtils.caseInsensitiveSet;
+import static com.l7tech.util.ConfigFactory.getProperty;
 import static com.l7tech.util.ExceptionUtils.getDebugException;
 import static com.l7tech.util.ValidationUtils.isValidInteger;
+import static java.lang.String.format;
+import static java.util.Arrays.asList;
+import static org.apache.commons.lang3.StringUtils.isEmpty;
+import static org.apache.commons.lang3.StringUtils.EMPTY;
 
 /**
  * Bean that owns the Tomcat servlet container and all the HTTP/HTTPS connectors.
@@ -71,18 +78,31 @@ import static com.l7tech.util.ValidationUtils.isValidInteger;
  * It listens for entity change events for SsgConnector to know when to start/stop HTTP connectors.
  */
 public class HttpTransportModule extends TransportModule implements PropertyChangeListener {
-    protected static final Logger logger = Logger.getLogger(HttpTransportModule.class.getName());
 
-    public static final String RESOURCE_PREFIX = "com/l7tech/server/resources/";
-    public static final String CONNECTOR_ATTR_KEYSTORE_PASS = "keystorePass";
+    private static final Logger LOGGER = Logger.getLogger(HttpTransportModule.class.getName());
+
     public static final String CONNECTOR_ATTR_TRANSPORT_MODULE_ID = "httpTransportModuleInstanceId";
     public static final String CONNECTOR_ATTR_CONNECTOR_OID = "ssgConnectorOid";
     public static final String INIT_PARAM_INSTANCE_ID = "httpTransportModuleInstanceId";
-    public static final String CONFIG_PROP_CONCURRENCY_WARNING_REPEAT_DELAY_SEC = "io.httpConcurrencyWarning.repeatDelay";
 
+    /** By default, set to "CA API Gateway for security reasons - overrides Tomcat's Apache-Coyote/1.1 */
+    static final String PROP_NAME_SERVER = "server";
+
+    /** This is the default value of the "server" header sent in all responses from a Gateway listen port response,
+     * overriding Tomcat's default "Apache-Coyote/1.1" */
+    static final String HEADER_SERVER_CONFIG_PROP_DEFAULT = "com.l7tech.server.response.header.server";
+
+    static final String HEADER_SERVER_DEFAULT_FORMAT = "CA-API-Gateway/%s.0";
+    private static final String RESOURCE_PREFIX = "com/l7tech/server/resources/";
+    private static final String CONNECTOR_ATTR_KEYSTORE_PASS = "keystorePass";
+    private static final String CONFIG_PROP_CONCURRENCY_WARNING_REPEAT_DELAY_SEC = "io.httpConcurrencyWarning.repeatDelay";
+    private static final String UNABLE_TO_START_CONNECTOR = "Unable to start %s connector on port %s: %s";
+    private static final String REQUEST_LACKS_ATTRIBUTE = "Request lacks valid attribute %s";
+    private static final String CLIENT_AUTH = "clientAuth";
+    private static final String HTTP_S = "HTTP(S)";
     private static final AtomicLong nextInstanceId = new AtomicLong(1L);
     private static final Map<Long, Reference<HttpTransportModule>> instancesById =
-            new ConcurrentHashMap<Long, Reference<HttpTransportModule>>();
+            new ConcurrentHashMap<>();
 
     static boolean testMode = false; // when test mode enabled, will always use the following two fields
     static final String APACHE_ALLOW_BACKSLASH = "org.apache.catalina.connector.CoyoteAdapter.ALLOW_BACKSLASH";
@@ -91,13 +111,14 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
 
     private final long instanceId;
 
+    private final Set<String> schemes = caseInsensitiveSet( SCHEME_HTTP, SCHEME_HTTPS );
     private final AtomicBoolean initialized = new AtomicBoolean(false);
     private final AtomicBoolean running = new AtomicBoolean(false);
     private final AtomicInteger sharedThreadPoolConcurrency = new AtomicInteger();
 
     private final ServerConfig serverConfig;
     private final MasterPasswordManager masterPasswordManager;
-    private final Map<Goid, Pair<SsgConnector, Connector>> activeConnectors = new ConcurrentHashMap<Goid, Pair<SsgConnector, Connector>>();
+    private final Map<Goid, Pair<SsgConnector, Connector>> activeConnectors = new ConcurrentHashMap<>();
     private final Map<Goid, AtomicInteger> connectorPoolConcurrency = new ConcurrentHashMap<>();
     private final Map<Goid, Integer> connectorConcurrencyWarningThreshold = new ConcurrentHashMap<>();
     private final AtomicLong lastConcurrencyWarningTime = new AtomicLong();
@@ -113,12 +134,12 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
                                 final SsgConnectorManager ssgConnectorManager,
                                 final TrustedCertServices trustedCertServices )
     {
-        super("HTTP Transport Module", GW_HTTPRECV, logger, SERVICE_HTTP_MESSAGE_INPUT, licenseManager, ssgConnectorManager, trustedCertServices, defaultKey, serverConfig);
+        super("HTTP Transport Module", GW_HTTPRECV, LOGGER, SERVICE_HTTP_MESSAGE_INPUT, licenseManager, ssgConnectorManager, trustedCertServices, defaultKey, serverConfig);
         this.serverConfig = serverConfig;
         this.masterPasswordManager = masterPasswordManager;
         this.instanceId = nextInstanceId.getAndIncrement();
         //noinspection ThisEscapedInObjectConstruction
-        instancesById.put(instanceId, new WeakReference<HttpTransportModule>(this));
+        instancesById.put(instanceId, new WeakReference<>(this));
     }
 
     private void initializeServletEngine() throws LifecycleException {
@@ -142,7 +163,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
             executor.start();
         } catch (org.apache.catalina.LifecycleException e) {
             final String msg = "Unable to start executor for HTTP/HTTPS connections: " + ExceptionUtils.getMessage(e);
-            auditError( "HTTP(S)", msg, getDebugException( e ) );
+            auditError( HTTP_S, msg, getDebugException( e ) );
             throw new LifecycleException(msg, e);
         }
 
@@ -152,8 +173,12 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         embedded.addEngine(engine);
 
         File inf = serverConfig.getLocalDirectoryProperty( ServerConfigParams.PARAM_WEB_DIRECTORY, null, false);
-        if (inf == null) throw new LifecycleException("No web directory set");
-        if (!inf.exists() || !inf.isDirectory()) throw new LifecycleException("No such directory: " + inf.getPath());
+        if (inf == null) {
+            throw new LifecycleException("No web directory set");
+        }
+        if (!inf.exists() || !inf.isDirectory()) {
+            throw new LifecycleException("No such directory: " + inf.getPath());
+        }
 
         final String s = inf.getAbsolutePath();
         Host host = embedded.createHost(InetAddressUtil.getLocalHostName(), s);
@@ -182,11 +207,13 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
             }
 
             @Override
-            public void load() throws ClassNotFoundException, IOException {
+            public void load() {
+                //
             }
 
             @Override
-            public void unload() throws IOException {
+            public void unload() {
+                //
             }
         });
 
@@ -231,7 +258,9 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
 
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
-        if (executor == null) return; // not yet started
+        if (executor == null) {
+            return; // not yet started
+        }
 
         final String propertyName = evt.getPropertyName();
         if ( ServerConfigParams.PARAM_IO_HTTP_POOL_MAX_CONCURRENCY.equals(propertyName) ||
@@ -244,7 +273,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
                 coreSize = adjusted.left;
                 maxSize = adjusted.right;
 
-                logger.info("Changing HTTP/HTTPS concurrency to core=" + coreSize + ", max=" + maxSize);
+                LOGGER.info("Changing HTTP/HTTPS concurrency to core=" + coreSize + ", max=" + maxSize);
                 if ( maxSize > executor.getMaxThreads() ) {
                     executor.setMaxThreads(maxSize);
                     executor.setMinSpareThreads(coreSize);
@@ -256,7 +285,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
                 executor.start();
             } catch (org.apache.catalina.LifecycleException e) {
                 final String msg = "Unable to restart executor after changing property " + evt.getPropertyName() + ": " + ExceptionUtils.getMessage(e);
-                logger.log(Level.SEVERE, msg, e);
+                LOGGER.log(Level.SEVERE, msg, e);
                 getApplicationContext().publishEvent(new TransportEvent(this, GW_HTTPRECV, null, Level.WARNING, "Error", msg));
             }
         }
@@ -278,7 +307,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         VirtualDirContext ssgContext = new VirtualDirContext("ssg", ssgFileContext);
 
         // Set up our virtual WEB-INF subdirectory
-        List<VirtualDirEntry> webinfEntries = new ArrayList<VirtualDirEntry>();
+        List<VirtualDirEntry> webinfEntries = new ArrayList<>();
 
         String extraAdmin = enableAdmin ? new String( loadResourceBytes( "webxml-admin.dat" ) ) : "<!-- admin subsystem omitted -->";
         String wacRepl = enableAdmin ? "webApplicationContext" : "webApplicationContext-noadmin";
@@ -355,21 +384,26 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
             try {
                 byte[] fileBytes = IOUtils.slurpFile(file);
                 collector.add(new VirtualDirEntryImpl(file.getName(), fileBytes));
-                logger.info("Noted add-on configuration file: " + file.getName());
+                LOGGER.info("Noted add-on configuration file: " + file.getName());
             } catch (IOException e) {
-                logger.log(Level.WARNING, "Unable to read add-on configuration file (ignoring it): " + file.getAbsolutePath() + ": " + ExceptionUtils.getMessage(e), e);
+                LOGGER.log(Level.WARNING, "Unable to read add-on configuration file (ignoring it): " + file.getAbsolutePath() + ": " + ExceptionUtils.getMessage(e), e);
             }
         }
     }
 
     private Pair<Integer, Integer> adjustCoreAndMaxThreads(int coreSize, int maxSize) {
-        if ( maxSize < 1 || maxSize > 100000 ) maxSize = 40;
-        if ( coreSize < 0 && coreSize > -1000 ) coreSize = maxSize / Math.abs(coreSize);
-        if ( coreSize < 1 )
+        if ( maxSize < 1 || maxSize > 100000 ) {
+            maxSize = 40;
+        }
+        if ( coreSize < 0 && coreSize > -1000 ) {
+            coreSize = maxSize / Math.abs(coreSize);
+        }
+        if ( coreSize < 1 ) {
             coreSize = 1;
-        else if ( coreSize > maxSize )
+        } else if ( coreSize > maxSize ) {
             coreSize = maxSize;
-        return new Pair<Integer, Integer>(coreSize, maxSize);
+        }
+        return new Pair<>(coreSize, maxSize);
     }
 
     private StandardThreadExecutor createExecutor( final String name,
@@ -380,14 +414,14 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         coreSize = adjusted.left;
         maxSize = adjusted.right;
 
-        StandardThreadExecutor executor = new StandardThreadExecutor();
-        executor.setName(name);
-        executor.setDaemon(true);
-        executor.setMaxIdleTime( serverConfig.getIntProperty( ServerConfigParams.PARAM_IO_HTTP_POOL_MAX_IDLE_TIME, 60000) );
-        executor.setMaxThreads(maxSize);
-        executor.setMinSpareThreads(coreSize);
-        executor.setNamePrefix("tomcat-exec-" + name + "-");
-        return executor;
+        StandardThreadExecutor threadExecutor = new StandardThreadExecutor();
+        threadExecutor.setName(name);
+        threadExecutor.setDaemon(true);
+        threadExecutor.setMaxIdleTime( serverConfig.getIntProperty( ServerConfigParams.PARAM_IO_HTTP_POOL_MAX_IDLE_TIME, 60000) );
+        threadExecutor.setMaxThreads(maxSize);
+        threadExecutor.setMinSpareThreads(coreSize);
+        threadExecutor.setNamePrefix("tomcat-exec-" + name + "-");
+        return threadExecutor;
     }
 
     private void startServletEngine() throws LifecycleException {
@@ -407,7 +441,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
             itworked = true;
         } catch (org.apache.catalina.LifecycleException e) {
             String msg = "Unable to start HTTP listener subsystem: " + ExceptionUtils.getMessage(e);
-            auditError( "HTTP(S)", msg, getDebugException( e ) );
+            auditError( HTTP_S, msg, getDebugException( e ) );
             throw new LifecycleException(e);
         } finally {
             if (!itworked)
@@ -427,13 +461,13 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
             return;
 
         try {
-            final List<Goid> oidsToStop = new ArrayList<Goid>(activeConnectors.keySet());
+            final List<Goid> oidsToStop = new ArrayList<>(activeConnectors.keySet());
             for ( final Goid goid : oidsToStop) {
                 removeConnector(goid);
             }
         }
         catch(Exception e) {
-            auditError( "HTTP(S)", "Error while shutting down.", e);
+            auditError( HTTP_S, "Error while shutting down.", e);
         }
 
         try {
@@ -480,18 +514,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
             for (SsgConnector connector : connectors) {
                 if (connector.isEnabled() && connectorIsOwnedByThisModule(connector)) {
                     foundHttp = true;
-                    try {
-                        if (actuallyStartThem) addConnector(connector);
-                    } catch ( Exception e ) {
-                        final Exception auditException;
-                        if ( e instanceof ListenerException || ExceptionUtils.getMessage(e).contains("java.net.BindException: ") ) { // The exception cause is not chained ...
-                            auditException = ExceptionUtils.getDebugException(e);
-                        } else {
-                            auditException = e;
-                        }
-                        auditError( "HTTP(S)", "Unable to start " + connector.getScheme() + " connector on port " + connector.getPort() +
-                                    ": " + ExceptionUtils.getMessage(e), auditException );
-                    }
+                    this.startConnectorIfNecessary(actuallyStartThem, connector);
                 }
             }
 
@@ -508,31 +531,49 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         }
     }
 
+    private void startConnectorIfNecessary(boolean actuallyStartThem, SsgConnector connector) {
+        if (!actuallyStartThem) {
+            return;
+        }
+
+        try {
+            addConnector(connector);
+        } catch ( ListenerException e ) {
+            auditError( HTTP_S, String.format(UNABLE_TO_START_CONNECTOR, connector.getScheme(), connector.getPort(), ExceptionUtils.getMessage(e)), ExceptionUtils.getDebugException(e) );
+        } catch ( Exception e ) {
+            final Exception auditException;
+            if ( ExceptionUtils.getMessage(e).contains("java.net.BindException: ") ) { // The exception cause is not chained ...
+                auditException = ExceptionUtils.getDebugException(e);
+            } else {
+                auditException = e;
+            }
+            auditError( HTTP_S, String.format(UNABLE_TO_START_CONNECTOR, connector.getScheme(), connector.getPort(), ExceptionUtils.getMessage(e)), auditException );
+        }
+    }
+
     /**
      * Add some connectors to the DB table, getting them from server.xml if possible, but just creating
      * some defaults if not.
      *
      * @param actuallyStartThem if true, start each connector immediately after saving it.
-     * @return zero or more connectors that have already been saved to the database.  Never null or empty.
      */
-    private Collection<SsgConnector> createFallbackConnectors(boolean actuallyStartThem) {
+    private void createFallbackConnectors(boolean actuallyStartThem) {
         Collection<SsgConnector> toAdd = DefaultHttpConnectors.getDefaultConnectors();
         for (SsgConnector connector : toAdd) {
             try {
                 ssgConnectorManager.save(connector);
-                if (actuallyStartThem) addConnector(connector);
+                if (actuallyStartThem) {
+                    addConnector(connector);
+                }
             } catch (SaveException e) {
-                logger.log(Level.WARNING, "Unable to save fallback connector to DB: " + ExceptionUtils.getMessage(e), e);
+                LOGGER.log(Level.WARNING, "Unable to save fallback connector to DB: " + ExceptionUtils.getMessage(e), e);
             } catch (ListenerException e) {
                 //noinspection ThrowableResultOfMethodCallIgnored
-                logger.log(Level.WARNING, "Unable to start " + connector.getScheme() + " connector on port " + connector.getPort() +
-                            ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                LOGGER.log(Level.WARNING, String.format(UNABLE_TO_START_CONNECTOR, connector.getScheme(), connector.getPort(), ExceptionUtils.getMessage(e)), ExceptionUtils.getDebugException(e));
             } catch (Exception e) {
-                logger.log(Level.WARNING, "Unable to start " + connector.getScheme() + " connector on port " + connector.getPort() +
-                            ": " + ExceptionUtils.getMessage(e), e);
+                LOGGER.log(Level.WARNING, String.format(UNABLE_TO_START_CONNECTOR, connector.getScheme(), connector.getPort(), ExceptionUtils.getMessage(e)), e);
             }
         }
-        return toAdd;
     }
 
     /**
@@ -540,26 +581,24 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
      *
      * @param currentConnectors connectors currently in the database
      * @param actuallyStartThem if true, start each connector immediately after saving it.
-     * @return zero or more connectors that have already been saved to the database.  Never null or empty.
      */
-    private Collection<SsgConnector> createRequiredConnectors(Collection<SsgConnector> currentConnectors, boolean actuallyStartThem) {
+    private void createRequiredConnectors(Collection<SsgConnector> currentConnectors, boolean actuallyStartThem) {
         Collection<SsgConnector> toAdd = DefaultHttpConnectors.getRequiredConnectors(currentConnectors);
         for (SsgConnector connector : toAdd) {
             try {
                 ssgConnectorManager.save(connector);
-                if (actuallyStartThem) addConnector(connector);
+                if (actuallyStartThem) {
+                    addConnector(connector);
+                }
             } catch (SaveException e) {
-                logger.log(Level.WARNING, "Unable to save required connector to DB: " + ExceptionUtils.getMessage(e), e);
+                LOGGER.log(Level.WARNING, "Unable to save required connector to DB: " + ExceptionUtils.getMessage(e), e);
             } catch (ListenerException e) {
                 //noinspection ThrowableResultOfMethodCallIgnored
-                logger.log(Level.WARNING, "Unable to start " + connector.getScheme() + " connector on port " + connector.getPort() +
-                            ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                LOGGER.log(Level.WARNING, String.format(UNABLE_TO_START_CONNECTOR, connector.getScheme(), connector.getPort(), ExceptionUtils.getMessage(e)), ExceptionUtils.getDebugException(e));
             } catch (Exception e) {
-                logger.log(Level.WARNING, "Unable to start " + connector.getScheme() + " connector on port " + connector.getPort() +
-                            ": " + ExceptionUtils.getMessage(e), e);
+                LOGGER.log(Level.WARNING, String.format(UNABLE_TO_START_CONNECTOR, connector.getScheme(), connector.getPort(), ExceptionUtils.getMessage(e)), e);
             }
         }
-        return toAdd;
     }
 
     @Override
@@ -584,7 +623,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
             addHttpsConnector(connector, connector.getPort(), connectorAttrs);
         } else {
             // It's not an HTTP connector; ignore it.  This shouldn't be possible
-            logger.log(Level.WARNING, "HttpTransportModule is ignoring non-HTTP(S) connector with scheme " + scheme);
+            LOGGER.log(Level.WARNING, "HttpTransportModule is ignoring non-HTTP(S) connector with scheme " + scheme);
         }
 
         notifyEndpointActivation( connector );
@@ -601,7 +640,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
     }
 
     private Map<String, Object> asTomcatConnectorAttrs(SsgConnector c) throws ListenerException {
-        Map<String, Object> m = new LinkedHashMap<String, Object>();
+        Map<String, Object> m = new LinkedHashMap<>();
 
         m.put("maxThreads", "150");
         m.put("minSpareThreads", "25");
@@ -609,7 +648,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         m.put("disableUploadTimeout", "true");
         m.put("acceptCount", "100");
 
-        String bindAddress = c.getProperty(SsgConnector.PROP_BIND_ADDRESS);
+        String bindAddress = c.getProperty(PROP_BIND_ADDRESS);
         if (bindAddress == null || InetAddressUtil.isAnyHostAddress(bindAddress)) {
             m.remove("address");
         } else {
@@ -626,11 +665,11 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
 
             final int clientAuth = c.getClientAuth();
             if (clientAuth == SsgConnector.CLIENT_AUTH_ALWAYS)
-                m.put("clientAuth", "true");
+                m.put(CLIENT_AUTH, "true");
             else if (clientAuth == SsgConnector.CLIENT_AUTH_OPTIONAL)
-                m.put("clientAuth", "want");
+                m.put(CLIENT_AUTH, "want");
             else if (clientAuth == SsgConnector.CLIENT_AUTH_NEVER)
-                m.put("clientAuth", "false");
+                m.put(CLIENT_AUTH, "false");
 
         } else {
             // Not SSL
@@ -639,16 +678,16 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         }
 
         // Allow overrides of any parameters we didn't already handle
+        List<String> handledProperties = asList(PROP_BIND_ADDRESS, PROP_PORT_RANGE_START, PROP_PORT_RANGE_COUNT, PROP_TLS_CIPHERLIST, PROP_TLS_PROTOCOLS);
         List<String> extraPropNames = c.getPropertyNames();
         for (String name : extraPropNames) {
-            if (name.equals(SsgConnector.PROP_BIND_ADDRESS) ||
-                name.equals(SsgConnector.PROP_PORT_RANGE_START) ||
-                name.equals(SsgConnector.PROP_PORT_RANGE_COUNT) ||
-                name.equals(SsgConnector.PROP_TLS_CIPHERLIST) ||
-                name.equals(SsgConnector.PROP_TLS_PROTOCOLS))
+            if (handledProperties.contains(name)) {
                 continue;
+            }
             String value = c.getProperty(name);
-            if (value != null) m.put(name, value);
+            if (value != null) {
+                m.put(name, value);
+            }
         }
 
         return m;
@@ -658,7 +697,9 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
     protected void removeConnector(Goid goid) {
         final Pair<SsgConnector, Connector> entry;
         entry = activeConnectors.remove(goid);
-        if (entry == null) return;
+        if (entry == null) {
+            return;
+        }
         Connector connector = entry.right;
         auditStop( entry.left.getScheme(), describe(entry.left) );
         embedded.removeConnector(connector);
@@ -681,7 +722,6 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         notifyEndpointDeactivation(entry.left);
     }
 
-    private final Set<String> schemes = caseInsensitiveSet( SCHEME_HTTP, SCHEME_HTTPS );
     @Override
     protected Set<String> getSupportedSchemes() {
         //noinspection ReturnOfCollectionOrArrayField
@@ -724,7 +764,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
             try {
                 startInitialConnectors(true);
             } catch (ListenerException e) {
-                logger.log(Level.SEVERE, "Unable to start HTTP connectors", e);
+                LOGGER.log(Level.SEVERE, "Unable to start HTTP connectors", e);
             }
         }
     }
@@ -765,7 +805,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
                 char[] decrypted = masterPasswordManager.decryptPassword(kspass.toString());
                 attrs.put(CONNECTOR_ATTR_KEYSTORE_PASS, new String(decrypted));
             } catch (ParseException e) {
-                logger.log(Level.WARNING, "Unable to decrypt encrypted password in server.xml -- falling back to password from keystore.properties: " + ExceptionUtils.getMessage(e));
+                LOGGER.log(Level.WARNING, "Unable to decrypt encrypted password in server.xml -- falling back to password from keystore.properties: " + ExceptionUtils.getMessage(e));
                 attrs.remove(CONNECTOR_ATTR_KEYSTORE_PASS);
             }
         }
@@ -815,7 +855,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
                 connectorExecutor.start();
                 embedded.addExecutor( connectorExecutor );
             } catch ( NumberFormatException nfe ) {
-                logger.warning("Ignoring invalid thread pool size '"+sizeStr+"' for connector '"+connector.getName()+"'.");
+                LOGGER.warning("Ignoring invalid thread pool size '"+sizeStr+"' for connector '"+connector.getName()+"'.");
             } catch (org.apache.catalina.LifecycleException e) {
                 throw new ListenerException( "Unable to start HTTPS listener on port " + connector.getPort() + ": Unable to start thread pool '" + ExceptionUtils.getMessage(e) + "'.");
             }
@@ -871,7 +911,13 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         }
     }
 
-    private static void setConnectorAttributes( final Connector c, final Map<String, Object> attrs ) {
+    @VisibleForTesting
+    static void setConnectorAttributes( final Connector c, final Map<String, Object> attrs ) {
+        // Ensure that we set the server header default if not specified for this connector
+        if (attributeMissingOrEmpty(PROP_NAME_SERVER, attrs, EMPTY)) {
+            attrs.put(PROP_NAME_SERVER, getDefaultServerHeader());
+        }
+
         for ( final Map.Entry<String, Object> entry : attrs.entrySet() ) {
             if ("enableLookups".equalsIgnoreCase(entry.getKey())) {
                 c.setEnableLookups(Boolean.valueOf(String.valueOf(entry.getValue())));
@@ -895,6 +941,39 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
                 c.setAttribute(entry.getKey(), entry.getValue());
             }
         }
+    }
+
+    /**
+     * Check if an atrribute in the attribute map is missing, null or considered empty against some value.
+     *
+     * @param attributeName attribute to be checked
+     * @param attrs attributes map
+     * @param emptyValue value to consider empty, "" for strings, 0 for integers.
+     * @return boolean
+     */
+    private static boolean attributeMissingOrEmpty(final String attributeName, final Map<String, Object> attrs, final Object emptyValue) {
+        Object attribute = attrs.get(attributeName);
+        if (attribute == null) {
+            return true;
+        }
+        if (attribute instanceof String) {
+            attribute = ((String) attribute).trim();
+        }
+        return attribute.equals(emptyValue);
+    }
+
+    /**
+     * Obtain the default server attribute value, from a system property or the default value for the gateway
+     *
+     * @return default server attribute value
+     */
+    private static String getDefaultServerHeader() {
+        // try from the config, if not available build a default string description for the gateway
+        String serverHeader = getProperty(HEADER_SERVER_CONFIG_PROP_DEFAULT);
+        if (isEmpty(serverHeader)) {
+            serverHeader = format(HEADER_SERVER_DEFAULT_FORMAT, getProductVersionMajor());
+        }
+        return serverHeader;
     }
 
     private static void callbackIfValidInteger( final Object value, final UnaryVoid<Integer> callback ) {
@@ -927,25 +1006,27 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
      * @return the SsgConnector instance whose listener accepted this request, or null if it can't be found.
      */
     public static SsgConnector getConnector( ServletRequest req) {
-        if (testMode) return testConnector;
+        if (testMode) {
+            return testConnector;
+        }
 
         Goid connectorGoid = (Goid)req.getAttribute(ConnectionIdValve.ATTRIBUTE_CONNECTOR_OID);
         if (connectorGoid == null) {
-            logger.log(Level.WARNING, "Request lacks valid attribute " + ConnectionIdValve.ATTRIBUTE_CONNECTOR_OID);
+            LOGGER.log(Level.WARNING, String.format(REQUEST_LACKS_ATTRIBUTE, ConnectionIdValve.ATTRIBUTE_CONNECTOR_OID));
             return null;
         }
 
         Long htmId = (Long)req.getAttribute(ConnectionIdValve.ATTRIBUTE_TRANSPORT_MODULE_INSTANCE_ID);
         HttpTransportModule htm = getInstance(htmId);
         if (htm == null) {
-            logger.log(Level.WARNING, "Request lacks valid attribute " + ConnectionIdValve.ATTRIBUTE_TRANSPORT_MODULE_INSTANCE_ID);
+            LOGGER.log(Level.WARNING, String.format(REQUEST_LACKS_ATTRIBUTE, ConnectionIdValve.ATTRIBUTE_TRANSPORT_MODULE_INSTANCE_ID));
             return null;
         }
 
         Pair<SsgConnector, Connector> pair = htm.activeConnectors.get(connectorGoid);
         if (pair == null) {
-            logger.log(Level.WARNING, "Request lacks valid attribute " + ConnectionIdValve.ATTRIBUTE_CONNECTOR_OID +
-                                      ": No active connector with oid " + connectorGoid);
+            LOGGER.log(Level.WARNING, String.format(REQUEST_LACKS_ATTRIBUTE, ConnectionIdValve.ATTRIBUTE_CONNECTOR_OID +
+                    ": No active connector with oid " + connectorGoid));
             return null;
         }
         return pair.left;
@@ -998,7 +1079,9 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
      * @return  the corresponding HttpTransportModule instance, or null if not found.
      */
     public static HttpTransportModule getInstance(long id) {
-        if (testMode) return testModule;
+        if (testMode) {
+            return testModule;
+        }
         
         Reference<HttpTransportModule> instance = instancesById.get(id);
         return instance == null ? null : instance.get();
@@ -1034,7 +1117,7 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
     public void reportMisconfiguredConnector(Goid connectorGoid) {
         Pair<SsgConnector, Connector> got = activeConnectors.get( connectorGoid );
         String desc = got == null ? null : got.left == null ? null : " (port " + got.left.getPort() + ")";
-        logger.log(Level.WARNING, "Shutting down HTTP connector OID " + connectorGoid + desc + " because it cannot be opened with its current configuration");
+        LOGGER.log(Level.WARNING, "Shutting down HTTP connector OID " + connectorGoid + desc + " because it cannot be opened with its current configuration");
         removeConnector(connectorGoid);
     }
 
@@ -1047,18 +1130,18 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
 
         Integer warningThreshold = connectorConcurrencyWarningThreshold.get( connectorGoid );
         if ( warningThreshold != null && concurrency >= warningThreshold )
-            maybeFireConcurrencyWarning( connectorGoid, concurrency, warningThreshold );
+            maybeFireConcurrencyWarning( connectorGoid, concurrency);
 
         return concurrency;
     }
 
-    private void maybeFireConcurrencyWarning( Goid connectorGoid, int concurrency, int warningThreshold ) {
+    private void maybeFireConcurrencyWarning(Goid connectorGoid, int concurrency) {
         int repeatDelay = ConfigFactory.getIntProperty( CONFIG_PROP_CONCURRENCY_WARNING_REPEAT_DELAY_SEC, 60 );
         long now = System.currentTimeMillis();
         long last = lastConcurrencyWarningTime.get();
         long millisSinceLast = now - last;
         if ( millisSinceLast < ( 1000L * repeatDelay ) ) {
-            logger.finer( "Suppressing repeated connector concurrency warning audit" );
+            LOGGER.finer( "Suppressing repeated connector concurrency warning audit" );
             return;
         }
 
