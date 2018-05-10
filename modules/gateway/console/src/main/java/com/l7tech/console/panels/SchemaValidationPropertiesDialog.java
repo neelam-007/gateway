@@ -1273,10 +1273,10 @@ public class SchemaValidationPropertiesDialog extends LegacyAssertionPropertyDia
     /**
      * Resource document resolver for Schemas embedded in the WSDL.
      */
-    private static final class WsdlSchemaResourceDocumentResolver extends ResourceDocumentResolverSupport {
+    public static final class WsdlSchemaResourceDocumentResolver extends ResourceDocumentResolverSupport {
         private final Collection<Pair<String,Element>> schemaElements;
 
-        private WsdlSchemaResourceDocumentResolver( final Collection<Pair<String,Element>> schemaElements ) {
+        public WsdlSchemaResourceDocumentResolver( final Collection<Pair<String,Element>> schemaElements ) {
             this.schemaElements = schemaElements;
         }
 

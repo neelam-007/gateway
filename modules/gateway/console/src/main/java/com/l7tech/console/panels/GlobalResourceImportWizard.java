@@ -264,9 +264,8 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
                     // treat as missing since a relative URI had to be updated to resolve the dependency
                     missingDependencies = true;
                 }
-            } catch( IOException e ) {
-                missingDependencies = true;
-            } catch ( SAXException e ) {
+            } catch( IOException | SAXException e ) {
+                logger.log(Level.WARNING, "Missing dependency" + e.getMessage(), e);
                 missingDependencies = true;
             }
 
@@ -285,10 +284,26 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
 
         // 3) Do import and prompt if options need selecting
         Collection<ResourceDocumentResolver> resolvers = new ArrayList<ResourceDocumentResolver>();
-        if ( additionalResolvers!=null ) resolvers.addAll( additionalResolvers );
-        resolvers.add( new FileResourceDocumentResolver() );
-        resolvers.add( GlobalResourceImportContext.buildDownloadingResolver( resourceAdmin ) );
-        resolvers.add( GlobalResourceImportContext.buildManualResolver(resourceTherapist, choiceSelector) );
+
+        //DE347794- additionalResolvers contains wsdl resolver which should not be used for resolving import dependency schemas as it always gives the same wsdl uri
+        //for given import schema, it has to be first resolved by external resolver like File resource and download resolver so moved wsdl resolver after these resolvers
+        // Schema document is resolved in the order the resolvers are added in the arrayList so wsdl resolver is added last to the arrayList
+        ResourceDocumentResolver wsdlSchemaResolver = null;
+        if (additionalResolvers != null) {
+            for (ResourceDocumentResolver resolver : additionalResolvers) {
+                if (resolver instanceof SchemaValidationPropertiesDialog.WsdlSchemaResourceDocumentResolver) {
+                    wsdlSchemaResolver = resolver;
+                } else {
+                    resolvers.add(resolver);
+                }
+            }
+        }
+        resolvers.add(new FileResourceDocumentResolver());
+        resolvers.add(GlobalResourceImportContext.buildDownloadingResolver(resourceAdmin));
+        resolvers.add(GlobalResourceImportContext.buildManualResolver(resourceTherapist, choiceSelector));
+        if (wsdlSchemaResolver != null) {
+            resolvers.add(wsdlSchemaResolver);
+        }
         context.setResourceDocumentResolverForType( ResourceType.XML_SCHEMA, context.buildSmartResolver(  ResourceType.XML_SCHEMA, resourceAdmin, resolvers, choiceSelector, entitySelector, resourceTherapist ));
         context.setResourceDocumentResolverForType( ResourceType.DTD, context.buildSmartResolver(  ResourceType.DTD, resourceAdmin, resolvers, choiceSelector, entitySelector, resourceTherapist ));
         final Map<String,ResourceHolder> processedResources =
@@ -452,6 +467,7 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
                     break;
                 }
             } catch ( IOException e ) {
+                logger.log(Level.WARNING, "Exception " + e.getMessage(), e);
                 // check other resources
             }
         }
@@ -615,7 +631,7 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
 
     private static final Logger logger = Logger.getLogger( GlobalResourceImportWizard.class.getName() );
 
-    private final ResourceAdmin resourceAdmin;
+    private final transient ResourceAdmin resourceAdmin;
 
     private void init() {
         setTitle( resources.getString( "dialog.title" ));
@@ -748,9 +764,8 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
         if ( resourceDocument != null ) {
             try {
                 tns = resourceDocument.available() ? XmlUtil.getSchemaTNS( resourceDocument.getContent() ) : null;
-            } catch ( XmlUtil.BadSchemaException e ) {
-                tns = null;
-            } catch ( IOException e ) {
+            } catch ( XmlUtil.BadSchemaException | IOException e ) {
+                logger.log(Level.WARNING, "Exception " + e.getMessage(), e);
                 tns = null;
             }
 
@@ -771,6 +786,7 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
                         break;
                 }
             } catch ( IOException e ) {
+                logger.log(Level.WARNING, "Exception " + e.getMessage());
                 // handle below
             }
         }
@@ -1097,9 +1113,9 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
             try {
                 absoluteUri = uri.isEmpty() ? new URI(baseUri) : new URI(baseUri).resolve( uri );
             } catch ( URISyntaxException e ) {
-                throw new IOException( "Error resolving uri '"+uri+"' against '"+baseUri+"'" );
+                throw new IOException( "Error resolving uri '"+uri+"' against '"+baseUri+"'", e );
             } catch ( IllegalArgumentException e ) {
-                throw new IOException( "Error resolving uri '"+uri+"' against '"+baseUri+"'" );
+                throw new IOException( "Error resolving uri '"+uri+"' against '"+baseUri+"'" , e);
             }
         } else {
             absoluteUri = absoluteUri(uri);
@@ -1146,6 +1162,7 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
                         processedResourceType = ResourceType.XML_SCHEMA;
                     }
                 } catch ( SAXException e ) {
+                    logger.log(Level.WARNING, "Exception " + e.getMessage(), e);
                     // not XML?
                 }
             }
@@ -1316,6 +1333,8 @@ public class GlobalResourceImportWizard extends Wizard<GlobalResourceImportConte
                             break;
                         case MISSING_RESOURCE:
                             messageBuilder.append( "A dependency of an imported resource is " ).append( optionDetail ).append( ':' );
+                            break;
+                        default:
                             break;
                     }
 
