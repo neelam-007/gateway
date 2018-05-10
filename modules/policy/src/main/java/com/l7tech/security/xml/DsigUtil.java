@@ -26,7 +26,6 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import javax.crypto.SecretKey;
-import javax.xml.crypto.dsig.keyinfo.*;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.security.*;
@@ -48,6 +47,7 @@ import static com.l7tech.security.xml.SupportedDigestMethods.*;
  */
 public class DsigUtil {
     public static final String DIGSIG_URI = "http://www.w3.org/2000/09/xmldsig#";
+    static final String PROP_DIGSIG_INCLUSIVE_NAMESPACES_PREFIX = "com.l7tech.security.xml.decorator.digsig.inclusiveNamespacesPrefix";
 
     /**
      * Get the identifier attribute for the given element.
@@ -361,19 +361,22 @@ public class DsigUtil {
     }
 
     /**
-     * Add a c14n:InclusiveNamespaces child element to the specified element with an empty PrefixList.
+     * Add a c14n:InclusiveNamespaces child element to the specified element with a PrefixList.
      */
     public static void addInclusiveNamespacesToElement(Element element) {
         //
-        // NOTE: Since we have no PrefixList attribute we should not have any inlclusive namespaces
+        // NOTE: If we have no PrefixList attribute we should not have any inlclusive namespaces
         // element (See the DTD http://www.w3.org/TR/xml-exc-c14n/exc-c14n.dtd)
         //
-        //Element inclusiveNamespaces = XmlUtil.createAndAppendElementNS(element,
-        //                                                               "InclusiveNamespaces",
-        //                                                               Transform.C14N_EXCLUSIVE,
-        //                                                               "c14n");
         // omit prefix list attribute if empty (WS-I BSP R5410)
-        //inclusiveNamespaces.setAttribute("PrefixList", "");
+        final String prefix = ConfigFactory.getProperty(PROP_DIGSIG_INCLUSIVE_NAMESPACES_PREFIX, null);
+        if (prefix != null && !prefix.isEmpty()) {
+            Element inclusiveNamespaces = XmlUtil.createAndAppendElementNS(element,
+                    "InclusiveNamespaces",
+                    Transform.C14N_EXCLUSIVE,
+                    "c14n");
+            inclusiveNamespaces.setAttribute("PrefixList", prefix);
+        }
     }
 
     /**

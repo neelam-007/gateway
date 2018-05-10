@@ -1,12 +1,19 @@
 package com.l7tech.security.xml;
 
+import com.ibm.xml.dsig.Canonicalizer;
+import com.ibm.xml.dsig.SignatureMethod;
+import com.ibm.xml.dsig.TemplateGenerator;
+import com.ibm.xml.dsig.XSignature;
 import com.l7tech.common.io.NullOutputStream;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.security.cert.TestCertificateGenerator;
 import com.l7tech.test.BenchmarkRunner;
+import com.l7tech.test.BugId;
 import com.l7tech.test.BugNumber;
-import com.l7tech.util.Pair;
+import com.l7tech.util.*;
 import com.l7tech.xml.soap.SoapUtil;
+
+import static com.l7tech.security.xml.DsigUtil.PROP_DIGSIG_INCLUSIVE_NAMESPACES_PREFIX;
 import static org.junit.Assert.*;
 import org.junit.*;
 import org.w3c.dom.Document;
@@ -30,6 +37,12 @@ public class DsigUtilTest {
     @BeforeClass
     public static void setUpSuite() throws Exception {
         rsaPublicKey = new TestCertificateGenerator().generate().getPublicKey();
+    }
+
+    @Before
+    public void setup() {
+        // Remove the system property "com.l7tech.security.xml.decorator.digsig.inclusiveNamespacesPrefix".
+        SyspropUtil.clearProperty(PROP_DIGSIG_INCLUSIVE_NAMESPACES_PREFIX);
     }
 
     @Test(expected = SignatureException.class)
@@ -179,5 +192,55 @@ public class DsigUtilTest {
             }
         }
     }
-}
 
+    @BugId("DE338973")
+    @Test
+    public void testNotAddInclusiveNamespace() throws TooManyChildElementsException, MissingRequiredElementException {
+        final Element signatureElement = createSignatureElementAndAddInclusiveNamespaces();
+
+        // By default, the system property "com.l7tech.security.xml.decorator.digsig.inclusiveNamespacesPrefix" is not set.
+        // Since the prefix list is not specified, InclusiveNamespaces will not be created.
+        assertTrue("should not find any InclusiveNamespaces elements",
+            DomUtils.findChildElementsByName(signatureElement, DomUtils.findAllNamespaces(signatureElement).values().toArray(new String[]{}), "InclusiveNamespaces").isEmpty()
+        );
+    }
+
+    @BugId("DE338973")
+    @Test
+    public void testAddInclusiveNamespace() {
+        // Set the system property "com.l7tech.security.xml.decorator.digsig.inclusiveNamespacesPrefix" to specify a prefix list.
+        final String dummyPrefixList = "dummy_prefix_1 dummy_prefix_2";  // Prefixes are sperated by space.
+        SyspropUtil.setProperty(PROP_DIGSIG_INCLUSIVE_NAMESPACES_PREFIX, dummyPrefixList);
+
+        final Element signatureElement = createSignatureElementAndAddInclusiveNamespaces();
+
+        // The system property "com.l7tech.security.xml.decorator.digsig.inclusiveNamespacesPrefix" is set to a dummy single-element list.
+        // Since the prefix list is specified, InclusiveNamespaces will be created and added.
+        try {
+            final Element inclusiveNamespaces = DomUtils.findExactlyOneChildElementByName(signatureElement, Canonicalizer.EXCLUSIVE, "InclusiveNamespaces");
+            assertNotNull("should find exactly only one InclusiveNamespaces element", inclusiveNamespaces);
+
+            // Verify the attribute, "PrefixList" in the element 'InclusiveNamespaces'.
+            assertEquals("", dummyPrefixList, inclusiveNamespaces.getAttribute("PrefixList"));
+        } catch (final TooManyChildElementsException | MissingRequiredElementException e) {
+            fail("Should not happen here.");
+        }
+    }
+
+    /**
+     * Create a new dummy Signature element.
+     * Add InclusiveNamespaces to the above signature element depending on the prefix list is specified or not.
+     * If the prefix list is specified, then InclusiveNamespaces will be added.  Otherwise, InclusiveNamespaces won't be added.
+     *
+     * @return a Signature element with or without an InclusiveNamespaces element.
+     */
+    private Element createSignatureElementAndAddInclusiveNamespaces() {
+        final TemplateGenerator template = new TemplateGenerator(XmlUtil.createEmptyDocument(), XSignature.SHA1, Canonicalizer.EXCLUSIVE, SignatureMethod.RSA);
+        template.addReference(template.createReference("#dummy_id"));
+        final Element signatureElement = template.getSignatureElement();
+
+        DsigUtil.addInclusiveNamespacesToElement(signatureElement);
+
+        return signatureElement;
+    }
+}
