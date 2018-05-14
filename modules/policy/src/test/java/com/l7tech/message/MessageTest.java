@@ -81,6 +81,15 @@ public class MessageTest {
 
     @Test
     @BugId("DE338158")
+    public void testNoContentLengthHeaderAndAllowContentLengthZeroInIsXml() throws IOException{
+        //Set up
+        setUpMessageWithReqServlet(false);
+        // Test no content-length header present
+        assertTrue(message.isXml(true));
+    }
+
+    @Test
+    @BugId("DE338158")
     public void testAllowContentLengthZeroInIsXml() throws IOException{
         //Set up
         setUpMessageWithReqServlet(true);
@@ -97,6 +106,11 @@ public class MessageTest {
         assertFalse(message.isXml());
     }
 
+    /**
+     * Set up a HttpRequest Servlet to access headers used for testing
+     * @param withContentLength true to add a contetnt length of 0
+     * @throws IOException from initialize
+     */
     private void setUpMessageWithReqServlet(final boolean withContentLength) throws IOException {
         final MockHttpServletRequest mockRequestServlet = new MockHttpServletRequest();
         message.attachHttpRequestKnob(new HttpServletRequestKnob(mockRequestServlet));
