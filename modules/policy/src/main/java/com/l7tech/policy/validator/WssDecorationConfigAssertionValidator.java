@@ -9,7 +9,6 @@ import com.l7tech.policy.assertion.PrivateKeyable;
 import com.l7tech.policy.assertion.xmlsec.WsSecurity;
 import com.l7tech.policy.assertion.xmlsec.WssConfigurationAssertion;
 import com.l7tech.policy.assertion.xmlsec.WssDecorationConfig;
-import com.l7tech.security.xml.KeyReference;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -81,8 +80,7 @@ public class WssDecorationConfigAssertionValidator implements AssertionValidator
 
                 // Check for the same key reference types (BST, Issuer/Serial, etc)
                 if ( (wdc1.getKeyReference() != null && wdc2.getKeyReference() != null) &&
-                     (!wdc1.getKeyReference().equals(wdc2.getKeyReference())))
-                {
+                     (!wdc1.getKeyReference().equals(wdc2.getKeyReference()))) {
                     hasDifferentKeyRefs = true;
                     bottomMostWssDecorationConfigAssertion = assertion.getOrdinal() > pathAssertion.getOrdinal() ? assertion : pathAssertion;
                 }

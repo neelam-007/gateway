@@ -24,6 +24,7 @@ import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.security.cert.CertValidationProcessor;
 import com.l7tech.xml.saml.SamlAssertionV1;
+import com.rsa.sslj.x.P;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -58,18 +59,16 @@ public class CertificateAuthenticatorJavaTest {
             "CN=Alice</saml:NameIdentifier> <saml:SubjectConfirmation> " +
             "<saml:ConfirmationMethod>urn:oasis:names:tc:SAML:1.0:cm:holder-of-key</saml:ConfirmationMethod> " +
             "<xd:KeyInfo xmlns:xd=\"http://www.w3.org/2000/09/xmldsig#\"> <xd:X509Data> " +
-            "<xd:X509Certificate>MIIDDDCCAfSgAwIBAgIQM6YEf7FVYx/tZyEXgVComTANBgkqhkiG9w0BAQUFADAwMQ4wDAYDVQQ" +
-            "KDAVPQVNJUzEeMBwGA1UEAwwVT0FTSVMgSW50ZXJvcCBUZXN0IENBMB4XDTA1MDMxOTAwMDAwMFoXDTE4MDMxOTIzNTk1OV" +
-            "owQjEOMAwGA1UECgwFT0FTSVMxIDAeBgNVBAsMF09BU0lTIEludGVyb3AgVGVzdCBDZXJ0MQ4wDAYDVQQDDAVBbGljZTCBn" +
-            "zANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEAoqi99By1VYo0aHrkKCNT4DkIgPL/SgahbeKdGhrbu3K2XG7arfD9tqIBIKMf" +
-            "rX4Gp90NJa85AV1yiNsEyvq+mUnMpNcKnLXLOjkTmMCqDYbbkehJlXPnaWLzve+mW0pJdPxtf3rbD4PS/cBQIvtpjmrDAU8" +
-            "VsZKT8DN5Kyz+EZsCAwEAAaOBkzCBkDAJBgNVHRMEAjAAMDMGA1UdHwQsMCowKKImhiRodHRwOi8vaW50ZXJvcC5iYnRlc3" +
-            "QubmV0L2NybC9jYS5jcmwwDgYDVR0PAQH/BAQDAgSwMB0GA1UdDgQWBBQK4l0TUHZ1QV3V2QtlLNDm+PoxiDAfBgNVHSMEG" +
-            "DAWgBTAnSj8wes1oR3WqqqgHBpNwkkPDzANBgkqhkiG9w0BAQUFAAOCAQEABTqpOpvW+6yrLXyUlP2xJbEkohXHI5OWwKWl" +
-            "eOb9hlkhWntUalfcFOJAgUyH30TTpHldzx1+vK2LPzhoUFKYHE1IyQvokBN2JjFO64BQukCKnZhldLRPxGhfkTdxQgdf5rC" +
-            "K/wh3xVsZCNTfuMNmlAM6lOAg8QduDah3WFZpEA0s2nwQaCNQTNMjJC8tav1CBr6+E5FAmwPXP7pJxn9Fw9OXRyqbRA4v2y" +
-            "7YpbGkG2GI9UvOHw6SGvf4FRSthMMO35YbpikGsLix3vAsXWWi4rwfVOYzQK0OFPNi9RMCUdSH06m9uLWckiCxjos0FQODZ" +
-            "E9l4ATGy9s9hNVwryOJTw==</xd:X509Certificate> </xd:X509Data> </xd:KeyInfo> " +
+            "<xd:X509Certificate>MIICgjCCAWqgAwIBAgIJALLt3UmjdE/TMA0GCSqGSIb3DQEBBQUAMDAxDjAMBgNVBAoTBU9BU0l" +
+            "TMR4wHAYDVQQDExVPQVNJUyBJbnRlcm9wIFRlc3QgQ0EwIBcNMTgwMzI2MjMxNjIxWhgPMjExODAzMDIyMzE2MjFaMEIxDj" +
+            "AMBgNVBAoTBU9BU0lTMSAwHgYDVQQLExdPQVNJUyBJbnRlcm9wIFRlc3QgQ2VydDEOMAwGA1UEAxMFQWxpY2UwgZ8wDQYJK" +
+            "oZIhvcNAQEBBQADgY0AMIGJAoGBAIUJPCtG7JthGRmQ8G1iryHRwCaU7aBRNqPl5dakkUsyoZLQ/ZBp7pOor6PnP/8l2FwF" +
+            "39bT8cR2lo2CqQqZ2UE7lCVq0Iz210U8Z1I7BcZw/ucEFhYE3NBsrXmI1eMTe9hwdvqvCmN48SWK1T4LaeYNN+P+QUSnkSE" +
+            "m8MvFQMiPAgMBAAGjDzANMAsGA1UdDwQEAwIEsDANBgkqhkiG9w0BAQUFAAOCAQEAFFJdESl83b5ChMRW6xfJJsfvG+Hdi5" +
+            "5Ppgz98gKgoYMewX4dGAbaELLxeGH1iWvtuvUjxW4jEBkoV5iVtKDVwwJElt/mOFTnTguhdd/OJYDnNtVQd+URvk6QnG8tA" +
+            "voKQxqsp6DSrs81W/pWVXMXe3xektcfq+NlGl1ylbmsj+oFd+XfiZbKKfE9YU4Q9oGs48T70a4uvIRhyaswZlO1vu+QNHHs" +
+            "s40mwrhZV9s1QEOV8+l1EiyornIOQLVX/mQoBY+2wh5I5G7IzZp6oWA+L578D5KI84Yh4xXKR5+1r4P1+yCDNxIO6J+Iyiz" +
+            "b5cEEcaS25Qw6GMUuVd/KKYqUWw==</xd:X509Certificate> </xd:X509Data> </xd:KeyInfo> " +
             "</saml:SubjectConfirmation>  </saml:Subject>  " +
             "<saml:SubjectLocality DNSAddress=\"Data.l7tech.com\" IPAddress=\"192.168.1.154\"/> " +
             "</saml:AuthenticationStatement></saml:Assertion>";

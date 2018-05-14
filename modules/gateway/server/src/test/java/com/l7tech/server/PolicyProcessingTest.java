@@ -1,5 +1,6 @@
 package com.l7tech.server;
 
+import com.l7tech.common.TestDocuments;
 import com.l7tech.common.http.*;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
@@ -20,6 +21,7 @@ import com.l7tech.security.token.SecurityTokenType;
 import com.l7tech.security.token.SignatureConfirmation;
 import com.l7tech.security.token.UsernamePasswordSecurityToken;
 import com.l7tech.security.xml.SimpleSecurityTokenResolver;
+import com.l7tech.security.xml.decorator.WssDecorator;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.server.audit.AuditContextStub;
 import com.l7tech.server.identity.AuthenticationResult;
@@ -31,6 +33,7 @@ import com.l7tech.server.policy.assertion.credential.DigestSessions;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.secureconversation.InboundSecureConversationContextManager;
 import com.l7tech.server.secureconversation.SessionCreationException;
+import com.l7tech.server.service.ServiceCache;
 import com.l7tech.server.service.ServiceCacheStub;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.tomcat.ResponseKillerValve;
@@ -79,6 +82,7 @@ public class PolicyProcessingTest {
     private static final Logger logger = Logger.getLogger(TokenServiceTest.class.getName());
     private static final String POLICY_RES_PATH = "policy/resources/";
 
+    private static ApplicationContext applicationContext = null;
     private static PolicyCache policyCache = null;
     private static MessageProcessor messageProcessor = null;
     private static SoapFaultManager soapFaultManager = null;
@@ -105,57 +109,57 @@ public class PolicyProcessingTest {
      * JMS service resolution to function correctly.
      */
     private static final String[][] TEST_SERVICES = new String[][]{
-        {"/sqlattack", "POLICY_sqlattack.xml", null, null, "false"},
-        {"/requestsizelimit", "POLICY_requestsizelimit.xml"},
-        {"/documentstructure", "POLICY_documentstructure.xml", "WSDL_noops.wsdl", "true"},
-        {"/stealthfault", "POLICY_stealthfault.xml"},
-        {"/faultlevel", "POLICY_faultlevel.xml"},
-        {"/ipaddressrange", "POLICY_iprange.xml"},
-        {"/xpathcreds", "POLICY_xpathcreds.xml"},
-        {"/usernametoken", "POLICY_usernametoken.xml"},
-        {"/encusernametoken", "POLICY_wss_encryptedusernametoken.xml"},
-        {"/encusernametokenX509", "POLICY_wss_encryptedusernametoken_x509.xml"},
-        {"/encusernametokentags", "POLICY_wss_encryptedusernametokenidtag.xml"},
-        {"/httpbasic", "POLICY_httpbasic.xml"},
-        {"/httproutecookie", "POLICY_httproutecookie.xml"},
-        {"/httproutenocookie", "POLICY_httproutenocookie.xml"},
-        {"/httproutetaicredchain", "POLICY_httproutetaicredchain.xml"},
-        {"/httproutepassthru", "POLICY_httproutepassthru.xml"},
-        {"/httproutepassheaders", "POLICY_httproutepassheaders.xml"},
-        {"/httproutejms", "POLICY_httproutejms.xml", "WSDL_httproutejms.wsdl"},
-        {"/httpwssheaderleave", "POLICY_httpwssheaderleave.xml"},
-        {"/httpwssheaderremove", "POLICY_httpwssheaderremove.xml"},
-        {"/httpwssheaderpromote", "POLICY_httpwssheaderpromote.xml"},
-        {"/attachment", "POLICY_signed_attachment.xml"},
-        {"/requestnonxmlok", "POLICY_request_modified_non_xml.xml"},
-        {"/httpdigestauth", "POLICY_twohttpdigestauth.xml"},
-        {"/x509token", "POLICY_wss_x509credssignedbody.xml"},
-        {"/multiplesignatures", "POLICY_multiplesignatures.xml"},
-        {"/multiplesignaturesnoid", "POLICY_multiplesignature_noidentity.xml"},
-        {"/multiplesignaturestags", "POLICY_multiplesignatures_idtags.xml"},
-        {"/multiplesignaturestags2", "POLICY_multiplesignatures_idtags2.xml"},
-        {"/multiplesignaturesx509SAML", "POLICY_wss_x509_and_SAML.xml"},
-        {"/multiplesignaturesvars", "POLICY_wss_multiplesigners_variables.xml"},
-        {"/wssDecoration1", "POLICY_requestdecoration1.xml"},
-        {"/wssDecoration2", "POLICY_requestdecoration2.xml"},
-        {"/wssDecoration3", "POLICY_sign_then_encrypt.xml"},
-        {"/threatprotections", "POLICY_threatprotections.xml"},
-        {"/removeelement", "POLICY_removeelement.xml"},
-        {"/addusernametoken", "POLICY_responsesecuritytoken.xml"},
-        {"/addtimestamp", "POLICY_responsetimestamp.xml"},
-        {"/addsignature", "POLICY_responsesignature.xml"},
-        {"/addsignaturevar", "POLICY_responsesignature_certificate_variable.xml"},
-        {"/removeheaders", "POLICY_removeheaders.xml"},
-        {"/signatureconfirmation1", "POLICY_signatureconfirmation1.xml"},
-        {"/signatureconfirmation2", "POLICY_signatureconfirmation2.xml"},
-        {"/signatureconfirmation3", "POLICY_signatureconfirmation3.xml"},
-        {"/addusernametoken2", "POLICY_response_wss_usernametoken_digest.xml"},
-        {"/addusernametoken3", "POLICY_response_encrypted_usernametoken.xml"},
-        {"/secureconversation", "POLICY_secure_conversation.xml"},
-        {"/timestampresolution", "POLICY_timestampresolution.xml"},
-        {"/wssEncryptResponseIssuerSerial", "POLICY_encrypted_response_issuerserial.xml"},
-        {"/hardcoded", "POLICY_hardcodedresponse.xml"},
-        {"/signaturenotoken", "POLICY_wss_signaturenotoken.xml"},
+            {"/sqlattack", "POLICY_sqlattack.xml", null, null, "false"},
+            {"/requestsizelimit", "POLICY_requestsizelimit.xml"},
+            {"/documentstructure", "POLICY_documentstructure.xml", "WSDL_noops.wsdl", "true"},
+            {"/stealthfault", "POLICY_stealthfault.xml"},
+            {"/faultlevel", "POLICY_faultlevel.xml"},
+            {"/ipaddressrange", "POLICY_iprange.xml"},
+            {"/xpathcreds", "POLICY_xpathcreds.xml"},
+            {"/usernametoken", "POLICY_usernametoken.xml"},
+            {"/encusernametoken", "POLICY_wss_encryptedusernametoken.xml"},
+            {"/encusernametokenX509", "POLICY_wss_encryptedusernametoken_x509.xml"},
+            {"/encusernametokentags", "POLICY_wss_encryptedusernametokenidtag.xml"},
+            {"/httpbasic", "POLICY_httpbasic.xml"},
+            {"/httproutecookie", "POLICY_httproutecookie.xml"},
+            {"/httproutenocookie", "POLICY_httproutenocookie.xml"},
+            {"/httproutetaicredchain", "POLICY_httproutetaicredchain.xml"},
+            {"/httproutepassthru", "POLICY_httproutepassthru.xml"},
+            {"/httproutepassheaders", "POLICY_httproutepassheaders.xml"},
+            {"/httproutejms", "POLICY_httproutejms.xml", "WSDL_httproutejms.wsdl"},
+            {"/httpwssheaderleave", "POLICY_httpwssheaderleave.xml"},
+            {"/httpwssheaderremove", "POLICY_httpwssheaderremove.xml"},
+            {"/httpwssheaderpromote", "POLICY_httpwssheaderpromote.xml"},
+            {"/attachment", "POLICY_signed_attachment.xml"},
+            {"/requestnonxmlok", "POLICY_request_modified_non_xml.xml"},
+            {"/httpdigestauth", "POLICY_twohttpdigestauth.xml"},
+            {"/x509token", "POLICY_wss_x509credssignedbody.xml"},
+            {"/multiplesignatures", "POLICY_multiplesignatures.xml"},
+            {"/multiplesignaturesnoid", "POLICY_multiplesignature_noidentity.xml"},
+            {"/multiplesignaturestags", "POLICY_multiplesignatures_idtags.xml"},
+            {"/multiplesignaturestags2", "POLICY_multiplesignatures_idtags2.xml"},
+            {"/multiplesignaturesx509SAML", "POLICY_wss_x509_and_SAML.xml"},
+            {"/multiplesignaturesvars", "POLICY_wss_multiplesigners_variables.xml"},
+            {"/wssDecoration1", "POLICY_requestdecoration1.xml"},
+            {"/wssDecoration2", "POLICY_requestdecoration2.xml"},
+            {"/wssDecoration3", "POLICY_sign_then_encrypt.xml"},
+            {"/threatprotections", "POLICY_threatprotections.xml"},
+            {"/removeelement", "POLICY_removeelement.xml"},
+            {"/addusernametoken", "POLICY_responsesecuritytoken.xml"},
+            {"/addtimestamp", "POLICY_responsetimestamp.xml"},
+            {"/addsignature", "POLICY_responsesignature.xml"},
+            {"/addsignaturevar", "POLICY_responsesignature_certificate_variable.xml"},
+            {"/removeheaders", "POLICY_removeheaders.xml"},
+            {"/signatureconfirmation1", "POLICY_signatureconfirmation1.xml"},
+            {"/signatureconfirmation2", "POLICY_signatureconfirmation2.xml"},
+            {"/signatureconfirmation3", "POLICY_signatureconfirmation3.xml"},
+            {"/addusernametoken2", "POLICY_response_wss_usernametoken_digest.xml"},
+            {"/addusernametoken3", "POLICY_response_encrypted_usernametoken.xml"},
+            {"/secureconversation", "POLICY_secure_conversation.xml"},
+            {"/timestampresolution", "POLICY_timestampresolution.xml"},
+            {"/wssEncryptResponseIssuerSerial", "POLICY_encrypted_response_issuerserial.xml"},
+            {"/hardcoded", "POLICY_hardcodedresponse.xml"},
+            {"/signaturenotoken", "POLICY_wss_signaturenotoken.xml"},
     };
 
     @Before
@@ -172,7 +176,7 @@ public class PolicyProcessingTest {
         // Software-only TransformerFactory to ignore the alluring Tarari impl, even if tarari_raxj.jar is sitting right there
         SyspropUtil.setProperty( "javax.xml.transform.TransformerFactory", "org.apache.xalan.processor.TransformerFactoryImpl" );
 
-        ApplicationContext applicationContext = ApplicationContexts.getTestApplicationContext();
+        applicationContext = ApplicationContexts.getTestApplicationContext();
         policyCache = applicationContext.getBean("policyCache", PolicyCache.class);
         messageProcessor = applicationContext.getBean("messageProcessor", MessageProcessor.class);
         soapFaultManager = applicationContext.getBean("soapFaultManager", SoapFaultManager.class);
@@ -198,9 +202,9 @@ public class PolicyProcessingTest {
     @AfterClass
     public static void cleanupSystemProperties() {
         SyspropUtil.clearProperties(
-            "com.l7tech.security.prov.rsa.libpath.nonfips",
-            "com.l7tech.server.serviceResolution.strictSoap",
-            "javax.xml.transform.TransformerFactory"
+                "com.l7tech.security.prov.rsa.libpath.nonfips",
+                "com.l7tech.server.serviceResolution.strictSoap",
+                "javax.xml.transform.TransformerFactory"
         );
     }
 
@@ -302,11 +306,11 @@ public class PolicyProcessingTest {
     /**
      * Test case for having two Http Digest assertions
      *
-      * @throws Exception
+     * @throws Exception
      */
     @SuppressWarnings({"unchecked"})
     @Test
-	public void testTwoHttpDigestAuth() throws Exception {
+    public void testTwoHttpDigestAuth() throws Exception {
         String requestMessage = new String(loadResource("REQUEST_general.xml"));
 
         //need to register the nonce so that we'll always be using the same nonce = 70ec76c747e23906120eec731341660f
@@ -338,7 +342,7 @@ public class PolicyProcessingTest {
      * Test rejection of message with SQL injection.
      */
     @Test
-	public void testSQLAttack() throws Exception  {
+    public void testSQLAttack() throws Exception  {
         String requestMessage1 = new String(loadResource("REQUEST_general.xml"));
         String requestMessage2 = new String(loadResource("REQUEST_sqlattack_fail.xml"));
 
@@ -350,7 +354,7 @@ public class PolicyProcessingTest {
      * Test large message rejection.
      */
     @Test
-	public void testRequestSizeLimit() throws Exception {
+    public void testRequestSizeLimit() throws Exception {
         String requestMessage1 = new String(loadResource("REQUEST_general.xml"));
         String requestMessage2 = new String(loadResource("REQUEST_requestsizelimit_fail.xml"));
 
@@ -362,7 +366,7 @@ public class PolicyProcessingTest {
      * Test rejection of messages with dubious structure
      */
     @Test
-	public void testDocumentStructure() throws Exception {
+    public void testDocumentStructure() throws Exception {
         GlobalTarariContext tgc = TarariLoader.getGlobalContext();
         if (tgc != null) {
             // Make sure document statistics collection is initialized
@@ -380,7 +384,7 @@ public class PolicyProcessingTest {
      * Test stealth fault (upgraded to fault level assertion)
      */
     @Test
-	public void testStealthFault() throws Exception {
+    public void testStealthFault() throws Exception {
         String requestMessage1 = new String(loadResource("REQUEST_general.xml"));
 
         try(Result result = processMessage("/stealthfault", requestMessage1, AssertionStatus.FALSIFIED.getNumeric())) {
@@ -392,7 +396,7 @@ public class PolicyProcessingTest {
      * Test fault level
      */
     @Test
-	public void testFaultLevel() throws Exception {
+    public void testFaultLevel() throws Exception {
         String requestMessage1 = new String(loadResource("REQUEST_general.xml"));
 
         result = processMessage("/faultlevel", requestMessage1, AssertionStatus.FALSIFIED.getNumeric());
@@ -404,7 +408,7 @@ public class PolicyProcessingTest {
      * Test rejection of requests from bad IP address
      */
     @Test
-	public void testIPAddressRange() throws Exception {
+    public void testIPAddressRange() throws Exception {
         String requestMessage1 = new String(loadResource("REQUEST_general.xml"));
 
         try(Result result = processMessage("/ipaddressrange", requestMessage1, 0)){}
@@ -415,7 +419,7 @@ public class PolicyProcessingTest {
      * Test xpath credentials are found
      */
     @Test
-	public void testXPathCredentials() throws Exception {
+    public void testXPathCredentials() throws Exception {
         String requestMessage1 = new String(loadResource("REQUEST_xpathcreds_success.xml"));
         String requestMessage2 = new String(loadResource("REQUEST_general.xml"));
 
@@ -427,7 +431,7 @@ public class PolicyProcessingTest {
      * Test username token messages (incl without password)
      */
     @Test
-	public void testUsernameToken() throws Exception {
+    public void testUsernameToken() throws Exception {
         String requestMessage1 = new String(loadResource("REQUEST_usernametoken_success_1.xml"));
         String requestMessage2 = new String(loadResource("REQUEST_usernametoken_success_2.xml"));
         String requestMessage3 = new String(loadResource("REQUEST_general.xml"));
@@ -441,7 +445,7 @@ public class PolicyProcessingTest {
      * Test encrypted username token
      */
     @Test
-	public void testEncryptedUsernameToken() throws Exception {
+    public void testEncryptedUsernameToken() throws Exception {
         String requestMessage = new String(loadResource("REQUEST_encryptedusernametoken.xml"));
         result = processMessage("/encusernametoken", requestMessage, "10.0.0.1", 0, null, null, new Functions.UnaryVoid<PolicyEnforcementContext>(){
             @Override
@@ -463,7 +467,8 @@ public class PolicyProcessingTest {
      */
     @BugNumber(7382)
     @Test
-	public void testEncryptedUsernameTokenX509SignedResonse() throws Exception {
+    public void testEncryptedUsernameTokenX509SignedResponse() throws Exception {
+        messageProcessor = applicationContext.getBean("messageProcessorFrancoSstr", MessageProcessor.class);
         String requestMessage = new String(loadResource("REQUEST_encryptedusernametoken.xml"));
         result = processMessage("/encusernametokenX509", requestMessage, "10.0.0.1", 0, null, null, new Functions.UnaryVoid<PolicyEnforcementContext>(){
             @Override
@@ -484,7 +489,8 @@ public class PolicyProcessingTest {
      * Test encrypted username token with idtags
      */
     @Test
-	public void testEncryptedUsernameTokenIdentityTag() throws Exception {
+    public void testEncryptedUsernameTokenIdentityTag() throws Exception {
+        messageProcessor = applicationContext.getBean("messageProcessorFrancoSstr", MessageProcessor.class);
         String requestMessage = new String(loadResource("REQUEST_encryptedusernametoken.xml"));
         result = processMessage("/encusernametokentags", requestMessage, 0);
     }
@@ -493,7 +499,7 @@ public class PolicyProcessingTest {
      * Test http basic auth with latin-1 charset
      */
     @Test
-	public void testHttpBasic() throws Exception {
+    public void testHttpBasic() throws Exception {
         String requestMessage1 = new String(loadResource("REQUEST_general.xml"));
 
         String username = "\u00e9\u00e2\u00e4\u00e5";
@@ -508,7 +514,7 @@ public class PolicyProcessingTest {
      * Test cookie pass-thru (or not)
      */
     @Test
-	public void testHttpRoutingCookie() throws Exception {
+    public void testHttpRoutingCookie() throws Exception {
         String requestMessage1 = new String(loadResource("REQUEST_general.xml"));
         byte[] responseMessage1 = loadResource("RESPONSE_general.xml");
 
@@ -528,9 +534,9 @@ public class PolicyProcessingTest {
         MockGenericHttpClient mockClient2 = buildMockHttpClient(responseHeaders, responseMessage1);
         testingHttpClientFactory.setMockHttpClient(mockClient2);
         try(Result result2 = processMessage("/httproutenocookie", requestMessage1, 0)) {
-           assertFalse("Outbound request cookie present", headerExists(mockClient2.getParams().getExtraHeaders(), "Cookie", "cookie=invalue"));
-           assertFalse("Outbound response cookie present", cookieExists(result2.context.getResponse().getHttpCookiesKnob().getCookies(), "cookie", "outvalue"));
-       }
+            assertFalse("Outbound request cookie present", headerExists(mockClient2.getParams().getExtraHeaders(), "Cookie", "cookie=invalue"));
+            assertFalse("Outbound response cookie present", cookieExists(result2.context.getResponse().getHttpCookiesKnob().getCookies(), "cookie", "outvalue"));
+        }
 
     }
 
@@ -538,7 +544,7 @@ public class PolicyProcessingTest {
      * Test outbound headers
      */
     @Test
-	public void testHttpRoutingHeaders() throws Exception {
+    public void testHttpRoutingHeaders() throws Exception {
         final String requestMessage1 = new String(loadResource("REQUEST_general.xml"));
         final byte[] responseMessage1 = loadResource("RESPONSE_general.xml");
 
@@ -572,7 +578,7 @@ public class PolicyProcessingTest {
      * Test outbound headers
      */
     @Test
-	public void testHttpRoutingBlockHeaders() throws Exception {
+    public void testHttpRoutingBlockHeaders() throws Exception {
         final String requestMessage1 = new String(loadResource("REQUEST_general.xml"));
         final byte[] responseMessage1 = loadResource("RESPONSE_general.xml");
 
@@ -606,7 +612,7 @@ public class PolicyProcessingTest {
      * Test outbound headers
      */
     @Test
-	public void testHttpRoutingAllHeaders() throws Exception {
+    public void testHttpRoutingAllHeaders() throws Exception {
         final String requestMessage1 = new String(loadResource("REQUEST_general.xml"));
         final byte[] responseMessage1 = loadResource("RESPONSE_general.xml");
 
@@ -640,7 +646,7 @@ public class PolicyProcessingTest {
      * Test that TAI info is routed
      */
     @Test
-	public void testHttpRoutingTAI() throws Exception {
+    public void testHttpRoutingTAI() throws Exception {
         String requestMessage1 = new String(loadResource("REQUEST_general.xml"));
         byte[] responseMessage1 = loadResource("RESPONSE_general.xml");
 
@@ -656,7 +662,7 @@ public class PolicyProcessingTest {
      * Test connection id propagation
      */
     @Test
-	public void testHttpRoutingSticky() throws Exception {
+    public void testHttpRoutingSticky() throws Exception {
         //This just tests that the context info gets to the CommonsHttpClient
         String requestMessage1 = new String(loadResource("REQUEST_general.xml"));
         byte[] responseMessage1 = loadResource( "RESPONSE_general.xml" );
@@ -672,7 +678,7 @@ public class PolicyProcessingTest {
      * Test HTTP routing for JMS message
      */
     @Test
-	public void testHttpRoutingJmsIn() throws Exception {
+    public void testHttpRoutingJmsIn() throws Exception {
         //This just tests that the context info gets to the CommonsHttpClient
         String requestMessage1 = new String(loadResource("REQUEST_general.xml"));
         byte[] responseMessage1 = loadResource("RESPONSE_general.xml");
@@ -687,7 +693,7 @@ public class PolicyProcessingTest {
      * Test WSS header handling
      */
     @Test
-	public void testHttpRoutingWssHeader() throws Exception {
+    public void testHttpRoutingWssHeader() throws Exception {
         String requestMessage1 = new String(loadResource("REQUEST_usernametoken_success_1.xml"));
         String requestMessage2 = new String(loadResource("REQUEST_httpwssheaderpromote_success.xml"));
 
@@ -715,8 +721,9 @@ public class PolicyProcessingTest {
     /**
      * Test WSS Signed Attachment processing
      */
+    @Ignore("Test is ignored as the request contains an expired certificate. Request needs to be regenerated")
     @Test
-	public void testWssSignedAttachment() throws Exception {
+    public void testWssSignedAttachment() throws Exception {
         String requestMessage1 = new String(loadResource("REQUEST_signed_attachment.txt"));
 
         result = processMessage("/attachment", requestMessage1, 0);
@@ -726,7 +733,7 @@ public class PolicyProcessingTest {
      * Test WSS Signed Attachment processing failure
      */
     @Test
-	public void testWssSignedAttachmentFailure() throws Exception {
+    public void testWssSignedAttachmentFailure() throws Exception {
         String requestMessage1 = new String(loadResource("REQUEST_unsigned_attachment.txt"));
 
         result = processMessage("/attachment", requestMessage1, 600);
@@ -739,7 +746,7 @@ public class PolicyProcessingTest {
      * - respnse is SOAP and needs to be decorated
      */
     @Test
-	public void testRequestNonXmlOk() throws Exception
+    public void testRequestNonXmlOk() throws Exception
     {
         result = processMessage("/requestnonxmlok", new String(loadResource("REQUEST_general.xml")), 0);
     }
@@ -748,7 +755,7 @@ public class PolicyProcessingTest {
      * Test multiple request/response signatures
      */
     @Test
-	public void testMultipleSignatures() throws Exception {
+    public void testMultipleSignatures() throws Exception {
         byte[] responseMessage1 = loadResource("REQUEST_multiplesignatures.xml");
 
         MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
@@ -758,13 +765,13 @@ public class PolicyProcessingTest {
     }
 
     @Test
-	public void testWssMessageAttributes() throws Exception {
+    public void testWssMessageAttributes() throws Exception {
         // build test request and run WSS processor on it
         String message = new String(loadResource("REQUEST_multiplesignatures.xml"));
         final Message request = new Message();
         request.initialize(ContentTypeHeader.XML_DEFAULT, message.getBytes());
         request.getSecurityKnob().setProcessorResult(
-            WSSecurityProcessorUtils.getWssResults(request, "multiple signatures test request", new SimpleSecurityTokenResolver(), new LoggingAudit(logger))
+                WSSecurityProcessorUtils.getWssResults(request, "multiple signatures test request", new SimpleSecurityTokenResolver(), new LoggingAudit(logger))
         );
 
         assertEquals("2", getRequestAttribute(request, "request.wss.certificates.count", null));
@@ -773,15 +780,15 @@ public class PolicyProcessingTest {
         assertEquals("CN=OASIS Interop Test CA", getRequestAttribute(request, "request.wss.certificates.value.1.issuer.dn.2", null));
         assertEquals("OASIS Interop Test CA", getRequestAttribute(request, "request.wss.certificates.value.2.issuer.dn.cn", null));
         assertEquals("", getRequestAttribute(request, "request.wss.certificates.value.2.issuerAltNameEmail", null));
-        assertEquals("NQM0IBvuplAtETQvk+6gn8C13wE=", getRequestAttribute(request, "request.wss.certificates.value.2.thumbprintSHA1", null));
+        assertEquals("Y2e57aTYGmIp1btQNscrjYorz/I=", getRequestAttribute(request, "request.wss.certificates.value.2.thumbprintSHA1", null));
 
         assertEquals("2", getRequestAttribute(request, "request.wss.signingcertificates.count", null));
-        assertEquals("CN=Bob, OU=OASIS Interop Test Cert, O=OASIS", getRequestAttribute(request, "request.wss.signingcertificates.value.2.subject", null));
-        assertEquals("cn=bob,ou=oasis interop test cert,o=oasis", getRequestAttribute(request, "request.wss.signingcertificates.value.2.subject.canonical", null));
+        assertEquals("CN=Alice, OU=OASIS Interop Test Cert, O=OASIS", getRequestAttribute(request, "request.wss.signingcertificates.value.2.subject", null));
+        assertEquals("cn=alice,ou=oasis interop test cert,o=oasis", getRequestAttribute(request, "request.wss.signingcertificates.value.2.subject.canonical", null));
         assertEquals("OU=OASIS Interop Test Cert", getRequestAttribute(request, "request.wss.signingcertificates.value.2.subject.dn.2", null));
         assertEquals("OASIS Interop Test Cert", getRequestAttribute(request, "request.wss.signingcertificates.value.1.subject.dn.ou", null));
         assertEquals("", getRequestAttribute(request, "request.wss.signingcertificates.value.1.subjectAltNameEmail", null));
-        assertEquals("bg6I8267h0TUcPYvYE0D6k6+UJQ=", getRequestAttribute(request, "request.wss.signingcertificates.value.1.thumbprintSHA1", null));
+        assertEquals("OgTQOPw+I7hTB9r00WrZJQsiiOg=", getRequestAttribute(request, "request.wss.signingcertificates.value.1.thumbprintSHA1", null));
 
 
         // test extraction of legacy wss attribute names (manually added instead of RequireWssX509Cert assertion)
@@ -810,7 +817,7 @@ public class PolicyProcessingTest {
      * Test failure with wrong signing identities in request message
      */
     @Test
-	public void testMultipleSignaturesWrongIdentitiesRequest() throws Exception {
+    public void testMultipleSignaturesWrongIdentitiesRequest() throws Exception {
         byte[] responseMessage1 = loadResource("REQUEST_multiplesignatures.xml");
 
         MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
@@ -823,7 +830,7 @@ public class PolicyProcessingTest {
      * Test multiple request/response signatures with identity tags (WssSignature selection by signature)
      */
     @Test
-	public void testMultipleSignaturesWithIdTags() throws Exception {
+    public void testMultipleSignaturesWithIdTags() throws Exception {
         byte[] responseMessage1 = loadResource("REQUEST_multiplesignatures.xml");
 
         MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
@@ -836,7 +843,7 @@ public class PolicyProcessingTest {
      * Test multiple request/response signatures with identity tags (WssSignature selection by signature reference)
      */
     @Test
-	public void testMultipleSignaturesWithIdTags2() throws Exception {
+    public void testMultipleSignaturesWithIdTags2() throws Exception {
         byte[] responseMessage1 = loadResource("REQUEST_multiplesignatures.xml");
 
         MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
@@ -849,7 +856,7 @@ public class PolicyProcessingTest {
      * Test failure with wrong signing identities in response message
      */
     @Test
-	public void testMultipleSignaturesWrongIdentitiesResponse() throws Exception {
+    public void testMultipleSignaturesWrongIdentitiesResponse() throws Exception {
         byte[] responseMessage1 = loadResource("REQUEST_multiplesignatures2.xml");
 
         MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
@@ -862,7 +869,7 @@ public class PolicyProcessingTest {
      * Test policy failure on missing response signatures
      */
     @Test
-	public void testMultipleSignaturesMissingResponseSignatures() throws Exception {
+    public void testMultipleSignaturesMissingResponseSignatures() throws Exception {
         byte[] responseMessage1 = loadResource("RESPONSE_general.xml");
 
         MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
@@ -875,7 +882,7 @@ public class PolicyProcessingTest {
      * the identity is not specified for a Require Signed Element assertion.
      */
     @Test
-	public void testMultipleSignaturesNoIdentity() throws Exception {
+    public void testMultipleSignaturesNoIdentity() throws Exception {
         result = processMessage("/multiplesignaturesnoid", new String(loadResource("REQUEST_multiplesignatures.xml")), 600);
     }
 
@@ -883,7 +890,7 @@ public class PolicyProcessingTest {
      * Test multiple request signatures are rejected by WSS X.509 assertion when not enabled.
      */
     @Test
-	public void testMultipleSignaturesRejected() throws Exception {
+    public void testMultipleSignaturesRejected() throws Exception {
         result = processMessage("/x509token", new String(loadResource("REQUEST_multiplesignatures.xml")), 400);
     }
 
@@ -892,7 +899,7 @@ public class PolicyProcessingTest {
      * This test also has a group identity target.
      */
     @Test
-	public void testMultipleSignaturesX509AndSAML() throws Exception {
+    public void testMultipleSignaturesX509AndSAML() throws Exception {
         result = processMessage("/multiplesignaturesx509SAML", new String(loadResource("REQUEST_wss_x509_and_SAML.xml")), 0);
     }
 
@@ -900,7 +907,7 @@ public class PolicyProcessingTest {
      * Test multiple request signatures with message variables and new context variables in template response.
      */
     @Test
-	public void testMultipleSignaturesVariables() throws Exception {
+    public void testMultipleSignaturesVariables() throws Exception {
         result = processMessage("/multiplesignaturesvars", new String(loadResource("REQUEST_multiplesignatures3.xml")), "10.0.0.1", 0, null, null, new Functions.UnaryVoid<PolicyEnforcementContext>(){
             @Override
             public void call(final PolicyEnforcementContext context) {
@@ -960,9 +967,10 @@ public class PolicyProcessingTest {
     /**
      * Test multiple request signatures are rejected by WSS X.509 assertion when not enabled.
      */
+    @Ignore("Test is ignored as the request contains an expired certificate. Request needs to be regenerated")
     @BugNumber(7285)
     @Test
-	public void testEncryptedKeyWithX509TokenRejected() throws Exception {
+    public void testEncryptedKeyWithX509TokenRejected() throws Exception {
         // Test with com.l7tech.server.policy.requireSigningTokenCredential=false for old behaviour
         result = processMessage("/x509token", new String(loadResource("REQUEST_signed_x509_and_encryptedkey.xml")), 600);
     }
@@ -972,7 +980,7 @@ public class PolicyProcessingTest {
      */
     @BugNumber(7528)
     @Test
-	public void testHmacSha1X509TokenRejected() throws Exception {
+    public void testHmacSha1X509TokenRejected() throws Exception {
         result = processMessage("/x509token", new String(loadResource("REQUEST_signed_hmac_sha1_certificate.xml")), 500);
     }
 
@@ -980,7 +988,7 @@ public class PolicyProcessingTest {
      * Test success on applying a signature to the request message using the WssDecoration assertion.
      */
     @Test
-	public void testDecorationCommitOnRequest() throws Exception {
+    public void testDecorationCommitOnRequest() throws Exception {
         byte[] responseMessage1 = loadResource("RESPONSE_general.xml");
         MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
         testingHttpClientFactory.setMockHttpClient(mockClient);
@@ -991,18 +999,18 @@ public class PolicyProcessingTest {
      * Test success on adding a signature that endorses an existing signature from the request
      */
     @Test
-	public void testEndorsingRequest() throws Exception {
+    public void testEndorsingRequest() throws Exception {
         byte[] responseMessage1 = loadResource("RESPONSE_general.xml");
         MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
         testingHttpClientFactory.setMockHttpClient(mockClient);
-        result = processMessage("/wssDecoration2", new String(loadResource("REQUEST_decoration2.xml")), 0);
+        result = processMessage("/wssDecoration2", new String(loadResource("REQUEST_signed.xml")), 0);
     }
 
     /**
      * Test that using signing, apply, encrypt, apply creates a (BSP) valid security header.
      */
     @Test
-	public void testDecorationSignThenEncrypt() throws Exception {
+    public void testDecorationSignThenEncrypt() throws Exception {
         result = processMessage("/wssDecoration3", new String(loadResource("REQUEST_general.xml")), 0);
     }
 
@@ -1010,7 +1018,7 @@ public class PolicyProcessingTest {
      * Test running threat protections for request, variable and response messages
      */
     @Test
-	public void testThreatProtectionsRequestResponseAndMessageTarget() throws Exception {
+    public void testThreatProtectionsRequestResponseAndMessageTarget() throws Exception {
         byte[] responseMessage1 = loadResource("RESPONSE_general.xml");
         MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
         testingHttpClientFactory.setMockHttpClient(mockClient);
@@ -1018,10 +1026,10 @@ public class PolicyProcessingTest {
     }
 
     /**
-     * Test removal of an XML element with XPath selection 
+     * Test removal of an XML element with XPath selection
      */
     @Test
-	public void testRemoveElement() throws Exception {
+    public void testRemoveElement() throws Exception {
         byte[] responseMessage1 = loadResource("RESPONSE_general.xml");
         MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
         testingHttpClientFactory.setMockHttpClient(mockClient);
@@ -1043,7 +1051,7 @@ public class PolicyProcessingTest {
      * Test addition of a username token to the response with creds from xpathcredsource
      */
     @Test
-	public void testAddSecurityToken() throws Exception {
+    public void testAddSecurityToken() throws Exception {
         byte[] responseMessage1 = loadResource("RESPONSE_general.xml");
         MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
         testingHttpClientFactory.setMockHttpClient(mockClient);
@@ -1074,7 +1082,7 @@ public class PolicyProcessingTest {
      * Test addition of a signed timestamp to the response
      */
     @Test
-	public void testAddTimestamp() throws Exception {
+    public void testAddTimestamp() throws Exception {
         byte[] responseMessage1 = loadResource("RESPONSE_general.xml");
         MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
         testingHttpClientFactory.setMockHttpClient(mockClient);
@@ -1101,7 +1109,7 @@ public class PolicyProcessingTest {
      * Test addition of a signature to the response
      */
     @Test
-	public void testAddSignature() throws Exception {
+    public void testAddSignature() throws Exception {
         byte[] responseMessage1 = loadResource("RESPONSE_general.xml");
         MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
         testingHttpClientFactory.setMockHttpClient(mockClient);
@@ -1145,7 +1153,7 @@ public class PolicyProcessingTest {
                     Assert.assertEquals("Signature found", 1, signatureNodeList.getLength());
                     final NodeList x509SerialNumberNodeList = document.getElementsByTagNameNS(dsigNS, "X509SerialNumber");
                     Assert.assertEquals("X509SerialNumber found", 1, x509SerialNumberNodeList.getLength());
-                    Assert.assertEquals( "Serial number value", "127901500862700997089151460209364726264", XmlUtil.getTextValue( (Element)x509SerialNumberNodeList.item( 0 ) ) );
+                    Assert.assertEquals( "Serial number value", "12893204616576258002", XmlUtil.getTextValue( (Element)x509SerialNumberNodeList.item( 0 ) ) );
                 } catch (Exception e) {
                     throw ExceptionUtils.wrap(e);
                 }
@@ -1157,7 +1165,7 @@ public class PolicyProcessingTest {
      * Test removal of the security header from request and response messages.
      */
     @Test
-	public void testRemoveSecurityHeaders() throws Exception {
+    public void testRemoveSecurityHeaders() throws Exception {
         byte[] responseMessage1 = loadResource("RESPONSE_general.xml");
         MockGenericHttpClient mockClient = buildMockHttpClient(null, responseMessage1);
         testingHttpClientFactory.setMockHttpClient(mockClient);
@@ -1198,7 +1206,7 @@ public class PolicyProcessingTest {
      * response with signature confirmation.
      */
     @Test
-	public void testSignatureConfirmation() throws Exception {
+    public void testSignatureConfirmation() throws Exception {
         MockGenericHttpClient mockClient = buildCallbackMockHttpClient(null, new Functions.Binary<byte[], byte[],GenericHttpRequestParams>(){
             @Override
             public byte[] call( final byte[] requestBytes, final GenericHttpRequestParams parameters ) {
@@ -1247,7 +1255,7 @@ public class PolicyProcessingTest {
             }
         });
 
-        // reset the mock client, as some unit tests don't set this before running 
+        // reset the mock client, as some unit tests don't set this before running
         testingHttpClientFactory.setMockHttpClient(buildMockHttpClient(null, loadResource("RESPONSE_general.xml")));
     }
 
@@ -1258,7 +1266,7 @@ public class PolicyProcessingTest {
      * signature confirmation for the inbound and outbound messages.
      */
     @Test
-	public void testSignatureConfirmationInOut() throws Exception {
+    public void testSignatureConfirmationInOut() throws Exception {
         MockGenericHttpClient mockClient = buildCallbackMockHttpClient(null, new Functions.Binary<byte[], byte[], GenericHttpRequestParams>(){
             @Override
             public byte[] call( final byte[] requestBytes, final GenericHttpRequestParams parameters ) {
@@ -1314,8 +1322,8 @@ public class PolicyProcessingTest {
                 Assert.assertNotNull( "Response message should have WSS processing results", result );
                 Assert.assertTrue( "Validation of signature confirmations was not performed for the message.", responseSK.isSignatureConfirmationValidated() );
                 System.out.println( result.getSignatureConfirmation().getErrors() );
-                Assert.assertTrue( "Signature confirmation validation failed: " + result.getSignatureConfirmation().getErrors(), 
-                                   result.getSignatureConfirmation().getStatus() != SignatureConfirmation.Status.INVALID );
+                Assert.assertTrue( "Signature confirmation validation failed: " + result.getSignatureConfirmation().getErrors(),
+                        result.getSignatureConfirmation().getStatus() != SignatureConfirmation.Status.INVALID );
 
                 // Test that the outbound response is confirmed
                 try {
@@ -1349,7 +1357,7 @@ public class PolicyProcessingTest {
 
     @BugNumber(7253)
     @Test
-	public void testHardcodedResolution() throws Exception {
+    public void testHardcodedResolution() throws Exception {
         // Test a SOAP message resolves to an XML service
         String requestMessage1 = new String(loadResource("REQUEST_general.xml"));
         processJmsMessage(requestMessage1, 0, getServiceOid("/sqlattack")); // 1 is /sqlattack
@@ -1365,7 +1373,7 @@ public class PolicyProcessingTest {
     }
 
     @Test
-	public void testAddWssUsernameToken() throws Exception {        
+    public void testAddWssUsernameToken() throws Exception {
         final String requestMessage = new String(loadResource("REQUEST_general.xml"));
         result = processMessage("/addusernametoken2", requestMessage, "10.0.0.1", 0, null, null, new Functions.UnaryVoid<PolicyEnforcementContext>(){
             @Override
@@ -1391,7 +1399,7 @@ public class PolicyProcessingTest {
     }
 
     @Test
-	public void testAddEncryptedWssUsernameToken() throws Exception {
+    public void testAddEncryptedWssUsernameToken() throws Exception {
         final String requestMessage = new String(loadResource("REQUEST_signed.xml"));
         result = processMessage("/addusernametoken3", requestMessage, 0);
     }
@@ -1403,7 +1411,7 @@ public class PolicyProcessingTest {
     }
 
     /**
-     * Test that processing of a signature with HMACOutputLength of 1 bit fails. 
+     * Test that processing of a signature with HMACOutputLength of 1 bit fails.
      */
     @BugNumber(7526)
     @Test
@@ -1413,7 +1421,7 @@ public class PolicyProcessingTest {
     }
 
     @Test
-	public void testWssTimestampResolution() throws Exception {
+    public void testWssTimestampResolution() throws Exception {
         final String requestMessage = new String(loadResource("REQUEST_general.xml"));
         result = processMessage("/timestampresolution", requestMessage, 0);
     }
@@ -1436,7 +1444,7 @@ public class PolicyProcessingTest {
     }
 
     /**
-     * Verify that global policies are run and do not affect the service policy results (context.getAssertionResults()) 
+     * Verify that global policies are run and do not affect the service policy results (context.getAssertionResults())
      */
     @Test
     public void testGlobalPoliciesRun() throws Exception {
@@ -1602,8 +1610,8 @@ public class PolicyProcessingTest {
 
         final String rawct = hrequest.getContentType();
         ContentTypeHeader ctype = rawct != null && rawct.length() > 0
-          ? ContentTypeHeader.parseValue(rawct)
-          : ContentTypeHeader.XML_DEFAULT;
+                ? ContentTypeHeader.parseValue(rawct)
+                : ContentTypeHeader.XML_DEFAULT;
 
         final HttpRequestKnob reqKnob = new HttpServletRequestKnob(hrequest);
         request.attachHttpRequestKnob(reqKnob);
@@ -1650,9 +1658,9 @@ public class PolicyProcessingTest {
                 logger.finest("checking for potential connection drop because status is " + status.getMessage());
                 if (faultLevelInfo.getLevel() == SoapFaultLevel.DROP_CONNECTION) {
                     logger.info("No policy found and global setting is to go stealth in this case. " +
-                                "Instructing valve to drop connection completly." + faultLevelInfo.toString());
+                            "Instructing valve to drop connection completly." + faultLevelInfo.toString());
                     hrequest.setAttribute(ResponseKillerValve.ATTRIBUTE_FLAG_NAME,
-                                          ResponseKillerValve.ATTRIBUTE_FLAG_NAME);
+                            ResponseKillerValve.ATTRIBUTE_FLAG_NAME);
                     throw new CausedIOException(ResponseKillerValve.ATTRIBUTE_FLAG_NAME);
                 }
             }
@@ -1686,7 +1694,7 @@ public class PolicyProcessingTest {
                     IOUtils.copyStream(response.getMimeKnob().getEntireMessageBodyAsInputStream(), responseos);
                     responseos.close();
                     logger.fine("servlet transport returned status " + routeStat +
-                                ". content-type " + response.getMimeKnob().getOuterContentType().getFullValue());
+                            ". content-type " + response.getMimeKnob().getOuterContentType().getFullValue());
                 }
             } else if (respKnob.hasChallenge()) {
                 logger.info("Challenge result.");
@@ -1703,10 +1711,10 @@ public class PolicyProcessingTest {
                 // if the policy throws AND the stealth flag is set, drop connection
                 if (context.isStealthResponseMode()) {
                     logger.log(Level.INFO, "Policy threw error and stealth mode is set. " +
-                                           "Instructing valve to drop connection completely.",
-                                           e);
+                                    "Instructing valve to drop connection completely.",
+                            e);
                     hrequest.setAttribute(ResponseKillerValve.ATTRIBUTE_FLAG_NAME,
-                                          ResponseKillerValve.ATTRIBUTE_FLAG_NAME);
+                            ResponseKillerValve.ATTRIBUTE_FLAG_NAME);
                 }
             }
         } finally {
@@ -1776,7 +1784,7 @@ public class PolicyProcessingTest {
                 logger.finest("checking for potential connection drop because status is " + status.getMessage());
                 if (faultLevelInfo.getLevel() == SoapFaultLevel.DROP_CONNECTION) {
                     logger.info("No policy found and global setting is to go stealth in this case. " +
-                                "Instructing valve to drop connection completly." + faultLevelInfo.toString());
+                            "Instructing valve to drop connection completly." + faultLevelInfo.toString());
                     throw new CausedIOException(ResponseKillerValve.ATTRIBUTE_FLAG_NAME);
                 }
             }
@@ -1788,7 +1796,7 @@ public class PolicyProcessingTest {
                 } else {
                     // Transmit the response and return
                     logger.fine("servlet transport returned status ?" +
-                                ". content-type " + response.getMimeKnob().getOuterContentType().getFullValue());
+                            ". content-type " + response.getMimeKnob().getOuterContentType().getFullValue());
                 }
             } else {
                 logger.info("500 (none 200?) result.");
@@ -1803,8 +1811,8 @@ public class PolicyProcessingTest {
                 // if the policy throws AND the stealth flag is set, drop connection
                 if (context.isStealthResponseMode()) {
                     logger.log(Level.INFO, "Policy threw error and stealth mode is set. " +
-                                           "Instructing valve to drop connection completely.",
-                                           e);
+                                    "Instructing valve to drop connection completely.",
+                            e);
                 }
             }
         } finally {
@@ -1828,10 +1836,10 @@ public class PolicyProcessingTest {
         }
 
         return new MockGenericHttpClient(200,
-                                         headers,
-                                         ContentTypeHeader.XML_DEFAULT,
-                                         (long)message.length,
-                                         message);
+                headers,
+                ContentTypeHeader.XML_DEFAULT,
+                (long)message.length,
+                message);
 
     }
 
@@ -1893,7 +1901,7 @@ public class PolicyProcessingTest {
         if (cookies != null) {
             for (HttpCookie cookie : cookies) {
                 if (name.equals(cookie.getCookieName()) &&
-                    (value == null || value.equals(cookie.getCookieValue()))) {
+                        (value == null || value.equals(cookie.getCookieValue()))) {
                     exists = true;
                     break;
                 }

@@ -82,7 +82,7 @@
         <constructor-arg index="1" ref="clusterPropertyManager"/>
     </bean>
 
-  <!-- service cache -->
+    <!-- service cache -->
     <bean id="serviceCache" class="com.l7tech.server.service.ServiceCacheStub" depends-on="wsdlStrategyServiceDocumentsInitializer">
         <constructor-arg index="0" ref="policyCache"/>
         <constructor-arg index="1"><null/></constructor-arg>
@@ -222,6 +222,33 @@
         <constructor-arg ref="serviceCache"/>
         <constructor-arg ref="policyCache"/>
         <constructor-arg ref="wssDecorator"/>
+        <constructor-arg ref="inboundSecureConversationContextManager"/>
+    </bean>
+
+    <!-- Old franco certificate -->
+    <bean id="francoOldCertificate" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="targetClass" value="com.l7tech.common.TestDocuments"/>
+        <property name="targetMethod" value="getFrancoOldCertificate"/>
+    </bean>
+
+    <!-- Old franco private key -->
+    <bean id="francoOldPrivateKey" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+        <property name="targetClass" value="com.l7tech.common.TestDocuments"/>
+        <property name="targetMethod" value="getFrancoOldPrivateKey"/>
+    </bean>
+
+    <!-- Simple security token resolver using old franco cert and key -->
+    <bean id="francoSstr" class="com.l7tech.security.xml.SimpleSecurityTokenResolver">
+        <constructor-arg ref="francoOldCertificate"/>
+        <constructor-arg ref="francoOldPrivateKey"/>
+    </bean>
+
+    <!-- server Message Processor with SimpleSecurityTokenResolver set to francoSstr -->
+    <bean id="messageProcessorFrancoSstr" class="com.l7tech.server.TestMessageProcessor">
+        <constructor-arg ref="serviceCache"/>
+        <constructor-arg ref="policyCache"/>
+        <constructor-arg ref="wssDecorator"/>
+        <constructor-arg ref="francoSstr"/>
         <constructor-arg ref="inboundSecureConversationContextManager"/>
     </bean>
 

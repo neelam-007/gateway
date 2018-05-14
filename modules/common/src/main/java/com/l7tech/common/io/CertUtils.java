@@ -73,6 +73,7 @@ public class CertUtils {
     public static final String FINGERPRINT_HEX = "hex";
     public static final String FINGERPRINT_RAW_HEX = "rawhex";
     public static final String FINGERPRINT_BASE64 = "b64";
+    public static final String FINGERPRINT_BASE64URL = "b64url";
 
     public static final String X509_OID_CRL_DISTRIBUTION_POINTS = "2.5.29.31";
     public static final String X509_OID_NETSCAPE_CRL_URL = "2.16.840.1.113730.1.4";
@@ -530,10 +531,30 @@ public class CertUtils {
         "Decipher Only",
     };
 
+    /**
+     * Get SHA1 thumbprint of a given certificate in base64 format
+     *
+     * @param cert Given certificate
+     * @return SHA1 thumbprint in base64 format
+     * @throws CertificateEncodingException
+     */
     public static String getThumbprintSHA1(X509Certificate cert) throws CertificateEncodingException
     {
+        return getThumbprintSHA1(cert, FINGERPRINT_BASE64);
+    }
+
+    /**
+     * Get SHA1 thumbprint of a given certificate for provided encoding option
+     *
+     * @param cert Given certificate
+     * @param format Encoding option
+     * @return SHA1 thumbprint in provided encoding format (FINGERPRINT_BASE64, FINGERPRINT_BASE64URL, or FINGERPRINT_RAW_HEX)
+     * @throws CertificateEncodingException
+     */
+    public static String getThumbprintSHA1(X509Certificate cert, String format) throws CertificateEncodingException
+    {
         try {
-            return getCertificateFingerprint(cert, ALG_SHA1, FINGERPRINT_BASE64);
+            return getCertificateFingerprint(cert, ALG_SHA1, format);
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("Misconfigured VM: SHA-1 not available: " + e.getMessage(), e); // can't happen
         }
@@ -1403,8 +1424,8 @@ public class CertUtils {
      *
      * @param cert      the certificate
      * @param algorithm the alghorithm (MD5 or SHA1)
-     * @param format    the format to return, either hex ("SHA1:00:22:ff:et:ce:te:ra"), b64 ("abndwlaksj=="),
-     *                  or rawhex ("0022ffetcetera").
+     * @param format    the format to return, either hex ("SHA1:00:22:ff:et:ce:te:ra"), b64 ("abndw+ak/j=="),
+     *                  b64url ("abndw-ak_j") or rawhex ("0022ffetcetera").
      * @return the certificate fingerprint as a String
      * @exception CertificateEncodingException
      *                      thrown whenever an error occurs while attempting to
@@ -1426,6 +1447,8 @@ public class CertUtils {
         boolean raw = false;
         if (FINGERPRINT_BASE64.equals(format))
             return HexUtils.encodeBase64(digest, true);
+        else if (FINGERPRINT_BASE64URL.equals(format))
+            return HexUtils.encodeBase64Url(digest, true);
         else if (FINGERPRINT_RAW_HEX.equals(format))
             raw = true;
         else if (!(FINGERPRINT_HEX.equals(format)))

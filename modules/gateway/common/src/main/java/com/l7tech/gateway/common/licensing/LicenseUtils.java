@@ -15,6 +15,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
+import javax.xml.crypto.dsig.keyinfo.X509Data;
 import java.io.IOException;
 import java.security.*;
 import java.security.cert.CertificateEncodingException;
@@ -381,8 +382,13 @@ public class LicenseUtils {
                 X509Certificate cert = null;
                 KeyInfo keyInfo = new KeyInfo(keyInfoElement);
                 String[] keyNames = keyInfo.getKeyNames();
+                KeyInfo.X509Data[] x509Data = keyInfo.getX509Data();
+
+                // Check if KeyName or X509Data element is present
                 if (keyNames != null && keyNames.length > 0) {
                     cert = new SimpleSecurityTokenResolver(trustedIssuers).lookupByKeyName( CertUtils.formatDN( keyNames[0] ) );
+                } else if (x509Data != null && x509Data.length > 0) {
+                    cert = x509Data[0].getCertificates()[0];
                 }
 
                 if (cert == null)

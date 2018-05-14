@@ -121,7 +121,7 @@ public class ServerProcessRstrSoapResponseTest {
 
     static {
         try {
-            beanFactory.addBean( "securityTokenResolver", new SimpleSecurityTokenResolver(TestDocuments.getDotNetServerCertificate(), TestDocuments.getDotNetServerPrivateKey()) );
+            beanFactory.addBean( "securityTokenResolver", new SimpleSecurityTokenResolver(TestDocuments.getFrancoOldCertificate(), TestDocuments.getFrancoOldPrivateKey()) );
         } catch ( Exception e ) {
             throw new RuntimeException(e);
         }

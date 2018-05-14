@@ -390,6 +390,43 @@ public class GlobalResourceImportWizardTest {
         assertTrue( "Imported resource xml", confirmedResources.get(0).isXml() );
         assertFalse( "Imported resource error", confirmedResources.get(0).isError() );
     }
+    @BugNumber(347794)
+    @Test
+    public void testDependencyImportExtraWsdlResolver() {
+        final GlobalResourceImportContext context = new GlobalResourceImportContext();
+        final ResourceAdminStub resourceAdmin = new ResourceAdminStub();
+        final boolean[] importConfirmed = {false};
+        final List<ResourceHolder> confirmedResources = new ArrayList<ResourceHolder>();
+        final ImportAdvisor advisor = buildAdvisor( DependencyImportChoice.IMPORT, DependencyImportChoice.IMPORT, importConfirmed, confirmedResources );
+        final ChoiceSelector choiceSelector = buildChoiceSelector();
+        final Functions.UnaryThrows<ResourceEntryHeader, Collection<ResourceEntryHeader>, IOException> entitySelector = buildEntitySelector();
+        final ResourceTherapist resourceTherapist = buildResourceTherapist();
+
+        final ResourceDocumentResolver extraResolver = new ResourceDocumentResolverSupport(){
+            @Override
+            public ResourceDocument resolveByUri( final String uri ) throws IOException {
+                if ( "http://localhost:8888/schema1.xsd".equals(uri)) {
+                    return newResourceDocument(uri, SCHEMA1);
+                } else {
+                    return null;
+                }
+            }
+        };
+        final ResourceDocumentResolver wsdlResolver = new SchemaValidationPropertiesDialog.WsdlSchemaResourceDocumentResolver(null);
+        Collection<ResourceDocumentResolver> additionalResolvers = new ArrayList<ResourceDocumentResolver>();
+        additionalResolvers.add(wsdlResolver);
+        additionalResolvers.add(extraResolver);
+
+        boolean proceed = importDependencies( context, "http://localhost:8888/schema2.xsd", ResourceType.XML_SCHEMA, SCHEMA2, resourceAdmin, additionalResolvers, advisor, null, getLoggingErrorListener(), choiceSelector, entitySelector, resourceTherapist );
+        assertTrue( "Import success", proceed );
+        assertTrue( "Dependency import confirmed", importConfirmed[0] );
+        assertEquals( "Imported resource count", 1, confirmedResources.size() );
+        assertEquals( "Imported resource uri", "http://localhost:8888/schema1.xsd", confirmedResources.get(0).getSystemId() );
+        assertEquals( "Imported resource type", ResourceType.XML_SCHEMA, confirmedResources.get(0).getType() );
+        assertTrue( "Imported resource persist", confirmedResources.get(0).isPersist() );
+        assertTrue( "Imported resource xml", confirmedResources.get(0).isXml() );
+        assertFalse( "Imported resource error", confirmedResources.get(0).isError() );
+    }
 
     @BugNumber(9437) // Global Resources: Import updates incorrectly the System ID for DTD
     @Test

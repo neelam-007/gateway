@@ -109,7 +109,7 @@ public class ServerCreateJsonWebKeyAssertion extends AbstractServerAssertion<Cre
             publicJwk.setCertificateChain(entry.getCertificateChain()); // RFC 7517 - 'x5c' parameter
 
             try {
-                publicJwk.setX509CertificateSha1Thumbprint(CertUtils.getThumbprintSHA1(entry.getCertificate())); // RFC 7517 - 'x5t' parameter
+                publicJwk.setX509CertificateSha1Thumbprint(CertUtils.getThumbprintSHA1(entry.getCertificate(), CertUtils.FINGERPRINT_BASE64URL)); // RFC 7517 - 'x5t' parameter, RFC 4648 base64url encoding
             } catch(CertificateEncodingException e) {
                 logAndAudit(AssertionMessages.JWT_JWK_ERROR, e.getMessage());
             }

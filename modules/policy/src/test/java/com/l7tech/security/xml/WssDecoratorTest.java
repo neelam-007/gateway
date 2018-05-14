@@ -1,5 +1,6 @@
 package com.l7tech.security.xml;
 
+import com.ibm.xml.dsig.Canonicalizer;
 import com.l7tech.common.TestDocuments;
 import com.l7tech.common.TestKeys;
 import com.l7tech.common.io.XmlUtil;
@@ -24,6 +25,7 @@ import com.l7tech.security.xml.decorator.DecoratorException;
 import com.l7tech.security.xml.decorator.WssDecorator;
 import com.l7tech.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.security.xml.processor.X509BinarySecurityTokenImpl;
+import com.l7tech.test.BugId;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.*;
 import com.l7tech.xml.DomElementCursor;
@@ -35,10 +37,7 @@ import com.l7tech.xml.xpath.DomCompiledXpath;
 import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.xml.xpath.XpathResult;
 import junit.framework.Assert;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.*;
 import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
@@ -57,6 +56,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.l7tech.security.xml.KeyInfoInclusionType.*;
+import static com.l7tech.security.xml.decorator.WssDecoratorImpl.PROPERTY_DIGSIG_CANONICALIZATION_METHOD;
 import static org.junit.Assert.*;
 
 /**
@@ -76,6 +76,12 @@ public class WssDecoratorTest {
     public static void beforeClass() {
         JceProvider.init();
         SyspropUtil.setProperty(SoapUtil.PROPERTY_DISCLOSE_ELEMENT_NAME_IN_WSU_ID, "true");
+    }
+
+    @Before
+    public void setup() {
+        // Remove the system property "com.l7tech.security.xml.decorator.digsig.canonicalization".
+        SyspropUtil.clearProperties(PROPERTY_DIGSIG_CANONICALIZATION_METHOD);
     }
 
     @AfterClass
@@ -674,6 +680,32 @@ public class WssDecoratorTest {
                 System.out.println(matcher.group());
             }
         }
+    }
+
+    @BugId("DE338973")
+    @Test
+    public void testSigningOnly_SpecifyDefaultCanonicalizationMethod() throws Exception {
+        // Use the default method "http://www.w3.org/2001/10/xml-exc-c14n#" as canonicalization method
+        runTest(getSigningOnlyTestDocument(), canonicalizationMethodVerifier(Canonicalizer.EXCLUSIVE));
+    }
+
+    @BugId("DE338973")
+    @Test
+    public void testSigningOnly_SpecifyDifferentCanonicalizationMethod() throws Exception {
+        // Use "http://www.w3.org/TR/2001/REC-xml-c14n-20010315" as canonicalization method
+        SyspropUtil.setProperty(PROPERTY_DIGSIG_CANONICALIZATION_METHOD, Canonicalizer.W3C2);
+        runTest(getSigningOnlyTestDocument(), canonicalizationMethodVerifier(Canonicalizer.W3C2));
+    }
+
+    /**
+     * Verify c14nURI is same as the value of the attribute 'Algorithm' in CanonicalizationMethod element.
+     * @param c14nURI the canonicalization method name to be verified.
+     * @return true if found and matched.  Otherwise return false.
+     */
+    private Functions.UnaryVoid<Document> canonicalizationMethodVerifier(final String c14nURI) {
+        final HashMap<String, String> nsMap = makeDefaultNsMap();
+        nsMap.put("ds", "http://www.w3.org/2000/09/xmldsig#");
+        return xpathVerifier("1=count(//ds:CanonicalizationMethod[@Algorithm='" + c14nURI + "'])", nsMap);
     }
 
     @Test

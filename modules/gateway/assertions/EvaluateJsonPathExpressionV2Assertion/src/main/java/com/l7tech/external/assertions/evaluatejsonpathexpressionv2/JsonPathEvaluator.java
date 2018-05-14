@@ -6,6 +6,7 @@ import com.jayway.jsonpath.*;
 import com.jayway.jsonpath.spi.json.AbstractJsonProvider;
 import com.l7tech.external.assertions.evaluatejsonpathexpressionv2.Evaluator.EvaluatorException;
 import com.l7tech.util.CollectionUtils;
+import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
 import net.minidev.json.JSONStyle;
 import net.minidev.json.JSONValue;
@@ -100,6 +101,8 @@ public class JsonPathEvaluator {
         // returns the result in json format
         if (obj instanceof Map) {
             return new JSONObject((Map) obj).toJSONString();
+        } else if (obj instanceof List) {
+            return JSONArray.toJSONString((List)obj);
         } else {
             return obj.toString();
         }

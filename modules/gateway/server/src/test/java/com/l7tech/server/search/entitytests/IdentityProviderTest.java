@@ -73,8 +73,6 @@ public class IdentityProviderTest extends DependencyTestBaseClass {
         Assert.assertEquals(0, result.getDependencies().size());
     }
 
-
-
     @Test
     public void testFederated1TrustedCert() throws FindException, CannotRetrieveDependenciesException {
 
@@ -106,40 +104,72 @@ public class IdentityProviderTest extends DependencyTestBaseClass {
         return new Goid(0, idCount.getAndIncrement());
     }
 
+    private TrustedCert nextTrustedCert() throws FindException {
+        TrustedCert trustedCert = new TrustedCert();
+        trustedCert.setGoid(nextGoid());
+        return trustedCert;
+    }
+
+    private TrustedCert nextTrustedCert(boolean mocked) throws FindException {
+        TrustedCert trustedCert = nextTrustedCert();
+        if (mocked) {
+            mockEntity(trustedCert, new EntityHeader(trustedCert.getGoid(), EntityType.TRUSTED_CERT, null, null));
+        }
+        return trustedCert;
+    }
+
     @Test
     public void testFederated3TrustedCert() throws FindException, CannotRetrieveDependenciesException {
+        final TrustedCert trustedCert1 = nextTrustedCert(true);
+        final TrustedCert trustedCert2 = nextTrustedCert(true);
+        final TrustedCert trustedCert3 = nextTrustedCert(true);
 
-        TrustedCert trustedCert = new TrustedCert();
-        Goid trustedCertOid = nextGoid();
-        trustedCert.setGoid(trustedCertOid);
-        mockEntity(trustedCert, new EntityHeader(trustedCertOid, EntityType.TRUSTED_CERT, null, null));
-
-        TrustedCert trustedCert2 = new TrustedCert();
-        Goid trustedCert2Oid = nextGoid();
-        trustedCert.setGoid(trustedCert2Oid);
-        mockEntity(trustedCert2, new EntityHeader(trustedCert2Oid, EntityType.TRUSTED_CERT, null, null));
-
-        TrustedCert trustedCert3 = new TrustedCert();
-        Goid trustedCert3Oid = nextGoid();
-        trustedCert.setGoid(trustedCert3Oid);
-        mockEntity(trustedCert3, new EntityHeader(trustedCert3Oid, EntityType.TRUSTED_CERT, null, null));
-
-        FederatedIdentityProviderConfig identityProviderConfig = new FederatedIdentityProviderConfig();
+        final FederatedIdentityProviderConfig identityProviderConfig = new FederatedIdentityProviderConfig();
         final Goid identityProviderOid = new Goid(0,idCount.getAndIncrement());
         identityProviderConfig.setGoid(identityProviderOid);
-        identityProviderConfig.setTrustedCertGoids(new Goid[]{trustedCertOid, trustedCert2Oid, trustedCert3Oid});
+        identityProviderConfig.setTrustedCertGoids(new Goid[]{trustedCert1.getGoid(), trustedCert2.getGoid(), trustedCert3.getGoid()});
 
         final EntityHeader IdentityProviderConfigEntityHeader = new EntityHeader(identityProviderOid, EntityType.ID_PROVIDER_CONFIG, null, null);
-
         mockEntity(identityProviderConfig, IdentityProviderConfigEntityHeader);
 
-        DependencySearchResults result = dependencyAnalyzer.getDependencies(IdentityProviderConfigEntityHeader);
+        final DependencySearchResults result = dependencyAnalyzer.getDependencies(IdentityProviderConfigEntityHeader);
 
         Assert.assertNotNull(result);
         Assert.assertEquals(identityProviderOid, Goid.parseGoid(((DependentEntity) result.getDependent()).getEntityHeader().getStrId()));
         Assert.assertEquals(EntityType.ID_PROVIDER_CONFIG, ((DependentEntity) result.getDependent()).getDependencyType().getEntityType());
         Assert.assertNotNull(result.getDependencies());
         Assert.assertEquals(3, result.getDependencies().size());
+    }
+
+    @Test
+    public void testUniqueDependencyUsingTrustedCerts() throws FindException, CannotRetrieveDependenciesException {
+        final TrustedCert trustedCert1 = nextTrustedCert(true);
+        final TrustedCert trustedCert2 = nextTrustedCert(true);
+        final TrustedCert trustedCert3 = nextTrustedCert(true);
+
+        DependencySearchResults result;
+
+        //Adding 1 unique and 2 duplicate certificates to the Config object and then getting a count of the unique dependencies
+        FederatedIdentityProviderConfig identityProviderConfigWithTwoDuplicates = new FederatedIdentityProviderConfig();
+        final Goid identityProviderOid2 = new Goid(0,idCount.getAndIncrement());
+        identityProviderConfigWithTwoDuplicates.setGoid(identityProviderOid2);
+        identityProviderConfigWithTwoDuplicates.setTrustedCertGoids(new Goid[]{trustedCert1.getGoid(), trustedCert2.getGoid(), trustedCert2.getGoid()});
+        final EntityHeader twoDuplicatesConfigEntityHeader = new EntityHeader(identityProviderOid2, EntityType.ID_PROVIDER_CONFIG, null, null);
+        mockEntity(identityProviderConfigWithTwoDuplicates, twoDuplicatesConfigEntityHeader);
+        //Should get 2 as only two are unique this time
+        result = dependencyAnalyzer.getDependencies(twoDuplicatesConfigEntityHeader);
+        Assert.assertEquals(2, result.getDependencies().size());
+
+        //Adding 3 duplicate certificates to the Config object and then getting a count of the unique dependencies
+        FederatedIdentityProviderConfig identityProviderConfigWithThreeDuplicates = new FederatedIdentityProviderConfig();
+        final Goid identityProviderOid3 = new Goid(0,idCount.getAndIncrement());
+        identityProviderConfigWithThreeDuplicates.setGoid(identityProviderOid3);
+        identityProviderConfigWithThreeDuplicates.setTrustedCertGoids(new Goid[]{trustedCert3.getGoid(), trustedCert3.getGoid(), trustedCert3.getGoid()});
+        final EntityHeader threeDuplicatesConfigEntityHeader = new EntityHeader(identityProviderOid3, EntityType.ID_PROVIDER_CONFIG, null, null);
+        mockEntity(identityProviderConfigWithThreeDuplicates, threeDuplicatesConfigEntityHeader);
+        //Should get 1 as all are duplicates this time
+        result = dependencyAnalyzer.getDependencies(threeDuplicatesConfigEntityHeader);
+        Assert.assertEquals(1, result.getDependencies().size());
     }
 
     @Test

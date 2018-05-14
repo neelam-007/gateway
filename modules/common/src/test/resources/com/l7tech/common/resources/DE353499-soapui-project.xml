@@ -1,0 +1,504 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<con:soapui-project id="d783c91f-9c21-4384-8797-eaba5307f4b0" activeEnvironment="Default" name="Warehouse" resourceRoot="" soapui-version="5.3.0" abortOnError="false" runType="SEQUENTIAL" xmlns:con="http://eviware.com/soapui/config"><con:settings/><con:interface xsi:type="con:WsdlInterface" id="c5a1bee1-dfd8-4e19-b8da-c4cb4f9f6c36" wsaVersion="NONE" name="WarehouseSoap12" type="wsdl" bindingName="{http://warehouse.acme.com/ws}WarehouseSoap12" soapVersion="1_2" anonymous="optional" definition="http://hugh.l7tech.com/ACMEWarehouseWS/Service1.asmx?wsdl" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><con:settings/><con:definitionCache/><con:endpoints><con:endpoint>http://hugh.l7tech.com/ACMEWarehouseWS/Service1.asmx</con:endpoint></con:endpoints><con:operation id="d7046e1a-2068-4443-8e93-71bf3be81452" isOneWay="false" action="http://warehouse.acme.com/ws/currentOrders" name="currentOrders" bindingOperationName="currentOrders" type="Request-Response" inputName="" receivesAttachments="false" sendsAttachments="false" anonymous="optional"><con:settings/><con:call id="a19470a7-f802-490a-8f6c-60b42d5e47c9" name="Request 1"><con:settings/><con:encoding>UTF-8</con:encoding><con:endpoint>http://hugh.l7tech.com/ACMEWarehouseWS/Service1.asmx</con:endpoint><con:request><![CDATA[<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope" xmlns:ws="http://warehouse.acme.com/ws">\r
+   <soap:Header/>\r
+   <soap:Body>\r
+      <ws:currentOrders>\r
+         <ws:accountid>?</ws:accountid>\r
+         <ws:delay>?</ws:delay>\r
+      </ws:currentOrders>\r
+   </soap:Body>\r
+</soap:Envelope>]]></con:request><con:wsaConfig mustUnderstand="NONE" version="200508" action="http://warehouse.acme.com/ws/WarehouseSoap/currentOrdersRequest"/></con:call></con:operation><con:operation id="c7b4f9c0-2f0f-4090-a660-c10fdd0900e9" isOneWay="false" action="http://warehouse.acme.com/ws/getProductDetails" name="getProductDetails" bindingOperationName="getProductDetails" type="Request-Response" inputName="" receivesAttachments="false" sendsAttachments="false" anonymous="optional"><con:settings/><con:call id="7ac92581-cbe1-4b65-9fac-eff814c195d1" name="Request 1"><con:settings/><con:encoding>UTF-8</con:encoding><con:endpoint>http://hugh.l7tech.com/ACMEWarehouseWS/Service1.asmx</con:endpoint><con:request><![CDATA[<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope" xmlns:ws="http://warehouse.acme.com/ws">\r
+   <soap:Header/>\r
+   <soap:Body>\r
+      <ws:getProductDetails>\r
+         <ws:productid>?</ws:productid>\r
+         <ws:delay>?</ws:delay>\r
+      </ws:getProductDetails>\r
+   </soap:Body>\r
+</soap:Envelope>]]></con:request><con:wsaConfig mustUnderstand="NONE" version="200508" action="http://warehouse.acme.com/ws/WarehouseSoap/getProductDetailsRequest"/></con:call></con:operation><con:operation id="b24432aa-9367-48f7-acd2-f685ba918d94" isOneWay="false" action="http://warehouse.acme.com/ws/listProducts" name="listProducts" bindingOperationName="listProducts" type="Request-Response" inputName="" receivesAttachments="false" sendsAttachments="false" anonymous="optional"><con:settings/><con:call id="59ef16fe-5cb5-4f8c-9ef6-02d2d926652e" name="Request 1"><con:settings/><con:encoding>UTF-8</con:encoding><con:endpoint>http://hugh.l7tech.com/ACMEWarehouseWS/Service1.asmx</con:endpoint><con:request><![CDATA[<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope" xmlns:ws="http://warehouse.acme.com/ws">\r
+   <soap:Header/>\r
+   <soap:Body>\r
+      <ws:listProducts>\r
+         <ws:delay>?</ws:delay>\r
+      </ws:listProducts>\r
+   </soap:Body>\r
+</soap:Envelope>]]></con:request><con:credentials><con:authType>No Authorization</con:authType></con:credentials><con:jmsConfig JMSDeliveryMode="PERSISTENT"/><con:jmsPropertyConfig/><con:wsaConfig mustUnderstand="NONE" version="200508" action="http://warehouse.acme.com/ws/WarehouseSoap/listProductsRequest"/><con:wsrmConfig version="1.2"/></con:call></con:operation><con:operation id="cb94978e-496c-4b59-b467-3acc0bd7ee3d" isOneWay="false" action="http://warehouse.acme.com/ws/placeOrder" name="placeOrder" bindingOperationName="placeOrder" type="Request-Response" inputName="" receivesAttachments="false" sendsAttachments="false" anonymous="optional"><con:settings/><con:call id="740fd960-ca9e-4ac3-a753-3e7cbad73567" name="Request 1"><con:settings/><con:encoding>UTF-8</con:encoding><con:endpoint>http://hugh.l7tech.com/ACMEWarehouseWS/Service1.asmx</con:endpoint><con:request><![CDATA[<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope" xmlns:ws="http://warehouse.acme.com/ws">\r
+   <soap:Header/>\r
+   <soap:Body>\r
+      <ws:placeOrder>\r
+         <ws:productid>?</ws:productid>\r
+         <ws:amount>?</ws:amount>\r
+         <ws:price>?</ws:price>\r
+         <ws:accountid>?</ws:accountid>\r
+         <ws:delay>?</ws:delay>\r
+      </ws:placeOrder>\r
+   </soap:Body>\r
+</soap:Envelope>]]></con:request><con:wsaConfig mustUnderstand="NONE" version="200508" action="http://warehouse.acme.com/ws/WarehouseSoap/placeOrderRequest"/></con:call></con:operation></con:interface><con:interface xsi:type="con:WsdlInterface" id="2f16f120-b9bc-41a8-8487-922b1e39e7c8" wsaVersion="NONE" name="WarehouseSoap" type="wsdl" bindingName="{http://warehouse.acme.com/ws}WarehouseSoap" soapVersion="1_1" anonymous="optional" definition="http://hugh.l7tech.com/ACMEWarehouseWS/Service1.asmx?wsdl" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><con:settings/><con:definitionCache type="TEXT" rootPart="http://hugh.l7tech.com/ACMEWarehouseWS/Service1.asmx?wsdl"><con:part><con:url>http://hugh.l7tech.com/ACMEWarehouseWS/Service1.asmx?wsdl</con:url><con:content><![CDATA[<wsdl:definitions targetNamespace="http://warehouse.acme.com/ws" xmlns:s="http://www.w3.org/2001/XMLSchema" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" xmlns:tns="http://warehouse.acme.com/ws" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tm="http://microsoft.com/wsdl/mime/textMatching/" xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/">
+  <wsdl:types>
+    <s:schema elementFormDefault="qualified" targetNamespace="http://warehouse.acme.com/ws">
+      <s:element name="listProducts">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="1" maxOccurs="1" name="delay" type="s:int"/>
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="listProductsResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="listProductsResult" type="tns:ArrayOfProductListHeader"/>
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="ArrayOfProductListHeader">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="ProductListHeader" nillable="true" type="tns:ProductListHeader"/>
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="ProductListHeader">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="1" name="productName" type="s:string"/>
+          <s:element minOccurs="1" maxOccurs="1" name="productId" type="s:long"/>
+        </s:sequence>
+      </s:complexType>
+      <s:element name="getProductDetails">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="1" maxOccurs="1" name="productid" type="s:long"/>
+            <s:element minOccurs="1" maxOccurs="1" name="delay" type="s:int"/>
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="getProductDetailsResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="getProductDetailsResult" type="tns:ProductDetails"/>
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="ProductDetails">
+        <s:complexContent mixed="false">
+          <s:extension base="tns:ProductListHeader">
+            <s:sequence>
+              <s:element minOccurs="0" maxOccurs="1" name="description" type="s:string"/>
+              <s:element minOccurs="1" maxOccurs="1" name="price" type="s:float"/>
+              <s:element minOccurs="1" maxOccurs="1" name="inStock" type="s:boolean"/>
+            </s:sequence>
+          </s:extension>
+        </s:complexContent>
+      </s:complexType>
+      <s:element name="placeOrder">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="1" maxOccurs="1" name="productid" type="s:long"/>
+            <s:element minOccurs="1" maxOccurs="1" name="amount" type="s:long"/>
+            <s:element minOccurs="1" maxOccurs="1" name="price" type="s:float"/>
+            <s:element minOccurs="1" maxOccurs="1" name="accountid" type="s:long"/>
+            <s:element minOccurs="1" maxOccurs="1" name="delay" type="s:int"/>
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="placeOrderResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="1" maxOccurs="1" name="placeOrderResult" type="s:long"/>
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="currentOrders">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="1" maxOccurs="1" name="accountid" type="s:long"/>
+            <s:element minOccurs="1" maxOccurs="1" name="delay" type="s:int"/>
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:element name="currentOrdersResponse">
+        <s:complexType>
+          <s:sequence>
+            <s:element minOccurs="0" maxOccurs="1" name="currentOrdersResult" type="tns:ArrayOfOrder"/>
+          </s:sequence>
+        </s:complexType>
+      </s:element>
+      <s:complexType name="ArrayOfOrder">
+        <s:sequence>
+          <s:element minOccurs="0" maxOccurs="unbounded" name="Order" nillable="true" type="tns:Order"/>
+        </s:sequence>
+      </s:complexType>
+      <s:complexType name="Order">
+        <s:sequence>
+          <s:element minOccurs="1" maxOccurs="1" name="date" type="s:dateTime"/>
+          <s:element minOccurs="1" maxOccurs="1" name="accountId" type="s:long"/>
+          <s:element minOccurs="1" maxOccurs="1" name="productId" type="s:long"/>
+          <s:element minOccurs="1" maxOccurs="1" name="amount" type="s:long"/>
+          <s:element minOccurs="1" maxOccurs="1" name="price" type="s:float"/>
+          <s:element minOccurs="1" maxOccurs="1" name="confirmationId" type="s:long"/>
+        </s:sequence>
+      </s:complexType>
+    </s:schema>
+  </wsdl:types>
+  <wsdl:message name="listProductsSoapIn">
+    <wsdl:part name="parameters" element="tns:listProducts"/>
+  </wsdl:message>
+  <wsdl:message name="listProductsSoapOut">
+    <wsdl:part name="parameters" element="tns:listProductsResponse"/>
+  </wsdl:message>
+  <wsdl:message name="getProductDetailsSoapIn">
+    <wsdl:part name="parameters" element="tns:getProductDetails"/>
+  </wsdl:message>
+  <wsdl:message name="getProductDetailsSoapOut">
+    <wsdl:part name="parameters" element="tns:getProductDetailsResponse"/>
+  </wsdl:message>
+  <wsdl:message name="placeOrderSoapIn">
+    <wsdl:part name="parameters" element="tns:placeOrder"/>
+  </wsdl:message>
+  <wsdl:message name="placeOrderSoapOut">
+    <wsdl:part name="parameters" element="tns:placeOrderResponse"/>
+  </wsdl:message>
+  <wsdl:message name="currentOrdersSoapIn">
+    <wsdl:part name="parameters" element="tns:currentOrders"/>
+  </wsdl:message>
+  <wsdl:message name="currentOrdersSoapOut">
+    <wsdl:part name="parameters" element="tns:currentOrdersResponse"/>
+  </wsdl:message>
+  <wsdl:portType name="WarehouseSoap">
+    <wsdl:operation name="listProducts">
+      <wsdl:input message="tns:listProductsSoapIn"/>
+      <wsdl:output message="tns:listProductsSoapOut"/>
+    </wsdl:operation>
+    <wsdl:operation name="getProductDetails">
+      <wsdl:input message="tns:getProductDetailsSoapIn"/>
+      <wsdl:output message="tns:getProductDetailsSoapOut"/>
+    </wsdl:operation>
+    <wsdl:operation name="placeOrder">
+      <wsdl:input message="tns:placeOrderSoapIn"/>
+      <wsdl:output message="tns:placeOrderSoapOut"/>
+    </wsdl:operation>
+    <wsdl:operation name="currentOrders">
+      <wsdl:input message="tns:currentOrdersSoapIn"/>
+      <wsdl:output message="tns:currentOrdersSoapOut"/>
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="WarehouseSoap" type="tns:WarehouseSoap">
+    <soap:binding transport="http://schemas.xmlsoap.org/soap/http"/>
+    <wsdl:operation name="listProducts">
+      <soap:operation soapAction="http://warehouse.acme.com/ws/listProducts" style="document"/>
+      <wsdl:input>
+        <soap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getProductDetails">
+      <soap:operation soapAction="http://warehouse.acme.com/ws/getProductDetails" style="document"/>
+      <wsdl:input>
+        <soap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="placeOrder">
+      <soap:operation soapAction="http://warehouse.acme.com/ws/placeOrder" style="document"/>
+      <wsdl:input>
+        <soap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="currentOrders">
+      <soap:operation soapAction="http://warehouse.acme.com/ws/currentOrders" style="document"/>
+      <wsdl:input>
+        <soap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output>
+        <soap:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:binding name="WarehouseSoap12" type="tns:WarehouseSoap">
+    <soap12:binding transport="http://schemas.xmlsoap.org/soap/http"/>
+    <wsdl:operation name="listProducts">
+      <soap12:operation soapAction="http://warehouse.acme.com/ws/listProducts" style="document"/>
+      <wsdl:input>
+        <soap12:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getProductDetails">
+      <soap12:operation soapAction="http://warehouse.acme.com/ws/getProductDetails" style="document"/>
+      <wsdl:input>
+        <soap12:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="placeOrder">
+      <soap12:operation soapAction="http://warehouse.acme.com/ws/placeOrder" style="document"/>
+      <wsdl:input>
+        <soap12:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="currentOrders">
+      <soap12:operation soapAction="http://warehouse.acme.com/ws/currentOrders" style="document"/>
+      <wsdl:input>
+        <soap12:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="Warehouse">
+    <wsdl:port name="WarehouseSoap" binding="tns:WarehouseSoap">
+      <soap:address location="http://hugh.l7tech.com/ACMEWarehouseWS/Service1.asmx"/>
+    </wsdl:port>
+    <wsdl:port name="WarehouseSoap12" binding="tns:WarehouseSoap12">
+      <soap12:address location="http://hugh.l7tech.com/ACMEWarehouseWS/Service1.asmx"/>
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>]]></con:content><con:type>http://schemas.xmlsoap.org/wsdl/</con:type></con:part></con:definitionCache><con:endpoints><con:endpoint>http://galactica.l7tech.com:8080/multiplesignatures</con:endpoint><con:endpoint>http://hugh.l7tech.com/ACMEWarehouseWS/Service1.asmx</con:endpoint></con:endpoints><con:operation id="0234bf31-c5dc-4035-b367-9e988d9f8f4b" isOneWay="false" action="http://warehouse.acme.com/ws/currentOrders" name="currentOrders" bindingOperationName="currentOrders" type="Request-Response" inputName="" receivesAttachments="false" sendsAttachments="false" anonymous="optional"><con:settings/><con:call id="4edd45b4-4583-49bd-8b65-b1adb2279d4a" name="Request 1"><con:settings/><con:encoding>UTF-8</con:encoding><con:endpoint>http://hugh.l7tech.com/ACMEWarehouseWS/Service1.asmx</con:endpoint><con:request><![CDATA[<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ws="http://warehouse.acme.com/ws">\r
+   <soapenv:Header/>\r
+   <soapenv:Body>\r
+      <ws:currentOrders>\r
+         <ws:accountid>?</ws:accountid>\r
+         <ws:delay>?</ws:delay>\r
+      </ws:currentOrders>\r
+   </soapenv:Body>\r
+</soapenv:Envelope>]]></con:request><con:wsaConfig mustUnderstand="NONE" version="200508" action="http://warehouse.acme.com/ws/currentOrders"/></con:call></con:operation><con:operation id="3fc53906-b0a7-459d-bae1-8f20c4f6fde9" isOneWay="false" action="http://warehouse.acme.com/ws/getProductDetails" name="getProductDetails" bindingOperationName="getProductDetails" type="Request-Response" inputName="" receivesAttachments="false" sendsAttachments="false" anonymous="optional"><con:settings/><con:call id="28835c8a-d863-4143-8936-3ee43429078e" name="Request 1"><con:settings/><con:encoding>UTF-8</con:encoding><con:endpoint>http://hugh.l7tech.com/ACMEWarehouseWS/Service1.asmx</con:endpoint><con:request><![CDATA[<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ws="http://warehouse.acme.com/ws">\r
+   <soapenv:Header/>\r
+   <soapenv:Body>\r
+      <ws:getProductDetails>\r
+         <ws:productid>?</ws:productid>\r
+         <ws:delay>?</ws:delay>\r
+      </ws:getProductDetails>\r
+   </soapenv:Body>\r
+</soapenv:Envelope>]]></con:request><con:wsaConfig mustUnderstand="NONE" version="200508" action="http://warehouse.acme.com/ws/getProductDetails"/></con:call></con:operation><con:operation id="7054e401-0b1c-40e0-9097-b5f5ad053c0d" isOneWay="false" action="http://warehouse.acme.com/ws/listProducts" name="listProducts" bindingOperationName="listProducts" type="Request-Response" inputName="" receivesAttachments="false" sendsAttachments="false" anonymous="optional"><con:settings/><con:call id="ba1c02cb-108f-40d6-864c-f53335eeec18" name="BUG_3611_SIGNATURE_INCLUSIVE_NAMESPACES" outgoingWss="BUG_3611_SIGNATURE_INCLUSIVE_NAMESPACES"><con:settings><con:setting id="com.eviware.soapui.impl.wsdl.WsdlRequest@request-headers">&lt;xml-fragment/></con:setting></con:settings><con:encoding>UTF-8</con:encoding><con:endpoint>http://hugh.l7tech.com/ACMEWarehouseWS/Service1.asmx</con:endpoint><con:request><![CDATA[<soapenv:Envelope xmlns:random="http://random.org/some/random/unused/namespace" xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ws="http://warehouse.acme.com/ws">\r
+   <soapenv:Header/>\r
+   <soapenv:Body>\r
+      <ws:listProducts>\r
+         <ws:delay>0</ws:delay>\r
+      </ws:listProducts>\r
+   </soapenv:Body>\r
+</soapenv:Envelope>]]></con:request><con:credentials><con:selectedAuthProfile>Basic</con:selectedAuthProfile><con:addedBasicAuthenticationTypes>Basic</con:addedBasicAuthenticationTypes><con:authType>Global HTTP Settings</con:authType></con:credentials><con:jmsConfig JMSDeliveryMode="PERSISTENT"/><con:jmsPropertyConfig/><con:wsaConfig mustUnderstand="NONE" version="200508" action="http://warehouse.acme.com/ws/listProducts"/><con:wsrmConfig version="1.2"/></con:call><con:call id="c20e852d-f3dc-471d-9234-b6d1898e02b5" name="BUG_3736_STR_TRANSFORM_REQUEST" outgoingWss="BUG_3736_STR_TRANSFORM_REQUEST"><con:settings><con:setting id="com.eviware.soapui.impl.wsdl.WsdlRequest@request-headers">&lt;xml-fragment/></con:setting></con:settings><con:encoding>UTF-8</con:encoding><con:endpoint>http://hugh.l7tech.com/ACMEWarehouseWS/Service1.asmx</con:endpoint><con:request><![CDATA[<?xml version="1.0" encoding="UTF-8" standalone="yes" ?> <SOAP-ENV:Envelope xmlns="" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"><SOAP-ENV:Header xmlns="" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"> <wsse:Security SOAP-ENV:mustUnderstand="1" xmlns="" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"><wsse:BinarySecurityToken EncodingType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary" ValueType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3" wsu:Id="CertId--225859775" xmlns="" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">MIICKjCCAZOgAwIBAgIIYNXFl9oCs0swDQYJKoZIhvcNAQEFBQAwKzEpMCcGA1UEAwwgcm9vdC5D UkxMN0dXMS5hbWVyaWNhcy5zaGVsbC5jb20wHhcNMDcwNTAzMTcxNDIzWhcNMDkwNTAyMTcyNDIz WjAiMSAwHgYDVQQDDBdTaW1wbGVBZGRpdGlvblJlcXVlc3RvcjCBnzANBgkqhkiG9w0BAQEFAAOB jQAwgYkCgYEAm0N12nDfL1ysbh/i3k8s2wpFHvTNAX+9bTBcmavY4HE6U36uM/dnBVSyUT2HT2vW kUwOnVm2rGRd2HfnwQEe5oSo9f78RZNZrpuEJsWHqNDcetUrhrvnF0c0+ve4NF8RORQ552fNDvQq Znv0xSRDO4/qgoVxEISPTob+bWMAQvECAwEAAaNgMF4wDAYDVR0TAQH/BAIwADAOBgNVHQ8BAf8E BAMCBeAwHQYDVR0OBBYEFPmdBKFV30mih+5LsvFbIpS3Mwb0MB8GA1UdIwQYMBaAFEkccF9IQQmV 2zd7p4Kwb5JM6um5MA0GCSqGSIb3DQEBBQUAA4GBADhueWeRIH0huIXR2c75PDXA94E9rTq8DIFf d/UXJPKB8+wKGrXGExEv+abL8QDMLGb+mgCon3D0FpORrOa6EqjDkTAyrXSXY7jSHbFpxCy+f7aH IzpM5nyd1gTbKHB13LyKRs8ZT/nbTY9GpObY/9ZWUhEvXXM2mtoTJgsoVnqD</wsse:BinarySecurityToken><ds:Signature xmlns="" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"> <ds:SignedInfo xmlns="" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"> <ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#" xmlns="" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"/> <ds:SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1" xmlns="" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"/> <ds:Reference URI="#id-30261655" xmlns="" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"> <ds:Transforms xmlns="" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"> <ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#" xmlns="" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"/> </ds:Transforms> <ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1" xmlns="" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"/> <ds:DigestValue xmlns="" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">t6BpXuf5nXqq5WmdjQT3lNPP2S4=</ds:DigestValue> </ds:Reference> <ds:Reference URI="#STRId-30521619" xmlns="" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"> <ds:Transforms xmlns="" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"> <ds:Transform Algorithm="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#STR-Transform" xmlns="" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"> <wsse:TransformationParameters xmlns="" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"><ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#" xmlns="" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"/></wsse:TransformationParameters> </ds:Transform> </ds:Transforms> <ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1" xmlns="" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"/> <ds:DigestValue xmlns="" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">LSrjfqfJVeJw0fXsK62MRU5Zvmc=</ds:DigestValue> </ds:Reference> <ds:Reference URI="#id-23122077" xmlns="" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"> <ds:Transforms xmlns="" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"> <ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#" xmlns="" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"/> </ds:Transforms> <ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1" xmlns="" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"/> <ds:DigestValue xmlns="" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">/ZCFI/6kiMPy6etVIuHuVqjfYMo=</ds:DigestValue> </ds:Reference> </ds:SignedInfo> <ds:SignatureValue xmlns="" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"> fMzy9pRS6ofZg7bazPG4lLnKG4r4K4OLpk0+dNG6t+QSIibShFUu6pteATsc9eLf5xyhHjs8p2MS VQldVF6u+jh1AJxMIxMaHlaSV3Ui2r/1DClg05wG+BpYVQiuUbePb1oPnci0GW3HrCaqED+MLlXa yH3/+w5oxE+WRZSCJME= </ds:SignatureValue> <ds:KeyInfo Id="KeyId-33160949" xmlns="" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"> <wsse:SecurityTokenReference wsu:Id="STRId-30521619" xmlns="" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"><wsse:Reference URI="#CertId--225859775" ValueType="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#X509v3" xmlns="" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"/></wsse:SecurityTokenReference> </ds:KeyInfo> </ds:Signature> <wsu:Timestamp wsu:Id="id-23122077" xmlns="" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"><wsu:Created xmlns="" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">2007-05-16T15:54:36.112Z</wsu:Created><wsu:Expires xmlns="" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">2007-05-16T15:55:06.112Z</wsu:Expires></wsu:Timestamp></wsse:Security><ns:MessageContext xmlns="" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns="urn:shell.com:schemas:trading:cif:msgcontext" xmlns:ns0="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><GlobalContext xmlns="" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns="urn:shell.com:schemas:trading:cif:msgcontext" xmlns:ns0="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><transactionID xmlns="" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns="urn:shell.com:schemas:trading:cif:msgcontext" xmlns:ns0="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">tid1234</transactionID><originatorServiceID xmlns="" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns="urn:shell.com:schemas:trading:cif:msgcontext" xmlns:ns0="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">string</originatorServiceID><originatorCorrelationID xmlns="" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns="urn:shell.com:schemas:trading:cif:msgcontext" xmlns:ns0="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">string</originatorCorrelationID><eventType xmlns="" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns="urn:shell.com:schemas:trading:cif:msgcontext" xmlns:ns0="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">string</eventType><timestamp xmlns="" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns="urn:shell.com:schemas:trading:cif:msgcontext" xmlns:ns0="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">2007-05-16T10:54:35.502-05:00</timestamp><sequenceNumber xmlns="" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns="urn:shell.com:schemas:trading:cif:msgcontext" xmlns:ns0="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">1234</sequenceNumber><ns:JMSQueueDestination xmlns="" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns="urn:shell.com:schemas:trading:cif:msgcontext" xmlns:ns0="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">/Services/SimpleAdditionwithSOAP</ns:JMSQueueDestination></GlobalContext><LegContext xmlns="" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns="urn:shell.com:schemas:trading:cif:msgcontext" xmlns:ns0="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><legID xmlns="" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns="urn:shell.com:schemas:trading:cif:msgcontext" xmlns:ns0="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">string123</legID><legNumber xmlns="" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns="urn:shell.com:schemas:trading:cif:msgcontext" xmlns:ns0="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">123</legNumber><senderServiceID xmlns="" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns="urn:shell.com:schemas:trading:cif:msgcontext" xmlns:ns0="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">string</senderServiceID><senderPhysicalID xmlns="" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns="urn:shell.com:schemas:trading:cif:msgcontext" xmlns:ns0="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">string</senderPhysicalID><receiverServiceID xmlns="" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns="urn:shell.com:schemas:trading:cif:msgcontext" xmlns:ns0="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">string</receiverServiceID><receiverOperation xmlns="" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns="urn:shell.com:schemas:trading:cif:msgcontext" xmlns:ns0="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">string</receiverOperation><timestamp xmlns="" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns="urn:shell.com:schemas:trading:cif:msgcontext" xmlns:ns0="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">2007-05-16T10:54:35.502-05:00</timestamp></LegContext></ns:MessageContext></SOAP-ENV:Header><SOAP-ENV:Body wsu:Id="id-30261655" xmlns="" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"><ns0:stml xmlns="" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns0="urn:shell.com:schemas:trading:cif:simpleaddition" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"><ns0:param1 xmlns="" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns0="urn:shell.com:schemas:trading:cif:simpleaddition" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">100</ns0:param1><ns0:param2 xmlns="" xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns0="urn:shell.com:schemas:trading:cif:simpleaddition" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">100</ns0:param2></ns0:stml></SOAP-ENV:Body></SOAP-ENV:Envelope>]]></con:request><con:credentials><con:selectedAuthProfile>Basic</con:selectedAuthProfile><con:addedBasicAuthenticationTypes>Basic</con:addedBasicAuthenticationTypes><con:authType>Global HTTP Settings</con:authType></con:credentials><con:jmsConfig JMSDeliveryMode="PERSISTENT"/><con:jmsPropertyConfig/><con:wsaConfig mustUnderstand="NONE" version="200508" action="http://warehouse.acme.com/ws/listProducts"/><con:wsrmConfig version="1.2"/></con:call><con:call id="04d6d44b-3fd4-4462-91c5-a2125efcc823" name="BUG_3754_PING_REQ_VORDEL_SIGNED" outgoingWss="BUG_3754_PING_REQ_VORDEL_SIGNED"><con:settings><con:setting id="com.eviware.soapui.impl.wsdl.WsdlRequest@request-headers">&lt;xml-fragment/></con:setting></con:settings><con:encoding>UTF-8</con:encoding><con:endpoint>http://hugh.l7tech.com/ACMEWarehouseWS/Service1.asmx</con:endpoint><con:request><![CDATA[<s12:Envelope xmlns:s12="http://www.w3.org/2003/05/soap-envelope">
+   <s12:Header/>
+   <s12:Body>
+      <tns:EchoRequest xmlns:tns="http://example.com/ws/2008/09/securitypolicy">Layer 7 Tech - Test Ping 123</tns:EchoRequest>
+   </s12:Body>
+</s12:Envelope>   ]]></con:request><con:credentials><con:selectedAuthProfile>Basic</con:selectedAuthProfile><con:addedBasicAuthenticationTypes>Basic</con:addedBasicAuthenticationTypes><con:authType>Global HTTP Settings</con:authType></con:credentials><con:jmsConfig JMSDeliveryMode="PERSISTENT"/><con:jmsPropertyConfig/><con:wsaConfig mustUnderstand="NONE" version="200508" action="http://warehouse.acme.com/ws/listProducts"/><con:wsrmConfig version="1.2"/></con:call><con:call id="3778aa22-eb35-4b62-89a5-47f48cf65ff2" name="WAREHOUSE_REQUEST_MULTIPLE_TIMESTAMP_SIGS" outgoingWss="WAREHOUSE_REQUEST_MULTIPLE_TIMESTAMP_SIGS"><con:settings><con:setting id="com.eviware.soapui.impl.wsdl.WsdlRequest@request-headers">&lt;xml-fragment/></con:setting></con:settings><con:encoding>UTF-8</con:encoding><con:endpoint>http://hugh.l7tech.com/ACMEWarehouseWS/Service1.asmx</con:endpoint><con:request><![CDATA[<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ws="http://warehouse.acme.com/ws">\r
+   <soapenv:Header/>\r
+   <soapenv:Body>\r
+      <ws:listProducts>\r
+         <ws:delay>0</ws:delay>\r
+      </ws:listProducts>\r
+   </soapenv:Body>\r
+</soapenv:Envelope>]]></con:request><con:credentials><con:selectedAuthProfile>Basic</con:selectedAuthProfile><con:addedBasicAuthenticationTypes>Basic</con:addedBasicAuthenticationTypes><con:authType>Global HTTP Settings</con:authType></con:credentials><con:jmsConfig JMSDeliveryMode="PERSISTENT"/><con:jmsPropertyConfig/><con:wsaConfig mustUnderstand="NONE" version="200508" action="http://warehouse.acme.com/ws/listProducts"/><con:wsrmConfig version="1.2"/></con:call><con:call id="784ed55d-ad8b-4dc1-a21f-a4ac67a8be40" name="WAREHOUSE_REQUEST_COMBINED_SIGNATURE" outgoingWss="" useWsAddressing="true"><con:settings><con:setting id="com.eviware.soapui.impl.wsdl.WsdlRequest@request-headers">&lt;xml-fragment/></con:setting></con:settings><con:encoding>UTF-8</con:encoding><con:endpoint>http://galactica.l7tech.com:8080/ncesDecorator</con:endpoint><con:request><![CDATA[<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ws="http://warehouse.acme.com/ws">\r
+   <soapenv:Header/>\r
+   <soapenv:Body>\r
+      <ws:listProducts>\r
+         <ws:delay>0</ws:delay>\r
+      </ws:listProducts>\r
+   </soapenv:Body>\r
+</soapenv:Envelope>]]></con:request><con:credentials><con:username>Alice</con:username><con:password>password</con:password><con:selectedAuthProfile>Basic</con:selectedAuthProfile><con:addedBasicAuthenticationTypes>Basic</con:addedBasicAuthenticationTypes><con:authType>Global HTTP Settings</con:authType></con:credentials><con:jmsConfig JMSDeliveryMode="PERSISTENT"/><con:jmsPropertyConfig/><con:wsaConfig mustUnderstand="NONE" version="200508" action="http://warehouse.acme.com/ws/listProducts" generateMessageId="true"/><con:wsrmConfig version="1.2"/></con:call><con:call id="5de21009-bd86-4bde-9358-ceabad56c7f3" name="LICENSE_EXPIRED"><con:settings><con:setting id="com.eviware.soapui.impl.wsdl.WsdlRequest@request-headers">&lt;xml-fragment/></con:setting></con:settings><con:encoding>UTF-8</con:encoding><con:endpoint>http://galactica.l7tech.com:8080/nonSoapSigner</con:endpoint><con:request><![CDATA[<license xmlns="http://l7tech.com/license" Id="1001"><description>Layer 7 Internal Developer License</description><licenseAttributes></licenseAttributes><valid>2008-05-07T02:07:33.980Z</valid><expires>2008-05-07T02:06:43.980Z</expires><host name="*"></host><ip address="*"></ip><product name="Layer 7 SecureSpan Suite"><version major="3" minor="4"></version><featureset name="set:Profile:IPS"></featureset><featureset name="service:SnmpQuery"></featureset><featureset name="assertion:JmsRouting"></featureset></product><licensee contactEmail="developers@layer7tech.com" name="Layer 7 Developer"></licensee><eulatext>H4sIAAAAAAAAACvIKE3Ozk9LAwDHKYzMCAAAAA==</eulatext></license>]]></con:request><con:credentials><con:authType>No Authorization</con:authType></con:credentials><con:jmsConfig JMSDeliveryMode="PERSISTENT"/><con:jmsPropertyConfig/><con:wsaConfig mustUnderstand="NONE" version="200508" action="http://warehouse.acme.com/ws/listProducts"/><con:wsrmConfig version="1.2"/></con:call><con:call id="87cd1f27-8af8-42a5-8a54-fbc1269adf2a" name="LICENSE_POSTDATED"><con:settings><con:setting id="com.eviware.soapui.impl.wsdl.WsdlRequest@request-headers">&lt;xml-fragment/></con:setting></con:settings><con:encoding>UTF-8</con:encoding><con:endpoint>http://galactica.l7tech.com:8080/nonSoapSigner</con:endpoint><con:request><![CDATA[<license xmlns="http://l7tech.com/license" Id="1001"><description>Layer 7 Internal Developer License</description><licenseAttributes></licenseAttributes><valid>2124-03-11T03:00:54.025Z</valid><expires>2201-01-02T03:07:34.025Z</expires><host name="*"></host><ip address="*"></ip><product name="Layer 7 SecureSpan Suite"><version major="3" minor="4"></version><featureset name="set:Profile:IPS"></featureset><featureset name="service:SnmpQuery"></featureset><featureset name="assertion:JmsRouting"></featureset></product><licensee contactEmail="developers@layer7tech.com" name="Layer 7 Developer"></licensee><eulatext>H4sIAAAAAAAAACvIKE3Ozk9LAwDHKYzMCAAAAA==</eulatext></license>]]></con:request><con:credentials><con:authType>No Authorization</con:authType></con:credentials><con:jmsConfig JMSDeliveryMode="PERSISTENT"/><con:jmsPropertyConfig/><con:wsaConfig mustUnderstand="NONE" version="200508" action="http://warehouse.acme.com/ws/listProducts"/><con:wsrmConfig version="1.2"/></con:call><con:call id="bddb79c9-f447-4aa7-ada8-ff1b692df402" name="LICENSE_PLAIN"><con:settings><con:setting id="com.eviware.soapui.impl.wsdl.WsdlRequest@request-headers">&lt;xml-fragment/></con:setting></con:settings><con:encoding>UTF-8</con:encoding><con:endpoint>http://galactica.l7tech.com:8080/nonSoapSigner</con:endpoint><con:request><![CDATA[<license xmlns="http://l7tech.com/license" Id="1001"><description>Layer 7 Internal Developer License</description><licenseAttributes></licenseAttributes><valid>2008-05-07T01:48:45.359Z</valid><expires>2101-01-02T02:48:45.359Z</expires><host name="*"></host><ip address="*"></ip><product name="Layer 7 SecureSpan Suite"><version major="3" minor="4"></version></product><licensee contactEmail="developers@layer7tech.com" name="Layer 7 Developer"></licensee><eulatext>H4sIAAAAAAAAACvIKE3Ozk9LAwDHKYzMCAAAAA==</eulatext></license>]]></con:request><con:credentials><con:authType>No Authorization</con:authType></con:credentials><con:jmsConfig JMSDeliveryMode="PERSISTENT"/><con:jmsPropertyConfig/><con:wsaConfig mustUnderstand="NONE" version="200508" action="http://warehouse.acme.com/ws/listProducts"/><con:wsrmConfig version="1.2"/></con:call><con:call id="a141e0c2-65d9-4d12-902a-fefa86f0d23d" name="LICENSE_FEATS"><con:settings><con:setting id="com.eviware.soapui.impl.wsdl.WsdlRequest@request-headers">&lt;xml-fragment/></con:setting></con:settings><con:encoding>UTF-8</con:encoding><con:endpoint>http://galactica.l7tech.com:8080/nonSoapSigner</con:endpoint><con:request><![CDATA[<license xmlns="http://l7tech.com/license" Id="1001"><description>Layer 7 Internal Developer License</description><licenseAttributes></licenseAttributes><valid>2008-05-07T01:48:46.117Z</valid><expires>2101-01-02T02:48:46.117Z</expires><host name="*"></host><ip address="*"></ip><product name="Layer 7 SecureSpan Suite"><version major="3" minor="4"></version><featureset name="set:Profile:IPS"></featureset><featureset name="service:SnmpQuery"></featureset><featureset name="assertion:JmsRouting"></featureset></product><licensee contactEmail="developers@layer7tech.com" name="Layer 7 Developer"></licensee><eulatext>H4sIAAAAAAAAACvIKE3Ozk9LAwDHKYzMCAAAAA==</eulatext></license>]]></con:request><con:credentials><con:authType>No Authorization</con:authType></con:credentials><con:jmsConfig JMSDeliveryMode="PERSISTENT"/><con:jmsPropertyConfig/><con:wsaConfig mustUnderstand="NONE" version="200508" action="http://warehouse.acme.com/ws/listProducts"/><con:wsrmConfig version="1.2"/></con:call><con:call id="9770af70-01e0-4d60-85fc-48d445069b13" name="WAREHOUSE_REQUEST_SIGNED" outgoingWss="WAREHOUSE_REQUEST_SIGNED"><con:settings><con:setting id="com.eviware.soapui.impl.wsdl.WsdlRequest@request-headers">&lt;xml-fragment/></con:setting></con:settings><con:encoding>UTF-8</con:encoding><con:endpoint>http://galactica.l7tech.com:8080/multiplesignatures</con:endpoint><con:request><![CDATA[<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ws="http://warehouse.acme.com/ws">\r
+   <soapenv:Header/>\r
+   <soapenv:Body>\r
+      <ws:listProducts>\r
+         <ws:delay>0</ws:delay>\r
+      </ws:listProducts>\r
+   </soapenv:Body>\r
+</soapenv:Envelope>]]></con:request><con:credentials><con:selectedAuthProfile>Basic</con:selectedAuthProfile><con:addedBasicAuthenticationTypes>Basic</con:addedBasicAuthenticationTypes><con:authType>Global HTTP Settings</con:authType></con:credentials><con:jmsConfig JMSDeliveryMode="PERSISTENT"/><con:jmsPropertyConfig/><con:wsaConfig mustUnderstand="NONE" version="200508" action="http://warehouse.acme.com/ws/listProducts"/><con:wsrmConfig version="1.2"/></con:call><con:call id="1d37484f-33f8-4797-a29b-1963e577075e" name="WAREHOUSE_REQUEST_ENCRYPTED_USERNAME_TOKEN" outgoingWss="WAREHOUSE_REQUEST_USERNAME_TOKEN"><con:settings><con:setting id="com.eviware.soapui.impl.wsdl.WsdlRequest@request-headers">&lt;xml-fragment/></con:setting></con:settings><con:encoding>UTF-8</con:encoding><con:endpoint>http://hugh.l7tech.com/ACMEWarehouseWS/Service1.asmx</con:endpoint><con:request><![CDATA[<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ws="http://warehouse.acme.com/ws">\r
+   <soapenv:Header/>\r
+   <soapenv:Body>\r
+      <ws:listProducts>\r
+         <ws:delay>0</ws:delay>\r
+      </ws:listProducts>\r
+   </soapenv:Body>\r
+</soapenv:Envelope>]]></con:request><con:credentials><con:selectedAuthProfile>Basic</con:selectedAuthProfile><con:addedBasicAuthenticationTypes>Basic</con:addedBasicAuthenticationTypes><con:authType>Global HTTP Settings</con:authType></con:credentials><con:jmsConfig JMSDeliveryMode="PERSISTENT"/><con:jmsPropertyConfig/><con:wsaConfig mustUnderstand="NONE" version="200508" action="http://warehouse.acme.com/ws/listProducts"/><con:wsrmConfig version="1.2"/></con:call><con:call id="43ac7985-fa81-411a-af23-0277b330c63e" name="BASE"><con:settings><con:setting id="com.eviware.soapui.impl.wsdl.WsdlRequest@request-headers">&lt;xml-fragment/></con:setting></con:settings><con:encoding>UTF-8</con:encoding><con:endpoint>http://galactica.l7tech.com:8080/signBodyMultiple</con:endpoint><con:request><![CDATA[<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ws="http://warehouse.acme.com/ws">\r
+   <soapenv:Header/>\r
+   <soapenv:Body>\r
+      <ws:listProducts>\r
+         <ws:delay>0</ws:delay>\r
+      </ws:listProducts>\r
+   </soapenv:Body>\r
+</soapenv:Envelope>]]></con:request><con:credentials><con:authType>No Authorization</con:authType></con:credentials><con:jmsConfig JMSDeliveryMode="PERSISTENT"/><con:jmsPropertyConfig/><con:wsaConfig mustUnderstand="NONE" version="200508" action="http://warehouse.acme.com/ws/listProducts"/><con:wsrmConfig version="1.2"/></con:call><con:call id="6328817e-55fa-4090-833f-87a6eee44668" name="WAREHOUSE_REQUEST_MULTIPLESIGNATURES" outgoingWss="WAREHOUSE_REQUEST_MULTIPLESIGNATURES"><con:settings><con:setting id="com.eviware.soapui.impl.wsdl.WsdlRequest@request-headers">&lt;xml-fragment/></con:setting></con:settings><con:encoding>UTF-8</con:encoding><con:endpoint>http://galactica.l7tech.com:8080/multiplesignatures</con:endpoint><con:request><![CDATA[<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ws="http://warehouse.acme.com/ws">\r
+   <soapenv:Header/>\r
+   <soapenv:Body>\r
+      <ws:listProducts>\r
+         <ws:delay>0</ws:delay>\r
+      </ws:listProducts>\r
+   </soapenv:Body>\r
+</soapenv:Envelope>]]></con:request><con:credentials><con:selectedAuthProfile>Basic</con:selectedAuthProfile><con:addedBasicAuthenticationTypes>Basic</con:addedBasicAuthenticationTypes><con:authType>Global HTTP Settings</con:authType></con:credentials><con:jmsConfig JMSDeliveryMode="PERSISTENT"/><con:jmsPropertyConfig/><con:wsaConfig mustUnderstand="NONE" version="200508" action="http://warehouse.acme.com/ws/listProducts"/><con:wsrmConfig version="1.2"/></con:call><con:call id="50165bbe-d44f-4f48-a9bb-8ac144d2ee0b" name="WAREHOUSE_REQUEST_MULTIPLESIGNATURES3" outgoingWss="WAREHOUSE_REQUEST_MULTIPLESIGNATURES3"><con:settings><con:setting id="com.eviware.soapui.impl.wsdl.WsdlRequest@request-headers">&lt;xml-fragment/></con:setting></con:settings><con:encoding>UTF-8</con:encoding><con:endpoint>http://hugh.l7tech.com/ACMEWarehouseWS/Service1.asmx</con:endpoint><con:request><![CDATA[<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ws="http://warehouse.acme.com/ws">\r
+   <soapenv:Header/>\r
+   <soapenv:Body>\r
+      <ws:listProducts>\r
+         <ws:delay>0</ws:delay>\r
+      </ws:listProducts>\r
+   </soapenv:Body>\r
+</soapenv:Envelope>]]></con:request><con:credentials><con:selectedAuthProfile>Basic</con:selectedAuthProfile><con:addedBasicAuthenticationTypes>Basic</con:addedBasicAuthenticationTypes><con:authType>Global HTTP Settings</con:authType></con:credentials><con:jmsConfig JMSDeliveryMode="PERSISTENT"/><con:jmsPropertyConfig/><con:wsaConfig mustUnderstand="NONE" version="200508" action="http://warehouse.acme.com/ws/listProducts"/><con:wsrmConfig version="1.2"/></con:call><con:call id="28f174fd-d611-4b7f-8724-baadb929f87f" name="WAREHOUSE_REQUEST_MULTIPLESIGNATURES2" outgoingWss="WAREHOUSE_REQUEST_MULTIPLESIGNATURES2"><con:settings><con:setting id="com.eviware.soapui.impl.wsdl.WsdlRequest@request-headers">&lt;xml-fragment/></con:setting></con:settings><con:encoding>UTF-8</con:encoding><con:endpoint>http://hugh.l7tech.com/ACMEWarehouseWS/Service1.asmx</con:endpoint><con:request><![CDATA[<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ws="http://warehouse.acme.com/ws">\r
+   <soapenv:Header/>\r
+   <soapenv:Body>\r
+      <ws:listProducts>\r
+         <ws:delay>0</ws:delay>\r
+      </ws:listProducts>\r
+   </soapenv:Body>\r
+</soapenv:Envelope>]]></con:request><con:credentials><con:selectedAuthProfile>Basic</con:selectedAuthProfile><con:addedBasicAuthenticationTypes>Basic</con:addedBasicAuthenticationTypes><con:authType>Global HTTP Settings</con:authType></con:credentials><con:jmsConfig JMSDeliveryMode="PERSISTENT"/><con:jmsPropertyConfig/><con:wsaConfig mustUnderstand="NONE" version="200508" action="http://warehouse.acme.com/ws/listProducts"/><con:wsrmConfig version="1.2"/></con:call><con:call id="ba63857f-f94f-4d35-87dd-bd60f4f15904" name="signed_attachment" outgoingWss="WAREHOUSE_REQUEST_SIGNED_NO_TIMESTAMP"><con:settings><con:setting id="com.eviware.soapui.impl.wsdl.WsdlRequest@request-headers">&lt;xml-fragment/></con:setting></con:settings><con:encoding>UTF-8</con:encoding><con:endpoint>http://galactica.l7tech.com:8080/multiplesignatures</con:endpoint><con:request><![CDATA[<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"><soapenv:Body><echoOne xmlns="urn:EchoAttachmentsService"><source xmlns="" href="cid:attachment-1"/></echoOne></soapenv:Body></soapenv:Envelope>]]></con:request><con:credentials><con:selectedAuthProfile>Basic</con:selectedAuthProfile><con:addedBasicAuthenticationTypes>Basic</con:addedBasicAuthenticationTypes><con:authType>Global HTTP Settings</con:authType></con:credentials><con:attachment><con:name>empty.txt</con:name><con:contentType>text/plain</con:contentType><con:size>0</con:size><con:contentId>empty.txt</con:contentId><con:part>&lt;anonymous></con:part><con:url>C:/Program Files (x86)/SmartBear/SoapUI-5.3.0/bin/empty.txt</con:url><con:data>UEsDBBQACAgIAP2FiUwAAAAAAAAAAAAAAAAJAAAAZW1wdHkudHh0AwBQSwcIAAAAAAIAAAAAAAAAUEsBAhQAFAAICAgA/YWJTAAAAAACAAAAAAAAAAkAAAAAAAAAAAAAAAAAAAAAAGVtcHR5LnR4dFBLBQYAAAAAAQABADcAAAA5AAAAAAA=</con:data><con:id>64b2d155-4720-4617-98a8-b06a70d485da</con:id></con:attachment><con:jmsConfig JMSDeliveryMode="PERSISTENT"/><con:jmsPropertyConfig/><con:wsaConfig mustUnderstand="NONE" version="200508" action="http://warehouse.acme.com/ws/listProducts"/><con:wsrmConfig version="1.2"/></con:call><con:call id="c4b9269a-71b3-45fa-9844-fdb1a53d9d8a" name="ValidLicenseDocumentWithoutSignature"><con:settings><con:setting id="com.eviware.soapui.impl.wsdl.WsdlRequest@request-headers">&lt;xml-fragment/></con:setting></con:settings><con:encoding>UTF-8</con:encoding><con:endpoint>http://galactica.l7tech.com:8080/nonSoapSigner</con:endpoint><con:request><![CDATA[<license Id="3028843424285276389" xmlns="http://l7tech.com/license"><description>Layer 7 Technologies - Dev - SecureSpan Gateway License</description><licenseAttributes/><valid>2012-05-02T22:27:55.423Z</valid><expires>2119-09-30T21:59:15.690Z</expires><host name="*"/><ip address="*"/><product name="Layer 7 SecureSpan Suite"><version major="8" minor="*"/><featureset name="set:Profile:US"/><featureset name="set:experimental"/></product><licensee name="Layer 7 Technologies"/><eulatext>H4sIAAAAAAAAALVcXXPbRrJ9n18x5apbK1UhvOvNzWazeaIl2GauRGlJKo73DSRACTEIcPEhmfvr7+mPGQxIUM4+3KpUTJHAfPT0dJ8+3TM3ySGr7Y82LlP70ODjTb7Jyiaz08c6y3ZZ2ZrVU9688ru9aJ8y+8b//ebS4vldkmZ2nbUvWVbaG+nErLLNU1kV1WOeNXZWbiaRTdDuoeoiW5X0b22rlxLvPSXF1lY1fev+2FrqBx3k7cG+PFU7et4kdWaTrn2q6vzfWWrbytbZvs4aHtibq65pq11Wv7mcWJ5GP+qsaZN1kTdPGAo13Gb1rjFdmWKkL0/55smN2r7kRWELnXbeNraptu0Ldbyvq7Tb4JuksXlKQ9vmGMRTVmd5yVPjfw6myfZJnbRZcfgu+5ptuhZPTVO8kSboPGkx6C1eKjcYx3CY1Ag/QWNEIy2JbpccjLZjtzUk0ea7jOZO/57MdFOVTd5glCxC/HRVPWNiy6csay+ay4iaNssWPSV1alckB+72qirTvM3xNv+Jedimg1z6ydjjyUjfZjh8ElnrW930rbJgsVjPSV5YHhP1UWE4df+CCV5ostZWXatStfuu3jwlpJRVnfL/9eXE94+v0mrT8WfVRhNIcmLMu8/2YTmbf7Crj7G9mV3F82V8bZd371efpovYfowX8Wwe2auH5eruNl7Y6YdFHC/t6s6+i+27u4f5tUUTht5exYvbpZ3im6u7+fVsNbubL+3de7Q8W8p7t/F8FdnZ/Orm4brv83a2msrD5m7O331YTOcrelUHxI3SD9ez5dXNdEYDwa8YIT04w3jQ42o6m2PoMuKJmb3vB43+53cr+2l2c8PdDgc/vbmRYbopnI7Z+KZu8cHeL+5u71c3n+0iXj0s5mdkh25upp/xzo8RT+A6volXsTXT+WfX3+lLs/lyhQHhK8jC9bq0y8/LVXyL9Qqn9Wm2/Chr8QAZjbd3h68X+G06t1PM6GH18W4x+yeeMLP5ycrg2b5TmerdO5KrnV7Lgk5vXB+y0vdTLH7w43tSDn7+1+n8KqZ5Lh+uPtIAJ33Ly48kc16zq5UTkjXv7xZhR7M5vrhl1ZCJf757sDQnzCW+vb+5+xzHEbeyQDN4l/6j6UIuXpC03vi+13FzKiPoAL06h1ZgYO9p0G6oEXe6iO8X8RIi4jmr2pl+fUm+Kz88XdvpB/54O/0FEl99JqngiYX95WExW17PrmheP1ODxr/9cfprzOq4iP/xMFvOoC1X0/vpFV6P7GL24SPW6P7uE21DjEMXE01jJNOrq/geY6IVdbtmdEYny4CtMFss4l/vrqbvoNJuWxjqwi0UpP0Z6rb6eLpZvrXfsXSvGlfzdmKvs21eyp8T82ba+zNyubDRb/5upzB42W5fVIcsi0KXlzyqoWu6NWxlWyeblizh1jrvR97Sdg0cB9s+9eCpXTo/1lQFWXOYVTRQZhsaCKxz+8ReZ901eZk1GDd+eM7ZAwWtT6x5g9lsxQEmBRz7tqp3CTVC44aNz/tvbJo1+WOZkNNAfy812isfyYFuwjbWmGwCX2PIUB8imp44ZXHQNKxNXsOww4vDa/KA0rzZFFXTYUJ1ljRVCf8Od9I9PrXkG9eZeEK8T1KDMMIeJ/bcHGwD/FHYpGgqjHhTdGlmR8UY6c88n6IwDeAMHDqtdrX+HVJF/ymeMtfqkaT5OitYGhiiuFffnPj+LHCe+zrfUPNOCqGfh+IMGobsVzRMRTEbyIS6oWaabr8vCKlc5JekGLV8e2jabGeTdAddbKBHpEaPHWQCWdEDu6TsIAZ++CLHqxh9AdUA4Cn2FgKjtmjpjhS4OadZXoTGyRCTOJGrTgQNqeZtqt0eqKMeALHHOoGQAOhokuiE2h8CHbxqhiKLPLAR3OAb9u2t8cNAdHgEOr+BjkC3CjdUzNk4QV8EWoCWH/YpXm4ifECTJEtqZkkrwGNoLjFnfQgzvccsqzTfcPtQDSgy2sc0GkZAioJPtzA1OtQr2S/GqWznxrFD81t0wNYm0knVtaxNwyjyj/VAG99N6s3/38DJXPCAYeW2XSkqRG9tsSq02bPyiWwAC/M/Gb65C5AmIDVZiJQMMV7LiiZ7IRxPqit78GvrAfQQ3zKMfUqeM9m/uywpafGhazUZHwKsxzv1LxO7TAoZlAuoPtQJ/XSRXEI7xF7oZGSEJ51Hsrd/tI/0Jk/dW/zE7rN6n7XYrzA4ZVUi7oA4m/xZOqVvsMPLBmEHzGTm45u2+jtbhbyEZSWzh4dpV48LFcIxZEyqunUr/A1v8XNvPVyzw9UXU/G7W2jjjQU9fk6LJmwhfIyGSGGfbVhpZJvucrWw9HbZ7dYZO0iTkB3UrUAD+2/YsBPjtfXOx3WwzTApXvE1hbf7JOfGnQUga+DmG5Gn0W5IztQY9h9Hey0bnKpkxcX35OvO7xSN64wbhLgl6GwSLJ4X6g7eE+vwHUxXyh0HLgjmsYBPZY3wdkq8laHfRZqkdV7pXA+san3XEnxSWM6BIPt3WJmRjdLBrxaG2szF+ZOHz3kDsosnMcHqPsPbuAAae2F92au0dFpWLak2FlQD0jU8ep6Ia4Deb7d5kXMHzBTQ14FUTh0OBlaQtvLW9a+gpRz4DKMRh0fTCOGKwIl1BT9MExk66TBiPRHExHw/sffJgYWCUFC2WeKNGgJpfhUYZJnVzxhvIzbBKZeIIc2K/FmB0AgQaavHjGXrd89gk0VuKxhtB3uk2ijakZ0jK+Qx3nApWB4s2D3MphsZNcg7I2mCVsZdsfO7nhlRBqHbvaL/swDSEoysdQxKAwC5eNkZbPgdvJt/nux7CoRVwS7B3aW6ijp2poBgeLqat6WDWfsKek80ASwyg9Ga1oPbek4gNEhoAx1o8ZEnBHVas9vTSbsfc+fU2t5KNfw4FDOFcDeBcKEtmNieoKozGMxYuFnib2mCRghhsZXuZ579q8v33jcZD5EulFeBrxyX76UFPsNWoIm11cABYGNizxGYxj+0WKw7Iz62wbq0SV4IuOdtAbl+5+R6BB/ed+y/jzHCWMPksrIXr2qeeKOlqGnKdXZWCGTUPag2GONLRvNqFBKdgpSz0my8Kt6ProaRBpgmZPXLt250acRuSQIt6sSvMewVzF8YUJn/mXwbNg6tglJpbD9DIBCxBSAIEkwKI68fKb7AOwM862Gb0e65UzeCqDfQzEiGGpsIo7bJ9+QfdO13SV62WUngzCFq7KGubjp6CKNMBo+4yITARM/gKfXJDKeujw7T/SljpZUwOlQxVw/ySA/C6RF9Qgwjm3m7L5LNeWjByzbEY+YMIAMgpiidJkCW9GyLdcZdsoXFbjwd3AVcc7bH3KFk+TOtWLWHGbrEdnaeF+vR1tVhaKapjRqgry6zEJCIgXl/TBRHXntoF+2SL1gComIZLpyGQmLBaPz0G7YwPUZiND6klBU745PWUEJpg/AlMRVYe3SLTijipu2tiL5hL6/4P0UgYMfVkVGkAnc2zRKiVYyu0pCnxmav9qr9biOw7zhDiChGRfP0F42G8xmPWQn7RzulFxQ1onL8EzQFULNIyFQ2OcA3WZeNLk7jt6L3ebIRG3vxJtjYlKtwC2OctxfgRHu21RQEuibCA8vNDv2FdiTxG0AwHYsqMBZQgPSSOdK795bY1+XD/f0Ns1NEDS8f3v0SX62IRXuFA57YgAZFUNG3sbS308/KascDyvp2Opuv4jkzocqW9fQmd3e3jH1XJujL/DCxdy8Qd/OU738GfNjnDgkRo1Tnj08IgDBZjaLIjEBzNDeQ/gdxoITARozh/sAtk63DApX0oSVt2yX1F3xuBJJZ/rPPN1DnRQELAbSozpJMek2IoYJmwifCqUrLwvcw/CCY21Y9z7PLgGStj4CbBHuVhrzFhqZEVTq07GadFRXa8ZFdcQijEMENec2ehqJ7DlCZ+KmBaHowt/lSVi9w2Y+cCUsgVuPsz1Eg5e3/GP8UYZ8IjB4sTlUP1sYE/pFMKwcUjIFgsWPfre8JryyVNnr7/QVACk36JRo4Hzz8BD9Km40DErIvKTFYOWwOJI0JuVi3FljXAH81YqMjv4wveUMr+4Ujon5/j2oRre0wbiV3RsYfwqV2e7B1Ek/2FObZwN4EQbKqysggAmiIKXluTP0523jYj5ol4DTXrGFgk67XXQJmeLjiAIvFk9QQ1qNHGZuTGIxizgKrIArJjkMclHN5Q8nQMJnMPZLEpI+S2Yozw8qttS+VvfjL5VGr4wJYQ3+/6/ZQN2gYQ2IsjXecTjSK4APa/Ftty1Sdm6LPg81cZHAGaTMMl7y//euQTgbAE9PVK3jAUDuESMJEHI3F4w3i7MX4XmOBSuRs+nCM4twjRKfdIETfQlxCE1HOVTDtAc0PhXJgdUFD0MJ+E5GZzMNYlVRP9xTJcLClzlLpEztFp9YQwbzrdoNZiLwZD7LAW0sgT9AEW0JIHx6e4UGdPSYawuHXqmcR4IHNWR6fQWve+j7EITvzyDEP0S8vpfAfNaKh/JnthYi5JyCSjUYc5eHI8RzOpxGkPWejjgZu1m6txmDlHE/SQLSwQAZCnQL0tIq9ae5Kkek0zosC6+Df+UbaI0BiErCHuZwezq0zqB1Whlp1e2rfrREaIeomgVtlQ8lJJBvOV1W73GsMlSAE4vjZGrZ+xDwlL9uOIddGt4kSLsHjIlIqpcjrVL/ycQ8Gva5Z0Yjx2wy35c8K83LKUaTZHnsav6G3FDukgCNPfUNBiUallEbflAklp/MfzAfzvcifuSPNU4lzEzaC4x/Wxt+7NGfr7Q20eSTqpNw5O62VDmTdaZxh0osFJDx4vttXmpmABNm8t9XmC4GFJ7LusGae3IB6Ud+USvObCrPJHiu2BQOaznsAIeGUVnVTCsOjo2KPU0rwiOnl6cOsYpJpR+C2yB8zDR03WUYjgzv6pKvBnK4brOJyjaOPhn/kvFpyMIFZbNpsL6FAaBXFjZcZr8OR3xJtg6CrZ0eehp7BL5y4CPZHbq8SBsOOIkesniVLBSFJrOOMiI+KPA4KvQtBpXeUmHL1QAGEEyvHhl3YiUBBTvXyeP8P1JjGQjm/khGuVhGRgDypyKNrziwvufRN4phXzkHoWHqbmtc1x0K0EGmySx6zgG0nVU7ZR/dgKld9eWYWIM+23A2QMH4BTP8XhVyToXCAnvuioL6WanQ8XruZCSYayxCug5rv9q0Ul7ERdwZnU3Vi7ygkzlg4v3d13qT5RkXoh+vVgnZpyzM2OgVulxKuZNsJppwuHa2Fxq30uJY57UXvKJR0wgpBFfPJx+izN+sp2ex9XsDTo6cEDny3pj9oG9QNyeAR+inWhpOGB46WB4mEM+gpGuGv0MqQvgKwXHF72OiaggmwjkP9f3X5d7x6cKY3gCyDqgcl4LkkgnWyBxgT8+PEfmJs2+bHpPqLfN94jPCUSFUgYzAGZuTmR4vzKk2K+Mc1W+553jCbMd7hOAIVTi+raUdyoqNNeJdKpUbgOPocmY/W+no5An1PIRtrR9lY3necNcwrolBsibUn1HPx058RTSWHRus8VYQHTfi+uezxDNNYEB75OMkrILCTrNWLeyutlN7ZkFeLzBPCiGdOk5UHhp/nEblYBVoZzrolRcs0D8YtLs1bz5fkMMjBcWKoPClLCPhM3nWbIsl39qXqijRI7iXPlTPAEovBChmAZu1duePzWQvWc7fsfvYqj375XWa7CRxDfoapF83YZVlrhA4N/H5Y9jOWzOSQUfsUNn9s9GbY1ZrSZAx0627fiszxuaq/22Ir9HRVLpM7Tl9AzPgISMDuAK1T3oSXjFBX5O2L11siRYIBQujElGGHQ+UQ5G0ax+t6lhI/pzxeQ3bWv6YlLb1POUvxEsjomKYvKyYV3JzCyZjBbJyXarqi7TfBa2nqUcjjkgqSPHAAVrOQ/ISfnPTIWPWIgz0S1/G8z9CcOW0l9n46+4n528SV930Oik0nXN8alJveTq+pwtAuYy7jg5ykdtPezOIHZhmpTI5LL4O37hbYlINSOSIj/3c2v47sp48xPx7/RqWGyxhfLVfT1cPqbsHVibPbe7R9LZWkxtUduiFyGV7kGMz4txVRm/fx4na2WsXXdkpFlp+CKt5P09mvMTGOfpi+xFFKcaOjcQfD9uW7kX33sOLCWsNFvOhodRfxnLwMw1e5GjJeXH3EL9N3sxuuauy/uInNPx6m8u31w8I/sZqtbuII/cy/m83fL9CxMLdo+v1sNYewLBeO2vvpYjW7eriZLsz9w+KeqFUuWcS87gN+96T+E076/nq6ipf04cMCS7sc8rvRgMjlukj8eLdYYf0Xv6I5qYLkul4WJmRxK8vtH7hf3P06u9b65If5NSnVTzAdhOO9EVo4FMPeeaX1/jUlTZM+Uea2pisu96ymUKnO/v1JaXL6rq9+MYyUDp4862ND+sv7qRCVBBzkjyecwYjN9ChSIhGiyrDJ/t67G2+h9ZuGCwsAH11wENK4WyqxwQh1oNS/OoYjVxyF1G/OTLOehEgIgSr0izSjliMskZxI9MdpI8kvhkm7oeFGx9v8a9aYYymRsWaPcdapRS4t9grjihC8KwcsuKDBHeXZCXlwJU5eDgt13EqfQxSP8PWmzqV+pkcC3q1F1oOUHjyvPXCVCFhL6CJCV9mQUnYa18uAsH22JdGcdfHiVsg2S6iBd4lnCcUt9YxjL8vhm8OrSOBnTZ/ljYs2JP46n4T/Iw2ixW2SFxpt9qtUsWZvgzJJd57nKweVmv4tpaIPv/E6IEYjvqYipuEQSA2KiHgMetrtKcgixE2xEiHKgGr5licGkOs9JgzNc15XTLMoPnUO1thz+FpX76iskHC+mtrb6W+z24fbgUNaLmcw9ZZNoJ3Cxs6o7jwWB+XPS5hB7fpstYxv3rORxUdJ383iBQxz6AA/ixW+oSMK6j3kTMHF7NKSC5hNb/j0CewwHA5/vp4tyDWIm1rG/3jAL3jMXk9vpx/IQ170p1Vu7pbstGHK4XiWl9zdxQyN3z/M4eF+Fd8Q/0aHE6Zw29oIZjNdzPgAwt3D6jSzSL2POSo9wTDVhCMhAH5evxBnPvun/vmwhCO7g4j179UCPou9dOC8DLpyvuvcEZQRd+h9nnOIJv41ntvZe38AghBKuDJylOFdjKewxpg9HWiRDuGYoQK8PMYdD1FJaVRcafnEV2LJsUWYWGDCrREgKnFyUFZYJC+Rc3QjKTTj/NdP5FdHEk4npV2ORQocryi7Y3h9inrMC8OaciqmG6uZdbA2cA/UcJhewGrnO6UK9AtJo+f/TrzLisIAprZHdaivcRLmXFFNYOBJkJnkZVPyoxupKnxOis6bFXU87HUGASdE/rrrcYPx/MiQHgk8kyXPZI48Eyez/LB6tn4dFKAxoUTsBZfoDx/ePGVpRwGNnLoLwv7v7SFL6kYqBo6Pp7md61D/T3o+hqyYHMKhwzLTBzochWfN9Eq2osP276ZLOdf1bhFPofX9ETbA3P47D5ixUoNv+ZxTZN/Ddk7ZENz4txb6iXbtPP5wM/sQY7tHgkfNiva72EkKKxYzOnXlbSSBZw9db+IPaBZf0QkkRuUkBgQhE/P2zxO7Sr6q2qyg5dstJDUkmCMsQsOYTkk61hHKjBySfuse77895z8LLsNEE9gJ0A3DW7gkTBZBn1LiuCPykVzIonsAeprTv01SZAqARUeTlCu1eLwXb3jcby5daRFHsvKbyxRUZV8NyfFlUO9yyWXMrm5OtmJj086Fqa3IAutVZM+5ctp9BiLMbGWSN0wCtoOONbkDQceC6Q9TGDJHVCUkSwAIykWAeC3tapcJGBQtBxm0KyAJob0KSQ2RxMUabaUIKKzRzpS147U6ySAAzuVtCNHpSxlU2kmZKg2VvzFJn5hJtWyYun/KijQSOu6o9bCiFghFTQxv/p67zlqIQ35Jtq3W+T5VRao1ofy4DElaJWa8CG0Wt3XMdZketL6mrtgJbyd8li2ik2sJ8R+8I7S6W1AQB3DDhE9D0YSWogxZQ81a9mXkXC9ux+rFzWm9ONeEQPDioSSLM8hapTLK5iS/0od5Wpwy1L7jPKMI85HGfxSxOaFrT7wRuf6TwbRmO0r3M7OYjDK72jsZ+cXHdzm9cvG9Y19lnSVzQT3K4Mzp6Hg5B9y1l+LptvC1aQ61a003nV9zlouycWNq0JdIaNEZHImbha7niJwbLc4k5N72CjMGSiTNz+X5ajqYQJSZD04kZKkZHSFRZTsuq+IywDp7rr4QJ/1JhYz1u3gLCftDK0NRm28MkCKykxIGKcA8yRCHuXVzmolzKCj4SgscX8Yynmfzm8Z1PygE02pRrfh9vfDl9EAW7YyAVOlrPaKgUDKQA3PG7oRCYjdZ3UrQpPW4VKGJbmu1vUmr78mDB5ljEpR+eM6fgrIio3qxY7NJfiQvu0xtrOmD862y/2rwRZ8TLwB/XiUwXqElc8/192F4qDVMykV6sKoVAiLruLisP1zo05mD2tHQTE0M1UjO5oy2FFoRu7iIEVIgmohnjFCI5nMH6Gcct73ngG42FTTzDuBHAduUsNqKg0CEVycH3mHI/0Jmc0v+U3bMDNtoV/qCJU+BaN0plZVkX/ekMpGscy4vbKGuFJ2T1SM5kDMi4nrH29cvlkkeqfJGYgtJuNDyvNDhaE6j0j0V9L6wEVj2Wg7wuvdCSkH4Aw6OjEvcEaXtEHCiPbySY0PnQ13nBEXAsZkG+2XsQFOuUmt85krLHq+SMoHB4ZjkoeSqxGXL1ctSUsr5DsNVpbbJqICXd8WgeGVYaB+kVzzzwXRKng0OUXuqcMhfnfULnDetCud+2JzqgZK+GQZ1yUvT5a3CSzVRQVUGed6yUscrvfXbM2ulRvcQNBpZbdKwNPq2vLXrS6r3CE1q72455/1M6JfPTp7OEOMwfdDqNr+MwoWfZEZqKj9Sqsx1ShpO7ox942jbI02LjgXup9FYG86/ET4y2F/ydKilLmlkWAsQxVLyPRUM/UezjKd63DOtRpelT3H63pk+Yzw0oBXr8Ejt+Urqqj4qgf0jtOMRShuqvRkXVYP2fEY0sducyvh/79JHfoyBpMTLWHtf7bHfZ3gKb1PBT8l5QXJcOZc4kHS2YaLgda4QwLT8veIR0JENKfvQVjyhuaZijme9TeiPuVWZrLIfQQm58TXkWlBwbCA0dBioKMVK/dmArMj6k9JqvI1abud0CL5o5o+1eUCqD6yE86yvnKM8nV940mdoPJV7doS/ry85xzyftu3qjvOWC3lUlIyHhraT1d5oT27/D9Td5+QdWOXqPzrzr5N1qflBgdnIKI/3oDLRNNNzCJxn1mc1zGAFztJOY4drxlkfM6B9TsieH5Ts6QPOQSWxpIfcQZh19Swnh6Fnpt/BLGV5smGN8qXrelSozyrlsLoU93OUPWZgTelKmwLasQ6DtDD101Od0OsaMKM4BBUvPF4l40PO6u1fOK9M1wZRphiwaRGHXFBP6dLNNENO95ikJtaIWSXm6Ae5WaF6DRHPNzd4/GF6Q7z5fbwQwok+L2bximhyvtiGGTOmoJaAZd9P7G3ebGASkjKrOk2Ixj3GPjm14aqW6MC3nNonj8Q1nc2Y1qmhNCHhK/iJAy0F2kfJU+alHG3CbIJv09315jjinLKAco7FuTRBdlg6Rk18YDEX7w/LnBSAF/2YCVfo9Rx48OhaL8IkVZ3I4VRFBtHYCILDNuLF3Em+HdX01WNM0dEFZlReqPk+sRpDx6w6CK/gAAqh1FouHEu78Io0PMO3iRh395g/ZT9WKxveb3Z8vVnQRd403fAMoBm9a2Ww/P1JvuOywnOFnqO3sZ1i4kF6dJ1LNXHPK8pupCOSjjRxMyIz0ZXOInu+jJTDlxmfkIM2DMSMv0mIDiP2pyQp6KKp9SQXrwpROKVDXwj6mb/RIzK5fCTvJmXAbLzoqAlAX7LhI37KYroKdhYUl5ZrhB9JoRVGai6+HzA4OwR/NM58yx8dQfpIInflbBIwZyk/ERFuaSk1u6di2Tx1B9bSlIxe5s+6Bee8fGGwS/UHv22qel/x8cMnmIp/dXg0q3095omd0AJETva/wgJB2FKn3hfoE8R3OWqOgEjI19iQw9uNlNh2jx/FTAEt20ohZX+k2QhBpCBli+cEKlHBO0xLuclhw5qQ6pQi0iS4gWNdpQd9Rzakdm/mmuO9qkryc+w/S/qLS0371M6MyuIcJy+3uqC5D1WV6gWHfGCE+1Xy0VB94gkmYoWpvkGQs2SP3woqDUgSfFkRd+TAIzcsdDx/3/P2YZWLhgIBGzXkfFeBWaW67edqw8eXYFKVD2drvWGDGJyUZVfkzQZ/J4G7r8gZlEw7po8gtl48CShPeUH/JR450aeTlCJLWo4TJBsX14SBJhtBPT3sWQYhJviUtHcdQVWpE4sJHEYclA+Nyecl4eIbJoLY+TD2d57lJYjUtnwfgpFAXVQBqtf5U+yMZccm099jpTHTWOtGmnc8QNK+3qbxpJsTjpRMsIPAsHKOvSr4oYn9JVxAzkDxsM+bC4TR/malk6WU3KNmUfwRgzEKhvh8IOPcHUilFwKDQWilk5P1dSf7kvLkRmFOJVJQBkl4Q3UYlfgcdxCMCp5SBxeyMdsnoyAHmRHNu8kcvzeWyNcwFPPMgrOVDmkkDd14pRf6fac0d2/0WM0GlIgyFkFSPpJkmZLw7kSzbPvoeN+PrtLRadZa792NxNU+Ve5gL2t8H3MFpVJKup0cCaHDozzDo6sLdH5GNv/xjOS2iODCV6GpREhBYTx/qdAUvlGsH5p1mNJskn1O56jkNFRQo0RH6OXOHArxd0nxmDhXzogVD9CwKqyzp0m85Y2sGYadFAjJ1pK5ZmHhOx8VgQ+igjFBFgSV9C+2Y/06ciQ1ONHhW+T4Smv59YjqNsuGPHefBgi5erfxTd+WRAHnrziSOx78NRiBnMPbCcPjQObYgVxspaSTDSLD2aBUbJCuGxyEFevrLLv3a32cj/1mzoFDxaK6rRPftxgXRxZJg+OpzovH48NWco6okhhJF4xzrF/l6hIO6b/Tv/zJL3eNMjBLJ0Uujbl4E8tTi+Apuj+7T52ThPsDgP7KkxAjRUJp1lKpLpi7NnoThYdVDmjTjUQ0DbndLjxG/8pRc4jh6dIfQ30FiXMysO60JtJBEb6jdAPrQSRaS96BPFEkoZDe8dCfw1fPi5bw9VhURycW5drTKLgSle8+CQtezbFauUM9enpIFI3ClJNknE8T0+E38QJ++emQQXBW1Ianj45BiJQWc8NntAu7cT5+wPL4FEWYodVDQUyH6kFQPajXd2PCgC8TatC1IdWlTV9b6o9NarGyZFqbn+1UMfWHSsIxOdMLL5ft2Jls8ue8oLJpPh/euXskeTXyCguEkAiLsy0qKlDGpqDzdmRUM8z2CdHHF/YkdLln1dHJqc2GM6ZUA1PnXzLKFKz5sHnVrcXrvFT1F+tPo2hnDH74tOE6O1RakhaUMRtNduh5JMfRB2e63fkyANNOgXIgcrkep08jikyp3sNc/H5p74LiGQpfsZ/5PoxdRdwqf8OlJ3yIESvVkbc6qSzRiz762jqxLVbdZZ9IFVrukvICxwnTV055cG7LsbLmW5dLDq8x5VtiC1+sH1wCS1euOsPhbpEj6ofMyx8Y0OS09tCdqOuP4PhlpPCiaUxAA/KlO1RIx8kMQUZKL2hdUEnha9Hn+AEzqEiRvBjm1/oEzFlmd8KchbhzfqO/BqPtl13JdejDFyE5jiu/BmjHUzB8oSGlib5Z+EE3PdQZu3U3gCS4XIUAva0VS7+d/PBfZCaggCVU6IIYFWBUhXZv/yY/kiLu9AAfAy8+eE1NSPmNTFmr6xsr5AOTWOuMKhAEj/D4XDoG0y9OeATFfZ4Ko2m+VMLE13pNXlbz9Zd6JwSmoOShE7XpuZw1+xRY8Me8dJnA4Vv+/sOREhXyckUWkGgY8u4yIOMovHS34b6N7PeR/SGyf40IQv0tsj9F9u2fI6KRqdu332sXMH3PFMweVYycgqDy5HrXAUQgSsrdq3F0EvC4NGkgYsNcA92gWPu4Yw0rvc0lvUwobsDJheGqUjFDnoj+bvguIFq1iut6w6uh6TqkjrejO3craLKZmP8DJfcLWFVkAAA=</eulatext></license>]]></con:request><con:credentials><con:authType>No Authorization</con:authType></con:credentials><con:jmsConfig JMSDeliveryMode="PERSISTENT"/><con:jmsPropertyConfig/><con:wsaConfig mustUnderstand="NONE" version="200508" action="http://warehouse.acme.com/ws/listProducts"/><con:wsrmConfig version="1.2"/></con:call><con:call id="f0aff9d2-75a2-4a88-9780-1be42f393906" name="Request 19"><con:settings><con:setting id="com.eviware.soapui.impl.wsdl.WsdlRequest@request-headers">&lt;xml-fragment/></con:setting></con:settings><con:encoding>UTF-8</con:encoding><con:endpoint>http://galactica.l7tech.com:8080/client_http_basic</con:endpoint><con:request><![CDATA[<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ws="http://warehouse.acme.com/ws">\r
+   <soapenv:Header/>\r
+   <soapenv:Body>\r
+      <ws:listProducts>\r
+         <ws:delay>0</ws:delay>\r
+      </ws:listProducts>\r
+   </soapenv:Body>\r
+</soapenv:Envelope>]]></con:request><con:credentials><con:username>user_encrypt</con:username><con:password>password</con:password><con:selectedAuthProfile>Basic</con:selectedAuthProfile><con:addedBasicAuthenticationTypes>Basic</con:addedBasicAuthenticationTypes><con:authType>Global HTTP Settings</con:authType></con:credentials><con:jmsConfig JMSDeliveryMode="PERSISTENT"/><con:jmsPropertyConfig/><con:wsaConfig mustUnderstand="NONE" version="200508" action="http://warehouse.acme.com/ws/listProducts"/><con:wsrmConfig version="1.2"/></con:call><con:call id="d2474f08-81da-43b2-8aba-0f24fc0d2347" name="WAREHOUSE_REQUEST_X509_AND_SAML" outgoingWss="WAREHOUSE_REQUEST_X509_AND_SAML"><con:settings><con:setting id="com.eviware.soapui.impl.wsdl.WsdlRequest@request-headers">&lt;xml-fragment/></con:setting></con:settings><con:encoding>UTF-8</con:encoding><con:endpoint>http://hugh.l7tech.com/ACMEWarehouseWS/Service1.asmx</con:endpoint><con:request><![CDATA[<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ws="http://warehouse.acme.com/ws">\r
+   <soapenv:Header/>\r
+   <soapenv:Body>\r
+      <ws:listProducts>\r
+         <ws:delay>0</ws:delay>\r
+      </ws:listProducts>\r
+   </soapenv:Body>\r
+</soapenv:Envelope>]]></con:request><con:credentials><con:selectedAuthProfile>Basic</con:selectedAuthProfile><con:addedBasicAuthenticationTypes>Basic</con:addedBasicAuthenticationTypes><con:authType>Global HTTP Settings</con:authType></con:credentials><con:jmsConfig JMSDeliveryMode="PERSISTENT"/><con:jmsPropertyConfig/><con:wsaConfig mustUnderstand="NONE" version="200508" action="http://warehouse.acme.com/ws/listProducts"/><con:wsrmConfig version="1.2"/></con:call><con:call id="b3c2a9a2-36c3-435d-b0a3-74274c41cbb6" name="WAREHOUSE_REQUEST_X509_AND_ENCRYPTED_USERNAME_TOKEN" outgoingWss="WAREHOUSE_REQUEST_X509_AND_ENCRYPTED_USERNAME_TOKEN"><con:settings><con:setting id="com.eviware.soapui.impl.wsdl.WsdlRequest@request-headers">&lt;xml-fragment/></con:setting></con:settings><con:encoding>UTF-8</con:encoding><con:endpoint>http://hugh.l7tech.com/ACMEWarehouseWS/Service1.asmx</con:endpoint><con:request><![CDATA[<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ws="http://warehouse.acme.com/ws">\r
+   <soapenv:Header/>\r
+   <soapenv:Body>\r
+      <ws:listProducts>\r
+         <ws:delay>0</ws:delay>\r
+      </ws:listProducts>\r
+   </soapenv:Body>\r
+</soapenv:Envelope>]]></con:request><con:credentials><con:selectedAuthProfile>Basic</con:selectedAuthProfile><con:addedBasicAuthenticationTypes>Basic</con:addedBasicAuthenticationTypes><con:authType>Global HTTP Settings</con:authType></con:credentials><con:jmsConfig JMSDeliveryMode="PERSISTENT"/><con:jmsPropertyConfig/><con:wsaConfig mustUnderstand="NONE" version="200508" action="http://warehouse.acme.com/ws/listProducts"/><con:wsrmConfig version="1.2"/></con:call></con:operation><con:operation id="297c9b2c-0ee0-4bf3-959c-116c0679af3b" isOneWay="false" action="http://warehouse.acme.com/ws/placeOrder" name="placeOrder" bindingOperationName="placeOrder" type="Request-Response" inputName="" receivesAttachments="false" sendsAttachments="false" anonymous="optional"><con:settings/><con:call id="86edcf95-fcce-4adc-98e7-a5b29a2d17b0" name="Request 1"><con:settings/><con:encoding>UTF-8</con:encoding><con:endpoint>http://hugh.l7tech.com/ACMEWarehouseWS/Service1.asmx</con:endpoint><con:request><![CDATA[<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ws="http://warehouse.acme.com/ws">\r
+   <soapenv:Header/>\r
+   <soapenv:Body>\r
+      <ws:placeOrder>\r
+         <ws:productid>?</ws:productid>\r
+         <ws:amount>?</ws:amount>\r
+         <ws:price>?</ws:price>\r
+         <ws:accountid>?</ws:accountid>\r
+         <ws:delay>?</ws:delay>\r
+      </ws:placeOrder>\r
+   </soapenv:Body>\r
+</soapenv:Envelope>]]></con:request><con:wsaConfig mustUnderstand="NONE" version="200508" action="http://warehouse.acme.com/ws/placeOrder"/></con:call></con:operation></con:interface><con:properties/><con:wssContainer><con:crypto><con:source>C:/Work/GIT/APIM-Gateway/UneasyRooster/modules/common/src/test/resources/com/l7tech/common/resources/franco.ks</con:source><con:password>password</con:password><con:type>KEYSTORE</con:type></con:crypto><con:crypto><con:source>C:/Work/GIT/APIM-Gateway/UneasyRooster/modules/common/src/test/resources/com/l7tech/common/resources/wssInterop/alice.pfx</con:source><con:password>password</con:password><con:type>KEYSTORE</con:type></con:crypto><con:crypto><con:source>C:/Work/GIT/APIM-Gateway/UneasyRooster/modules/common/src/test/resources/com/l7tech/common/resources/wssInterop/bob.pfx</con:source><con:password>password</con:password><con:type>KEYSTORE</con:type></con:crypto><con:outgoing mustUnderstand="true"><con:name>BUG_3611_SIGNATURE_INCLUSIVE_NAMESPACES</con:name><con:entry type="Signature" username="bob" password="password"><con:configuration><crypto>franco.ks</crypto><keyIdentifierType>1</keyIdentifierType><signatureAlgorithm>http://www.w3.org/2000/09/xmldsig#rsa-sha1</signatureAlgorithm><signatureCanonicalization>http://www.w3.org/2001/10/xml-exc-c14n#</signatureCanonicalization><useSingleCert>true</useSingleCert><digestAlgorithm>http://www.w3.org/2000/09/xmldsig#sha1</digestAlgorithm><customTokenValueType/><customTokenId/><signaturePart><![CDATA[<xml-fragment xmlns:con="http://eviware.com/soapui/config">
+  <con:entry key="id" value=""/>
+  <con:entry key="name" value="Body"/>
+  <con:entry key="enc" value="Element"/>
+  <con:entry key="namespace" value="http://schemas.xmlsoap.org/soap/envelope/"/>
+</xml-fragment>]]></signaturePart></con:configuration></con:entry></con:outgoing><con:outgoing mustUnderstand="true"><con:name>BUG_3736_STR_TRANSFORM_REQUEST</con:name><con:entry type="Timestamp"><con:configuration><timeToLive>60</timeToLive><strictTimestamp>true</strictTimestamp></con:configuration></con:entry><con:entry type="Signature" username="bob" password="password"><con:configuration><crypto>franco.ks</crypto><keyIdentifierType>1</keyIdentifierType><signatureAlgorithm>http://www.w3.org/2000/09/xmldsig#rsa-sha1</signatureAlgorithm><signatureCanonicalization>http://www.w3.org/2001/10/xml-exc-c14n#</signatureCanonicalization><useSingleCert>true</useSingleCert><digestAlgorithm>http://www.w3.org/2000/09/xmldsig#sha1</digestAlgorithm><customTokenValueType/><customTokenId/><signaturePart><![CDATA[<xml-fragment xmlns:con="http://eviware.com/soapui/config">
+  <con:entry key="id" value=""/>
+  <con:entry key="name" value="Body"/>
+  <con:entry key="namespace" value="http://schemas.xmlsoap.org/soap/envelope/"/>
+  <con:entry key="enc" value="Element"/>
+</xml-fragment>]]></signaturePart><signaturePart><![CDATA[<xml-fragment xmlns:con="http://eviware.com/soapui/config">
+  <con:entry key="id" value=""/>
+  <con:entry key="name" value="Timestamp"/>
+  <con:entry key="namespace" value="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"/>
+  <con:entry key="enc" value="Element"/>
+</xml-fragment>]]></signaturePart><signaturePart><![CDATA[<xml-fragment xmlns:con="http://eviware.com/soapui/config">
+  <con:entry key="id" value=""/>
+  <con:entry key="name" value="BinarySecurityToken"/>
+  <con:entry key="namespace" value="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"/>
+  <con:entry key="enc" value="Element"/>
+</xml-fragment>]]></signaturePart></con:configuration></con:entry></con:outgoing><con:outgoing><con:name>BUG_3754_PING_REQ_VORDEL_SIGNED</con:name><con:entry type="Signature" username="alice" password="password"><con:configuration><crypto>alice.pfx</crypto><keyIdentifierType>3</keyIdentifierType><signatureAlgorithm>http://www.w3.org/2000/09/xmldsig#rsa-sha1</signatureAlgorithm><signatureCanonicalization>http://www.w3.org/2001/10/xml-exc-c14n#</signatureCanonicalization><useSingleCert>true</useSingleCert><digestAlgorithm>http://www.w3.org/2000/09/xmldsig#sha1</digestAlgorithm><customTokenValueType/><customTokenId/><signaturePart><![CDATA[<xml-fragment xmlns:con="http://eviware.com/soapui/config">
+  <con:entry key="id" value=""/>
+  <con:entry key="name" value="Body"/>
+  <con:entry key="enc" value="Element"/>
+  <con:entry key="namespace" value="http://www.w3.org/2003/05/soap-envelope"/>
+</xml-fragment>]]></signaturePart></con:configuration></con:entry></con:outgoing><con:outgoing mustUnderstand="true"><con:name>WAREHOUSE_REQUEST_MULTIPLE_TIMESTAMP_SIGS</con:name><con:entry type="Timestamp"><con:configuration><timeToLive>3600</timeToLive><strictTimestamp>true</strictTimestamp></con:configuration></con:entry><con:entry type="Signature" username="alice" password="password"><con:configuration><crypto>alice.pfx</crypto><keyIdentifierType>1</keyIdentifierType><signatureAlgorithm>http://www.w3.org/2000/09/xmldsig#rsa-sha1</signatureAlgorithm><signatureCanonicalization>http://www.w3.org/2001/10/xml-exc-c14n#</signatureCanonicalization><useSingleCert>true</useSingleCert><digestAlgorithm>http://www.w3.org/2000/09/xmldsig#sha1</digestAlgorithm><customTokenValueType/><customTokenId/><signaturePart><![CDATA[<xml-fragment xmlns:con="http://eviware.com/soapui/config">
+  <con:entry key="id" value=""/>
+  <con:entry key="name" value="Body"/>
+  <con:entry key="enc" value="Element"/>
+  <con:entry key="namespace" value="http://schemas.xmlsoap.org/soap/envelope/"/>
+</xml-fragment>]]></signaturePart><signaturePart><![CDATA[<xml-fragment xmlns:con="http://eviware.com/soapui/config">
+  <con:entry key="id" value=""/>
+  <con:entry key="name" value="Timestamp"/>
+  <con:entry key="enc" value="Element"/>
+  <con:entry key="namespace" value="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"/>
+</xml-fragment>]]></signaturePart></con:configuration></con:entry><con:entry type="Signature" username="bob" password="password"><con:configuration><crypto>bob.pfx</crypto><keyIdentifierType>1</keyIdentifierType><signatureAlgorithm>http://www.w3.org/2000/09/xmldsig#rsa-sha1</signatureAlgorithm><signatureCanonicalization>http://www.w3.org/2001/10/xml-exc-c14n#</signatureCanonicalization><useSingleCert>true</useSingleCert><digestAlgorithm>http://www.w3.org/2000/09/xmldsig#sha1</digestAlgorithm><customTokenValueType/><customTokenId/><signaturePart><![CDATA[<xml-fragment xmlns:con="http://eviware.com/soapui/config">
+  <con:entry key="id" value=""/>
+  <con:entry key="name" value="Body"/>
+  <con:entry key="enc" value="Element"/>
+  <con:entry key="namespace" value="http://schemas.xmlsoap.org/soap/envelope/"/>
+</xml-fragment>]]></signaturePart><signaturePart><![CDATA[<xml-fragment xmlns:con="http://eviware.com/soapui/config">
+  <con:entry key="id" value=""/>
+  <con:entry key="name" value="Timestamp"/>
+  <con:entry key="enc" value="Element"/>
+  <con:entry key="namespace" value="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"/>
+</xml-fragment>]]></signaturePart></con:configuration></con:entry></con:outgoing><con:outgoing mustUnderstand="true"><con:name>WAREHOUSE_REQUEST_COMBINED_SIGNATURE</con:name><con:entry type="Timestamp"><con:configuration><timeToLive>300</timeToLive><strictTimestamp>true</strictTimestamp></con:configuration></con:entry><con:entry type="SAML (Form)" username="alice" password="password"><con:configuration><samlVersion>2.0</samlVersion><signed>true</signed><assertionType>Authentication</assertionType><confirmationMethod>Sender vouches</confirmationMethod><crypto>alice.pfx</crypto><issuer>Alice</issuer><subjectName>CN=Alice, OU=OASIS Interop Test Cert, O=OASIS</subjectName><subjectQualifier/><digestAlgorithm>http://www.w3.org/2000/09/xmldsig#sha1</digestAlgorithm><signatureAlgorithm>http://www.w3.org/2000/09/xmldsig#rsa-sha1</signatureAlgorithm><attributeName/></con:configuration></con:entry><con:entry type="Signature" username="alice" password="password"><con:configuration><crypto>alice.pfx</crypto><keyIdentifierType>1</keyIdentifierType><signatureAlgorithm>http://www.w3.org/2000/09/xmldsig#rsa-sha1</signatureAlgorithm><signatureCanonicalization>http://www.w3.org/2001/10/xml-exc-c14n#</signatureCanonicalization><useSingleCert>true</useSingleCert><digestAlgorithm>http://www.w3.org/2000/09/xmldsig#sha1</digestAlgorithm><customTokenValueType/><customTokenId/><signaturePart><![CDATA[<xml-fragment xmlns:con="http://eviware.com/soapui/config">
+  <con:entry key="id" value=""/>
+  <con:entry key="name" value="Timestamp"/>
+  <con:entry key="enc" value="Element"/>
+  <con:entry key="namespace" value="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"/>
+</xml-fragment>]]></signaturePart><signaturePart><![CDATA[<xml-fragment xmlns:con="http://eviware.com/soapui/config">
+  <con:entry key="id" value=""/>
+  <con:entry key="name" value="MessageID"/>
+  <con:entry key="enc" value="Element"/>
+  <con:entry key="namespace" value="http://www.w3.org/2005/08/addressing"/>
+</xml-fragment>]]></signaturePart><signaturePart><![CDATA[<xml-fragment xmlns:con="http://eviware.com/soapui/config">
+  <con:entry key="id" value=""/>
+  <con:entry key="name" value="Body"/>
+  <con:entry key="enc" value="Element"/>
+  <con:entry key="namespace" value="http://schemas.xmlsoap.org/soap/envelope/"/>
+</xml-fragment>]]></signaturePart></con:configuration></con:entry></con:outgoing><con:outgoing mustUnderstand="true"><con:name>WAREHOUSE_REQUEST_SIGNED</con:name><con:entry type="Timestamp"><con:configuration><timeToLive>300</timeToLive><strictTimestamp>true</strictTimestamp></con:configuration></con:entry><con:entry type="Signature" username="alice" password="password"><con:configuration><crypto>alice.pfx</crypto><keyIdentifierType>1</keyIdentifierType><signatureAlgorithm>http://www.w3.org/2000/09/xmldsig#rsa-sha1</signatureAlgorithm><signatureCanonicalization>http://www.w3.org/2001/10/xml-exc-c14n#</signatureCanonicalization><useSingleCert>true</useSingleCert><digestAlgorithm>http://www.w3.org/2000/09/xmldsig#sha1</digestAlgorithm><customTokenValueType/><customTokenId/><signaturePart><![CDATA[<xml-fragment xmlns:con="http://eviware.com/soapui/config">
+  <con:entry key="id" value=""/>
+  <con:entry key="name" value="Body"/>
+  <con:entry key="namespace" value="http://schemas.xmlsoap.org/soap/envelope/"/>
+  <con:entry key="enc" value="Element"/>
+</xml-fragment>]]></signaturePart><signaturePart><![CDATA[<xml-fragment xmlns:con="http://eviware.com/soapui/config">
+  <con:entry key="id" value=""/>
+  <con:entry key="name" value="Timestamp"/>
+  <con:entry key="namespace" value="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"/>
+  <con:entry key="enc" value="Element"/>
+</xml-fragment>]]></signaturePart></con:configuration></con:entry></con:outgoing><con:outgoing mustUnderstand="true" actor="secure_span"><con:name>WAREHOUSE_REQUEST_ENCRYPTED_USERNAME_TOKEN</con:name><con:entry type="Timestamp"><con:configuration><timeToLive>300</timeToLive><strictTimestamp>true</strictTimestamp></con:configuration></con:entry><con:entry type="Username" username="Alice" password="password"><con:configuration><addCreated>true</addCreated><addNonce>true</addNonce><passwordType>PasswordText</passwordType></con:configuration></con:entry><con:entry type="Encryption" username="bob" password="password"><con:configuration><crypto>franco.ks</crypto><keyIdentifierType>4</keyIdentifierType><symmetricEncAlgorithm>http://www.w3.org/2001/04/xmlenc#aes128-cbc</symmetricEncAlgorithm><encKeyTransport>http://www.w3.org/2001/04/xmlenc#rsa-1_5</encKeyTransport><embeddedKeyName/><embeddedKeyPassword/><encryptionCanonicalization/><encryptSymmetricKey>true</encryptSymmetricKey><encryptionPart><![CDATA[<xml-fragment xmlns:con="http://eviware.com/soapui/config">
+  <con:entry key="id" value=""/>
+  <con:entry key="name" value="UsernameToken"/>
+  <con:entry key="enc" value="Element"/>
+  <con:entry key="namespace" value="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"/>
+</xml-fragment>]]></encryptionPart></con:configuration></con:entry><con:entry type="Signature" username="bob" password="password"><con:configuration><crypto>franco.ks</crypto><keyIdentifierType>12</keyIdentifierType><signatureAlgorithm>http://www.w3.org/2000/09/xmldsig#rsa-sha1</signatureAlgorithm><signatureCanonicalization>http://www.w3.org/2001/10/xml-exc-c14n#</signatureCanonicalization><useSingleCert>true</useSingleCert><digestAlgorithm>http://www.w3.org/2000/09/xmldsig#sha1</digestAlgorithm><customTokenValueType>http://schemas.xmlsoap.org/ws/2004/04/security/sc/dk</customTokenValueType><customTokenId>DerivedKeyToken</customTokenId><signaturePart><![CDATA[<xml-fragment xmlns:con="http://eviware.com/soapui/config">
+  <con:entry key="id" value=""/>
+  <con:entry key="name" value="Body"/>
+  <con:entry key="enc" value="Element"/>
+  <con:entry key="namespace" value="http://schemas.xmlsoap.org/soap/envelope/"/>
+</xml-fragment>]]></signaturePart></con:configuration></con:entry></con:outgoing><con:outgoing actor="secure_span" mustUnderstand="true"><con:name>WAREHOUSE_REQUEST_USERNAME_TOKEN</con:name><con:entry type="Timestamp"><con:configuration><timeToLive>300</timeToLive><strictTimestamp>true</strictTimestamp></con:configuration></con:entry><con:entry type="Username" username="Alice" password="password"><con:configuration><addCreated>true</addCreated><addNonce>true</addNonce><passwordType>PasswordText</passwordType></con:configuration></con:entry></con:outgoing><con:outgoing mustUnderstand="true"><con:name>WAREHOUSE_REQUEST_MULTIPLESIGNATURES</con:name><con:entry type="Signature" username="alice" password="password"><con:configuration><crypto>alice.pfx</crypto><keyIdentifierType>1</keyIdentifierType><signatureAlgorithm>http://www.w3.org/2000/09/xmldsig#rsa-sha1</signatureAlgorithm><signatureCanonicalization>http://www.w3.org/2001/10/xml-exc-c14n#</signatureCanonicalization><useSingleCert>true</useSingleCert><digestAlgorithm>http://www.w3.org/2000/09/xmldsig#sha1</digestAlgorithm><customTokenValueType/><customTokenId/><signaturePart><![CDATA[<xml-fragment xmlns:con="http://eviware.com/soapui/config">
+  <con:entry key="id" value=""/>
+  <con:entry key="name" value="Body"/>
+  <con:entry key="enc" value="Element"/>
+  <con:entry key="namespace" value="http://schemas.xmlsoap.org/soap/envelope/"/>
+</xml-fragment>]]></signaturePart></con:configuration></con:entry><con:entry type="Signature" username="bob" password="password"><con:configuration><crypto>bob.pfx</crypto><keyIdentifierType>1</keyIdentifierType><signatureAlgorithm>http://www.w3.org/2000/09/xmldsig#rsa-sha1</signatureAlgorithm><signatureCanonicalization>http://www.w3.org/2001/10/xml-exc-c14n#</signatureCanonicalization><useSingleCert>true</useSingleCert><digestAlgorithm>http://www.w3.org/2000/09/xmldsig#sha1</digestAlgorithm><customTokenValueType/><customTokenId/><signaturePart><![CDATA[<xml-fragment xmlns:con="http://eviware.com/soapui/config">
+  <con:entry key="id" value=""/>
+  <con:entry key="name" value="Signature"/>
+  <con:entry key="enc" value="Element"/>
+  <con:entry key="namespace" value="http://www.w3.org/2000/09/xmldsig#"/>
+</xml-fragment>]]></signaturePart></con:configuration></con:entry></con:outgoing><con:outgoing mustUnderstand="true"><con:name>WAREHOUSE_REQUEST_MULTIPLESIGNATURES3</con:name><con:entry type="Signature" username="bob" password="password"><con:configuration><crypto>bob.pfx</crypto><keyIdentifierType>1</keyIdentifierType><signatureAlgorithm>http://www.w3.org/2000/09/xmldsig#rsa-sha1</signatureAlgorithm><signatureCanonicalization>http://www.w3.org/2001/10/xml-exc-c14n#</signatureCanonicalization><useSingleCert>true</useSingleCert><digestAlgorithm>http://www.w3.org/2000/09/xmldsig#sha1</digestAlgorithm><customTokenValueType/><customTokenId/><signaturePart><![CDATA[<xml-fragment xmlns:con="http://eviware.com/soapui/config">
+  <con:entry key="id" value=""/>
+  <con:entry key="name" value="Body"/>
+  <con:entry key="enc" value="Element"/>
+  <con:entry key="namespace" value="http://schemas.xmlsoap.org/soap/envelope/"/>
+</xml-fragment>]]></signaturePart></con:configuration></con:entry><con:entry type="Signature" username="alice" password="password"><con:configuration><crypto>alice.pfx</crypto><keyIdentifierType>1</keyIdentifierType><signatureAlgorithm>http://www.w3.org/2000/09/xmldsig#rsa-sha1</signatureAlgorithm><signatureCanonicalization>http://www.w3.org/2001/10/xml-exc-c14n#</signatureCanonicalization><useSingleCert>true</useSingleCert><digestAlgorithm>http://www.w3.org/2000/09/xmldsig#sha1</digestAlgorithm><customTokenValueType/><customTokenId/><signaturePart><![CDATA[<xml-fragment xmlns:con="http://eviware.com/soapui/config">
+  <con:entry key="id" value=""/>
+  <con:entry key="name" value="Body"/>
+  <con:entry key="enc" value="Element"/>
+  <con:entry key="namespace" value="http://schemas.xmlsoap.org/soap/envelope/"/>
+</xml-fragment>]]></signaturePart></con:configuration></con:entry></con:outgoing><con:outgoing mustUnderstand="true"><con:name>WAREHOUSE_REQUEST_MULTIPLESIGNATURES2</con:name><con:entry type="Signature" username="bob" password="password"><con:configuration><crypto>bob.pfx</crypto><keyIdentifierType>1</keyIdentifierType><signatureAlgorithm>http://www.w3.org/2000/09/xmldsig#rsa-sha1</signatureAlgorithm><signatureCanonicalization>http://www.w3.org/2001/10/xml-exc-c14n#</signatureCanonicalization><useSingleCert>true</useSingleCert><digestAlgorithm>http://www.w3.org/2000/09/xmldsig#sha1</digestAlgorithm><customTokenValueType/><customTokenId/><signaturePart><![CDATA[<xml-fragment xmlns:con="http://eviware.com/soapui/config">
+  <con:entry key="id" value=""/>
+  <con:entry key="name" value="Body"/>
+  <con:entry key="enc" value="Element"/>
+  <con:entry key="namespace" value="http://schemas.xmlsoap.org/soap/envelope/"/>
+</xml-fragment>]]></signaturePart></con:configuration></con:entry><con:entry type="Signature" username="alice" password="password"><con:configuration><crypto>alice.pfx</crypto><keyIdentifierType>1</keyIdentifierType><signatureAlgorithm>http://www.w3.org/2000/09/xmldsig#rsa-sha1</signatureAlgorithm><signatureCanonicalization>http://www.w3.org/2001/10/xml-exc-c14n#</signatureCanonicalization><useSingleCert>true</useSingleCert><digestAlgorithm>http://www.w3.org/2000/09/xmldsig#sha1</digestAlgorithm><customTokenValueType/><customTokenId/><signaturePart><![CDATA[<xml-fragment xmlns:con="http://eviware.com/soapui/config">
+  <con:entry key="id" value=""/>
+  <con:entry key="name" value="Signature"/>
+  <con:entry key="enc" value="Element"/>
+  <con:entry key="namespace" value="http://www.w3.org/2000/09/xmldsig#"/>
+</xml-fragment>]]></signaturePart></con:configuration></con:entry></con:outgoing><con:outgoing mustUnderstand="true"><con:name>WAREHOUSE_REQUEST_X509_AND_SAML</con:name><con:entry type="Signature" username="alice" password="password"><con:configuration><crypto>alice.pfx</crypto><keyIdentifierType>1</keyIdentifierType><signatureAlgorithm>http://www.w3.org/2000/09/xmldsig#rsa-sha1</signatureAlgorithm><signatureCanonicalization>http://www.w3.org/2001/10/xml-exc-c14n#</signatureCanonicalization><useSingleCert>true</useSingleCert><digestAlgorithm>http://www.w3.org/2000/09/xmldsig#sha1</digestAlgorithm><customTokenValueType/><customTokenId/><signaturePart><![CDATA[<xml-fragment xmlns:con="http://eviware.com/soapui/config">
+  <con:entry key="id" value=""/>
+  <con:entry key="name" value="Body"/>
+  <con:entry key="enc" value="Element"/>
+  <con:entry key="namespace" value="http://schemas.xmlsoap.org/soap/envelope/"/>
+</xml-fragment>]]></signaturePart></con:configuration></con:entry><con:entry type="SAML (Form)" username="bob" password="password"><con:configuration><samlVersion>1.1</samlVersion><signed>true</signed><assertionType>Authentication</assertionType><confirmationMethod>Holder-of-key</confirmationMethod><crypto>bob.pfx</crypto><issuer>Bob</issuer><subjectName>CN=Bob, OU=OASIS Interop Test Cert, O=OASIS</subjectName><subjectQualifier/><digestAlgorithm>http://www.w3.org/2000/09/xmldsig#sha1</digestAlgorithm><signatureAlgorithm>http://www.w3.org/2000/09/xmldsig#rsa-sha1</signatureAlgorithm><attributeName/></con:configuration></con:entry></con:outgoing><con:outgoing><con:name>WAREHOUSE_REQUEST_X509_AND_ENCRYPTED_USERNAME_TOKEN</con:name><con:entry type="Signature" username="alice" password="password"><con:configuration><crypto>alice.pfx</crypto><keyIdentifierType>1</keyIdentifierType><signatureAlgorithm>http://www.w3.org/2000/09/xmldsig#rsa-sha1</signatureAlgorithm><signatureCanonicalization>http://www.w3.org/2001/10/xml-exc-c14n#</signatureCanonicalization><useSingleCert>true</useSingleCert><digestAlgorithm>http://www.w3.org/2000/09/xmldsig#sha1</digestAlgorithm><customTokenValueType/><customTokenId/></con:configuration></con:entry><con:entry type="Username" username="Bob" password="password"><con:configuration><addCreated>true</addCreated><addNonce>true</addNonce><passwordType>PasswordText</passwordType></con:configuration></con:entry><con:entry type="Encryption" username="bob" password="password"><con:configuration><crypto>franco.ks</crypto><keyIdentifierType>4</keyIdentifierType><symmetricEncAlgorithm>http://www.w3.org/2001/04/xmlenc#aes128-cbc</symmetricEncAlgorithm><encKeyTransport>http://www.w3.org/2001/04/xmlenc#rsa-1_5</encKeyTransport><embeddedKeyName/><embeddedKeyPassword/><encryptionCanonicalization/><encryptSymmetricKey>true</encryptSymmetricKey><encryptionPart><![CDATA[<xml-fragment xmlns:con="http://eviware.com/soapui/config">
+  <con:entry key="id" value=""/>
+  <con:entry key="name" value="UsernameToken"/>
+  <con:entry key="enc" value="Element"/>
+  <con:entry key="namespace" value="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"/>
+</xml-fragment>]]></encryptionPart></con:configuration></con:entry><con:entry type="Signature" username="bob" password="password"><con:configuration><crypto>franco.ks</crypto><keyIdentifierType>1</keyIdentifierType><signatureAlgorithm>http://www.w3.org/2000/09/xmldsig#rsa-sha1</signatureAlgorithm><signatureCanonicalization>http://www.w3.org/2001/10/xml-exc-c14n#</signatureCanonicalization><useSingleCert>true</useSingleCert><digestAlgorithm>http://www.w3.org/2000/09/xmldsig#sha1</digestAlgorithm><customTokenValueType>http://schemas.xmlsoap.org/ws/2004/04/security/sc/dk</customTokenValueType><customTokenId>DerivedKeyToken</customTokenId></con:configuration></con:entry></con:outgoing><con:outgoing><con:name>WAREHOUSE_REQUEST_SIGNED_NO_TIMESTAMP</con:name><con:entry type="Signature" username="alice" password="password"><con:configuration><crypto>alice.pfx</crypto><keyIdentifierType>1</keyIdentifierType><signatureAlgorithm>http://www.w3.org/2000/09/xmldsig#rsa-sha1</signatureAlgorithm><signatureCanonicalization>http://www.w3.org/2001/10/xml-exc-c14n#</signatureCanonicalization><useSingleCert>true</useSingleCert><digestAlgorithm>http://www.w3.org/2000/09/xmldsig#sha1</digestAlgorithm><customTokenValueType/><customTokenId/></con:configuration></con:entry></con:outgoing></con:wssContainer><con:oAuth2ProfileContainer/><con:oAuth1ProfileContainer/><con:sensitiveInformation/></con:soapui-project>

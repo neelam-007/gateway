@@ -198,7 +198,12 @@ public class HexUtils {
      */
     @NotNull
     public static String encodeBase64Url( @NotNull byte[] bytes ) {
-        return encodeBase64( bytes ).
+        return encodeBase64Url(bytes, false);
+    }
+
+    @NotNull
+    public static String encodeBase64Url( @NotNull byte[] bytes, boolean isDoNotChunk ) {
+        return encodeBase64( bytes, isDoNotChunk ).
                 replace( '+', '-' ).
                 replace( '/', '_' ).replaceAll( "\\s|=", "" );
     }
@@ -555,7 +560,7 @@ public class HexUtils {
             return URLDecoder.decode(encoded, "UTF-8");
         } catch (IllegalArgumentException e) {
             throw new CausedIOException(e);
-        }            
+        }
     }
 
     /**

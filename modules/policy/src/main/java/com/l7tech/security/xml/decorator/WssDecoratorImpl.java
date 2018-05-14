@@ -49,6 +49,7 @@ public class WssDecoratorImpl implements WssDecorator {
     public static final String PROPERTY_SUPPRESS_NANOSECONDS = "com.l7tech.server.timestamp.omitNanos";
     public static final String PROPERTY_SAML_USE_URI_REF = "com.l7tech.server.saml.useUriReference";
     public static final String PROPERTY_PROTECTTOKENS_SIGNS_DERIVED_KEYS = "com.l7tech.security.xml.protectTokensSignsDerivedKeys";
+    public static final String PROPERTY_DIGSIG_CANONICALIZATION_METHOD = "com.l7tech.security.xml.decorator.digsig.canonicalization";
 
     private static final boolean PROTECTTOKENS_SIGNS_DERIVED_KEYS = ConfigFactory.getBooleanProperty( PROPERTY_PROTECTTOKENS_SIGNS_DERIVED_KEYS, false );
 
@@ -1282,7 +1283,7 @@ public class WssDecoratorImpl implements WssDecorator {
         // Create signature template and populate with appropriate transforms. Reference is to SOAP Envelope
         TemplateGenerator template = new TemplateGenerator(elementsToSign[0].getOwnerDocument(),
                                                            refDigestMethod.getIdentifier(),
-                                                           Canonicalizer.EXCLUSIVE,
+                                                           ConfigFactory.getProperty(PROPERTY_DIGSIG_CANONICALIZATION_METHOD, Canonicalizer.EXCLUSIVE),
                                                            signaturemethod.getAlgorithmIdentifier());
         template.setIndentation(false);
         template.setPrefix(DS_PREFIX);
@@ -1373,7 +1374,12 @@ public class WssDecoratorImpl implements WssDecorator {
         });
         sigContext.setEntityResolver(c.attachmentResolver);
         sigContext.setAlgorithmFactory(DsigUtil.createSignatureAlgorithmFactory(senderSigningKey, strTransformsNodeToNode));
+
+        final Element signatureElement;
         try {
+            // Add Signature element the Security header before signing. This way, necessary namespaces are included in
+            // canonicalized form when Non Exclusive canonicalization method is used.
+            signatureElement = (Element)securityHeader.appendChild(emptySignatureElement);
             KeyUsageChecker.requireActivityForKey(KeyUsageActivity.signXml, senderSigningCert, senderSigningKey);
             sigContext.sign(emptySignatureElement, senderSigningKey);
         } catch (KeyUsageException e) {
@@ -1390,7 +1396,6 @@ public class WssDecoratorImpl implements WssDecorator {
             throw new DecoratorException(e);
         }
 
-        Element signatureElement = (Element)securityHeader.appendChild(emptySignatureElement);
         signatureElement.appendChild(keyInfoElement);
 
         return signatureElement;

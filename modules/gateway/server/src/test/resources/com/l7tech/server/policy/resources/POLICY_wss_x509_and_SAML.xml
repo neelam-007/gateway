@@ -48,7 +48,9 @@
                         <L7p:item stringValue="urn:oasis:names:tc:SAML:1.0:am:password"/>
                     </L7p:AuthenticationMethods>
                 </L7p:AuthenticationStatement>
+                <L7p:CheckAssertionValidity booleanValue="false"/>
                 <L7p:NameFormats stringArrayValue="included">
+                    <L7p:item stringValue="urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified"/>
                     <L7p:item stringValue="urn:oasis:names:tc:SAML:1.1:nameid-format:X509SubjectName"/>
                 </L7p:NameFormats>
                 <L7p:NameQualifier stringValue=""/>

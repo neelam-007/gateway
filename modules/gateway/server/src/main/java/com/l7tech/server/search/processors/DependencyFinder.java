@@ -17,6 +17,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * The dependency finder will find all dependencies that an Entity has. Do not use this object directly use the
@@ -152,8 +154,8 @@ public class DependencyFinder {
         if (searchDepth != 0 && !ignoreDependenciesHeaders.contains(getHeader(dependent))) {
             //decrement the search depth.
             searchDepth--;
-            //If the depth is non 0 then find the dependencies for the given entity.
-            dependency.setDependencies(getDependencies(dependent.getEntity()));
+            //If the depth is non 0 then find all unique dependencies for the given entity.
+            dependency.setDependencies(getUniqueDependencies(dependent.getEntity()));
         }
         return dependency;
     }
@@ -190,6 +192,25 @@ public class DependencyFinder {
         //using the dependency processor find the dependencies and return the results.
         //noinspection unchecked
         return processor.findDependencies(dependent, this);
+    }
+
+    /**
+     * Returns the list of unique dependencies for the given object. If the given object is null the empty list is returned.
+     *
+     * @param dependent The entity to find the dependencies for
+     * @return The set of dependencies that this entity has.
+     */
+    @NotNull
+    List<Dependency> getUniqueDependencies(@Nullable final Object dependent) throws CannotRetrieveDependenciesException, FindException {
+        final List<Dependency> dependencies = getDependencies(dependent);
+
+        if (dependencies.size() > 1) {
+            try (final Stream<Dependency> stream = dependencies.stream()) {
+                return stream.distinct().collect(Collectors.toList());
+            }
+        }
+
+        return dependencies;
     }
 
     private boolean isSearchType(Object dependent) {

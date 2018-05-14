@@ -5,6 +5,7 @@
 package com.l7tech.security.xml;
 
 import com.ibm.xml.dsig.*;
+import com.ibm.xml.dsig.KeyInfo;
 import com.ibm.xml.enc.AlgorithmFactoryExtn;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.XmlUtil;
@@ -46,6 +47,7 @@ import static com.l7tech.security.xml.SupportedDigestMethods.*;
  */
 public class DsigUtil {
     public static final String DIGSIG_URI = "http://www.w3.org/2000/09/xmldsig#";
+    static final String PROP_DIGSIG_INCLUSIVE_NAMESPACES_PREFIX = "com.l7tech.security.xml.decorator.digsig.inclusiveNamespacesPrefix";
 
     /**
      * Get the identifier attribute for the given element.
@@ -359,19 +361,22 @@ public class DsigUtil {
     }
 
     /**
-     * Add a c14n:InclusiveNamespaces child element to the specified element with an empty PrefixList.
+     * Add a c14n:InclusiveNamespaces child element to the specified element with a PrefixList.
      */
     public static void addInclusiveNamespacesToElement(Element element) {
         //
-        // NOTE: Since we have no PrefixList attribute we should not have any inlclusive namespaces
+        // NOTE: If we have no PrefixList attribute we should not have any inlclusive namespaces
         // element (See the DTD http://www.w3.org/TR/xml-exc-c14n/exc-c14n.dtd)
         //
-        //Element inclusiveNamespaces = XmlUtil.createAndAppendElementNS(element,
-        //                                                               "InclusiveNamespaces",
-        //                                                               Transform.C14N_EXCLUSIVE,
-        //                                                               "c14n");
         // omit prefix list attribute if empty (WS-I BSP R5410)
-        //inclusiveNamespaces.setAttribute("PrefixList", "");
+        final String prefix = ConfigFactory.getProperty(PROP_DIGSIG_INCLUSIVE_NAMESPACES_PREFIX, null);
+        if (prefix != null && !prefix.isEmpty()) {
+            Element inclusiveNamespaces = XmlUtil.createAndAppendElementNS(element,
+                    "InclusiveNamespaces",
+                    Transform.C14N_EXCLUSIVE,
+                    "c14n");
+            inclusiveNamespaces.setAttribute("PrefixList", prefix);
+        }
     }
 
     /**
@@ -405,8 +410,13 @@ public class DsigUtil {
             X509Certificate cert = null;
             KeyInfo keyInfo = new KeyInfo(keyInfoElement);
             String[] keyNames = keyInfo.getKeyNames();
+            KeyInfo.X509Data[] x509Data = keyInfo.getX509Data();
+
+            // Check if KeyName or X509Data element is present
             if (keyNames != null && keyNames.length > 0) {
                 cert = securityTokenResolver.lookupByKeyName( CertUtils.formatDN(keyNames[0]) );
+            } else if (x509Data != null && x509Data.length > 0){
+                cert = x509Data[0].getCertificates()[0];
             }
 
             if (cert == null)
