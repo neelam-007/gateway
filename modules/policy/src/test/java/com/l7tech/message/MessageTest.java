@@ -72,19 +72,37 @@ public class MessageTest {
 
     @Test
     @BugId("DE338158")
-    public void checkContentLengthInIsXml() throws IOException{
+    public void testNoContentLengthHeaderInIsXml() throws IOException{
         //Set up
-        final MimeKnob mknob = message.getMimeKnob();
-        mknob.getFirstPart().setContentType(ContentTypeHeader.XML_DEFAULT);
-        final HeadersKnob hknob = message.getHeadersKnob();
-        hknob.setHeader(HttpConstants.HEADER_CONTENT_LENGTH, 0, HeadersKnob.HEADER_TYPE_HTTP);
-
-        // Test content-length:0, no message body means it's not XML
-        assertFalse(message.isXml());
-
+        setUpMessageWithReqServlet(false);
         // Test no content-length header present
-        message.initialize(ContentTypeHeader.XML_DEFAULT, new byte[]{});
-        hknob.removeHeader(HttpConstants.HEADER_CONTENT_LENGTH, HeadersKnob.HEADER_TYPE_HTTP);
         assertTrue(message.isXml());
+    }
+
+    @Test
+    @BugId("DE338158")
+    public void testAllowContentLengthZeroInIsXml() throws IOException{
+        //Set up
+        setUpMessageWithReqServlet(true);
+        // Test allow content-length 0
+        assertTrue(message.isXml(true));
+    }
+
+    @Test
+    @BugId("DE338158")
+    public void testDoNotAllowContentLengthZeroInIsXml() throws IOException{
+        //Set up
+        setUpMessageWithReqServlet(true);
+        // Test allow content-length 0
+        assertFalse(message.isXml());
+    }
+
+    private void setUpMessageWithReqServlet(final boolean withContentLength) throws IOException {
+        final MockHttpServletRequest mockRequestServlet = new MockHttpServletRequest();
+        message.attachHttpRequestKnob(new HttpServletRequestKnob(mockRequestServlet));
+        message.initialize(ContentTypeHeader.XML_DEFAULT, new byte[]{});
+        if (withContentLength) {
+            mockRequestServlet.addHeader(HttpConstants.HEADER_CONTENT_LENGTH, 0);
+        }
     }
 }
