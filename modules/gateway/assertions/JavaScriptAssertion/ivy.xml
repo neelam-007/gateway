@@ -2,8 +2,7 @@
 <ivy-module version="1.0">
 	<info organisation="com.l7tech"
 		module="JavaScriptAssertion"
-        status="integration"
-	>
+        status="integration">
 	</info>
 	<configurations>
         <include file="../assertion-ivyconfiguration.xml"/>
@@ -15,6 +14,5 @@
 	<dependencies>
         <dependency name="layer7-modular-assertions" rev="latest.integration"
                     conf="compile->compile;runtime->runtime;test->test"/>
-                
 	</dependencies>
 </ivy-module>

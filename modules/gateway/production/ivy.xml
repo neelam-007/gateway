@@ -70,7 +70,7 @@
         <dependency name="MqNativeAssertion" rev="latest.integration" conf="module"/>
         <dependency name="GenerateSecurityHashAssertion" rev="latest.integration" conf="module"/>
         <dependency name="EvaluateJsonPathExpressionAssertion" rev="latest.integration" conf="module"/>
-		<dependency name="EvaluateJsonPathExpressionV2Assertion" rev="latest.integration" conf="module"/>
+        <dependency name="EvaluateJsonPathExpressionV2Assertion" rev="latest.integration" conf="module"/>
         <dependency name="LookupDynamicContextVariablesAssertion" rev="latest.integration" conf="module"/>
         <dependency name="NtlmAuthenticationAssertion" rev="latest.integration" conf="module"/>
         <dependency name="KerberosAuthenticationAssertion" rev="latest.integration" conf="module"/>
@@ -102,6 +102,7 @@
         <dependency org="com.ca.apim.gateway.extension" name="PolicyBackedServiceMetricsEventListener" rev="latest.integration" conf="module">
             <artifact name="PolicyBackedServiceMetricsEventListener" type="aar"/>
         </dependency>
+        <dependency name="JavaScriptAssertion" rev="latest.integration" conf="module"/>
         <!-- Optional Modular Assertions are copied to "dist" but not packaged -->
         <dependency name="CaWsdmAssertion" rev="latest.integration" conf="module-optional"/>
     </dependencies>

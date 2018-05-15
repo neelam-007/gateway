@@ -1,29 +1,29 @@
 package com.l7tech.external.assertions.js.server;
 
-import com.l7tech.common.io.NullOutputStream;
-import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.external.assertions.js.JavaScriptAssertion;
+import com.l7tech.external.assertions.js.features.JavaScriptException;
+import com.l7tech.external.assertions.js.features.JavaScriptExecutor;
+import com.l7tech.external.assertions.js.features.JavaScriptExecutorOptions;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
-import com.l7tech.util.Charsets;
+import com.l7tech.server.policy.variable.ExpandVariables;
+import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.IOUtils;
-import jdk.nashorn.api.scripting.AbstractJSObject;
-import jdk.nashorn.api.scripting.ClassFilter;
-import jdk.nashorn.api.scripting.NashornScriptEngine;
-import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.ApplicationContext;
 
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.script.ScriptContext;
 import javax.script.ScriptException;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
+import java.util.logging.Logger;
+
+import static com.l7tech.external.assertions.js.features.JavaScriptAssertionConstants.DEFAULT_EXECUTION_TIMEOUT;
+import static com.l7tech.external.assertions.js.features.JavaScriptAssertionConstants.EXECUTION_TIMEOUT_PROPERTY;
 
 /**
  * Server side implementation of the JavaScriptAssertion.
@@ -31,98 +31,61 @@ import javax.script.ScriptException;
  * @see com.l7tech.external.assertions.js.JavaScriptAssertion
  */
 public class ServerJavaScriptAssertion extends AbstractServerAssertion<JavaScriptAssertion> {
-    static boolean allowNoSecurityManager = false;  // for testing
 
-    private ApplicationContext applicationContext;
-    private String script;
+    private static final Logger LOGGER = Logger.getLogger(ServerJavaScriptAssertion.class.getName());
+    private final Config serverConfig;
 
-    public ServerJavaScriptAssertion(JavaScriptAssertion assertion, ApplicationContext context) throws PolicyAssertionException {
+    public ServerJavaScriptAssertion(final JavaScriptAssertion assertion, final ApplicationContext applicationContext) {
         super(assertion);
-        this.applicationContext = context;
-        this.script = assertion.decodeScript();
-
-        if ( null == System.getSecurityManager() && !allowNoSecurityManager ) {
-            throw new PolicyAssertionException( assertion, "Unable to instantiate JavaScriptAssertion when Gateway is running without a SecurityManager" );
-        }
+        serverConfig = applicationContext.getBean("serverConfig", ServerConfig.class);
     }
 
     @Override
-    public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        NashornScriptEngineFactory factory = new NashornScriptEngineFactory();
-
-        // Restrict access to Java classes not passed in as part of the published interface for scripts
-        NashornScriptEngine engine = (NashornScriptEngine)factory.getScriptEngine(
-                new String[] { "-strict", "--no-java", "--no-syntax-extensions" },
-                new AlwaysFailingClassLoader(),
-                new AlwaysFailingClassFilter()
-        );
-
-        ScriptContext scriptContext = engine.getContext();
-
-        // Prevent stdout/stderr written from script from going anywhere
-        scriptContext.setErrorWriter( new OutputStreamWriter( new NullOutputStream() ) );
-        scriptContext.setWriter( new OutputStreamWriter( new NullOutputStream() ) );
-
-        // Prevent script from loading remote scripts
-        engine.put("load", null);
-        engine.put("loadWithNewGlobal", null);
-
-        // Prevent script from doing dynamic evaluation of other script code
-        engine.put("eval", null);
-
-        // Prevent script from terminating the Gateway process
-        engine.put("exit", null);
-        engine.put("quit", null);
-
-        // Hook up public API for JavaScript to consume
-        engine.put( "context", context );
-        engine.put( "appContext", applicationContext );
-        engine.put( "request", context.getRequest() );
-        engine.put( "response", context.getResponse() );
+    public AssertionStatus checkRequest(final PolicyEnforcementContext context) {
+        final String[] varsUsed = assertion.getVariablesUsed();
+        final Map<String, Object> variableMap = context.getVariableMap(varsUsed, getAudit());
 
         try {
-            Object result = engine.eval( script );
+            final JavaScriptExecutorOptions executorOptions = new JavaScriptExecutorOptions(
+                    assertion.getScript(),
+                    assertion.isStrictModeEnabled(),
+                    getScriptExecutionTimeout(variableMap, assertion.getExecutionTimeout()));
+            final Object result = new JavaScriptExecutor(executorOptions).execute(context);
 
-            if (isTruth(result))
+            /**
+             * The script is expected to return TRUE or FALSE if the script was executed. If TRUE is NOT returned we
+             * must falsify the assertion.
+             */
+            if(result != null && BooleanUtils.toBoolean(result.toString())) {
                 return AssertionStatus.NONE;
-            else
+            } else {
+                LOGGER.warning("The javascript did not return TRUE. Falsifying the assertion.");
                 return AssertionStatus.FALSIFIED;
-
-        } catch ( ScriptException e ) {
+            }
+        } catch (InterruptedException|ExecutionException|TimeoutException|ScriptException|JavaScriptException e) {
             logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
                     new String[]{ "Script failure: " + ExceptionUtils.getMessage( e ) },
+                    ExceptionUtils.getDebugException( e ) );
+            return AssertionStatus.FAILED;
+        } catch (Exception e) {
+            logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
+                    new String[]{ "Unexpected script failure: " + ExceptionUtils.getMessage( e ) },
                     ExceptionUtils.getDebugException( e ) );
             return AssertionStatus.FAILED;
         }
     }
 
-    private boolean isTruth(Object result) throws ScriptException {
-        if (result == null)
-            throw new ScriptException("Script return value was null");
-        if (result instanceof Boolean)
-            return (Boolean)result;
-        if (result instanceof Double || result instanceof Float) {
-            Number number = (Number)result;
-            return number.doubleValue() != 0;
-        }
-        if (result instanceof Number) {
-            Number number = (Number)result;
-            return number.longValue() != 0;
-        }
-        throw new ScriptException("Script did not return (true or nonzero) or (false or zero).  Return value: " + result.getClass() + "=" + result);
-    }
+    private int getScriptExecutionTimeout(final Map<String, Object> variableMap, final String executionTimeoutString) {
+        int executionTimeout = serverConfig.getIntProperty(EXECUTION_TIMEOUT_PROPERTY, DEFAULT_EXECUTION_TIMEOUT);
 
-    public static class AlwaysFailingClassLoader extends ClassLoader {
-        @Override
-        protected Class<?> findClass( String name ) throws ClassNotFoundException {
-            throw new ClassNotFoundException( "Class loading not permitted within script: " + name );
+        if (StringUtils.isNotBlank(executionTimeoutString)) {
+            try {
+                executionTimeout = Integer.parseInt(ExpandVariables.process(executionTimeoutString, variableMap, getAudit()));
+            } catch (NumberFormatException ex) {
+                LOGGER.warning("Unable to parse Execution timeout. Using the default timeout " + executionTimeout);
+            }
         }
-    }
 
-    public static class AlwaysFailingClassFilter implements ClassFilter {
-        @Override
-        public boolean exposeToScripts( String s ) {
-            return false;
-        }
+        return executionTimeout;
     }
 }
