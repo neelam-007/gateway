@@ -1,14 +1,10 @@
 package com.l7tech.message;
 
 import com.l7tech.common.http.HttpConstants;
-import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.test.BugId;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
-
-import java.io.IOException;
 
 import static org.junit.Assert.*;
 
@@ -68,55 +64,5 @@ public class MessageTest {
     @Test
     public void findHttpCookiesKnobNotAttached() {
         assertNull(message.getKnob(HttpCookiesKnob.class));
-    }
-
-    @Test
-    @BugId("DE338158")
-    public void testNoContentLengthHeaderInIsXml() throws IOException{
-        //Set up
-        setUpMessageWithReqServlet(false);
-        // Test no content-length header present
-        assertTrue(message.isXml());
-    }
-
-    @Test
-    @BugId("DE338158")
-    public void testNoContentLengthHeaderAndAllowContentLengthZeroInIsXml() throws IOException{
-        //Set up
-        setUpMessageWithReqServlet(false);
-        // Test no content-length header present
-        assertTrue(message.isXml(true));
-    }
-
-    @Test
-    @BugId("DE338158")
-    public void testAllowContentLengthZeroInIsXml() throws IOException{
-        //Set up
-        setUpMessageWithReqServlet(true);
-        // Test allow content-length 0
-        assertTrue(message.isXml(true));
-    }
-
-    @Test
-    @BugId("DE338158")
-    public void testDoNotAllowContentLengthZeroInIsXml() throws IOException{
-        //Set up
-        setUpMessageWithReqServlet(true);
-        // Test allow content-length 0
-        assertFalse(message.isXml());
-    }
-
-    /**
-     * Set up a HttpRequest Servlet to access headers used for testing
-     * @param withContentLength true to add a contetnt length of 0
-     * @throws IOException from initialize
-     */
-    private void setUpMessageWithReqServlet(final boolean withContentLength) throws IOException {
-        final MockHttpServletRequest mockRequestServlet = new MockHttpServletRequest();
-        message.attachHttpRequestKnob(new HttpServletRequestKnob(mockRequestServlet));
-        message.initialize(ContentTypeHeader.XML_DEFAULT, new byte[]{});
-        if (withContentLength) {
-            mockRequestServlet.addHeader(HttpConstants.HEADER_CONTENT_LENGTH, 0);
-        }
     }
 }
