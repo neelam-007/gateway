@@ -140,7 +140,7 @@ public abstract class ServerXpathAssertion<AT extends SimpleXpathAssertion> exte
         final ElementCursor cursor;
         try {
             boolean usePlaceholderMessage = false;
-            if (!message.isXml(true)) {
+            if (!message.isXml()) {
                 if (xpathReferencesTargetDocument) {
                     auditNotXml();
 
