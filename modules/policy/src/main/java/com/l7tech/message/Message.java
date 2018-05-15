@@ -436,6 +436,22 @@ public final class Message implements Closeable {
      * @throws IOException if XML serialization is necessary, and it throws IOException (perhaps due to a lazy DOM)
      */
     public boolean isXml() throws IOException {
+        return isXml(false);
+    }
+
+    /**
+     * Check if this message is declared as containing XML.  Does not actually parse the XML, if it's there.
+     * No exceptions are thrown except IOException, and that only in a situation that would be fatal to the Message
+     * anyway.
+     * <p>
+     * If this method returns true, an XmlKnob will be present on this Message.
+     *
+     * @param allowContentLengthZero Bypass check for content-length of zero in http request headers.
+     * @return true if this message has a first part declared as text/xml, which has some content;
+     *         false if this message has no first part or its first part isn't declared as XML or has a length of 0.
+     * @throws IOException if XML serialization is necessary, and it throws IOException (perhaps due to a lazy DOM)
+     */
+    public boolean isXml(final boolean allowContentLengthZero) throws IOException {
         if (xmlKnob != null)
             return true;
         if (getKnob(XmlKnob.class) != null)
@@ -448,7 +464,7 @@ public final class Message implements Closeable {
 
         // It's declared as XML, check that there is some content
         HttpRequestKnob knob = getKnob(HttpRequestKnob.class);
-        if (knob != null) {
+        if (knob != null && !allowContentLengthZero) {
             int length = knob.getIntHeader(HttpConstants.HEADER_CONTENT_LENGTH);
             if (length == 0) {
                 return false;
