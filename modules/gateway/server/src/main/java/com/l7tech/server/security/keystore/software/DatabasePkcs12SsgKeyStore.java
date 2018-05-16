@@ -6,9 +6,7 @@ import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.event.AdminInfo;
 import com.l7tech.server.security.keystore.*;
-import com.l7tech.util.ExceptionUtils;
-import com.l7tech.util.Functions;
-import com.l7tech.util.PoolByteArrayOutputStream;
+import com.l7tech.util.*;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.ByteArrayInputStream;
@@ -27,7 +25,6 @@ import java.util.logging.Logger;
  */
 public class DatabasePkcs12SsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
     protected static final Logger logger = Logger.getLogger(DatabasePkcs12SsgKeyStore.class.getName());
-    private static final long refreshTime = (long) (5 * 1000);
     private static final String DB_FORMAT = "sdb.pkcs12";
 
     private final Goid id;
@@ -82,18 +79,19 @@ public class DatabasePkcs12SsgKeyStore extends JdkKeyStoreBackedSsgKeyStore impl
 
     @Override
     protected synchronized KeyStore keyStore() throws KeyStoreException {
-        if (cachedKeystore == null || System.currentTimeMillis() - lastLoaded > refreshTime) {
+        if (cachedKeystore == null || System.currentTimeMillis() - lastLoaded > getRefreshTime()) {
             try {
+                if (cachedKeystore != null && keystoreVersion == kem.getVersion(getGoid())) {
+                    // No changes since last time we checked.  Just use the one we've got.
+                    return cachedKeystore;
+                }
+
                 KeystoreFile keystoreFile = kem.findByPrimaryKey(getGoid());
                 if ( keystoreFile == null ) {
                     // Our backing row has vanished.  Keystore will not be functional
                     throw new KeyStoreException( "No row present in database for software database keystore id " + id + " (named " + name + ")" );
                 }
-                int dbVersion = keystoreFile.getVersion();
-                if (cachedKeystore != null && keystoreVersion == dbVersion) {
-                    // No changes since last time we checked.  Just use the one we've got.
-                    return cachedKeystore;
-                }
+
                 final KeyStore ks;
                 if ( null == keystoreFile.getDatabytes() ) {
                     // No databytes in DB -- creating a new keystore from scratch.  Make sure it gets persisted

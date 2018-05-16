@@ -1381,6 +1381,23 @@
         <constructor-arg index="2" ref="ssgKeyStoreManager"/>
         <constructor-arg index="3" ref="transactionManager"/>
     </bean>
+    <bean id="defaultKeyCache"  class="com.l7tech.server.util.EntityCachingFactoryBean">
+        <constructor-arg>
+            <null/>
+        </constructor-arg>
+        <constructor-arg value="DefaultKeyCache"/>
+        <constructor-arg value="com.l7tech.server.DefaultKeyCache"/>
+        <constructor-arg>
+            <bean class="com.l7tech.server.DefaultKeyCacheImpl">
+                <constructor-arg>
+                    <bean class="com.l7tech.gateway.common.spring.factory.config.LazyProxyFactoryBean">
+                        <constructor-arg value="defaultKey"/>
+                        <constructor-arg value="com.l7tech.server.DefaultKey"/>
+                    </bean>
+                </constructor-arg>
+            </bean>
+        </constructor-arg>
+    </bean>
     <bean id="keystoreMutatorSwitch"
           class="com.l7tech.server.security.keystore.JdkKeyStoreBackedSsgKeyStore$StartupListener"/>
 

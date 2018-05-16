@@ -12,7 +12,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.security.cert.KeyUsageActivity;
 import com.l7tech.security.cert.KeyUsageChecker;
-import com.l7tech.server.DefaultKey;
+import com.l7tech.server.DefaultKeyCache;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
@@ -49,7 +49,7 @@ import java.util.Map;
 public class ServerEncodeJsonWebTokenAssertion extends AbstractServerAssertion<EncodeJsonWebTokenAssertion> {
 
     @Inject
-    private DefaultKey defaultKey;
+    private DefaultKeyCache defaultKey;
 
     private final boolean singleSignatureSecretVarKeyExpr;
     private final boolean singleEncryptionSecretVarKeyExpr;

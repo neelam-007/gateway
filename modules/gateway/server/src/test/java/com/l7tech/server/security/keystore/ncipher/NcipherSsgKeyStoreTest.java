@@ -51,6 +51,7 @@ public class NcipherSsgKeyStoreTest {
         testingKeyStoreFile.setFormat(NcipherSsgKeyStore.DB_FORMAT);
         testingKeyStoreFile.setVersion(1); // Set a new DB version as 1.
         when(kem.findByPrimaryKey(testableNcipherSsgKeyStore.getGoid())).thenReturn(testingKeyStoreFile);
+        when(kem.getVersion(testableNcipherSsgKeyStore.getGoid())).thenReturn(testingKeyStoreFile.getVersion());
 
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // Check keystore and keystore version after the first method call to keystore() will update keystore and keystore version. //

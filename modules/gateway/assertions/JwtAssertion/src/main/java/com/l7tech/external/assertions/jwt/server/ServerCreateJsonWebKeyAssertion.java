@@ -5,13 +5,13 @@ import com.l7tech.common.io.CertUtils;
 import com.l7tech.external.assertions.jwt.CreateJsonWebKeyAssertion;
 import com.l7tech.external.assertions.jwt.JsonWebTokenConstants;
 import com.l7tech.external.assertions.jwt.JwkKeyInfo;
+import com.l7tech.external.assertions.jwt.JwtUtils;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.server.DefaultKey;
+import com.l7tech.server.DefaultKeyCache;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
@@ -24,7 +24,6 @@ import org.jose4j.lang.JoseException;
 
 import javax.inject.Inject;
 import java.io.IOException;
-import java.security.KeyStoreException;
 import java.security.cert.CertificateEncodingException;
 import java.util.List;
 import java.util.Map;
@@ -33,7 +32,7 @@ import java.util.logging.Level;
 public class ServerCreateJsonWebKeyAssertion extends AbstractServerAssertion<CreateJsonWebKeyAssertion> {
 
     @Inject
-    private DefaultKey defaultKey;
+    private DefaultKeyCache defaultKey;
 
     public ServerCreateJsonWebKeyAssertion(@NotNull final CreateJsonWebKeyAssertion assertion) {
         super(assertion);
@@ -69,15 +68,8 @@ public class ServerCreateJsonWebKeyAssertion extends AbstractServerAssertion<Cre
         final Goid goid = jwkKeyInfo.getSourceKeyGoid();
         final String alias = jwkKeyInfo.getSourceKeyAlias();
 
-        final SsgKeyEntry entry;
-
-        try {
-            entry = defaultKey.lookupKeyByKeyAlias(alias, goid);
-        } catch (FindException e1) {
-            logAndAudit(AssertionMessages.JWT_JWK_NOT_FOUND, jwkKeyInfo.getSourceKeyAlias());
-            return null;
-        } catch (IOException | KeyStoreException e1) {
-            logAndAudit(AssertionMessages.JWT_KEYSTORE_ERROR);
+        final SsgKeyEntry entry = JwtUtils.getKeyFromStore(defaultKey, getAudit(), goid, alias);
+        if (entry == null){
             return null;
         }
 

@@ -7,12 +7,12 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.security.cert.BouncyCastleCertUtils;
 import com.l7tech.security.cert.ParamsKeyGenerator;
 import com.l7tech.security.prov.CertificateRequest;
+import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.event.system.Started;
 import com.l7tech.server.event.system.Stopped;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.NotFuture;
-import com.l7tech.util.PoolByteArrayOutputStream;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationEvent;
@@ -41,6 +41,7 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
     private static final Logger logger = Logger.getLogger(JdkKeyStoreBackedSsgKeyStore.class.getName());
 
     private static final boolean FORCE_CASE_INSENSITIVE_ALIAS_MATCH = ConfigFactory.getBooleanProperty( "com.l7tech.server.security.keystore.jdkbacked.checkForCaseInsensitiveAliasMatch", true );
+    private static final long DEFAULT_KEYSTORE_CACHE_EXPIRY = (long) 5 * 1000;
     private static final AtomicBoolean startedRef = new AtomicBoolean(false);
     private static BlockingQueue<Runnable> mutationQueue = new LinkedBlockingQueue<Runnable>();
     private static ExecutorService mutationExecutor = new ThreadPoolExecutor(1, 1, 5 * 60, TimeUnit.SECONDS, mutationQueue);
@@ -61,6 +62,10 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
 
     /** @return the format string for this keystore, to store in the format column in the DB, ie "hsm" or "sdb". */
     protected abstract String getFormat();
+
+    protected long getRefreshTime() {
+        return ConfigFactory.getTimeUnitProperty(ServerConfigParams.PARAM_KEYSTORE_FILE_CACHE_EXPIRY, DEFAULT_KEYSTORE_CACHE_EXPIRY);
+    }
 
     @Override
     public String getId() {

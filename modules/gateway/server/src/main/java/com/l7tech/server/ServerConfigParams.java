@@ -96,6 +96,7 @@ public interface ServerConfigParams {
     String PARAM_KEYSTORE_DEFAULT_CA_KEY = "keyStoreDefaultCaKey";
     String PARAM_KEYSTORE_AUDIT_VIEWER_KEY = "keyStoreAuditViewerKey";
     String PARAM_KEYSTORE_AUDIT_SIGNING_KEY = "keyStoreAuditSigningKey";
+    String PARAM_KEYSTORE_FILE_CACHE_EXPIRY = "keyStoreFileCacheExpiry";
     String PARAM_CERT_EXPIRY_CHECK_PERIOD = "trustedCert.expiryCheckPeriod";
     String PARAM_CERT_EXPIRY_FINE_AGE = "trustedCert.expiryFineAge";
     String PARAM_CERT_EXPIRY_INFO_AGE = "trustedCert.expiryInfoAge";

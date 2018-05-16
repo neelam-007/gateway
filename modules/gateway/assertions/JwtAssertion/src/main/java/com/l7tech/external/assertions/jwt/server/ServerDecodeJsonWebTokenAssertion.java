@@ -15,7 +15,7 @@ import com.l7tech.policy.variable.Syntax;
 import com.l7tech.security.cert.KeyUsageActivity;
 import com.l7tech.security.cert.KeyUsageChecker;
 import com.l7tech.security.cert.KeyUsageException;
-import com.l7tech.server.DefaultKey;
+import com.l7tech.server.DefaultKeyCache;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
@@ -56,7 +56,7 @@ import java.util.Map;
 public class ServerDecodeJsonWebTokenAssertion extends AbstractServerAssertion<DecodeJsonWebTokenAssertion> {
 
     @Inject
-    private DefaultKey defaultKey;
+    private DefaultKeyCache defaultKey;
 
     private final boolean singleVarKeyExpr;
 

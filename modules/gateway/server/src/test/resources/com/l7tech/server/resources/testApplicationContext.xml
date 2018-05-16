@@ -192,6 +192,10 @@
 
     <!-- ssl config  -->
     <bean id="defaultKey" class="com.l7tech.server.TestDefaultKey"/>
+    <bean id="defaultKeyCache" class="com.l7tech.server.DefaultKeyCacheImpl">
+        <constructor-arg ref="defaultKey"/>
+    </bean>
+
 
     <bean id="sslKeyEntry" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
         <property name="targetObject" ref="defaultKey"/>

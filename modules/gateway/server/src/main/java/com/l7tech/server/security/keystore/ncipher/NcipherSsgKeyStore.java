@@ -197,14 +197,15 @@ public class NcipherSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements 
     }
 
     protected synchronized KeyStore keyStore() throws KeyStoreException {
-        if (keystore == null || System.currentTimeMillis() - lastLoaded > refreshTime) {
+        if (keystore == null || System.currentTimeMillis() - lastLoaded > getRefreshTime()) {
             try {
-                final KeystoreFile keystoreFile = findKeystoreFile();
-                final int dbVersion = keystoreFile.getVersion();
-                if (keystore != null && keystoreVersion == dbVersion) {
+                if (keystore != null && keystoreVersion == kem.getVersion(getGoid())) {
                     // No changes since last time we checked.  Just use the one we've got.
                     return keystore;
                 }
+                KeystoreFile keystoreFile = kem.findByPrimaryKey(getGoid());
+                if (keystoreFile == null)
+                    throw new KeyStoreException("No keystore_file found with goid " + getGoid());
 
                 final byte[] bytes = keystoreFile.getDatabytes();
                 if (!keystoreFile.getFormat().equals(DB_FORMAT))
@@ -215,7 +216,7 @@ public class NcipherSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements 
                     // Load existing keystore data.
                     final Pair<NcipherKeyStoreData, KeyStore> ks = bytesToKeyStore(bytes);
                     this.keystore = ks.right;
-                    keystoreVersion = dbVersion;
+                    keystoreVersion = keystoreFile.getVersion();
                 } else {
                     // No existing keystore data present -- will need to create a new one.
                     // Begin a write transaction to create some (or to use existing in the unlikely event another node created some in the meantime).
@@ -243,6 +244,8 @@ public class NcipherSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements 
                     });
                     keystoreVersion = updated.getVersion();
                 }
+            } catch (FindException e) {
+                throw new KeyStoreException("Unable to load hardware keystore data from database for keystore named " + name + ": " + ExceptionUtils.getMessage(e), e);
             } catch (final UpdateException e) {
                 throw new KeyStoreException("Unable to initialize hardware keystore data in database for keystore named " + name + ": " + ExceptionUtils.getMessage(e), e);
             }

@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.jwt.server;
 
 import com.l7tech.common.TestKeys;
+import com.l7tech.common.io.CertUtils;
 import com.l7tech.external.assertions.jwt.CreateJsonWebKeyAssertion;
 import com.l7tech.external.assertions.jwt.JwkKeyInfo;
 import com.l7tech.gateway.common.audit.AssertionMessages;
@@ -14,10 +15,10 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.security.cert.TestCertificateGenerator;
-import com.l7tech.server.ApplicationContexts;
-import com.l7tech.server.DefaultKey;
+import com.l7tech.server.*;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.test.BugId;
 import com.l7tech.util.CollectionUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jose4j.jwk.Use;
@@ -265,7 +266,7 @@ public class ServerCreateJsonWebKeyAssertionTest {
     }
 
     @Test
-    public void test_KeyIdNotFound_FailWithAudit10841() throws Exception {
+    public void test_KeyIdNotFound_FailWithAudit10802() throws Exception {
         setupFindExceptionMock();
         PolicyEnforcementContext context = getContext();
         CreateJsonWebKeyAssertion ass = createAssertion("keyId", publicKeyUses.get(0));
@@ -278,7 +279,7 @@ public class ServerCreateJsonWebKeyAssertionTest {
         assertEquals(EMPTY_JWKS, jwks);
 
         assertEquals(1, testAudit.getAuditCount());
-        assertTrue(testAudit.isAuditPresentWithParameters(AssertionMessages.JWT_JWK_NOT_FOUND, KEY_ALIAS));
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.JWT_PRIVATE_KEY_NOT_FOUND));
     }
 
     @Test
@@ -298,17 +299,31 @@ public class ServerCreateJsonWebKeyAssertionTest {
         assertTrue(testAudit.isAuditPresentWithParameters(AssertionMessages.JWT_KEYSTORE_ERROR));
     }
 
+    public static final String EC_sect163k1_CERT_X509_B64 =
+            "MIIBYzCCASGgAwIBAgIJANwhLBsO1WFOMAkGByqGSM49BAEwHDEaMBgGA1UEAwwRdGVzdF9lY19z" +
+            "ZWN0MTYzazEwHhcNMTgwNTA0MTgyNDUxWhcNNDMwNDI4MTgyNDUxWjAcMRowGAYDVQQDDBF0ZXN0" +
+            "X2VjX3NlY3QxNjNrMTBAMBAGByqGSM49AgEGBSuBBAABAywABAYkMc1YV76cnQxQliPEkrD0sA8E" +
+            "eAP+zauavYxp7gak9EQuvFvKNyXJx6NmMGQwDgYDVR0PAQH/BAQDAgXgMBIGA1UdJQEB/wQIMAYG" +
+            "BFUdJQAwHQYDVR0OBBYEFFd72M/5j9yQBdSSn2hrKcnFTbFhMB8GA1UdIwQYMBaAFFd72M/5j9yQ" +
+            "BdSSn2hrKcnFTbFhMAkGByqGSM49BAEDMQAwLgIVA0TOZBUB+RU+JWM8vVLcDCp3mmNKAhUBjJXj" +
+            "jXsfr2oan8S7RAxOI3r4XMg=";
+
+    @BugId("SSG-10594")
     @Test
     public void test_KeyTypeNotSupported_FailWithAudit10805() throws Exception {
+        SsgKeyEntry unSupportedKey =  mock(SsgKeyEntry.class);
+        X509Certificate cert = CertUtils.decodeFromPEM(EC_sect163k1_CERT_X509_B64 ,false);
+        when(unSupportedKey.getPublic()).thenReturn(cert.getPublicKey());
+        when(unSupportedKey.getCertificateChain()).thenReturn(new X509Certificate[]{cert});
+        when(unSupportedKey.getCertificate()).thenReturn(cert);
+        when(defaultKey.lookupKeyByKeyAlias(any(String.class), any(Goid.class))).thenReturn(unSupportedKey);
+
         PolicyEnforcementContext context = getContext();
         CreateJsonWebKeyAssertion ass = createAssertion("keyId", publicKeyUses.get(0));
 
         ServerCreateJsonWebKeyAssertion sass = createServerAssertion(ass);
         AssertionStatus status = sass.checkRequest(context);
-        Assert.assertEquals(AssertionStatus.NONE, status);
-
-        String jwks = (String) context.getVariable("result");
-        assertEquals(EMPTY_JWKS, jwks);
+        Assert.assertEquals(AssertionStatus.FAILED, status);
 
         assertEquals(1, testAudit.getAuditCount());
         assertTrue(testAudit.isAuditPresentWithParameters(AssertionMessages.JWT_JOSE_ERROR, "Unsupported Key Type"));
@@ -324,7 +339,7 @@ public class ServerCreateJsonWebKeyAssertionTest {
 
         ApplicationContexts.inject(sass,
                 CollectionUtils.<String, Object>mapBuilder()
-                        .put("defaultKey", defaultKey)
+                        .put("defaultKeyCache", new DefaultKeyCacheImpl(defaultKey))
                         .put("auditFactory", testAudit.factory())
                         .map(),
                 false);

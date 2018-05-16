@@ -92,7 +92,7 @@ public class SsgKeyStoreManagerImpl implements SsgKeyStoreManager, InitializingB
             throw new IllegalStateException(msg);
         }
 
-        List<SsgKeyFinder> list = new ArrayList<SsgKeyFinder>();
+        final List<SsgKeyFinder> list = new ArrayList<>();
         Collection<KeystoreFile> dbFiles = keystoreFileManager.findAll();
 
         if (dbFiles.isEmpty()) {

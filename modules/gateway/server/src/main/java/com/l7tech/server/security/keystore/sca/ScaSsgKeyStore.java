@@ -99,14 +99,14 @@ public class ScaSsgKeyStore extends JdkKeyStoreBackedSsgKeyStore implements SsgK
 
     @Override
     protected synchronized KeyStore keyStore() throws KeyStoreException {
-        if (keystore == null || System.currentTimeMillis() - lastLoaded > refreshTime) {
+        if (keystore == null || System.currentTimeMillis() - lastLoaded > getRefreshTime()) {
             try {
-                KeystoreFile keystoreFile = kem.findByPrimaryKey(getGoid());
-                int dbVersion = keystoreFile.getVersion();
+                final int dbVersion = kem.getVersion(getGoid());
                 if (keystore != null && keystoreVersion == dbVersion) {
                     // No changes since last time we checked.  Just use the one we've got.
                     return keystore;
                 }
+                final KeystoreFile keystoreFile = kem.findByPrimaryKey(getGoid());
 
                 byte[] bytes = keystoreFile.getDatabytes();
                 if (bytes != null && bytes.length > 0 && !keystoreFile.getFormat().equals(DB_FORMAT))

@@ -7,9 +7,7 @@ import com.l7tech.gateway.common.audit.TestAudit;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.variable.NoSuchVariableException;
-import com.l7tech.server.ApplicationContexts;
-import com.l7tech.server.DefaultKey;
-import com.l7tech.server.TestDefaultKey;
+import com.l7tech.server.*;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
@@ -529,14 +527,14 @@ public class ServerDecodeJsonWebTokenAssertionTest {
 
         assertion.setTargetVariablePrefix("result");
 
-        final DefaultKey defaultKey = new TestDefaultKey();
+        final DefaultKeyCache defaultKey = new DefaultKeyCacheImpl(new TestDefaultKey());
 
         ServerDecodeJsonWebTokenAssertion sass = new ServerDecodeJsonWebTokenAssertion(assertion);
 
         TestAudit testAudit = new TestAudit();
 
         HashMap<String, Object> beanMap = new HashMap<>();
-        beanMap.put("defaultKey", defaultKey);
+        beanMap.put("defaultKeyCache", defaultKey);
         beanMap.put("auditFactory", testAudit.factory());
 
         ApplicationContexts.inject(sass, beanMap);

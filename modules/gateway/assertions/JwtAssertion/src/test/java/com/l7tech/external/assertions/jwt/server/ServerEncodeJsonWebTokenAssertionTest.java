@@ -9,6 +9,7 @@ import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.ApplicationContexts;
+import com.l7tech.server.DefaultKeyCacheImpl;
 import com.l7tech.server.TestDefaultKey;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
@@ -791,7 +792,7 @@ public class ServerEncodeJsonWebTokenAssertionTest {
         TestAudit testAudit = new TestAudit();
 
         HashMap<String, Object> beanMap = new HashMap<>();
-        beanMap.put("defaultKey", new TestDefaultKey());
+        beanMap.put("defaultKeyCache", new DefaultKeyCacheImpl(new TestDefaultKey()));
         beanMap.put("auditFactory", testAudit.factory());
 
         ApplicationContexts.inject(sass, beanMap);
@@ -824,7 +825,7 @@ public class ServerEncodeJsonWebTokenAssertionTest {
         TestAudit testAudit = new TestAudit();
 
         HashMap<String, Object> beanMap = new HashMap<>();
-        beanMap.put("defaultKey", new TestDefaultKey());
+        beanMap.put("defaultKey", new DefaultKeyCacheImpl(new TestDefaultKey()));
         beanMap.put("auditFactory", testAudit.factory());
 
         ApplicationContexts.inject(sass, beanMap);
@@ -936,7 +937,7 @@ public class ServerEncodeJsonWebTokenAssertionTest {
         TestAudit testAudit = new TestAudit();
 
         HashMap<String, Object> beanMap = new HashMap<>();
-        beanMap.put("defaultKey", new TestDefaultKey());
+        beanMap.put("defaultKey", new DefaultKeyCacheImpl(new TestDefaultKey()));
         beanMap.put("auditFactory", testAudit.factory());
 
         ApplicationContexts.inject(sass, beanMap);
@@ -1031,7 +1032,7 @@ public class ServerEncodeJsonWebTokenAssertionTest {
         TestAudit testAudit = new TestAudit();
 
         HashMap<String, Object> beanMap = new HashMap<>();
-        beanMap.put("defaultKey", new TestDefaultKey());
+        beanMap.put("defaultKey", new DefaultKeyCacheImpl(new TestDefaultKey()));
         beanMap.put("auditFactory", testAudit.factory());
 
         ApplicationContexts.inject(sass, beanMap);
