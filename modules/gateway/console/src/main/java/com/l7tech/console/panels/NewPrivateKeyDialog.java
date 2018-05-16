@@ -6,6 +6,7 @@ import com.l7tech.console.util.SecurityZoneWidget;
 import com.l7tech.gateway.common.AsyncAdminMethods;
 import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.keystore.KeystoreFileEntityHeader;
+import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.gateway.common.security.keystore.SsgKeyMetadata;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gui.NumberField;
@@ -14,6 +15,7 @@ import com.l7tech.gui.util.Utilities;
 import com.l7tech.gui.widgets.PleaseWaitDialog;
 import com.l7tech.gui.widgets.SquigglyTextField;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.ExceptionUtils;
 
 import javax.security.auth.x500.X500Principal;
@@ -28,12 +30,15 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -221,7 +226,7 @@ public class  NewPrivateKeyDialog extends JDialog {
                 String dn = dnField.getText();
                 try {
                     new X500Principal(dn);
-                    return null;
+                    return isExistingSubjectDn(dn.trim()) ? "Subject DN already exists in the Keystore." : null;
                 } catch (IllegalArgumentException e) {
                     return "Bad DN: " + ExceptionUtils.getMessage(e);
                 }
@@ -444,5 +449,31 @@ public class  NewPrivateKeyDialog extends JDialog {
         aliasField = new SquigglyTextField();
         dnField = new SquigglyTextField();
         expiryDaysField = new SquigglyTextField();
+    }
+
+    /**
+     * Checks if the Keystore contains any Certificate (including the X509 Certificates in certificate chain of any
+     * of the Keys) with this Subject DN.
+     * @param subjectDn
+     * @return true if same Subject DN found, otherwise returns false.
+     */
+    private boolean isExistingSubjectDn(final String subjectDn) {
+        try {
+            final List<SsgKeyEntry> keys = getCertAdmin().findAllKeys(keystoreInfo.getGoid(), true);
+            for (SsgKeyEntry key : keys) {
+                final X509Certificate[] certificateChain = key.getCertificateChain();
+                for (X509Certificate certificate : certificateChain) {
+                    final String existingSubjectDn = certificate.getSubjectDN().getName().trim();
+                    if(existingSubjectDn.equalsIgnoreCase(subjectDn)) {
+                        return true;
+                    }
+                }
+            }
+        } catch (CertificateException | FindException | IOException e) {
+            String logMsg = "Exception while checking keystore for any certificate with SubjectDN " + subjectDn + ": "  +
+                    ExceptionUtils.getMessage(e);
+            logger.log(Level.WARNING, logMsg , e);
+        }
+        return false;
     }
 }

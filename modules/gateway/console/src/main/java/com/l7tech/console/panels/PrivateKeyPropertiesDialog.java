@@ -24,7 +24,6 @@ import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.FileUtils;
 import org.apache.commons.lang.ObjectUtils;
-import org.jetbrains.annotations.NotNull;
 
 import javax.security.auth.x500.X500Principal;
 import javax.swing.*;
@@ -37,7 +36,9 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.security.KeyStoreException;
 import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.logging.Level;
@@ -818,15 +819,20 @@ public class PrivateKeyPropertiesDialog extends JDialog {
         }
 
         boolean isAuditViewer = subject.isDesignatedAs(SpecialKeyType.AUDIT_VIEWER);
-        String confirmationDialogMessage =
-            "<html><center>This will delete this key and cannot be undone. " +
-                    (isAuditViewer ? "Encrypted audit records will no longer be viewable. " : "") +
-                    "The change will not fully take effect until all cluster nodes have been restarted.</center><p>" +
-                "<center>Really delete the private key " + alias + " (" + subjectDn + ")?</center></html>";
+
+        final StringBuilder confirmationDialogMessage =
+            new StringBuilder("<html><center>This will delete this key and cannot be undone. ")
+                    .append(isAuditViewer ? "Encrypted audit records will no longer be viewable. " : "")
+                    .append("The change will not fully take effect until all cluster nodes have been restarted.</center>");
+
+        confirmationDialogMessage.append(createMessageForKeysSignedBySubject(subject));
+
+        confirmationDialogMessage.append("<p><center>Really delete the private key ").append(alias).append(" (")
+                .append(subjectDn).append(")").append("?</center></html>");
 
         DialogDisplayer.showSafeConfirmDialog(
             this,
-            confirmationDialogMessage,
+            confirmationDialogMessage.toString(),
             confirmationDialogTitle,
             JOptionPane.OK_CANCEL_OPTION,
             JOptionPane.WARNING_MESSAGE,
@@ -850,5 +856,57 @@ public class PrivateKeyPropertiesDialog extends JDialog {
     private void showErrorMessage(String title, String msg, Throwable e) {
         logger.log(Level.WARNING, msg, e);
         DialogDisplayer.showMessageDialog(this, msg, title, JOptionPane.ERROR_MESSAGE, null);
+    }
+
+    /**
+     * Gets the list of all the Keys signed by the subject to be deleted.
+     * @param subject
+     * @return list of keys signed by the subject
+     */
+    private List<SsgKeyEntry> getKeysSignedBySubject(final PrivateKeyManagerWindow.KeyTableRow subject) {
+        try {
+            final List<SsgKeyEntry> signedKeyEntries = new ArrayList<>();
+            final SsgKeyEntry toBeDeletedKeyEntry = getTrustedCertAdmin().findKeyEntry(subject.getAlias(), subject
+                    .getKeystore().getGoid());
+            final X500Principal toBeDeletedSubjectPrincipal = toBeDeletedKeyEntry.getCertificate().getSubjectX500Principal();
+            final List<SsgKeyEntry> keys = getTrustedCertAdmin().findAllKeys(this.subject.getKeystore().getGoid(), true);
+
+            for (SsgKeyEntry key : keys) {
+                final X509Certificate[] certificateChain = key.getCertificateChain();
+                for (X509Certificate certificate : certificateChain) {
+                    final X500Principal subjectPrincipalInChain = certificate.getSubjectX500Principal();
+                    if(!toBeDeletedKeyEntry.getAlias().equals(key.getAlias()) && toBeDeletedSubjectPrincipal.equals
+                            (subjectPrincipalInChain)) {
+                        signedKeyEntries.add(key);
+                        break;
+                    }
+                }
+            }
+            return signedKeyEntries;
+        } catch (CertificateException | FindException | IOException | KeyStoreException e) {
+            final String logMsg = "Exception while checking keys signed by " + subject.getAlias() + ": " + ExceptionUtils
+                    .getMessage(e);
+            logger.log(Level.WARNING, logMsg , e);
+        }
+        return Collections.emptyList();
+    }
+
+    /**
+     * Creates the message containing list of all the keys signed by the subject to be delete to display in
+     * confirmation dialog.
+     * @param subject
+     * @return message containing list of key to display in the dialog.
+     */
+    private String createMessageForKeysSignedBySubject(final PrivateKeyManagerWindow.KeyTableRow subject) {
+        final List<SsgKeyEntry> keysSignedByThisPrivateKey = getKeysSignedBySubject(subject);
+        final StringBuilder message = new StringBuilder();
+        if(!keysSignedByThisPrivateKey.isEmpty()) {
+            message.append("<p><br/>This private key was used to sign the following keys: </p>");
+            for (SsgKeyEntry keyEntry : keysSignedByThisPrivateKey) {
+                message.append("<p>").append(keyEntry.getAlias()).append(" (").append(keyEntry.getCertificate()
+                        .getSubjectX500Principal().getName()).append(")</p>");
+            }
+        }
+        return message.toString();
     }
 }
