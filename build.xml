@@ -1684,6 +1684,7 @@ ${versionfilecontent}
             <string lastmodified="1970" value="node.db.config.main.name = ${deploy.db.name}"/>
             <string lastmodified="1970" value="node.db.config.main.user = ${deploy.db.username}"/>
             <string lastmodified="1970" value="node.db.config.main.pass = ${deploy.db.password}"/>
+            <string lastmodified="1970" value="node.db.type = derby"/>
             <string lastmodified="1970" value="node.cluster.pass = ${deploy.cluster.password}"/>
             <string lastmodified="1970" value="node.java.path = ${java.home}"/>
         </concat>
@@ -1703,7 +1704,6 @@ ${versionfilecontent}
         <echo level="info">Creating service files</echo>
         <mkdir dir="${dev.deploy.ssg.dir}/node/default/etc/bootstrap/services"/>
         <touch file="${dev.deploy.ssg.dir}/node/default/etc/bootstrap/services/restman"/>
-        <touch file="${dev.deploy.ssg.dir}/node/default/etc/bootstrap/services/wsman"/>
 
         <echo level="info">Finished copying gateway bootstrap files</echo>
     </target>
@@ -1732,7 +1732,7 @@ ${versionfilecontent}
     <!--
       Deploy SSG for development
     -->
-    <target name="deploy" description="Deploy a development SSG (run with ./run.sh gateway)" depends="skiptests, package.gateway.ifrequired, deployconfig">
+    <target name="deploy" description="Deploy a development SSG (run with ./run.sh gateway)" depends="skiptests, package.gateway.ifrequired, deployconfig, bootstrap">
         <!-- Remove any pack200 files if present, otherwise these can be out of date and cause problems running the SSM applet -->
         <delete>
             <fileset dir="${build.dir}/managerapplet/" includes="**/*.pack.gz"/>
@@ -1742,7 +1742,7 @@ ${versionfilecontent}
         <install-ssg-software dir="${dev.deploy.ssg.dir}"/>
     </target>
 
-    <target name="deploy-nocheck" description="Deploy a development SSG, skipping the build (useful to deploy partial rebuild)" depends="deployconfig, package.manager.work, package.gateway.work, package.modules.work">
+    <target name="deploy-nocheck" description="Deploy a development SSG, skipping the build (useful to deploy partial rebuild)" depends="deployconfig, package.manager.work, package.gateway.work, package.modules.work, bootstrap">
         <!-- Remove any pack200 files if present, otherwise these can be out of date and cause problems running the SSM applet -->
         <delete>
             <fileset dir="${build.dir}/managerapplet/" includes="**/*.pack.gz"/>
