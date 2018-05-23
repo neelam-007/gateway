@@ -16,9 +16,11 @@ import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.boot.GatewayPermissiveLoggingSecurityManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
+import com.l7tech.test.BugId;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.IOUtils;
+import io.swagger.models.SecurityRequirement;
 import io.swagger.models.Swagger;
 import io.swagger.models.auth.AuthorizationValue;
 import io.swagger.parser.SwaggerParser;
@@ -35,13 +37,15 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import javax.inject.Inject;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import static com.l7tech.external.assertions.swagger.server.ServerSwaggerAssertion.PathDefinition;
 import static com.l7tech.external.assertions.swagger.server.ServerSwaggerAssertion.PathResolver;
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.when;
 
 /**
  * Test the SwaggerAssertion.
@@ -70,6 +74,8 @@ public class ServerSwaggerAssertionTest {
     private static String testDocument;
     private static Swagger testModel;
     private static PathResolver testModelPathResolver;
+    private static Swagger testModelWithRootLevelSecurity;
+    private static PathResolver testModelWithRootLevelSecurityPathResolver;
 
     @BeforeClass
     public static void init() throws Exception {
@@ -81,6 +87,16 @@ public class ServerSwaggerAssertionTest {
                 .getResourceAsStream("petstore_swagger.json")), Charsets.UTF8);
         testModel = parser.parse(testDocument, authorizationValues);
         testModelPathResolver = new PathResolver(testModel);
+
+        /**
+         * A custom Swagger model with security at root level
+         * as modifying Swagger document or the existing testModel will affect other test cases.
+         */
+        testModelWithRootLevelSecurity = parser.parse(testDocument, authorizationValues);
+        SecurityRequirement requirement = new SecurityRequirement();
+        requirement.setRequirements("basic_auth", new ArrayList<>(Arrays.asList()));
+        testModelWithRootLevelSecurity.setSecurity(new ArrayList<>(Arrays.asList(requirement)));
+        testModelWithRootLevelSecurityPathResolver = new PathResolver(testModelWithRootLevelSecurity);
     }
 
     @Before
@@ -751,6 +767,73 @@ public class ServerSwaggerAssertionTest {
         assertFalse(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri));
         assertEquals(1, testAudit.getAuditCount());
     }
+
+    @BugId("DE342980")
+    @Test
+    public void testValidateSecurityWithEmptySecurityInOperationButNonEmptyAtRootLevel() throws Exception {
+        //using this API as it has empty security field (at method level) in the swagger document (refer: petstore_swagger.json)
+        String requestUri = "/pet/findByTags";
+
+        HttpRequestKnob mockRequestKnob = Mockito.mock(HttpRequestKnob.class);
+
+        assertion.setValidatePath(true);
+        assertion.setValidateMethod(true);
+        assertion.setValidateScheme(true);
+        assertion.setRequireSecurityCredentials(true);
+
+        fixture = createServer(assertion);
+
+        when(mockRequestKnob.getMethod()).thenReturn(HttpMethod.GET);
+        when(mockRequestKnob.isSecure()).thenReturn(false);
+
+        assertTrue(fixture.validate(testModelWithRootLevelSecurity, testModelWithRootLevelSecurityPathResolver, mockRequestKnob, requestUri));
+        assertEquals(0, testAudit.getAuditCount());
+    }
+
+    @BugId("DE342980")
+    @Test
+    public void testValidateSecurityWithNoSecurityInOperationButNonEmptyAtRootLevel_BasicAuthentication() throws Exception {
+        //using this API as it has no security field (at method level) in the swagger document (refer: petstore_swagger.json)
+        String requestUri = "/store/order/2";
+
+        HttpRequestKnob mockRequestKnob = Mockito.mock(HttpRequestKnob.class);
+
+        assertion.setValidatePath(true);
+        assertion.setValidateMethod(true);
+        assertion.setValidateScheme(true);
+        assertion.setRequireSecurityCredentials(true);
+
+        fixture = createServer(assertion);
+
+        when(mockRequestKnob.getMethod()).thenReturn(HttpMethod.GET);
+        when(mockRequestKnob.isSecure()).thenReturn(false);
+        when(mockRequestKnob.getHeaderValues("authorization")).thenReturn(new String[]{BASIC_TOKEN});
+
+        assertTrue(fixture.validate(testModelWithRootLevelSecurity, testModelWithRootLevelSecurityPathResolver, mockRequestKnob, requestUri));
+        assertEquals(0, testAudit.getAuditCount());
+    }
+
+    @BugId("DE342980")
+    @Test
+    public void testValidateSecurityWithNoSecurityInOperationButNonEmptyAtRootLevel_MissingBasicAuthentication() throws Exception {
+        //using this API as it has no security field (at method level) in the swagger document (refer: petstore_swagger.json)
+        String requestUri = "/store/order/2";
+
+        HttpRequestKnob mockRequestKnob = Mockito.mock(HttpRequestKnob.class);
+
+        assertion.setValidatePath(true);
+        assertion.setValidateMethod(true);
+        assertion.setValidateScheme(true);
+        assertion.setRequireSecurityCredentials(true);
+
+        fixture = createServer(assertion);
+
+        when(mockRequestKnob.getMethod()).thenReturn(HttpMethod.GET);
+        when(mockRequestKnob.isSecure()).thenReturn(false);
+
+        assertFalse(fixture.validate(testModelWithRootLevelSecurity, testModelWithRootLevelSecurityPathResolver, mockRequestKnob, requestUri));
+        assertEquals(1, testAudit.getAuditCount());
+    }
     // PATH DEFINITION RESOLUTION HELPER CLASS TESTS
 
     @Test
@@ -838,4 +921,5 @@ public class ServerSwaggerAssertionTest {
 
         return request;
     }
+
 }

@@ -22,13 +22,8 @@ import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
-import io.swagger.models.Operation;
-import io.swagger.models.Path;
-import io.swagger.models.Scheme;
-import io.swagger.models.Swagger;
-import io.swagger.models.auth.AuthorizationValue;
+import io.swagger.models.*;
 import io.swagger.models.auth.SecuritySchemeDefinition;
-import io.swagger.parser.SwaggerParser;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.web.util.UriTemplate;
 
@@ -37,6 +32,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
 
 /**
  * Server side implementation of the SwaggerAssertion.
@@ -211,8 +207,7 @@ public class ServerSwaggerAssertion extends AbstractServerAssertion<SwaggerAsser
                 }
 
                 if (assertion.isRequireSecurityCredentials()) {
-                    Map<String, SecuritySchemeDefinition> securityDefinitions = model.getSecurityDefinitions();
-                    return validateRequestSecurity(httpRequestKnob, operation, securityDefinitions, requestPathDefinition.path);
+                    return validateRequestSecurity(httpRequestKnob, operation, requestPathDefinition.path, model);
                 }
             }
         }
@@ -220,11 +215,13 @@ public class ServerSwaggerAssertion extends AbstractServerAssertion<SwaggerAsser
         return true;
     }
 
-    private boolean validateRequestSecurity(HttpRequestKnob httpRequestKnob, Operation operation, Map<String, SecuritySchemeDefinition> securityDefinitions, String path) {
-        if (securityDefinitions != null) {
-            List<Map<String, List<String>>> securityRequirementObjects = operation.getSecurity();
+    private boolean validateRequestSecurity(HttpRequestKnob httpRequestKnob, Operation operation, String path, Swagger model) {
+        final Map<String, SecuritySchemeDefinition> securityDefinitions = model.getSecurityDefinitions();
 
-            if ( securityRequirementObjects == null || securityRequirementObjects.isEmpty() ) return true;  /* No Security Requirements Object = no security required */
+        if (securityDefinitions != null) {
+            final List<Map<String, List<String>>> securityRequirementObjects = getSecurityRequirements(operation, model);
+
+            if (securityRequirementObjects == null || securityRequirementObjects.isEmpty()) return true;  /* No Security Requirements Object = no security required */
 
             for (Map<String, List<String>> securityRequirementObject : securityRequirementObjects) {
                 boolean conjunctValid = true;
@@ -256,6 +253,29 @@ public class ServerSwaggerAssertion extends AbstractServerAssertion<SwaggerAsser
             //security is not required (no securityDefinitions)
             return true;
         }
+    }
+
+    /**
+     * DE342980 : Validate against Swagger Assertion does not check for authentication when security
+     * is specified at root level and not at operation level.
+     * <p>
+     * operation.getSecurity() is the security at operation level.
+     * model.getSecurity() is the security at root level.
+     * <p>
+     * According to Swagger specification, operation level security(if specified) overrides the root level security.
+     * But, when operation level security is not specified(i.e. null), root level security takes effect.
+     */
+    private List<Map<String, List<String>>> getSecurityRequirements(final Operation operation, final Swagger model) {
+        List<Map<String, List<String>>> securityRequirementObjects = operation.getSecurity();
+
+        if (securityRequirementObjects == null) {
+            final List<SecurityRequirement> rootLevelSecurityRequirements = model.getSecurity();
+            if (rootLevelSecurityRequirements != null) {
+                securityRequirementObjects = rootLevelSecurityRequirements.stream().map(SecurityRequirement::getRequirements).collect(Collectors.toList());
+            }
+        }
+
+        return securityRequirementObjects;
     }
 
     private String getServiceRoutingUri(PublishedService service) {
