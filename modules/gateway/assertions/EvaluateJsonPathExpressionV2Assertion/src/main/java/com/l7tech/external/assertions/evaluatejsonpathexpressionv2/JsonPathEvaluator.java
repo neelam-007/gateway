@@ -104,7 +104,7 @@ public class JsonPathEvaluator {
         } else if (obj instanceof List) {
             return JSONArray.toJSONString((List)obj);
         } else {
-            return obj.toString();
+            return obj != null ? obj.toString() : null;
         }
     }
 }

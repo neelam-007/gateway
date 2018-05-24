@@ -120,6 +120,15 @@ public class ServerEvaluateJsonPathExpressionAssertionTest {
             "    \"members\": []\n" +
             "  }\n" +
             "}";
+    private static final String TEST_JSON_WITH_NULL_ATTRIBUTE = "{\n" +
+            "  \"book\": {\n" +
+            "    \"category\": \"fiction\",\n" +
+            "    \"author\": \"J. R. R. Tolkien\",\n" +
+            "    \"title\": \"The Lord of the Rings\",\n" +
+            "    \"isbn\": \"0-395-19395-8\",\n" +
+            "    \"price\": null\n" +
+            "  }\n" +
+            "}";
 
     private EvaluateJsonPathExpressionV2Assertion assertion;
     private PolicyEnforcementContext pec;
@@ -499,6 +508,25 @@ public class ServerEvaluateJsonPathExpressionAssertionTest {
         } catch (Exception e) {
             Assert.fail(MESSAGE_TEST_FAILED + e.getMessage());
         }
+    }
+
+    @BugId("DE347516")
+    @Test
+    public void testEvaluateJsonPathExpressionV2_NULL_Result() throws Exception {
+        assertion.setEvaluator(EVALUATOR_JSONPATH);
+        assertion.setExpression("$.book.price");
+
+        request.initialize(new ByteArrayStashManager(), ContentTypeHeader.APPLICATION_JSON,
+                new ByteArrayInputStream(TEST_JSON_WITH_NULL_ATTRIBUTE.getBytes()));
+
+        final AssertionStatus status = serverAssertion.checkRequest(pec);
+        Assert.assertEquals(AssertionStatus.NONE, status);
+        Assert.assertEquals(true, pec.getVariable(VAR_NAME_JSONPATH_FOUND));
+        Assert.assertEquals(1, pec.getVariable(VAR_NAME_JSONPATH_COUNT));
+
+        /* jsonPath.result throws NoSuchVariableException as it is NOT set if the value is NULL.
+        Check for jsonPath.results instead. */
+        Assert.assertEquals(null, ((String[]) pec.getVariable(VAR_NAME_JSONPATH_RESULTS))[0]);
     }
 
     private void testJsonPathSingleStringResult(String evaluator, String expectedResult) {
