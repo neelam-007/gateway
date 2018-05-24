@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsp:Policy xmlns:L7p="http://www.layer7tech.com/ws/policy" xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy">
+    <wsp:All wsp:Usage="Required">
+        <L7p:HttpBasic/>
+        <L7p:Include>
+            <L7p:PolicyGuid stringValue="PolicyFragment01_guid"/>
+        </L7p:Include>
+    </wsp:All>
+</wsp:Policy>

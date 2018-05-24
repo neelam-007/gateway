@@ -23,6 +23,7 @@ build
 *.iml
 UneasyRooster.ipr
 *.iws
+.ideaDataSources/
 
 # Application specific
 *.env
