@@ -8,6 +8,7 @@
 ./**/*.ipr
 idea-classes/
 .shelf/
+.rebel.xml.bak
 
 # Build directories/files
 build
