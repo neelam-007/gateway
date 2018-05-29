@@ -51,6 +51,7 @@ public abstract class JceProvider {
     public static final String RSA_ENGINE = "com.l7tech.security.prov.rsa.RsaJceProviderEngine";
     public static final String GENERIC_ENGINE = "com.l7tech.security.prov.generic.GenericJceProviderEngine";
     public static final String CRYPTOCOMPLY_ENGINE = "com.l7tech.security.prov.ccj.CryptoComplyJceProviderEngine";
+    public static final String DEFAULT_ENGINE = "com.l7tech.security.prov.defaultprov.DefaultJceProviderEngine";
 
     // Old driver class names
     private static final String OLD_BC_ENGINE = "com.l7tech.common.security.prov.bc.BouncyCastleJceProviderEngine";
@@ -79,6 +80,7 @@ public abstract class JceProvider {
     static {
         Map<String,String> driverMap = new HashMap<String,String>();
         driverMap.put( OLD_BC_ENGINE, BC_ENGINE );
+        driverMap.put( CRYPTOCOMPLY_ENGINE, DEFAULT_ENGINE );
         driverMap.put( OLD_SUN_ENGINE, SUN_ENGINE );
         driverMap.put( OLD_PKCS11_ENGINE, PKCS11_ENGINE );
         DRIVER_MAP = Collections.unmodifiableMap(driverMap);
@@ -93,7 +95,7 @@ public abstract class JceProvider {
         put("rsa", RSA_ENGINE);
         put("ncipher", NCIPHER_ENGINE);
         put("generic", GENERIC_ENGINE);
-        put("ccj", CRYPTOCOMPLY_ENGINE);
+        put("ccj", DEFAULT_ENGINE);
     }};
 
     static String mapEngine( final String engineClass ) {
@@ -108,9 +110,6 @@ public abstract class JceProvider {
 
         return mappedClass;
     }
-
-    // Default driver
-    private static final String DEFAULT_ENGINE = CRYPTOCOMPLY_ENGINE;
 
     private static class Holder {
         private static final String ENGINE_NAME = getEngineClassname();

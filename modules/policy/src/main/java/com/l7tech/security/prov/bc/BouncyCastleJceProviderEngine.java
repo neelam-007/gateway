@@ -18,10 +18,13 @@ import java.security.spec.AlgorithmParameterSpec;
 import java.util.Arrays;
 
 /**
- * BouncyCastle-specific JCE provider engine.
+ * BouncyCastle-specific JCE provider engine used by DefaultJceProviderEngine in Non-FIPS mode or if user has
+ * overridden the default to BouncyCastle using com.l7tech.common.security.jceProviderEngineName or
+ * com.l7tech.common.security.jceProviderEngine System property.
  */
 public class BouncyCastleJceProviderEngine extends JceProvider {
-    protected final Provider PROVIDER = new BouncyCastleProvider();
+
+    private static final Provider PROVIDER = new BouncyCastleProvider();
 
     // A GCM IV full of zero bytes, for sanity checking IVs
     private static final byte[] ZERO_IV = new byte[12];
@@ -31,8 +34,13 @@ public class BouncyCastleJceProviderEngine extends JceProvider {
     }
 
     @Override
+    public boolean isFips140ModeEnabled() {
+        return false;
+    }
+
+    @Override
     public String getDisplayName() {
-        return PROVIDER.toString();
+        return PROVIDER.getName();
     }
 
     @Override
@@ -58,5 +66,9 @@ public class BouncyCastleJceProviderEngine extends JceProvider {
             throw new InvalidAlgorithmParameterException("IV in GCM spec does not match requested IV");
 
         return ret;
+    }
+
+    public static Provider getProvider() {
+        return PROVIDER;
     }
 }
