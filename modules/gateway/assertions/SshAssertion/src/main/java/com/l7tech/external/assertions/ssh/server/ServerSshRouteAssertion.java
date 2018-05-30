@@ -31,6 +31,7 @@ import com.l7tech.server.ssh.client.*;
 import com.l7tech.server.util.ThreadPoolBean;
 import com.l7tech.util.*;
 import com.l7tech.util.ThreadPool.ThreadPoolShutDownException;
+import com.l7tech.util.TimeUnit;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
@@ -41,14 +42,8 @@ import java.io.IOException;
 import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.text.ParseException;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
@@ -84,6 +79,8 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
 
     @Inject
     private SshSessionPool sshSessionPool;
+
+    private static final Timer timer = new Timer();
 
     public static final String defaultCipherOrder = "aes128-ctr, aes128-cbc, 3des-cbc, blowfish-cbc, aes192-ctr, aes192-cbc, aes256-ctr, aes256-cbc";
     public static final String defaultMacOrder = "hmac-md5,hmac-sha1,hmac-sha2-256,hmac-sha1-96,hmac-md5-96";
@@ -418,7 +415,7 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
         return true;
     }
 
-    private boolean performGetCommand(final SshSession session, final FileTransferClient sshClient, final String fileName, final String directory, PolicyEnforcementContext context, Map<String, ?> variables) throws IOException, ThreadPoolShutDownException, InterruptedException, NoSuchVariableException {
+    private boolean performGetCommand(final SshSession session, final FileTransferClient sshClient, final String fileName, final String directory, PolicyEnforcementContext context, Map<String, ?> variables) throws Exception {
         // Use this to wait till the input stream to the file is properly retrieved and any additional data is retrieved (file size)
         final CountDownLatch gotData = new CountDownLatch(1);
         //This will hold any exceptions that may have been thrown attempting to retrieve the input stream to the file
@@ -453,6 +450,33 @@ public class ServerSshRouteAssertion extends ServerRoutingAssertion<SshRouteAsse
                     logger.log(Level.FINE, "SSH routing: Finished retrieving file: " + fileName + " in Session: " + session.getKey().toString());
                 }
             };
+
+            // start thread to monitor progress monitor, kill pipe if no progress for too long.  This indicates the response has been abandoned.
+            final long checkInterval = config.getLongProperty("sshRoutingInactiveTimeout", 10*1000);
+            timer.schedule(new TimerTask() {
+                long lastSize = fileSize.get();
+                @Override
+                public void run() {
+                    if(!sshClient.isConnected()) {
+                        cancel();
+                    } else if (fileSize.get() <= lastSize) {
+                        try {
+                            // break pipe
+                            logger.fine("Inactive file transfer stream. Closing.");
+                            pos.close();
+                        } catch (IOException e) {
+                            logger.warning("Error closing inactive file transfer stream.");
+                        } finally {
+                            cancel();
+                        }
+                    } else {
+                        logger.finest("File transfer stream still active");
+                        lastSize = fileSize.get();
+                    }
+                }
+            }, checkInterval, checkInterval);
+
+
 
             // start download task. This will run in the background after this assertion completes until the entire file has been received.
             startSshResponseTask(sshClient, new Functions.NullaryVoidThrows<Exception>() {
