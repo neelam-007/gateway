@@ -35,7 +35,9 @@
         <dependency name="ComparisonAssertion" rev="latest.integration" conf="module"/>
         <dependency name="SnmpTrapAssertion" rev="latest.integration" conf="module"/>
         <dependency name="EmailAssertion" rev="latest.integration" conf="module"/>
-        <dependency name="EchoRoutingAssertion" rev="latest.integration" conf="module"/>
+        <dependency org="com.ca.apim.gateway.extension" name="EchoRoutingAssertion" rev="latest.integration" conf="module">
+            <artifact name="EchoRoutingAssertion" type="aar"/>
+        </dependency>
         <dependency name="FtpRoutingAssertion" rev="latest.integration" conf="module"/>
         <dependency name="FtpCredentialAssertion" rev="latest.integration" conf="module"/>
         <dependency name="IdentityAttributesAssertion" rev="latest.integration" conf="module"/>

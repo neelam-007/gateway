@@ -9,6 +9,7 @@
 idea-classes/
 .shelf/
 .rebel.xml.bak
+*.log
 
 # Build directories/files
 build
