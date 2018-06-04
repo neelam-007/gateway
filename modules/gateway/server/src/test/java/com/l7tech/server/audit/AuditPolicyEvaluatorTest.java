@@ -12,6 +12,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.TrueAssertion;
 import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.server.EntitiesProcessedInBatch;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.ServerConfigStub;
 import com.l7tech.server.TestLicenseManager;
@@ -143,15 +144,17 @@ public class AuditPolicyEvaluatorTest {
     PolicyManagerStub policyManager = new PolicyManagerStub(new Policy[] { testPolicy });
 
     /** A PolicyCache that always returns the fake policy, with a ServerAssertion instrumented to count its invocations. */
-    PolicyCache policyCache = new PolicyCacheImpl(null, new ServerPolicyFactory(new TestLicenseManager(),new MockInjector()), new FolderCacheStub()) {
+    PolicyCache policyCache = new PolicyCacheImpl(null, new ServerPolicyFactory(new TestLicenseManager(),new MockInjector()), new FolderCacheStub(),
+            new EntitiesProcessedInBatch()) {
         {
             setPolicyManager(policyManager);
             setApplicationEventPublisher(new EventChannel());
+            setPolicyVersionManager(new PolicyVersionManagerStub());
             onApplicationEvent(new Started(this, Component.GATEWAY, "Test"));
         }
 
         @Override
-        protected ServerAssertion buildServerPolicy(Policy policy) throws ServerPolicyInstantiationException, ServerPolicyException, InvalidPolicyException {
+        protected ServerAssertion buildServerPolicy(Policy policy) throws ServerPolicyException, InvalidPolicyException {
             return new AbstractServerAssertion<TrueAssertion>(new TrueAssertion()) {
                 @Override
                 public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {

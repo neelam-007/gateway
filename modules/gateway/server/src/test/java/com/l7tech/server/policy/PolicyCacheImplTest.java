@@ -4,6 +4,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
+import com.l7tech.policy.PolicyVersion;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AuditDetailAssertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
@@ -12,6 +13,7 @@ import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.server.ApplicationContexts;
+import com.l7tech.server.EntitiesProcessedInBatch;
 import com.l7tech.server.PlatformTransactionManagerStub;
 import com.l7tech.server.event.EntityInvalidationEvent;
 import com.l7tech.server.folder.FolderCache;
@@ -69,6 +71,8 @@ public class PolicyCacheImplTest {
     private FolderCache folderCache;
     @Mock
     private PolicyManager policyManager;
+    @Mock
+    private PolicyVersionManager policyVersionManager;
     private PolicyCacheImpl policyCache;
     private ConfiguredGOIDGenerator goidGenerator;
 
@@ -79,12 +83,21 @@ public class PolicyCacheImplTest {
         ServerPolicyFactory serverPolicyFactory = context.getBean("policyFactory", ServerPolicyFactory.class);
 
         this.goidGenerator = new ConfiguredGOIDGenerator();
-        this.policyCache = new PolicyCacheImpl(platformTransactionManager, serverPolicyFactory, this.folderCache);
+        this.policyCache = new PolicyCacheImpl(platformTransactionManager, serverPolicyFactory, this.folderCache, new EntitiesProcessedInBatch());
         this.policyCache.setPolicyManager(this.policyManager);
+        this.policyCache.setPolicyVersionManager(this.policyVersionManager);
         this.policyCache.setApplicationEventPublisher(context);
 
         when(this.policyManager.findByPrimaryKey(any(Goid.class))).thenAnswer((Answer<Policy>) invocation -> this.policyMapById.get(invocation.getArgumentAt(0, Goid.class)));
         when(this.policyManager.findByGuid(any(String.class))).thenAnswer((Answer<Policy>) invocation -> this.policyMapByGuid.get(invocation.getArgumentAt(0, String.class)));
+        when(this.policyVersionManager.findActiveVersionForPolicy(any(Goid.class))).thenAnswer((Answer<PolicyVersion>) invocation -> {
+            PolicyVersion version = new PolicyVersion();
+            version.setPolicyGoid(invocation.getArgumentAt(0, Goid.class));
+            version.setOrdinal(this.policyMapById.get(version.getPolicyGoid()).getVersion());
+            return version;
+        });
+
+        this.policyCache = spy(this.policyCache);
     }
 
     @Test
@@ -95,6 +108,9 @@ public class PolicyCacheImplTest {
 
         ServerPolicyHandle serverPolicy = this.policyCache.getServerPolicy(policy);
         assertNotNull(serverPolicy);
+
+        // extra verification to ensure that the real update is called only the required number of times and for the correct objects
+        verifyUpdatePolicyNumberOfCalls(1, policy);
     }
 
     @Test
@@ -130,6 +146,11 @@ public class PolicyCacheImplTest {
 
         testIncludingPolicyFragments(includingFragment1.getGoid(), singletonList(fragment.getGoid()), ThroughputQuota.class, Include.class);
         testIncludingPolicyFragments(includingFragment2.getGoid(), singletonList(fragment.getGoid()), HttpBasic.class, Include.class);
+
+        // extra verification to ensure that the real update is called only the required number of times
+        verifyUpdatePolicyNumberOfCalls(1, fragment);
+        verifyUpdatePolicyNumberOfCalls(1, includingFragment1);
+        verifyUpdatePolicyNumberOfCalls(1, includingFragment2);
     }
 
     @Test
@@ -151,6 +172,11 @@ public class PolicyCacheImplTest {
 
         testIncludingPolicyFragments(fragment2.getGoid(), singletonList(fragment1.getGoid()), AuditDetailAssertion.class, Include.class);
         testIncludingPolicyFragments(includingFragmentWithFragment.getGoid(), asList(fragment1.getGoid(), fragment2.getGoid()), HttpBasic.class, Include.class);
+
+        // extra verification to ensure that the real update is called only the required number of times
+        verifyUpdatePolicyNumberOfCalls(1, fragment1);
+        verifyUpdatePolicyNumberOfCalls(1, fragment2);
+        verifyUpdatePolicyNumberOfCalls(1, includingFragmentWithFragment);
     }
 
     @Test
@@ -176,7 +202,7 @@ public class PolicyCacheImplTest {
         // let's replace the fragment
         // the fragment should be modified, but the including policies needs to continue having the same content
 
-        fragment = this.createPolicy(fragment.getGoid(), INCLUDE_FRAGMENT, POLICY_FRAGMENT_SIMPLE_MODIFIED);
+        fragment = this.createPolicy(fragment.getGoid(), INCLUDE_FRAGMENT, POLICY_FRAGMENT_SIMPLE_MODIFIED, fragment.getVersion() + 1);
         event = new EntityInvalidationEvent(NULL, Policy.class, toArray(fragment.getGoid()), toPrimitive(toArray(UPDATE)));
         this.policyCache.onApplicationEvent(event);
 
@@ -188,6 +214,11 @@ public class PolicyCacheImplTest {
 
         testIncludingPolicyFragments(includingFragment1.getGoid(), singletonList(fragment.getGoid()), ThroughputQuota.class, Include.class);
         testIncludingPolicyFragments(includingFragment2.getGoid(), singletonList(fragment.getGoid()), HttpBasic.class, Include.class);
+
+        // extra verification to ensure that the real update is called only the required number of times
+        verifyUpdatePolicyNumberOfCalls(2, fragment);
+        verifyUpdatePolicyNumberOfCalls(2, includingFragment1);
+        verifyUpdatePolicyNumberOfCalls(2, includingFragment2);
     }
 
     @Test
@@ -213,7 +244,7 @@ public class PolicyCacheImplTest {
         // let's replace the fragments
         // the fragments should be modified, but the including policies needs to continue having the same content
 
-        fragment1 = this.createPolicy(fragment1.getGoid(), INCLUDE_FRAGMENT, POLICY_FRAGMENT_SIMPLE_MODIFIED);
+        fragment1 = this.createPolicy(fragment1.getGoid(), INCLUDE_FRAGMENT, POLICY_FRAGMENT_SIMPLE_MODIFIED, fragment1.getVersion() + 1);
         event = new EntityInvalidationEvent(NULL, Policy.class, toArray(fragment1.getGoid()), toPrimitive(toArray(UPDATE)));
         this.policyCache.onApplicationEvent(event);
 
@@ -226,7 +257,7 @@ public class PolicyCacheImplTest {
         testIncludingPolicyFragments(fragment2.getGoid(), singletonList(fragment1.getGoid()), AuditDetailAssertion.class, Include.class);
         testIncludingPolicyFragments(includingFragmentWithFragment.getGoid(), asList(fragment1.getGoid(), fragment2.getGoid()), HttpBasic.class, Include.class);
 
-        fragment2 = this.createPolicy(fragment2.getGoid(), INCLUDE_FRAGMENT, POLICY_FRAGMENT_INCLUDING_FRAGMENT_MODIFIED);
+        fragment2 = this.createPolicy(fragment2.getGoid(), INCLUDE_FRAGMENT, POLICY_FRAGMENT_INCLUDING_FRAGMENT_MODIFIED, fragment2.getVersion() + 1);
         event = new EntityInvalidationEvent(NULL, Policy.class, toArray(fragment2.getGoid()), toPrimitive(toArray(UPDATE)));
         this.policyCache.onApplicationEvent(event);
 
@@ -235,6 +266,20 @@ public class PolicyCacheImplTest {
 
         testIncludingPolicyFragments(fragment2.getGoid(), singletonList(fragment1.getGoid()), Include.class);
         testIncludingPolicyFragments(includingFragmentWithFragment.getGoid(), asList(fragment1.getGoid(), fragment2.getGoid()), HttpBasic.class, Include.class);
+
+        // extra verification to ensure that the real update is called only the required number of times
+        verifyUpdatePolicyNumberOfCalls(2, fragment1);
+        verifyUpdatePolicyNumberOfCalls(3, fragment2);
+        verifyUpdatePolicyNumberOfCalls(3, includingFragmentWithFragment);
+    }
+
+    private void verifyUpdatePolicyNumberOfCalls(int expected, Policy policy) {
+        verify(this.policyCache, times(expected)).buildPolicyCacheEntry(argThat(new ArgumentMatcher<Policy>() {
+            @Override
+            public boolean matches(Object arg) {
+                return ((Policy) arg).getGoid().equals(policy.getGoid());
+            }
+        }), any(Policy.class), any(Set.class), any(Map.class), any(List.class));
     }
 
     private void testIncludingPolicyFragments(Goid policyGoid, List<Goid> includedGoids, Class<? extends Assertion>... expectedAssertions) throws Exception {
@@ -269,10 +314,10 @@ public class PolicyCacheImplTest {
     }
 
     private Policy createPolicy(PolicyType policyType, String xmlPath) throws Exception {
-        return this.createPolicy((Goid) this.goidGenerator.generate(null, null), policyType, xmlPath);
+        return this.createPolicy((Goid) this.goidGenerator.generate(null, null), policyType, xmlPath, 1);
     }
 
-    private Policy createPolicy(Goid policyGoid, PolicyType policyType, String xmlPath) throws Exception {
+    private Policy createPolicy(Goid policyGoid, PolicyType policyType, String xmlPath, int version) throws Exception {
         String name = xmlPath.substring(xmlPath.lastIndexOf("/") + POLICY_NAME_PREFIX.length() + 1);
         if (name.endsWith("Modified")) {
             name = name.replace("_Modified", EMPTY);
@@ -281,6 +326,7 @@ public class PolicyCacheImplTest {
         Policy policy = new Policy(policyType, name, loadPolicyXml(xmlPath), false);
         policy.setGoid(policyGoid);
         policy.setGuid(name + "_guid");
+        policy.setVersion(version);
 
         this.storePolicy(policy);
         return policy;

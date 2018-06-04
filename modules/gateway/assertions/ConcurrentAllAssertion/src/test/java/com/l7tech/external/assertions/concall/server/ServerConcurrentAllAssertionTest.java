@@ -16,6 +16,7 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.variable.NoSuchVariableException;
+import com.l7tech.server.EntitiesProcessedInBatch;
 import com.l7tech.server.TestLicenseManager;
 import com.l7tech.server.audit.AuditContextFactoryStub;
 import com.l7tech.server.audit.AuditDetailProcessingAuditListener;
@@ -69,7 +70,7 @@ public class ServerConcurrentAllAssertionTest {
         auditContext = new ConcurrentDetailCollectingAuditContextStub();
         auditContext.logDetails = true;
         AuditContextFactoryStub.setCurrent(auditContext);
-        policyCache = new PolicyCacheImpl(null, new ServerPolicyFactory(new TestLicenseManager(),new MockInjector()), new FolderCacheStub()) {
+        policyCache = new PolicyCacheImpl(null, new ServerPolicyFactory(new TestLicenseManager(),new MockInjector()), new FolderCacheStub(), new EntitiesProcessedInBatch()) {
             {
                 PolicyManagerStub policyManager = new PolicyManagerStub( new Policy[0] );
                 setPolicyManager(policyManager);
@@ -78,8 +79,8 @@ public class ServerConcurrentAllAssertionTest {
             }
 
             @Override
-            protected ServerAssertion buildServerPolicy(Policy policy) throws ServerPolicyInstantiationException, ServerPolicyException, InvalidPolicyException {
-                throw new ServerPolicyInstantiationException("stub");
+            protected ServerAssertion buildServerPolicy(Policy policy) throws ServerPolicyException, InvalidPolicyException {
+                throw new InvalidPolicyException("stub");
             }
 
             @Override

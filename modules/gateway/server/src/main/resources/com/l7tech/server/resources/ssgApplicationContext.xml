@@ -1700,7 +1700,10 @@
         <constructor-arg value="EntityVersionChecker"/>
     </bean>
 
+    <bean id="entitiesProcessedInBatch" class="com.l7tech.server.EntitiesProcessedInBatch" />
+
     <bean id="entityInvalidator" class="com.l7tech.server.EntityVersionChecker" depends-on="ssgBoot">
+        <property name="entitiesProcessedInBatch" ref="entitiesProcessedInBatch" />
         <property name="applicationEventProxy" ref="applicationEventProxy"/>
         <property name="entityManagers">
             <list>
@@ -2032,6 +2035,7 @@
         <constructor-arg index="0" ref="transactionManager"/>
         <constructor-arg index="1" ref="policyFactory"/>
         <constructor-arg index="2" ref="folderCache"/>
+        <constructor-arg index="3" ref="entitiesProcessedInBatch"/>
         <property name="policyManager" ref="policyManager"/>
         <property name="policyVersionManager" ref="policyVersionManager"/>
     </bean>

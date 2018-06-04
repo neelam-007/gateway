@@ -9,7 +9,6 @@ import com.l7tech.server.event.admin.Updated;
 import com.l7tech.server.util.ApplicationEventProxy;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Pair;
-import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.*;
@@ -17,7 +16,9 @@ import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationAdapter;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import java.text.MessageFormat;
 import java.util.*;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -45,7 +46,9 @@ public class EntityVersionChecker implements ApplicationContextAware, Initializi
      * @param applicationEventProxy The proxy to use
      */
     public void setApplicationEventProxy( final ApplicationEventProxy applicationEventProxy ) {
-        if (eventProxy != null) throw new IllegalStateException("applicationEventProxy already set");
+        if (eventProxy != null) {
+            throw new IllegalStateException("applicationEventProxy already set");
+        }
         eventProxy = applicationEventProxy;
     }
 
@@ -57,7 +60,7 @@ public class EntityVersionChecker implements ApplicationContextAware, Initializi
      */
     public void setEntityManagers(List<EntityManager<? extends Entity,? extends EntityHeader>> managers) {
         if(managers!=null && !managers.isEmpty()) {
-            List<EntityInvalidationVersionCheck> tasks = new ArrayList<EntityInvalidationVersionCheck>();
+            List<EntityInvalidationVersionCheck> tasks = new ArrayList<>();
             for (EntityManager<? extends Entity,? extends EntityHeader> manager : managers) {
                 try {
                     tasks.add(new EntityInvalidationVersionCheck(manager));
@@ -76,17 +79,7 @@ public class EntityVersionChecker implements ApplicationContextAware, Initializi
      * @throws ClassCastException if the list contains a non-HibernateEntityManager
      */
      public void addEntityManagers(List<EntityManager<? extends Entity,? extends EntityHeader>> managers) {
-        if(managers!=null && !managers.isEmpty()) {
-            List<EntityInvalidationVersionCheck> tasks = new ArrayList<EntityInvalidationVersionCheck>();
-            for (EntityManager<? extends Entity,? extends EntityHeader> manager : managers) {
-                try {
-                    tasks.add(new EntityInvalidationVersionCheck(manager));
-                } catch (Exception e) {
-                    logger.warning("Could not create invalidator for manager of '" + manager.getImpClass() + "'");
-                }
-            }
-            btt.addTasks(tasks);
-        }
+        setEntityManagers(managers);
     }
 
     /**
@@ -95,7 +88,9 @@ public class EntityVersionChecker implements ApplicationContextAware, Initializi
      * @param interval the interval to use (minimum is 1000)
      */
     public void setInterval(long interval) {
-        if(interval < 1000) throw new IllegalArgumentException("Interval must be at least 1000ms");
+        if(interval < 1000) {
+            throw new IllegalArgumentException("Interval must be at least 1000ms");
+        }
         this.interval = interval;
     }
 
@@ -118,8 +113,9 @@ public class EntityVersionChecker implements ApplicationContextAware, Initializi
                 eventProxy.addApplicationListener(eventListener);
             }
 
-            if (timer == null)
+            if (timer == null) {
                 timer = new Timer("EntityVersionChecker");
+            }
             timer.schedule(btt, interval, interval);
         }
         else {
@@ -143,9 +139,24 @@ public class EntityVersionChecker implements ApplicationContextAware, Initializi
      * @param applicationContext the context to use.
      * @throws IllegalStateException if the context is already set.
      */
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        if(this.applicationContext !=null) throw new IllegalStateException("applicationContext is already set");
+    public void setApplicationContext(ApplicationContext applicationContext) {
+        if(this.applicationContext !=null) {
+            throw new IllegalStateException("applicationContext is already set");
+        }
         this.applicationContext = applicationContext;
+    }
+
+    /**
+     * Set the entitiesProcessedInBatch controller.
+     *
+     * @param entitiesProcessedInBatch the controller that tracks entities already processed to avoid duplicate operations
+     * @throws IllegalStateException if the entitiesProcessedInBatch is already set.
+     */
+    public void setEntitiesProcessedInBatch(EntitiesProcessedInBatch entitiesProcessedInBatch) {
+        if(this.entitiesProcessedInBatch !=null) {
+            throw new IllegalStateException("entitiesProcessedInBatch is already set");
+        }
+        this.entitiesProcessedInBatch = entitiesProcessedInBatch;
     }
 
     //- PRIVATE
@@ -156,8 +167,9 @@ public class EntityVersionChecker implements ApplicationContextAware, Initializi
     private ApplicationContext applicationContext;
     private ApplicationEventProxy eventProxy;
     private Timer timer;
-    private long interval = 15 * 1000;
+    private long interval = 15L * 1000L;
     private BigTimerTask btt = new BigTimerTask();
+    private EntitiesProcessedInBatch entitiesProcessedInBatch;
 
     private void handleAdminInvalidation(final PersistenceEvent event, final char operation) {
         Entity entity = event.getEntity();
@@ -184,8 +196,12 @@ public class EntityVersionChecker implements ApplicationContextAware, Initializi
                                       final PersistentEntity entity,
                                       final char operation,
                                       final EntityInvalidationVersionCheck checker ) {
-        if ( logger.isLoggable( Level.FINE ))
-            logger.log( Level.FINE, "Queuing invalidation for entity {0}", entity.getId() );
+        logger.log(Level.FINE, new Supplier<String>() {
+            @Override
+            public String get() {
+                return MessageFormat.format("Queuing invalidation for entity {0}", entity.getId());
+            }
+        });
 
         DispatchingTransactionSynchronization dts = null;
 
@@ -205,28 +221,11 @@ public class EntityVersionChecker implements ApplicationContextAware, Initializi
 
         EntityInvalidationEvent eie = new EntityInvalidationEvent( source, checker.entityType, new Goid[]{entity.getGoid()}, new char[]{operation});
 
-        dts.events.add( new Pair<EntityInvalidationEvent,Functions.Nullary<Boolean>>(eie, new Functions.Nullary<Boolean>(){
+        dts.events.add(new Pair<>(eie, new Functions.Nullary<Boolean>() {
             public Boolean call() {
-                return checker.isInvalidationRequired( entity, operation );
+                return checker.isInvalidationRequired(entity, operation);
             }
         }));
-    }
-
-    /**
-     * Publish invalidation information for the given entityies
-     */
-    private void performInvalidation(final Class<? extends Entity> entityType, final List<Goid> goids, final List<Character> ops) {
-        if(!goids.isEmpty()) {
-            if (goids.size() != ops.size()) throw new IllegalArgumentException("oids and ops must be equal in size");
-            Goid[] goidArray = new Goid[goids.size()];
-            char[] opsArray = new char[goids.size()];
-            for (int i = 0; i < goidArray.length; i++) {
-                goidArray[i] = goids.get(i);
-                opsArray[i] = ops.get(i);
-            }
-
-            dispatchInvalidation(new EntityInvalidationEvent(this, entityType, goidArray, opsArray));
-        }
     }
 
     /**
@@ -235,9 +234,12 @@ public class EntityVersionChecker implements ApplicationContextAware, Initializi
      * WARNING: only dispatch on a callback to ensure single threaded for any listeners that expect that
      */
     private void dispatchInvalidation( final EntityInvalidationEvent eie ) {
-
-        if(logger.isLoggable(Level.FINE))
-            logger.fine("Invalidating entities of type '"+eie.getEntityClass().getName()+"'; ids are "+asList(eie.getEntityIds())+".");
+        logger.fine(new Supplier<String>() {
+            @Override
+            public String get() {
+                return "Invalidating entities of type '"+eie.getEntityClass().getName()+"'; ids are "+asList(eie.getEntityIds())+".";
+            }
+        });
 
         applicationContext.publishEvent(eie);
     }
@@ -246,10 +248,8 @@ public class EntityVersionChecker implements ApplicationContextAware, Initializi
      * Box array
      */
     private List<Goid> asList( Goid[] items ) {
-        List<Goid> list = new ArrayList<Goid>( items.length );
-        for ( Goid item : items ) {
-            list.add( item );
-        }
+        List<Goid> list = new ArrayList<>(items.length);
+        list.addAll(Arrays.asList(items));
         return list;
     }
 
@@ -281,9 +281,17 @@ public class EntityVersionChecker implements ApplicationContextAware, Initializi
 
         @Override
         public void run() {
-            if(logger.isLoggable(Level.FINE)) logger.fine("Running entity invalidation.");
+            logger.fine(new Supplier<String>() {
+                @Override
+                public String get() {
+                    return "Running entity invalidation.";
+                }
+            });
 
             long startTime = System.currentTimeMillis();
+
+            entitiesProcessedInBatch.reset();
+
             //noinspection ForLoopReplaceableByForEach This is iterated in this way in case items are added to the list
             for (int i = 0; i < tasks.size(); i++) {
                 TimerTask task = tasks.get(i);
@@ -298,11 +306,17 @@ public class EntityVersionChecker implements ApplicationContextAware, Initializi
                     logger.log(Level.WARNING, "Error running version check task", e);
                 }
             }
+
+            entitiesProcessedInBatch.reset();
+
             long checkTime = System.currentTimeMillis() - startTime;
             Level logLevel = checkTime > 1000 ? Level.INFO : Level.FINE;
-            if(logger.isLoggable(logLevel)) {
-                logger.log(logLevel, "Version checking took "+checkTime+"ms");
-            }
+            logger.log(logLevel, new Supplier<String>() {
+                @Override
+                public String get() {
+                    return "Version checking took "+checkTime+"ms";
+                }
+            });
         }
     }
 
@@ -314,16 +328,16 @@ public class EntityVersionChecker implements ApplicationContextAware, Initializi
         private List<Goid> invalidationGoids;
         private List<Character> invalidationOps;
 
-        private EntityInvalidationVersionCheck(EntityManager<? extends PersistentEntity, ? extends EntityHeader> manager) throws Exception {
+        private EntityInvalidationVersionCheck(EntityManager<? extends PersistentEntity, ? extends EntityHeader> manager) throws FindException {
             super(manager);
             entityType = manager.getInterfaceClass();
         }
 
-        public boolean isOfInterest( Entity entity ) {
+        boolean isOfInterest(Entity entity) {
             return entityType.isInstance( entity );
         }
 
-        public boolean isInvalidationRequired( PersistentEntity entity, char operation ) {
+        boolean isInvalidationRequired(PersistentEntity entity, char operation) {
             boolean invalidationRequired;
 
             if ( operation == EntityInvalidationEvent.DELETE ) {
@@ -337,8 +351,8 @@ public class EntityVersionChecker implements ApplicationContextAware, Initializi
 
         @Override
         public void run() {
-            invalidationGoids = new ArrayList<Goid>();
-            invalidationOps = new ArrayList<Character>();
+            invalidationGoids = new ArrayList<>();
+            invalidationOps = new ArrayList<>();
             super.run();
             performInvalidation(entityType, invalidationGoids, invalidationOps);
             invalidationGoids = null;
@@ -368,21 +382,40 @@ public class EntityVersionChecker implements ApplicationContextAware, Initializi
                 invalidationOps.add(EntityInvalidationEvent.CREATE);
             }
         }
+
+        /**
+         * Publish invalidation information for the given entityies
+         */
+        private void performInvalidation(final Class<? extends Entity> entityType, final List<Goid> goids, final List<Character> ops) {
+            if(!goids.isEmpty()) {
+                if (goids.size() != ops.size()) throw new IllegalArgumentException("oids and ops must be equal in size");
+                Goid[] goidArray = new Goid[goids.size()];
+                char[] opsArray = new char[goids.size()];
+                for (int i = 0; i < goidArray.length; i++) {
+                    goidArray[i] = goids.get(i);
+                    opsArray[i] = ops.get(i);
+                }
+
+                dispatchInvalidation(new EntityInvalidationEvent(this, entityType, goidArray, opsArray));
+            }
+        }
     }
 
     /**
      * Dispatch invalidations for entity events on commit
      */
     private class DispatchingTransactionSynchronization extends TransactionSynchronizationAdapter {
-        final List<Pair<EntityInvalidationEvent,Functions.Nullary<Boolean>>> events
-                = new ArrayList<Pair<EntityInvalidationEvent, Functions.Nullary<Boolean>>>();
+        final List<Pair<EntityInvalidationEvent,Functions.Nullary<Boolean>>> events = new ArrayList<>();
 
         @Override
         public void afterCompletion( final int status ) {
-            if ( status == TransactionSynchronization.STATUS_COMMITTED ) {
+            if ( status == STATUS_COMMITTED ) {
                 timer.schedule( new TimerTask() {
                     @Override
                     public void run() {
+                        long startTime = System.currentTimeMillis();
+                        entitiesProcessedInBatch.reset();
+
                         for ( Pair<EntityInvalidationEvent,Functions.Nullary<Boolean>> eventAndChecker : events ) {
                             EntityInvalidationEvent eie = eventAndChecker.left;
                             Functions.Nullary<Boolean> requiredCallback = eventAndChecker.right;
@@ -391,6 +424,18 @@ public class EntityVersionChecker implements ApplicationContextAware, Initializi
                                 dispatchInvalidation(eie);
                             }
                         }
+
+                        entitiesProcessedInBatch.reset();
+                        long endtime = System.currentTimeMillis();
+
+                        long duration = endtime - startTime;
+                        logger.fine(new Supplier<String>() {
+                            @Override
+                            public String get() {
+                                return String.format("Entity Invalidation batch took %s millis", duration);
+                            }
+                        });
+
                     }
                 }, 0L );
             }

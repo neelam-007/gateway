@@ -14,6 +14,7 @@ import com.l7tech.policy.Policy;
 import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.ApplicationContexts;
+import com.l7tech.server.EntitiesProcessedInBatch;
 import com.l7tech.server.TestStashManagerFactory;
 import com.l7tech.server.event.system.Started;
 import com.l7tech.server.folder.FolderCacheStub;
@@ -51,7 +52,7 @@ public class AuditFilterPolicyManagerTest {
         ApplicationContext testApplicationContext = ApplicationContexts.getTestApplicationContext();
         ServerPolicyFactory pfac = (ServerPolicyFactory)testApplicationContext.getBean("policyFactory");
 
-        policyCache = new PolicyCacheImpl(null, pfac, new FolderCacheStub()){
+        policyCache = new PolicyCacheImpl(null, pfac, new FolderCacheStub(), new EntitiesProcessedInBatch()){
             @Override
             protected void logAndAudit(AuditDetailMessage message, String... params) {
                 System.err.println( MessageFormat.format(message.getMessage(), (Object[])params) );
@@ -78,6 +79,7 @@ public class AuditFilterPolicyManagerTest {
         
         policyCache.setApplicationEventPublisher(aep);
         policyCache.setPolicyManager(policyManager);
+        policyCache.setPolicyVersionManager(new PolicyVersionManagerStub());
         policyCache.onApplicationEvent(new Started(this, Component.GATEWAY, "Test"));
         auditLogListener = new AuditLogListener() {
             @Override

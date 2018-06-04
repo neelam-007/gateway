@@ -16,6 +16,7 @@ import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.server.EntitiesProcessedInBatch;
 import com.l7tech.server.EntityFinderStub;
 import com.l7tech.server.event.PolicyCacheEvent;
 import com.l7tech.server.event.system.LicenseChangeEvent;
@@ -477,7 +478,8 @@ public class PolicyDependencyTest {
             };
         }
 
-        PolicyCacheImpl cache = new PolicyCacheImpl(null, null, new FolderCacheStub()){
+        PolicyCacheImpl cache = new PolicyCacheImpl(null, null, new FolderCacheStub(),
+                new EntitiesProcessedInBatch()){
             @Override
             protected ServerAssertion buildServerPolicy( final Policy policy ) throws InvalidPolicyException {
                 try {
@@ -522,6 +524,7 @@ public class PolicyDependencyTest {
         };
         cache.setApplicationEventPublisher( aep );
         cache.setPolicyManager(manager);
+        cache.setPolicyVersionManager(new PolicyVersionManagerStub());
         cache.onApplicationEvent(new Started(this, Component.GATEWAY, "Test"));
         return cache;
     }
