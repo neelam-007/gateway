@@ -654,6 +654,7 @@
 				<propertyref name="module.skarsigner.generate.restman.xml"/>
 				<propertyref name="suffix.snapshot"/>
 				<propertyref name="module.skip.tests"/>
+                <propertyref name="module.skip.tools"/>
             </propertyset>
         </subant>
     </presetdef>
@@ -1728,6 +1729,15 @@ ${versionfilecontent}
       Deploy all server applications for development
     -->
     <target name="deploy-all" description="Deploy server applications for development (run with ./run.sh gateway, etc)" depends="deploy, deploy-controller"/>
+
+    <target name="deploy-lite-init">
+        <property name="module.skip.tools" value="true"/>
+    </target>
+
+    <!--
+      Deploy Gateway for development without building and packaging non-essential utilities
+    -->
+    <target name="deploy-lite" description="Deploy a development Gateway, skipping build and package of nonessential utilities (License Generators, AuditSignatureChecker, SkarSigner, etc.)" depends="deploy-lite-init, deploy"/>
 
     <!--
       Deploy SSG for development
@@ -3566,7 +3576,7 @@ ${versionfilecontent}
 				    <fileset dir="${build.dir}/managerwebstart" includes="layer7-gateway-console-webstart.jar"/>
                     <fileset dir="${build.dir}/managerwebstart/lib"/>
                 </copy>
-				
+
 				<foreach target="checkwebstartresourcefile" param="currentFile" parallel="false">
 					<path>
 						<fileset dir="@{dir}/${install.src.ssg.webstartlib}" casesensitive="yes">
@@ -3575,14 +3585,14 @@ ${versionfilecontent}
 						</fileset>
 					</path>
 				</foreach>
-				
+
 				<jar destfile="@{dir}/${install.src.ssg.webstartlib}/layer7-gateway-console-webstart.jar" update="true">
 					<manifest>
 						<attribute name="Permissions" value="all-permissions" />
 						<attribute name="Application-Name" value="CA API Gateway - Policy Manager" />
 					</manifest>
 				</jar>
-							
+
 				<copy todir="@{dir}/${install.src.ssg.webstartres}">
 					<fileset dir="modules/gateway/console-webstart/src/main/resources/com/l7tech/console/webstart/resources">
 						<include name="ca_logo_black_16x16.jpg"/>
@@ -3596,16 +3606,21 @@ ${versionfilecontent}
                 <copy file="${src.root}/etc/backup_tables_audit" todir="@{dir}/${install.src.ssg.backuprestore.cfg}"/>
                 <copy file="${src.root}/etc/exclude_tables" todir="@{dir}/${install.src.ssg.backuprestore.cfg}"/>
                 <copy file="${src.root}/etc/exclude_files" todir="@{dir}/${install.src.ssg.backuprestore.cfg}"/>
-				<signjar alias="signer7" keystore="${src.root}/etc/ssgKeyStore" storepass="password" lazy="true">
-					<path>
-						<fileset dir="@{dir}/${install.src.ssg.webstartlib}" includes="*.jar"/>
-					</path>
-				</signjar>
-				
+
+                <foreach param="file" target="sign-jar" inheritall="true" parallel="true" maxThreads="8">
+                    <path>
+                        <fileset dir="@{dir}/${install.src.ssg.webstartlib}" includes="*.jar"/>
+                    </path>
+                </foreach>
+
 				<move file="@{dir}/${install.src.ssg.webstartlib}/layer7-gateway-console-webstart.jar" tofile="@{dir}/${install.src.ssg.webstartlib}/manager.jar"/>
             </sequential>
         </macrodef>
 
+    </target>
+
+    <target name="sign-jar">
+        <signjar jar="${file}" alias="signer7" keystore="${src.root}/etc/ssgKeyStore" storepass="password" lazy="true"/>
     </target>
 
 	<target name="checkwebstartresourcefile">

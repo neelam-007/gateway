@@ -493,7 +493,7 @@
     <!--
       Test
     -->
-    <target name="compile-test-init" if="module.tests.available" depends="init">
+    <target name="compile-test-init" if="module.tests.available" depends="init" unless="module.skip.tests">
         <mkdir dir="${classes.test.dir}"/>
         <ivy-resolve conf="test"/>
         <ivy:cachepath pathid="lib.test.path.id" conf="test"/>
@@ -505,15 +505,23 @@
             <path refid="lib.test.path.id"/>
         </path>
     </target>
-    <target name="compile-test-java" if="module.tests.available" depends="compile-test-init,compile">
+    <target name="compile-test-java" if="module.tests.available" depends="compile-test-init,compile" unless="module.skip.tests">
         <module-javac srcdir="${src.test.java.dir}" destdir="${classes.test.dir}">
             <classpath refid="full.test.path.id"/>
         </module-javac>
     </target>
-    <target name="compile-test-forms" if="module.tests.available" unless="module.skip.forms" depends="compile-test-init, compile-test-java">
+    <target name="check-skip-test-forms">
+        <condition property="module.skip.test.forms" value="true" else="false">
+            <or>
+                <equals arg1="${module.skip.forms}" arg2="true"/>
+                <equals arg1="${module.skip.tests}" arg2="true"/>
+            </or>
+        </condition>
+    </target>
+    <target name="compile-test-forms" if="module.tests.available" unless="module.skip.test.forms" depends="check-skip-test-forms, compile-test-init, compile-test-java">
         <module-javac2 srcdir="${src.test.java.dir}" destdir="${classes.test.dir}" classpathref="full.test.path.id"/>
     </target>
-    <target name="compile-test-resources" if="module.testresources.available" depends="compile-test-init">
+    <target name="compile-test-resources" if="module.testresources.available" depends="compile-test-init" unless="module.skip.tests">
         <copy todir="${classes.test.dir}" preservelastmodified="true">
             <fileset dir="${src.test.res.dir}" includes="**/*.properties"/>
             <filterset begintoken="@@@" endtoken="@@@">
@@ -524,7 +532,7 @@
             <fileset dir="${src.test.res.dir}" excludes="**/*.properties"/>
         </copy>
     </target>
-    <target name="compile-test-all" depends="compile-test-java, compile-test-forms, compile-test-resources"/>
+    <target name="compile-test-all" depends="compile-test-java, compile-test-forms, compile-test-resources" unless="module.skip.tests"/>
     <target name="test" description="Run unit tests" if="module.tests.available" unless="module.skip.tests"
             depends="compile-test-all">
         <mkdir dir="${report.test.dir}"/>
@@ -725,7 +733,7 @@
 	
     <!--
     -->
-    <target name="packagetests" if="module.tests.available" depends="version, test" description="Package this project">
+    <target name="packagetests" if="module.tests.available" depends="version, test" description="Package this project" unless="module.skip.tests">
         <jar destfile="${jar.file.test}">
             <fileset dir="${classes.test.dir}"/>
             <manifest>

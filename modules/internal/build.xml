@@ -6,7 +6,11 @@
     <property name="module.main" value="com.l7tech.skunkworks"/>
     <property name="vendor.name" value="Layer 7 Technologies Inc."/>
 
-    <target name="package.custom.post" depends="package.licensegenerator, package.auditsignaturechecker, package.generatecertificate, package.batchlicensegenerator, package.softwaredbextractor, package.skarsigner"/>
+    <target name="package.custom.post" unless="module.skip.tools">
+        <antcall target="package.tools"/>
+    </target>
+
+    <target name="package.tools" depends="package.licensegenerator, package.auditsignaturechecker, package.generatecertificate, package.batchlicensegenerator, package.softwaredbextractor, package.skarsigner"/>
 
     <!--
       Build a Jar containing all dependencies
