@@ -25,6 +25,7 @@ public class SwaggerAssertion extends Assertion implements UsesVariables, SetsVa
     public static final String SWAGGER_BASE_URI = ".baseUri";
     public static final String SWAGGER_HOST = ".host";
     public static final String SWAGGER_API_URI = ".apiUri";
+    public static final String SWAGGER_PATH = ".path";
 
     public static final String CPROP_SWAGGER_DOC_MAX_DOWNLOAD_SIZE = "swagger.maxDownloadSize";
 
@@ -192,11 +193,14 @@ public class SwaggerAssertion extends Assertion implements UsesVariables, SetsVa
      */
     @Override
     public VariableMetadata[] getVariablesSet() {
-        return new VariableMetadata[] {
-                new VariableMetadata(prefix + SWAGGER_HOST, false, false, prefix + SWAGGER_HOST, false, DataType.STRING),
-                new VariableMetadata(prefix + SWAGGER_BASE_URI, false, false, prefix + SWAGGER_BASE_URI, false, DataType.STRING),
-                new VariableMetadata(prefix + SWAGGER_API_URI, false, false, prefix + SWAGGER_API_URI, false, DataType.STRING)
-        };
+        List<VariableMetadata> output = new ArrayList<>();
+        output.add(new VariableMetadata(prefix + SWAGGER_HOST, false, false, prefix + SWAGGER_HOST, false, DataType.STRING));
+        output.add(new VariableMetadata(prefix + SWAGGER_BASE_URI, false, false, prefix + SWAGGER_BASE_URI, false, DataType.STRING));
+        output.add(new VariableMetadata(prefix + SWAGGER_API_URI, false, false, prefix + SWAGGER_API_URI, false, DataType.STRING));
+        if (isValidatePath()) {
+            output.add(new VariableMetadata(prefix + SWAGGER_PATH, false, false, prefix + SWAGGER_PATH, false, DataType.STRING));
+        }
+        return output.toArray(new VariableMetadata[output.size()]);
     }
 
 }

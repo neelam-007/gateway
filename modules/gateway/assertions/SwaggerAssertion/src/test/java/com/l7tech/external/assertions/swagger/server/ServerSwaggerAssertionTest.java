@@ -11,6 +11,7 @@ import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.message.HttpServletRequestKnob;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.boot.GatewayPermissiveLoggingSecurityManager;
@@ -54,15 +55,15 @@ import static org.mockito.Mockito.when;
 @ContextConfiguration(locations = "/com/l7tech/server/resources/testApplicationContext.xml")
 public class ServerSwaggerAssertionTest {
 
-    public static final String INVALID_SWAGGER_JSON = "{\"name\":\"value\"}";
-    public static final String INVALID_SWAGGER_NONJSON = "<name>value</name>";
-    public static final String OAUTH2_AUTH_TOKEN = " bearer J1qK1c18UUGJFAzz9xnH56584l4";
-    public static final String OAUTH2_PARAM_TOKEN = "J1qK1c18UUGJFAzz9xnH56584l4";
-    public static final String APIKEY_TOKEN = "Jlkhbejhven789hhetbJMHeur";
-    public static final String BASIC_TOKEN = "Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==";
+    private static final String INVALID_SWAGGER_JSON = "{\"name\":\"value\"}";
+    private static final String INVALID_SWAGGER_NONJSON = "<name>value</name>";
+    private static final String OAUTH2_AUTH_TOKEN = " bearer J1qK1c18UUGJFAzz9xnH56584l4";
+    private static final String OAUTH2_PARAM_TOKEN = "J1qK1c18UUGJFAzz9xnH56584l4";
+    private static final String APIKEY_TOKEN = "Jlkhbejhven789hhetbJMHeur";
+    private static final String BASIC_TOKEN = "Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==";
 
-    SwaggerAssertion assertion;
-    ServerSwaggerAssertion fixture;
+    private SwaggerAssertion assertion;
+    private ServerSwaggerAssertion fixture;
 
     @Inject
     private StashManagerFactory stashManagerFactory;
@@ -165,6 +166,26 @@ public class ServerSwaggerAssertionTest {
         assertEquals("petstore.swagger.io", pec.getVariable(SwaggerAssertion.DEFAULT_PREFIX + SwaggerAssertion.SWAGGER_HOST));
         assertEquals("/v2", pec.getVariable(SwaggerAssertion.DEFAULT_PREFIX + SwaggerAssertion.SWAGGER_BASE_URI));
         assertEquals("/pet/findByStatus", pec.getVariable(SwaggerAssertion.DEFAULT_PREFIX + SwaggerAssertion.SWAGGER_API_URI));
+        assertEquals("/pet/findByStatus", pec.getVariable(SwaggerAssertion.DEFAULT_PREFIX + SwaggerAssertion.SWAGGER_PATH));
+    }
+
+    @BugId("DE362150")
+    @Test
+    public void testSwaggerValidRequest_getResolutionPath() throws Exception {
+        assertion.setSwaggerDoc("swaggerDoc");
+        fixture = createServer(assertion);
+
+        PolicyEnforcementContext pec = createPolicyEnforcementContext(
+                createHttpRequestMessage("/svr/pet/123", "GET")
+        );
+
+        pec.setVariable("swaggerDoc", testDocument);
+
+        assertEquals(AssertionStatus.NONE, fixture.checkRequest(pec));
+        assertEquals("petstore.swagger.io", pec.getVariable(SwaggerAssertion.DEFAULT_PREFIX + SwaggerAssertion.SWAGGER_HOST));
+        assertEquals("/v2", pec.getVariable(SwaggerAssertion.DEFAULT_PREFIX + SwaggerAssertion.SWAGGER_BASE_URI));
+        assertEquals("/pet/123", pec.getVariable(SwaggerAssertion.DEFAULT_PREFIX + SwaggerAssertion.SWAGGER_API_URI));
+        assertEquals("/pet/{petId}", pec.getVariable(SwaggerAssertion.DEFAULT_PREFIX + SwaggerAssertion.SWAGGER_PATH));
     }
 
     @Test
@@ -172,6 +193,7 @@ public class ServerSwaggerAssertionTest {
         String requestUri = "/pet/findByTags";
 
         HttpRequestKnob mockRequestKnob = Mockito.mock(HttpRequestKnob.class);
+        PolicyEnforcementContext pec = createPolicyEnforcementContext();
 
         assertion.setValidatePath(true);
         assertion.setValidateMethod(true);
@@ -183,7 +205,7 @@ public class ServerSwaggerAssertionTest {
         when(mockRequestKnob.getMethod()).thenReturn(HttpMethod.GET);
         when(mockRequestKnob.isSecure()).thenReturn(true);  // scheme is https - not supported
 
-        assertTrue(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri));
+        assertTrue(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri, pec));
         assertEquals(0, testAudit.getAuditCount());
     }
 
@@ -201,6 +223,7 @@ public class ServerSwaggerAssertionTest {
         pec.setVariable("abc", "/svr");
         assertEquals(AssertionStatus.NONE, fixture.checkRequest(pec));
         assertEquals("/pet/findByStatus", pec.getVariable(SwaggerAssertion.DEFAULT_PREFIX + SwaggerAssertion.SWAGGER_API_URI));
+        assertEquals("/pet/findByStatus", pec.getVariable(SwaggerAssertion.DEFAULT_PREFIX + SwaggerAssertion.SWAGGER_PATH));
     }
 
     @Test
@@ -217,6 +240,7 @@ public class ServerSwaggerAssertionTest {
 
         assertEquals(AssertionStatus.NONE, fixture.checkRequest(pec));
         assertEquals("/pet/findByStatus", pec.getVariable(SwaggerAssertion.DEFAULT_PREFIX + SwaggerAssertion.SWAGGER_API_URI));
+        assertEquals("/pet/findByStatus", pec.getVariable(SwaggerAssertion.DEFAULT_PREFIX + SwaggerAssertion.SWAGGER_PATH));
     }
 
     @Test
@@ -249,6 +273,12 @@ public class ServerSwaggerAssertionTest {
         pec.setVariable("empty","");
         assertEquals(AssertionStatus.NONE, fixture.checkRequest(pec));
         assertEquals("/svr/pet/findByStatus", pec.getVariable(SwaggerAssertion.DEFAULT_PREFIX + SwaggerAssertion.SWAGGER_API_URI));
+        try {
+            pec.getVariable(SwaggerAssertion.DEFAULT_PREFIX + SwaggerAssertion.SWAGGER_PATH);
+            fail("Expected a NoSuchVariableException.");
+        } catch (NoSuchVariableException e) {
+            // expected
+        }
     }
 
     @Test
@@ -256,6 +286,7 @@ public class ServerSwaggerAssertionTest {
         String requestUri = "/store/order";
 
         HttpRequestKnob mockRequestKnob = Mockito.mock(HttpRequestKnob.class);
+        PolicyEnforcementContext pec = createPolicyEnforcementContext();
 
         assertion.setValidatePath(true);
         assertion.setValidateMethod(true);
@@ -264,7 +295,7 @@ public class ServerSwaggerAssertionTest {
 
         when(mockRequestKnob.getMethod()).thenReturn(HttpMethod.POST);
 
-        assertTrue(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri));
+        assertTrue(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri, pec));
         assertEquals(0, testAudit.getAuditCount());
     }
 
@@ -273,6 +304,7 @@ public class ServerSwaggerAssertionTest {
         String requestUri = "/store/order";
 
         HttpRequestKnob mockRequestKnob = Mockito.mock(HttpRequestKnob.class);
+        PolicyEnforcementContext pec = createPolicyEnforcementContext();
 
         assertion.setValidatePath(true);
         assertion.setValidateMethod(true);
@@ -281,7 +313,7 @@ public class ServerSwaggerAssertionTest {
 
         when(mockRequestKnob.getMethod()).thenReturn(HttpMethod.GET);   // get not defined
 
-        assertFalse(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri));
+        assertFalse(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri, pec));
         assertEquals(1, testAudit.getAuditCount());
         assertTrue(AssertionMessages.SWAGGER_INVALID_METHOD.getMessage(),
                 testAudit.isAuditPresent(AssertionMessages.SWAGGER_INVALID_METHOD));
@@ -292,6 +324,7 @@ public class ServerSwaggerAssertionTest {
         String requestUri = "/store/order";
 
         HttpRequestKnob mockRequestKnob = Mockito.mock(HttpRequestKnob.class);
+        PolicyEnforcementContext pec = createPolicyEnforcementContext();
 
         assertion.setValidatePath(true);
         assertion.setValidateMethod(true);
@@ -300,7 +333,7 @@ public class ServerSwaggerAssertionTest {
 
         when(mockRequestKnob.getMethod()).thenReturn(HttpMethod.HEAD);   // head not defined
 
-        assertFalse(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri));
+        assertFalse(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri, pec));
         assertEquals(1, testAudit.getAuditCount());
         assertTrue(AssertionMessages.SWAGGER_INVALID_METHOD.getMessage(),
                 testAudit.isAuditPresent(AssertionMessages.SWAGGER_INVALID_METHOD));
@@ -311,6 +344,7 @@ public class ServerSwaggerAssertionTest {
         String requestUri = "/store/order/{orderId}";
 
         HttpRequestKnob mockRequestKnob = Mockito.mock(HttpRequestKnob.class);
+        PolicyEnforcementContext pec = createPolicyEnforcementContext();
 
         assertion.setValidatePath(true);
         assertion.setValidateMethod(true);
@@ -319,7 +353,7 @@ public class ServerSwaggerAssertionTest {
 
         when(mockRequestKnob.getMethod()).thenReturn(HttpMethod.HEAD);   // head defined
 
-        assertTrue(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri));
+        assertTrue(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri, pec));
         assertEquals(0, testAudit.getAuditCount());
     }
 
@@ -328,6 +362,7 @@ public class ServerSwaggerAssertionTest {
         String requestUri = "/swagger.json";    // swagger doc is not defined as a path item
 
         HttpRequestKnob mockRequestKnob = Mockito.mock(HttpRequestKnob.class);
+        PolicyEnforcementContext pec = createPolicyEnforcementContext();
 
         assertion.setValidatePath(true);
         assertion.setValidateMethod(true);
@@ -336,7 +371,7 @@ public class ServerSwaggerAssertionTest {
 
         when(mockRequestKnob.getMethod()).thenReturn(HttpMethod.GET);
 
-        assertFalse(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri));
+        assertFalse(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri, pec));
         assertEquals(1, testAudit.getAuditCount());
         assertTrue(AssertionMessages.SWAGGER_INVALID_PATH.getMessage(),
                 testAudit.isAuditPresent(AssertionMessages.SWAGGER_INVALID_PATH));
@@ -347,6 +382,7 @@ public class ServerSwaggerAssertionTest {
         String requestUri = "/pet/123";
 
         HttpRequestKnob mockRequestKnob = Mockito.mock(HttpRequestKnob.class);
+        PolicyEnforcementContext pec = createPolicyEnforcementContext();
 
         assertion.setValidatePath(true);
         assertion.setValidateMethod(true);
@@ -357,7 +393,7 @@ public class ServerSwaggerAssertionTest {
         when(mockRequestKnob.getMethod()).thenReturn(HttpMethod.GET);
         when(mockRequestKnob.isSecure()).thenReturn(false);
 
-        assertTrue(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri));
+        assertTrue(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri, pec));
         assertEquals(0, testAudit.getAuditCount());
     }
 
@@ -366,6 +402,7 @@ public class ServerSwaggerAssertionTest {
         String requestUri = "/pet/123";
 
         HttpRequestKnob mockRequestKnob = Mockito.mock(HttpRequestKnob.class);
+        PolicyEnforcementContext pec = createPolicyEnforcementContext();
 
         assertion.setValidatePath(true);
         assertion.setValidateMethod(true);
@@ -376,7 +413,7 @@ public class ServerSwaggerAssertionTest {
         when(mockRequestKnob.getMethod()).thenReturn(HttpMethod.GET);
         when(mockRequestKnob.isSecure()).thenReturn(true);  // scheme is https - not supported
 
-        assertFalse(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri));
+        assertFalse(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri, pec));
         assertEquals(1, testAudit.getAuditCount());
         assertTrue(AssertionMessages.SWAGGER_INVALID_SCHEME.getMessage(),
                 testAudit.isAuditPresent(AssertionMessages.SWAGGER_INVALID_SCHEME));
@@ -387,6 +424,7 @@ public class ServerSwaggerAssertionTest {
         String requestUri = "/pet/123";
 
         HttpRequestKnob mockRequestKnob = Mockito.mock(HttpRequestKnob.class);
+        PolicyEnforcementContext pec = createPolicyEnforcementContext();
 
         assertion.setValidatePath(true);
         assertion.setValidateMethod(true);
@@ -397,7 +435,7 @@ public class ServerSwaggerAssertionTest {
         when(mockRequestKnob.getMethod()).thenReturn(HttpMethod.GET);
         when(mockRequestKnob.isSecure()).thenReturn(true);  // scheme is https - not supported
 
-        assertTrue(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri));
+        assertTrue(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri, pec));
         assertEquals(0, testAudit.getAuditCount());
     }
 
@@ -406,6 +444,7 @@ public class ServerSwaggerAssertionTest {
         String requestUri = "/user/test123";
 
         HttpRequestKnob mockRequestKnob = Mockito.mock(HttpRequestKnob.class);
+        PolicyEnforcementContext pec = createPolicyEnforcementContext();
 
         assertion.setValidatePath(true);
         assertion.setValidateMethod(true);
@@ -418,7 +457,7 @@ public class ServerSwaggerAssertionTest {
 
         fixture = createServer(assertion);
 
-        assertTrue(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri));
+        assertTrue(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri, pec));
         assertEquals(0, testAudit.getAuditCount());
     }
 
@@ -427,6 +466,7 @@ public class ServerSwaggerAssertionTest {
         String requestUri = "/user/test123";
 
         HttpRequestKnob mockRequestKnob = Mockito.mock(HttpRequestKnob.class);
+        PolicyEnforcementContext pec = createPolicyEnforcementContext();
 
         assertion.setValidatePath(true);
         assertion.setValidateMethod(true);
@@ -439,7 +479,7 @@ public class ServerSwaggerAssertionTest {
 
         fixture = createServer(assertion);
 
-        assertFalse(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri));
+        assertFalse(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri, pec));
         assertTrue("Missing audit: " + AssertionMessages.SWAGGER_CREDENTIALS_CHECK_FAILED.getMessage(), testAudit.isAuditPresent(AssertionMessages.SWAGGER_CREDENTIALS_CHECK_FAILED));
 
     }
@@ -449,6 +489,7 @@ public class ServerSwaggerAssertionTest {
         String requestUri = "/pet/123";
 
         HttpRequestKnob mockRequestKnob = Mockito.mock(HttpRequestKnob.class);
+        PolicyEnforcementContext pec = createPolicyEnforcementContext();
 
         assertion.setValidatePath(true);
         assertion.setValidateMethod(true);
@@ -461,7 +502,7 @@ public class ServerSwaggerAssertionTest {
         when(mockRequestKnob.isSecure()).thenReturn(false);
         when(mockRequestKnob.getHeaderValues("api_key")).thenReturn(new String[]{APIKEY_TOKEN});
 
-        assertTrue(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri));
+        assertTrue(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri, pec));
         assertEquals(0, testAudit.getAuditCount());
     }
 
@@ -470,6 +511,7 @@ public class ServerSwaggerAssertionTest {
         String requestUri = "/pet/123";
 
         HttpRequestKnob mockRequestKnob = Mockito.mock(HttpRequestKnob.class);
+        PolicyEnforcementContext pec = createPolicyEnforcementContext();
 
         assertion.setValidatePath(true);
         assertion.setValidateMethod(true);
@@ -482,7 +524,7 @@ public class ServerSwaggerAssertionTest {
         when(mockRequestKnob.isSecure()).thenReturn(false);
         when(mockRequestKnob.getHeaderValues("authorization")).thenReturn(new String[]{APIKEY_TOKEN});
 
-        assertFalse(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri));
+        assertFalse(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri, pec));
         assertTrue("Missing audit:" + AssertionMessages.SWAGGER_CREDENTIALS_CHECK_FAILED.getMessage(), testAudit.isAuditPresent(AssertionMessages.SWAGGER_CREDENTIALS_CHECK_FAILED));
     }
 
@@ -491,6 +533,7 @@ public class ServerSwaggerAssertionTest {
         String requestUri = "/petParams/123";
 
         HttpRequestKnob mockRequestKnob = Mockito.mock(HttpRequestKnob.class);
+        PolicyEnforcementContext pec = createPolicyEnforcementContext();
 
         assertion.setValidatePath(true);
         assertion.setValidateMethod(true);
@@ -503,7 +546,7 @@ public class ServerSwaggerAssertionTest {
         when(mockRequestKnob.isSecure()).thenReturn(false);
         when(mockRequestKnob.getParameter("api_key")).thenReturn("blah");
 
-        assertTrue(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri));
+        assertTrue(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri, pec));
         assertEquals(0, testAudit.getAuditCount());
     }
 
@@ -512,6 +555,7 @@ public class ServerSwaggerAssertionTest {
         String requestUri = "/store/order/111111";
 
         HttpRequestKnob mockRequestKnob = Mockito.mock(HttpRequestKnob.class);
+        PolicyEnforcementContext pec = createPolicyEnforcementContext();
 
         assertion.setValidatePath(true);
         assertion.setValidateMethod(true);
@@ -523,7 +567,7 @@ public class ServerSwaggerAssertionTest {
         when(mockRequestKnob.getMethod()).thenReturn(HttpMethod.GET);
         when(mockRequestKnob.isSecure()).thenReturn(false);
 
-        assertTrue(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri));
+        assertTrue(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri, pec));
         assertEquals(0, testAudit.getAuditCount());
     }
 
@@ -532,6 +576,7 @@ public class ServerSwaggerAssertionTest {
         String requestUri = "/pet/123";
 
         HttpRequestKnob mockRequestKnob = Mockito.mock(HttpRequestKnob.class);
+        PolicyEnforcementContext pec = createPolicyEnforcementContext();
 
         assertion.setValidatePath(true);
         assertion.setValidateMethod(true);
@@ -546,7 +591,7 @@ public class ServerSwaggerAssertionTest {
         when(mockRequestKnob.getParameterValues("access_token")).thenReturn(new String[]{});
 
 
-        assertTrue(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri));
+        assertTrue(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri, pec));
         assertEquals(0, testAudit.getAuditCount());
     }
 
@@ -555,6 +600,7 @@ public class ServerSwaggerAssertionTest {
         String requestUri = "/pet/123";
 
         HttpRequestKnob mockRequestKnob = Mockito.mock(HttpRequestKnob.class);
+        PolicyEnforcementContext pec = createPolicyEnforcementContext();
 
         assertion.setValidatePath(true);
         assertion.setValidateMethod(true);
@@ -567,7 +613,7 @@ public class ServerSwaggerAssertionTest {
         when(mockRequestKnob.isSecure()).thenReturn(false);
         when(mockRequestKnob.getParameterValues("access_token")).thenReturn(new String[]{OAUTH2_PARAM_TOKEN});
 
-        assertTrue(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri));
+        assertTrue(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri, pec));
         assertEquals(0, testAudit.getAuditCount());
     }
 
@@ -576,6 +622,7 @@ public class ServerSwaggerAssertionTest {
         String requestUri = "/pet/123";
 
         HttpRequestKnob mockRequestKnob = Mockito.mock(HttpRequestKnob.class);
+        PolicyEnforcementContext pec = createPolicyEnforcementContext();
 
         assertion.setValidatePath(true);
         assertion.setValidateMethod(true);
@@ -589,7 +636,7 @@ public class ServerSwaggerAssertionTest {
         when(mockRequestKnob.getHeaderValues("authorization")).thenReturn(new String[]{OAUTH2_AUTH_TOKEN});
         doThrow(IOException.class).when(mockRequestKnob).getParameterValues("access_token");
 
-        assertFalse(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri));
+        assertFalse(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri, pec));
         assertTrue("Missing audit:" + AssertionMessages.SWAGGER_CREDENTIALS_CHECK_FAILED.getMessage(), testAudit.isAuditPresent(AssertionMessages.SWAGGER_CREDENTIALS_CHECK_FAILED));
     }
 
@@ -598,6 +645,7 @@ public class ServerSwaggerAssertionTest {
         String requestUri = "/pet/123";
 
         HttpRequestKnob mockRequestKnob = Mockito.mock(HttpRequestKnob.class);
+        PolicyEnforcementContext pec = createPolicyEnforcementContext();
 
         assertion.setValidatePath(true);
         assertion.setValidateMethod(true);
@@ -611,7 +659,7 @@ public class ServerSwaggerAssertionTest {
         when(mockRequestKnob.getParameterValues("access_token")).thenReturn(new String[]{"fakeoauth2token", OAUTH2_PARAM_TOKEN});
 
 
-        assertFalse(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri));
+        assertFalse(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri, pec));
         assertTrue("Missing audit:" + AssertionMessages.SWAGGER_CREDENTIALS_CHECK_FAILED.getMessage(), testAudit.isAuditPresent(AssertionMessages.SWAGGER_CREDENTIALS_CHECK_FAILED));
     }
 
@@ -620,6 +668,7 @@ public class ServerSwaggerAssertionTest {
         String requestUri = "/pet/123";
 
         HttpRequestKnob mockRequestKnob = Mockito.mock(HttpRequestKnob.class);
+        PolicyEnforcementContext pec = createPolicyEnforcementContext();
 
         assertion.setValidatePath(true);
         assertion.setValidateMethod(true);
@@ -633,7 +682,7 @@ public class ServerSwaggerAssertionTest {
         when(mockRequestKnob.getHeaderValues("authorization")).thenReturn(new String[]{OAUTH2_AUTH_TOKEN});
         when(mockRequestKnob.getParameterValues("access_token")).thenReturn(new String[]{OAUTH2_PARAM_TOKEN});
 
-        assertFalse(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri));
+        assertFalse(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri, pec));
         assertTrue("Missing audit:" + AssertionMessages.SWAGGER_CREDENTIALS_CHECK_FAILED.getMessage(), testAudit.isAuditPresent(AssertionMessages.SWAGGER_CREDENTIALS_CHECK_FAILED));
     }
 
@@ -642,6 +691,7 @@ public class ServerSwaggerAssertionTest {
         String requestUri = "/pet/123";
 
         HttpRequestKnob mockRequestKnob = Mockito.mock(HttpRequestKnob.class);
+        PolicyEnforcementContext pec = createPolicyEnforcementContext();
 
         assertion.setValidatePath(true);
         assertion.setValidateMethod(true);
@@ -654,7 +704,7 @@ public class ServerSwaggerAssertionTest {
         when(mockRequestKnob.isSecure()).thenReturn(false);
         when(mockRequestKnob.getParameterValues("access_token")).thenReturn(new String[]{});
 
-        assertFalse(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri));
+        assertFalse(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri, pec));
         assertTrue("Missing audit:" + AssertionMessages.SWAGGER_CREDENTIALS_CHECK_FAILED.getMessage(), testAudit.isAuditPresent(AssertionMessages.SWAGGER_CREDENTIALS_CHECK_FAILED));
     }
 
@@ -663,6 +713,7 @@ public class ServerSwaggerAssertionTest {
         String requestUri = "/pet/123";
 
         HttpRequestKnob mockRequestKnob = Mockito.mock(HttpRequestKnob.class);
+        PolicyEnforcementContext pec = createPolicyEnforcementContext();
 
         assertion.setValidatePath(true);
         assertion.setValidateMethod(true);
@@ -676,7 +727,7 @@ public class ServerSwaggerAssertionTest {
         when(mockRequestKnob.getHeaderValues("authorization")).thenReturn(new String[]{BASIC_TOKEN});
         when(mockRequestKnob.getParameterValues("access_token")).thenReturn(new String[]{});
 
-        assertFalse(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri));
+        assertFalse(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri, pec));
         assertTrue("Missing audit:" + AssertionMessages.SWAGGER_CREDENTIALS_CHECK_FAILED.getMessage(), testAudit.isAuditPresent(AssertionMessages.SWAGGER_CREDENTIALS_CHECK_FAILED));
     }
 
@@ -685,6 +736,7 @@ public class ServerSwaggerAssertionTest {
         String requestUri = "/pet/123";
 
         HttpRequestKnob mockRequestKnob = Mockito.mock(HttpRequestKnob.class);
+        PolicyEnforcementContext pec = createPolicyEnforcementContext();
 
         assertion.setValidatePath(true);
         assertion.setValidateMethod(true);
@@ -698,7 +750,7 @@ public class ServerSwaggerAssertionTest {
         when(mockRequestKnob.getHeaderValues("authorization")).thenReturn(new String[]{OAUTH2_AUTH_TOKEN});
         when(mockRequestKnob.getParameterValues("access_token")).thenReturn(new String[]{OAUTH2_PARAM_TOKEN});
 
-        assertFalse(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri));
+        assertFalse(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri, pec));
         assertTrue("Missing audit: " + AssertionMessages.SWAGGER_CREDENTIALS_CHECK_FAILED.getMessage(), testAudit.isAuditPresent(AssertionMessages.SWAGGER_CREDENTIALS_CHECK_FAILED));
     }
 
@@ -707,6 +759,7 @@ public class ServerSwaggerAssertionTest {
         String requestUri = "/store/inventoryOR";
 
         HttpRequestKnob mockRequestKnob = Mockito.mock(HttpRequestKnob.class);
+        PolicyEnforcementContext pec = createPolicyEnforcementContext();
 
         assertion.setValidatePath(true);
         assertion.setValidateMethod(true);
@@ -720,7 +773,7 @@ public class ServerSwaggerAssertionTest {
         // when(mockRequestKnob.getHeaderValues("authorization")).thenReturn(new String[]{APIKEY_TOKEN});
         when(mockRequestKnob.getHeaderValues("authorization")).thenReturn(new String[]{BASIC_TOKEN});
 
-        assertTrue(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri));
+        assertTrue(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri, pec));
         assertEquals(0, testAudit.getAuditCount());
     }
 
@@ -729,6 +782,7 @@ public class ServerSwaggerAssertionTest {
         String requestUri = "/store/inventoryAND";
 
         HttpRequestKnob mockRequestKnob = Mockito.mock(HttpRequestKnob.class);
+        PolicyEnforcementContext pec = createPolicyEnforcementContext();
 
         assertion.setValidatePath(true);
         assertion.setValidateMethod(true);
@@ -742,7 +796,7 @@ public class ServerSwaggerAssertionTest {
         when(mockRequestKnob.getParameter("api_key")).thenReturn("blah");
         when(mockRequestKnob.getHeaderValues("authorization")).thenReturn(new String[]{BASIC_TOKEN});
 
-        assertTrue(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri));
+        assertTrue(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri, pec));
         assertEquals(0, testAudit.getAuditCount());
     }
 
@@ -751,6 +805,7 @@ public class ServerSwaggerAssertionTest {
         String requestUri = "/store/inventoryMissingSecurityDefinition";
 
         HttpRequestKnob mockRequestKnob = Mockito.mock(HttpRequestKnob.class);
+        PolicyEnforcementContext pec = createPolicyEnforcementContext();
 
         assertion.setValidatePath(true);
         assertion.setValidateMethod(true);
@@ -764,7 +819,7 @@ public class ServerSwaggerAssertionTest {
         when(mockRequestKnob.getParameter("api_key")).thenReturn("blah");
         when(mockRequestKnob.getHeaderValues("authorization")).thenReturn(new String[]{BASIC_TOKEN});
 
-        assertFalse(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri));
+        assertFalse(fixture.validate(testModel, testModelPathResolver, mockRequestKnob, requestUri, pec));
         assertEquals(1, testAudit.getAuditCount());
     }
 
@@ -775,6 +830,7 @@ public class ServerSwaggerAssertionTest {
         String requestUri = "/pet/findByTags";
 
         HttpRequestKnob mockRequestKnob = Mockito.mock(HttpRequestKnob.class);
+        PolicyEnforcementContext pec = createPolicyEnforcementContext();
 
         assertion.setValidatePath(true);
         assertion.setValidateMethod(true);
@@ -786,7 +842,7 @@ public class ServerSwaggerAssertionTest {
         when(mockRequestKnob.getMethod()).thenReturn(HttpMethod.GET);
         when(mockRequestKnob.isSecure()).thenReturn(false);
 
-        assertTrue(fixture.validate(testModelWithRootLevelSecurity, testModelWithRootLevelSecurityPathResolver, mockRequestKnob, requestUri));
+        assertTrue(fixture.validate(testModelWithRootLevelSecurity, testModelWithRootLevelSecurityPathResolver, mockRequestKnob, requestUri, pec));
         assertEquals(0, testAudit.getAuditCount());
     }
 
@@ -797,6 +853,7 @@ public class ServerSwaggerAssertionTest {
         String requestUri = "/store/order/2";
 
         HttpRequestKnob mockRequestKnob = Mockito.mock(HttpRequestKnob.class);
+        PolicyEnforcementContext pec = createPolicyEnforcementContext();
 
         assertion.setValidatePath(true);
         assertion.setValidateMethod(true);
@@ -809,7 +866,7 @@ public class ServerSwaggerAssertionTest {
         when(mockRequestKnob.isSecure()).thenReturn(false);
         when(mockRequestKnob.getHeaderValues("authorization")).thenReturn(new String[]{BASIC_TOKEN});
 
-        assertTrue(fixture.validate(testModelWithRootLevelSecurity, testModelWithRootLevelSecurityPathResolver, mockRequestKnob, requestUri));
+        assertTrue(fixture.validate(testModelWithRootLevelSecurity, testModelWithRootLevelSecurityPathResolver, mockRequestKnob, requestUri, pec));
         assertEquals(0, testAudit.getAuditCount());
     }
 
@@ -820,6 +877,7 @@ public class ServerSwaggerAssertionTest {
         String requestUri = "/store/order/2";
 
         HttpRequestKnob mockRequestKnob = Mockito.mock(HttpRequestKnob.class);
+        PolicyEnforcementContext pec = createPolicyEnforcementContext();
 
         assertion.setValidatePath(true);
         assertion.setValidateMethod(true);
@@ -831,7 +889,7 @@ public class ServerSwaggerAssertionTest {
         when(mockRequestKnob.getMethod()).thenReturn(HttpMethod.GET);
         when(mockRequestKnob.isSecure()).thenReturn(false);
 
-        assertFalse(fixture.validate(testModelWithRootLevelSecurity, testModelWithRootLevelSecurityPathResolver, mockRequestKnob, requestUri));
+        assertFalse(fixture.validate(testModelWithRootLevelSecurity, testModelWithRootLevelSecurityPathResolver, mockRequestKnob, requestUri, pec));
         assertEquals(1, testAudit.getAuditCount());
     }
     // PATH DEFINITION RESOLUTION HELPER CLASS TESTS
@@ -888,6 +946,10 @@ public class ServerSwaggerAssertionTest {
         );
 
         return serverAssertion;
+    }
+
+    private PolicyEnforcementContext createPolicyEnforcementContext() {
+        return createPolicyEnforcementContext(new Message(), new Message());
     }
 
     private PolicyEnforcementContext createPolicyEnforcementContext(Message request) {

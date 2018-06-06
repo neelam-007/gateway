@@ -116,7 +116,7 @@ public class ServerSwaggerAssertion extends AbstractServerAssertion<SwaggerAsser
 
         // perform the validation
 
-        return validate(model, resolver, httpRequestKnob, apiUri) ? AssertionStatus.NONE : AssertionStatus.FALSIFIED;
+        return validate(model, resolver, httpRequestKnob, apiUri, context) ? AssertionStatus.NONE : AssertionStatus.FALSIFIED;
     }
 
     private String getApiUri(PolicyEnforcementContext context, Map<String, Object> variableMap, HttpRequestKnob httpRequestKnob) {
@@ -141,7 +141,7 @@ public class ServerSwaggerAssertion extends AbstractServerAssertion<SwaggerAsser
         return apiUri;
     }
 
-    protected boolean validate(Swagger model, PathResolver resolver, HttpRequestKnob httpRequestKnob, String apiUri) {
+    protected boolean validate(final Swagger model, final PathResolver resolver, final HttpRequestKnob httpRequestKnob, final String apiUri, final PolicyEnforcementContext context) {
         if (assertion.isValidatePath()) {
             PathDefinition requestPathDefinition = resolver.getPathForRequestUri(apiUri);
 
@@ -149,6 +149,8 @@ public class ServerSwaggerAssertion extends AbstractServerAssertion<SwaggerAsser
                 logAndAudit(AssertionMessages.SWAGGER_INVALID_PATH, apiUri);
                 return false;
             }
+
+            context.setVariable(assertion.getPrefix() + SwaggerAssertion.SWAGGER_PATH, requestPathDefinition.path);
 
             Path requestPathModel = model.getPath(requestPathDefinition.path);
 
