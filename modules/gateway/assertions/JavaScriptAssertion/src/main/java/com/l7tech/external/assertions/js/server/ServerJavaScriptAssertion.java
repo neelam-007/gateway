@@ -82,8 +82,13 @@ public class ServerJavaScriptAssertion extends AbstractServerAssertion<JavaScrip
             try {
                 executionTimeout = Integer.parseInt(ExpandVariables.process(executionTimeoutString, variableMap, getAudit()));
             } catch (NumberFormatException ex) {
-                LOGGER.warning("Unable to parse Execution timeout. Using the default timeout " + executionTimeout);
+                LOGGER.warning("Unable to parse Execution timeout. Using the global timeout value.");
             }
+        }
+
+        if (executionTimeout < 0) {
+            LOGGER.warning("Invalid execution timeout value configured. Using the default timeout value " + DEFAULT_EXECUTION_TIMEOUT);
+            executionTimeout = DEFAULT_EXECUTION_TIMEOUT;
         }
 
         return executionTimeout;

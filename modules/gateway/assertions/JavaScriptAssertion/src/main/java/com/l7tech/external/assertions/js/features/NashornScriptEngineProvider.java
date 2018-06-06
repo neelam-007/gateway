@@ -4,12 +4,14 @@ import com.l7tech.common.io.NullOutputStream;
 import com.l7tech.util.ConfigFactory;
 import jdk.nashorn.api.scripting.ClassFilter;
 import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
+import org.apache.commons.lang.StringUtils;
 
 import javax.script.Bindings;
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.SimpleScriptContext;
 import java.io.OutputStreamWriter;
+import java.util.logging.Logger;
 
 import static com.l7tech.external.assertions.js.features.JavaScriptAssertionConstants.*;
 
@@ -17,6 +19,8 @@ import static com.l7tech.external.assertions.js.features.JavaScriptAssertionCons
  * Nashorn Javascript Engine Provider
  */
 public class NashornScriptEngineProvider implements ScriptEngineProvider {
+
+    private static final Logger LOGGER = Logger.getLogger(NashornScriptEngineProvider.class.getName());
 
     private static final String ARG_LANGUAGE = "--language=";
     private static final String ARG_NO_JAVA = "--no-java";
@@ -56,7 +60,14 @@ public class NashornScriptEngineProvider implements ScriptEngineProvider {
     }
 
     private String[] getScriptEngineOptions() {
-        final String ecmaVersion = ConfigFactory.getProperty(ECMA_VERSION_PROPERTY, DEFAULT_ECMA_VERSION);
+        String ecmaVersion = ConfigFactory.getProperty(ECMA_VERSION_PROPERTY, DEFAULT_ECMA_VERSION);
+
+        if(!(StringUtils.equalsIgnoreCase(ecmaVersion, ECMA_VERSION_ES5)
+                || StringUtils.equalsIgnoreCase(ecmaVersion, ECMA_VERSION_ES6))) {
+            LOGGER.warning(String.format("Invalid property value %s for %s. Initializing with default %s",
+                    ecmaVersion, ECMA_VERSION_CLUSTER_PROPERTY, DEFAULT_ECMA_VERSION));
+            ecmaVersion = DEFAULT_ECMA_VERSION;
+        }
         return new String[] {
                 ARG_LANGUAGE + ecmaVersion,
                 ARG_NO_JAVA,

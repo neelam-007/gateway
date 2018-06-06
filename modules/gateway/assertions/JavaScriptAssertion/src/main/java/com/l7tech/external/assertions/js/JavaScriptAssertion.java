@@ -13,7 +13,10 @@ import com.l7tech.util.HexUtils;
 
 import javax.xml.bind.annotation.XmlValue;
 
-import static com.l7tech.external.assertions.js.features.JavaScriptAssertionConstants.DEFAULT_EXECUTION_TIMEOUT_STRING;
+import java.util.HashMap;
+import java.util.Map;
+
+import static com.l7tech.external.assertions.js.features.JavaScriptAssertionConstants.*;
 import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
 
@@ -80,6 +83,18 @@ public class JavaScriptAssertion extends Assertion implements UsesVariables {
         meta.put( PROPERTIES_ACTION_NAME, "JavaScript Execution Properties");
         meta.put( PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.js.console.JavaScriptAssertionPropertiesDialog" );
         meta.put( MODULE_LOAD_LISTENER_CLASSNAME, "com.l7tech.external.assertions.js.server.JavaScriptModuleLoaderListener" );
+
+        Map<String, String[]> props = new HashMap<>();
+        props.put(EXECUTION_TIMEOUT_CLUSTER_PROPERTY, new String[] {
+                "Execution timeout for the Javascript in milliseconds. Default is 1500 milliseconds. Here, 0 stands for unlimited.",
+                String.valueOf(DEFAULT_EXECUTION_TIMEOUT),
+                "integer"
+        });
+        props.put(ECMA_VERSION_CLUSTER_PROPERTY, new String[] {
+                "The ECMAScript version to use. It must be either es5 or es6. Default value is es6.",
+                DEFAULT_ECMA_VERSION
+        });
+        meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
 
         meta.put( META_INITIALIZED, Boolean.TRUE );
         return meta;
