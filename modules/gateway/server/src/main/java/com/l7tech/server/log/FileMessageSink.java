@@ -12,6 +12,8 @@ import com.l7tech.util.ExceptionUtils;
 import java.io.IOException;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
+import java.util.Collections;
+import java.util.List;
 import java.util.logging.*;
 
 /**
@@ -27,6 +29,11 @@ class FileMessageSink extends MessageSinkSupport implements Serializable {
     public void close() throws IOException {
         handler.setErrorManager( new ErrorUnManager() );
         handler.close();
+    }
+
+    @Override
+    public List<Handler> getHandlers() {
+        return Collections.singletonList(this.handler);
     }
 
     //- PACKAGE

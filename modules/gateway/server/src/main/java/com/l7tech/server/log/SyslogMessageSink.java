@@ -12,8 +12,8 @@ import com.l7tech.util.Pair;
 
 import java.io.IOException;
 import java.text.MessageFormat;
-import java.util.MissingResourceException;
-import java.util.ResourceBundle;
+import java.util.*;
+import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.LogRecord;
@@ -58,6 +58,10 @@ class SyslogMessageSink extends MessageSinkSupport {
         syslog.close();
     }
 
+    @Override
+    public List<Handler> getHandlers() {
+        return Collections.emptyList();
+    }
     //- PACKAGE
 
     SyslogMessageSink( final ServerConfig serverConfig,

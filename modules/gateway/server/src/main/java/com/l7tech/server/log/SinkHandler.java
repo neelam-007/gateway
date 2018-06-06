@@ -2,7 +2,10 @@ package com.l7tech.server.log;
 
 import com.l7tech.common.log.HybridDiagnosticContext;
 import com.l7tech.common.log.HybridDiagnosticContextKeys;
+import com.l7tech.util.CompositeHandler;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 
@@ -11,7 +14,7 @@ import java.util.logging.LogRecord;
  *
  * @author Steve Jones
  */
-public class SinkHandler extends Handler {
+public class SinkHandler extends CompositeHandler {
 
     //- PUBLIC
 
@@ -49,6 +52,11 @@ public class SinkHandler extends Handler {
     public void publish(final LogRecord record) {
         HybridDiagnosticContext.put( HybridDiagnosticContextKeys.LOGGER_NAME, record.getLoggerName() );
         sink.message(category, record);
+    }
+
+    @Override
+    public List<Handler> getHandlers() {
+        return Collections.unmodifiableList(sink.getHandlers());
     }
 
     //- PRIVATE

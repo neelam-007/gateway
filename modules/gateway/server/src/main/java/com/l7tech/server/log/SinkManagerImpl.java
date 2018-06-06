@@ -26,7 +26,6 @@ import com.l7tech.util.*;
 import com.l7tech.util.Functions.Unary;
 import com.l7tech.util.Functions.UnaryThrows;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.transaction.annotation.Propagation;
@@ -1157,6 +1156,11 @@ public class SinkManagerImpl
 
         @Override
         public void close() {
+        }
+
+        @Override
+        public List<Handler> getHandlers() {
+            return Collections.unmodifiableList(sink.getHandlers());
         }
     }
 }

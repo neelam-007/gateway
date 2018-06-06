@@ -1,10 +1,12 @@
 package com.l7tech.server.log;
 
-import java.util.logging.LogRecord;
-import java.util.Set;
-import java.util.HashSet;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.logging.Handler;
+import java.util.logging.LogRecord;
 
 import com.l7tech.common.log.HybridDiagnosticContextMatcher;
 import com.l7tech.common.log.HybridDiagnosticContextMatcher.MatcherRules;
@@ -25,6 +27,11 @@ abstract class MessageSinkSupport implements MessageSink {
         if ( record != null && acceptMessage( category, record ) ) {
             processMessage( category, record );
         }
+    }
+
+    @Override
+    public List<Handler> getHandlers() {
+        return Collections.emptyList();
     }
 
     //- PACKAGE

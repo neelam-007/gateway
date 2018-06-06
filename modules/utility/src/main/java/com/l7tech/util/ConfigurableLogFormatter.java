@@ -187,40 +187,59 @@ public class ConfigurableLogFormatter extends DebugExceptionLogFormatter {
             configured = true;
             LogManager manager = LogManager.getLogManager();
             Enumeration nameEnum = manager.getLoggerNames();
-            boolean found = false;
             // Loop through the Loggers
-            while(nameEnum.hasMoreElements() && !found) {
+            while (nameEnum.hasMoreElements()) {
                 String loggerName = (String) nameEnum.nextElement();
                 Logger logger = manager.getLogger(loggerName);
 
                 // Check Handlers for this Logger
                 Handler[] handlers = logger.getHandlers();
+
                 for (int i = 0; i < handlers.length; i++) {
                     Handler handler = handlers[i];
-                    String className = handler.getClass().getName();
+                    if (setFromHandler(manager, handler))
+                        return;
+                }
+            }
+        }
+    }
 
-                    // See if we are the formatter for this Handler
-                    Formatter formatter = handler.getFormatter();
-                    if(formatter == this) {
-                        // Check for customized format pattern for exceptions and std messages
-                        String prefix = className + ".formatter";
-                        String configFormat = manager.getProperty(prefix + ".format");
-                        String configExceptFormat = manager.getProperty(prefix + ".exceptionFormat");
-
-                        if(configFormat!=null) {
-                            format = configFormat;
-                            exceptFormat = configFormat + "%" + EXCEPTION_ARG + "$s"; // default to showing stack last
-                        }
-                        if(configExceptFormat!=null) {
-                            exceptFormat = configExceptFormat;
-                        }
-
-                        found = true;
-                        break;
+    private boolean setFromHandler(final LogManager manager, final Handler handler) {
+        if (setConfig(manager, handler.getClass().getName(), handler)) {
+            return true;
+        } else {
+            if (handler instanceof CompositeHandler) {
+                CompositeHandler compositeHandler = (CompositeHandler) handler;
+                for (Handler handle : compositeHandler.getHandlers()) {
+                    if (setFromHandler(manager, handle)) {
+                        return true;
                     }
                 }
             }
         }
+        return false;
+    }
+
+    private boolean setConfig(final LogManager manager, final String className, final Handler handler) {
+        // See if we are the formatter for this Handler
+        Formatter formatter = handler.getFormatter();
+        if (formatter == this) {
+            // Check for customized format pattern for exceptions and std messages
+            String prefix = className + ".formatter";
+            String configFormat = manager.getProperty(prefix + ".format");
+            String configExceptFormat = manager.getProperty(prefix + ".exceptionFormat");
+
+            if (configFormat != null) {
+                format = configFormat;
+                exceptFormat = configFormat + "%" + EXCEPTION_ARG + "$s"; // default to showing stack last
+            }
+            if (configExceptFormat != null) {
+                exceptFormat = configExceptFormat;
+            }
+
+            return true;
+        }
+        return false;
     }
 
     /**

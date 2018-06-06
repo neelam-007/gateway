@@ -5,6 +5,8 @@ import com.l7tech.gateway.common.log.SinkConfiguration;
 import java.io.FileDescriptor;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
+import java.util.Collections;
+import java.util.List;
 import java.util.logging.*;
 
 /**
@@ -20,6 +22,11 @@ public class ConsoleMessageSink extends MessageSinkSupport {
      * Does nothing
      */
     public void close() {
+    }
+
+    @Override
+    public List<Handler> getHandlers() {
+        return Collections.singletonList(this.handler);
     }
 
     //- PACKAGE

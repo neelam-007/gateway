@@ -1,5 +1,8 @@
 package com.l7tech.server.log;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import java.io.IOException;
@@ -18,5 +21,9 @@ public class LoggingMessageSink implements MessageSink {
     }
 
     public void close() throws IOException {
+    }
+    
+    public List<Handler> getHandlers() {
+        return Collections.emptyList();
     }
 }

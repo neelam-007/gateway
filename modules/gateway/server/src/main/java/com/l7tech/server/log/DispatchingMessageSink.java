@@ -1,5 +1,6 @@
 package com.l7tech.server.log;
 
+import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.Collections;
@@ -80,6 +81,17 @@ public class DispatchingMessageSink implements MessageSink {
                 exception.printStackTrace();
             }
         }
+    }
+
+    @Override
+    public List<Handler> getHandlers() {
+        List<Handler> handlers = new ArrayList<>();
+        List<MessageSink> sinks = list.get();
+
+        for ( MessageSink sink : sinks ) {
+            handlers.addAll(sink.getHandlers());
+        }
+        return Collections.unmodifiableList(handlers);
     }
 
     //- PRIVATE
