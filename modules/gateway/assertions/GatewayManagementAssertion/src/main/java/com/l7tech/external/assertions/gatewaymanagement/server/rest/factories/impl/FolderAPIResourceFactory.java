@@ -73,9 +73,12 @@ public class FolderAPIResourceFactory extends WsmanBaseResourceFactory<FolderMO,
     }
 
     public void deleteResource(@NotNull String id, boolean forceDelete) throws ResourceFactory.ResourceNotFoundException {
-        if(forceDelete){
+        if (forceDelete) {
+            if (Folder.ROOT_FOLDER_ID.equals(Goid.parseGoid(id))) {
+                throw new ResourceFactory.ResourceAccessException(new ConstraintViolationException("Cannot delete root folder"));
+            }
             deleteRecursively(id);
-        }else {
+        } else {
             super.deleteResource(id);
         }
     }
