@@ -31,7 +31,7 @@ public class EnrollWithPortalAction extends SecureAction {
             String messageStr = "Default OTK not detected.\n" +
                     "Please install the OTK with the following default parameters:\n" +
                     "\t - with no prefix\n" +
-                    "\t - default JDBC Connection name (OAuth)\n";
+                    "\t - default JDBC Connection name (OAuth) or Cassandra Connection name (OAuth_Cassandra)\n";
 
             DialogDisplayer.showMessageDialog(TopComponents.getInstance().getTopParent() , messageStr, "Enroll with SaaS Portal Prerequisites", JOptionPane.PLAIN_MESSAGE, null);
             return;

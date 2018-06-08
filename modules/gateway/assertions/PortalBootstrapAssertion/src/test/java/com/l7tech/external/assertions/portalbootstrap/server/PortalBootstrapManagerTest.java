@@ -1,6 +1,7 @@
 package com.l7tech.external.assertions.portalbootstrap.server;
 
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.gateway.common.cassandra.CassandraConnection;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.gateway.common.jdbc.JdbcConnection;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
@@ -15,6 +16,8 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.server.*;
+import com.l7tech.server.cassandra.CassandraConnectionHolder;
+import com.l7tech.server.cassandra.CassandraConnectionManager;
 import com.l7tech.server.cluster.ClusterInfoManager;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.jdbc.JdbcConnectionManager;
@@ -29,6 +32,7 @@ import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.util.ApplicationContextInjector;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.Config;
+import com.l7tech.util.Triple;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.junit.Before;
@@ -45,6 +49,8 @@ import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -86,6 +92,8 @@ public class PortalBootstrapManagerTest {
     @Mock
     private JdbcConnectionManager jdbcConnectionManager;
     @Mock
+    private CassandraConnectionManager cassandraConnectionManager;
+    @Mock
     private Config config;
     @Mock
     private ClusterPropertyManager clusterPropertyManager;
@@ -122,6 +130,7 @@ public class PortalBootstrapManagerTest {
                         .put("policyManager", policyManager)
                         .put("encapsulatedAssertionConfigManager", encapsulatedAssertionConfigManager)
                         .put("jdbcConnectionManager", jdbcConnectionManager)
+                        .put("cassandraConnectionManager", cassandraConnectionManager)
                         .put("stashManagerFactory", stashManagerFactory)
                         .put("clusterPropertyManager", clusterPropertyManager)
                         .put("trustedCertManager", trustedCertManager)
@@ -157,6 +166,91 @@ public class PortalBootstrapManagerTest {
         assertEquals(OTK_JDBC_GOID.toString(), jsonNode.get(OTK_JDBC_CONN).getTextValue());
         assertEquals("1", jsonNode.get("node_count").getTextValue());
         assertNotNull(jsonNode.get("nodeInfo"));
+    }
+
+    @Test
+    public void testGetOtkEntities() throws Exception {
+        Policy otkPolicy = mock(Policy.class);
+        when(policyManager.findByUniqueName(OTK_CLIENT_DB_GET)).thenReturn(otkPolicy);
+
+        EncapsulatedAssertionConfig otkEncass = mock(EncapsulatedAssertionConfig.class);
+        when(encapsulatedAssertionConfigManager.findByUniqueName(OTK_REQUIRE_OAUTH_2_0_TOKEN)).thenReturn(otkEncass);
+
+        JdbcConnection otkJdbc = mock(JdbcConnection.class);
+        when(jdbcConnectionManager.findByUniqueName(OAUTH)).thenReturn(otkJdbc);
+
+        Triple<Policy,EncapsulatedAssertionConfig,JdbcConnection> response = manager.getOtkEntities();
+
+        assertSame(otkPolicy, response.left);
+        assertSame(otkEncass, response.middle);
+        assertSame(otkJdbc, response.right);
+    }
+
+    @Test
+    public void testGetOtkEntitiesWithCassandra() throws Exception {
+        Policy otkPolicy = mock(Policy.class);
+        when(policyManager.findByUniqueName(OTK_CLIENT_DB_GET)).thenReturn(null);
+        when(policyManager.findByUniqueName(OTK_CLIENT_NOSQL_GET)).thenReturn(otkPolicy);
+
+        EncapsulatedAssertionConfig otkEncass = mock(EncapsulatedAssertionConfig.class);
+        when(encapsulatedAssertionConfigManager.findByUniqueName(OTK_REQUIRE_OAUTH_2_0_TOKEN)).thenReturn(otkEncass);
+
+        when(jdbcConnectionManager.findByUniqueName(OAUTH)).thenReturn(null);
+        CassandraConnectionHolder connectionHolder = mock(CassandraConnectionHolder.class);
+        when(cassandraConnectionManager.getConnection(OAUTH_CASSANDRA)).thenReturn(connectionHolder);
+        when(connectionHolder.getCassandraConnectionEntity()).thenReturn(mock(CassandraConnection.class));
+
+        Triple<Policy,EncapsulatedAssertionConfig,JdbcConnection> response = manager.getOtkEntities();
+
+        assertSame(otkPolicy, response.left);
+        assertSame(otkEncass, response.middle);
+        assertNull(response.right);
+    }
+
+    @Test(expected = IOException.class)
+    public void testGetOtkEntitiesWithNoPolicy() throws Exception {
+        when(policyManager.findByUniqueName(OTK_CLIENT_DB_GET)).thenReturn(null);
+        when(policyManager.findByUniqueName(OTK_CLIENT_NOSQL_GET)).thenReturn(null);
+        manager.getOtkEntities();
+    }
+
+    @Test(expected = IOException.class)
+    public void testGetOtkEntitiesWithNoEncapsulatedAssertionConfig() throws Exception {
+        when(policyManager.findByUniqueName(OTK_CLIENT_DB_GET)).thenReturn(mock(Policy.class));
+
+        when(encapsulatedAssertionConfigManager.findByUniqueName(OTK_REQUIRE_OAUTH_2_0_TOKEN)).thenReturn(null);
+
+        manager.getOtkEntities();
+    }
+
+    @Test(expected = IOException.class)
+    public void testGetOtkEntitiesWithNoJdbcConnectionAndNoCassandraHolder() throws Exception {
+        Policy otkPolicy = mock(Policy.class);
+        when(policyManager.findByUniqueName(OTK_CLIENT_DB_GET)).thenReturn(null);
+        when(policyManager.findByUniqueName(OTK_CLIENT_NOSQL_GET)).thenReturn(otkPolicy);
+
+        EncapsulatedAssertionConfig otkEncass = mock(EncapsulatedAssertionConfig.class);
+        when(encapsulatedAssertionConfigManager.findByUniqueName(OTK_REQUIRE_OAUTH_2_0_TOKEN)).thenReturn(otkEncass);
+
+        when(jdbcConnectionManager.findByUniqueName(OAUTH)).thenReturn(null);
+        CassandraConnectionHolder connectionHolder = mock(CassandraConnectionHolder.class);
+        when(cassandraConnectionManager.getConnection(OAUTH_CASSANDRA)).thenReturn(connectionHolder);
+        when(connectionHolder.getCassandraConnectionEntity()).thenReturn(null);
+
+        manager.getOtkEntities();
+    }
+
+    @Test(expected = IOException.class)
+    public void testGetOtkEntitiesWithNoConnection() throws Exception {
+        when(policyManager.findByUniqueName(OTK_CLIENT_DB_GET)).thenReturn(mock(Policy.class));
+
+        EncapsulatedAssertionConfig otkEncass = mock(EncapsulatedAssertionConfig.class);
+        when(encapsulatedAssertionConfigManager.findByUniqueName(OTK_REQUIRE_OAUTH_2_0_TOKEN)).thenReturn(otkEncass);
+
+        when(jdbcConnectionManager.findByUniqueName(OAUTH)).thenReturn(null);
+        when(cassandraConnectionManager.getConnection(OAUTH_CASSANDRA)).thenReturn(null);
+
+        manager.getOtkEntities();
     }
 
     @Test

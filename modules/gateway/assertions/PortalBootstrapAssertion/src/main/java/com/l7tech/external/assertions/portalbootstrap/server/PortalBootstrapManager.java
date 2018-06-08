@@ -24,6 +24,8 @@ import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.token.OpaqueSecurityToken;
 import com.l7tech.server.StashManagerFactory;
+import com.l7tech.server.cassandra.CassandraConnectionHolder;
+import com.l7tech.server.cassandra.CassandraConnectionManager;
 import com.l7tech.server.cluster.ClusterInfoManager;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.identity.AuthenticationResult;
@@ -94,6 +96,10 @@ public class PortalBootstrapManager {
     static final String OTK_REQUIRE_OAUTH_2_0_TOKEN = "OTK Require OAuth 2.0 Token";
     static final String OAUTH = "OAuth";
 
+    //For Cassandra
+    static final String OTK_CLIENT_NOSQL_GET = "OTK Client NoSQL GET";
+    static final String OAUTH_CASSANDRA = "OAuth_Cassandra";
+
     private static PortalBootstrapManager instance = null;
     private static final int ENROLL_PORT = 9446;
     private static final String SKAR_ID_HEADER_FIELD = "L7-skar-id";
@@ -124,6 +130,9 @@ public class PortalBootstrapManager {
 
     @Inject
     private JdbcConnectionManager jdbcConnectionManager;
+
+    @Inject
+    private CassandraConnectionManager cassandraConnectionManager;
 
     @Inject
     private StashManagerFactory stashManagerFactory;
@@ -393,10 +402,13 @@ public class PortalBootstrapManager {
         try {
             otkPolicy = policyManager.findByUniqueName(OTK_CLIENT_DB_GET);
             if(otkPolicy == null){
-                throw new IOException( "OTK policy not found: "+OTK_CLIENT_DB_GET+"" );
+                otkPolicy = policyManager.findByUniqueName(OTK_CLIENT_NOSQL_GET);
+                if (otkPolicy == null) {
+                    throw new IOException("OTK policy not found: " + OTK_CLIENT_DB_GET + " or " + OTK_CLIENT_NOSQL_GET);
+                }
             }
         } catch (FindException e) {
-            throw new IOException( "Error finding OTK policy: "+OTK_CLIENT_DB_GET+"", ExceptionUtils.getDebugException(e) );
+            throw new IOException( "Error finding OTK policy: " + OTK_CLIENT_DB_GET + " or " + OTK_CLIENT_NOSQL_GET, ExceptionUtils.getDebugException(e) );
         }
 
 
@@ -410,14 +422,18 @@ public class PortalBootstrapManager {
             throw new IOException( "Error finding OTK encapsulated assertion: "+OTK_REQUIRE_OAUTH_2_0_TOKEN+"", ExceptionUtils.getDebugException(e) );
         }
 
-        // assume only 1 jdbc connection and its for the OTK db
+        // At least 1 connection (Jdbc or Cassandra) should be exits
         try {
             jdbcConnection = jdbcConnectionManager.findByUniqueName(OAUTH);
-            if (jdbcConnection == null) {
-                throw new IOException("Cannot find jdbc connection: " + OAUTH);
+
+            CassandraConnectionHolder connectionHolder = cassandraConnectionManager.getConnection(OAUTH_CASSANDRA);
+
+            //Atleast one connection should be exists
+            if (jdbcConnection == null && (connectionHolder == null || connectionHolder.getCassandraConnectionEntity() == null)) {
+                throw new IOException("Cannot find jdbc or cassandra connection");
             }
         } catch (FindException e) {
-            throw new IOException("Error finding OTK jdbc connection", ExceptionUtils.getDebugException(e));
+            throw new IOException("Error finding OTK db connection", ExceptionUtils.getDebugException(e));
         }
 
         return Triple.triple(otkPolicy,otkEncass,jdbcConnection);
@@ -463,7 +479,9 @@ public class PortalBootstrapManager {
         gen.writeStringField(ADMINUSER_ID, adminUser.getId() );
         gen.writeStringField(OTK_CLIENT_DB_GET_POLICY, otkEntities.left.getId());
         gen.writeStringField(OTK_REQUIRE_OAUTH_2_TOKEN_ENCASS, otkEntities.middle.getId());
-        gen.writeStringField(OTK_JDBC_CONN, otkEntities.right.getId());
+        //In case of cassandra, we don't need JDBC connection so we are pass dummy id so that existing
+        //enrolment bundle or old otk can work.
+        gen.writeStringField(OTK_JDBC_CONN, (otkEntities.right == null) ? Goid.DEFAULT_GOID.toString(): otkEntities.right.getId());
         gen.writeStringField(NODE_COUNT, nodeCount );
         gen.writeFieldName(NODE_INFO);
         gen.writeStartArray();
