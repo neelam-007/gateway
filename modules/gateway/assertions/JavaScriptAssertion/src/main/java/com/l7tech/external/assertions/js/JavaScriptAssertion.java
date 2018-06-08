@@ -7,9 +7,12 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionMetadata;
 import com.l7tech.policy.assertion.DefaultAssertionMetadata;
 import com.l7tech.policy.assertion.UsesVariables;
+import com.l7tech.policy.assertion.AssertionNodeNameFactory;
+import com.l7tech.policy.assertion.AssertionUtils;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.HexUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.xml.bind.annotation.XmlValue;
 
@@ -27,6 +30,7 @@ public class JavaScriptAssertion extends Assertion implements UsesVariables {
 
     private static final String META_INITIALIZED = JavaScriptAssertion.class.getName() + ".metadataInitialized";
 
+    private String name;
     private String script;
     private boolean strictModeEnabled = true;
     private String executionTimeout = DEFAULT_EXECUTION_TIMEOUT_STRING;
@@ -38,6 +42,15 @@ public class JavaScriptAssertion extends Assertion implements UsesVariables {
 
     public void setScript(String script) {
         this.script = script;
+    }
+
+    @XmlValue
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     @Deprecated
@@ -68,18 +81,35 @@ public class JavaScriptAssertion extends Assertion implements UsesVariables {
         return Syntax.getReferencedNames(getExecutionTimeout());
     }
 
+    private static final String ASSERTION_NAME = "Execute JavaScript";
+
+    final static AssertionNodeNameFactory policyNameFactory = new AssertionNodeNameFactory<JavaScriptAssertion>() {
+        @Override
+        public String getAssertionName(final JavaScriptAssertion assertion, final boolean decorate) {
+            if (!decorate) return ASSERTION_NAME;
+
+            final StringBuilder sb = new StringBuilder(ASSERTION_NAME);
+            if (StringUtils.isNotBlank(assertion.getName())) {
+                sb.append(" - ").append(assertion.getName());
+            }
+
+            return AssertionUtils.decorateName(assertion, sb);
+        }
+    };
+
     @Override
     public AssertionMetadata meta() {
         DefaultAssertionMetadata meta = super.defaultMeta();
         if ( Boolean.TRUE.equals( meta.get( META_INITIALIZED ) ) )
             return meta;
 
-        meta.put( SHORT_NAME, "Execute JavaScript" );
+        meta.put( SHORT_NAME, ASSERTION_NAME );
         meta.put( DESCRIPTION, "To execute Javascript code inside the Gateway's policy context.") ;
         meta.put( PALETTE_FOLDERS, new String[] { "misc" } );
         meta.put( PALETTE_NODE_ICON, "com/l7tech/resources/json.gif" );
         meta.put( POLICY_ADVICE_CLASSNAME, "auto" );
         meta.put( POLICY_NODE_ICON, "com/l7tech/resources/json.gif" );
+        meta.put( POLICY_NODE_NAME_FACTORY, policyNameFactory );
         meta.put( PROPERTIES_ACTION_NAME, "JavaScript Execution Properties");
         meta.put( PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.js.console.JavaScriptAssertionPropertiesDialog" );
         meta.put( MODULE_LOAD_LISTENER_CLASSNAME, "com.l7tech.external.assertions.js.server.JavaScriptModuleLoaderListener" );

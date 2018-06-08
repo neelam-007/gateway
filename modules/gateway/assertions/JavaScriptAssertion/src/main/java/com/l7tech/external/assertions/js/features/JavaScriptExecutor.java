@@ -1,10 +1,10 @@
 package com.l7tech.external.assertions.js.features;
 
+import com.l7tech.external.assertions.js.features.bindings.JavaScriptLoggerImpl;
 import com.l7tech.server.message.PolicyEnforcementContext;
 
 import javax.script.*;
 import java.util.concurrent.*;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.l7tech.external.assertions.js.features.JavaScriptAssertionConstants.USE_STRICT_MODE_DIRECTIVE_STATEMENT;
@@ -15,17 +15,6 @@ import static com.l7tech.external.assertions.js.features.JavaScriptAssertionCons
 public class JavaScriptExecutor {
 
     private static final Logger LOGGER = Logger.getLogger(JavaScriptExecutor.class.getName());
-    private static final Logger SCRIPT_LOGGER = Logger.getLogger(JavaScriptLogger.class.getName());
-
-    /**
-     * The Logger implementation to be exposed to the JavaScript to enable it to log
-     */
-    private static final JavaScriptLogger JAVA_SCRIPT_LOGGER = new JavaScriptLogger() {
-        @Override
-        public void log(String level, String message) {
-            SCRIPT_LOGGER.log(Level.parse(level), message);
-        }
-    };
 
     private JavaScriptExecutorOptions executorOptions;
 
@@ -100,7 +89,7 @@ public class JavaScriptExecutor {
 
         engineScopeBindings.put("context",
                 new JavaScriptPolicyEnforcementContextImpl(policyContext, manager.getJsonScriptObjectMirror()));
-        engineScopeBindings.put("logger", JAVA_SCRIPT_LOGGER);
+        engineScopeBindings.put("logger", new JavaScriptLoggerImpl(executorOptions.getScriptName()));
 
         return scriptContext;
     }

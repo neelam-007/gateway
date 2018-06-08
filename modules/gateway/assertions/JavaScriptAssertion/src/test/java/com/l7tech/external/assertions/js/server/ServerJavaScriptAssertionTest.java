@@ -2,11 +2,14 @@ package com.l7tech.external.assertions.js.server;
 
 import static com.l7tech.external.assertions.js.features.JavaScriptAssertionConstants.DEFAULT_EXECUTION_TIMEOUT;
 import static org.junit.Assert.*;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.spy;
 
 import com.l7tech.external.assertions.js.JavaScriptAssertion;
 import com.l7tech.external.assertions.js.features.JavaScriptLogger;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.TestAudit;
+import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.ApplicationContexts;
@@ -38,21 +41,25 @@ import java.util.logging.Logger;
 @ContextConfiguration(locations = "/com/l7tech/server/resources/testApplicationContext.xml")
 public class ServerJavaScriptAssertionTest {
     private static final Logger LOGGER = Logger.getLogger( ServerJavaScriptAssertion.class.getName() );
+    private static final String TEST_SERVICE_NAME = "JavaScriptTest";
 
     @Autowired
     private ApplicationContext applicationContext;
     private TestAudit testAudit;
-    private ServerConfig serverConfig;
 
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
         testAudit = new TestAudit();
-        serverConfig = applicationContext.getBean("serverConfig", ServerConfig.class);
     }
 
     private JavaScriptAssertion createAssertion(final String code) {
+        return createAssertion("", code);
+    }
+
+    private JavaScriptAssertion createAssertion(final String name, final String code) {
         final JavaScriptAssertion assertion = new JavaScriptAssertion();
+        assertion.setName(name);
         assertion.setScript(code);
         return assertion;
     }
@@ -75,7 +82,17 @@ public class ServerJavaScriptAssertionTest {
     }
 
     private PolicyEnforcementContext createServerContext() {
-        return PolicyEnforcementContextFactory.createPolicyEnforcementContext( new Message(), new Message() );
+        return PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
+    }
+
+    private PolicyEnforcementContext createSpiedServerContext() {
+        final PolicyEnforcementContext spyContext = spy(createServerContext());
+        final PublishedService spyService = spy(new PublishedService());
+
+        doReturn(TEST_SERVICE_NAME).when(spyService).getName();
+        doReturn(spyService).when(spyContext).getService();
+
+        return spyContext;
     }
 
     @Test
@@ -288,12 +305,32 @@ public class ServerJavaScriptAssertionTest {
 
         try {
             final String code = "var foo = 'hello world'; logger.log('WARNING', foo); return true;";
-            final PolicyEnforcementContext pec = createServerContext();
-            final AssertionStatus status = createServerAssertion(createAssertion(code)).checkRequest(pec);
+            final JavaScriptAssertion assertion = createAssertion(code);
+            final PolicyEnforcementContext pec = createSpiedServerContext();
+            final AssertionStatus status = createServerAssertion(assertion).checkRequest(pec);
 
-            assertEquals("Script execution should PASS",
-                    AssertionStatus.NONE, status);
-            assertTrue(logCollector.indexOf("WARNING:hello world") != -1);
+            assertEquals("Script execution should PASS", AssertionStatus.NONE, status);
+            final String systemScriptName = TEST_SERVICE_NAME + "_" + assertion.getOrdinal();
+            assertTrue(logCollector.indexOf("WARNING:" + systemScriptName + ": hello world") != -1);
+        } finally {
+            Logger.getLogger(JavaScriptLogger.class.getName()).removeHandler(logHandler);
+        }
+    }
+
+    @Test
+    public void testScriptNameInLogger() {
+        final StringBuilder logCollector = new StringBuilder();
+        final Handler logHandler = createLogHandler(logCollector);
+        Logger.getLogger(JavaScriptLogger.class.getName()).addHandler(logHandler);
+
+        try {
+            final String code = "logger.log('WARNING', 'Hello World!'); return true;";
+            // Tests user defined script name is being logged in SSG logs
+            final String name = "JS_ScriptManager1";
+            final AssertionStatus status = createServerAssertion(createAssertion(name, code)).checkRequest(createSpiedServerContext());
+
+            assertEquals("Script execution should PASS", AssertionStatus.NONE, status);
+            assertTrue(logCollector.indexOf("WARNING:" + name + ": Hello World!") != -1);
         } finally {
             Logger.getLogger(JavaScriptLogger.class.getName()).removeHandler(logHandler);
         }

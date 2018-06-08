@@ -44,9 +44,10 @@ public class ServerJavaScriptAssertion extends AbstractServerAssertion<JavaScrip
     public AssertionStatus checkRequest(final PolicyEnforcementContext context) {
         final String[] varsUsed = assertion.getVariablesUsed();
         final Map<String, Object> variableMap = context.getVariableMap(varsUsed, getAudit());
-
+        final String scriptName = getScriptName(context);
         try {
             final JavaScriptExecutorOptions executorOptions = new JavaScriptExecutorOptions(
+                    scriptName,
                     assertion.getScript(),
                     assertion.isStrictModeEnabled(),
                     getScriptExecutionTimeout(variableMap, assertion.getExecutionTimeout()));
@@ -56,7 +57,7 @@ public class ServerJavaScriptAssertion extends AbstractServerAssertion<JavaScrip
              * The script is expected to return TRUE or FALSE if the script was executed. If TRUE is NOT returned we
              * must falsify the assertion.
              */
-            if(result != null && BooleanUtils.toBoolean(result.toString())) {
+            if (result != null && BooleanUtils.toBoolean(result.toString())) {
                 return AssertionStatus.NONE;
             } else {
                 LOGGER.warning("The javascript did not return TRUE. Falsifying the assertion.");
@@ -64,12 +65,12 @@ public class ServerJavaScriptAssertion extends AbstractServerAssertion<JavaScrip
             }
         } catch (InterruptedException|ExecutionException|TimeoutException|ScriptException|JavaScriptException e) {
             logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
-                    new String[]{ "Script failure: " + ExceptionUtils.getMessage( e ) },
+                    new String[]{ "Script failure: " + scriptName + ":" + ExceptionUtils.getMessage( e ) },
                     ExceptionUtils.getDebugException( e ) );
             return AssertionStatus.FAILED;
         } catch (Exception e) {
             logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
-                    new String[]{ "Unexpected script failure: " + ExceptionUtils.getMessage( e ) },
+                    new String[]{ "Unexpected script failure: " + scriptName + ":" + ExceptionUtils.getMessage( e ) },
                     ExceptionUtils.getDebugException( e ) );
             return AssertionStatus.FAILED;
         }
@@ -92,5 +93,18 @@ public class ServerJavaScriptAssertion extends AbstractServerAssertion<JavaScrip
         }
 
         return executionTimeout;
+    }
+
+    private String getScriptName(final PolicyEnforcementContext context) {
+        String name = assertion.getName();
+        if (StringUtils.isBlank(name)) {
+            StringBuilder builder = new StringBuilder();
+            if (context.getService() != null) {
+                builder.append(context.getService().getName());
+            }
+            builder.append("_").append(assertion.getOrdinal());
+            name = builder.toString();
+        }
+        return name;
     }
 }

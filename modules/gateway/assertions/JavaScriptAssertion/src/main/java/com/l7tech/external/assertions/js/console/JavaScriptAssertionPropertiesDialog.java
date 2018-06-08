@@ -7,16 +7,20 @@ import com.l7tech.gui.util.InputValidator;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.policy.variable.Syntax;
 import com.l7tech.util.ValidationUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.regex.Pattern;
 
 import static com.l7tech.external.assertions.js.features.JavaScriptAssertionConstants.*;
 
 public class JavaScriptAssertionPropertiesDialog extends AssertionPropertiesOkCancelSupport<JavaScriptAssertion> {
+
+    private static final String SCRIPT_NAME_REGEX = "^[a-zA-Z0-9_]*$";
+    private static final Pattern SCRIPT_NAME_PATTERN = Pattern.compile(SCRIPT_NAME_REGEX);
 
     private final InputValidator validator;
 
@@ -25,6 +29,8 @@ public class JavaScriptAssertionPropertiesDialog extends AssertionPropertiesOkCa
     private JCheckBox executionTimeoutCheckBox;
     private JTextField executionTimeoutTextfield;
     private JCheckBox strictVariableSyntaxCheckBox;
+    private JTextField scriptNameTextField;
+    private JLabel scriptNameLabel;
 
     public JavaScriptAssertionPropertiesDialog( final Frame owner, final JavaScriptAssertion assertion ) {
         super( JavaScriptAssertion.class, owner, assertion, true );
@@ -46,6 +52,17 @@ public class JavaScriptAssertionPropertiesDialog extends AssertionPropertiesOkCa
                     return "The value for the Execution Timeout must be a valid positive number or use context variables.";
                 }
 
+                return null;
+            }
+        });
+        validator.constrainTextFieldToMaxChars("Script Name", scriptNameTextField, 128, null);
+        validator.constrainTextField(scriptNameTextField, new InputValidator.ValidationRule() {
+            @Override
+            public String getValidationError() {
+                if (StringUtils.isNotBlank(scriptNameTextField.getText()) && (!SCRIPT_NAME_PATTERN.matcher
+                        (StringUtils.trim(scriptNameTextField.getText())).matches())) {
+                    return "Invalid script name. Script name must contain only alphanumeric characters and underscore.";
+                }
                 return null;
             }
         });
@@ -85,6 +102,7 @@ public class JavaScriptAssertionPropertiesDialog extends AssertionPropertiesOkCa
 
     @Override
     public void setData( final JavaScriptAssertion assertion ) {
+        scriptNameTextField.setText(assertion.getName());
         scriptEditor.setText(assertion.getScript());
         strictVariableSyntaxCheckBox.setSelected(assertion.isStrictModeEnabled());
 
@@ -105,6 +123,7 @@ public class JavaScriptAssertionPropertiesDialog extends AssertionPropertiesOkCa
             throw new ValidationException(error);
         }
 
+        assertion.setName(StringUtils.trim(scriptNameTextField.getText()));
         assertion.setScript(scriptEditor.getText());
         assertion.setStrictModeEnabled(strictVariableSyntaxCheckBox.isSelected());
         assertion.setExecutionTimeout(executionTimeoutCheckBox.isSelected() ?
