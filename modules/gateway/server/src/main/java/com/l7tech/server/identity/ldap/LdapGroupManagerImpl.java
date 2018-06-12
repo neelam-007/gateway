@@ -1257,7 +1257,9 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
             if ( LdapUtils.attrContainsCaseIndependent(objectclasses, grpclass)) {
                 Object tmp = LdapUtils.extractOneAttributeValue(attributes,
                         groupType.getNameAttrName());
-                group = buildGroup( getProviderOid(), dn, tmp!=null ? tmp.toString() : null, attributes );
+                // if description attribute present, use it
+                Object desc  = LdapUtils.extractOneAttributeValue(attributes, LdapIdentityProvider.DESCRIPTION_ATTRIBUTE_NAME);
+                group = buildGroup( getProviderOid(), dn, tmp!=null ? tmp.toString() : null, desc!=null ? desc.toString() : null, attributes );
                 break;
             }
         }
@@ -1265,10 +1267,11 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
         return group;
     }
 
-    private static LdapGroup buildGroup( final Goid providerOid, final String dn, final String cn, final Attributes attributes ) {
+    private static LdapGroup buildGroup( final Goid providerOid, final String dn, final String cn, final String desc, final Attributes attributes ) {
         LdapGroup ldapGroup = new LdapGroup();
         ldapGroup.setProviderId(providerOid);
         ldapGroup.setDn(dn);
+        ldapGroup.setDescription(desc);
         ldapGroup.setAttributes(attributes);
         if ( cn != null ) {
             ldapGroup.setCn( cn );
@@ -1311,6 +1314,7 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
         private final Goid providerOid;
         private final String dn;
         private final String cn;
+        private final String description;
         private final Attributes attributes;
         private final long timestamp = System.currentTimeMillis();
         private final Set<String> nonGroupMembers = Collections.synchronizedSet( new HashSet<String>() );
@@ -1320,21 +1324,24 @@ public class LdapGroupManagerImpl implements LdapGroupManager, Lifecycle {
             this( ldapGroup.getProviderId(),
                   ldapGroup.getDn(),
                   ldapGroup.getCn(),
+                  ldapGroup.getDescription(),
                   ldapGroup.getAttributes() );
         }
 
         private GroupCacheEntry( final Goid providerOid,
                                  final String dn,
                                  final String cn,
+                                 final String description,
                                  final Attributes attributes ) {
             this.providerOid = providerOid;
             this.dn = dn;
             this.cn = cn;
+            this.description = description;
             this.attributes = attributes;
         }
 
         private LdapGroup asLdapGroup() {
-            return buildGroup( providerOid, dn, cn, attributes );
+            return buildGroup( providerOid, dn, cn, description, attributes );
         }
 
         public boolean isNonGroup( final String member ) {
