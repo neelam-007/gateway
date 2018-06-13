@@ -1,7 +1,7 @@
 package com.l7tech.external.assertions.js.server;
 
 import com.l7tech.external.assertions.js.JavaScriptAssertion;
-import com.l7tech.external.assertions.js.features.JavaScriptException;
+import com.l7tech.external.assertions.js.RuntimeScriptException;
 import com.l7tech.external.assertions.js.features.JavaScriptExecutor;
 import com.l7tech.external.assertions.js.features.JavaScriptExecutorOptions;
 import com.l7tech.gateway.common.audit.AssertionMessages;
@@ -12,10 +12,12 @@ import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.Config;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Pair;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.ApplicationContext;
 
+import javax.script.CompiledScript;
 import javax.script.ScriptException;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -34,10 +36,22 @@ public class ServerJavaScriptAssertion extends AbstractServerAssertion<JavaScrip
 
     private static final Logger LOGGER = Logger.getLogger(ServerJavaScriptAssertion.class.getName());
     private final Config serverConfig;
+    private final JavaScriptExecutor scriptExecutor;
+    private transient CompiledScript compiledScript;
 
     public ServerJavaScriptAssertion(final JavaScriptAssertion assertion, final ApplicationContext applicationContext) {
+        this(assertion, applicationContext, JavaScriptExecutor.getInstance());
+    }
+
+    public ServerJavaScriptAssertion(final JavaScriptAssertion assertion, final ApplicationContext applicationContext, final JavaScriptExecutor scriptExecutor) {
         super(assertion);
-        serverConfig = applicationContext.getBean("serverConfig", ServerConfig.class);
+        this.serverConfig = applicationContext.getBean("serverConfig", ServerConfig.class);
+        this.scriptExecutor = scriptExecutor;
+        this.compiledScript = scriptExecutor.getCompiledScript(new JavaScriptExecutorOptions(
+                assertion.getName(),
+                assertion.getScript(),
+                assertion.isStrictModeEnabled(),
+                0));
     }
 
     @Override
@@ -51,7 +65,14 @@ public class ServerJavaScriptAssertion extends AbstractServerAssertion<JavaScrip
                     assertion.getScript(),
                     assertion.isStrictModeEnabled(),
                     getScriptExecutionTimeout(variableMap, assertion.getExecutionTimeout()));
-            final Object result = new JavaScriptExecutor(executorOptions).execute(context);
+            final Pair<CompiledScript, Object> resultPair = scriptExecutor.execute(compiledScript, context, executorOptions);
+
+            // Update the compiled script if underlying script engine is changed.
+            if (!compiledScript.getEngine().equals(resultPair.left.getEngine())) {
+                compiledScript = resultPair.left;
+            }
+
+            final Object result = resultPair.right;
 
             /**
              * The script is expected to return TRUE or FALSE if the script was executed. If TRUE is NOT returned we
@@ -63,7 +84,7 @@ public class ServerJavaScriptAssertion extends AbstractServerAssertion<JavaScrip
                 LOGGER.warning("The javascript did not return TRUE. Falsifying the assertion.");
                 return AssertionStatus.FALSIFIED;
             }
-        } catch (InterruptedException|ExecutionException|TimeoutException|ScriptException|JavaScriptException e) {
+        } catch (InterruptedException | ExecutionException | TimeoutException | ScriptException | RuntimeScriptException e) {
             logAndAudit( AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
                     new String[]{ "Script failure: " + scriptName + ":" + ExceptionUtils.getMessage( e ) },
                     ExceptionUtils.getDebugException( e ) );

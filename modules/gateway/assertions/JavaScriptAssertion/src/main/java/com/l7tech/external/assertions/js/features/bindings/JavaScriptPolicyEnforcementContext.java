@@ -1,5 +1,6 @@
-package com.l7tech.external.assertions.js.features;
+package com.l7tech.external.assertions.js.features.bindings;
 
+import com.l7tech.external.assertions.js.features.JavaScriptException;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.VariableNotSettableException;
 

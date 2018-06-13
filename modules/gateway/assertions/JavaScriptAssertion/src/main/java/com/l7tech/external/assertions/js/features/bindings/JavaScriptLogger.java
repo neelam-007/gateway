@@ -1,8 +1,9 @@
-package com.l7tech.external.assertions.js.features;
+package com.l7tech.external.assertions.js.features.bindings;
 
 /**
  * Logger for JavaScript in execution.
  */
+@SuppressWarnings("unused")
 public interface JavaScriptLogger {
 
     /**

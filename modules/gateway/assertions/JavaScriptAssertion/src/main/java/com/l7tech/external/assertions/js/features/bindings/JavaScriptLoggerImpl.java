@@ -1,7 +1,5 @@
 package com.l7tech.external.assertions.js.features.bindings;
 
-import com.l7tech.external.assertions.js.features.JavaScriptLogger;
-
 import java.util.logging.Level;
 import java.util.logging.Logger;
 

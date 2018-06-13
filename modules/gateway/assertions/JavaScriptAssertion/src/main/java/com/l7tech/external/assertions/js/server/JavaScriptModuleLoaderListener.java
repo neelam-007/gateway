@@ -1,9 +1,11 @@
 package com.l7tech.external.assertions.js.server;
 
 import com.l7tech.external.assertions.js.features.JavaScriptAssertionConstants;
-import com.l7tech.external.assertions.js.features.JavaScriptEngineManager;
+import com.l7tech.external.assertions.js.features.JavaScriptExecutor;
 import com.l7tech.util.ConfigFactory;
 import org.springframework.context.ApplicationContext;
+
+import static com.l7tech.external.assertions.js.features.JavaScriptExecutor.JavaScriptExecutorPart.EXECUTOR_ENGINE;
 
 /**
  * ModuleLoaderListener for capturing ECMA Version change event and re-initializing the ScriptEngine.
@@ -23,7 +25,7 @@ public class JavaScriptModuleLoaderListener {
 
             @Override
             public void notifyPropertyChanged(final String propertyName) {
-                JavaScriptEngineManager.getInstance().reInitializeEngine();
+                JavaScriptExecutor.getInstance().update(EXECUTOR_ENGINE);
             }
         });
     }

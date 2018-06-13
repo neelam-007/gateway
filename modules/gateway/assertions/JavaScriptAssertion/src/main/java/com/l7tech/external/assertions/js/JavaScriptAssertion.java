@@ -106,9 +106,9 @@ public class JavaScriptAssertion extends Assertion implements UsesVariables {
         meta.put( SHORT_NAME, ASSERTION_NAME );
         meta.put( DESCRIPTION, "To execute Javascript code inside the Gateway's policy context.") ;
         meta.put( PALETTE_FOLDERS, new String[] { "misc" } );
-        meta.put( PALETTE_NODE_ICON, "com/l7tech/resources/json.gif" );
+        meta.put( PALETTE_NODE_ICON, "com/l7tech/external/assertions/js/resources/json.gif");
         meta.put( POLICY_ADVICE_CLASSNAME, "auto" );
-        meta.put( POLICY_NODE_ICON, "com/l7tech/resources/json.gif" );
+        meta.put( POLICY_NODE_ICON, "com/l7tech/external/assertions/js/resources/json.gif");
         meta.put( POLICY_NODE_NAME_FACTORY, policyNameFactory );
         meta.put( PROPERTIES_ACTION_NAME, "JavaScript Execution Properties");
         meta.put( PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.js.console.JavaScriptAssertionPropertiesDialog" );

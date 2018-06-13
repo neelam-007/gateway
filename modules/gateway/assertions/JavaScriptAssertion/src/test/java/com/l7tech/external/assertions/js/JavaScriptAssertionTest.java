@@ -6,8 +6,6 @@ import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.util.SyspropUtil;
-import org.apache.commons.lang.StringEscapeUtils;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -20,15 +18,12 @@ import static org.junit.Assert.assertTrue;
  */
 public class JavaScriptAssertionTest {
 
-    private static WspReader wspReader;
-
     @BeforeClass
     public static void beforeClassSetup() {
         final AssertionRegistry tmf = new AssertionRegistry();
         tmf.registerAssertion(JavaScriptAssertion.class);
         tmf.setApplicationContext(null);
         WspConstants.setTypeMappingFinder(tmf);
-        wspReader = new WspReader(tmf);
         SyspropUtil.setProperty( "com.l7tech.policy.wsp.checkAccessors", "true" );
     }
 

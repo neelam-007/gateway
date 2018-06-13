@@ -40,16 +40,15 @@ public class NashornScriptEngineProvider implements ScriptEngineProvider {
     public ScriptContext createScriptEngineContext(final ScriptEngine scriptEngine) {
         final ScriptContext scriptContext = new SimpleScriptContext();
 
-        scriptContext.setBindings(createScriptEngineBindings(scriptEngine), ScriptContext.GLOBAL_SCOPE);
         scriptContext.setBindings(createScriptEngineBindings(scriptEngine), ScriptContext.ENGINE_SCOPE);
-
         scriptContext.setErrorWriter(new OutputStreamWriter( new NullOutputStream()));
         scriptContext.setWriter(new OutputStreamWriter( new NullOutputStream()));
 
         return scriptContext;
     }
 
-    private Bindings createScriptEngineBindings(final ScriptEngine scriptEngine) {
+    @Override
+    public Bindings createScriptEngineBindings(final ScriptEngine scriptEngine) {
         final Bindings bindings = scriptEngine.createBindings();
 
         for (final String def : UNSAFE_DEFINITIONS) {
