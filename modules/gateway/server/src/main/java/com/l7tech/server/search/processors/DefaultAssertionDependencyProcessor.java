@@ -16,6 +16,7 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.assertion.ext.entity.CustomEntitySerializer;
 import com.l7tech.server.DefaultKey;
+import com.l7tech.server.EntityFinder;
 import com.l7tech.server.EntityHeaderUtils;
 import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.globalresources.ResourceEntryManager;
@@ -42,6 +43,7 @@ import javax.inject.Named;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -49,7 +51,7 @@ import static com.l7tech.policy.variable.BuiltinVariables.*;
 
 
 /**
- * The assertion dependencyProcessor finds the dependencies that an assertions has.
+ * The assertion dependencyProcessor finds the dependencies that an assertion has.
  *
  * @author Victor Kazakov
  */
@@ -74,6 +76,8 @@ public class DefaultAssertionDependencyProcessor<A extends Assertion> extends De
     private DefaultKey defaultKey;
     @Inject
     private ServerModuleFileManager serverModuleFileManager;
+    @Inject
+    private EntityFinder entityFinder;
 
     /**
      * Finds the dependencies that an assertion has. First finds the dependencies by looking at the methods defined by
@@ -93,99 +97,21 @@ public class DefaultAssertionDependencyProcessor<A extends Assertion> extends De
         //uses the generic dependency processor to find dependencies using the methods defined by the assertion.
         final List<Dependency> dependencies = super.findDependencies(assertion, finder);
 
-        //use the entity resolver to resolve entities used by assertions
-        final EntitiesResolver entitiesResolver = EntitiesResolver
-                .builder()
-                .keyValueStore(new CustomKeyValueStoreImpl(customKeyValueStoreManager))
-                .classNameToSerializer(new ClassNameToEntitySerializer() {
-                    @Override
-                    public CustomEntitySerializer getSerializer(final String className) {
-                        return customAssertionRegistrar.getExternalEntitySerializer(className);
-                    }
-                })
-                .build();
-        for (final EntityHeader header : entitiesResolver.getEntitiesUsed(assertion)) {
-            final Entity entity = loadEntity(header);
-            Dependency dependency = finder.getDependency(DependencyFinder.FindResults.create(entity, header ));
-            if (dependency != null && !dependencies.contains(dependency)) {
-                dependencies.add(dependency);
-            }
+        if (assertion instanceof UsesEntitiesAtDesignTime) {
+            loadEntitiesUsedAtDesignTime((UsesEntitiesAtDesignTime) assertion);
         }
 
-        //If the assertion implements UsesVariables then all cluster properties or secure passwords used be the assertion are considered to be dependencies.
+        loadEntityDependencies(assertion, finder, dependencies);
+
         if (assertion instanceof UsesVariables) {
-            final boolean doSecPasswordPlaintext = finder.getOption(DependencyAnalyzer.FindSecurePasswordDependencyFromContextVariablePlaintextOptionKey, Boolean.class, true);
-
-            for (final String variable : ((UsesVariables) assertion).getVariablesUsed()) {
-                if (variable.startsWith(PREFIX_CLUSTER_PROPERTY) &&
-                        variable.length() > PREFIX_CLUSTER_PROPERTY.length() &&
-                        !variable.startsWith(PREFIX_GATEWAY_RANDOM) &&
-                        !variable.startsWith(PREFIX_GATEWAY_TIME) /* special case exclude, because PREFIX_GATEWAY_TIME.startsWith(PREFIX_CLUSTER_PROPERTY) */) {
-                    final String cpName = variable.substring(PREFIX_CLUSTER_PROPERTY.length() + 1);
-
-                    // try to get cluster property reference
-                    final ClusterProperty property = clusterPropertyManager.findByUniqueName(cpName);
-                    final Dependency dependency = finder.getDependency(DependencyFinder.FindResults.create(property, new EntityHeader(Goid.DEFAULT_GOID,EntityType.CLUSTER_PROPERTY,cpName,null)));
-                    if (dependency != null && !dependencies.contains(dependency)) {
-                        dependencies.add(dependency);
-                    }
-                } else if (doSecPasswordPlaintext) {
-                    // try get secure password reference
-                    final Matcher matcher = SECPASS_PLAINTEXT_PATTERN.matcher(variable);
-                    if (matcher.matches()) {
-                        final String alias = matcher.group(1);
-                        final SecurePassword securePassword = securePasswordManager.findByUniqueName(alias);
-                        final Dependency dependency = finder.getDependency(DependencyFinder.FindResults.create(securePassword, new EntityHeader(Goid.DEFAULT_GOID,EntityType.SECURE_PASSWORD,alias,null)));
-                        if (dependency != null && !dependencies.contains(dependency)) {
-                            dependencies.add(dependency);
-                        }
-                    }
-                }
-            }
+            loadVariableDependencies((UsesVariables) assertion, finder, dependencies);
         }
-        //If the assertion implements UsesResourceInfo then add the used resource as a dependent.
         if (assertion instanceof UsesResourceInfo) {
-            final AssertionResourceInfo assertionResourceInfo = ((UsesResourceInfo) assertion).getResourceInfo();
-            if (assertionResourceInfo != null && assertionResourceInfo.getType().equals(AssertionResourceType.GLOBAL_RESOURCE)) {
-                final String uri = ((GlobalResourceInfo) assertionResourceInfo).getId();
-                //Passing null as the resource type should be ok as resources as unique by uri anyways.
-                final ResourceEntry resourceEntry = resourceEntryManager.findResourceByUriAndType(uri, null);
-                final Dependency dependency = finder.getDependency(DependencyFinder.FindResults.create(resourceEntry, new EntityHeader(Goid.DEFAULT_GOID,EntityType.RESOURCE_ENTRY,uri,null)));
-                if (dependency != null && !dependencies.contains(dependency))
-                    dependencies.add(dependency);
-
-            }
+            loadResourceDependencies((UsesResourceInfo) assertion, finder, dependencies);
         }
 
-        //Add any private keys to the assertion dependencies
         if (assertion instanceof PrivateKeyable) {
-            final PrivateKeyable privateKeyable = (PrivateKeyable) assertion;
-            if ((!(privateKeyable instanceof OptionalPrivateKeyable) || !((OptionalPrivateKeyable) privateKeyable).isUsesNoKey()) && !privateKeyable.isUsesDefaultKeyStore()) {
-                SsgKeyHeader keyHeader = new SsgKeyHeader(privateKeyable.getNonDefaultKeystoreId() + ":" + privateKeyable.getKeyAlias(), privateKeyable.getNonDefaultKeystoreId(), privateKeyable.getKeyAlias(), privateKeyable.getKeyAlias());
-                try {
-                    final Entity keyEntry = loadEntity(keyHeader);
-                    if(keyEntry == null){
-                        dependencies.add(new BrokenDependency(keyHeader));
-                    }else {
-                        final Dependency dependency = finder.getDependency(DependencyFinder.FindResults.create(keyEntry, keyHeader));
-                        if (dependency != null && !dependencies.contains(dependency))
-                            dependencies.add(dependency);
-                    }
-
-                } catch ( FindException e){
-                    dependencies.add(new BrokenDependency(keyHeader));
-                }
-            }else if((!(privateKeyable instanceof OptionalPrivateKeyable) || !((OptionalPrivateKeyable) privateKeyable).isUsesNoKey()) && privateKeyable.isUsesDefaultKeyStore()){
-                // get the default key
-                try {
-                    SsgKeyEntry keyEntry = defaultKey.getSslInfo();
-                    final Dependency dependency = finder.getDependency(DependencyFinder.FindResults.create(keyEntry, EntityHeaderUtils.fromEntity(keyEntry)));
-                    if (dependency != null && !dependencies.contains(dependency))
-                        dependencies.add(dependency);
-                } catch ( IOException e){
-                    throw new CannotRetrieveDependenciesException(assertion.getClass(),e.getMessage());
-                }
-            }
+            loadPrivateKeyDependencies((PrivateKeyable) assertion, finder, dependencies);
         }
 
         // determine whether the assertion is from a module uploaded via Policy Manager (i.e. ServerModuleFile)
@@ -210,13 +136,231 @@ public class DefaultAssertionDependencyProcessor<A extends Assertion> extends De
     }
 
     /**
+     * Loads the entities used by an assertion at design time
+     * @param assertion the assertion containing entities used at design time
+     */
+    private void loadEntitiesUsedAtDesignTime(final UsesEntitiesAtDesignTime assertion) {
+        final EntityHeader[] headers = assertion.getEntitiesUsedAtDesignTime();
+        if (headers != null) {
+            for (final EntityHeader header : headers) {
+                if (assertion.needsProvideEntity(header)) {
+                    try {
+                        final Entity entity = entityFinder.find(header);
+                        if (entity == null) {
+                            logger.warning(new Supplier<String>() {
+                                @Override
+                                public String get() {
+                                    return "Unable to find entity matching header of type " + header.getType() + " with ID " + header.getStrId();
+                                }
+                            });
+                        } else {
+                            assertion.provideEntity(header, entity);
+                        }
+                    } catch (final FindException e) {
+                        logger.warning(new Supplier<String>() {
+                            @Override
+                            public String get() {
+                                return "Encountered an exception fetching entity matching header of type " + header.getType() + " with ID " + header.getStrId();
+                            }
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Add entities used by an assertion to the list of its dependencies
+     *
+     * @param assertion    The assertion to find entities for
+     * @param finder       The finder performing the current dependency search
+     * @param dependencies List containing dependencies found so far for this assertion
+     * @throws CannotRetrieveDependenciesException if there is a problem attempting to retrieve a dependency
+     * @throws FindException                       if an entity cannot be found
+     */
+    private void loadEntityDependencies(@NotNull final A assertion, @NotNull final DependencyFinder finder, final List<Dependency> dependencies) throws FindException, CannotRetrieveDependenciesException {
+        //use the entity resolver to resolve entities used by assertions
+        final EntitiesResolver entitiesResolver = EntitiesResolver
+                .builder()
+                .keyValueStore(new CustomKeyValueStoreImpl(customKeyValueStoreManager))
+                .classNameToSerializer(new ClassNameToEntitySerializer() {
+                    @Override
+                    public CustomEntitySerializer getSerializer(final String className) {
+                        return customAssertionRegistrar.getExternalEntitySerializer(className);
+                    }
+                })
+                .build();
+        for (final EntityHeader header : entitiesResolver.getEntitiesUsed(assertion)) {
+            final Entity entity = loadEntity(header);
+            final Dependency dependency = finder.getDependency(DependencyFinder.FindResults.create(entity, header));
+            if (dependency != null && !dependencies.contains(dependency)) {
+                dependencies.add(dependency);
+            }
+        }
+    }
+
+    /**
+     * Add resources to the assertion dependencies
+     *
+     * @param assertion    The assertion to find resource dependencies for
+     * @param finder       The finder performing the current dependency search
+     * @param dependencies List containing dependencies found so far for this assertion
+     * @throws CannotRetrieveDependenciesException if there is a problem attempting to retrieve a dependency
+     * @throws FindException                       if an entity cannot be found
+     */
+    private void loadVariableDependencies(final UsesVariables assertion, @NotNull final DependencyFinder finder, final List<Dependency> dependencies) throws FindException, CannotRetrieveDependenciesException {
+        final boolean doSecPasswordPlaintext = finder.getOption(DependencyAnalyzer.FindSecurePasswordDependencyFromContextVariablePlaintextOptionKey, Boolean.class, true);
+
+        for (final String variable : assertion.getVariablesUsed()) {
+
+            final boolean variableIsClusterProperty = variable.startsWith(PREFIX_CLUSTER_PROPERTY) &&
+                    variable.length() > PREFIX_CLUSTER_PROPERTY.length() &&
+                    !variable.startsWith(PREFIX_GATEWAY_RANDOM) &&
+                    !variable.startsWith(PREFIX_GATEWAY_TIME); /* special case exclude, because PREFIX_GATEWAY_TIME.startsWith(PREFIX_CLUSTER_PROPERTY) */
+
+            if (variableIsClusterProperty) {
+                loadClusterPropertyDependency(finder, dependencies, variable);
+            } else if (doSecPasswordPlaintext) {
+                loadSecurePasswordReferenceDependency(finder, dependencies, variable);
+
+            }
+        }
+    }
+
+    /**
+     * Given a variable containing a cluster property, add that cluster property to the list of dependencies
+     *
+     * @param variable     The variable containing the cluster property
+     * @param finder       The finder performing the current dependency search
+     * @param dependencies List containing dependencies found so far
+     * @throws CannotRetrieveDependenciesException if there is a problem attempting to retrieve a dependency
+     * @throws FindException                       if an entity cannot be found
+     */
+    private void loadClusterPropertyDependency(@NotNull final DependencyFinder finder, final List<Dependency> dependencies, final String variable) throws FindException, CannotRetrieveDependenciesException {
+        final String cpName = variable.substring(PREFIX_CLUSTER_PROPERTY.length() + 1);
+
+        // try to get cluster property reference
+        final ClusterProperty property = clusterPropertyManager.findByUniqueName(cpName);
+        final Dependency dependency = finder.getDependency(DependencyFinder.FindResults.create(property, new EntityHeader(Goid.DEFAULT_GOID, EntityType.CLUSTER_PROPERTY, cpName, null)));
+        if (dependency != null && !dependencies.contains(dependency)) {
+            dependencies.add(dependency);
+        }
+    }
+
+    /**
+     * Given a variable containing a secure password reference, add that secure password reference to the list of dependencies
+     *
+     * @param variable     The variable containing the secure password reference
+     * @param finder       The finder performing the current dependency search
+     * @param dependencies List containing dependencies found so far
+     * @throws CannotRetrieveDependenciesException if there is a problem attempting to retrieve a dependency
+     * @throws FindException                       if an entity cannot be found
+     */
+    private void loadSecurePasswordReferenceDependency(@NotNull final DependencyFinder finder, final List<Dependency> dependencies, final String variable) throws FindException, CannotRetrieveDependenciesException {
+        // try get secure password reference
+        final Matcher matcher = SECPASS_PLAINTEXT_PATTERN.matcher(variable);
+        if (matcher.matches()) {
+            final String alias = matcher.group(1);
+            final SecurePassword securePassword = securePasswordManager.findByUniqueName(alias);
+            final Dependency dependency = finder.getDependency(DependencyFinder.FindResults.create(securePassword, new EntityHeader(Goid.DEFAULT_GOID, EntityType.SECURE_PASSWORD, alias, null)));
+            if (dependency != null && !dependencies.contains(dependency)) {
+                dependencies.add(dependency);
+            }
+        }
+    }
+
+    /**
+     * Add resources to the assertion dependencies
+     *
+     * @param assertion    The assertion to find resource dependencies for
+     * @param finder       The finder performing the current dependency search
+     * @param dependencies List containing dependencies found so far for this assertion
+     * @throws CannotRetrieveDependenciesException if there is a problem attempting to retrieve a dependency
+     * @throws FindException                       if an entity cannot be found
+     */
+    private void loadResourceDependencies(@NotNull final UsesResourceInfo assertion, @NotNull final DependencyFinder finder, final List<Dependency> dependencies) throws FindException, CannotRetrieveDependenciesException {
+        final AssertionResourceInfo assertionResourceInfo = assertion.getResourceInfo();
+        if (assertionResourceInfo != null && assertionResourceInfo.getType().equals(AssertionResourceType.GLOBAL_RESOURCE)) {
+            final String uri = ((GlobalResourceInfo) assertionResourceInfo).getId();
+            //Passing null as the resource type should be ok as resources as unique by uri anyways.
+            final ResourceEntry resourceEntry = resourceEntryManager.findResourceByUriAndType(uri, null);
+            final Dependency dependency = finder.getDependency(DependencyFinder.FindResults.create(resourceEntry, new EntityHeader(Goid.DEFAULT_GOID, EntityType.RESOURCE_ENTRY, uri, null)));
+            if (dependency != null && !dependencies.contains(dependency))
+                dependencies.add(dependency);
+
+        }
+    }
+
+    /**
+     * Add private keys to the assertion dependencies
+     *
+     * @param assertion    The assertion to find private key dependencies for
+     * @param finder       The finder performing the current dependency search
+     * @param dependencies List containing dependencies found so far for this assertion
+     * @throws CannotRetrieveDependenciesException if there is a problem attempting to retrieve a dependency
+     * @throws FindException                       if an entity cannot be found
+     */
+    private void loadPrivateKeyDependencies(@NotNull final PrivateKeyable assertion, @NotNull final DependencyFinder finder, final List<Dependency> dependencies) throws CannotRetrieveDependenciesException, FindException {
+        if ((!(assertion instanceof OptionalPrivateKeyable) || !((OptionalPrivateKeyable) assertion).isUsesNoKey()) && !assertion.isUsesDefaultKeyStore()) {
+            loadNonDefaultKeyDependency(assertion, finder, dependencies);
+        } else if ((!(assertion instanceof OptionalPrivateKeyable) || !((OptionalPrivateKeyable) assertion).isUsesNoKey()) && assertion.isUsesDefaultKeyStore()) {
+            loadDefaultKeyDependency(assertion, finder, dependencies);
+
+        }
+    }
+
+    /**
+     * Add non-default private key dependencies to the assertion dependencies
+     *
+     * @param assertion    The assertion to find private key dependencies for
+     * @param finder       The finder performing the current dependency search
+     * @param dependencies List containing dependencies found so far for this assertion
+     * @throws CannotRetrieveDependenciesException if there is a problem attempting to retrieve a dependency
+     */
+    private void loadNonDefaultKeyDependency(@NotNull final PrivateKeyable assertion, @NotNull final DependencyFinder finder, final List<Dependency> dependencies) throws CannotRetrieveDependenciesException {
+        final SsgKeyHeader keyHeader = new SsgKeyHeader(assertion.getNonDefaultKeystoreId() + ":" + assertion.getKeyAlias(), assertion.getNonDefaultKeystoreId(), assertion.getKeyAlias(), assertion.getKeyAlias());
+        try {
+            final Entity keyEntry = loadEntity(keyHeader);
+            if (keyEntry == null) {
+                dependencies.add(new BrokenDependency(keyHeader));
+            } else {
+                final Dependency dependency = finder.getDependency(DependencyFinder.FindResults.create(keyEntry, keyHeader));
+                if (dependency != null && !dependencies.contains(dependency))
+                    dependencies.add(dependency);
+            }
+
+        } catch (final FindException e) {
+            dependencies.add(new BrokenDependency(keyHeader));
+        }
+    }
+
+    /**
+     * Add default private key dependencies to the assertion dependencies
+     *
+     * @param assertion    The assertion to find private key dependencies for
+     * @param finder       The finder performing the current dependency search
+     * @param dependencies List containing dependencies found so far for this assertion
+     * @throws CannotRetrieveDependenciesException if there is a problem attempting to retrieve a dependency
+     * @throws FindException                       if an entity cannot be found
+     */
+    private void loadDefaultKeyDependency(@NotNull final PrivateKeyable assertion, @NotNull final DependencyFinder finder, final List<Dependency> dependencies) throws FindException, CannotRetrieveDependenciesException {
+        // get the default key
+        try {
+            final SsgKeyEntry keyEntry = defaultKey.getSslInfo();
+            final Dependency dependency = finder.getDependency(DependencyFinder.FindResults.create(keyEntry, EntityHeaderUtils.fromEntity(keyEntry)));
+            if (dependency != null && !dependencies.contains(dependency))
+                dependencies.add(dependency);
+        } catch (final IOException e) {
+            throw new CannotRetrieveDependenciesException(assertion.getClass(), e.getMessage());
+        }
+    }
+
+    /**
      * Utility method for processing Assertion dependencies of the {@code ServerModuleFile} specified with the {@code moduleName}.
      *
-     * @param moduleName      The module name i.e. {@code ServerModuleFile} entity name.  Optional and can be {@code null}, in which case nothing is checked.
-     * @param finder          The finder that is performing the current dependency search.
-     * @param dependencies    List of dependencies found so far.
-     * @throws FindException
-     * @throws CannotRetrieveDependenciesException
+     * @param moduleName   The module name i.e. {@code ServerModuleFile} entity name.  Optional and can be {@code null}, in which case nothing is checked.
+     * @param finder       The finder that is performing the current dependency search.
+     * @param dependencies List of dependencies found so far.
      */
     private void processServerModuleFileDependency(
             @Nullable final String moduleName,
@@ -263,7 +407,7 @@ public class DefaultAssertionDependencyProcessor<A extends Assertion> extends De
 
     @Override
     public void replaceDependencies(@NotNull final A assertion, @NotNull final Map<EntityHeader, EntityHeader> replacementMap, @NotNull final DependencyFinder finder, final boolean replaceAssertionsDependencies) throws CannotReplaceDependenciesException {
-        if(!replaceAssertionsDependencies) return;
+        if (!replaceAssertionsDependencies) return;
 
         super.replaceDependencies(assertion, replacementMap, finder, replaceAssertionsDependencies);
 
@@ -292,7 +436,7 @@ public class DefaultAssertionDependencyProcessor<A extends Assertion> extends De
                 final String uri = ((GlobalResourceInfo) assertionResourceInfo).getId();
                 final EntityHeader found = Functions.grepFirst(replacementMap.keySet(), new Functions.Unary<Boolean, EntityHeader>() {
                     @Override
-                    public Boolean call(EntityHeader entityHeader) {
+                    public Boolean call(final EntityHeader entityHeader) {
                         return entityHeader instanceof ResourceEntryHeader && ((ResourceEntryHeader) entityHeader).getUri().equals(uri);
                     }
                 });
@@ -309,15 +453,15 @@ public class DefaultAssertionDependencyProcessor<A extends Assertion> extends De
 
         if (assertion instanceof PrivateKeyable) {
             final PrivateKeyable privateKeyable = (PrivateKeyable) assertion;
-            if (!(privateKeyable instanceof OptionalPrivateKeyable && ((OptionalPrivateKeyable) privateKeyable).isUsesNoKey()) && privateKeyable.getKeyAlias() != null){
+            if (!(privateKeyable instanceof OptionalPrivateKeyable && ((OptionalPrivateKeyable) privateKeyable).isUsesNoKey()) && privateKeyable.getKeyAlias() != null) {
                 final SsgKeyHeader privateKeyHeader = new SsgKeyHeader(privateKeyable.getNonDefaultKeystoreId() + ":" + privateKeyable.getKeyAlias(), privateKeyable.getNonDefaultKeystoreId(), privateKeyable.getKeyAlias(), privateKeyable.getKeyAlias());
-                EntityHeader mappedHeader = DependencyProcessorUtils.findMappedHeader(replacementMap, privateKeyHeader);
-                if(mappedHeader != null) {
-                    if(!(mappedHeader instanceof SsgKeyHeader)){
+                final EntityHeader mappedHeader = DependencyProcessorUtils.findMappedHeader(replacementMap, privateKeyHeader);
+                if (mappedHeader != null) {
+                    if (!(mappedHeader instanceof SsgKeyHeader)) {
                         throw new CannotReplaceDependenciesException(assertion.getClass(), "Attempting to replace ssg key but mapped header in not an SsgKeyHeader.");
                     }
-                    privateKeyable.setNonDefaultKeystoreId(((SsgKeyHeader)mappedHeader).getKeystoreId());
-                    privateKeyable.setKeyAlias(((SsgKeyHeader)mappedHeader).getAlias());
+                    privateKeyable.setNonDefaultKeystoreId(((SsgKeyHeader) mappedHeader).getKeystoreId());
+                    privateKeyable.setKeyAlias(((SsgKeyHeader) mappedHeader).getAlias());
                 }
             }
         }
