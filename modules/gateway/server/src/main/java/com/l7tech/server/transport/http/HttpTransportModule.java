@@ -16,6 +16,7 @@ import com.l7tech.server.audit.AuditContextUtils;
 import com.l7tech.server.event.system.ReadyForMessages;
 import com.l7tech.server.event.system.TransportEvent;
 import com.l7tech.server.identity.cert.TrustedCertServices;
+import com.l7tech.server.service.BundleBootstrapCompleteEvent;
 import com.l7tech.server.tomcat.*;
 import com.l7tech.server.transport.*;
 import com.l7tech.util.*;
@@ -740,15 +741,11 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
 
     @Override
     protected void doStart() throws LifecycleException {
-        if (isStarted())
+        if (isStarted()) {
             return;
-        try {
-            registerProtocols();
-            startServletEngine();
-            startInitialConnectors(false); // ensure we can find some initial connectors but don't start them yet (Bug #4500)
-        } catch (ListenerException e) {
-            throw new LifecycleException("Unable to start HTTP transport module: " + ExceptionUtils.getMessage(e), e);
         }
+        registerProtocols();
+        startServletEngine();
     }
 
     @Override
@@ -763,6 +760,12 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
         if (applicationEvent instanceof ReadyForMessages) {
             try {
                 startInitialConnectors(true);
+            } catch (ListenerException e) {
+                LOGGER.log(Level.SEVERE, "Unable to start HTTP connectors", e);
+            }
+        } else if (applicationEvent instanceof BundleBootstrapCompleteEvent){
+            try {
+                startInitialConnectors(false); // ensure we can find some initial connectors but don't start them yet (Bug #4500)
             } catch (ListenerException e) {
                 LOGGER.log(Level.SEVERE, "Unable to start HTTP connectors", e);
             }

@@ -28,7 +28,7 @@ import com.l7tech.server.policy.module.AssertionModuleScanCompletedEvent;
 import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.util.*;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
 
 import javax.inject.Inject;
@@ -60,6 +60,9 @@ public class MigrationBundleBootstrapService implements PostStartupApplicationLi
     @Inject
     private IdentityProviderFactory identityProviderFactory;
 
+    @Inject
+    private ApplicationContext context;
+
     // TODO find some way to detect when bundles should not be loaded on startup perhaps because they are already loaded
     private boolean shouldLoadBundles = true;
 
@@ -73,6 +76,7 @@ public class MigrationBundleBootstrapService implements PostStartupApplicationLi
     public void onApplicationEvent( ApplicationEvent event ) {
         if ( event instanceof AssertionModuleScanCompletedEvent ) {
             installBootstrapBundles();
+            context.publishEvent( new BundleBootstrapCompleteEvent( this ) );
         }
     }
 
