@@ -11,35 +11,31 @@ import com.l7tech.util.TimeUnit;
  * Date: 10/30/14
  */
 public interface CassandraConnectionManager {
-    public static final String HOST_DISTANCE = "hostDistance";
-    public static final String CORE_CONNECTION_PER_HOST = "coreConnectionsPerHost";
-    public static final String MAX_CONNECTION_PER_HOST = "maxConnectionPerHost";
-    public static final String MAX_SIMUL_REQ_PER_HOST = "maxSimultaneousRequestsPerHostThreshold";
-    public static final String MAX_CONNECTION_CACHE_AGE = "cassandra.maxConnectionCacheAge";
-    public static final String MAX_CONNECTION_CACHE_IDLE_TIME = "cassandra.maxConnectionCacheIdleTime";
-    public static final String MAX_CONNECTION_CACHE_SIZE = "cassandra.maxConnectionCacheSize";
+    String HOST_DISTANCE = "hostDistance";
+    String MAX_SIMUL_REQ_PER_HOST = "maxSimultaneousRequestsPerHostThreshold";
 
-    public static final int CORE_CONNECTION_PER_HOST_DEF = 1;
-    public static final int CORE_CONNECTION_PER_HOST_LOCAL_DEF = 2;
-    public static final int MAX_CONNECTION_PER_HOST_DEF = 2;
-    public static final int MAX_CONNECTION_PER_HOST_LOCAL_DEF = 8;
-    public static final int MAX_SIMUL_REQ_PER_HOST_LOCAL_DEF = 8192;
-    public static final int MAX_SIMUL_REQ_PER_HOST_REMOTE_DEF = 256;
+    int MAX_SIMUL_REQ_PER_HOST_LOCAL_DEF = 8192;
+    int MAX_SIMUL_REQ_PER_HOST_REMOTE_DEF = 256;
 
-    public static final String CONNECTION_TIMEOUT_MILLIS = "connectTimeoutMillis";
-    public static final String READ_TIMEOUT_MILLIS = "readTimeoutMillis";
-    public static final String KEEP_ALIVE = "keepAlive";
-    public static final String RECEIVE_BUFFER_SIZE = "receiveBufferSize";
-    public static final String REUSE_ADDRESS = "reuseAddress";
-    public static final String SEND_BUFFER_SIZE = "sendBufferSize";
-    public static final String SO_LINGER = "soLinger";
-    public static final String TCP_NO_DELAY = "tcpNoDelay";
+    String CONNECTION_TIMEOUT_MILLIS = "connectTimeoutMillis";
+    String READ_TIMEOUT_MILLIS = "readTimeoutMillis";
+    String KEEP_ALIVE = "keepAlive";
+    String RECEIVE_BUFFER_SIZE = "receiveBufferSize";
+    String REUSE_ADDRESS = "reuseAddress";
+    String SEND_BUFFER_SIZE = "sendBufferSize";
+    String SO_LINGER = "soLinger";
+    String TCP_NO_DELAY = "tcpNoDelay";
+    String QUERY_FETCH_SIZE = "fetchSize";
 
-    public static final long DEFAULT_CONNECTION_MAX_AGE = 0L;
-    public static final long DEFAULT_CONNECTION_MAX_IDLE = TimeUnit.MINUTES.toMillis(30);
-    public  static final int DEFAULT_CONNECTION_CACHE_SIZE = 20;
-    public static final int DEFAULT_FETCH_SIZE = 5000;
-    public static final String QUERY_FETCH_SIZE = "fetchSize";
+    long DEFAULT_CONNECTION_MAX_AGE = 0L;
+    long DEFAULT_CONNECTION_MAX_IDLE = TimeUnit.MINUTES.toMillis(30);
+    int DEFAULT_CONNECTION_CACHE_SIZE = 20;
+    int DEFAULT_FETCH_SIZE = 5000;
+    int DEFAULT_CONNECTION_TIMEOUT_MS = 5000;
+    int DEFAULT_READ_TIMEOUT_MS = 12000;
+    boolean DEFAULT_KEEP_ALIVE = true;
+    boolean DEFAULT_TCP_NO_DELAY = false;
+
 
     CassandraConnectionHolder getConnection(String name);
 

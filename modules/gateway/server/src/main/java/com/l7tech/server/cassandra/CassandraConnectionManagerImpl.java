@@ -343,9 +343,15 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
         }
     }
 
-    private Cluster buildCluster(CassandraConnection cassandraConnectionEntity) throws Exception {
+    private Cluster buildCluster(CassandraConnection cassandraConnectionEntity) throws ParseException, FindException, KeyManagementException, NoSuchAlgorithmException {
         //start cluster creation
         Cluster.Builder clusterBuilder = Cluster.builder();
+        populateCluster(clusterBuilder, cassandraConnectionEntity);
+        //build cluster
+        return clusterBuilder.build();
+    }
+
+    protected void populateCluster(Cluster.Builder clusterBuilder, CassandraConnection cassandraConnectionEntity) throws ParseException, FindException, KeyManagementException, NoSuchAlgorithmException {
         //add basic cluster info
         addBasicClusterInfo(clusterBuilder, cassandraConnectionEntity, cassandraConnectionEntity.getContactPointsAsArray());
         //add pooling option
@@ -356,8 +362,6 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
         addSSLOptions(clusterBuilder, cassandraConnectionEntity);
         //add query options
         addQueryOptions(clusterBuilder, cassandraConnectionEntity);
-        //build cluster
-        return clusterBuilder.build();
     }
 
     private void addQueryOptions(Cluster.Builder clusterBuilder, CassandraConnection cassandraConnectionEntity) {
@@ -382,8 +386,10 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
         Map<String,String> connectionProperties = cassandraConnectionEntity.getProperties();
         PoolingOptions poolingOptions = new PoolingOptions();
         String defaultHostDistance = config.getProperty(ServerConfigParams.PARAM_CASSANDRA_HOST_DISTANCE, "LOCAL");
-        HostDistance defaultHD = HostDistance.valueOf(defaultHostDistance);
-        if(defaultHD == null) {
+        HostDistance defaultHD;
+        try {
+            defaultHD = HostDistance.valueOf(defaultHostDistance);
+        } catch (IllegalArgumentException e) {
             auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_MANAGER_FINE_MESSAGE, "Invalid value of the property " + ServerConfigParams.PARAM_CASSANDRA_HOST_DISTANCE + ". Using default value.");
             defaultHD = HostDistance.LOCAL;
         }
@@ -411,107 +417,147 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
         SocketOptions socketOptions = new SocketOptions();
         Map<String, String> connectionProperties = cassandraConnectionEntity.getProperties();
 
-        setSocketOptionsProp(socketOptions, connectionProperties, CONNECTION_TIMEOUT_MILLIS);
-        setSocketOptionsProp(socketOptions, connectionProperties, READ_TIMEOUT_MILLIS);
-        setSocketOptionsProp(socketOptions, connectionProperties, KEEP_ALIVE);
-        setSocketOptionsProp(socketOptions, connectionProperties, RECEIVE_BUFFER_SIZE);
-        setSocketOptionsProp(socketOptions, connectionProperties, REUSE_ADDRESS);
-        setSocketOptionsProp(socketOptions, connectionProperties, SEND_BUFFER_SIZE);
-        setSocketOptionsProp(socketOptions, connectionProperties, SO_LINGER);
-        setSocketOptionsProp(socketOptions, connectionProperties, TCP_NO_DELAY);
+        setSocketOptionsConnectionTimeout(socketOptions, connectionProperties);
+        setSocketOptionsReadTimeout(socketOptions, connectionProperties);
+        setSocketOptionsKeepAlive(socketOptions, connectionProperties);
+        setSocketOptionsReceiveBufferSize(socketOptions, connectionProperties);
+        setSocketOptionsReuseAddress(socketOptions, connectionProperties);
+        setSocketOptionsSendBufferSize(socketOptions, connectionProperties);
+        setSocketOptionsSoLinger(socketOptions, connectionProperties);
+        setSocketOptionsTcpNoDelay(socketOptions, connectionProperties);
 
         clusterBuilder.withSocketOptions(socketOptions);
     }
 
-    private void setSocketOptionsProp(SocketOptions socketOptions, Map<String, String> connectionProperties, String propName) {
-        if (connectionProperties.containsKey(propName)) {
-            Integer propInt;
-            boolean propBool;
+    private void auditDefaultUsed(final String propName){
+        auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_MANAGER_FINE_MESSAGE, "Using default value for " + propName);
+    }
 
-            switch (propName) {
-                case CONNECTION_TIMEOUT_MILLIS:
-                    propInt = CassandraUtil.getInteger(connectionProperties.get(propName));
-                    if (propInt != null) {
-                        socketOptions.setConnectTimeoutMillis(propInt);
-                    } else {
-                        auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_MANAGER_FINE_MESSAGE, "Unable to read property " + propName + ". Using default value.");
-                    }
-                    break;
+    private void auditInvalidDefault(final String propName, final String prop) {
+        auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_MANAGER_FINE_MESSAGE, "Invalid default value for " + propName + ": " + prop);
+    }
+    
+    private void setSocketOptionsConnectionTimeout(SocketOptions socketOptions, Map<String, String> connectionProperties) {
+        Integer propInt;
+        String propName = CONNECTION_TIMEOUT_MILLIS;
 
-                case READ_TIMEOUT_MILLIS:
-                    propInt = CassandraUtil.getInteger(connectionProperties.get(propName));
-                    if (propInt != null) {
-                        socketOptions.setReadTimeoutMillis(propInt);
-                    } else {
-                        auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_MANAGER_FINE_MESSAGE, "Unable to read property " + propName + ". Using default value.");
-                    }
-                    break;
+        propInt = CassandraUtil.getInteger(connectionProperties.get(propName));
+        if (propInt == null) {
+            auditDefaultUsed(propName);
+            propInt = config.getIntProperty(ServerConfigParams.PARAM_CASSANDRA_CONNECTION_TIMEOUT, DEFAULT_CONNECTION_TIMEOUT_MS);
 
-                case KEEP_ALIVE:
-                    String val = connectionProperties.get(propName);
-                    if(val != null && (Boolean.TRUE.toString().equalsIgnoreCase(val) || Boolean.FALSE.toString().equalsIgnoreCase(val))) {
-                        propBool = Boolean.parseBoolean(val);
-                    }
-                    else {
-                        propBool = config.getBooleanProperty(ServerConfigParams.PARAM_CASSANDRA_KEEP_ALIVE, false);
-                    }
+        }
+        socketOptions.setConnectTimeoutMillis(propInt);
+    }
+    private void setSocketOptionsReadTimeout(SocketOptions socketOptions, Map<String, String> connectionProperties) {
+        Integer propInt;
+        String propName = READ_TIMEOUT_MILLIS;
 
-                    if (propBool) {
-                        socketOptions.setKeepAlive(propBool);
-                    } else {
-                        auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_MANAGER_FINE_MESSAGE, "Unable to read property " + propName + ". Using default value.");
-                    }
-                    break;
+        propInt = CassandraUtil.getInteger(connectionProperties.get(propName));
+        if (propInt == null) {
+            auditDefaultUsed(propName);
+            propInt = config.getIntProperty(ServerConfigParams.PARAM_CASSANDRA_READ_TIMEOUT, DEFAULT_READ_TIMEOUT_MS);
+        }
+        socketOptions.setReadTimeoutMillis(propInt);
 
-                case RECEIVE_BUFFER_SIZE:
-                    propInt = CassandraUtil.getInteger(connectionProperties.get(propName));
-                    if (propInt != null) {
-                        socketOptions.setReceiveBufferSize(propInt);
-                    } else {
-                        auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_MANAGER_FINE_MESSAGE, "Unable to read property " + propName + ". Using default value.");
-                    }
-                    break;
+    }
+    private void setSocketOptionsKeepAlive(SocketOptions socketOptions, Map<String, String> connectionProperties) {
+        boolean propBool;
+        String propName = KEEP_ALIVE;
 
-                case REUSE_ADDRESS:
-                    propBool = Boolean.parseBoolean(connectionProperties.get(propName));
-                    if (propBool) {
-                        socketOptions.setReuseAddress(propBool);
-                    } else {
-                        auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_MANAGER_FINE_MESSAGE, "Unable to read property " + propName + ". Using default value.");
-                    }
-                    break;
+        String val = connectionProperties.get(propName);
+        if (val != null && (Boolean.TRUE.toString().equalsIgnoreCase(val) || Boolean.FALSE.toString().equalsIgnoreCase(val))) {
+            propBool = Boolean.parseBoolean(val);
+        } else {
+            auditDefaultUsed(propName);
+            propBool = config.getBooleanProperty(ServerConfigParams.PARAM_CASSANDRA_KEEP_ALIVE, DEFAULT_KEEP_ALIVE);
+        }
+        socketOptions.setKeepAlive(propBool);
+    }
 
-                case SEND_BUFFER_SIZE:
-                    propInt = CassandraUtil.getInteger(connectionProperties.get(propName));
-                    if (propInt != null) {
-                        socketOptions.setSendBufferSize(propInt);
-                    } else {
-                        auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_MANAGER_FINE_MESSAGE, "Unable to read property " + propName + ". Using default value.");
-                    }
-                    break;
+    private void setSocketOptionsReceiveBufferSize(SocketOptions socketOptions, Map<String, String> connectionProperties) {
 
-                case SO_LINGER:
-                    propInt = CassandraUtil.getInteger(connectionProperties.get(propName));
-                    if (propInt != null) {
-                        socketOptions.setSoLinger(propInt);
-                    } else {
-                        auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_MANAGER_FINE_MESSAGE, "Unable to read property " + propName + ". Using default value.");
-                    }
-                    break;
-
-                case TCP_NO_DELAY:
-                    propBool = Boolean.parseBoolean(connectionProperties.get(propName));
-                    if (propBool) {
-                        socketOptions.setTcpNoDelay(propBool);
-                    } else {
-                        auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_MANAGER_FINE_MESSAGE, "Unable to read property " + propName + ". Using default value.");
-                    }
-                    break;
-
-                default:
-                    auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_MANAGER_FINE_MESSAGE, "Unrecognized property " + propName + ". Ignored.");
-
+        String propName = RECEIVE_BUFFER_SIZE;
+        Integer propInt = CassandraUtil.getInteger(connectionProperties.get(propName));
+        if (propInt == null) {
+            String prop = config.getProperty(ServerConfigParams.PARAM_CASSANDRA_RECIEVE_BUFFER_SIZE);
+            if (prop != null) {
+                try {
+                    propInt = Integer.parseInt(prop);
+                    auditDefaultUsed(propName);
+                } catch (NumberFormatException e) {
+                    auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_MANAGER_FINE_MESSAGE, "Attempting to use invalid default value for " + propName + ": " + prop);
+                }
             }
+        }
+        // default value is null, only set if specified
+        if (propInt != null) {
+            socketOptions.setReceiveBufferSize(propInt);
+        }
+    }
+
+    private void setSocketOptionsReuseAddress(SocketOptions socketOptions, Map<String, String> connectionProperties) {
+
+        String propName = REUSE_ADDRESS;
+        if (connectionProperties.containsKey(propName)) {
+            socketOptions.setReuseAddress(Boolean.parseBoolean(connectionProperties.get(propName)));
+        } else {
+            String prop = config.getProperty(ServerConfigParams.PARAM_CASSANDRA_REUSE_ADDRESS);
+            if (prop != null) {
+                socketOptions.setReuseAddress(Boolean.parseBoolean(prop));
+                auditDefaultUsed(propName);
+            }
+            // else default value is null
+
+        }
+    }
+
+    private void setSocketOptionsSendBufferSize(SocketOptions socketOptions, Map<String, String> connectionProperties) {
+        String propName = SEND_BUFFER_SIZE;
+        Integer propInt = CassandraUtil.getInteger(connectionProperties.get(propName));
+        if (propInt != null) {
+            socketOptions.setSendBufferSize(propInt);
+        } else {
+            String prop = config.getProperty(ServerConfigParams.PARAM_CASSANDRA_SEND_BUFFER_SIZE);
+            if (prop != null) {
+                try {
+                    socketOptions.setSendBufferSize(Integer.parseInt(prop));
+                    auditDefaultUsed(propName);
+
+                } catch (NumberFormatException e) {
+                    auditInvalidDefault(propName,prop);
+                }
+            }
+            // else default value is null
+        }
+    }
+
+    private void setSocketOptionsSoLinger(SocketOptions socketOptions, Map<String, String> connectionProperties) {
+        String propName = SO_LINGER;
+        Integer propInt = CassandraUtil.getInteger(connectionProperties.get(propName));
+        if (propInt != null) {
+            socketOptions.setSoLinger(propInt);
+        } else {
+            String prop = config.getProperty(ServerConfigParams.PARAM_CASSANDRA_SO_LINGER);
+            if (prop != null) {
+                try {
+                    socketOptions.setSoLinger(Integer.parseInt(prop));
+                    auditDefaultUsed(propName);
+                } catch (NumberFormatException e) {
+                    auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_MANAGER_FINE_MESSAGE, "Invalid default value for " + propName + ": " + prop);
+                }
+            }
+            // else default value is null
+        }
+    }
+
+    private void setSocketOptionsTcpNoDelay(SocketOptions socketOptions, Map<String, String> connectionProperties) {
+        String propName =  TCP_NO_DELAY;
+        if (connectionProperties.containsKey(propName)) {
+            socketOptions.setTcpNoDelay(Boolean.parseBoolean(connectionProperties.get(propName)));
+        } else {
+            socketOptions.setTcpNoDelay(config.getBooleanProperty(ServerConfigParams.PARAM_CASSANDRA_TCP_NO_DELAY, DEFAULT_TCP_NO_DELAY));
+            auditDefaultUsed(propName);
         }
     }
 
@@ -603,9 +649,9 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
             auditor.logAndAudit(AssertionMessages.CASSANDRA_CONNECTION_MANAGER_FINE_MESSAGE, "CacheCleanUp task starting...");
             connectionManager.lock.lock();
             try {
-                final long maximumAge = ConfigFactory.getTimeUnitProperty(MAX_CONNECTION_CACHE_AGE, DEFAULT_CONNECTION_MAX_AGE);
-                final long maximumIdleTime = ConfigFactory.getTimeUnitProperty(MAX_CONNECTION_CACHE_IDLE_TIME, DEFAULT_CONNECTION_MAX_IDLE);
-                final int maximumSize = ConfigFactory.getIntProperty(MAX_CONNECTION_CACHE_SIZE, DEFAULT_CONNECTION_CACHE_SIZE);
+                final long maximumAge = ConfigFactory.getTimeUnitProperty(ServerConfigParams.PARAM_CASSANDRA_MAX_CONNECTION_CACHE_AGE, DEFAULT_CONNECTION_MAX_AGE);
+                final long maximumIdleTime = ConfigFactory.getTimeUnitProperty(ServerConfigParams.PARAM_CASSANDRA_MAX_CONNECTION_CACHE_IDLE, DEFAULT_CONNECTION_MAX_IDLE);
+                final int maximumSize = ConfigFactory.getIntProperty(ServerConfigParams.PARAM_CASSANDRA_MAX_CONNECTION_CACHE_SIZE, DEFAULT_CONNECTION_CACHE_SIZE);
 
                 final long timeNow = System.currentTimeMillis();
                 final int overSize = cassandraConnections.size() - maximumSize;

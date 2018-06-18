@@ -158,7 +158,7 @@ public class ServerCassandraQueryAssertion extends AbstractServerAssertion<Cassa
 
             return AssertionStatus.NONE;
         } finally {
-          int maxConnectionCacheSize = config.getIntProperty(CassandraConnectionManager.MAX_CONNECTION_CACHE_SIZE, CassandraConnectionManager.DEFAULT_CONNECTION_CACHE_SIZE);
+          int maxConnectionCacheSize = config.getIntProperty(ServerConfigParams.PARAM_CASSANDRA_MAX_CONNECTION_CACHE_SIZE, CassandraConnectionManager.DEFAULT_CONNECTION_CACHE_SIZE);
           if(cassandraConnection != null && maxConnectionCacheSize == 0) {
               connectionManager.removeConnection(cassandraConnection.getCassandraConnectionEntity());
           }

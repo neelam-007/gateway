@@ -218,6 +218,16 @@ public interface ServerConfigParams {
     String PARAM_CASSANDRA_MAX_SIMULTANEOUS_REQ_PER_HOST = "cassandra.maxSimultaneousRequestsPerHostThreshold";
     String PARAM_CASSANDRA_HOST_DISTANCE = "cassandra.hostDistance";
     String PARAM_CASSANDRA_KEEP_ALIVE = "cassandra.keepAlive";
+    String PARAM_CASSANDRA_MAX_CONNECTION_CACHE_AGE = "cassandra.maxConnectionCacheAge";
+    String PARAM_CASSANDRA_MAX_CONNECTION_CACHE_IDLE = "cassandra.maxConnectionCacheIdleTime";
+    String PARAM_CASSANDRA_MAX_CONNECTION_CACHE_SIZE = "cassandra.maxConnectionCacheSize";
+    String PARAM_CASSANDRA_CONNECTION_TIMEOUT = "cassandra.connectTimeoutMillis";
+    String PARAM_CASSANDRA_READ_TIMEOUT = "cassandra.readTimeoutMillis";
+    String PARAM_CASSANDRA_REUSE_ADDRESS = "cassandra.reuseAddress";
+    String PARAM_CASSANDRA_RECIEVE_BUFFER_SIZE = "cassandra.receiveBufferSize";
+    String PARAM_CASSANDRA_SEND_BUFFER_SIZE = "cassandra.sendBufferSize";
+    String PARAM_CASSANDRA_SO_LINGER = "cassandra.soLinger";
+    String PARAM_CASSANDRA_TCP_NO_DELAY = "cassandra.tcpNoDelay";
     String PARAM_CASSANDRA_FETCH_SIZE = "cassandra.fetchSize.defaultValue";
 
     // Adding custom assertions system properties
