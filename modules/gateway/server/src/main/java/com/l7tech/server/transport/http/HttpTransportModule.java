@@ -9,6 +9,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.server.DefaultKey;
+import com.l7tech.server.GatewayURLStreamHandlerFactory;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.ServerConfigParams;
@@ -33,6 +34,7 @@ import org.apache.catalina.session.ManagerBase;
 import org.apache.catalina.startup.Embedded;
 import org.apache.coyote.ProtocolHandler;
 import org.apache.coyote.http11.Http11Protocol;
+import org.apache.naming.resources.DirContextURLStreamHandlerFactory;
 import org.apache.naming.resources.FileDirContext;
 import org.apache.tomcat.util.IntrospectionUtils;
 import org.jetbrains.annotations.Nullable;
@@ -148,6 +150,9 @@ public class HttpTransportModule extends TransportModule implements PropertyChan
             // Already initialized
             return;
         }
+        // This is originally done by WebappLoader class, but it fails because GatewayURLStreamHandlerFactory is taking place before
+        // So we do it the way we support to preserve tomcat behaviour
+        GatewayURLStreamHandlerFactory.registerHandlerFactory("jndi", new DirContextURLStreamHandlerFactory());
 
         embedded = new Embedded();
 

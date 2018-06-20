@@ -35,11 +35,12 @@ import static java.util.logging.Level.*;
  * Object that represents a complete, running Gateway instance.
  */
 public class GatewayBoot {
-    protected static final Logger logger = Logger.getLogger(GatewayBoot.class.getName());
+    protected static final Logger LOGGER = Logger.getLogger(GatewayBoot.class.getName());
     private static final long DB_CHECK_DELAY = 30;
     private static final String SYSPROP_STARTUPCHECKS = "com.l7tech.server.performStartupChecks";
     private static final String PROP_STARTED_FILENAME = "com.l7tech.server.started.filename";
     private static final String STARTED_FILENAME = SyspropUtil.getString( PROP_STARTED_FILENAME, "started" );
+    private static final String SSG_BOOT_BEAN_NAME = "ssgBoot";
 
     private final AtomicBoolean running = new AtomicBoolean(false);
     private final AtomicBoolean destroyRequested = new AtomicBoolean(false);
@@ -95,7 +96,7 @@ public class GatewayBoot {
             try {
                 if (providerName.contains(" ")) {
                     String[] splitz = providerName.split(" ");
-                    logger.info("Adding " + splitz[0]);
+                    LOGGER.log(INFO, "Adding {0}", splitz[0]);
                     Class providerClass = Class.forName(splitz[0]);
                     Constructor ctor = providerClass.getConstructor(String.class);
                     p = (Provider) ctor.newInstance(splitz[1]);
@@ -115,7 +116,8 @@ public class GatewayBoot {
      * Create a Gateway instance but do not initialize or start it.
      * Set the com.l7tech.server.partitionName system property if the partition name is other than "default_".
      */
-    public GatewayBoot() {
+    GatewayBoot() {
+        // No implementation is necessary here
     }
 
     public void start() throws LifecycleException {
@@ -124,13 +126,14 @@ public class GatewayBoot {
             return;
         }
 
-        logger.info("Starting " + BuildInfo.getLongBuildString());
+        LOGGER.info("Starting " + BuildInfo.getLongBuildString());
         destroyRequested.set(false);
 
         // This thread is responsible for attempting to start the server, and for clearing "running" flag if it fails
         boolean itworked = false;
         try {
             final long startTime = System.currentTimeMillis();
+            GatewayURLStreamHandlerFactory.install(); // This is needed in order to proper load of modular assertion files (more details in GatewayURLStreamHandlerFactory)
             ServerConfig.getInstance().getLocalDirectoryProperty( ServerConfigParams.PARAM_LOG_DIRECTORY, true);
             FirewallUtils.initializeFirewall();
             dbInit();
@@ -139,7 +142,7 @@ public class GatewayBoot {
             String ipAddress = startBootProcess();
             startListeners(ipAddress);
             itworked = true;
-            logger.log( FINE, "Boot completed in {0}ms", System.currentTimeMillis() - startTime );
+            LOGGER.log( FINE, "Boot completed in {0}ms", System.currentTimeMillis() - startTime );
         } finally {
             if (!itworked)
                 running.set(false);
@@ -149,24 +152,22 @@ public class GatewayBoot {
     /**
      * Stop and destroy this Gateway instance.
      * This Gateway instance can not be started again once it is destroyed and should be discarded.
-     *
-     * @throws LifecycleException if there is a problem shutting down the server
      */
-    public void destroy() throws LifecycleException {
+    public void destroy() {
         destroyRequested.set(true);
         if (!running.get())
             return;
 
         final int shutdownDelay = ConfigFactory.getIntProperty( "ssg.shutdownDelay", 3 );
-        logger.info("Starting shutdown.");
+        LOGGER.info("Starting shutdown.");
         stopBootProcess();
         try {
             for ( int i=0; i<shutdownDelay; i++ ) {
-                logger.info("Continuing shutdown in " +(shutdownDelay-i)+ "s.");
+                LOGGER.log(INFO, "Continuing shutdown in {0}s.", (shutdownDelay-i));
                 Thread.sleep(1000);
             }
         } catch ( InterruptedException e ) {
-            logger.info("Continuing shutdown (interrupted).");                        
+            LOGGER.info("Continuing shutdown (interrupted).");
         }
         destroyBootProcess();
         applicationContext.close();
@@ -215,16 +216,16 @@ public class GatewayBoot {
                             return;
                         final Pair<Integer,Integer> poolsAndConnections = getNumDbConnections();
                         if ( poolsAndConnections.left==0 ) {
-                            logger.log(Level.FINE, "Database pooling not in use, or is not initialized after " + DB_CHECK_DELAY + " seconds");
+                            LOGGER.log(Level.FINE, "Database pooling not in use, or is not initialized after {0} seconds", DB_CHECK_DELAY);
                             return;
                         } else if ( poolsAndConnections.right >= 1 ) {
-                            logger.log(Level.FINE, "Database check: " + poolsAndConnections.right + " database connections open after " + DB_CHECK_DELAY + " seconds");
+                            LOGGER.log(Level.FINE, "Database check: {0} database connections open after {1} seconds", new Object[] { poolsAndConnections.right, DB_CHECK_DELAY });
                             return;
                         }
 
-                        logger.log(SEVERE, "WARNING: No database connections open after " + DB_CHECK_DELAY + " seconds; possible DB connection failure?");
+                        LOGGER.log(SEVERE, "WARNING: No database connections open after " + DB_CHECK_DELAY + " seconds; possible DB connection failure?");
                     } catch (Throwable t) {
-                        logger.log(SEVERE, "Unable to check for database connections: " + ExceptionUtils.getMessage(t), t);
+                        LOGGER.log(SEVERE, "Unable to check for database connections: " + ExceptionUtils.getMessage(t), t);
                     }
                 }
             };
@@ -237,7 +238,7 @@ public class GatewayBoot {
         final File varDir = ServerConfig.getInstance().getLocalDirectoryProperty( ServerConfigParams.PARAM_VAR_DIRECTORY, true );
         final File derbySqlFile = new File( varDir, "derby.sql" );
         if (derbySqlFile.exists() && !derbySqlFile.delete()) {
-            logger.warning("derby.sql could not be deleted");
+            LOGGER.warning("derby.sql could not be deleted");
         }
     }
 
@@ -262,7 +263,7 @@ public class GatewayBoot {
         final boolean allowCircularDependencies = ConfigFactory.getBooleanProperty( SYSPROP_ALLOW_CIRCULARITY, false );
         final long startTime = System.currentTimeMillis();
         final String dbType = NodePropertiesLoaderImpl.getInstance().getProperty("node.db.type", "mysql");
-        logger.info("Database type: " + dbType);
+        LOGGER.log(INFO, "Database type: {0}", dbType);
         final boolean useMysql = "mysql".equals(dbType);
         Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
 
@@ -277,7 +278,7 @@ public class GatewayBoot {
                 ) );
 
         final Mode mode = GatewayBootUtil.getMode();
-        logger.log( Level.INFO, "Starting gateway in {0} mode", mode );
+        LOGGER.log( Level.INFO, "Starting gateway in {0} mode", mode );
 
         if(Mode.TRADITIONAL.equals(mode)){
             applicationContexts.addAll( Arrays.asList(
@@ -287,7 +288,7 @@ public class GatewayBoot {
         }
 
         final List<String> componentsContexts = GatewayBootUtil.getComponentsContexts(mode);
-        logger.log( Level.INFO, "Enabled component: {0}", componentsContexts );
+        LOGGER.log( Level.INFO, "Enabled component: {0}", componentsContexts );
         applicationContexts.addAll(componentsContexts);
 
 
@@ -295,45 +296,45 @@ public class GatewayBoot {
         applicationContext.setAllowCircularReferences( allowCircularDependencies );
         applicationContext.refresh();
         shutdowner = applicationContext.getBean("ssgShutdown", ShutdownWatcher.class);
-        logger.log( FINE, "Created application context in {0}ms", System.currentTimeMillis() - startTime );
+        LOGGER.log( FINE, "Created application context in {0}ms", System.currentTimeMillis() - startTime );
     }
 
     private String startBootProcess() throws LifecycleException {
         final long contextStartTime = System.currentTimeMillis();
         applicationContext.start();
-        logger.log( FINE, "Started application context in {0}ms", System.currentTimeMillis() - contextStartTime );
+        LOGGER.log( FINE, "Started application context in {0}ms", System.currentTimeMillis() - contextStartTime );
         final long bootStartTime = System.currentTimeMillis();
-        final BootProcess boot = applicationContext.getBean("ssgBoot", BootProcess.class);
+        final BootProcess boot = applicationContext.getBean(SSG_BOOT_BEAN_NAME, BootProcess.class);
         boot.start();
-        logger.log( FINE, "Started boot process in {0}ms", System.currentTimeMillis() - bootStartTime );
+        LOGGER.log( FINE, "Started boot process in {0}ms", System.currentTimeMillis() - bootStartTime );
         return boot.getIpAddress();
     }
 
     private void stopBootProcess() {
         try {
-            BootProcess boot = applicationContext.getBean("ssgBoot", BootProcess.class);
+            BootProcess boot = applicationContext.getBean(SSG_BOOT_BEAN_NAME, BootProcess.class);
             boot.stop();
             applicationContext.stop();
         } catch ( Exception e ) {
-            logger.log( WARNING, "Error shutting down boot process '"+ExceptionUtils.getMessage(e)+"'.", e );
+            LOGGER.log( WARNING, "Error shutting down boot process '"+ExceptionUtils.getMessage(e)+"'.", e );
         }
     }
 
     private void destroyBootProcess() {
         try {
-            BootProcess boot = applicationContext.getBean("ssgBoot", BootProcess.class);
+            BootProcess boot = applicationContext.getBean(SSG_BOOT_BEAN_NAME, BootProcess.class);
             boot.destroy();
         } catch ( Exception e ) {
-            logger.log( WARNING, "Error destroying boot process '"+ExceptionUtils.getMessage(e)+"'.", e );
+            LOGGER.log( WARNING, "Error destroying boot process '"+ExceptionUtils.getMessage(e)+"'.", e );
         }
     }
 
     private void startListeners(String ipAddress) {
         final long startTime = System.currentTimeMillis();
-        logger.log( INFO, "Ready for messages" );
+        LOGGER.log( INFO, "Ready for messages" );
         applicationContext.publishEvent(new ReadyForMessages(this, Component.GW_SERVER, ipAddress));
         touchStartedFile();
-        logger.log( FINE, "Started listeners in {0}ms", System.currentTimeMillis() - startTime );
+        LOGGER.log( FINE, "Started listeners in {0}ms", System.currentTimeMillis() - startTime );
     }
 
     private void touchStartedFile() {
@@ -343,7 +344,7 @@ public class GatewayBoot {
         try {
             FileUtils.touch( started );
         } catch ( IOException e ) {
-            logger.log( Level.WARNING, "Unable to touch " + started + ": " + ExceptionUtils.getMessage( e ) );
+            LOGGER.log( Level.WARNING, "Unable to touch " + started + ": " + ExceptionUtils.getMessage( e ) );
         }
     }
 
@@ -352,27 +353,24 @@ public class GatewayBoot {
         shutdowner.setShutdownLatch( shutdown );
 
         // add shutdown handler
-        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable(){
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             /**
              * Run before shutdown, we need to be ready to exit when this thread dies.
              */
-            @Override
-            public void run() {
-                // notify to start shutdown process
-                shutdown.countDown();
+            // notify to start shutdown process
+            shutdown.countDown();
 
-                // wait for shutdown to complete, we'll assume that the process is killed if it takes too long
-                // but we don't want to block forever so timeout after 5 mins
-                try {
-                    exitSync.await( 5, TimeUnit.MINUTES );
-                } catch (InterruptedException e) {
-                    // thread exits immediately
-                }
+            // wait for shutdown to complete, we'll assume that the process is killed if it takes too long
+            // but we don't want to block forever so timeout after 5 mins
+            try {
+                exitSync.await( 5, TimeUnit.MINUTES );
+            } catch (InterruptedException e) {
+                // thread exits immediately
+            }
 
-                LogManager logManager = LogManager.getLogManager();
-                if ( logManager instanceof GatewayLogManager ) {
-                    ((GatewayLogManager)logManager).resetLogs();
-                }                
+            LogManager logManager = LogManager.getLogManager();
+            if ( logManager instanceof GatewayLogManager ) {
+                ((GatewayLogManager)logManager).resetLogs();
             }
         }));
     }
@@ -385,7 +383,7 @@ public class GatewayBoot {
             } catch (StrongCryptoNotAvailableException e) {
                 throw new LifecycleException("Strong cryptography not available. Please update JDK to enable strong cryptography.");
             } catch (GeneralSecurityException e) {
-                logger.log(WARNING, "Unexpected error when checking for strong cryptography in JDK '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e));
+                LOGGER.log(WARNING, "Unexpected error when checking for strong cryptography in JDK '"+ExceptionUtils.getMessage(e)+"'.", ExceptionUtils.getDebugException(e));
             }
         }
     }
@@ -400,7 +398,7 @@ public class GatewayBoot {
         try {
             shutdown.await();
         } catch (InterruptedException e) {
-            logger.info("Shutting down due to interruped.");
+            LOGGER.info("Shutting down due to interruped.");
         }
     }
 
@@ -415,6 +413,7 @@ public class GatewayBoot {
     public static final class GatewayLogManager extends LogManager implements JdkLoggerConfigurator.ResettableLogManager {
         @Override
         public void reset() throws SecurityException {
+            // no impl is necessary
         }
 
         @Override

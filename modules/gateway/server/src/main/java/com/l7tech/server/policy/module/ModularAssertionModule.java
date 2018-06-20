@@ -7,6 +7,7 @@ import com.l7tech.util.ExceptionUtils;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.Collection;
 import java.util.Collections;
@@ -64,6 +65,27 @@ public class ModularAssertionModule extends BaseAssertionModule<ModularAssertion
      */
     public byte[] getResourceBytes(String resourcepath, boolean hidePrivateLibraries) throws IOException {
         return getModuleClassLoader().getResourceBytes(resourcepath, hidePrivateLibraries);
+    }
+
+    /**
+     * Open an InputStream for the specified resource from this assertion module, without looking in any parent
+     * classloaders.
+     * <p/>
+     * Keep in mind you can convert a class name into a resource path easily:
+     * <pre>
+     * String resourcepath = classname.replace('.', '/').concat(".class");
+     * </pre>
+     *
+     * @param resourcepath  the path to look for, ie "com/l7tech/console/panels/resources/RateLimitAssertionPropertiesDialog.form".  Required.
+     * @param hidePrivateLibraries  true if the resource bytes will be sent back to a remote client, and so any classes from nested jarfiles
+     *                              matching patterns listed in the .AAR manifest's "Private-Libraries:" header should not be loadable.
+     *                              <p/>
+     *                              false if all resource bytes should be loadable, even those from private nested jarfiles.
+     * @return an instance of {@link java.io.InputStream} pointing to the specified resource, or null if no matching resource was found.
+     * @throws IOException if there was an error opening the stream
+     */
+    public InputStream getResourceStream(String resourcepath, boolean hidePrivateLibraries) throws IOException {
+        return getModuleClassLoader().getResourceStream(resourcepath, hidePrivateLibraries);
     }
 
     /**

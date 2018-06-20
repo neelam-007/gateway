@@ -30,6 +30,12 @@ public class ModularAssertionModuleFinderStub implements AssertionModuleFinder<M
         return null;
     }
 
+    @Nullable
+    @Override
+    public ModularAssertionModule getModuleByName(@NotNull String moduleName) {
+        return null;
+    }
+
     @NotNull
     @Override
     public Set<ModularAssertionModule> getLoadedModules() {

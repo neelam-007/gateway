@@ -193,6 +193,33 @@ class ModularAssertionClassLoader extends URLClassLoader implements Closeable {
     }
 
     /**
+     * Open an InputStream for the specified resource from this assertion module, without looking in any parent
+     * class loaders (unless the resource is under resourceLoadPrefix)
+     *
+     * @param path  the path, ie "com/l7tech/console/panels/resources/RateLimitAssertionPropertiesDialog.form".  Required.
+     * @param hidePrivateLibraries  true if the resource bytes will be sent back to a remote client, and so any classes from nested jarfiles
+     *                              matching patterns listed in the .AAR manifest's "Private-Libraries:" header should not be loadable.
+     *                              <p/>
+     *                              false if all resource bytes should be loadable, even those from private nested jarfiles.
+     * @return an instance of {@link java.io.InputStream} pointing to the specified resource, or null if no matching resource was found.
+     * @throws IOException if there is an error opening the stream
+     */
+    InputStream getResourceStream(final String path, boolean hidePrivateLibraries) throws IOException {
+        URL url = shouldLoadFromParentResources( toClassPath(path) ) ?
+                super.getResource(path):
+                super.findResource(path);
+        if (url == null) {
+            // this goes deep into zip structure and has a cache so it should not be a problem to recover the bytes here
+            byte[] found = getResourceBytesFromNestedJars(path, hidePrivateLibraries);
+            if (found != null) {
+                return new ByteArrayInputStream(found);
+            }
+            return getResourceStreamFromDelegates(path);
+        }
+        return url.openStream();
+    }
+
+    /**
      * Get the bytes for the specified resource from this assertion module, without looking in any parent
      * class loaders (unless the resource is under resourceLoadPrefix)
      *
@@ -240,19 +267,27 @@ class ModularAssertionClassLoader extends URLClassLoader implements Closeable {
     }
 
     private byte[] getResourceBytesFromDelegates(String path) {
+        InputStream foundStream = this.getResourceStreamFromDelegates(path);
+        if (foundStream != null) {
+            try {
+                return IOUtils.slurpStream(foundStream);
+            } catch (IOException e) {
+                logger.log(Level.WARNING,
+                        "Error reading resource " + path +
+                                " from delegate ClassLoader for module name " + moduleName + ": " + ExceptionUtils.getMessage(e),
+                        e);
+            } finally {
+                ResourceUtils.closeQuietly(foundStream);
+            }
+        }
+        return null;
+    }
+
+    private InputStream getResourceStreamFromDelegates(String path) {
         for (ClassLoader loader : delegates) {
             InputStream foundStream = loader.getResourceAsStream(path);
             if (foundStream != null) {
-                try {
-                    return IOUtils.slurpStream(foundStream);
-                } catch (IOException e) {
-                    logger.log(Level.WARNING,
-                               "Error reading resource " + path +
-                               " from delegate ClassLoader for module name " + moduleName + ": " + ExceptionUtils.getMessage(e),
-                               e);
-                } finally {
-                    ResourceUtils.closeQuietly(foundStream);
-                }
+                return foundStream;
             }
         }
         return null;

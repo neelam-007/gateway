@@ -8,6 +8,7 @@ import com.l7tech.gateway.common.module.ServerModuleFileLoader;
 import com.l7tech.policy.AllAssertions;
 import com.l7tech.policy.AssertionRegistry;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.server.GatewayURLStreamHandlerFactory;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.admin.ExtensionInterfaceManager;
 import com.l7tech.server.event.system.LicenseChangeEvent;
@@ -25,11 +26,15 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ApplicationEventMulticaster;
 
 import java.io.File;
+import java.net.URLStreamHandler;
+import java.net.URLStreamHandlerFactory;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.l7tech.server.policy.module.ModularAssertionURLStreamHandler.PROTOCOL;
 
 /**
  * The Gateway's AssertionRegistry, which extends the default registry with the ability to look for
@@ -74,6 +79,13 @@ public class ServerAssertionRegistry extends AssertionRegistry implements Dispos
         this.licenseManager = licenseManager;
         this.extensionInterfaceManager = extensionInterfaceManager;
         installGatewayMetadataDefaults();
+        // register a handler for the modular assertion url protocol
+        GatewayURLStreamHandlerFactory.registerHandlerFactory(PROTOCOL, new URLStreamHandlerFactory() {
+            @Override
+            public URLStreamHandler createURLStreamHandler(String protocol) {
+                return new ModularAssertionURLStreamHandler(ServerAssertionRegistry.this);
+            }
+        });
     }
 
     @Override
@@ -158,7 +170,7 @@ public class ServerAssertionRegistry extends AssertionRegistry implements Dispos
                 String serverConfigName = ClusterProperty.asServerConfigPropertyName(clusterPropertyName);
 
                 toAdd.add(new String[] { serverConfigName, clusterPropertyName, desc, dflt, validation });
-                logger.info("Dynamically registering cluster property " + clusterPropertyName);
+                logger.log(Level.INFO, "Dynamically registering cluster property {0}", clusterPropertyName);
             }
         }
         if (!toAdd.isEmpty()) {
@@ -194,6 +206,20 @@ public class ServerAssertionRegistry extends AssertionRegistry implements Dispos
     public ModularAssertionModule getModuleForAssertion(@NotNull final String className) {
         for (final ModularAssertionModule module : assertionsScanner.getModules()) {
             if (module.offersClass(className)) {
+                return module;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Nullable
+    @Override
+    public ModularAssertionModule getModuleByName(@NotNull final String moduleName) {
+        for (final ModularAssertionModule module : assertionsScanner.getModules()) {
+            if (module.getName().equals(moduleName)) {
                 return module;
             }
         }

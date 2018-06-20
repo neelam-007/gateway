@@ -776,6 +776,20 @@ public class CustomAssertionsRegistrarImpl extends ApplicationObjectSupport impl
     }
 
     /**
+     * {@inheritDoc}
+     */
+    @Nullable
+    @Override
+    public CustomAssertionModule getModuleByName(@NotNull final String moduleName) {
+        for (final CustomAssertionModule module : assertionsScanner.getModules()) {
+            if (module.getName().equals(moduleName)) {
+                return module;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Find the assertion module, if any, that owns the specified class loader.
      *
      * @param classLoader    the class loader to check.  Required and cannot be {@code null}.

@@ -32,13 +32,23 @@ public interface AssertionModuleFinder<T extends BaseAssertionModule> {
     T getModuleForClassLoader(ClassLoader classLoader);
 
     /**
-     * Find the most-recently-loaded loaded assertion module that contains at least one class or resource in the specified package.
+     * Find the most-recently-loaded assertion module that contains at least one class or resource in the specified package.
      *
      * @param packageName    a package name.  Required and cannot be {@code null}.
      * @return The most-recently-loaded loaded assertion module that offers at least one file in this package, or {@code null} if there isn't one.
      */
     @Nullable
     T getModuleForPackage(@NotNull String packageName);
+
+    /**
+     * Find the assertion module, if any, that has the specified name.
+     *
+     * @param moduleName    the desired module name.  Required and cannot be {@code null}.
+     * @return The module with the name specified, or {@code null} if no currently registered
+     *         assertion modules with the specified name.
+     */
+    @Nullable
+    T getModuleByName(@NotNull String moduleName);
 
     /**
      * Gather all Modular or Custom Assertion modules which are currently loaded.

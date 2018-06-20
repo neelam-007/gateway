@@ -30,6 +30,12 @@ public class CustomAssertionModuleFinderStub implements AssertionModuleFinder<Cu
         return null;
     }
 
+    @Nullable
+    @Override
+    public CustomAssertionModule getModuleByName(@NotNull String moduleName) {
+        return null;
+    }
+
     @NotNull
     @Override
     public Set<CustomAssertionModule> getLoadedModules() {
