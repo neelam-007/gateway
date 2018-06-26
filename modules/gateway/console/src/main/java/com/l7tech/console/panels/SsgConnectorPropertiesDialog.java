@@ -168,6 +168,11 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         initialize(connector);
     }
 
+    public SsgConnectorPropertiesDialog(PrivateKeysComboBox privateKeyComboBox, CipherSuiteListModel cipherSuiteListModel) {
+        this.privateKeyComboBox = privateKeyComboBox;
+        this.cipherSuiteListModel = cipherSuiteListModel;
+    }
+
     private void initialize(SsgConnector connector) {
         this.connector = connector;
         setContentPane(contentPane);
@@ -509,8 +514,12 @@ public class SsgConnectorPropertiesDialog extends JDialog {
                     return null;
                 if (!cipherSuiteListModel.isAnyEntryChecked())
                     return "At least one cipher suite must be enabled for an SSL listener.";
-                if (isEccCertButHasRsaCiphersEnabled())
-                    return "The server private key uses elliptic curve crypto, but at least one RSA cipher suite is enabled.";
+                if (isEccKeyButRsaCiphersChecked()) {
+                    return "The server private key uses elliptic curve crypto, but at least one TLS_RSA/TLS_DHE_RSA/TLS_ECDHE_RSA cipher suite is enabled.";
+                }
+                if (isRsaKeyButEccCiphersChecked()) {
+                    return "The server private key uses RSA crypto, but at least one TLS_ECDH_ECDSA/TLS_ECDHE_ECDSA/TLS_ECDH_RSA cipher suite is enabled.";
+                }
                 if (!tls10CheckBox.isSelected() &&
                     !tls11CheckBox.isSelected() &&
                     !tls12CheckBox.isSelected())
@@ -662,12 +671,26 @@ public class SsgConnectorPropertiesDialog extends JDialog {
         }
     }
 
-    private boolean isEccCertButHasRsaCiphersEnabled() {
+    protected boolean isEccKeyButRsaCiphersChecked() {
         String alg = privateKeyComboBox.getSelectedKeyAlgorithm();
-        if (!("EC".equals(alg) || "ECDSA".equals(alg)))
-            return false;
         final String cipherList = cipherSuiteListModel.asCipherListStringOrNullIfDefault();
-        return cipherList == null || cipherList.indexOf("RSA_") > 0;
+
+        //Check if selected private key is Elliptic Curve key but RSA Encryption Ciphers TLS_RSA/TLS_DHE_RSA/TLS_ECDHE_RSA are selected in listen port properties
+        // Reference - https://tools.ietf.org/html/rfc4492#section-2.1 - Read this RFC for more info
+        final boolean ecKeyIncluded = "EC".equals(alg);
+        final boolean rsaCipherSelected = cipherList == null || cipherList.contains("TLS_RSA")  || cipherList.contains("TLS_DHE_RSA") || cipherList.contains("TLS_ECDHE_RSA");
+        return ecKeyIncluded && rsaCipherSelected;
+    }
+
+    protected boolean isRsaKeyButEccCiphersChecked() {
+        String alg = privateKeyComboBox.getSelectedKeyAlgorithm();
+        final String cipherList = cipherSuiteListModel.asCipherListStringOrNullIfDefault();
+
+        //Check if selected private key is RSA key but EC Encryption Ciphers TLS_ECDHE_ECDSA/TLS_ECDH_ECDSA/TLS_ECDH_RSA are selected in listen port properties
+        // Reference - https://tools.ietf.org/html/rfc4492#section-2.1 - Read this RFC for more info
+        final boolean rsaKeyIncluded = "RSA".equals(alg);
+        final boolean eccCipherSelected = cipherList == null || cipherList.contains("TLS_ECDHE_ECDSA") || cipherList.contains("TLS_ECDH_ECDSA") || cipherList.contains("TLS_ECDH_RSA");
+        return rsaKeyIncluded && eccCipherSelected;
     }
 
     private void editProperty(@Nullable final Pair<String, String> origPair) {
