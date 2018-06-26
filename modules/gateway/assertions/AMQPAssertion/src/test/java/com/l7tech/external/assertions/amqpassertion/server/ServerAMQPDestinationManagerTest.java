@@ -5,6 +5,7 @@ import com.l7tech.external.assertions.amqpassertion.AmqpSsgActiveConnector;
 import com.l7tech.external.assertions.amqpassertion.AmqpSupportAssertion;
 import com.l7tech.external.assertions.amqpassertion.console.AMQPDestinationHelper;
 import com.l7tech.gateway.common.security.password.SecurePassword;
+import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.transport.SsgActiveConnector;
 import com.l7tech.message.Message;
 import com.l7tech.objectmodel.FindException;
@@ -18,11 +19,13 @@ import com.l7tech.server.cluster.ClusterPropertyManager;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.service.ServiceCache;
 import com.l7tech.server.transport.SsgActiveConnectorManager;
+import com.l7tech.test.BugId;
 import com.l7tech.util.Functions;
 import com.rabbitmq.client.Address;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -38,6 +41,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -90,10 +94,10 @@ public class ServerAMQPDestinationManagerTest {
                 thenReturn(mock(ClusterPropertyManager.class));
     }
 
-    private void createOutboundDestination1(List<AMQPDestination> destinations) throws FindException, SaveException {
+    private void createDestination(List<AMQPDestination> destinations, boolean isInbound) throws FindException, SaveException {
         AMQPDestination destination = new AMQPDestination();
         destination.setName("Test 1");
-        destination.setInbound(false);
+        destination.setInbound(isInbound);
         destination.setVirtualHost("vhost");
         destination.setAddresses(new String[]{"localhost:1234", "localhost:5678"});
         destination.setCredentialsRequired(true);
@@ -101,7 +105,12 @@ public class ServerAMQPDestinationManagerTest {
         destination.setPasswordGoid(addPassword("password"));
         destination.setUseSsl(false);
         destination.setExchangeName("exchange1");
-        destination.setOutboundReplyBehaviour(AMQPDestination.OutboundReplyBehaviour.ONE_WAY);
+        if (isInbound) {
+            destination.setQueueName("testQueue");
+        }
+        else {
+            destination.setOutboundReplyBehaviour(AMQPDestination.OutboundReplyBehaviour.ONE_WAY);
+        }
 
         destinations.add(destination);
     }
@@ -127,18 +136,13 @@ public class ServerAMQPDestinationManagerTest {
     @Test
     public void activateOutboundDestination1() throws Exception {
         List<AMQPDestination> destinations = new ArrayList<AMQPDestination>();
-        createOutboundDestination1(destinations);
+        createDestination(destinations, false);
         setDestinationsClusterProperty(destinations);
 
         ServerConfig config = new ServerConfigStub();
         when(applicationContext.getBean("ssgActiveConnectorManager", SsgActiveConnectorManager.class)).
                 thenReturn(ssgActiveConnectorManager);
-        SsgActiveConnector amqpconnector = mock(SsgActiveConnector.class);
-        when(amqpconnector.getName()).thenReturn("AMQP");
-        // to match the default GOID when a new AMQPDestination is created
-        when(amqpconnector.getGoid()).thenReturn(new Goid(0, -1));
-        when(amqpconnector.getType()).thenReturn(AmqpSsgActiveConnector.ACTIVE_CONNECTOR_TYPE_AMQP);
-        when(amqpconnector.getProperty(AmqpSsgActiveConnector.PROPERTY_KEY_AMQP_ADDRESSES)).thenReturn(PROPERTY_KEY_ADDRESS);
+        SsgActiveConnector amqpconnector = prepareAmqpConnector();
         Collection<SsgActiveConnector> connectorList = new ArrayList<>();
         connectorList.add(amqpconnector);
         when(ssgActiveConnectorManager.findSsgActiveConnectorsByType(AmqpSsgActiveConnector.ACTIVE_CONNECTOR_TYPE_AMQP)).thenReturn(connectorList);
@@ -148,7 +152,7 @@ public class ServerAMQPDestinationManagerTest {
         ServerAMQPDestinationManager spyManager = Mockito.spy(manager);
 
         ConnectionFactory connectionFactory = new ConnectionFactoryBuilder()
-                .whenNewConnectionReturn(new ConnectionBuilder().whenCreateChannelReturn(mock(Channel.class)).build())
+                .whenNewOutBoundConnectionReturn(new ConnectionBuilder().whenCreateChannelReturn(mock(Channel.class)).build())
                 .build();
         Mockito.doReturn(connectionFactory).when(spyManager).createNewConnectionFactory();
 
@@ -157,28 +161,107 @@ public class ServerAMQPDestinationManagerTest {
 
         Assert.assertEquals(1, spyManager.destinations.size());
         assertTrue(spyManager.destinations.containsKey(destinations.get(0).getGoid()));
-        Assert.assertEquals(0, spyManager.failedProducers.size());
-        assertTrue(spyManager.clientChannels.containsKey(destinations.get(0).getGoid()));
+        Assert.assertEquals(0, spyManager.getFailedProducers().size());
+        assertTrue(spyManager.getClientChannels().containsKey(destinations.get(0).getGoid()));
 
-        Channel channel = spyManager.clientChannels.get(destinations.get(0).getGoid()).getClientChannel();
+        Channel channel = spyManager.getClientChannels().get(destinations.get(0).getGoid()).getClientChannel();
         Assert.assertNotNull(channel);
+    }
+
+    @BugId("DE350748")
+    @Test
+    public void testActivateInboundDestinationSuccess() throws Exception {
+        final List<AMQPDestination> destinations = new ArrayList<AMQPDestination>();
+        createDestination(destinations, true);
+        setDestinationsClusterProperty(destinations);
+
+        final ServerConfig config = new ServerConfigStub();
+        when(applicationContext.getBean("ssgActiveConnectorManager", SsgActiveConnectorManager.class)).
+                thenReturn(ssgActiveConnectorManager);
+        SsgActiveConnector amqpconnector = prepareAmqpInboundConnector();
+
+        final Collection<SsgActiveConnector> connectorList = new ArrayList<>();
+        connectorList.add(amqpconnector);
+        when(ssgActiveConnectorManager.findSsgActiveConnectorsByType(AmqpSsgActiveConnector.ACTIVE_CONNECTOR_TYPE_AMQP)).thenReturn(connectorList);
+        when(applicationContext.getBean("serviceCache", ServiceCache.class)).thenReturn(serviceCache);
+        prepareServiceForInboundTest();
+
+        final ServerAMQPDestinationManager manager = new ServerAMQPDestinationManager(config, applicationContext);
+        final ServerAMQPDestinationManager spyManager = Mockito.spy(manager);
+        final ConnectionFactory connectionFactory = new ConnectionFactoryBuilder()
+                .whenNewInboundConnectionReturn(new ConnectionBuilder().whenCreateChannelReturn(mock(Channel.class)).build())
+                .build();
+        Mockito.doReturn(connectionFactory).when(spyManager).createNewConnectionFactory();
+
+        spyManager.loadClusterProperties();
+        spyManager.loadDestinations();
+
+        Assert.assertEquals(1, spyManager.destinations.size());
+        assertTrue(spyManager.destinations.containsKey(destinations.get(0).getGoid()));
+        Assert.assertEquals(0, spyManager.getFailedConsumers().size());
+        assertTrue(spyManager.getServerChannels().containsKey(destinations.get(0).getGoid()));
+
+        final Channel channel = spyManager.getServerChannels().get(destinations.get(0).getGoid());
+        Assert.assertNotNull(channel);
+        Mockito.verify(spyManager, times(1)).createNewConnectionFactory();
+
+        // DE350748: Connections are always regenerated when reloading the consumer destinations.
+        // Simulate reconnecting with the same AMQP destination
+        spyManager.loadDestinations();
+        // verify that a connection is not created again (ie: createNewConnectionFactory is not called a second time)
+        Mockito.verify(spyManager, times(1)).createNewConnectionFactory();
+    }
+
+    @BugId("DE350748")
+    @Test
+    public void testInboundChannelClosedOnError() throws Exception {
+        final List<AMQPDestination> destinations = new ArrayList<AMQPDestination>();
+        createDestination(destinations, true);
+        setDestinationsClusterProperty(destinations);
+
+        final ServerConfig config = new ServerConfigStub();
+        when(applicationContext.getBean("ssgActiveConnectorManager", SsgActiveConnectorManager.class)).
+                thenReturn(ssgActiveConnectorManager);
+        final SsgActiveConnector amqpconnector = prepareAmqpInboundConnector();
+
+        final Collection<SsgActiveConnector> connectorList = new ArrayList<>();
+        connectorList.add(amqpconnector);
+        when(ssgActiveConnectorManager.findSsgActiveConnectorsByType(AmqpSsgActiveConnector.ACTIVE_CONNECTOR_TYPE_AMQP)).thenReturn(connectorList);
+        when(applicationContext.getBean("serviceCache", ServiceCache.class)).thenReturn(serviceCache);
+        prepareServiceForInboundTest();
+
+        final ServerAMQPDestinationManager manager = new ServerAMQPDestinationManager(config, applicationContext);
+        final ServerAMQPDestinationManager spyManager = Mockito.spy(manager);
+
+        final Channel channel = mock(Channel.class);
+        // Simulate channel error
+        when(channel.basicConsume(anyString(), anyBoolean(), any(AMQPConsumer.class))).thenThrow(new IOException("mock channel error"));
+
+        final Connection connection = mock(Connection.class);
+        when(channel.getConnection()).thenReturn(connection);
+
+        ConnectionFactory connectionFactory = new ConnectionFactoryBuilder()
+                .whenNewInboundConnectionReturn(new ConnectionBuilder().whenCreateChannelReturn(channel).build())
+                .build();
+        Mockito.doReturn(connectionFactory).when(spyManager).createNewConnectionFactory();
+        spyManager.loadClusterProperties();
+        spyManager.loadDestinations();
+
+        // Verify that the channels are closed if an error occurred while trying to consume from the queue
+        Mockito.verify(channel, times(1)).close();
+        Mockito.verify(connection, times(1)).close();
     }
 
     @Test
     public void testQueueMessage() throws Exception {
         List<AMQPDestination> destinations = new ArrayList<AMQPDestination>();
-        createOutboundDestination1(destinations);
+        createDestination(destinations, false);
         setDestinationsClusterProperty(destinations);
 
         ServerConfig config = new ServerConfigStub();
         when(applicationContext.getBean("ssgActiveConnectorManager", SsgActiveConnectorManager.class)).
                 thenReturn(ssgActiveConnectorManager);
-        SsgActiveConnector amqpconnector = mock(SsgActiveConnector.class);
-        when(amqpconnector.getName()).thenReturn("AMQP");
-        // to match the default GOID when a new AMQPDestination is created
-        when(amqpconnector.getGoid()).thenReturn(new Goid(0, -1));
-        when(amqpconnector.getType()).thenReturn(AmqpSsgActiveConnector.ACTIVE_CONNECTOR_TYPE_AMQP);
-        when(amqpconnector.getProperty(AmqpSsgActiveConnector.PROPERTY_KEY_AMQP_ADDRESSES)).thenReturn(PROPERTY_KEY_ADDRESS);
+        final SsgActiveConnector amqpconnector = prepareAmqpConnector();
         Collection<SsgActiveConnector> connectorList = new ArrayList<>();
         connectorList.add(amqpconnector);
         when(ssgActiveConnectorManager.findSsgActiveConnectorsByType(AmqpSsgActiveConnector.ACTIVE_CONNECTOR_TYPE_AMQP)).thenReturn(connectorList);
@@ -188,7 +271,7 @@ public class ServerAMQPDestinationManagerTest {
         ServerAMQPDestinationManager spyManager = Mockito.spy(manager);
 
         ConnectionFactory connectionFactory = new ConnectionFactoryBuilder()
-                .whenNewConnectionReturn(new ConnectionBuilder().whenCreateChannelReturn(mock(Channel.class)).build())
+                .whenNewOutBoundConnectionReturn(new ConnectionBuilder().whenCreateChannelReturn(mock(Channel.class)).build())
                 .build();
         Mockito.doReturn(connectionFactory).when(spyManager).createNewConnectionFactory();
 
@@ -197,8 +280,8 @@ public class ServerAMQPDestinationManagerTest {
 
         Assert.assertEquals(1, spyManager.destinations.size());
         assertTrue(spyManager.destinations.containsKey(destinations.get(0).getGoid()));
-        Assert.assertEquals(0, spyManager.failedProducers.size());
-        assertTrue(spyManager.clientChannels.containsKey(destinations.get(0).getGoid()));
+        Assert.assertEquals(0, spyManager.getFailedProducers().size());
+        assertTrue(spyManager.getClientChannels().containsKey(destinations.get(0).getGoid()));
 
         HashMap amqpProperties = new HashMap();
         String routingKey = "key";
@@ -254,6 +337,31 @@ public class ServerAMQPDestinationManagerTest {
                 returnedButNotSupported.isEmpty());
     }
 
+    private void prepareServiceForInboundTest() {
+        final PublishedService service = mock(PublishedService.class);
+        when(serviceCache.getCachedService(any(Goid.class))).thenReturn(service);
+        when(service.isDisabled()).thenReturn(false);
+    }
+
+    @NotNull
+    private SsgActiveConnector prepareAmqpInboundConnector() {
+        final SsgActiveConnector amqpconnector = prepareAmqpConnector();
+        when(amqpconnector.getProperty(AmqpSsgActiveConnector.PROPERTIES_KEY_IS_INBOUND)).thenReturn("true");
+        when(amqpconnector.isEnabled()).thenReturn(true);
+        return amqpconnector;
+    }
+
+    @NotNull
+    private SsgActiveConnector prepareAmqpConnector() {
+        final SsgActiveConnector amqpconnector = mock(SsgActiveConnector.class);
+        when(amqpconnector.getName()).thenReturn("AMQP");
+        // to match the default GOID when a new AMQPDestination is created
+        when(amqpconnector.getGoid()).thenReturn(new Goid(0, -1));
+        when(amqpconnector.getType()).thenReturn(AmqpSsgActiveConnector.ACTIVE_CONNECTOR_TYPE_AMQP);
+        when(amqpconnector.getProperty(AmqpSsgActiveConnector.PROPERTY_KEY_AMQP_ADDRESSES)).thenReturn(PROPERTY_KEY_ADDRESS);
+        return amqpconnector;
+    }
+
 }
 
 class ConnectionFactoryBuilder {
@@ -263,8 +371,13 @@ class ConnectionFactoryBuilder {
         connectionFactory = mock(ConnectionFactory.class);
     }
 
-    ConnectionFactoryBuilder whenNewConnectionReturn(Connection connection) throws Exception {
+    ConnectionFactoryBuilder whenNewOutBoundConnectionReturn(final Connection connection) throws Exception {
         when(connectionFactory.newConnection(any(Address[].class))).thenReturn(connection);
+        return this;
+    }
+
+    ConnectionFactoryBuilder whenNewInboundConnectionReturn(final Connection connection) throws Exception {
+        when(connectionFactory.newConnection(any(ExecutorService.class), any(Address[].class))).thenReturn(connection);
         return this;
     }
 

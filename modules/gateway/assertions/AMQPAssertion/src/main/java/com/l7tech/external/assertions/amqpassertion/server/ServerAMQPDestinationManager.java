@@ -3,8 +3,7 @@ package com.l7tech.external.assertions.amqpassertion.server;
 import com.l7tech.common.io.SSLSocketFactoryWrapper;
 import com.l7tech.common.io.SingleCertX509KeyManager;
 import com.l7tech.common.mime.NoSuchPartException;
-import com.l7tech.external.assertions.amqpassertion.AMQPDestination;
-import com.l7tech.external.assertions.amqpassertion.AmqpSsgActiveConnector;
+import com.l7tech.external.assertions.amqpassertion.*;
 import com.l7tech.external.assertions.amqpassertion.console.AMQPDestinationHelper;
 import com.l7tech.gateway.common.cluster.ClusterProperty;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
@@ -43,11 +42,13 @@ import java.net.Socket;
 import java.security.*;
 import java.text.ParseException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -65,6 +66,8 @@ public class ServerAMQPDestinationManager implements ApplicationListener {
     private static final Logger logger = Logger.getLogger(ServerAMQPDestinationManager.class.getName());
 
     private static ServerAMQPDestinationManager INSTANCE;
+    private final String FAIL_TO_QUEUE_MESSAGE = "Failed to queue the request message: ";
+    private final long OUTBOUND_CONNECT_TIMER = 30000L;
 
     private ServiceCache serviceCache;
 
@@ -82,10 +85,12 @@ public class ServerAMQPDestinationManager implements ApplicationListener {
     private AtomicInteger nodeMessageId = new AtomicInteger(1);
     protected HashMap<Goid, AMQPDestination> destinations = new HashMap<Goid, AMQPDestination>();
 
-    protected HashMap<Goid, Channel> serverChannels = new HashMap<Goid, Channel>();
-    protected HashMap<Goid, CachedChannel> clientChannels = new HashMap<Goid, CachedChannel>();
-    protected HashMap<Goid, Long> failedConsumers = new HashMap<Goid, Long>();
-    protected HashMap<Goid, Long> failedProducers = new HashMap<Goid, Long>();
+    private final Map<Goid, Channel> serverChannels = new ConcurrentHashMap<>();
+    private final Map<Goid, CachedChannel> clientChannels = new ConcurrentHashMap<>();
+    private final Map<Goid, Long> failedConsumers = new ConcurrentHashMap<>();
+    private final Map<Goid, Long> failedProducers = new ConcurrentHashMap<>();
+    private final Map<Goid, Connection> destinationConnection = new ConcurrentHashMap<>();
+
 
     private Timer failedConsumersTimer;
     private Timer clientChannelEvictionTimer;
@@ -137,15 +142,13 @@ public class ServerAMQPDestinationManager implements ApplicationListener {
         failedConsumersTimer.schedule(new TimerTask() {
             @Override
             public void run() {
-                List<AMQPDestination> failedDestinations = new ArrayList<AMQPDestination>();
-                synchronized (failedConsumers) {
-                    for (Iterator<Map.Entry<Goid, Long>> it = failedConsumers.entrySet().iterator(); it.hasNext(); ) {
-                        Map.Entry<Goid, Long> entry = it.next();
+                List<AMQPDestination> failedDestinations = new ArrayList<>();
+                for (Iterator<Map.Entry<Goid, Long>> it = failedConsumers.entrySet().iterator(); it.hasNext(); ) {
+                    Map.Entry<Goid, Long> entry = it.next();
 
-                        if (entry.getValue() < System.currentTimeMillis() - inboundConnectTimeout) {
-                            failedDestinations.add(destinations.get(entry.getKey()));
-                            it.remove();
-                        }
+                    if (entry.getValue() < System.currentTimeMillis() - inboundConnectTimeout) {
+                        failedDestinations.add(destinations.get(entry.getKey()));
+                        it.remove();
                     }
                 }
 
@@ -159,32 +162,40 @@ public class ServerAMQPDestinationManager implements ApplicationListener {
         clientChannelEvictionTimer.schedule(new TimerTask() {
             @Override
             public void run() {
-                synchronized (clientChannels) {
-                    for (Iterator<Map.Entry<Goid, CachedChannel>> it = clientChannels.entrySet().iterator(); it.hasNext(); ) {
-                        Map.Entry<Goid, CachedChannel> entry = it.next();
+                for (Iterator<Map.Entry<Goid, CachedChannel>> it = clientChannels.entrySet().iterator(); it.hasNext(); ) {
+                    Map.Entry<Goid, CachedChannel> entry = it.next();
 
-                        if (entry.getValue().isExpired()) {
-                            try {
-                                Channel channel = entry.getValue().getClientChannel();
-                                Connection connection = entry.getValue().getClientChannel().getConnection();
-                                channel.close();
-                                connection.close();
-                            } catch (IOException e) {
-                                logger.log(Level.WARNING, "Failed to close the AMQP destination: " + entry.getKey(), e);
-                            } catch (AlreadyClosedException e) {
-                                // Connection already closed.
-                                logger.log(Level.FINE, "Attempting to close already closed AMQP destination: " + entry.getKey(), e);
-                            }
-
-                            //Setting the producer to automatically re-connect the connection, as this was not a "failed" connection
-                            //in the strict sense. This is a cache expiry
-                            failedProducers.put(entry.getKey(), System.currentTimeMillis() - ModuleLoadListener.DEFAULT_AMQP_CONNECT_ERROR_SLEEP_MS);
-                            it.remove();
-                        }
+                    if (entry.getValue().isExpired()) {
+                        final Channel channel = entry.getValue().getClientChannel();
+                        final Goid goid = entry.getKey();
+                        closeChannel(channel, destinations.get(goid).getName());
+                        //Setting the producer to automatically re-connect the connection, as this was not a "failed" connection
+                        //in the strict sense. This is a cache expiry
+                        failedProducers.putIfAbsent(goid, System.currentTimeMillis() - ModuleLoadListener.DEFAULT_AMQP_CONNECT_ERROR_SLEEP_MS);
+                        it.remove();
                     }
                 }
             }
-        }, 30000L, 30000L);
+        }, OUTBOUND_CONNECT_TIMER, OUTBOUND_CONNECT_TIMER);
+    }
+
+    /**
+     * Closes the channel associated with an AMQP destination
+     * @param channel The channel to close
+     * @param name the AMQP destination name
+     */
+    private void closeChannel(final Channel channel, final String name) {
+        final Connection conn = channel.getConnection();
+        try {
+            channel.close();
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "Failed to close the AMQP destination: " + name, ExceptionUtils.getDebugException(e));
+        } catch (AlreadyClosedException e) {
+            // Connection already closed.
+            logger.log(Level.FINE, "Attempting to close already closed AMQP destination: " + name, ExceptionUtils.getDebugException(e));
+        } finally {
+            closeConnection(conn);
+        }
     }
 
     /**
@@ -192,7 +203,7 @@ public class ServerAMQPDestinationManager implements ApplicationListener {
      *
      * @return a map of destinations mapped to active server channels
      */
-    public HashMap<Goid, Channel> getServerChannels() {
+    Map<Goid, Channel> getServerChannels() {
         return serverChannels;
     }
 
@@ -201,7 +212,7 @@ public class ServerAMQPDestinationManager implements ApplicationListener {
      *
      * @return map of destinations that failed to connect and when they failed to connect
      */
-    public HashMap<Goid, Long> getFailedConsumers() {
+    Map<Goid, Long> getFailedConsumers() {
         return failedConsumers;
     }
 
@@ -214,7 +225,7 @@ public class ServerAMQPDestinationManager implements ApplicationListener {
                 responseTimeout = ModuleLoadListener.DEFAULT_AMQP_RESPONSE_TIMEOUT_MS;
             }
         } catch (NumberFormatException | FindException e) {
-            logger.log(Level.WARNING, "Error loading cluster-wide property " + ModuleLoadListener.AMQP_RESPONSE_TIMEOUT_UI_PROPERTY + ". Using default value.", e);
+            logger.log(Level.WARNING, "Error loading cluster-wide property " + ModuleLoadListener.AMQP_RESPONSE_TIMEOUT_UI_PROPERTY + ". Using default value.", ExceptionUtils.getDebugException(e));
             responseTimeout = ModuleLoadListener.DEFAULT_AMQP_RESPONSE_TIMEOUT_MS;
         }
 
@@ -226,7 +237,7 @@ public class ServerAMQPDestinationManager implements ApplicationListener {
                 maxMessageSize = ModuleLoadListener.DEFAULT_AMQP_MESSAGE_MAX_BYTES;
             }
         } catch (NumberFormatException | FindException e) {
-            logger.log(Level.WARNING, "Error loading cluster-wide property " + ModuleLoadListener.AMQP_MESSAGE_MAX_BYTES_UI_PROPERTY + ". Using default value.", e);
+            logger.log(Level.WARNING, "Error loading cluster-wide property " + ModuleLoadListener.AMQP_MESSAGE_MAX_BYTES_UI_PROPERTY + ". Using default value.", ExceptionUtils.getDebugException(e));
             maxMessageSize = ModuleLoadListener.DEFAULT_AMQP_MESSAGE_MAX_BYTES;
         }
 
@@ -238,7 +249,7 @@ public class ServerAMQPDestinationManager implements ApplicationListener {
                 inboundConnectTimeout = ModuleLoadListener.DEFAULT_AMQP_CONNECT_ERROR_SLEEP_MS;
             }
         } catch (NumberFormatException | FindException e) {
-            logger.log(Level.WARNING, "Error loading cluster-wide property " + ModuleLoadListener.AMQP_CONNECT_ERROR_SLEEP_UI_PROPERTY + ". Using default value.", e);
+            logger.log(Level.WARNING, "Error loading cluster-wide property " + ModuleLoadListener.AMQP_CONNECT_ERROR_SLEEP_UI_PROPERTY + ". Using default value.", ExceptionUtils.getDebugException(e));
             inboundConnectTimeout = ModuleLoadListener.DEFAULT_AMQP_CONNECT_ERROR_SLEEP_MS;
         }
 
@@ -301,33 +312,57 @@ public class ServerAMQPDestinationManager implements ApplicationListener {
         for (AMQPDestination destination : destinations.values()) {
             deactivateDestination(destination);
         }
+        destinations.clear();
+
+        for (Connection conn : destinationConnection.values()) {
+            closeConnection(conn);
+        }
+        destinationConnection.clear();
+    }
+
+    private void closeConnection(final Connection conn) {
+        try {
+            conn.close();
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "Failed to close the AMQP destination connection", ExceptionUtils.getDebugException(e));
+        } catch (AlreadyClosedException e) {
+            // Connection already closed.
+            logger.log(Level.FINE, "Attempting to close already closed AMQP destination connection", ExceptionUtils.getDebugException(e));
+        }
     }
 
     private void activateConsumerDestination(AMQPDestination destination) {
         destinations.put(destination.getGoid(), destination);
+
         if (serverChannels.containsKey(destination.getGoid())) {
             return;
         }
 
-        try {
-            Channel channel = activateConsumerDestinationHelper(destination);
-            if (channel != null) {
-                AMQPConsumer consumer = new AMQPConsumer(channel, destination, stashManagerFactory,
-                        messageProcessor, messageProcessingEventChannel, this);
-                channel.basicConsume(destination.getQueueName(),
-                        JmsAcknowledgementType.AUTOMATIC == destination.getAcknowledgementType(), consumer);
-
-                serverChannels.put(destination.getGoid(), channel);
-            } else {
-                synchronized (failedConsumers) {
-                    failedConsumers.put(destination.getGoid(), System.currentTimeMillis());
+        final Connection connection = getConnection(destination);
+        if (connection != null) {
+            Channel channel = null;
+            try {
+                channel = connection.createChannel();
+                if (channel != null) {
+                    AMQPConsumer consumer = new AMQPConsumer(channel, destination, stashManagerFactory,
+                            messageProcessor, messageProcessingEventChannel, this);
+                    channel.basicConsume(destination.getQueueName(),
+                            JmsAcknowledgementType.AUTOMATIC == destination.getAcknowledgementType(), consumer);
+                    serverChannels.putIfAbsent(destination.getGoid(), channel);
+                } else {
+                    failedConsumers.putIfAbsent(destination.getGoid(), System.currentTimeMillis());
+                }
+            } catch (IOException e) {
+                logger.log(Level.WARNING, "Error while activating consumer: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                failedConsumers.putIfAbsent(destination.getGoid(), System.currentTimeMillis());
+                //DE350748: Channel not closed if an error arises from basicConsume.
+                if (channel != null) {
+                    closeChannel(channel, destination.getName());
                 }
             }
-        } catch (FindException | ParseException | IOException e) {
-            logger.log(Level.WARNING, e.getMessage(), e);
-            synchronized (failedConsumers) {
-                failedConsumers.put(destination.getGoid(), System.currentTimeMillis());
-            }
+        } else {
+            logger.log(Level.FINE, "No Connection for consumer.");
+            failedConsumers.putIfAbsent(destination.getGoid(), System.currentTimeMillis());
         }
     }
 
@@ -337,20 +372,23 @@ public class ServerAMQPDestinationManager implements ApplicationListener {
         if (clientChannels.containsKey(destination.getGoid())) {
             return;
         }
-        try {
-            Channel channel = activateProducerDestinationHelper(destination);
-            if (channel != null) {
-                clientChannels.put(destination.getGoid(), new CachedChannel(channel));
-            } else {
-                synchronized (failedProducers) {
-                    failedProducers.put(destination.getGoid(), System.currentTimeMillis());
+
+        final Connection connection = getConnection(destination);
+        if (connection != null) {
+            try {
+                final Channel channel = connection.createChannel();
+                if (channel != null) {
+                    clientChannels.putIfAbsent(destination.getGoid(), new CachedChannel(channel));
+                } else {
+                    failedProducers.putIfAbsent(destination.getGoid(), System.currentTimeMillis());
                 }
+            } catch (IOException e) {
+                logger.log(Level.WARNING, "Error activating producer: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                failedProducers.putIfAbsent(destination.getGoid(), System.currentTimeMillis());
             }
-        } catch (FindException | ParseException | IOException e) {
-            logger.log(Level.WARNING, e.getMessage(), e);
-            synchronized (failedProducers) {
-                failedProducers.put(destination.getGoid(), System.currentTimeMillis());
-            }
+        } else {
+            logger.log(Level.FINE, "No Connection for producer.");
+            failedProducers.putIfAbsent(destination.getGoid(), System.currentTimeMillis());
         }
     }
 
@@ -366,17 +404,7 @@ public class ServerAMQPDestinationManager implements ApplicationListener {
         }
 
         if (channel != null) {
-            try {
-                Connection connection = channel.getConnection();
-                channel.close();
-                connection.close();
-                logger.log(Level.INFO, "Closed AMQP Destination: " + destination.getName());
-            } catch (IOException e) {
-                logger.log(Level.WARNING, "Failed to close the AMQP destination: " + destination.getName(), e);
-            } catch (AlreadyClosedException e) {
-                // Connection already closed.
-                logger.log(Level.FINE, "Attempting to close already closed AMQP destination: " + destination.getName(), e);
-            }
+            closeChannel(channel, destination.getName());
         }
     }
 
@@ -405,17 +433,15 @@ public class ServerAMQPDestinationManager implements ApplicationListener {
 
             if (clientChannels.containsKey(destinationGoid) && !clientChannels.get(destinationGoid).getClientChannel().isOpen()) {
                 clientChannels.remove(destinationGoid);
-                failedProducers.put(destinationGoid, System.currentTimeMillis());
+                failedProducers.putIfAbsent(destinationGoid, System.currentTimeMillis());
             }
 
             // Try to reconnect producer
             boolean reconnect = false;
-            synchronized (failedProducers) {
-                if (failedProducers.containsKey(destinationGoid) &&
-                        failedProducers.get(destinationGoid) < System.currentTimeMillis() - inboundConnectTimeout) {
-                    reconnect = true;
-                    failedProducers.remove(destinationGoid);
-                }
+            if (failedProducers.containsKey(destinationGoid) &&
+                    failedProducers.get(destinationGoid) < System.currentTimeMillis() - inboundConnectTimeout) {
+                reconnect = true;
+                failedProducers.remove(destinationGoid);
             }
 
             if (reconnect) {
@@ -437,10 +463,8 @@ public class ServerAMQPDestinationManager implements ApplicationListener {
                     String queueName = channel.queueDeclare("", false, true, true, null).getQueue();
 
                     result = queueMessageWaitForResponse(channel, queueName, destination, routingKey, requestMsg, responseMsg, amqpProps);
-                } catch (IOException e) {
-                    logger.log(Level.WARNING, "Failed to create the temporary response queue.", e);
-                } catch (ShutdownSignalException e) {
-                    logger.log(Level.WARNING, "Failed to create the temporary response queue.", e);
+                } catch (IOException | ShutdownSignalException e) {
+                    logger.log(Level.WARNING, "Failed to create the temporary response queue.", ExceptionUtils.getDebugException(e));
                 }
             } else if (AMQPDestination.OutboundReplyBehaviour.ONE_WAY == destination.getOutboundReplyBehaviour()) {
                 result = queueOneWayMessage(channel, destination, routingKey, requestMsg, amqpProps);
@@ -502,18 +526,13 @@ public class ServerAMQPDestinationManager implements ApplicationListener {
                     IOUtils.slurpStream(message.getMimeKnob().getEntireMessageBodyAsInputStream()));
 
             return true;
-        } catch (IOException e) {
-            logger.log(Level.WARNING, "Failed to queue the request message.", e);
-            return false;
-        } catch (NoSuchPartException e) {
-            logger.log(Level.WARNING, "Failed to queue the request message.", e);
+        } catch (IOException | NoSuchPartException e) {
+            logger.log(Level.WARNING, FAIL_TO_QUEUE_MESSAGE + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             return false;
         } catch (AlreadyClosedException e) {
-            logger.log(Level.WARNING, "Failed to queue the request message.", e);
+            logger.log(Level.WARNING, FAIL_TO_QUEUE_MESSAGE + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             deactivateDestination(destination);
-            synchronized (failedProducers) {
-                failedProducers.put(destination.getGoid(), System.currentTimeMillis());
-            }
+            failedProducers.putIfAbsent(destination.getGoid(), System.currentTimeMillis());
             return false;
         }
     }
@@ -589,18 +608,13 @@ public class ServerAMQPDestinationManager implements ApplicationListener {
                 replyConsumer.initializeMessage(stashManagerFactory.createStashManager(), responseMsg, destination.getServiceGoid());
                 return true;
             }
-        } catch (IOException e) {
-            logger.log(Level.WARNING, "Failed to queue the request message.", e);
-            return false;
-        } catch (NoSuchPartException e) {
-            logger.log(Level.WARNING, "Failed to queue the request message.", e);
+        } catch (IOException | NoSuchPartException e) {
+            logger.log(Level.WARNING, FAIL_TO_QUEUE_MESSAGE + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             return false;
         } catch (AlreadyClosedException e) {
-            logger.log(Level.WARNING, "Failed to queue the request message.", e);
+            logger.log(Level.WARNING, FAIL_TO_QUEUE_MESSAGE + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             deactivateDestination(destination);
-            synchronized (failedProducers) {
-                failedProducers.put(destination.getGoid(), System.currentTimeMillis());
-            }
+            failedProducers.putIfAbsent(destination.getGoid(), System.currentTimeMillis());
             return false;
         }
     }
@@ -731,7 +745,7 @@ public class ServerAMQPDestinationManager implements ApplicationListener {
             }
 
         } catch (FindException e) {
-            logger.log(Level.WARNING, "Something went wrong while fetching AMQP destinations", e);
+            logger.log(Level.WARNING, "Something went wrong while fetching AMQP destinations", ExceptionUtils.getDebugException(e));
         }
     }
 
@@ -839,55 +853,68 @@ public class ServerAMQPDestinationManager implements ApplicationListener {
         return validatedValue;
     }
 
-    private Channel activateConsumerDestinationHelper(AMQPDestination destination) throws FindException, ParseException, IOException {
-
-        ConnectionFactory connectionFactory = createNewConnectionFactory();
-        if (destination.getUsername() != null) {
-            connectionFactory.setUsername(destination.getUsername());
-
-            connectionFactory.setPassword(new String(securePasswordManager.decryptPassword(
-                    securePasswordManager.findByPrimaryKey(destination.getPasswordGoid()).getEncodedPassword())));
-
+    /**
+     * Gets the connection from {@link ServerAMQPDestinationManager#destinationConnection} if possible,
+     * Creates a new connection if it does not yet exist, or the connection was dropped
+     * @param destination the AMQP destination to get a connection from
+     * @return The connection to the AMQP destination
+     */
+    private Connection getConnection(final AMQPDestination destination) {
+        Connection connection = destinationConnection.get(destination.getGoid());
+        //DE350748: Only create connections if they were never established, or they closed.
+        if (connection == null || !connection.isOpen()) {
+            destinationConnection.remove(destination.getGoid());
+            connection = destinationConnection.computeIfAbsent(destination.getGoid(), new Function<Goid, Connection>() {
+                @Override
+                public Connection apply(Goid goid) {
+                    try {
+                        return createConnection(destination);
+                    } catch (FindException | ParseException | IOException e) {
+                        logger.log(Level.WARNING, "AMQP Connection error: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                        return null;
+                    }
+                }
+            });
         }
-        if (destination.getVirtualHost() != null) {
-            connectionFactory.setVirtualHost(destination.getVirtualHost());
-        }
-
-        initSSLSettings(destination, connectionFactory);
-
-        ExecutorService es = Executors.newFixedThreadPool(destination.getThreadPoolSize());
-
-        Address[] addresses = getAddresses(destination);
-
-        Connection connection = connectionFactory.newConnection(es, addresses);
-        Channel channel = connection.createChannel();
-        return channel;
-
-
+        return connection;
     }
 
-    private Channel activateProducerDestinationHelper(AMQPDestination destination) throws IOException, FindException, ParseException {
-
+    /**
+     * Creates an autorecovery connection from the connection factory
+     * @param destination The AMQP destination
+     * @return The connection for the AMQP destination
+     * @throws FindException from findByPrimaryKey
+     * @throws ParseException from decryptPassword
+     * @throws IOException when failing to create a connection
+     */
+    private Connection createConnection(AMQPDestination destination) throws FindException, ParseException, IOException {
         ConnectionFactory connectionFactory = createNewConnectionFactory();
         if (destination.getUsername() != null) {
             connectionFactory.setUsername(destination.getUsername());
-            if (destination.getPasswordGoid() !=null ){
+            if (destination.getPasswordGoid() != null) {
                 connectionFactory.setPassword(new String(securePasswordManager.decryptPassword(
                         securePasswordManager.findByPrimaryKey(destination.getPasswordGoid()).getEncodedPassword())));
             }
         }
+
         if (destination.getVirtualHost() != null) {
             connectionFactory.setVirtualHost(destination.getVirtualHost());
         }
 
         initSSLSettings(destination, connectionFactory);
+        final Address[] addresses = getAddresses(destination);
 
-        Address[] addresses = getAddresses(destination);
-
-        Connection connection = connectionFactory.newConnection(addresses);
-        Channel channel = connection.createChannel();
-        return channel;
-
+        Connection connection;
+        if (destination.isInbound()) {
+            final ExecutorService es = Executors.newFixedThreadPool(destination.getThreadPoolSize());
+            connection = connectionFactory.newConnection(es, addresses);
+        } else {
+            connection = connectionFactory.newConnection(addresses);
+        }
+        if (connection instanceof Recoverable) {
+            ((Recoverable) connection).addRecoveryListener(new ConnectionRecoverListener(destination.getGoid()));
+        }
+        return connection;
     }
 
     protected ConnectionFactory createNewConnectionFactory() {
@@ -945,7 +972,7 @@ public class ServerAMQPDestinationManager implements ApplicationListener {
 
         } catch (IOException | FindException | KeyStoreException | NoSuchAlgorithmException |
                 KeyManagementException | UnrecoverableKeyException e) {
-            logger.log(Level.WARNING, e.getMessage(), e);
+            logger.log(Level.WARNING, ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
         }
     }
 
@@ -959,6 +986,31 @@ public class ServerAMQPDestinationManager implements ApplicationListener {
             addresses[i] = new Address(address[0], Integer.parseInt(address[1]));
         }
         return addresses;
+    }
+
+    Map<Goid, CachedChannel> getClientChannels() {
+        return Collections.unmodifiableMap(clientChannels);
+    }
+
+    Map<Goid, Long> getFailedProducers() {
+        return Collections.unmodifiableMap(failedProducers);
+    }
+
+    private class ConnectionRecoverListener implements RecoveryListener {
+        final Goid destinationGoid;
+
+        ConnectionRecoverListener(final Goid destinationGoid) {
+            this.destinationGoid = destinationGoid;
+        }
+
+        @Override
+        public void handleRecovery(final Recoverable recoverable) {
+            if (recoverable instanceof Connection) {
+                String connectionState = ((Connection) recoverable).isOpen()? "Open" : "Closed";
+                logger.log(Level.WARNING, "Connection recovered for destination {0}. Connection state is {1}",
+                        new Object[]{destinationGoid, connectionState});
+            }
+        }
     }
 
     private static class DelegatingSslContextSpi extends SSLContextSpi {
