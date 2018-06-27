@@ -2,10 +2,8 @@ package com.l7tech.kerberos;
 
 import com.l7tech.kerberos.delegate.KerberosDelegateClient;
 import com.l7tech.util.FileUtils;
+import org.junit.*;
 import com.l7tech.util.TestTimeSource;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 import sun.security.krb5.KrbException;
 import sun.security.krb5.PrincipalName;
 import sun.security.krb5.RealmException;

@@ -567,6 +567,12 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             String methodString = assertion.getHttpMethodAsString();
             if ( methodString != null ) {
                 methodString = ExpandVariables.process( methodString, variableMap, getAudit() );
+                /* Bug fix DE251925: Try fetching the HttpMethod from the processed methodString variable. */
+                HttpMethod resolvedMethod = HttpMethod.valueOfHttpMethod(methodString);
+                if (resolvedMethod != null && !HttpMethod.OTHER.equals(resolvedMethod)) {
+                    method = resolvedMethod;
+                    methodString = null;
+                }
             }
             return new Pair<>(method, methodString );
         }

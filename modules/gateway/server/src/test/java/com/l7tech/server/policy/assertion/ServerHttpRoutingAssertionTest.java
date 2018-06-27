@@ -8,6 +8,7 @@ import com.google.mockwebserver.MockResponse;
 import com.google.mockwebserver.MockWebServer;
 import com.l7tech.common.TestDocuments;
 import com.l7tech.common.http.*;
+import com.l7tech.common.http.prov.apache.IdentityBindingHttpConnectionManager;
 import com.l7tech.common.http.prov.apache.components.HttpComponentsClient;
 import com.l7tech.common.io.PermissiveHostnameVerifier;
 import com.l7tech.common.io.TestSSLSocketFactory;
@@ -45,6 +46,10 @@ import com.l7tech.server.util.*;
 import com.l7tech.test.BugId;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.IOUtils;
+import com.l7tech.util.Pair;
+import com.sun.net.httpserver.Headers;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
 import org.apache.http.pool.PoolStats;
 import org.jetbrains.annotations.Nullable;
 import org.junit.After;
@@ -68,6 +73,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.security.KeyStore;
@@ -79,6 +85,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.l7tech.message.HeadersKnob.HEADER_TYPE_HTTP;
+import static junit.framework.Assert.assertEquals;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -1908,6 +1915,97 @@ public class ServerHttpRoutingAssertionTest {
         testingHttpClientFactory.setMockHttpClient(mockClient);
         return pec;
 
+    }
+
+    @BugId("DE251925")
+    @Test
+    public void testHttpMethodFromContextVar_BodylessMethodsLikeGet_MustNotAddContentLengthHeader() throws Exception {
+        final Boolean[] containsContentLengthHeader = new Boolean[1];
+        MockHttpServer httpServer = new MockHttpServer(17802);
+        httpServer.setHttpHandler(new HttpHandler() {
+            @Override
+            public void handle(HttpExchange exchange) throws IOException {
+                containsContentLengthHeader[0] = exchange.getRequestHeaders().containsKey("Content-Length");
+                exchange.sendResponseHeaders(200, 0);
+                exchange.close();
+            }
+        });
+        httpServer.start();
+
+        GenericHttpRequestParams requestParams = new GenericHttpRequestParams();
+        requestParams.setTargetUrl(new URL("http://localhost:" + httpServer.getPort()));
+
+        HttpRoutingAssertion assertion = new HttpRoutingAssertion();
+        assertion.setProtectedServiceUrl("http://localhost:" + httpServer.getPort());
+        assertion.setHttpMethod(HttpMethod.OTHER);
+        assertion.setHttpMethodAsString("${contextVarMethod}");
+        assertion.setForceIncludeRequestBody(false);
+
+        ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+
+        Message messageRequest = new Message();
+        Message messageResponse = new Message();
+        PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(messageRequest, messageResponse);
+        pec.setVariable("contextVarMethod", "GET");
+        ServerHttpRoutingAssertion routingAssertion = new ServerHttpRoutingAssertion(assertion, appContext);
+        Method m = routingAssertion.getClass().getDeclaredMethod("methodFromRequest", new Class[] {PolicyEnforcementContext.class, Map.class, GenericHttpRequestParams.class});
+        m.setAccessible(true);
+        Pair<HttpMethod,String> methodPair = (Pair<HttpMethod,String>) m.invoke(routingAssertion, pec, pec.getAllVariables(), requestParams);
+        requestParams.setMethodAsString(methodPair.right);
+        HttpComponentsClient client = new HttpComponentsClient(new IdentityBindingHttpConnectionManager(), -1, -1);
+        GenericHttpRequest httpRequest = client.createRequest(methodPair.left, requestParams);
+        GenericHttpResponse httpResponse = httpRequest.getResponse();
+        assertEquals(200, httpResponse.getStatus());
+        assertFalse(containsContentLengthHeader[0]);
+    }
+
+    @BugId("DE251925")
+    @Test
+    public void testHttpMethodFromContextVar_MethodsLikePOST_MustAddContentLengthHeader() throws Exception {
+        final Headers[] headers = new Headers[1];
+        MockHttpServer httpServer = new MockHttpServer(17802);
+        httpServer.setHttpHandler(new HttpHandler() {
+            @Override
+            public void handle(HttpExchange exchange) throws IOException {
+                headers[0] = exchange.getRequestHeaders();
+                exchange.sendResponseHeaders(200, 0);
+                exchange.close();
+            }
+        });
+        httpServer.start();
+
+        GenericHttpRequestParams requestParams = new GenericHttpRequestParams();
+        requestParams.setTargetUrl(new URL("http://localhost:" + httpServer.getPort()));
+
+        HttpRoutingAssertion assertion = new HttpRoutingAssertion();
+        assertion.setProtectedServiceUrl("http://localhost:" + httpServer.getPort());
+        assertion.setHttpMethod(HttpMethod.OTHER);
+        assertion.setHttpMethodAsString("${contextVarMethod}");
+        assertion.setForceIncludeRequestBody(false);
+
+        ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+        String requestMessage = "<foo/>";
+
+        Message messageRequest = new Message(XmlUtil.stringAsDocument(requestMessage));
+        Message messageResponse = new Message();
+        PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(messageRequest, messageResponse);
+        pec.setVariable("contextVarMethod", "POST");
+        ServerHttpRoutingAssertion routingAssertion = new ServerHttpRoutingAssertion(assertion, appContext);
+        Method m = routingAssertion.getClass().getDeclaredMethod("methodFromRequest", new Class[] {PolicyEnforcementContext.class, Map.class, GenericHttpRequestParams.class});
+        m.setAccessible(true);
+        Pair<HttpMethod,String> methodPair = (Pair<HttpMethod,String>) m.invoke(routingAssertion, pec, pec.getAllVariables(), requestParams);
+        requestParams.setMethodAsString(methodPair.right);
+        requestParams.setForceIncludeRequestBody(assertion.isForceIncludeRequestBody());
+        requestParams.setContentLength((long)requestMessage.length());
+
+        HttpComponentsClient client = new HttpComponentsClient(new IdentityBindingHttpConnectionManager(), -1, -1);
+        GenericHttpRequest httpRequest = client.createRequest(methodPair.left, requestParams);
+        httpRequest.setInputStream(messageRequest.getMimeKnob().getEntireMessageBodyAsInputStream());
+
+        GenericHttpResponse httpResponse = httpRequest.getResponse();
+        assertEquals(200, httpResponse.getStatus());
+        assertTrue(headers[0].containsKey("Content-Length"));
+        assertEquals(headers[0].getFirst("Content-Length"), String.valueOf(requestMessage.length()));
     }
 
 }
