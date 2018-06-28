@@ -59,16 +59,17 @@ public class StatusUpdateManagerImpl extends HibernateDaoSupport implements Stat
      * XXX IMPORTANT XXX: This method may appear to be unused according to IDEA but it is called from a Spring timer 
      * XXX IMPORTANT XXX: defined in webApplicationContext.xml.
      */
+    @Override
     public void update() {
         updateNodeStatus();
-        clearStaleNodes();
         updateServiceUsage();
     }
 
     /**
      * This cleans up stale nodes from the ClusterNodeInfo table
      */
-    private void clearStaleNodes() {
+    @Override
+    public void clearStaleNodes() {
         //Only the master needs to do cleanup
         if (clusterMaster.isMaster()) {
             final int staleTimeoutSeconds = config.getIntProperty("com.l7tech.server.clusterStaleNodeCleanupTimeoutSeconds", 3600);

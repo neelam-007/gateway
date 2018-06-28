@@ -18,4 +18,8 @@ public interface StatusUpdateManager {
      * @throws UpdateException
      */
     void update() throws UpdateException;
+    /**
+     * This cleans up stale nodes from the ClusterNodeInfo table
+     */
+    void clearStaleNodes();
 }

@@ -1519,7 +1519,7 @@
         <!-- wait 10 seconds before starting repeated execution -->
         <property name="delay" value="8000"/>
         <!-- 8 seconds -->
-        <property name="period" value="4000"/>
+        <property name="period" value="4001"/>
         <!-- repeat every 4 seconds -->
         <property name="timerTask">
             <!-- server side Status Update Manager Scheduled Task -->
@@ -1529,11 +1529,30 @@
             </bean>
         </property>
     </bean>
+
+    <!-- Stale Nodes Cleanup Task Scheduler -->
+    <bean id="staleNodesCleanupTask" class="org.springframework.scheduling.timer.ScheduledTimerTask"
+          depends-on="clusterBoot">
+        <!-- wait 8 seconds before starting repeated execution -->
+        <property name="delay" value="8089"/>
+        <!-- 8 seconds -->
+        <property name="period" value="3600001"/>
+        <!-- repeat every hour -->
+        <property name="timerTask">
+            <!-- server side Stale Node Cleanup Scheduled Task -->
+            <bean class="org.springframework.scheduling.timer.MethodInvokingTimerTaskFactoryBean">
+                <property name="targetObject" ref="statusUpdateManager"/>
+                <property name="targetMethod" value="clearStaleNodes"/>
+            </bean>
+        </property>
+    </bean>
+
     <!-- server side Task Scheduler -->
     <bean class="org.springframework.scheduling.timer.TimerFactoryBean">
         <property name="scheduledTimerTasks">
             <list>
                 <ref local="statusUpdateManagerSchedulerTask"/>
+                <ref local="staleNodesCleanupTask"/>
             </list>
         </property>
     </bean>
