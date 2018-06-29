@@ -434,11 +434,11 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
         if (!SIGNATURE_METHODS.contains(foundSignatureMethod.toUpperCase())) {
             throw new InvalidParameterException(OAUTH_SIGNATURE_METHOD, foundSignatureMethod, OAUTH_SIGNATURE_METHOD + " is invalid: " + foundSignatureMethod);
         }
-        // callback must be oob or start with http/https and be a max of 200 characters
+        // callback must be oob or start with http/https and be a max of 2048 characters (the maximum length of the corresponding table field)
         if (sortedParameters.get(OAUTH_CALLBACK) != null) {
             final String foundCallback = sortedParameters.get(OAUTH_CALLBACK).iterator().next();
             if (!(assertion.isAllowEmptyCallback() && StringUtils.isBlank(foundCallback)) &&
-                    !foundCallback.matches("oob|http[s]?[^\"]{1,200}")) {
+                    !foundCallback.matches("oob|http[s]?[^\"]{1,2048}")) {
                 throw new InvalidParameterException(OAUTH_CALLBACK, foundCallback, OAUTH_CALLBACK + " is invalid: " + foundCallback);
             }
         }

@@ -13,6 +13,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.test.BugId;
 import com.l7tech.test.BugNumber;
+import com.l7tech.util.HexUtils;
 import com.l7tech.util.TestTimeSource;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
@@ -1532,6 +1533,67 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
         assertEquals(AssertionStatus.FALSIFIED, assertionStatus);
         assertTrue(testAudit.isAuditPresent(AssertionMessages.OAUTH_INVALID_PARAMETERS));
         assertEquals("Invalid oauth parameters", (String) policyContext.getVariable("oauth.error"));
+    }
+
+    @Test
+    @BugId("DE367210")
+    public void longCallback() throws Exception {
+        // callback longer than previous 200 character limit, from Mastercard's use case
+        final String longCallback = "https://stage.beta.masterpassteststore.com/teststorefront/?sdk=java&" +
+                "oauth_token=VY3w79ecd2acd752ae71d05e3ac4ffef14ac3a88aded6&oauth_verifier=VY3w79ecd2acd752ae71d05e3ac4ffe" +
+                "f14ac3a88aded6&checkoutId=2315016983126251771&checkout_resource_url=https%3A%2F%2Fstage.api.mastercard.c" +
+                "om%2Fstage3%2Fonline%2Fv3%2Fcheckout%2F2315016983126251771&mpstatus=success#/callback/checkout?reload=tr" +
+                "ue&callbackReturn=true";
+
+        assertTrue(longCallback.length() > 200);
+
+        final String expected = "GET&http%3A%2F%2Fphotos.example.net%2Fphotos&a%3Dfirst%26oauth_callback%3D" + HexUtils.urlEncode(longCallback) + "%26" +
+                "oauth_consumer_key%3Ddpf43f3p2l4k3l03%26oauth_nonce%3Dstubgeneratednonce%26oauth_signature_method" +
+                "%3DHMAC-SHA1%26oauth_timestamp%3D1000%26oauth_version%3D1.0%26p%3Dmiddle%26z%3Dlast";
+
+        setParamsForRequestToken(assertion);
+        assertion.setOauthCallback(longCallback);
+        requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
+
+        assertEquals(AssertionStatus.NONE, assertionStatus);
+        assertEquals(expected, (String) policyContext.getVariable("oauth." + SIG_BASE_STRING));
+        assertEquals(REQUEST_TOKEN, (String) policyContext.getVariable("oauth." + REQUEST_TYPE));
+        assertCommonVariables("oauth");
+        assertEquals(longCallback, (String) policyContext.getVariable("oauth." + OAUTH_CALLBACK));
+    }
+
+    @Test
+    @BugId("DE367210")
+    public void longCallback_TooLong() throws Exception {
+        // construct a callback that's longer than the new 2048 character limit
+        StringBuilder extraLongCallbackBuilder = new StringBuilder("https://stage.beta.masterpassteststore.com/teststorefront/?sdk=java&" +
+                "oauth_token=VY3w79ecd2acd752ae71d05e3ac4ffef14ac3a88aded6&oauth_verifier=VY3w79ecd2acd752ae71d05e3ac4ffe" +
+                "f14ac3a88aded6&checkoutId=2315016983126251771&checkout_resource_url=https%3A%2F%2Fstage.api.mastercard.c" +
+                "om%2Fstage3%2Fonline%2Fv3%2Fcheckout");
+
+        String longPathSegment = "%2FVERYLONGPATHSEGMENT";
+
+        // construct a callback at least as long as the 2048 character limit
+        while (extraLongCallbackBuilder.length() < 2048) {
+            extraLongCallbackBuilder.append(longPathSegment);
+        }
+
+        extraLongCallbackBuilder.append("%2F2315016983126251771&mpstatus=success#/callback/checkout?reload=tr" +
+                "ue&callbackReturn=true");
+
+        final String longCallback = extraLongCallbackBuilder.toString();
+
+        setParamsForRequestToken(assertion);
+        assertion.setOauthCallback(longCallback);
+        requestMessage.attachHttpRequestKnob(new HttpServletRequestKnob(request));
+
+        final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
+
+        assertEquals(AssertionStatus.FALSIFIED, assertionStatus);
+        assertTrue(testAudit.isAuditPresentWithParameters(AssertionMessages.OAUTH_INVALID_PARAMETER, "oauth_callback", longCallback));
+        assertEquals("Invalid oauth_callback: " + longCallback, (String) policyContext.getVariable("oauth.error"));
     }
 
     private void assertContextVariablesDoNotExist(final String... names) throws NoSuchVariableException {
