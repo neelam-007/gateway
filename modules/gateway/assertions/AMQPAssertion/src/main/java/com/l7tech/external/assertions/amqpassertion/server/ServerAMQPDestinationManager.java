@@ -45,6 +45,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -193,6 +194,8 @@ public class ServerAMQPDestinationManager implements ApplicationListener {
         } catch (AlreadyClosedException e) {
             // Connection already closed.
             logger.log(Level.FINE, "Attempting to close already closed AMQP destination: " + name, ExceptionUtils.getDebugException(e));
+        } catch (TimeoutException e) {
+            logger.log(Level.WARNING, "Encountered timeout when trying to close Channel: " + name, ExceptionUtils.getDebugException(e));
         } finally {
             closeConnection(conn);
         }
@@ -343,6 +346,7 @@ public class ServerAMQPDestinationManager implements ApplicationListener {
             Channel channel = null;
             try {
                 channel = connection.createChannel();
+                channel.basicQos(destination.getPrefetchSize());
                 if (channel != null) {
                     AMQPConsumer consumer = new AMQPConsumer(channel, destination, stashManagerFactory,
                             messageProcessor, messageProcessingEventChannel, this);
@@ -869,8 +873,9 @@ public class ServerAMQPDestinationManager implements ApplicationListener {
                 public Connection apply(Goid goid) {
                     try {
                         return createConnection(destination);
-                    } catch (FindException | ParseException | IOException e) {
-                        logger.log(Level.WARNING, "AMQP Connection error: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                    } catch (FindException | ParseException | IOException | TimeoutException e) {
+                        logger.log(Level.WARNING, "AMQP Connection error: " + ExceptionUtils.getMessage(e),
+                                ExceptionUtils.getDebugException(e));
                         return null;
                     }
                 }
@@ -887,7 +892,8 @@ public class ServerAMQPDestinationManager implements ApplicationListener {
      * @throws ParseException from decryptPassword
      * @throws IOException when failing to create a connection
      */
-    private Connection createConnection(AMQPDestination destination) throws FindException, ParseException, IOException {
+    private Connection createConnection(AMQPDestination destination) throws FindException, ParseException,
+            IOException, TimeoutException {
         ConnectionFactory connectionFactory = createNewConnectionFactory();
         if (destination.getUsername() != null) {
             connectionFactory.setUsername(destination.getUsername());
@@ -1008,6 +1014,15 @@ public class ServerAMQPDestinationManager implements ApplicationListener {
             if (recoverable instanceof Connection) {
                 String connectionState = ((Connection) recoverable).isOpen()? "Open" : "Closed";
                 logger.log(Level.WARNING, "Connection recovered for destination {0}. Connection state is {1}",
+                        new Object[]{destinationGoid, connectionState});
+            }
+        }
+
+        @Override
+        public void handleRecoveryStarted(Recoverable recoverable) {
+            if (recoverable instanceof Connection) {
+                String connectionState = ((Connection) recoverable).isOpen() ? "Open" : "Closed";
+                logger.log(Level.WARNING, "Connection about to be recovered for destination {0}. Connection state is {1}",
                         new Object[]{destinationGoid, connectionState});
             }
         }

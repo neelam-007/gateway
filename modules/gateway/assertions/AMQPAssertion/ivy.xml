@@ -17,7 +17,7 @@
                     conf="compile->compile;runtime->runtime;test->test">
             <exclude org="org.mockito" name="mockito-core"/>
         </dependency>
-        <dependency org="com.rabbitmq" name="rabbitmq-client" rev="3.4.3" force="true" conf="core"/>
+        <dependency org="com.rabbitmq" name="amqp-client" rev="5.2.0" force="true" conf="core"/>
         <dependency org="org.powermock" name="powermock-mockito-1.6.3-full" rev="1.6.3" force="true" conf="test"/>
     </dependencies>
 </ivy-module>

@@ -22,6 +22,7 @@ import java.security.SecureRandom;
 import java.text.ParseException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -86,22 +87,21 @@ public class AmqpSupportServer {
                     serverAMQPDestinationManager.initSSLSettings(destination, connectionFactory);
                     Address[] addresses = serverAMQPDestinationManager.getAddresses(destination);
                     connection = connectionFactory.newConnection(addresses);
-                    final Channel channel = connection.createChannel();
-
-                    if (destination.isInbound()) {
-                        if (!StringUtils.isBlank(destination.getQueueName())){
-                            //Verify that the queue exists, will throw IOException if queue does not exist
-                            channel.queueDeclarePassive(destination.getQueueName());
-                        }
-                    } else {
-                        if (!StringUtils.isBlank(destination.getExchangeName())) {
-                            //Validate exchange exists, will throw IOException if exchange does not exist
-                            channel.exchangeDeclarePassive(destination.getExchangeName());
+                    try (Channel channel = connection.createChannel()) {
+                        if (destination.isInbound()) {
+                            if (!StringUtils.isBlank(destination.getQueueName())) {
+                                //Verify that the queue exists, will throw IOException if queue does not exist
+                                channel.queueDeclarePassive(destination.getQueueName());
+                            }
+                        } else {
+                            if (!StringUtils.isBlank(destination.getExchangeName())) {
+                                //Validate exchange exists, will throw IOException if exchange does not exist
+                                channel.exchangeDeclarePassive(destination.getExchangeName());
+                            }
                         }
                     }
-
                     return true;
-                } catch (IOException e) {
+                } catch (IOException | TimeoutException e) {
                     logger.log(Level.WARNING, "Test Settings Error: " + ExceptionUtils.getMessage(e),
                             ExceptionUtils.getDebugException(e));
                 } finally {

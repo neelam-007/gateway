@@ -59,6 +59,7 @@ public class AMQPDestination implements Serializable {
     private String queueName;
     private int threadPoolSize = 10;
     private JmsAcknowledgementType acknowledgementType = JmsAcknowledgementType.AUTOMATIC;
+    private int prefetchSize = 0;
     private InboundReplyBehaviour inboundReplyBehaviour = InboundReplyBehaviour.AUTOMATIC;
     private String inboundReplyQueue = null;
     private InboundCorrelationBehaviour inboundCorrelationBehaviour = InboundCorrelationBehaviour.CORRELATION_ID;
@@ -187,6 +188,14 @@ public class AMQPDestination implements Serializable {
 
     public void setAcknowledgementType(JmsAcknowledgementType acknowledgementType) {
         this.acknowledgementType = acknowledgementType;
+    }
+
+    public int getPrefetchSize() {
+        return prefetchSize;
+    }
+
+    public void setPrefetchSize(int prefetchSize) {
+        this.prefetchSize = prefetchSize;
     }
 
     public InboundReplyBehaviour getInboundReplyBehaviour() {

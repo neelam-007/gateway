@@ -95,6 +95,7 @@ public class AMQPDestinationHelper {
         setNotNullProperty(ssgConnector, AmqpSsgActiveConnector.PROPERTY_KEY_AMQP_QUEUE_NAME, destination.getQueueName(), false);
         setNotNullProperty(ssgConnector, AmqpSsgActiveConnector.PROPERTY_KEY_AMQP_THREADPOOLSIZE, destination.getThreadPoolSize(), false); //TODO check with Tien on how to specify that in SsgActiveConnector Framework.
         setNotNullProperty(ssgConnector, AmqpSsgActiveConnector.PROPERTY_KEY_AMQP_ACKNOWLEDGEMENT_TYPE, destination.getAcknowledgementType(), false);
+        setNotNullProperty(ssgConnector, AmqpSsgActiveConnector.PROPERTY_KEY_AMQP_PREFETCHSIZE, destination.getPrefetchSize(), false); //TODO check with Tien on how to specify that in SsgActiveConnector Framework.
         setNotNullProperty(ssgConnector, AmqpSsgActiveConnector.PROPERTY_KEY_AMQP_INBOUND_REPLY_BEHAVIOUR, destination.getInboundReplyBehaviour(), false);
         setNotNullProperty(ssgConnector, AmqpSsgActiveConnector.PROPERTY_KEY_AMQP_INBOUND_REPLY_QUEUE, destination.getInboundReplyQueue(), false);
         setNotNullProperty(ssgConnector, AmqpSsgActiveConnector.PROPERTY_KEY_AMQP_INBOUND_CORRELATION_BEHAVIOUR, destination.getInboundCorrelationBehaviour(), false);
@@ -157,6 +158,9 @@ public class AMQPDestinationHelper {
 
             if (ssgConnector.getProperty(AmqpSsgActiveConnector.PROPERTY_KEY_AMQP_ACKNOWLEDGEMENT_TYPE) != null) {
                 destination.setAcknowledgementType(JmsAcknowledgementType.valueOf(ssgConnector.getProperty(AmqpSsgActiveConnector.PROPERTY_KEY_AMQP_ACKNOWLEDGEMENT_TYPE)));
+            }
+            if (ssgConnector.getProperty(AmqpSsgActiveConnector.PROPERTY_KEY_AMQP_PREFETCHSIZE) != null) {
+                destination.setPrefetchSize(Integer.parseInt(ssgConnector.getProperty(AmqpSsgActiveConnector.PROPERTY_KEY_AMQP_PREFETCHSIZE))); //TODO check with Tien on how to specify that in SsgActiveConnector Framework.
             }
             if (destination.isInbound()) {
                 if (ssgConnector.getProperty(AmqpSsgActiveConnector.PROPERTY_KEY_AMQP_INBOUND_REPLY_BEHAVIOUR) != null) {

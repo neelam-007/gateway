@@ -24,6 +24,7 @@ public class AmqpSsgActiveConnector extends SsgActiveConnector {
     public static final String PROPERTY_KEY_AMQP_SSL_CLIENT_KEY_ID = "AMQPSslClientKeyId";
     public static final String PROPERTY_KEY_AMQP_QUEUE_NAME = "AMQPQueueName";
     public static final String PROPERTY_KEY_AMQP_THREADPOOLSIZE = "AMQPThreadPoolSize";
+    public static final String PROPERTY_KEY_AMQP_PREFETCHSIZE = "AMQPPrefetchSize";
     public static final String PROPERTY_KEY_AMQP_ACKNOWLEDGEMENT_TYPE = "AMQPAcknowledgement"; //Its an enum use just string ..
     public static final String PROPERTY_KEY_AMQP_INBOUND_REPLY_BEHAVIOUR = "AMQPInboundReplyBehaviour"; //Its an enum use just string ..
     public static final String PROPERTY_KEY_AMQP_INBOUND_REPLY_QUEUE = "AMQPInboundReplyQueue";

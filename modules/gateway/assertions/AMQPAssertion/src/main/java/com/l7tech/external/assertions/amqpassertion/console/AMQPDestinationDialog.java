@@ -132,6 +132,7 @@ public class AMQPDestinationDialog extends JDialog {
     private JTextField queueNameField;
     private JSpinner threadPoolSizeField;
     private JComboBox ackBehaviourComboBox;
+    private JSpinner prefetchField;
     private JRadioButton automaticSendReplyIfRadioButton;
     private JRadioButton doNotSendRepliesRadioButton;
     private JRadioButton sendReplyToSpecifiedRadioButton;
@@ -320,6 +321,7 @@ public class AMQPDestinationDialog extends JDialog {
                 enableDisableInboundComponents();
             }
         });
+        prefetchField.setModel(new SpinnerNumberModel(0, 0, 1000, 1));
 
         automaticSendReplyIfRadioButton.addActionListener(new ActionListener() {
             @Override
@@ -767,6 +769,7 @@ public class AMQPDestinationDialog extends JDialog {
             if (destination.getAcknowledgementType() != null) {
                 ackBehaviourComboBox.setSelectedItem(destination.getAcknowledgementType());
             }
+            prefetchField.setValue(destination.getPrefetchSize());
 
             automaticSendReplyIfRadioButton.setSelected(AMQPDestination.InboundReplyBehaviour.AUTOMATIC == destination.getInboundReplyBehaviour());
             doNotSendRepliesRadioButton.setSelected(AMQPDestination.InboundReplyBehaviour.ONE_WAY == destination.getInboundReplyBehaviour());
@@ -880,6 +883,7 @@ public class AMQPDestinationDialog extends JDialog {
             destination.setQueueName(queueNameField.getText().trim());
             destination.setThreadPoolSize(((Number) threadPoolSizeField.getValue()).intValue());
             destination.setAcknowledgementType((JmsAcknowledgementType) ackBehaviourComboBox.getSelectedItem());
+            destination.setPrefetchSize(((Number) prefetchField.getValue()).intValue());
 
             if (automaticSendReplyIfRadioButton.isSelected()) {
                 destination.setInboundReplyBehaviour(AMQPDestination.InboundReplyBehaviour.AUTOMATIC);
