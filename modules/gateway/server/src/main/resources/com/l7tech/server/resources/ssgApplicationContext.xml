@@ -76,8 +76,12 @@
 
     <bean id="clusterBoot" class="com.l7tech.server.cluster.ClusterBootProcess">
         <constructor-arg index="0" ref="clusterInfoManager"/>
-        <constructor-arg index="1" ref="gatewayHazelcast"/>
-        <constructor-arg index="2" ref="messageIdManager"/>
+    </bean>
+
+    <bean id="lifecycleExtensionRegistry" class="com.l7tech.server.extension.registry.lifecycle.LifecycleExtensionRegistry"/>
+
+    <bean id="lifecycleExtensionComponent" class="com.l7tech.server.LifecycleExtensionComponent">
+        <constructor-arg ref="lifecycleExtensionRegistry"/>
     </bean>
 
     <bean id="clusterPropertyManager" class="com.l7tech.server.cluster.ClusterPropertyManagerImpl" depends-on="gatewayDbVersionChecker"
@@ -788,10 +792,10 @@
     <bean id="serviceUsageManager" class="com.l7tech.server.cluster.ServiceUsageManagerImpl">
         <property name="sessionFactory" ref="sessionFactory"/>
     </bean>
-    <!-- server side HazelcastMessageIdManager -->
-    <bean id="messageIdManager" class="com.l7tech.server.cluster.HazelcastMessageIdManager"/>
-    <!-- server side GatewayHazelcast -->
-    <bean id="gatewayHazelcast" class="com.l7tech.server.cluster.GatewayHazelcast"/>
+    <!-- server side GatewayMessageIdManager -->
+    <bean id="messageIdManager" class="com.l7tech.server.cluster.GatewayMessageIdManager">
+        <constructor-arg ref="sharedKeyValueStoreProviderRegistry"/>
+    </bean>
 
     <bean id="counterManager" class="com.l7tech.server.sla.CounterManagerImpl">
         <constructor-arg ref="transactionManager"/>
@@ -2699,7 +2703,7 @@
     <bean id="serviceMetricsEventListenerProxy" class="com.l7tech.server.extension.event.metrics.ServiceMetricsEventListenerProxy"/>
 
     <!-- Registries for sharing state -->
-    <bean id="sharedStateProviderRegistry" class="com.l7tech.server.extension.registry.sharedstate.SharedStateProviderRegistry">
+    <bean id="sharedKeyValueStoreProviderRegistry" class="com.l7tech.server.extension.registry.sharedstate.SharedKeyValueStoreProviderRegistry">
         <constructor-arg index="0" ref="serverConfig"/>
     </bean>
 

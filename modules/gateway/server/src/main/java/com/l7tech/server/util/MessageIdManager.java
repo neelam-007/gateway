@@ -9,7 +9,10 @@ package com.l7tech.server.util;
  */
 public interface MessageIdManager {
 
-    public static class MessageIdCheckException extends Exception {
+    /**
+     * Represents a failure during message id check.
+     */
+    class MessageIdCheckException extends Exception {
         public MessageIdCheckException( final String message ) {
             super( message );
         }
@@ -18,16 +21,19 @@ public interface MessageIdManager {
             super( message, cause );
         }
 
-        public MessageIdCheckException() {
+        MessageIdCheckException() {
             super();
         }
     }
-    
-    public static class DuplicateMessageIdException extends MessageIdCheckException {}
+
+    /**
+     * Represents that message id being checked is already stored.
+     */
+    class DuplicateMessageIdException extends MessageIdCheckException {}
 
     /**
      * Atomically check for the presence of the specified message Id, and remember it either way.  If the specified
-     * prospect MessageId is already known, throws IllegalStateException.  Otherwise,
+     * prospect MessageId is already known, throws DuplicateMessageIdException.  Otherwise,
      * stores the prospect MessageId and then returns.
      *
      * @param prospect The message Id to test and set.

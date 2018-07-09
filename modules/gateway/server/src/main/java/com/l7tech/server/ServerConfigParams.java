@@ -12,8 +12,6 @@ public interface ServerConfigParams {
     String PARAM_HTTP_SESSION_NAME = "httpSessionName";
     String PARAM_SYSTEMPROPS = "systemPropertiesPath";
     String PARAM_MULTICAST_ADDRESS = "multicastAddress";
-    String PARAM_DATA_GRID_PROTOCOL = "dataGrid.protocol";
-    String PARAM_DATA_GRID_TCPIP_CONNECTION_TIMEOUT = "dataGrid.tcpip.connectionTimeout";
     String PARAM_SSG_HOME_DIRECTORY = "ssgHome";
     String PARAM_SSG_APPLIANCE_DIRECTORY = "ssgAppliance";
     String PARAM_CONFIG_DIRECTORY = "configDirectory";
