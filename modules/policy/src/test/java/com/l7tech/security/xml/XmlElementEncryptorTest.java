@@ -12,7 +12,6 @@ import com.l7tech.util.Pair;
 import com.l7tech.util.SoapConstants;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.xml.soap.SoapUtil;
-import com.rsa.jsafe.provider.JsafeJCE;
 import com.safelogic.cryptocomply.jce.provider.SLProvider;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -142,8 +141,8 @@ public class XmlElementEncryptorTest {
         runOaepTest( true );
     }
 
-    private void runOaepTest( boolean useCryptoJ ) throws Exception {
-        setCCJ( useCryptoJ );
+    private void runOaepTest( boolean useCCJ ) throws Exception {
+        setCCJ( useCCJ );
 
         XmlElementEncryptionConfig rawConfig = new XmlElementEncryptionConfig();
         rawConfig.setRecipientCertificateBase64(recipb64);
@@ -174,12 +173,12 @@ public class XmlElementEncryptorTest {
 
         // Make sure decryption uses actual OAEP with default params
         OAEPParameterSpec spec = new OAEPParameterSpec( "SHA-1", "MGF1", MGF1ParameterSpec.SHA1, new PSource.PSpecified( new byte[0] ) );
-        byte[] decryptedKey = unwrapKeyWithOaep( XmlUtil.stringAsDocument( encryptedXml ).getDocumentElement(), spec );
+        byte[] decryptedKey = unwrapKeyWithOaep( XmlUtil.stringAsDocument( encryptedXml ).getDocumentElement(), spec, useCCJ );
         assertArrayEquals( keyPair.right.getEncoded(), decryptedKey );
     }
 
     // Examines a passed-in xenc:EncryptedData element and tries to unwrap an embedded KeyInfo CipherValue using the specified OAEPParameterSpec
-    private static byte[] unwrapKeyWithOaep( Element encryptedData, OAEPParameterSpec spec ) throws Exception {
+    private static byte[] unwrapKeyWithOaep( Element encryptedData, OAEPParameterSpec spec, boolean useCCJ ) throws Exception {
         // Check default provider for RSA was as expected during encryption
         assertEquals( expectedRsaProvider, Cipher.getInstance( "RSA/ECB/OAEPPadding" ).getProvider().getName() );
 
@@ -189,17 +188,19 @@ public class XmlElementEncryptorTest {
         Element cipherValue = XmlUtil.findExactlyOneChildElementByName( cipherData, SoapUtil.XMLENC_NS, "CipherValue" );
         byte[] ciphertextBytes = HexUtils.decodeBase64( XmlUtil.getTextValue( cipherValue ) );
 
-        // Ensure both Sun and RSA providers can decrypt
         Cipher rsa = Cipher.getInstance( "RSA/ECB/OAEPPadding", "SunJCE" );
         rsa.init( Cipher.DECRYPT_MODE, recipPrivateKey, spec );
         byte[] sunBytes = rsa.doFinal( ciphertextBytes );
 
-        rsa = Cipher.getInstance( "RSA/ECB/OAEPWithSHA1AndMGF1Padding", new JsafeJCE() ); // init with spec should override
-        rsa.init( Cipher.DECRYPT_MODE, recipPrivateKey, spec );
-        byte[] cryptojBytes = rsa.doFinal( ciphertextBytes );
+        if (useCCJ) {
+            rsa = Cipher.getInstance("RSA/ECB/OAEPWithSHA1AndMGF1Padding", "WF");
+            rsa.init(Cipher.DECRYPT_MODE, recipPrivateKey, spec);
+            byte[] ccjBytes = rsa.doFinal(ciphertextBytes);
 
-        assertArrayEquals( sunBytes, cryptojBytes );
-        return cryptojBytes;
+            //Ensure both SunJCE and CCJ can decrypt
+            assertArrayEquals(sunBytes, ccjBytes);
+        }
+        return sunBytes;
     }
 
     @Test
@@ -214,8 +215,8 @@ public class XmlElementEncryptorTest {
         runOaepWithSha256Mgf1Sha1Test( true );
     }
 
-    private void runOaepWithSha256Mgf1Sha1Test( boolean useCryptoJ ) throws Exception {
-        setCCJ( useCryptoJ );
+    private void runOaepWithSha256Mgf1Sha1Test( boolean useCCJ ) throws Exception {
+        setCCJ( useCCJ );
 
         XmlElementEncryptionConfig rawConfig = new XmlElementEncryptionConfig();
         rawConfig.setRecipientCertificateBase64(recipb64);
@@ -246,7 +247,7 @@ public class XmlElementEncryptorTest {
 
         // Make sure decryption uses actual OAEP with SHA-256 params
         OAEPParameterSpec spec = new OAEPParameterSpec( "SHA-256", "MGF1", MGF1ParameterSpec.SHA1, new PSource.PSpecified( new byte[0] ) );
-        byte[] decryptedKey = unwrapKeyWithOaep( XmlUtil.stringAsDocument( encryptedXml ).getDocumentElement(), spec );
+        byte[] decryptedKey = unwrapKeyWithOaep( XmlUtil.stringAsDocument( encryptedXml ).getDocumentElement(), spec, useCCJ );
         assertArrayEquals( keyPair.right.getEncoded(), decryptedKey );
     }
 
@@ -258,12 +259,12 @@ public class XmlElementEncryptorTest {
 
     @Test
     @BugId("SSG-12386")
-    public void testOaepWithSha384Mgf1Sha1_withCryptoJ() throws Exception {
+    public void testOaepWithSha384Mgf1Sha1_withCCJ() throws Exception {
         runOaepWithSha384Mgf1Sha1Test( true );
     }
 
-    private void runOaepWithSha384Mgf1Sha1Test( boolean useCryptoJ ) throws Exception {
-        setCCJ( useCryptoJ );
+    private void runOaepWithSha384Mgf1Sha1Test( boolean useCCJ ) throws Exception {
+        setCCJ( useCCJ );
 
         XmlElementEncryptionConfig rawConfig = new XmlElementEncryptionConfig();
         rawConfig.setRecipientCertificateBase64(recipb64);
@@ -294,7 +295,7 @@ public class XmlElementEncryptorTest {
 
         // Make sure decryption uses actual OAEP with SHA-384 params
         OAEPParameterSpec spec = new OAEPParameterSpec( "SHA-384", "MGF1", MGF1ParameterSpec.SHA1, new PSource.PSpecified( new byte[0] ) );
-        byte[] decryptedKey = unwrapKeyWithOaep( XmlUtil.stringAsDocument( encryptedXml ).getDocumentElement(), spec );
+        byte[] decryptedKey = unwrapKeyWithOaep( XmlUtil.stringAsDocument( encryptedXml ).getDocumentElement(), spec, useCCJ );
         assertArrayEquals( keyPair.right.getEncoded(), decryptedKey );
     }
 
@@ -306,12 +307,12 @@ public class XmlElementEncryptorTest {
 
     @Test
     @BugId("SSG-12386")
-    public void testOaepWithSha256Mgf1Sha1_defaultViaSystemProperty_withCryptoJ() throws Exception {
+    public void testOaepWithSha256Mgf1Sha1_defaultViaSystemProperty_withCCJ() throws Exception {
         runOaepWithSha256Mgf1Sha1_defaultViaSystemPropertyTest( true );
     }
 
-    private void runOaepWithSha256Mgf1Sha1_defaultViaSystemPropertyTest( boolean useCryptoJ ) throws Exception {
-        setCCJ( useCryptoJ );
+    private void runOaepWithSha256Mgf1Sha1_defaultViaSystemPropertyTest( boolean useCCJ ) throws Exception {
+        setCCJ( useCCJ );
 
         // Make sure encryption of XML using OAEP uses SHA-256 by default (note: not currently known to be necessary for security, SHA-1 seems to be fine for this application, even without collision resistance)
         SyspropUtil.setProperty( XmlElementEncryptor.PROP_OAEP_DIGEST_SHA256, "true" );
@@ -345,7 +346,7 @@ public class XmlElementEncryptorTest {
 
         // Make sure decryption uses actual OAEP with SHA-256 params
         OAEPParameterSpec spec = new OAEPParameterSpec( "SHA-256", "MGF1", MGF1ParameterSpec.SHA1, new PSource.PSpecified( new byte[0] ) );
-        byte[] decryptedKey = unwrapKeyWithOaep( XmlUtil.stringAsDocument( encryptedXml ).getDocumentElement(), spec );
+        byte[] decryptedKey = unwrapKeyWithOaep( XmlUtil.stringAsDocument( encryptedXml ).getDocumentElement(), spec, useCCJ );
         assertArrayEquals( keyPair.right.getEncoded(), decryptedKey );
     }
 }

@@ -296,22 +296,10 @@ public class TlsProviderTestSuite {
         secretKeysMethod.invoke(manager, true);
     }
 
-    private void initCryptoJFipsMode() throws Exception {
-        Class cryptojClass = Class.forName("com.rsa.jsafe.crypto.CryptoJ");
-        Method setModeMethod = cryptojClass.getMethod("setMode", int.class);
-        int fips140SslEcc = (Integer)cryptojClass.getField("FIPS140_SSL_ECC_MODE").get(null);
-        setModeMethod.invoke(null, fips140SslEcc);
-    }
-
     private void start() throws Exception {
         if (Boolean.valueOf(debug)) System.setProperty( "javax.net.debug", "ssl" );
 
-        if ("rsa".equals(jceprov)) {
-            addProv("com.rsa.jsafe.provider.JsafeJCE", false);
-        } else if ("rsafips".equals(jceprov)) {
-            addProv("com.rsa.jsafe.provider.JsafeJCE", true);
-            initCryptoJFipsMode();
-        } else if ("luna4".equals(jceprov)) {
+        if ("luna4".equals(jceprov)) {
             addProv("com.chrysalisits.cryptox.LunaJCEProvider", true);
             addProv("com.chrysalisits.crypto.LunaJCAProvider", true);
             initLuna(false);
@@ -326,14 +314,7 @@ public class TlsProviderTestSuite {
             throw new IllegalArgumentException("Unknown jceprov: " + jceprov);
         }
 
-        String expectTlsProv = null;
-        if ("rsa".equals(tlsprov)) {
-            Security.removeProvider("SunJSSE");
-            addProv("com.rsa.jsse.JsseProvider", true);
-            expectTlsProv = "RsaJsse";
-        } else if ("sun".equals(tlsprov)) {
-            expectTlsProv = "SunJSSE";
-        }
+        final String expectTlsProv = "SunJSSE";
 
         addProvs(additionalProviders, false);
         addProvs(firstPlaceProviders, true);
@@ -341,7 +322,7 @@ public class TlsProviderTestSuite {
         SSLContext sslContext = SSLContext.getInstance("TLS");
         String gotTlsProv = sslContext.getProvider().getName();
         System.out.println("Using TLS provider: " + gotTlsProv);
-        if (expectTlsProv != null) assertEquals(expectTlsProv, gotTlsProv);
+        assertEquals(expectTlsProv, gotTlsProv);
 
         X509KeyManager[] km = {new SingleCertX509KeyManager(getCertificate(certtype), getPrivateKey(certtype))};
         if (!server && !"yes".equals(clientcert)) km = null;

@@ -12,7 +12,6 @@
 		<artifact name="BatchLicenseGenerator" type="jar" ext="jar" conf="master"/>
 	</publications>
 	<dependencies>
-        <dependency org="com.rsa" name="jcm" rev="6.2.0.1" force="true" conf="core"/>
         <!-- CryptoComply-->
         <dependency org="com.safelogic.cryptocomply" name="cryptocomply" rev="2.2.1" force="true" conf="core"/>
 

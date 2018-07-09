@@ -30,11 +30,6 @@
         <dependency org="org.springframework" name="spring-orm" rev="3.0.7.RELEASE" force="true" conf="core"/>
         <!-- Required on server -->
         <dependency org="org.springframework" name="spring-web" rev="3.0.7.RELEASE" force="true" conf="optional"/>
-
-        <!-- RSA needed for running tests (since alternatives jarfiles are not deployed) -->
-        <dependency org="com.rsa" name="jcmFIPS" rev="6.2.0.1" force="true" conf="test"/>
-        <dependency org="com.rsa" name="cryptojcommon" rev="6.2.0.1" force="true" conf="test"/>
-        <dependency org="com.rsa" name="cryptojce" rev="6.2.0.1" force="true" conf="test"/>
         <!-- CryptoComply-->
         <dependency org="com.safelogic.cryptocomply" name="cryptocomply" rev="2.2.1" force="true" conf="core"/>
     </dependencies>

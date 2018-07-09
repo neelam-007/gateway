@@ -393,10 +393,6 @@ public class EllipticCurveProviderTester {
         boolean cjDheRsa256 = testRequirement("subsubtestRsaJsse_DHE_RSA_AES256", results);
         assertTrue(cjRsaAes128 && cjRsaAes256 && cjDheRsaAes128 && cjRsaAes128 && cjDheRsa256, "all sub-subrequirements must succeed");
     }
-    public void subsubtestRsaJsse_RSA_AES128()      throws Exception { sslTest(SslKey.RSA_L7, "TLS_RSA_WITH_AES_128_CBC_SHA", JsseProvider.RSA); }
-    public void subsubtestRsaJsse_RSA_AES256()      throws Exception { sslTest(SslKey.RSA_L7, "TLS_RSA_WITH_AES_256_CBC_SHA", JsseProvider.RSA); }
-    public void subsubtestRsaJsse_DHE_RSA_AES128()  throws Exception { sslTest(SslKey.RSA_L7, "TLS_DHE_RSA_WITH_AES_128_CBC_SHA", JsseProvider.RSA); }
-    public void subsubtestRsaJsse_DHE_RSA_AES256()  throws Exception { sslTest(SslKey.RSA_L7, "TLS_DHE_RSA_WITH_AES_256_CBC_SHA", JsseProvider.RSA); }
 
     /**
      * Test the ability to open an SSL connection to ourself using various ECC cipher suites.
@@ -447,11 +443,6 @@ public class EllipticCurveProviderTester {
         assertTrue(cjEcdhAes128EcKey && cjEcdheAes256EcKey && cjEcdheAes128EcKey && cjEcdhAes128BcKey && cjEcdheAes256BcKey,
                 "all sub-subrequirements must succeed");
     }
-    public void subsubtestRsaJsse_ECDH_ECDSA_AES128_tstKey()  throws Exception { sslTest(SslKey.ECC_CERT, "TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA", JsseProvider.RSA); }
-    public void subsubtestRsaJsse_ECDHE_ECDSA_AES256_tstKey()  throws Exception { sslTest(SslKey.ECC_CERT, "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA", JsseProvider.RSA); }
-    public void subsubtestRsaJsse_ECDHE_ECDSA_AES128_tstKey() throws Exception { sslTest(SslKey.ECC_CERT, "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA", JsseProvider.RSA); }
-    public void subsubtestRsaJsse_ECDH_ECDSA_AES128_BcKey()   throws Exception { sslTest(SslKey.ECC_L7, "TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA", JsseProvider.RSA); }
-    public void subsubtestRsaJsse_ECDHE_ECDSA_AES256_BcKey()  throws Exception { sslTest(SslKey.ECC_L7, "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA", JsseProvider.RSA); }
 
     //
     //
@@ -700,7 +691,6 @@ public class EllipticCurveProviderTester {
 
     static enum JsseProvider {
         DEFAULT(null),
-        RSA("com.rsa.jsse.JsseProvider"),
         CERTICOM("com.certicom.jsse.provider.CerticomJSSE");
 
         final String name;
@@ -1191,7 +1181,6 @@ public class EllipticCurveProviderTester {
         new SecurityProvider("bc", false, "org.bouncycastle.jce.provider.BouncyCastleProvider"),
         new SecurityProvider("bclowpri", true, "org.bouncycastle.jce.provider.BouncyCastleProvider"),
         new SecurityProvider("certicom", false, "com.certicom.ecc.jcae.Certicom"),
-        new SecurityProvider("rsa", false, "com.rsa.jsafe.provider.JsafeJCE"),
     };
 
 

@@ -92,7 +92,6 @@ done
 echo "WARNING: The compile time requirement above is a best effort."
 echo "         Some libs are required but not directly imported, e.g."
 echo "         - lib/commons-logging-1.0.4.jar"
-echo "         - lib/crypto/rsa/jsafeJCE.jar"
 echo "         - lib/gateway/cluster/jboss-jmx.jar"
 echo "         - lib/gateway/cluster/jboss-system.jar"
 echo "It looks like you should be able to build with this classpath:"
