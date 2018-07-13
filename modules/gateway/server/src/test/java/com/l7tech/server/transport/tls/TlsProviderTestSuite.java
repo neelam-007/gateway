@@ -205,8 +205,8 @@ public class TlsProviderTestSuite {
                 "    host <hostname|ip>              server listens on, or client connects to, specified host or address\n" +
                 "    port <port>                     server listens on, or client connects to, specified port\n" +
                 "    tlsversions <TLSv1|TLSv1.2>     comma delimited specific version of TLS to use, otherwise uses defaults\n" +
-                "    tlsprov <sun|rsa>               JSSE provider to use, either SunJSSE or RsaJsse\n" +
-                "    jceprov <sun|rsa|luna4|luna5>   extra JCE provider to register for test\n" +
+                "    tlsprov <sun>               JSSE provider to use, either SunJSSE or RsaJsse\n" +
+                "    jceprov <sun|luna4|luna5>   extra JCE provider to register for test\n" +
                 "    tokenPin <token PIN>            Luna partition PIN; required if using jceprov luna4 or luna5\n" +
                 "    ciphers <suite,suite>           comma delimited cipher suites to enable, otherwise uses defaults\n" +
                 "    certtype <rsa|ecc>              whether to use an ECC or RSA key for this side's certificate\n" +

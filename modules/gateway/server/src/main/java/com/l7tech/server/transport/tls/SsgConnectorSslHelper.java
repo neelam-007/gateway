@@ -479,7 +479,6 @@ public class SsgConnectorSslHelper {
             // Use the manually-specified provider.
             logger.log(Level.FINE, "Attempting to create SSLContext using custom provider named " + customTlsProvider);
             SSLContext sslContext = SSLContext.getInstance(tlsProtocol, customTlsProvider);
-            JceProvider.getInstance().prepareSslContext( sslContext );
             return sslContext;
         }
 
@@ -496,14 +495,12 @@ public class SsgConnectorSslHelper {
         if (provider == null) {
             logger.log(Level.FINE, "Attempting to create SSLContext using default provider");
             SSLContext sslContext = SSLContext.getInstance(tlsProtocol);
-            JceProvider.getInstance().prepareSslContext( sslContext );
             return sslContext;
         }
 
         if (logger.isLoggable(Level.FINE))
             logger.log(Level.FINE, "Attempting to create SSLContext using " + sslContextService + " provider named " + provider.getName());
         SSLContext sslContext = SSLContext.getInstance(tlsProtocol, provider);
-        JceProvider.getInstance().prepareSslContext( sslContext );
         return sslContext;
     }
 

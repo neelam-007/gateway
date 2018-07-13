@@ -127,7 +127,6 @@ public abstract class SslClientSocketFactorySupport extends SSLSocketFactory imp
         final SSLContext context;
         try {
             context = SSLContext.getInstance("TLS");
-            JceProvider.getInstance().prepareSslContext( context );
             context.init( keyManagers, new TrustManager[]{ trustManager }, null );
             context.getClientSessionContext().setSessionTimeout(timeout);
         } catch (GeneralSecurityException e) {

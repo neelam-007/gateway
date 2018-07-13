@@ -122,7 +122,6 @@ public class JmsSslCustomizerSupport {
                 }
 
                 final SSLContext context = SSLContext.getInstance("TLS");
-                JceProvider.getInstance().prepareSslContext( context );
                 context.init(keyManagers,
                              new TrustManager[] { trustManager } ,
                              null);

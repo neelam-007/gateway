@@ -254,7 +254,6 @@ public class  NewPrivateKeyDialog extends JDialog {
         expiryDaysField.setDocument(new NumberField(7));
         expiryDaysField.setText(DEFAULT_EXPIRY);
 
-        // Some EC curve names commented out because they aren't supported by RSA BSAFE Crypto-J as of version 4.1.0.1
         final KeyType dfltk;
         Collection<KeyType> types = new ArrayList<KeyType>(Arrays.asList(
                 rsasize(512, 20, 1),

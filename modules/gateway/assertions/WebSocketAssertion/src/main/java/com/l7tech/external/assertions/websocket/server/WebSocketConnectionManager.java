@@ -311,7 +311,6 @@ public class WebSocketConnectionManager {
         }
 
         SSLContext sslContext = SSLContext.getInstance("TLS");
-        JceProvider.getInstance().prepareSslContext(sslContext);
         sslContext.init(keyManagers, new TrustManager[]{tm}, secureRandom);
 
         return sslContext;

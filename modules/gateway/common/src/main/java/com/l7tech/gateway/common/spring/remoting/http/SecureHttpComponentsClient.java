@@ -107,7 +107,6 @@ public class SecureHttpComponentsClient extends DefaultHttpClientWithHttpContext
     private SSLSocketFactory getSSLSocketFactory() {
         try {
             SSLContext sslContext = SSLContext.getInstance("TLS");
-            JceProvider.getInstance().prepareSslContext(sslContext);
             KeyManager[] keyManagers = getKeyManagers();
             TrustManager[] trustManagers = getTrustManagers();
             sslContext.init(keyManagers, trustManagers, null);

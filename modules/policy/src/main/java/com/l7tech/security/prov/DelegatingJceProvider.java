@@ -172,14 +172,4 @@ public class DelegatingJceProvider extends JceProvider {
     public Provider getProviderFor(String service) {
         return delegate.getProviderFor(service);
     }
-
-    @Override
-    public Object getCompatibilityFlag( String flagName ) {
-        return delegate.getCompatibilityFlag(flagName);
-    }
-
-    @Override
-    public void prepareSslContext( @NotNull SSLContext sslContext ) {
-        delegate.prepareSslContext( sslContext );
-    }
 }

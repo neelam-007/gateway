@@ -510,30 +510,6 @@ public abstract class JceProvider {
         return sp != null ? sp : first( Security.getProviders( service ) ).toNull();
     }
 
-    //For SSL-J the accepted issuers list must be nonempty in order to do client auth for inbound TLS 1.0.
-    public static final String CF_TLSv10_CLIENT_AUTH_REQUIRES_NONEMPTY_CACERTS = "CF_TLSv10_CLIENT_AUTH_REQUIRES_NONEMPTY_CACERTS";
-
-    //For SSL-J accepted issuers list must be nonempty in order to do client auth for inboud TLS versions > 1.0.
-    public static final String CF_TLSv12_CLIENT_AUTH_REQUIRES_NONEMPTY_CACERTS = "CF_TLSv12_CLIENT_AUTH_REQUIRES_NONEMPTY_CACERTS";
-
-    /**
-     * See if this provider requires a special compatibility mode enabled at the application level.
-     * <p/>
-     * Current defined compatbility modes as of 9.2:
-     * <ul>
-     *     <li>{@link #CF_TLSv10_CLIENT_AUTH_REQUIRES_NONEMPTY_CACERTS} - The accepted issuers list must be nonempty in order to do client auth for inbound TLS 1.0.
-     *     The return value will be the Boolean.TRUE if this is the case.</li>
-     *     <li>{@link #CF_TLSv12_CLIENT_AUTH_REQUIRES_NONEMPTY_CACERTS} - The accepted issuers list must be nonempty in order to do client auth for inboud TLS versions > 1.0.
-     *     The return value will be the Boolean.TRUE if this is the case.</li>
-     * </ul>
-     *
-     * @param flagName the name of the compatibility flag to query for.  Required.
-     * @return an object ,or null if the flag is not required or meaningful to the current JceProviderEngine.
-     */
-    public Object getCompatibilityFlag( String flagName ) {
-        return null;
-    }
-
     /**
      * Get the specified MessageDigest from the specified Provider (which may be null).
      *
@@ -605,19 +581,6 @@ public abstract class JceProvider {
      */
     private static KeyStore getKeyStore(String kstype, Provider prov) throws KeyStoreException {
         return prov == null ? KeyStore.getInstance(kstype) : KeyStore.getInstance(kstype, prov);
-    }
-
-    /**
-     * Perform any provider-specific initialization that may be required for the specified newly-created
-     * SSLContext.
-     * <p/>
-     * An example of such initialization is configuring a custom session cache with a more aggressive
-     * replacement policy to avoid running out of memory when using SSL-J with the default session cache.
-     *
-     * @param sslContext an SSLContext to configure.  Required.  Implementors must check to ensure the provided
-     *                   context was created by their JSSE provider and must not assume it was.
-     */
-    public void prepareSslContext( @NotNull SSLContext sslContext ) {
     }
 
     /**

@@ -137,7 +137,7 @@ public class XmlElementEncryptorTest {
 
     @Test
     @BugId("SSG-12386")
-    public void testOaep_withCryptoJ() throws Exception {
+    public void testOaep_withCCJ() throws Exception {
         runOaepTest( true );
     }
 
@@ -211,7 +211,7 @@ public class XmlElementEncryptorTest {
 
     @Test
     @BugId("SSG-12386")
-    public void testOaepWithSha256Mgf1Sha1_withCryptoJ() throws Exception {
+    public void testOaepWithSha256Mgf1Sha1_withCCJ() throws Exception {
         runOaepWithSha256Mgf1Sha1Test( true );
     }
 

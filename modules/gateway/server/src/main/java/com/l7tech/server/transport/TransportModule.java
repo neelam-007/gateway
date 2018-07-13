@@ -293,14 +293,9 @@ public abstract class TransportModule extends LifecycleBean {
         if (protocols == null) protocols = connector.getProperty(SsgConnector.PROP_TLS_PROTOCOLS);
         final boolean isOnlyTls10Enabled =  (protocols == null || (!protocols.contains("TLSv1.1") && !protocols.contains("TLSv1.2")));
 
-        //If the TLS provider returns true for requireCacerts then a non-empty cacerts list must be present in order to use client aut
-        final Object requireCacerts = JceProvider.getInstance().getCompatibilityFlag(
-                isOnlyTls10Enabled ? JceProvider.CF_TLSv10_CLIENT_AUTH_REQUIRES_NONEMPTY_CACERTS : JceProvider.CF_TLSv12_CLIENT_AUTH_REQUIRES_NONEMPTY_CACERTS
-        );
-
         // Changing the default behaviour due to a request from Support to always send the Gateway's configured accepted issuers list if not empty (see DE258122).
-        // Keeping default 9.1 behaviour for TLS1.0, in which case an empty list was sent regardless of the configured accepted issuers list in the Gateway (unless SSL-J is the provider)
-        if (isOnlyTls10Enabled && !Boolean.TRUE.equals(requireCacerts) && !connector.getBooleanProperty("acceptedIssuers"))
+        // Keeping default 9.1 behaviour for TLS1.0, in which case an empty list was sent regardless of the configured accepted issuers list in the Gateway
+        if (isOnlyTls10Enabled && !connector.getBooleanProperty("acceptedIssuers"))
             return new X509Certificate[0];
 
         Collection<TrustedCert> trustedCerts = trustedCertServices.getAllCertsByTrustFlags(EnumSet.of(TrustedCert.TrustedFor.SIGNING_CLIENT_CERTS));
@@ -313,13 +308,12 @@ public abstract class TransportModule extends LifecycleBean {
         // to work around an issue with older versions of SSL-J (that would fail with client auth set to OPTIONAL or REQUIRED
         // unless the accepted issuers list was non-empty).  We will still support this hack, in case it is required in some
         // situation, but only if a new undocumented connector property includeSelfCertIfAcceptedIssuersEmpty is set to true.
-        // If cacert is empty and acceptedIssuers is true and includeSelfCertIfAcceptedIssuersEmpty/requireCacerts is true as well then self-signed cert will be added
-        if ( certs.isEmpty() && (Boolean.TRUE.equals(requireCacerts) || connector.getBooleanProperty( "includeSelfCertIfAcceptedIssuersEmpty" )) ) {
+        if ( certs.isEmpty() && connector.getBooleanProperty("includeSelfCertIfAcceptedIssuersEmpty")) {
             try {
                 certs.add( defaultKey.getSslInfo().getCertificate() );
             } catch (IOException e) {
                 // This is non-fatal, at least for this purpose, since many TLS handshakes will succeed even with
-                // an empty issuers list -- the purpose of this hack was just to work around an SSL-J issue.
+                // an empty issuers list
                 logger.log(Level.WARNING, "Unable to get default certificate: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
             }
         }

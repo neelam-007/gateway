@@ -66,7 +66,7 @@ public class SsgConnector extends ZoneableNamedEntityImp implements PortOwner {
 
     /**
      * Name of specific SSLContext provider to use.  Can be used to force the Gateway to use a specific registered JSSE provider instead of selecting one automatically.
-     * If set, this should be the second argument to pass to {@link javax.net.ssl.SSLContext#getInstance(String, String)}, ie "SunJSSE" or "RsaJsse".
+     * If set, this should be the second argument to pass to {@link javax.net.ssl.SSLContext#getInstance(String, String)}, ie "SunJSSE".
      */
     public static final String PROP_TLS_PROTOCOL_PROVIDER = "protocolProvider";
 
@@ -81,7 +81,7 @@ public class SsgConnector extends ZoneableNamedEntityImp implements PortOwner {
 
     /**
      * Can be set to "true" to disable the crude work around for CVE-2009-3555 (removing all cipher suites after handshake to prevent re-handshakes).
-     * Currently only has an effect for HTTPS listeners.  Not necessary when using RSA SSL-J 5.1.1 or later as the TLS provider. 
+     * Currently only has an effect for HTTPS listeners.
      */
     public static final String PROP_TLS_ALLOW_UNSAFE_LEGACY_RENEGOTIATION = "allowUnsafeLegacyRenegotiation";
 

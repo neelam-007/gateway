@@ -201,7 +201,7 @@ public class EllipticCurveProviderTester {
         try {
             p384spec = (AlgorithmParameterSpec)invokeStaticMethod("com.certicom.ecc.jcae.CurveList", "byName", new Class[] {String.class}, "secp384r1");
         } catch (ClassNotFoundException e) {
-            throw new SkipTestException("Certicom SecurityBuilder Crypto-J not present in classpath", null);
+            throw new SkipTestException("Certicom SecurityBuilder not present in classpath", null);
         }
         kpg.initialize(p384spec);
         KeyPair kp = kpg.generateKeyPair();

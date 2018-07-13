@@ -569,7 +569,6 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
             TrustManager[] trustManagers = new TrustManager[]{trustManager};
 
             SSLContext sslContext = SSLContext.getInstance("TLS");
-            JceProvider.getInstance().prepareSslContext( sslContext );
 
             //initialize the SSLContext with the an array of trustmanager, and random number generator
             sslContext.init(null, trustManagers, secureRandom);
