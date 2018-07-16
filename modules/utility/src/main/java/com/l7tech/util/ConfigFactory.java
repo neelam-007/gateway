@@ -396,7 +396,9 @@ public class ConfigFactory {
                 } else if ( "long".equalsIgnoreCase( type ) ) {
                     validator = factory.buildLongValidator( min.orSome( Long.MIN_VALUE ), max.orSome( Long.MAX_VALUE ) );
                 } else if ( "greaterThanZeroLong".equalsIgnoreCase( type ) ) {
-                    validator = factory.buildLongValidator( 1, max.orSome( Long.MAX_VALUE ) );
+                    validator = factory.buildLongValidator(1, max.orSome(Long.MAX_VALUE));
+                } else if ( "boolean".equalsIgnoreCase( type ) ) {
+                    validator = factory.buildPatternValidator("(?i)true|false");
                 } else {
                     logger.warning( "Ignoring unknown type '"+type+"' for validation of property '"+propertyName+"'" );
                 }

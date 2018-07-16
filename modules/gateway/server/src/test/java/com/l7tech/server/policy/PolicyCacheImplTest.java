@@ -11,7 +11,6 @@ import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.Include;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.EntitiesProcessedInBatch;
 import com.l7tech.server.PlatformTransactionManagerStub;
@@ -144,7 +143,6 @@ public class PolicyCacheImplTest {
         // Check if the compiled policy has the correct assertions
         checkAssertions(fragmentServerPolicy, AuditDetailAssertion.class, HttpRoutingAssertion.class);
 
-        testIncludingPolicyFragments(includingFragment1.getGoid(), singletonList(fragment.getGoid()), ThroughputQuota.class, Include.class);
         testIncludingPolicyFragments(includingFragment2.getGoid(), singletonList(fragment.getGoid()), HttpBasic.class, Include.class);
 
         // extra verification to ensure that the real update is called only the required number of times
@@ -196,7 +194,6 @@ public class PolicyCacheImplTest {
         // Check if the compiled policy has the correct assertions
         checkAssertions(fragmentServerPolicy, AuditDetailAssertion.class, HttpRoutingAssertion.class);
 
-        testIncludingPolicyFragments(includingFragment1.getGoid(), singletonList(fragment.getGoid()), ThroughputQuota.class, Include.class);
         testIncludingPolicyFragments(includingFragment2.getGoid(), singletonList(fragment.getGoid()), HttpBasic.class, Include.class);
 
         // let's replace the fragment
@@ -212,7 +209,6 @@ public class PolicyCacheImplTest {
         // Check if the compiled policy has the correct assertions
         checkAssertions(fragmentServerPolicy, HttpRoutingAssertion.class);
 
-        testIncludingPolicyFragments(includingFragment1.getGoid(), singletonList(fragment.getGoid()), ThroughputQuota.class, Include.class);
         testIncludingPolicyFragments(includingFragment2.getGoid(), singletonList(fragment.getGoid()), HttpBasic.class, Include.class);
 
         // extra verification to ensure that the real update is called only the required number of times

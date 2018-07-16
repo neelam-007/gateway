@@ -98,8 +98,6 @@
                 <L7p:WsFederationPassiveTokenRequest/>
                 <L7p:Regex/>
                 <L7p:UnknownAssertion/>
-                <L7p:ThroughputQuota/>
-                <L7p:ThroughputQuotaQuery/>
                 <L7p:CommentAssertion/>
                 <L7p:SqlAttackProtection/>
                 <L7p:OversizedText/>

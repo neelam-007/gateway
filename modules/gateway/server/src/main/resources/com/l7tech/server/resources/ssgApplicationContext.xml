@@ -797,11 +797,6 @@
         <constructor-arg ref="sharedKeyValueStoreProviderRegistry"/>
     </bean>
 
-    <bean id="counterManager" class="com.l7tech.server.sla.CounterManagerImpl">
-        <constructor-arg ref="transactionManager"/>
-        <property name="sessionFactory" ref="sessionFactory"/>
-    </bean>
-
     <!-- Logon service that monitors the login attempts in the SSM -->
     <bean id="logonService" class="com.l7tech.server.logon.SSMLogonService">
         <constructor-arg ref="transactionManager"/>
@@ -2707,9 +2702,7 @@
         <constructor-arg index="0" ref="serverConfig"/>
     </bean>
 
-    <bean id="sharedCounterProviderRegistry" class="com.l7tech.server.extension.registry.sharedstate.SharedCounterProviderRegistry">
-        <constructor-arg index="0" ref="serverConfig"/>
-    </bean>
+    <bean id="sharedCounterProviderRegistry" class="com.l7tech.server.extension.registry.sharedstate.SharedCounterProviderRegistry"/>
 
     <bean id="sharedExecutorServiceProviderRegistry" class="com.l7tech.server.extension.registry.sharedstate.SharedExecutorProviderRegistry">
         <constructor-arg index="0" ref="serverConfig"/>

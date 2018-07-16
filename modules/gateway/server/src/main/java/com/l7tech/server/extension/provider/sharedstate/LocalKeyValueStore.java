@@ -96,7 +96,7 @@ public class LocalKeyValueStore<K extends Serializable, V extends Serializable> 
 
     @Override
     public boolean containsKey(K key) {
-       try (CloseableLock closeableLock = new CloseableLock(striped.get(key))){
+        try (CloseableLock closeableLock = new CloseableLock(striped.get(key))){
             cleanup();
             return kvMap.containsKey(key);
         }

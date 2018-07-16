@@ -470,8 +470,6 @@
 
     <bean id="injector" class="com.l7tech.server.util.ApplicationContextInjector"/>
 
-    <bean id="counterManager" class="com.l7tech.server.sla.CounterManagerStub"/>
-
     <bean id="debugManager" class="com.l7tech.server.stepdebug.DebugManagerImpl">
         <constructor-arg ref="auditFactory"/>
     </bean>

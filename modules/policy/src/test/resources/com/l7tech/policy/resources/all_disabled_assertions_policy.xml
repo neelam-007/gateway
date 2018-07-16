@@ -155,12 +155,6 @@
         <L7p:UnknownAssertion>
             <L7p:Enabled booleanValue="false"/>
         </L7p:UnknownAssertion>
-        <L7p:ThroughputQuota>
-            <L7p:Enabled booleanValue="false"/>
-        </L7p:ThroughputQuota>
-        <L7p:ThroughputQuotaQuery>
-            <L7p:Enabled booleanValue="false"/>
-        </L7p:ThroughputQuotaQuery>
         <L7p:CommentAssertion>
             <L7p:Enabled booleanValue="false"/>
         </L7p:CommentAssertion>

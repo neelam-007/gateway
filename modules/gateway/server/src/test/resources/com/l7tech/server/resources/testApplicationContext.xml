@@ -555,8 +555,6 @@
 
     <bean id="injector" class="com.l7tech.server.util.ApplicationContextInjector"/>
 
-    <bean id="counterManager" class="com.l7tech.server.sla.CounterManagerStub"/>
-
     <bean id="dateTimeConfigUtils" class="com.l7tech.util.DateTimeConfigUtils" />
 
     <bean id="timeSource" class="com.l7tech.util.TimeSource"/>
@@ -867,4 +865,6 @@
 
     <!-- An events publisher for GatewayMetricsEvent's. -->
     <bean id="gatewayMetricsPublisher" class="com.l7tech.server.message.metrics.GatewayMetricsPublisher"/>
+
+    <bean id="sharedCounterProviderRegistry" class="com.l7tech.server.extension.registry.sharedstate.SharedCounterProviderRegistry"/>
 </beans>

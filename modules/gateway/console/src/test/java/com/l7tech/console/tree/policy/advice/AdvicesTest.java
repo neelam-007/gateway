@@ -5,7 +5,6 @@ import com.l7tech.policy.assertion.credential.WsFederationPassiveTokenRequest;
 import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
 import com.l7tech.policy.assertion.credential.XpathCredentialSource;
 import com.l7tech.policy.assertion.credential.http.CookieCredentialSourceAssertion;
-import com.l7tech.policy.assertion.sla.ThroughputQuota;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.SamlBrowserArtifact;
@@ -35,7 +34,6 @@ public class AdvicesTest {
             Regex.class,
             HttpFormPost.class,
             InverseHttpFormPost.class,
-            ThroughputQuota.class,
             CommentAssertion.class,
             SqlAttackAssertion.class,
             OversizedTextAssertion.class,
