@@ -1,11 +1,9 @@
 package com.l7tech.server.extension.registry.sharedstate;
 
-import com.ca.apim.gateway.extension.sharedstate.SharedCounterProvider;
-import com.l7tech.server.extension.provider.sharedstate.LocalCounterProvider;
+import com.ca.apim.gateway.extension.sharedstate.counter.SharedCounterProvider;
+import com.l7tech.server.extension.provider.sharedstate.counter.LocalCounterProvider;
 import com.l7tech.server.extension.registry.AbstractRegistryImpl;
-import com.l7tech.util.Config;
 
-import java.util.Objects;
 import java.util.logging.Logger;
 
 /**
@@ -13,18 +11,19 @@ import java.util.logging.Logger;
  */
 public class SharedCounterProviderRegistry extends AbstractRegistryImpl<SharedCounterProvider> {
     private static final Logger LOGGER = Logger.getLogger(SharedCounterProviderRegistry.class.getName());
+    public static final String SYSPROP_COUNTER_PROVIDER = "com.l7tech.server.extension.sharedCounterProvider";
 
-    private static final String DEFAULT_EXTENSION = LocalCounterProvider.class.getName();
-    private static final String DEFAULT_EXTENSION_PROPERTY = "com.ca.apim.gateway.extension.distributedcounter.default";
-
-    private Config config;
-
-    public SharedCounterProviderRegistry(Config config) {
+    public SharedCounterProviderRegistry() {
         super();
-        Objects.requireNonNull(config, "Config cannot be null");
-        this.config = config;
+        this.register(LocalCounterProvider.KEY, new LocalCounterProvider(), LocalCounterProvider.KEY);
+    }
 
-        register(DEFAULT_EXTENSION, new LocalCounterProvider());
+    @Override
+    public SharedCounterProvider getExtension(String key) {
+        if (key == null || key.isEmpty()) {
+            return super.getExtension(LocalCounterProvider.KEY);
+        }
+        return super.getExtension(key);
     }
 
     @Override

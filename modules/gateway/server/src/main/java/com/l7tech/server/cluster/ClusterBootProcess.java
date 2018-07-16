@@ -1,6 +1,5 @@
 package com.l7tech.server.cluster;
 
-import com.hazelcast.core.HazelcastInstance;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
@@ -21,27 +20,21 @@ import java.util.logging.Logger;
  * @author alex
  */
 public class ClusterBootProcess implements ServerComponentLifecycle {
-    private static final Logger logger = Logger.getLogger(ClusterBootProcess.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(ClusterBootProcess.class.getName());
 
     private static final String PROP_OLD_MULTICAST_GEN = "com.l7tech.cluster.macAddressOldGen"; // true for old
     private static final Random random = new SecureRandom();
     private String multicastAddress;
 
     private final ClusterInfoManager clusterInfoManager;
-    private final GatewayHazelcast gatewayHazelcast;
-    private final HazelcastMessageIdManager hazelcastMessageIdManager;
 
     //- PUBLIC
 
-    public ClusterBootProcess(final ClusterInfoManager clusterInfoManager,
-                              final GatewayHazelcast gatewayHazelcast,
-                              final HazelcastMessageIdManager hazelcastMessageIdManager) {
+    public ClusterBootProcess(final ClusterInfoManager clusterInfoManager) {
         if (clusterInfoManager instanceof ClusterInfoManagerImpl)
             throw new IllegalArgumentException("cim autoproxy failure");
 
         this.clusterInfoManager = clusterInfoManager;
-        this.gatewayHazelcast = gatewayHazelcast;
-        this.hazelcastMessageIdManager = hazelcastMessageIdManager;
     }
 
     @Override
@@ -60,7 +53,7 @@ public class ClusterBootProcess implements ServerComponentLifecycle {
                     String nodeAddress = nodeInfo.getMulticastAddress();
                     if (nodeAddress != null) {
                         if (multicastAddress == null) {
-                            logger.info("Found an existing cluster node with multicast address " + nodeAddress);
+                            LOGGER.log(Level.INFO,"Found an existing cluster node with multicast address {0}", nodeAddress);
                             multicastAddress = nodeAddress;
                         } else if (!multicastAddress.equals(nodeAddress)) {
                             throw new LifecycleException("At least two nodes in database have different multicast addresses");
@@ -74,40 +67,27 @@ public class ClusterBootProcess implements ServerComponentLifecycle {
                     clusterInfoManager.updateSelfStatus(myInfo);
                 }
             }
-
-            try {
-                HazelcastInstance hazelcastInstance = gatewayHazelcast.getHazelcastInstance();
-
-                logger.info("Initializing HazelcastMessageIdManager");
-                hazelcastMessageIdManager.initialize(hazelcastInstance);
-                logger.info("Initialized HazelcastMessageIdManager");
-            } catch (Exception e) {
-                logger.warning("Could not initialize HazelcastMessageIdManager - Gateway Hazelcast instance not available!");
-            }
         } catch (UpdateException e) {
             final String msg = "error updating boot time of node.";
-            logger.log(Level.WARNING, msg, e);
+            LOGGER.log(Level.WARNING, msg, e);
             throw new LifecycleException(msg, e);
         } catch ( FindException e ) {
-            logger.log(Level.WARNING, e.getMessage(), e );
+            LOGGER.log(Level.WARNING, e.getMessage(), e );
             throw new LifecycleException(e.getMessage(), e);
         } catch (Exception e) {
-            logger.log(Level.SEVERE, e.getMessage(), e );
+            LOGGER.log(Level.SEVERE, e.getMessage(), e );
             throw new LifecycleException(e.getMessage(), e);
         }
     }
 
     @Override
-    public void stop() throws LifecycleException {
-        try {
-            gatewayHazelcast.shutdown();
-        } catch (Exception e) {
-            throw new LifecycleException("HazelcastMessageIdManager couldn't shut down properly", e);
-        }
+    public void stop() {
+        // nothing to stop
     }
 
     @Override
-    public void close() throws LifecycleException {
+    public void close() {
+        // nothing to close
     }
 
     public String toString() {
@@ -174,7 +154,7 @@ public class ClusterBootProcess implements ServerComponentLifecycle {
                 throw new LifecycleException("Could not determine network prefix or scope for address " + address);
 
             if (prefixLength > 64) {
-                logger.log(Level.WARNING, "Network prefix for address " + address + " is " + prefixLength + ", longer than 64bit; not a unicast address? Using 64 instead.");
+                LOGGER.log(Level.WARNING, "Network prefix for address {0} is {1}, longer than 64bit; not a unicast address? Using 64 instead.", new Object[]{address, prefixLength});
                 prefixLength = 64;
             }
 
@@ -198,7 +178,7 @@ public class ClusterBootProcess implements ServerComponentLifecycle {
             multicast[15] = (byte) groupId;
 
             InetAddress multicastIpv6 = Inet6Address.getByAddress(multicast);
-            logger.log(Level.INFO, "Generated IPv6 multicast address: " + multicastIpv6.getHostAddress());
+            LOGGER.log(Level.INFO, "Generated IPv6 multicast address: " + multicastIpv6.getHostAddress());
             return multicastIpv6.getHostAddress();
 
         } catch (SocketException e) {
@@ -219,10 +199,11 @@ public class ClusterBootProcess implements ServerComponentLifecycle {
      * @return the multicast scope
      */
     static int getMulticastScope(Inet6Address ipv6addr) {
-        return ipv6addr.isMulticastAddress() ? ipv6addr.getAddress()[1] & 0x0f :
-               ipv6addr.isLoopbackAddress() ? 1 :   // host
-               ipv6addr.isLinkLocalAddress() ? 2 :  // link
-               ipv6addr.isSiteLocalAddress() ? 5 :  // site
-               14;                                  // global
+        if (ipv6addr.isMulticastAddress())
+            return ipv6addr.getAddress()[1] & 0x0f;
+        else if (ipv6addr.isLoopbackAddress()) return 1;  // host
+        else if (ipv6addr.isLinkLocalAddress()) return 2; // link
+        else if (ipv6addr.isSiteLocalAddress()) return 5; // site
+        else return 14;                                   // global
     }
 }

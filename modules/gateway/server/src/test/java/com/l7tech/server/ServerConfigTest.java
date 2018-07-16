@@ -256,4 +256,22 @@ public class ServerConfigTest {
         assertTrue(sc.getClusterPropertyValidators().get("my.id").isValid("1234"));
         assertFalse(sc.getClusterPropertyValidators().get("my.id").isValid("Hello1234"));
     }
+
+    @Test
+    public void checkBooleanPropertyRegistrationInfo() {
+        ServerConfig sc = ServerConfig.getInstance();
+        List<PropertyRegistrationInfo> list = new ArrayList<>();
+
+        list.add(PropertyRegistrationInfo.prInfo("myChoice", "my.choice", "My Choice", "true", "boolean"));
+
+        sc.registerServerConfigProperties(list);
+
+        assertTrue(sc.getClusterPropertyValidators().get("my.choice").isValid("true"));
+        assertTrue(sc.getClusterPropertyValidators().get("my.choice").isValid("false"));
+        assertTrue(sc.getClusterPropertyValidators().get("my.choice").isValid("True"));
+        assertFalse(sc.getClusterPropertyValidators().get("my.choice").isValid("fals"));
+        assertFalse(sc.getClusterPropertyValidators().get("my.choice").isValid("asd8"));
+
+    }
+
 }

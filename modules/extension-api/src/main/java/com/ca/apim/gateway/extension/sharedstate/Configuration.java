@@ -17,8 +17,7 @@ public class Configuration {
     public enum Param {
         PERSISTED("persisted", "false"),
 
-        SCHEDULED_EXECUTOR_CORE_POOL_SIZE("schedule_executor_core_pool_size", "0")
-        ;
+        SCHEDULED_EXECUTOR_CORE_POOL_SIZE("schedule_executor_core_pool_size", "0");
 
         private final String name;
         private final String defaultValue;
@@ -53,7 +52,8 @@ public class Configuration {
         return properties.getProperty(name);
     }
 
-    public void set(String name, String value) {
+    public Configuration set(String name, String value) {
         properties.setProperty(name, value);
+        return this;
     }
 }

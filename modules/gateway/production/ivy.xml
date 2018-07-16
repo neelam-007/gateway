@@ -107,6 +107,9 @@
         <dependency org="com.ca.apim.gateway.extension" name="JavaScriptAssertion" rev="latest.integration" conf="module">
             <artifact name="JavaScriptAssertion" type="aar"/>
         </dependency>
+        <dependency name="HazelcastEmbeddedProviderAssertion" rev="latest.integration" conf="module"/>
+        <dependency name="MysqlCounterAssertion" rev="latest.integration" conf="module" />
+        <dependency name="ThroughputQuotaAssertion" rev="latest.integration" conf="module" />
         <!-- Optional Modular Assertions are copied to "dist" but not packaged -->
         <dependency name="CaWsdmAssertion" rev="latest.integration" conf="module-optional"/>
     </dependencies>

@@ -1,0 +1,3 @@
+<project name="HazelcastEmbeddedProviderAssertion" default="compile">
+    <import file="../assertion-build.xml"/>
+</project>

@@ -105,7 +105,6 @@
         <dependency org="org.apache.tomcat" name="annotations-api" rev="6.0.53" force="true" conf="core"/>
         <dependency org="org.apache.tomcat" name="catalina" rev="6.0.53-l7p1" force="true" conf="core"/>
         <dependency org="org.apache.tomcat" name="coyote" rev="6.0.53-l7p2" force="true" conf="core"/>
-        <dependency org="com.hazelcast" name="hazelcast" rev="3.6.1" force="true" conf="core"/>
 
         <!-- Progress Data Direct JDBC Drivers -->
         <dependency org="com.l7tech.ddtek" name="L7db2" rev="5.1.4.patch" force="true" conf="core"/>

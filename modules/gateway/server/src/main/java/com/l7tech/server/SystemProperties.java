@@ -10,6 +10,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -33,6 +34,7 @@ public class SystemProperties implements InitializingBean {
 
     private static final Logger logger = Logger.getLogger(SystemProperties.class.getName());
     private static final String DEFAULT_PROPS_RES = "resources/system.properties";
+    private static final String PROCESS_CONTROLLER_PRESENT_PROP = "com.l7tech.server.processControllerPresent";
 
     private final Config config;
 
@@ -71,12 +73,24 @@ public class SystemProperties implements InitializingBean {
     }
 
     public void setSystemProperties(Properties props, String prefix, boolean log) {
+
         final String realPrefix = prefix == null ? "" : (prefix.endsWith(".") ? prefix : prefix + ".");
+
+        // DE372409 : We don't overwrite existing properties in a docker environment, to ensure that JAVA_EXTRA_ARGS get precedence
+        String processControllerProp = PROCESS_CONTROLLER_PRESENT_PROP.replace(realPrefix, "");
+        boolean overwriteExistingProperties = SyspropUtil.getBoolean(PROCESS_CONTROLLER_PRESENT_PROP) ||
+                Boolean.parseBoolean(props.getProperty(processControllerProp));
+
         for (String unprefixedPropertyName : props.stringPropertyNames()) {
             String value = props.getProperty(unprefixedPropertyName);
             String sysPropName = realPrefix + unprefixedPropertyName;
-            if (log) logger.config("Setting system property " + sysPropName + "=" + value);
-            SyspropUtil.setProperty( sysPropName, value );
+
+            if (overwriteExistingProperties || SyspropUtil.getProperty(sysPropName) == null) {
+                if (log) logger.log(Level.CONFIG, "Setting system property {0}={1}", new Object[]{sysPropName, value});
+                SyspropUtil.setProperty(sysPropName, value);
+            } else if (log) {
+                logger.log(Level.FINE, "Not setting system property {0} because it has already been set", sysPropName);
+            }
         }
     }
 

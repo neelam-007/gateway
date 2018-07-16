@@ -1,6 +1,5 @@
 package com.l7tech.server.policy;
 
-import com.hazelcast.com.eclipsesource.json.JsonObject;
 import com.l7tech.common.TestDocuments;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
@@ -465,7 +464,7 @@ public class RegexAssertionTest {
     @Test
     @BugNumber(336817)
     public void testGroupReferenceError() throws Exception {
-        expect(AssertionStatus.SERVER_ERROR, regex("(test_string)", "$$badGroupReference"), context(new JsonObject().add("test", "test_string").toString(), PHRASE_ORLY));
+        expect(AssertionStatus.SERVER_ERROR, regex("(test_string)", "$$badGroupReference"), context("{'test':'test_string'}", PHRASE_ORLY));
 
         assertTrue(testAudit.isAuditPresent(AssertionMessages.REGEX_REPLACEMENT_INVALID));
         assertTrue(testAudit.isAuditPresentContaining("Error: Illegal group reference"));
