@@ -1114,7 +1114,6 @@
             <exclude name="com.tibco.*"/>
             <exclude name="com.tarari.*"/>
             <exclude name="com.sun.*"/>
-            <exclude name="com.rsa.*"/>
             <exclude name="com.safelogic.cryptocomply.*"/>
             <exclude name="com.ncipher.*"/>
             <exclude name="com.mchange.*"/>
