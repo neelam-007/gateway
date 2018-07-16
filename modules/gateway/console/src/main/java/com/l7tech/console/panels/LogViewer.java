@@ -654,7 +654,6 @@ public class LogViewer extends JFrame {
                     boolean done = false;
                     boolean reloadFile = false;
                     long startByte = lastReadByte;
-                    long fileSize = 0;
                     final StringBuilder sb = new StringBuilder(1024);
                     while(!done && !cancelled.get()){
                         LogSinkData logData;
@@ -670,7 +669,6 @@ public class LogViewer extends JFrame {
                                             resources.getString("load.error"), null);
                                     break;
                                 }
-                                fileSize = logData.getFileSize();
                                 lastReadTime = logData.getTimeRead();
                             }
                         } catch ( FindException e ) {
@@ -719,11 +717,8 @@ public class LogViewer extends JFrame {
                         lastReadByte = size + startByte -1;
                         startByte = logData.getNextReadPosition();
                     }
-                    if(tail> 0 )
-                    {
-                        boolean firstLineComplete = lastReadByte == fileSize ; //  started reading at middle of file?
-                        if(!firstLineComplete) list.remove(0); // first line might not be complete
-                        if(tail< (long) list.size() ) list = list.subList(list.size() - tail ,list.size());
+                    if (tail > 0 && tail < (long) list.size()) {
+                        list = list.subList(list.size() - tail, list.size());
                     }
                 }catch (IOException e) {
                     logger.warning("Error loading logs");
