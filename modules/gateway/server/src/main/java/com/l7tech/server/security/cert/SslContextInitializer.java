@@ -7,7 +7,6 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.security.cert.TrustedCert;
-import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.event.EntityClassEvent;
 import com.l7tech.server.security.keystore.KeystoreFile;
 import com.l7tech.server.security.keystore.SsgKeyFinder;

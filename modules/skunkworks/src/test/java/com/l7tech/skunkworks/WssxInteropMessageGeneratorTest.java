@@ -18,15 +18,7 @@ public class WssxInteropMessageGeneratorTest {
     private static final Logger log = Logger.getLogger(WssxInteropMessageGeneratorTest.class.getName());
 
     static {
-        SyspropUtil.setProperty( "com.l7tech.security.prov.rsa.libpath.nonfips", "USECLASSPATH" );
         JceProvider.init();
-    }
-
-    @AfterClass
-    public static void cleanupSystemProperties() {
-        SyspropUtil.clearProperties(
-            "com.l7tech.security.prov.rsa.libpath.nonfips"
-        );
     }
 
     @Test

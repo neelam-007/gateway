@@ -124,7 +124,6 @@
                 <exclude name="com/l7tech/internal/**/*"/>
 
                 <!-- Omit the third-party crypto drivers unless we need to ship with one or more of them.  Including it causes testpackage to fail -->
-                <exclude name="com/l7tech/common/security/prov/rsa/**/*"/>
                 <exclude name="com/l7tech/common/security/prov/ncipher/**/*"/>
                 <exclude name="com/l7tech/common/security/prov/entrust/**/*"/>
                 <exclude name="com/l7tech/common/security/prov/tarari/**/*"/>

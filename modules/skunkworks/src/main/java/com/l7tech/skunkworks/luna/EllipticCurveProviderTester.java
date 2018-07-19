@@ -358,8 +358,7 @@ public class EllipticCurveProviderTester {
     public void testRsa_TLS_1_0(List<String> results) throws Exception {
         boolean dj = testRequirement("subtestRsa_TLS_1_0_DefaultJSSE", results);
         boolean cj = testRequirement("subtestRsa_TLS_1_0_CerticomJSSE", results);
-        boolean rj = testRequirement("subtestRsa_TLS_1_0_RsaJSSE", results);
-        assertTrue(dj || cj || rj, "at least one subrequirements must succeed");
+        assertTrue(dj || cj, "at least one subrequirements must succeed");
     }
 
     public void subtestRsa_TLS_1_0_DefaultJSSE(List<String> results) throws Exception {
@@ -386,22 +385,13 @@ public class EllipticCurveProviderTester {
     public void subsubtestCrtJsse_DHE_RSA_AES128()  throws Exception { sslTest(SslKey.RSA_L7, "TLS_DHE_RSA_WITH_AES_128_CBC_SHA", JsseProvider.CERTICOM); }
     public void subsubtestCrtJsse_DHE_RSA_AES256()  throws Exception { sslTest(SslKey.RSA_L7, "TLS_DHE_RSA_WITH_AES_256_CBC_SHA", JsseProvider.CERTICOM); }
 
-    public void subtestRsa_TLS_1_0_RsaJSSE(List<String> results) throws Exception {
-        boolean cjRsaAes128 = testRequirement("subsubtestRsaJsse_RSA_AES128", results);
-        boolean cjRsaAes256 = testRequirement("subsubtestRsaJsse_RSA_AES256", results);
-        boolean cjDheRsaAes128 = testRequirement("subsubtestRsaJsse_DHE_RSA_AES128", results);
-        boolean cjDheRsa256 = testRequirement("subsubtestRsaJsse_DHE_RSA_AES256", results);
-        assertTrue(cjRsaAes128 && cjRsaAes256 && cjDheRsaAes128 && cjRsaAes128 && cjDheRsa256, "all sub-subrequirements must succeed");
-    }
-
     /**
      * Test the ability to open an SSL connection to ourself using various ECC cipher suites.
      */
     public void testEcc_TLS_1_0(List<String> results) throws Exception {
         boolean dj = testRequirement("subtestEcc_TLS_1_0_DefaultJSSE", results);
         boolean cj = testRequirement("subtestEcc_TLS_1_0_CerticomJSSE", results);
-        boolean rj = testRequirement("subtestEcc_TLS_1_0_RSA_JSSE", results);
-        assertTrue(dj || cj || rj, "at least one subrequirement must succeed");
+        assertTrue(dj || cj, "at least one subrequirement must succeed");
     }
 
     public void subtestEcc_TLS_1_0_DefaultJSSE(List<String> results) throws Exception {
@@ -433,16 +423,6 @@ public class EllipticCurveProviderTester {
     public void subsubtestCrtJsse_ECDHE_ECDSA_AES128_tstKey() throws Exception { sslTest(SslKey.ECC_CERT, "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA", JsseProvider.CERTICOM); }
     public void subsubtestCrtJsse_ECDH_ECDSA_AES128_BcKey()   throws Exception { sslTest(SslKey.ECC_L7, "TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA", JsseProvider.CERTICOM); }
     public void subsubtestCrtJsse_ECDHE_ECDSA_AES256_BcKey()  throws Exception { sslTest(SslKey.ECC_L7, "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA", JsseProvider.CERTICOM); }
-
-    public void subtestEcc_TLS_1_0_RSA_JSSE(List<String> results) throws Exception {
-        boolean cjEcdhAes128EcKey = testRequirement("subsubtestRsaJsse_ECDH_ECDSA_AES128_tstKey", results);
-        boolean cjEcdheAes256EcKey = testRequirement("subsubtestRsaJsse_ECDHE_ECDSA_AES256_tstKey", results);
-        boolean cjEcdheAes128EcKey = testRequirement("subsubtestRsaJsse_ECDHE_ECDSA_AES128_tstKey", results);
-        boolean cjEcdhAes128BcKey = testRequirement("subsubtestRsaJsse_ECDH_ECDSA_AES128_BcKey", results);
-        boolean cjEcdheAes256BcKey = testRequirement("subsubtestRsaJsse_ECDHE_ECDSA_AES256_BcKey", results);
-        assertTrue(cjEcdhAes128EcKey && cjEcdheAes256EcKey && cjEcdheAes128EcKey && cjEcdhAes128BcKey && cjEcdheAes256BcKey,
-                "all sub-subrequirements must succeed");
-    }
 
     //
     //

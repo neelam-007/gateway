@@ -56,7 +56,6 @@ public class PolicyProcessingPerformanceTest extends TestCase {
     private static InboundSecureConversationContextManager inboundSecureConversationContextManager = null;
 
     static {
-        SyspropUtil.setProperty( "com.l7tech.security.prov.rsa.libpath.nonfips", "USECLASSPATH" );
         JceProvider.init();
     }
 
@@ -136,7 +135,6 @@ public class PolicyProcessingPerformanceTest extends TestCase {
              @Override
              protected void tearDown() throws Exception {
                  SyspropUtil.clearProperties(
-                     "com.l7tech.security.prov.rsa.libpath.nonfips",
                      "com.l7tech.server.serviceResolution.strictSoap",
                      "javax.xml.transform.TransformerFactory"
                  );

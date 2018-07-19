@@ -167,7 +167,14 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 final DefaultKey ku = (DefaultKey)applicationContext.getBean("defaultKey");
                 keyManagers = ku.getSslKeyManagers();
             }
-            sslContext = SSLContext.getInstance("TLS");
+            // HACK: If SSLv2Hello requested, have to use SunJSSE instead
+            Provider tlsProvider = null;
+            if ( assertion.getTlsVersion() != null && assertion.getTlsVersion().contains( "SSLv2Hello" ) ) {
+                tlsProvider = JceProvider.getInstance().getProviderFor( "SSLContext.TLSv1" );
+            }
+            sslContext = tlsProvider == null
+                    ? SSLContext.getInstance( "TLS" )
+                    : SSLContext.getInstance( "TLS", tlsProvider );
 
             final Goid[] tlsTrustedCertOids = assertion.getTlsTrustedCertGoids();
             Set<Goid> customTrustedCerts = tlsTrustedCertOids == null ? null : new HashSet<Goid>(Arrays.asList(tlsTrustedCertOids));

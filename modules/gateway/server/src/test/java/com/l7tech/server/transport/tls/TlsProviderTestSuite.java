@@ -205,7 +205,7 @@ public class TlsProviderTestSuite {
                 "    host <hostname|ip>              server listens on, or client connects to, specified host or address\n" +
                 "    port <port>                     server listens on, or client connects to, specified port\n" +
                 "    tlsversions <TLSv1|TLSv1.2>     comma delimited specific version of TLS to use, otherwise uses defaults\n" +
-                "    tlsprov <sun>               JSSE provider to use, either SunJSSE or RsaJsse\n" +
+                "    tlsprov <sun>               JSSE provider to use, either SunJSSE\n" +
                 "    jceprov <sun|luna4|luna5>   extra JCE provider to register for test\n" +
                 "    tokenPin <token PIN>            Luna partition PIN; required if using jceprov luna4 or luna5\n" +
                 "    ciphers <suite,suite>           comma delimited cipher suites to enable, otherwise uses defaults\n" +
@@ -223,7 +223,7 @@ public class TlsProviderTestSuite {
                 "  client options:\n" +
                 "    clientcert <yes|no>             whether to present a client cert, if challenged by server\n\n" +
                 "Examples:\n" +
-                "  TlsProviderTestSuite server tlsprov rsa tlsversions TLSv1,TLSv1.1,TLSv1.2 certtype ecc clientcert optional &\n" +
+                "  TlsProviderTestSuite server tlsprov sun tlsversions TLSv1,TLSv1.1,TLSv1.2 certtype ecc clientcert optional &\n" +
                 "  TlsProviderTestSuite client tlsprov sun tlsversions TLSv1 certtype rsa clientcert no\n");
         System.exit(1);
     }

@@ -46,7 +46,7 @@ public class JceProviderTest {
     public static final String KS = "ca.ks";
     private static String DFLT_STORE_TYPE = "JKS";
 
-    public static final String USAGE = "Usage: JceProviderTest (phaos|bc|rsa|ncipher|entrust|ibm) scale dir keypass storepass [storetype] [concurrency]";
+    public static final String USAGE = "Usage: JceProviderTest (phaos|bc|ncipher|entrust|ibm) scale dir keypass storepass [storetype] [concurrency]";
     private static final boolean LOAD_CSR_FROM_DISK = false;
 
     @AfterClass
@@ -107,8 +107,6 @@ public class JceProviderTest {
         String driver;
         if ("phaos".equalsIgnoreCase(prov)) {
             driver = "com.l7tech.common.security.prov.phaos.PhaosJceProviderEngine";
-        } else if ("rsa".equalsIgnoreCase(prov)) {
-            driver = "com.l7tech.common.security.prov.rsa.RsaJceProviderEngine";
         } else if ("bc".equalsIgnoreCase(prov)) {
             driver = "com.l7tech.common.security.prov.bc.BouncyCastleJceProviderEngine";
         } else if ("ncipher".equalsIgnoreCase(prov)) {

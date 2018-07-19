@@ -10,7 +10,6 @@ import com.l7tech.gateway.common.transport.SsgConnector;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.security.cert.TrustedCert;
-import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.LifecycleBean;
 import com.l7tech.server.event.EntityInvalidationEvent;

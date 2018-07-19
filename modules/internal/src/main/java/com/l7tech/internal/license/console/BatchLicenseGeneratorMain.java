@@ -62,9 +62,6 @@ public class BatchLicenseGeneratorMain {
     private static Map<String, String> eulaFilePaths;
 
     public static void main(String[] args) {
-        //set crypto jar path
-        SyspropUtil.setProperty("com.l7tech.security.prov.rsa.libpath.nonfips", "USECLASSPATH");
-
         //disable logging set up for other modules - unimportant to the batch license generation
         LogManager.getLogManager().reset();
 

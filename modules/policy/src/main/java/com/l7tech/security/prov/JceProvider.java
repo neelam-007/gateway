@@ -7,7 +7,6 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
-import javax.net.ssl.SSLContext;
 import java.security.*;
 import java.security.cert.X509Certificate;
 import java.security.spec.AlgorithmParameterSpec;
@@ -48,7 +47,6 @@ public abstract class JceProvider {
     public static final String PKCS11_ENGINE = "com.l7tech.security.prov.pkcs11.Pkcs11JceProviderEngine";
     public static final String LUNA_ENGINE = "com.l7tech.security.prov.luna.LunaJceProviderEngine";
     public static final String NCIPHER_ENGINE = "com.l7tech.security.prov.ncipher.NcipherJceProviderEngine";
-    public static final String RSA_ENGINE = "com.l7tech.security.prov.rsa.RsaJceProviderEngine";
     public static final String GENERIC_ENGINE = "com.l7tech.security.prov.generic.GenericJceProviderEngine";
     public static final String CRYPTOCOMPLY_ENGINE = "com.l7tech.security.prov.ccj.CryptoComplyJceProviderEngine";
     public static final String DEFAULT_ENGINE = "com.l7tech.security.prov.defaultprov.DefaultJceProviderEngine";
@@ -68,7 +66,7 @@ public abstract class JceProvider {
     public static final String SERVICE_SIGNATURE_ECDSA = "Signature.NONEwithECDSA"; // any ECDSA signing or signature verification
     public static final String SERVICE_KEYSTORE_PKCS12 = "KeyStore.PKCS12";
     public static final String SERVICE_TLS10 = "SSLContext.TLSv1";   // Not the real service name, but lets us distinguish
-    public static final String SERVICE_TLS12 = "SSLContext.TLSv1.2"; // SunJSSE from RsaJsse on the basis of which one (currently) support TLSv1.2
+    public static final String SERVICE_TLS12 = "SSLContext.TLSv1.2"; // SunJSSE
     public static final String SERVICE_DIFFIE_HELLMAN_SOFTWARE = "KeyPairGenerator.DiffieHellmanSoftware";
 
     private static final String SYSPROP_SSL_DEBUG = "javax.net.debug";
@@ -92,7 +90,6 @@ public abstract class JceProvider {
         put("default", DEFAULT_ENGINE);
         put("bc", BC_ENGINE);
         put("luna", LUNA_ENGINE);
-        put("rsa", RSA_ENGINE);
         put("ncipher", NCIPHER_ENGINE);
         put("generic", GENERIC_ENGINE);
         put("ccj", DEFAULT_ENGINE);

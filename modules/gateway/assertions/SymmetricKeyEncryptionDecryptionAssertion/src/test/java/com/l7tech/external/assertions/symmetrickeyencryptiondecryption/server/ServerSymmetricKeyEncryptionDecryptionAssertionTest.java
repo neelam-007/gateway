@@ -49,8 +49,6 @@ public class ServerSymmetricKeyEncryptionDecryptionAssertionTest {
 
     @Before
     public void setUp() {
-
-        System.setProperty("com.l7tech.security.prov.rsa.libpath.nonfips", "USECLASSPATH");
         JceProvider.init();
     }
 

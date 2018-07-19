@@ -1,7 +1,6 @@
 package com.l7tech.gateway.common.spring.remoting.http;
 
 import com.l7tech.gateway.common.spring.remoting.ssl.SSLTrustFailureHandler;
-import com.l7tech.security.prov.JceProvider;
 import com.l7tech.util.Background;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.SyspropUtil;

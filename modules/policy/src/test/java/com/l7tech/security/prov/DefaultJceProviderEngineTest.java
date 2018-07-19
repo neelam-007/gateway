@@ -1,7 +1,6 @@
-package com.l7tech.security.prov.rsa;
+package com.l7tech.security.prov;
 
 import com.l7tech.security.cert.TestCertificateGenerator;
-import com.l7tech.security.prov.JceProvider;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.Pair;
@@ -23,8 +22,8 @@ import static org.junit.Assert.*;
 /**
  *
  */
-public class RsaJceProviderEngineTest {
-    private static final Logger logger = Logger.getLogger(RsaJceProviderEngineTest.class.getName());
+public class DefaultJceProviderEngineTest {
+    private static final Logger logger = Logger.getLogger(DefaultJceProviderEngineTest.class.getName());
 
     // Unpadded 20 byte SHA-1 hash output to be signed
     private static final byte[] UNPADDED_20_BYTES = new byte[] { 29,-32,-40,21,-108,66,-111,87,90,6,-126,-127,113,-3,43,-25,-103,-96,15,45 };

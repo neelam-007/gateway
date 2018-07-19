@@ -77,7 +77,6 @@ public class XmlElementEncryptorTest {
 
     private static void useDefaultProvider() {
         Security.removeProvider( "WF" );
-        Security.removeProvider( "RsaJsse" );
         expectedRsaProvider = "SunJCE";
     }
 
