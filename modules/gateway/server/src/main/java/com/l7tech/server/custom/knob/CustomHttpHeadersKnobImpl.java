@@ -1,6 +1,6 @@
 package com.l7tech.server.custom.knob;
 
-import com.l7tech.message.HttpServletRequestKnob;
+import com.l7tech.message.HeadersKnob;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.ext.message.knob.CustomHttpHeadersKnob;
 
@@ -26,13 +26,11 @@ public class CustomHttpHeadersKnobImpl extends CustomMessageKnobBase implements 
 
     @Override
     public String[] getHeaderNames() {
-        final HttpServletRequestKnob requestKnob = message.getKnob(HttpServletRequestKnob.class);
-        return requestKnob == null ? new String[0] : requestKnob.getHeaderNames();
+        return message.getHeadersKnob().getHeaderNames(HeadersKnob.HEADER_TYPE_HTTP);
     }
 
     @Override
     public String[] getHeaderValues(final String name) {
-        final HttpServletRequestKnob requestKnob = message.getKnob(HttpServletRequestKnob.class);
-        return requestKnob == null ? new String[0] : requestKnob.getHeaderValues(name);
+        return message.getHeadersKnob().getHeaderValues(name, HeadersKnob.HEADER_TYPE_HTTP);
     }
 }

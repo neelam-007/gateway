@@ -2,6 +2,7 @@ package com.l7tech.server.custom.knob;
 
 import com.l7tech.common.io.NullOutputStream;
 import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.message.HeadersKnob;
 import com.l7tech.message.HttpRequestKnob;
 import com.l7tech.message.HttpServletRequestKnob;
 import com.l7tech.message.Message;
@@ -24,6 +25,7 @@ import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.ServerCustomAssertionHolder;
 import com.l7tech.server.policy.assertion.composite.ServerAllAssertion;
 import com.l7tech.server.policy.custom.CustomAssertionsPolicyTestBase;
+import com.l7tech.server.util.ServletUtils;
 import com.l7tech.util.IOUtils;
 
 import org.jetbrains.annotations.NotNull;
@@ -209,6 +211,10 @@ public class CustomMessageKnobTest extends CustomAssertionsPolicyTestBase {
 
         final String[] HEADER_NAMES = {"header1", "header2", "header3"};
         final String[][] HEADER_VALUES = {{"header1_value"}, {"header2_value"}, {"header3_multi_value1", "header3_multi_value2", "header3_multi_value3"}};
+        final String NEW_HEADER = "header4";
+        final String[] NEW_HEADER_VALUE = {"header4_value"};
+        final String[] RESULT_HEADER_NAMES = {HEADER_NAMES[0], HEADER_NAMES[2], NEW_HEADER};
+        final String[][] RESULT_HEADER_VALUES = {HEADER_VALUES[0], HEADER_VALUES[2], NEW_HEADER_VALUE};
 
         // create our assertion CustomAssertionHolder
         final CustomAssertionHolder customAssertionHolder = new CustomAssertionHolder();
@@ -244,9 +250,9 @@ public class CustomMessageKnobTest extends CustomAssertionsPolicyTestBase {
 
                 final CustomHttpHeadersKnob knob = sourceMsg.getKnob(CustomHttpHeadersKnob.class);
                 final String[] headerNames = knob.getHeaderNames();
-                assertTrue(Arrays.equals(headerNames, HEADER_NAMES));
+                assertTrue(Arrays.equals(headerNames, RESULT_HEADER_NAMES));
                 for (int i = 0; i < headerNames.length; ++i) {
-                    assertTrue(Arrays.equals(knob.getHeaderValues(headerNames[i]), HEADER_VALUES[i]));
+                    assertTrue(Arrays.equals(knob.getHeaderValues(headerNames[i]), RESULT_HEADER_VALUES[i]));
                 }
 
                 return CustomAssertionStatus.NONE;
@@ -265,6 +271,10 @@ public class CustomMessageKnobTest extends CustomAssertionsPolicyTestBase {
         // attach headers
         request.attachKnob(HttpRequestKnob.class, new HttpServletRequestKnob(mockHttpServletRequest));
         request.attachKnob(HttpServletRequestKnob.class, new HttpServletRequestKnob(mockHttpServletRequest));
+
+        ServletUtils.loadHeaders(mockHttpServletRequest, request);
+        request.getHeadersKnob().removeHeader(HEADER_NAMES[1], HeadersKnob.HEADER_TYPE_HTTP);
+        request.getHeadersKnob().addHeader(NEW_HEADER, NEW_HEADER_VALUE[0], HeadersKnob.HEADER_TYPE_HTTP);
         
         final PolicyEnforcementContext context = makeContext(request, new Message());
         final AssertionStatus status = serverCustomAssertionHolder.checkRequest(context);
