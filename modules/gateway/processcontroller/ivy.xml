@@ -24,8 +24,6 @@
         <dependency org="org.apache.neethi" name="neethi" rev="3.0.2" force="true" conf="core"/>
         <dependency org="org.apache.ws.xmlschema" name="xmlschema-core" rev="2.0.3" conf="core"/>
 
-        <dependency org="com.sun.xml.fastinfoset" name="FastInfoset" rev="1.2.11" force="true" conf="core"/>
-
         <dependency org="javax.inject" name="javax.inject" rev="1" force="true" conf="core"/>
 
         <dependency org="org.mortbay.jetty" name="jetty" rev="6.1.26-l7p" force="true" conf="core"/>

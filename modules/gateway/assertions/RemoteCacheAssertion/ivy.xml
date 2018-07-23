@@ -20,8 +20,6 @@
         <dependency org="net.spy.memcached" name="spymemcached" rev="2.7.3" force="true" conf="core"/>
         <dependency org="redis.clients" name="jedis" rev="2.9.0" force="true" conf="core"/>
         <dependency org="commons-pool2" name="commons-pool2" rev="2.4.1" force="true" conf="core"/>
-        <dependency org="gemfire" name="gemfire" rev="7.0.1" force="true" conf="compile"/>
-        <dependency org="net.sf.ehcache" name="ehcache-ee" rev="2.7.3" force="true" conf="optional"/>
         <dependency org="com.tangosol" name="coherence" rev="3.7.1.0" force="true" conf="compile"/>
         <dependency org="org.powermock" name="powermock-mockito-1.6.3-full" rev="1.6.3" force="true" conf="test"/>
     </dependencies>
