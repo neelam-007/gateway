@@ -27,6 +27,7 @@ import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import java.io.*;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -126,32 +127,9 @@ public class XmlUtil extends DomUtils {
         }
     };
 
-    private static final ThreadLocal<DocumentBuilder> documentBuilder = new ThreadLocal<DocumentBuilder>() {
-        private final DocumentBuilderFactory dbf =
-                configureDocumentBuilderFactory( DocumentBuilderFactory.newInstance(), true );
+    private static final DocumentBuilderPool documentBuilderPool = new DocumentBuilderPool(configureDocumentBuilderFactory( DocumentBuilderFactory.newInstance(), true));
+    private static final DocumentBuilderPool documentBuilderAllowingDoctypePool = new DocumentBuilderPool(configureDocumentBuilderFactory( DocumentBuilderFactory.newInstance(), false));
 
-        @Override
-        protected synchronized DocumentBuilder initialValue() {
-            try {
-                return configureDocumentBuilder( dbf.newDocumentBuilder() );
-            } catch ( ParserConfigurationException e) {
-                throw new RuntimeException(e); // can't happen
-            }
-        }
-    };
-    private static final ThreadLocal<DocumentBuilder> documentBuilderAllowingDoctype = new ThreadLocal<DocumentBuilder>() {
-        private final DocumentBuilderFactory dbfAllowingDoctype =
-                configureDocumentBuilderFactory( DocumentBuilderFactory.newInstance(), false );
-
-        @Override
-        protected synchronized DocumentBuilder initialValue() {
-            try {
-                return configureDocumentBuilder( dbfAllowingDoctype.newDocumentBuilder() );
-            } catch (ParserConfigurationException e) {
-                throw new RuntimeException(e); // can't happen
-            }
-        }
-    };
     private static final ThreadLocal<Canonicalizer> transparentXMLSerializer_XSS4J_W3C = new ThreadLocal<Canonicalizer>() {
         @Override
         protected Canonicalizer initialValue() {
@@ -223,18 +201,30 @@ public class XmlUtil extends DomUtils {
         return STRICT_ERROR_HANDLER;
     }
 
-    private static DocumentBuilder getDocumentBuilder() {
-        return documentBuilder.get();
+    private static Document parseWithDocumentBuilder(InputSource is) throws IOException, SAXException {
+        return parseWithDocumentBuilder(documentBuilderPool, b -> {}, is);
     }
 
-    private static DocumentBuilder getDocumentBuilderAllowingDoctype() {
-        return getDocumentBuilderAllowingDoctype(XSS4J_SAFE_ENTITY_RESOLVER);
+    private static Document parseWithDocumentBuilderAllowingDoctype(InputSource is) throws IOException, SAXException {
+        return parseWithDocumentBuilderAllowingDoctype(XSS4J_SAFE_ENTITY_RESOLVER, is);
     }
 
-    private static DocumentBuilder getDocumentBuilderAllowingDoctype( final EntityResolver entityResolver ) {
-        final DocumentBuilder builder = documentBuilderAllowingDoctype.get();
-        builder.setEntityResolver( entityResolver );
-        return builder;
+    private static Document parseWithDocumentBuilderAllowingDoctype(final EntityResolver entityResolver, InputSource is) throws IOException, SAXException {
+        return parseWithDocumentBuilder(documentBuilderAllowingDoctypePool, b -> b.setEntityResolver(entityResolver), is);
+    }
+
+    private static Document parseWithDocumentBuilder(final DocumentBuilderPool documentBuilderPool, Consumer<DocumentBuilder> documentBuilderAugmentor, InputSource is) throws IOException, SAXException {
+        logger.log(Level.FINE, "Getting Document Builder");
+        try (DocumentBuilderPooledObject builder = documentBuilderPool.borrowObject()) {
+            documentBuilderAugmentor.accept(builder);
+            return builder.parse(is);
+        } catch (IOException | SAXException e) {
+            throw e;
+        } catch (Exception e) {
+            // this should never happen, the document builder pool is configured to always grow
+            logger.warning("Failed to return document builder to pool: " + e.getMessage());
+            throw new DocumentBuilderAvailabilityException(e);
+        }
     }
 
     /**
@@ -284,7 +274,7 @@ public class XmlUtil extends DomUtils {
         return dbf;
     }
 
-    private static DocumentBuilder configureDocumentBuilder( final DocumentBuilder builder ) {
+    protected static DocumentBuilder configureDocumentBuilder(final DocumentBuilder builder) {
         builder.setEntityResolver(XSS4J_SAFE_ENTITY_RESOLVER);
         builder.setErrorHandler(QUIET_ERROR_HANDLER);
         return builder;
@@ -292,7 +282,14 @@ public class XmlUtil extends DomUtils {
 
     /** @return a new, empty DOM document with absolutely nothing in it. */
     public static Document createEmptyDocument() {
-        return getDocumentBuilder().newDocument();
+        logger.log(Level.FINE, "Getting Document Builder");
+        try (DocumentBuilderPooledObject docBuilder = documentBuilderPool.borrowObject()) {
+            return docBuilder.newDocument();
+        } catch (Exception e) {
+            // this should never happen, the document builder pool is configured to always grow
+            logger.warning("Failed to return document builder to pool: " + e.getMessage());
+            throw new DocumentBuilderAvailabilityException(e);
+        }
     }
 
     /**
@@ -309,9 +306,7 @@ public class XmlUtil extends DomUtils {
      * @return a new DOM document contianing only a single empty document element.  Never null.
      */
     public static Document createEmptyDocument(@NotNull String rootElementName, @Nullable String rootPrefix, @Nullable String rootNs) {
-        if (rootElementName == null)
-            throw new NullPointerException("rootElementName");
-        Document doc = getDocumentBuilder().newDocument();
+        Document doc = createEmptyDocument();
         final Element root;
         if (rootNs == null) {
             root = doc.createElement(rootElementName);
@@ -438,10 +433,9 @@ public class XmlUtil extends DomUtils {
      * @throws org.xml.sax.SAXException if there is a parsing error
      */
     public static Document parse(InputSource source, boolean allowDoctype) throws IOException, SAXException {
-        DocumentBuilder parser = allowDoctype
-                ? getDocumentBuilderAllowingDoctype()
-                : getDocumentBuilder();
-        return parser.parse(source);
+        return allowDoctype
+                ? parseWithDocumentBuilderAllowingDoctype(source)
+                : parseWithDocumentBuilder(source);
     }
 
     /**
@@ -465,8 +459,7 @@ public class XmlUtil extends DomUtils {
      */
     public static Document parse( final InputSource source,
                                   final EntityResolver entityResolver ) throws IOException, SAXException {
-        final DocumentBuilder parser = getDocumentBuilderAllowingDoctype( safeResolver(entityResolver) );
-        return parser.parse(source);
+        return parseWithDocumentBuilderAllowingDoctype(safeResolver(entityResolver), source);
     }
 
     @SuppressWarnings({"deprecation"})
@@ -739,8 +732,7 @@ public class XmlUtil extends DomUtils {
      */
     @SuppressWarnings({"deprecation"})
     public static String elementToXml(Element schema) throws IOException {
-        DocumentBuilder builder = getDocumentBuilder();
-        Document schemadoc = builder.newDocument();
+        Document schemadoc = createEmptyDocument();
         Element newRootNode = (Element)schemadoc.importNode(schema, true);
         schemadoc.appendChild(newRootNode);
         // remember all namespace declarations of parent elements
@@ -760,14 +752,15 @@ public class XmlUtil extends DomUtils {
             node = node.getParentNode();
         }
         // output to string
-        final StringWriter sw = new StringWriter(512);
-        XMLSerializer xmlSerializer = new XMLSerializer();
-        xmlSerializer.setOutputCharStream(sw);
-        OutputFormat of = new OutputFormat();
-        of.setIndent(4);
-        xmlSerializer.setOutputFormat(of);
-        xmlSerializer.serialize(schemadoc);
-        return sw.toString();
+        try (final StringWriter sw = new StringWriter(512)) {
+            XMLSerializer xmlSerializer = new XMLSerializer();
+            xmlSerializer.setOutputCharStream(sw);
+            OutputFormat of = new OutputFormat();
+            of.setIndent(4);
+            xmlSerializer.setOutputFormat(of);
+            xmlSerializer.serialize(schemadoc);
+            return sw.toString();
+        }
     }
 
     /**

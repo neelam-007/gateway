@@ -33,5 +33,6 @@
         <dependency org="org.apache.httpcomponents" name="httpcore" rev="4.2.4" force="true" conf="core"/>
         <dependency org="org.apache.httpcomponents" name="httpclient" rev="4.2.5" force="true" conf="core"/>
         <dependency org="org.apache.httpcomponents" name="httpmime" rev="4.2.5" force="true" conf="core"/>
+        <dependency org="commons-pool" name="commons-pool" rev="1.6" force="true" conf="core"/>
     </dependencies>
 </ivy-module>
