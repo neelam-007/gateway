@@ -2,7 +2,7 @@
 <ivy-module version="1.0">
 	<info organisation="com.whirlycott"
 		module="whirlycache"
-		revision="1.0.1"
+		revision="1.0.1-l7p1"
 		status="release"
 		publication="20080707125110"
 		default="true"

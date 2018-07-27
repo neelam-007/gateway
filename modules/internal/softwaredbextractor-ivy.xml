@@ -20,7 +20,7 @@
         <dependency org="commons-codec" name="commons-codec" rev="1.6" force="true" conf="core"/>
         <dependency org="commons-collections" name="commons-collections" rev="3.2.2" force="true" conf="core"/>
         <dependency org="commons-logging" name="commons-logging" rev="1.1.1" force="true" conf="core"/>
-        <dependency org="com.whirlycott" name="whirlycache" rev="1.0.1" force="true" conf="core"/>
+        <dependency org="com.whirlycott" name="whirlycache" rev="1.0.1-l7p1" force="true" conf="core"/>
 
         <!-- This needs the signed version of bouncy castle because it registers it as a provider. -->
         <exclude org="bouncycastle" module="bcprov-unsigned-jdk16" artifact="*" type="*" ext="jar" conf="*" matcher="exact" />

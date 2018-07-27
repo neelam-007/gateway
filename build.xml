@@ -1858,7 +1858,7 @@ ${versionfilecontent}
         <pack-mac jarfile="${build.dir}/managerapplet/lib/stax-ex-1.2.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/streambuffer-0.8.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/validation-api-1.0.0.GA.jar"/>
-        <pack-mac jarfile="${build.dir}/managerapplet/lib/whirlycache-1.0.1.jar"/>
+        <pack-mac jarfile="${build.dir}/managerapplet/lib/whirlycache-1.0.1-l7p1.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/wsdl4j-1.6.2-l7p3.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/xalan-2.7.2-l7p1.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/xalan-serializer-2.7.2.jar"/>
