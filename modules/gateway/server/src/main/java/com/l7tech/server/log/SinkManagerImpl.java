@@ -15,6 +15,7 @@ import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.cluster.ClusterContextFactory;
 import com.l7tech.server.cluster.ClusterInfoManager;
 import com.l7tech.server.event.EntityClassEvent;
+import com.l7tech.server.event.system.Started;
 import com.l7tech.server.event.system.SyslogEvent;
 import com.l7tech.server.log.syslog.SyslogConnectionListener;
 import com.l7tech.server.log.syslog.SyslogManager;
@@ -26,6 +27,7 @@ import com.l7tech.util.*;
 import com.l7tech.util.Functions.Unary;
 import com.l7tech.util.Functions.UnaryThrows;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.transaction.annotation.Propagation;
@@ -42,6 +44,7 @@ import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.text.MessageFormat;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -647,25 +650,52 @@ public class SinkManagerImpl
      * Install a syslog connection listener to audit connection errors.
      */
     private void installConnectionListener() {
-        syslogManager.setConnectionListener(new
-                                            SyslogConnectionListener(){
-                                                @Override
-                                                public void notifyConnected(final SocketAddress address) {
-                                                    fireEvent(address, true);
-                                                }
+        syslogManager.setConnectionListener(new CustomSyslogConnectionListener(applicationContext));
+    }
 
-                                                @Override
-                                                public void notifyDisconnected(final SocketAddress address) {
-                                                    fireEvent(address, false);
-                                                }
+    /**
+     * DE360516 : Gateway won't start when a syslog server is configured and enabled
+     *
+     * During Gateway Boot-up applicationContext tries to publish events, because of which it enters into a deadlock with main thread (inside Spring framework).
+     * The fix is to capture all the events in 'events' variable until the server has started and publish them after that.
+     */
+    private class CustomSyslogConnectionListener implements SyslogConnectionListener {
 
-                                                private void fireEvent(final SocketAddress address, final boolean connected) {
-                                                    if ( applicationContext != null ) {
-                                                        applicationContext.publishEvent(
-                                                                new SyslogEvent(SinkManagerImpl.this, address.toString(), connected));
-                                                    }
-                                                }
-                                            });
+        private final ApplicationContext applicationContext;
+        private final List<Pair<SocketAddress, Boolean>> events = new ArrayList<>();
+        private final AtomicBoolean started = new AtomicBoolean(false);
+
+        public CustomSyslogConnectionListener(final ApplicationContext applicationContext) {
+            this.applicationContext = applicationContext;
+            final ApplicationEventProxy eventProxy = applicationContext.getBean("applicationEventProxy", ApplicationEventProxy.class);
+            eventProxy.addApplicationListener(event -> {
+                if (event instanceof Started) {
+                    started.set(true);
+                    events.forEach(it -> fireEvent(it.left, it.right));
+                    events.clear();
+                }
+            });
+        }
+
+        @Override
+        public void notifyConnected(final SocketAddress address) {
+            fireEvent(address, true);
+        }
+
+        @Override
+        public void notifyDisconnected(final SocketAddress address) {
+            fireEvent(address, false);
+        }
+
+        private void fireEvent(final SocketAddress address, final boolean connected) {
+            if (applicationContext != null) {
+                if (started.get()) {
+                    applicationContext.publishEvent(new SyslogEvent(SinkManagerImpl.this, address.toString(), connected));
+                } else {
+                    events.add(new Pair<>(address, connected));
+                }
+            }
+        }
     }
 
     /**
