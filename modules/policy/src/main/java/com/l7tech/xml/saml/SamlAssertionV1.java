@@ -405,6 +405,7 @@ public class SamlAssertionV1 extends SamlAssertion {
                 }
             });
             WssProcessorAlgorithmFactory algFactory = new WssProcessorAlgorithmFactory();
+            algFactory.setVerifyMode(true);
             sigContext.setAlgorithmFactory(algFactory);
 
             KeyUsageChecker.requireActivity(KeyUsageActivity.verifyXml, signingCert);

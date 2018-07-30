@@ -130,7 +130,7 @@ public class XmlElementVerifier {
 
         final boolean[] sawMoreThanOneDigestMethod = { false };
         final String[] lastSeenDigestMethod = { null };
-        sigContext.setAlgorithmFactory(new WssProcessorAlgorithmFactory() {
+        WssProcessorAlgorithmFactory algFactory = new WssProcessorAlgorithmFactory() {
             @Override
             public MessageDigest getDigestMethod(String s) throws NoSuchAlgorithmException, NoSuchProviderException {
                 if (lastSeenDigestMethod[0] != null && !lastSeenDigestMethod[0].equals(s)) {
@@ -139,7 +139,9 @@ public class XmlElementVerifier {
                 lastSeenDigestMethod[0] = s;
                 return super.getDigestMethod(s);
             }
-        });
+        };
+        algFactory.setVerifyMode(true);
+        sigContext.setAlgorithmFactory(algFactory);
         Validity validity = DsigUtil.verify(sigContext, sigElement, signingKey);
 
         if (!validity.getCoreValidity()) {

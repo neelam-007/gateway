@@ -16,16 +16,21 @@ import javax.crypto.spec.IvParameterSpec;
 import java.security.*;
 import java.security.spec.AlgorithmParameterSpec;
 import java.util.Arrays;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
  */
 public class NcipherJceProviderEngine extends JceProvider {
+    private static final int UNDEFINED_POSITION = -1;
     final Provider PROVIDER;
     final Provider MESSAGE_DIGEST_PROVIDER;
     final Provider SOFTWARE_DH_PROVIDER;
 
     final long moduleId;
+
+    private static final Logger logger = Logger.getLogger(NcipherJceProviderEngine.class.getName());
 
     // A GCM IV full of zero bytes, for sanity checking IVs
     private static final byte[] ZERO_IV = new byte[12];
@@ -36,32 +41,54 @@ public class NcipherJceProviderEngine extends JceProvider {
             SyspropUtil.setProperty( "protect", "module" );
         }
 
-        boolean mostPref = "highest".equalsIgnoreCase(ConfigFactory.getProperty("com.l7tech.ncipher.preference", "default"));
+        final int specifiedPos = ConfigFactory.getIntProperty("com.l7tech.ncipher.position", UNDEFINED_POSITION);
+        if (specifiedPos == UNDEFINED_POSITION) {
+            // if no position explicitly specified, fall back to preference.
+            boolean mostPref = "highest".equalsIgnoreCase(ConfigFactory.getProperty("com.l7tech.ncipher.preference", "default"));
 
-        Provider existing =  Security.getProvider("nCipherKM");
-        if (null == existing) {
-            // Insert nCipher as highest-preference provider
-            PROVIDER = new nCipherKM();
-            if (mostPref) {
-                Security.insertProviderAt(PROVIDER, 1);
+            Provider existing =  Security.getProvider("nCipherKM");
+            if (null == existing) {
+                // Insert nCipher as highest-preference provider
+                PROVIDER = new nCipherKM();
+                if (mostPref) {
+                    Security.insertProviderAt(PROVIDER, 1);
+                } else {
+                    Security.addProvider(PROVIDER);
+                }
             } else {
-                Security.addProvider(PROVIDER);
+                if (mostPref) {
+                    PROVIDER = new nCipherKM();
+                    Security.removeProvider(existing.getName());
+                    Security.insertProviderAt(PROVIDER, 1);
+                } else {
+                    // Leave existing provider order unchanged
+                    PROVIDER = existing;
+                }
             }
         } else {
-            if (mostPref) {
+            logger.log(Level.FINE, "nCipherKM JCE Provider position requested: {0}", specifiedPos);
+
+            Provider existing = Security.getProvider("nCipherKM");
+
+            if (null == existing) {
+                // If no position already defined, insert nCipher provider at specified position
                 PROVIDER = new nCipherKM();
-                Security.removeProvider(existing.getName());
-                Security.insertProviderAt(PROVIDER, 1);
 
-                // TODO consider disabling all but RSA services from nCipherKM by setting system properties on command line:
-                //
-                // -Dcom.ncipher.provider.announcemode=off -Dcom.ncipher.provider.enable=Signature.SHA1withRSA,Signature.SHA256withRSA,Signature.SHA384withRSA,Signature.SHA512withRSA,KeyPairGenerator.RSA
-
+                // N.B. if adding as lowest priority, the actual position is not known until after statically defined providers have been loaded and this one appended
+                int actualPos = Security.insertProviderAt(PROVIDER, specifiedPos);
+                logger.log(Level.INFO, "nCipherKM JCE Provider inserted at position: {0}", actualPos);
             } else {
-                // Leave existing provider order unchanged
-                PROVIDER = existing;
+                // Remove existing nCipher provider and insert new instance at specified position
+                PROVIDER = new nCipherKM();
+
+                Security.removeProvider(existing.getName());
+                logger.log(Level.INFO, "Existing nCipherKM JCE Provider removed");
+
+                int actualPos = Security.insertProviderAt(PROVIDER, specifiedPos);
+                logger.log(Level.INFO, "nCipherKM JCE Provider inserted at position: {0}", actualPos);
             }
         }
+
         PROVIDER.remove("KeyStore.JKS"); // Bug #10109 - avoid message to STDERR from nCipher prov when third-party software loads truststores using JKS
         MESSAGE_DIGEST_PROVIDER = Security.getProvider("SUN"); // Bug #10327 - use Sun JDK provider for MD5, SHA-1, and SHA-2, if available, to avoid clobbering a nethsm with Sha512Crypt password hashes
         SOFTWARE_DH_PROVIDER = Security.getProvider("SunJCE"); // Bug #11810 - use Sun JDK provider for Diffie-Hellman KeyPairGenerator for JSCAPE software SFTP
@@ -118,7 +145,8 @@ public class NcipherJceProviderEngine extends JceProvider {
             return MESSAGE_DIGEST_PROVIDER;
         if (SERVICE_DIFFIE_HELLMAN_SOFTWARE.equals(service))
             return SOFTWARE_DH_PROVIDER;
-        if (SERVICE_SIGNATURE_RSA_PRIVATE_KEY.equals(service))
+        if (SERVICE_SIGNATURE_RSA_PRIVATE_KEY.equals(service) ||
+                service.startsWith(SERVICE_KEY_PAIR_GENERATOR_RSA))
             return PROVIDER;
         return super.getProviderFor(service);
     }

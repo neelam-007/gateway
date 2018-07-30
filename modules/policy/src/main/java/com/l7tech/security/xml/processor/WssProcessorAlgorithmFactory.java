@@ -21,7 +21,9 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.Provider;
+import java.security.Signature;
 import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.regex.Pattern;
 
 import static com.l7tech.util.CollectionUtils.set;
@@ -63,7 +65,12 @@ public class WssProcessorAlgorithmFactory extends AlgorithmFactoryExtn {
     private final Set<String> enabledDigestSet;
     private final Set<String> enabledTransformSet;
     private final String ecdsaProviderName;
-    
+
+    private static final Queue<RsaSha1SignatureMethod> rsaSha1VerificationPool = new ConcurrentLinkedQueue<>();
+    private static final boolean ENABLE_VERIFY_MODE =
+            ConfigFactory.getBooleanProperty("com.l7tech.security.xml.processor.enableIndependentSignAndVerifyCiphers", false);
+    private boolean verifyMode = false;
+
     /**
      * Create a basic algorithm factory
      */
@@ -129,12 +136,35 @@ public class WssProcessorAlgorithmFactory extends AlgorithmFactoryExtn {
 
     @Override
     public SignatureMethod getSignatureMethod(String uri, Object o) throws NoSuchAlgorithmException, NoSuchProviderException {
+        SignatureMethod signatureMethod;
+
         String sigMethod = ecdsaSignatureMethodTable.get(uri);
-        if (sigMethod == null) {
-            return checkSignatureMethod(super.getSignatureMethod(uri, o));
+        if (sigMethod != null) {
+            signatureMethod = new EcdsaSignatureMethod(sigMethod, uri, ecdsaProviderName);
+        } else if (ENABLE_VERIFY_MODE && verifyMode && SupportedSignatureMethods.RSA_SHA1.getAlgorithmIdentifier().equals(uri)) {
+            signatureMethod = rsaSha1VerificationPool.poll();
+
+            if (null == signatureMethod) {
+                signatureMethod = new RsaSha1SignatureMethod(Signature.getInstance("SHA1withRSA"), uri);
+            }
+        } else {
+            signatureMethod = super.getSignatureMethod(uri, o);
         }
 
-        return checkSignatureMethod(new EcdsaSignatureMethod(sigMethod, uri, ecdsaProviderName));
+        return checkSignatureMethod(signatureMethod);
+    }
+
+    public void setVerifyMode(boolean verifyMode) {
+        this.verifyMode = verifyMode;
+    }
+
+    @Override
+    public void releaseSignatureMethod(SignatureMethod sm) {
+        if (sm instanceof RsaSha1SignatureMethod) {
+            rsaSha1VerificationPool.add((RsaSha1SignatureMethod) sm);
+        } else {
+            super.releaseSignatureMethod(sm);
+        }
     }
 
     private SignatureMethod checkSignatureMethod(SignatureMethod signatureMethod) throws NoSuchAlgorithmException {
@@ -210,6 +240,7 @@ public class WssProcessorAlgorithmFactory extends AlgorithmFactoryExtn {
     }
 
     public static void clearAlgorithmPools() {
+        rsaSha1VerificationPool.clear();
         rsaPool.clear();
         dsaPool.clear();
         sha1Pool.clear();

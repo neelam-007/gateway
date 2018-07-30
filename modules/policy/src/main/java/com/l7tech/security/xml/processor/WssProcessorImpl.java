@@ -2187,7 +2187,10 @@ public class WssProcessorImpl implements WssProcessor {
                 }
             }
         });
-        sigContext.setAlgorithmFactory(new WssProcessorAlgorithmFactory(strToTarget));
+
+        WssProcessorAlgorithmFactory algFactory = new WssProcessorAlgorithmFactory(strToTarget);
+        algFactory.setVerifyMode(true);
+        sigContext.setAlgorithmFactory(algFactory);
         KeyUsageChecker.requireActivityForKey(KeyUsageActivity.verifyXml, signingCert, signingKey);
         Validity validity = DsigUtil.verify(sigContext, sigElement, signingKey);
 

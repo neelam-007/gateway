@@ -310,6 +310,7 @@ public class ServerProcessSamlAuthnRequestAssertion extends AbstractMessageTarge
                 }
             });
             final WssProcessorAlgorithmFactory algFactory = new WssProcessorAlgorithmFactory();
+            algFactory.setVerifyMode(true);
             sigContext.setAlgorithmFactory(algFactory);
             try {
                 KeyUsageChecker.requireActivity( KeyUsageActivity.verifyXml, signingCert);

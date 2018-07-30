@@ -70,6 +70,7 @@ public abstract class JceProvider {
     public static final String SERVICE_TLS10 = "SSLContext.TLSv1";   // Not the real service name, but lets us distinguish
     public static final String SERVICE_TLS12 = "SSLContext.TLSv1.2"; // SunJSSE from RsaJsse on the basis of which one (currently) support TLSv1.2
     public static final String SERVICE_DIFFIE_HELLMAN_SOFTWARE = "KeyPairGenerator.DiffieHellmanSoftware";
+    public static final String SERVICE_KEY_PAIR_GENERATOR_RSA = "KeyPairGenerator.RSA";
 
     private static final String SYSPROP_SSL_DEBUG = "javax.net.debug";
 
