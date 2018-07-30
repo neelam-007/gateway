@@ -1,0 +1,3 @@
+The officially uploaded version of wirlycache to mavencentral is missing the MessagesBundle. The version here contains it.
+
+More details: https://code.google.com/archive/p/whirlycache/issues/3
