@@ -59,14 +59,18 @@ public class CrlCacheImpl implements CrlCache, DisposableBean {
     private final HttpObjectCache<X509CRL> httpObjectCache;
     private final ExecutorService executor;
     private final Config config;
-    private static final long MAX_CACHE_AGE_VALUE = 30000;
+    private static final String CRL_CACHE_EXPIRY = "pkixCRL.cache.expiry";
+    private static final long DEFAULT_CRL_CACHE_EXPIRY = 300000;
+    private static final String CRL_CACHE_PREEXPIRY = "pkixCRL.cache.preexpiry";
+    private static final long DEFAULT_CRL_CACHE_PREEXPIRY = 60000;
+    private static final String INVALIDATE_CRL_CACHE_ON_NEXT_UPDATE = "pkixCRL.invalidateCrlCacheOnNextUpdate";
     private static final int DEFAULT_CACHE_THREADS = 3;
     private static final int DEFAULT_MAX_HTTP_CACHE_OBJECTS_SIZE = 1000;
     private static final String MAX_HTTP_CACHE_OBJECTS_PROP = "com.l7tech.server.security.cert.crlCacheSize";
 
     protected static final String PROP_MAX_CRL_SIZE = "pkixCRL.maxSize";
     protected static final int DEFAULT_MAX_CRL_SIZE = 1024 * 1024;
-    
+
     public CrlCacheImpl( final GenericHttpClientFactory httpClientFactory,
                          final Config config,
                          final Timer cacheTimer ) throws Exception {
@@ -74,8 +78,10 @@ public class CrlCacheImpl implements CrlCache, DisposableBean {
         this.certCache = WhirlycacheFactory.createCache(CrlCache.class.getSimpleName() + ".certCache", 1000, 1800, WhirlycacheFactory.POLICY_LRU);
 
         this.config = config;
-        final long maxCacheAge = config.getTimeUnitProperty( "pkixCRL.cache.expiry", 300000 );
-        final long cacheExpiry = config.getTimeUnitProperty( "pkixCRL.cache.preexpiry", 60000 );
+        final long maxCacheAge = config.getTimeUnitProperty( CRL_CACHE_EXPIRY, DEFAULT_CRL_CACHE_EXPIRY );
+        final long cachePreExpiry = config.getTimeUnitProperty( CRL_CACHE_PREEXPIRY, DEFAULT_CRL_CACHE_PREEXPIRY );
+
+
         int cacheThreads = config.getIntProperty("pkixCRL.cache.threads", DEFAULT_CACHE_THREADS);
         if ( cacheThreads < 0 || cacheThreads > 100 ) {
             cacheThreads = DEFAULT_CACHE_THREADS;
@@ -107,7 +113,7 @@ public class CrlCacheImpl implements CrlCache, DisposableBean {
                 DEFAULT_MAX_CRL_SIZE);
 
         executor = buildExecutor( cacheThreads );
-        scheduleCacheRefresh( cacheTimer, cacheExpiry );
+        scheduleCacheRefresh( cacheTimer, cachePreExpiry );
     }
 
     @Override
@@ -129,15 +135,16 @@ public class CrlCacheImpl implements CrlCache, DisposableBean {
             byte[] der;
 
             if ( ArrayUtils.compareArrays(data, 0, pemPrefix, 0, pemPrefix.length) ) {
-                BufferedReader br = new BufferedReader(new StringReader(new String(data,encoding)));
-                StringBuilder base64 = new StringBuilder();
-                if (!br.readLine().trim().equals(CertUtils.PEM_CRL_BEGIN_MARKER)) throw new IllegalArgumentException("First line doesn't look like PEM");
-                String line;
-                while (!(line = br.readLine().trim()).equals( CertUtils.PEM_CRL_END_MARKER)) {
-                    base64.append(line).append("\n");
+                try (BufferedReader br = new BufferedReader(new StringReader(new String(data,encoding)))) {
+                    StringBuilder base64 = new StringBuilder();
+                    if (!br.readLine().trim().equals(CertUtils.PEM_CRL_BEGIN_MARKER))
+                        throw new IllegalArgumentException("First line doesn't look like PEM");
+                    String line;
+                    while (!(line = br.readLine().trim()).equals(CertUtils.PEM_CRL_END_MARKER)) {
+                        base64.append(line).append("\n");
+                    }
+                    der = HexUtils.decodeBase64(base64.toString());
                 }
-
-                der = HexUtils.decodeBase64(base64.toString());
             } else {
                 der = data;
             }
@@ -199,16 +206,20 @@ public class CrlCacheImpl implements CrlCache, DisposableBean {
                     } else {
                         throw new CRLException("Unsupported CRL URL scheme: " + crlUrl);
                     }
-                }
-                catch (IOException ioe){
+                    auditor.logAndAudit(SystemMessages.CERTVAL_REV_CACHE_UPDATE, "CRL", crlUrl);
+                } catch (IOException ioe){
                     //failed to grab CRL from LDAP(s) or HTTP(s), so we should try to reuse the cache version
-                    if ( cachedCRL != null ) {
-
+                    if ( cachedCRL != null) {
+                        boolean invalidateCrlCacheOnNextUpdate = config.getBooleanProperty(INVALIDATE_CRL_CACHE_ON_NEXT_UPDATE, false );
+                        if (invalidateCrlCacheOnNextUpdate && cachedCRL.getNextUpdate() != null && cachedCRL.getNextUpdate().getTime() <= System.currentTimeMillis()) {
+                            //CRL's next update is considered as expiration date of the CRL. if this date passes, SSG should invalidate certificates that are checked against this CRL
+                            logger.severe("CRL [" + crlUrl + "] is beyond validity period, hence no longer used for revocation");
+                            throw ioe;
+                        }
                         //we do have a cached CRL, we should use it
                         auditor.logAndAudit(SystemMessages.CERTVAL_REV_USE_CACHE, "CRL", crlUrl, new Date(crlCacheEntry.refresh).toString());
                         crl = cachedCRL;    //return the cached CRL to be used
-                    }
-                    else {
+                    } else {
                         //we do not have a cached CRL, so we need to throw IOException
                         throw ioe;
                     }
@@ -278,13 +289,13 @@ public class CrlCacheImpl implements CrlCache, DisposableBean {
         }
     }
 
-    private void scheduleCacheRefresh( final Timer cacheTimer, final long cacheExpiry ) {
+    private void scheduleCacheRefresh( final Timer cacheTimer, final long cachePreExpiry ) {
         if ( executor != null && cacheTimer != null ) {
             cacheTimer.schedule( new TimerTask(){
                 @Override
                 public void run() {
                     try {
-                        httpObjectCache.serviceCache( executor, cacheExpiry );
+                        httpObjectCache.serviceCache( executor, cachePreExpiry );
                     } catch ( Exception e ) {
                         logger.log( Level.WARNING, "Error during CRL cache refresh.", e );
                     }

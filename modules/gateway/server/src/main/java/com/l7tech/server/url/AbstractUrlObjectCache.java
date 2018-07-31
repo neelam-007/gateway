@@ -291,6 +291,7 @@ public abstract class AbstractUrlObjectCache<UT> implements UrlResolver<UT> {
      * @param preExpiryTime The time offset for cache expiry checks (is expired in preExpiryTime millis?)
      */
     public void serviceCache( final Executor executor, final long preExpiryTime ) {
+        logger.log( Level.FINEST, "Processing the cache refresh");
         final long threadId = Thread.currentThread().getId();
         final Lock readLock = getReadLock();
 
@@ -441,6 +442,7 @@ public abstract class AbstractUrlObjectCache<UT> implements UrlResolver<UT> {
     {
         // We are the only thread permitted to write to the cache entry, but we'll still need to synchronize writes
         // so readers will be guaranteed to pick them up.
+        logger.log(Level.FINER, () -> "Polling the URL : " + urlStr);
         long requestStart = clock.currentTimeMillis();
 
         UT entryObject;
@@ -475,6 +477,8 @@ public abstract class AbstractUrlObjectCache<UT> implements UrlResolver<UT> {
             }
             FetchResult<UT> ret = doSuccessfulDownload(entry, requestStart, lastSuccessfulPollStarted, userObjectModified, userObjectETag, userObject);
             reported = true;
+            final Date refreshedDate = new Date(requestStart);
+            logger.log( Level.FINE, () -> "Refreshed the cached entry : " + entry.url + " at " + refreshedDate);
             return ret;
         } catch (IOException e) {
             FetchResult<UT> ret = doFailedDownload(entry, e);
