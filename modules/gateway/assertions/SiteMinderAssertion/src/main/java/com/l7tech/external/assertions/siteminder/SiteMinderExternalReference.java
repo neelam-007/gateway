@@ -163,8 +163,8 @@ public class SiteMinderExternalReference extends ExternalReference {
     @Override
     protected boolean localizeAssertion(@Nullable Assertion assertionToLocalize) {
         if (localizeType != LocalizeAction.IGNORE) {
-            if (assertionToLocalize instanceof SiteMinderCheckProtectedAssertion) {
-                final SiteMinderCheckProtectedAssertion assertion = (SiteMinderCheckProtectedAssertion) assertionToLocalize;
+            if (assertionToLocalize instanceof SiteMinderAgentReference) {
+                final SiteMinderAgentReference assertion = (SiteMinderAgentReference) assertionToLocalize;
                 final Goid agentGoid = assertion.getAgentGoid();
                 if ((siteMinderConfiguration != null && agentGoid.equals(siteMinderConfiguration.getGoid())) || (identifier != null && agentGoid.equals(identifier))) { // The purpose of "equals" is to find the right assertion and update it using localized value.
                     if (localizeType == LocalizeAction.REPLACE) {

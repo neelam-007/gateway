@@ -21,10 +21,10 @@ public class SiteMinderExternalReferenceFactory extends ExternalReferenceFactory
 
     @Override
     public ExternalReference createExternalReference(ExternalReferenceFinder finder, Assertion assertion) {
-        if (!(assertion instanceof SiteMinderCheckProtectedAssertion)) {
-            throw new IllegalArgumentException("The assertion is not a CA Single Sign-On Check Protected Assertion.");
+        if (!(assertion instanceof SiteMinderAgentReference)) {
+            throw new IllegalArgumentException("The assertion is not a CA Single Sign-On Assertion that references SSO Agent Configuration.");
         }
-        return new SiteMinderExternalReference(finder, ((SiteMinderCheckProtectedAssertion) assertion).getAgentGoid());
+        return new SiteMinderExternalReference(finder, ((SiteMinderAgentReference) assertion).getAgentGoid());
     }
 
     @Override

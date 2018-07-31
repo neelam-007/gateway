@@ -23,7 +23,7 @@ import static com.l7tech.objectmodel.ExternalEntityHeader.ValueType.TEXT_ARRAY;
  * @author ymoiseyenko
  * Date: 7/12/13
  */
-public class SiteMinderCheckProtectedAssertion extends Assertion implements MessageTargetable, UsesVariables, SetsVariables, UsesEntities{
+public class SiteMinderCheckProtectedAssertion extends Assertion implements MessageTargetable, UsesVariables, SetsVariables, UsesEntities, SiteMinderAgentReference {
  
     public static final String DEFAULT_PREFIX = "siteminder";
 
@@ -56,18 +56,22 @@ public class SiteMinderCheckProtectedAssertion extends Assertion implements Mess
 
 
     @Dependency(type = Dependency.DependencyType.SITEMINDER_CONFIGURATION, methodReturnType = Dependency.MethodReturnType.GOID)
+    @Override
     public Goid getAgentGoid() {
         return agentGoid;
     }
 
+    @Override
     public void setAgentGoid(Goid agentID) {
         this.agentGoid = agentID;
     }
 
+    @Override
     public String getAgentId() {
         return agentId;
     }
 
+    @Override
     public void setAgentId(String agentId) {
         this.agentId = agentId;
     }

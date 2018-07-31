@@ -2,9 +2,19 @@ package com.ca.siteminder;
 
 import com.ca.siteminder.util.SiteMinderUtil;
 import com.l7tech.util.ConfigFactory;
+import com.netegrity.sdk.apiutil.SmApiConnection;
+import com.netegrity.sdk.apiutil.SmApiException;
+import com.netegrity.sdk.apiutil.SmApiResult;
+import com.netegrity.sdk.apiutil.SmApiSession;
+import com.netegrity.sdk.dmsapi.*;
+import com.netegrity.sdk.policyapi.SmPolicyApi;
+import com.netegrity.sdk.policyapi.SmPolicyApiImpl;
+import com.netegrity.sdk.policyapi.SmUserDirectory;
 import netegrity.siteminder.javaagent.*;
 import org.apache.commons.lang.StringUtils;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -22,6 +32,7 @@ public class SiteMinderLowLevelAgent {
 
     private static final Logger logger = Logger.getLogger(SiteMinderLowLevelAgent.class.getName());
     private static final Map<String, String> defaultAcoAttrMap = new HashMap<>();
+    private static final String FAIL_MESSAGE = "Failed to change user password: ";
 
     private boolean initialized = false;
 
@@ -520,6 +531,206 @@ public class SiteMinderLowLevelAgent {
         }
 
         return retCode == AgentAPI.YES;
+    }
+
+    /**
+     * Changes the password of the specified user DN.
+     *
+     * @param adminUsername the SiteMinder administrator username
+     * @param adminPassword the SiteMinder administrator password
+     * @param domOid the object ID of the domain
+     * @param username the username
+     * @param oldPassword the old password
+     * @param newPassword the new password
+     * @return the reason code. Returns 0 if successful.
+     * @throws SiteMinderApiClassException
+     */
+    int changePassword(
+            final String adminUsername,
+            final String adminPassword,
+            final String domOid,
+            final String username,
+            final String oldPassword,
+            final String newPassword) throws SiteMinderApiClassException {
+        SmApiSession apiSession = null;
+        try {
+            apiSession = this.getAdminApiSession(adminUsername, adminPassword);
+
+            final SmDmsUser dmsUser = this.findUserFromUserDirectory(apiSession, domOid, username);
+            boolean doNotRequireOldPassword = false;
+            SmApiResult result = dmsUser.changePassword(newPassword, oldPassword, doNotRequireOldPassword);
+            if (!result.isSuccess()) {
+                if (result.getReason() == 1003 && result.getMessage() != null && (result.getMessage().contains("data 773,") || result.getMessage().contains("data 532,"))) {
+                    // SmDmsUser#changePassword() failed due to password must change or password has expired
+                    // when doNotRequireOldPassword is true, even though correct old password is provided.
+                    // As a workaround, call SmDmsUser#changePassword() again with doNotRequireOldPassword set to true.
+                    // When doNotRequireOldPassword is true, it doesn't check old password and resets the password
+                    // to new password
+                    // "data 773," means ERROR_PASSWORD_MUST_CHANGE
+                    // "data 532," means ERROR_PASSWORD_EXPIRED
+                    //
+                    logger.log(Level.FINE, "Failed to change user password. Password must change or password is expired. Attempting to change user again with doNotRequireOldPassword set to false: {0}", result);
+                    doNotRequireOldPassword = true;
+                    result = dmsUser.changePassword(newPassword, oldPassword, doNotRequireOldPassword);
+                    if (!result.isSuccess()) {
+                        logger.log(Level.WARNING, "Failed to change user password: {0}",result);
+                    }
+                } else {
+                    logger.log(Level.WARNING, "Failed to change user password: {0}",result);
+                     if (result.getReason() == 0) {
+                        // It's possible that result.isSuccess() returns false to indicate failure but reason is still set to 0.
+                        // In this case, throw an exception.
+                        throw new SiteMinderApiClassException(FAIL_MESSAGE + result.getMessage());
+                    }
+                }
+            }
+            return result.getReason();
+        } catch (SmApiException | UnknownHostException e) {
+            logger.log(Level.WARNING, "An error occurred attempting to change user password", e);
+            throw new SiteMinderApiClassException("An error occurred attempting to change user password", e);
+        } finally {
+            if (apiSession != null) {
+                try {
+                    final SmApiResult result = apiSession.logout();
+                    if (!result.isSuccess()) {
+                        logger.log(Level.WARNING, "Failed to end administrator session: {0}", result);
+                    }
+                } catch (SmApiException e) {
+                    logger.log(Level.WARNING, "An error occurred attempting to end administrator session", e);
+                }
+            }
+        }
+    }
+
+    /**
+     * Enables the user account of the specified user DN.
+     *
+     * @param adminUsername the SiteMinder administrator username
+     * @param adminPassword the SiteMinder administrator password
+     * @param domOid the object ID of the domain
+     * @param username the username
+     * @return the reason code. Returns 0 if successful.
+     * @throws SiteMinderApiClassException
+     */
+    int enableUser(
+            final String adminUsername,
+            final String adminPassword,
+            final String domOid,
+            final String username) throws SiteMinderApiClassException {
+        SmApiSession apiSession = null;
+        try {
+            apiSession = this.getAdminApiSession(adminUsername, adminPassword);
+            final SmDmsUser dmsUser = this.findUserFromUserDirectory(apiSession, domOid, username);
+            final SmApiResult result = dmsUser.setEnable();
+            if (!result.isSuccess()) {
+                logger.log(Level.WARNING, "Failed to enable user account: {0}", result);
+            }
+            return result.getReason();
+        } catch (SmApiException | UnknownHostException e) {
+            logger.log(Level.WARNING, "An error occurred attempting to enable user account", e);
+            throw new SiteMinderApiClassException("An error occurred attempting to enable user account", e);
+        } finally {
+            if (apiSession != null) {
+                try {
+                    final SmApiResult result = apiSession.logout();
+                    if (!result.isSuccess()) {
+                        logger.log(Level.WARNING, "Failed to end administrator session: {0}", result);
+                    }
+                } catch (SmApiException e) {
+                    logger.log(Level.WARNING, "An error occurred attempting to end administrator session", e);
+                }
+            }
+        }
+    }
+
+    private SmApiSession getAdminApiSession (final String adminUsername, final String adminPassword) throws UnknownHostException, SmApiException, SiteMinderApiClassException {
+        final SmApiConnection apiConnection = new SmApiConnection(agentApi);
+        final SmApiSession apiSession = new SmApiSession(apiConnection);
+
+        final int challengeReason = 0;
+        SmApiResult result = apiSession.login(adminUsername, adminPassword, InetAddress.getByName(agentConfig.getAddress()), challengeReason);
+        if (!result.isSuccess()) {
+            logger.log(Level.WARNING, "Failed to create administrator session: {0}", result);
+            throw new SiteMinderApiClassException("Failed to create administrator session: " + result.getMessage());
+        }
+        return apiSession;
+    }
+
+    private SmDmsUser findUserFromUserDirectory (final SmApiSession apiSession, final String domOid, final String username) throws SmApiException, SiteMinderApiClassException {
+        // Find User Directory using DMS Directory Context
+        SmApiResult result;
+
+        final SmPolicyApi policyApi = new SmPolicyApiImpl(apiSession);
+
+        // Find all user directories for the specified domain.
+        //
+        Vector dirs = new Vector();
+        result = policyApi.getUserDirSearchOrder(domOid, dirs);
+        if (!result.isSuccess()) {
+            logger.log(Level.WARNING, "Failed to get user directories: {0}", result);
+            throw new SiteMinderApiClassException("Failed to get user directories: " + result.getMessage());
+        }
+        logger.log(Level.FINE, "Found {0} user directories", new Object[] { dirs.size() });
+
+        // Search for user in each user directory until user is found.
+        //
+        for (Object dir : dirs) {
+            String userDirectoryName = (String) dir;
+            logger.log(Level.FINE, "Searching user directory ''{0}''", new Object[] { userDirectoryName });
+
+            final SmUserDirectory userDir = new SmUserDirectory();
+            result = policyApi.getUserDirectory(userDirectoryName, userDir);
+            if (!result.isSuccess()) {
+                logger.log(Level.FINE, "Failed to get user directory ''{0}'': {1}", new Object[] { userDirectoryName, result.getMessage() });
+            }
+
+            final String userDirNamespace = userDir.getNamespace();
+            logger.log(Level.FINE, "Found user directory ''{0}'' with namespace ''{1}''", new Object[] { userDirectoryName, userDirNamespace });
+
+            if ( !"AD:".equals(userDirNamespace) && !SmUserDirectory.LDAP_NAMESPACE.equals(userDirNamespace) ) {
+                // TODO: Include queryFilter input option in the assertion UI to support other user directory namespace (ie. ODBC, Custom).
+                // queryFilter can represented as a tuple of search objects to enumerate over when multiple directory exist/configured.
+                logger.log(Level.FINE, "Skipping user directory ''{0}''. Namespace ''{1}'' not supported.", new Object[] { userDirectoryName, userDirNamespace });
+                continue;
+            }
+
+            final SmDmsApi dmsApi = new SmDmsApiImpl(apiSession);
+            final SmDmsDirectoryContext dirContext = new SmDmsDirectoryContext();
+            result = dmsApi.getDirectoryContext(userDir, new SmDmsConfig(), dirContext);
+            if (!result.isSuccess()) {
+                logger.log(Level.FINE, "Failed to get directory context for user directory ''{0}'': {1}", new Object[] { userDirectoryName, result.getMessage() });
+            }
+
+            final String searchRoot = userDir.getSearchRoot();
+            final String searchFilter = userDir.getUserLookupStart() + username + userDir.getUserLookupEnd();
+            logger.log(Level.FINE, "Searching user directory ''{0}'' with search filter ''{1}'' starting at ''{2}''", new Object[] { userDirectoryName, searchFilter, searchRoot });
+
+            final SmDmsSearch search = new SmDmsSearch(searchFilter, searchRoot);
+            search.setScope(2); // Search whole tree.
+            search.setNextItem(0);
+            search.setPreviousItem(0);
+
+            final SmDmsDirectory dmsDir = dirContext.getDmsDirectory();
+            final SmDmsOrganization orgRoot = dmsDir.newOrganization(searchRoot);
+            result = orgRoot.search(search, SmDmsSearch.Forward);
+            if (!result.isSuccess()) {
+                logger.log(Level.FINE, "Failed to search user directory ''{0}'': {1}", new Object[] { userDirectoryName, result.getMessage() });
+            }
+
+            final List results = search.getResults();
+            // The first item is always SmDmsSearchResultParams.
+            final SmDmsSearchResultParams searchParams = (SmDmsSearchResultParams) results.get(0);
+            if (searchParams.m_nItemsFound == 1) {
+                // The second item is the user.
+                logger.log(Level.FINE, "Found user in user directory ''{0}''", new Object[]{userDirectoryName});
+                return (SmDmsUser) results.get(1);
+            } else if (searchParams.m_nItemsFound != 0) {
+                logger.log(Level.FINE, "Unexpected number of users found in user directory ''{0}'': {1}", new Object[] { userDirectoryName, searchParams });
+            }
+            // else, user is not found in user directory. No need to log this.
+        }
+
+        throw new SiteMinderApiClassException("Failed to find user in user directories.");
     }
 
     /**

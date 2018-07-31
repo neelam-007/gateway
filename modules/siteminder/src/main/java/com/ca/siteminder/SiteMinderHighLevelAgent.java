@@ -319,6 +319,66 @@ public class SiteMinderHighLevelAgent {
     }
 
     /**
+     * Changes the password of the specified user DN.
+     *
+     * @param adminUsername the SiteMinder administrator username
+     * @param adminPassword the SiteMinder administrator password
+     * @param domOid the object ID of the domain
+     * @param username the username
+     * @param oldPassword the old password
+     * @param newPassword the new password
+     * @return the reason code. Returns 0 if successful.
+     * @throws SiteMinderApiClassException
+     */
+    public int processChangePasswordRequest(
+            final String adminUsername,
+            final String adminPassword,
+            final String domOid,
+            final String username,
+            final String oldPassword,
+            final String newPassword,
+            final SiteMinderContext context) throws SiteMinderApiClassException {
+        if(context == null) {
+            throw new SiteMinderApiClassException("SiteMinderContext object is null!");//should never happen
+        }
+
+        final SiteMinderLowLevelAgent agent = context.getAgent();
+        if(agent == null) {
+            throw new SiteMinderApiClassException("Unable to find CA Single Sign-On Agent");
+        }
+
+        return agent.changePassword(adminUsername, adminPassword, domOid, username, oldPassword, newPassword);
+    }
+
+    /**
+     * Enables the user account of the specified user DN.
+     *
+     * @param adminUsername the SiteMinder administrator username
+     * @param adminPassword the SiteMinder administrator password
+     * @param domOid the object ID of the domain
+     * @param username the username
+     * @return the reason code. Returns 0 if successful.
+     * @throws SiteMinderApiClassException
+     */
+    public int processEnableUserRequest(
+            final String adminUsername,
+            final String adminPassword,
+            final String domOid,
+            final String username,
+            final SiteMinderContext context) throws SiteMinderApiClassException {
+        if(context == null) {
+            throw new SiteMinderApiClassException("SiteMinderContext object is null!");//should never happen
+        }
+
+        final SiteMinderLowLevelAgent agent = context.getAgent();
+        if(agent == null) {
+            throw new SiteMinderApiClassException("Unable to find CA Single Sign-On Agent");
+        }
+
+        return agent.enableUser(adminUsername, adminPassword, domOid, username);
+    }
+
+    /**
      * Perform authentication if required, and authorize the session against the specified resource.
      *
      * @param credentials the user credentials

@@ -1,12 +1,14 @@
 package com.l7tech.external.assertions.siteminder.server;
 
-import com.l7tech.external.assertions.siteminder.SiteMinderExternalReferenceFactory;
+import com.l7tech.external.assertions.siteminder.*;
 import com.l7tech.server.policy.export.PolicyExporterImporterManager;
 import org.springframework.context.ApplicationContext;
 
 public class SiteMinderModuleLoadListener {
     private static PolicyExporterImporterManager policyExporterImporterManager;
-    private static SiteMinderExternalReferenceFactory externalReferenceFactory;
+    private static SiteMinderExternalReferenceFactory externalReferenceFactory; // external reference factory for SiteMinderCheckProtectedAssertion
+    private static SiteMinderExternalReferenceFactory changePasswordExternalReferenceFactory;
+    private static SiteMinderExternalReferenceFactory enableUserExternalReferenceFactory;
 
     public static synchronized void onModuleLoaded(final ApplicationContext context) {
         registerExternalReferenceFactory(context);
@@ -25,12 +27,32 @@ public class SiteMinderModuleLoadListener {
 
         externalReferenceFactory = new SiteMinderExternalReferenceFactory();
         policyExporterImporterManager.register(externalReferenceFactory);
+
+        changePasswordExternalReferenceFactory= new SiteMinderExternalReferenceFactory(
+                SiteMinderChangePasswordAssertion.class, SiteMinderExternalReference.class);
+        policyExporterImporterManager.register(changePasswordExternalReferenceFactory);
+
+        enableUserExternalReferenceFactory= new SiteMinderExternalReferenceFactory(
+                SiteMinderEnableUserAssertion.class, SiteMinderExternalReference.class);
+        policyExporterImporterManager.register(enableUserExternalReferenceFactory);
     }
 
     private static void unregisterExternalReferenceFactory() {
-        if (policyExporterImporterManager != null && externalReferenceFactory!=null) {
-            policyExporterImporterManager.unregister(externalReferenceFactory);
-            externalReferenceFactory = null;
+        if (policyExporterImporterManager != null) {
+            if (externalReferenceFactory != null) {
+                policyExporterImporterManager.unregister(externalReferenceFactory);
+                externalReferenceFactory = null;
+            }
+
+            if (changePasswordExternalReferenceFactory != null) {
+                policyExporterImporterManager.unregister(changePasswordExternalReferenceFactory);
+                changePasswordExternalReferenceFactory = null;
+            }
+
+            if (enableUserExternalReferenceFactory != null) {
+                policyExporterImporterManager.unregister(enableUserExternalReferenceFactory);
+                enableUserExternalReferenceFactory = null;
+            }
         }
     }
 }
