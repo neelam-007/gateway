@@ -33,7 +33,7 @@ public class LocalCounterStoreTest {
         underTest = new LocalCounterStore();
         underTest.init();
 
-        clock = Instant.ofEpochMilli(0L);
+        clock = Instant.now().truncatedTo(ChronoUnit.DAYS);
     }
 
     /**

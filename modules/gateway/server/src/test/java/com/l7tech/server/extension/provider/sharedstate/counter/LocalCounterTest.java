@@ -10,15 +10,15 @@ import java.time.temporal.ChronoUnit;
 
 import static org.junit.Assert.assertEquals;
 
-public class CounterTest {
+public class LocalCounterTest {
 
     private static final String name = "localCounter";
 
-    private Counter underTest;
+    private LocalCounter underTest;
 
     @Before
     public void setUp() throws Exception {
-        underTest = new Counter(name);
+        underTest = new LocalCounter(name);
     }
 
     @Test
@@ -28,73 +28,73 @@ public class CounterTest {
 
     @Test
     public void get_afterIncrementingCounterBy10_returns10ForAllCounterFields() {
-        underTest.updateCounter(Instant.now().toEpochMilli(), 10);
+        underTest.updateBy(Instant.now().toEpochMilli(), 10);
         assertCounterState(10, 10, 10, 10, 10);
     }
 
     @Test
-    public void updateCounter_givenCounterSetTo99_expectAllCounterFieldsSetTo100WhenUpdatedBy1UnderOneSecondLater() {
+    public void updateBy_givenCounterSetTo99_expectAllCounterFieldsSetTo100WhenUpdatedBy1UnderOneSecondLater() {
         Instant updateTime = Instant.now().truncatedTo(ChronoUnit.SECONDS);
 
-        underTest.updateCounter(updateTime.toEpochMilli(), 99);
+        underTest.updateBy(updateTime.toEpochMilli(), 99);
         assertCounterState(99, 99, 99, 99, 99);
-        assertEquals(updateTime.toEpochMilli(), underTest.getLastUpdate());
+        assertEquals(updateTime.toEpochMilli(), underTest.getLastUpdateTime());
 
         Instant updateTimePlusUnderOneSec = updateTime.plusSeconds(1).minusNanos(1);
-        underTest.updateCounter(updateTimePlusUnderOneSec.toEpochMilli(), 1);
+        underTest.updateBy(updateTimePlusUnderOneSec.toEpochMilli(), 1);
         assertCounterState(100, 100, 100, 100, 100);
-        assertEquals(updateTimePlusUnderOneSec.toEpochMilli(), underTest.getLastUpdate());
+        assertEquals(updateTimePlusUnderOneSec.toEpochMilli(), underTest.getLastUpdateTime());
     }
 
     @Test
-    public void updateCounter_givenCounterSetTo100_expectSecondsFieldSetTo6AndAllOtherFieldsSetTo106WhenUpdatedBy6OneSecondLater() {
+    public void updateBy_givenCounterSetTo100_expectSecondsFieldSetTo6AndAllOtherFieldsSetTo106WhenUpdatedBy6OneSecondLater() {
         Instant updateTime = Instant.now().truncatedTo(ChronoUnit.SECONDS);
 
-        underTest.updateCounter(updateTime.toEpochMilli(), 100);
+        underTest.updateBy(updateTime.toEpochMilli(), 100);
         assertCounterState(100, 100, 100, 100, 100);
-        assertEquals(updateTime.toEpochMilli(), underTest.getLastUpdate());
+        assertEquals(updateTime.toEpochMilli(), underTest.getLastUpdateTime());
 
         Instant updateTimePlusOneSec = updateTime.plusSeconds(1);
-        underTest.updateCounter(updateTimePlusOneSec.toEpochMilli(), 6);
+        underTest.updateBy(updateTimePlusOneSec.toEpochMilli(), 6);
         assertCounterState(6, 106, 106, 106, 106);
-        assertEquals(updateTimePlusOneSec.toEpochMilli(), underTest.getLastUpdate());
+        assertEquals(updateTimePlusOneSec.toEpochMilli(), underTest.getLastUpdateTime());
     }
 
     @Test
-    public void updateCounter_givenCounterSetTo100_expectSecondsFieldSetToNegativeOneAndAllOtherFieldsSetTo99WhenDecrementedByOneOverOneSecondLater() {
+    public void updateBy_givenCounterSetTo100_expectSecondsFieldSetToNegativeOneAndAllOtherFieldsSetTo99WhenDecrementedByOneOverOneSecondLater() {
         Instant updateTime = Instant.now().truncatedTo(ChronoUnit.SECONDS);
 
-        underTest.updateCounter(updateTime.toEpochMilli(), 100);
+        underTest.updateBy(updateTime.toEpochMilli(), 100);
         assertCounterState(100, 100, 100, 100, 100);
-        assertEquals(updateTime.toEpochMilli(), underTest.getLastUpdate());
+        assertEquals(updateTime.toEpochMilli(), underTest.getLastUpdateTime());
 
         Instant updateTimePlusOverOneSec = updateTime.plusSeconds(1).plusNanos(1);
-        underTest.updateCounter(updateTimePlusOverOneSec.toEpochMilli(), -1);
+        underTest.updateBy(updateTimePlusOverOneSec.toEpochMilli(), -1);
         assertCounterState(-1, 99, 99, 99, 99);
-        assertEquals(updateTimePlusOverOneSec.toEpochMilli(), underTest.getLastUpdate());
+        assertEquals(updateTimePlusOverOneSec.toEpochMilli(), underTest.getLastUpdateTime());
     }
 
     @Test
     public void updateWithoutExceedingLimit_givenCounterSetToZeroAndUpdateBy9WithLimit10_incrementsCounterTo9() throws CounterLimitReachedException {
-        underTest.updateCounterWithoutExceedingLimit(CounterFieldOfInterest.SEC, System.currentTimeMillis(), 9, 10);
+        underTest.updateWithoutExceedingLimit(System.currentTimeMillis(), 9, CounterFieldOfInterest.SEC, 10);
         assertCounterState(9, 9, 9, 9, 9);
     }
 
     @Test
     public void updateWithoutExceedingLimit_givenCounterSetTo9AndUpdateBy1WithLimit10_incrementsCounterTo10() throws CounterLimitReachedException {
-        underTest.updateCounterWithoutExceedingLimit(CounterFieldOfInterest.SEC, System.currentTimeMillis(), 9, 10);
+        underTest.updateWithoutExceedingLimit(System.currentTimeMillis(), 9, CounterFieldOfInterest.SEC, 10);
         assertCounterState(9, 9, 9, 9, 9);
-        underTest.updateCounterWithoutExceedingLimit(CounterFieldOfInterest.SEC, System.currentTimeMillis(), 1, 10);
+        underTest.updateWithoutExceedingLimit(System.currentTimeMillis(), 1, CounterFieldOfInterest.SEC, 10);
         assertCounterState(10, 10, 10, 10, 10);
     }
 
     @Test(expected = CounterLimitReachedException.class)
     public void updateWithoutExceedingLimit_givenCounterSetTo10AndUpdateBy1WithLimit10_throwsExceptionAndCounterRemainsAt10() throws CounterLimitReachedException {
         CounterLimitReachedException exception = null;
-        underTest.updateCounterWithoutExceedingLimit(CounterFieldOfInterest.SEC, System.currentTimeMillis(), 10, 10);
+        underTest.updateWithoutExceedingLimit(System.currentTimeMillis(), 10, CounterFieldOfInterest.SEC, 10);
         assertCounterState(10, 10, 10, 10, 10);
         try {
-            underTest.updateCounterWithoutExceedingLimit(CounterFieldOfInterest.SEC, System.currentTimeMillis(), 1, 10);
+            underTest.updateWithoutExceedingLimit(System.currentTimeMillis(), 1, CounterFieldOfInterest.SEC, 10);
         } catch (CounterLimitReachedException e) {
             exception = e;
         }
@@ -110,44 +110,44 @@ public class CounterTest {
     }
 
     @Test
-    public void getLastUpdate_givenCounterUpdatedWithUnixTimestamp_returnsSameUpdateTimeAsUnixTimestamp() {
+    public void getLastUpdateTime_givenCounterUpdatedWithUnixTimestamp_returnsSameUpdateTimeAsUnixTimestamp() {
         long timestampIn = System.currentTimeMillis();
-        underTest.updateCounter(timestampIn, 1);
-        long timestampOut = underTest.getLastUpdate();
+        underTest.updateBy(timestampIn, 1);
+        long timestampOut = underTest.getLastUpdateTime();
         assertEquals(timestampIn, timestampOut);
     }
 
     @Test
-    public void updateCounter_givenCounterSetToMaxLong_doesNotIncrementWhenIncrementedByOne() {
+    public void updateBy_givenCounterSetToMaxLong_doesNotIncrementWhenIncrementedByOne() {
         long now = Instant.now().toEpochMilli();
         long deltaThatOverflows = 100;
 
-        underTest.updateCounter(now, Long.MAX_VALUE);
+        underTest.updateBy(now, Long.MAX_VALUE);
         assertCounterState(Long.MAX_VALUE, Long.MAX_VALUE, Long.MAX_VALUE, Long.MAX_VALUE, Long.MAX_VALUE);
 
-        underTest.updateCounter(now, deltaThatOverflows);
+        underTest.updateBy(now, deltaThatOverflows);
         assertCounterState(Long.MAX_VALUE, Long.MAX_VALUE, Long.MAX_VALUE, Long.MAX_VALUE, Long.MAX_VALUE);
     }
 
     @Test
-    public void updateCounter_givenCounterSetToMinLong_doesNotDecrementWhenDecrementedByOne() {
+    public void updateBy_givenCounterSetToMinLong_doesNotDecrementWhenDecrementedByOne() {
         long now = Instant.now().toEpochMilli();
         long almostMinLong = Long.MIN_VALUE + 2L;
         long deltaThatOverflows = -100L;
 
-        underTest.updateCounter(now, almostMinLong);
+        underTest.updateBy(now, almostMinLong);
         assertCounterState(almostMinLong, almostMinLong, almostMinLong, almostMinLong, almostMinLong);
 
-        underTest.updateCounter(now, deltaThatOverflows);
+        underTest.updateBy(now, deltaThatOverflows);
         assertCounterState(almostMinLong, almostMinLong, almostMinLong, almostMinLong, almostMinLong);
     }
 
     private void assertCounterState(long secCount, long minCount, long hourCount, long dayCount, long monthCount) {
-        assertEquals(secCount, underTest.getCounterField(CounterFieldOfInterest.SEC));
-        assertEquals(minCount, underTest.getCounterField(CounterFieldOfInterest.MIN));
-        assertEquals(hourCount, underTest.getCounterField(CounterFieldOfInterest.HOUR));
-        assertEquals(dayCount, underTest.getCounterField(CounterFieldOfInterest.DAY));
-        assertEquals(monthCount, underTest.getCounterField(CounterFieldOfInterest.MONTH));
+        assertEquals(secCount, underTest.get(CounterFieldOfInterest.SEC));
+        assertEquals(minCount, underTest.get(CounterFieldOfInterest.MIN));
+        assertEquals(hourCount, underTest.get(CounterFieldOfInterest.HOUR));
+        assertEquals(dayCount, underTest.get(CounterFieldOfInterest.DAY));
+        assertEquals(monthCount, underTest.get(CounterFieldOfInterest.MONTH));
     }
 
 }
