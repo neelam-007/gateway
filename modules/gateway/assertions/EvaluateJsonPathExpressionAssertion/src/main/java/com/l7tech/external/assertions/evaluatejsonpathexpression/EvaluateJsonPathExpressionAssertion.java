@@ -22,6 +22,16 @@ public class EvaluateJsonPathExpressionAssertion extends MessageTargetableAssert
     public static final String PARAM_JSON_EVALJSONPATH_WITHCOMPRESSION = "json.evalJsonPathWithCompression";
 
     /**
+     * To accept empty arrays as results or not : ServerConfig Property name
+     */
+    public static final String PARAM_JSON_EVALJSONPATH_ACCEPT_EMPTYARRAY = "jsonEvalJsonPathAcceptEmptyArray";
+
+    /**
+     * To accept empty arrays as results or not : Cluster Wide Property name
+     */
+    public static final String JSON_EVALJSONPATH_ACCEPT_EMPTYARRAY_PROPERTY = "json.evalJsonPathAcceptEmptyArray";
+
+    /**
      * The default variable prefix.
      */
     public static final String VARIABLE_PREFIX = "jsonPath";
@@ -31,10 +41,10 @@ public class EvaluateJsonPathExpressionAssertion extends MessageTargetableAssert
     private static final String BASE_NAME = "Evaluate JSON Path Expression";
 
     private static final String META_INITIALIZED = EvaluateJsonPathExpressionAssertion.class.getName() + ".metadataInitialized";
-    private static final String SUFFIX_FOUND = "found";
-    private static final String SUFFIX_COUNT = "count";
-    private static final String SUFFIX_RESULT = "result";
-    private static final String SUFFIX_RESULTS = "results";
+    public static final String SUFFIX_FOUND = ".found";
+    public static final String SUFFIX_COUNT = ".count";
+    public static final String SUFFIX_RESULT = ".result";
+    public static final String SUFFIX_RESULTS = ".results";
 
     private static final String[] AVAILABLE_SUFFIXES = new String[]{
             SUFFIX_FOUND, SUFFIX_COUNT, SUFFIX_RESULT, SUFFIX_RESULTS
@@ -65,7 +75,7 @@ public class EvaluateJsonPathExpressionAssertion extends MessageTargetableAssert
                 final ExtensionInterfaceBinding<EvaluateJsonPathExpressionAdmin> binding = new ExtensionInterfaceBinding<EvaluateJsonPathExpressionAdmin>(
                         EvaluateJsonPathExpressionAdmin.class,
                         null,
-                        new EvaluateJsonPathExpressionAdminImpl());
+                        new EvaluateJsonPathExpressionAdminImpl(appContext));
                 return Collections.<ExtensionInterfaceBinding>singletonList(binding);
             }
         });
@@ -78,6 +88,15 @@ public class EvaluateJsonPathExpressionAssertion extends MessageTargetableAssert
                 return AssertionUtils.decorateName(assertion, decoration);
             }
         });
+
+        final Map<String, String[]> props = new HashMap<>();
+        props.put(JSON_EVALJSONPATH_ACCEPT_EMPTYARRAY_PROPERTY, new String[] {
+                "Can the empty array be accepted as valid JSON path evaluation result or not? if true, assertion accepts empty arrays as valid results, otherwise it falsifies.",
+                "true",
+                "boolean"
+        });
+        meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
+
         meta.put(META_INITIALIZED, Boolean.TRUE);
         return meta;
     }
@@ -149,10 +168,10 @@ public class EvaluateJsonPathExpressionAssertion extends MessageTargetableAssert
     @Override
     protected VariablesSet doGetVariablesSet() {
         return super.doGetVariablesSet().withVariables(
-                new VariableMetadata(getVariablePrefix() + "." + SUFFIX_FOUND),
-                new VariableMetadata(getVariablePrefix() + "." + SUFFIX_COUNT),
-                new VariableMetadata(getVariablePrefix() + "." + SUFFIX_RESULT),
-                new VariableMetadata(getVariablePrefix() + "." + SUFFIX_RESULTS, false, true, null, false)
+                new VariableMetadata(getVariablePrefix() + SUFFIX_FOUND),
+                new VariableMetadata(getVariablePrefix() + SUFFIX_COUNT),
+                new VariableMetadata(getVariablePrefix() + SUFFIX_RESULT),
+                new VariableMetadata(getVariablePrefix() + SUFFIX_RESULTS, false, true, null, false)
         );
     }
 

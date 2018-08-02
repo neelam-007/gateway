@@ -52,7 +52,7 @@ public enum JsonPathEvaluator implements Evaluator {
 
         try {
             final List<String> results = new ArrayList<>();
-            final Object jsonResults = path.read(source, expression);
+            final Object jsonResults = path.read(source);
 
             if (jsonResults instanceof JSONArray) {
                 for (Object item : (JSONArray)jsonResults) {

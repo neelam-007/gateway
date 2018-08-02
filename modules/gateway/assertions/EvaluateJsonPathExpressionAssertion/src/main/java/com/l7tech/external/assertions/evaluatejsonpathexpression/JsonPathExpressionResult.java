@@ -11,6 +11,7 @@ import java.util.List;
 public class JsonPathExpressionResult implements Serializable {
 
     private final List<String> results;
+    private final boolean found;
 
     /**
      * Construct a new JsonPathExpressionResult.
@@ -18,7 +19,18 @@ public class JsonPathExpressionResult implements Serializable {
      * @param results the results.
      */
     public JsonPathExpressionResult(final List<String> results) {
+        this(results, results != null);
+    }
+
+    /**
+     * Construct a new JsonPathExpressionResult.
+     *
+     * @param results the results.
+     * @param found results found or not.
+     */
+    public JsonPathExpressionResult(final List<String> results, final boolean found) {
         this.results = results;
+        this.found = found;
     }
 
     /**
@@ -26,7 +38,7 @@ public class JsonPathExpressionResult implements Serializable {
      * @return true if a result was found, false otherwise.
      */
     public boolean isFound() {
-        return results != null;
+        return found;
     }
 
     /**

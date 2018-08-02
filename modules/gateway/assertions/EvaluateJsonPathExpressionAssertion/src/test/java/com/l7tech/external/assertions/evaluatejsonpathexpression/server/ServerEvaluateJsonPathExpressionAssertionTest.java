@@ -95,6 +95,7 @@ public class ServerEvaluateJsonPathExpressionAssertionTest {
     public void setUp() {
         try {
             serverConfig.putProperty(EvaluateJsonPathExpressionAssertion.PARAM_JSON_EVALJSONPATH_WITHCOMPRESSION, "false");
+            serverConfig.putProperty(EvaluateJsonPathExpressionAssertion.PARAM_JSON_EVALJSONPATH_ACCEPT_EMPTYARRAY, "true");
             assertion = new EvaluateJsonPathExpressionAssertion();
             assertion.setTarget(TargetMessageType.REQUEST);
             request = new Message();
@@ -452,6 +453,30 @@ public class ServerEvaluateJsonPathExpressionAssertionTest {
 
             //check results
             Assert.assertEquals(true, pec.getVariable("jsonPath.found"));
+            Assert.assertEquals(0, pec.getVariable("jsonPath.count"));
+
+            doTestForNonExistingContextVar("jsonPath.result");
+
+            final Object objects = pec.getVariable("jsonPath.results");
+            Assert.assertThat(objects, Matchers.instanceOf(String[].class));
+            Assert.assertThat((String[]) objects, Matchers.emptyArray());
+        } catch (Exception e) {
+            Assert.fail("Test JsonPath failed: " + e.getMessage());
+        }
+    }
+
+    @BugId("DE246126")
+    @Test
+    public void testEmptyArrayWithAcceptEmptyArraysDisabled() {
+        try {
+            serverConfig.putProperty(EvaluateJsonPathExpressionAssertion.PARAM_JSON_EVALJSONPATH_ACCEPT_EMPTYARRAY, "false");
+            assertion.setEvaluator("JsonPath");
+            assertion.setExpression("$.store.members");
+            final AssertionStatus status = serverAssertion.checkRequest(pec);
+            Assert.assertEquals(AssertionStatus.FALSIFIED, status);
+
+            //check results
+            Assert.assertEquals(false, pec.getVariable("jsonPath.found"));
             Assert.assertEquals(0, pec.getVariable("jsonPath.count"));
 
             doTestForNonExistingContextVar("jsonPath.result");

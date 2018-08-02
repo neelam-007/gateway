@@ -23,10 +23,9 @@ import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.util.Collections;
 import java.util.Map;
 
-import static com.l7tech.external.assertions.evaluatejsonpathexpression.EvaluateJsonPathExpressionAssertion.PARAM_JSON_EVALJSONPATH_WITHCOMPRESSION;
+import static com.l7tech.external.assertions.evaluatejsonpathexpression.EvaluateJsonPathExpressionAssertion.*;
 
 /**
  * Server side implementation of the EvaluateJsonPathExpressionAssertion.
@@ -92,17 +91,27 @@ public class ServerEvaluateJsonPathExpressionAssertion extends AbstractServerAss
                                                @NotNull final String sourceJsonString, @NotNull final String expression) {
         try{
             final JsonPathExpressionResult result = evaluator.evaluate(sourceJsonString, expression);
-            context.setVariable(assertion.getVariablePrefix() + ".found", result.isFound());
+            context.setVariable(assertion.getVariablePrefix() + SUFFIX_FOUND, result.isFound());
             final int count = result.getCount();
-            context.setVariable(assertion.getVariablePrefix() + ".count", count);
+            context.setVariable(assertion.getVariablePrefix() + SUFFIX_COUNT, count);
             if(!result.isFound()){
                 logAndAudit(AssertionMessages.EVALUATE_JSON_PATH_NOT_FOUND, expression);
-                context.setVariable(assertion.getVariablePrefix() + ".result", null);
-                context.setVariable(assertion.getVariablePrefix() + ".results", null);
+                context.setVariable(assertion.getVariablePrefix() + SUFFIX_RESULT, null);
+                context.setVariable(assertion.getVariablePrefix() + SUFFIX_RESULTS, null);
                 return AssertionStatus.FALSIFIED;
             }
-            context.setVariable(assertion.getVariablePrefix() + ".result", count == 0 ? null : result.getResults().get(0));
-            context.setVariable(assertion.getVariablePrefix() + ".results", result.getResults().toArray(new String[count]));
+
+            // Exhibit the previous behaviour with the empty array treatment since 9.1 for backward compatibility
+            if (count == 0 && !serverConfig.getBooleanProperty(PARAM_JSON_EVALJSONPATH_ACCEPT_EMPTYARRAY, true)) {
+                logAndAudit(AssertionMessages.EVALUATE_JSON_PATH_NOT_FOUND, expression);
+                context.setVariable(assertion.getVariablePrefix() + SUFFIX_FOUND, false);
+                context.setVariable(assertion.getVariablePrefix() + SUFFIX_RESULT, null);
+                context.setVariable(assertion.getVariablePrefix() + SUFFIX_RESULTS, new String[0]);
+                return AssertionStatus.FALSIFIED;
+            }
+
+            context.setVariable(assertion.getVariablePrefix() + SUFFIX_RESULT, count == 0 ? null : result.getResults().get(0));
+            context.setVariable(assertion.getVariablePrefix() + SUFFIX_RESULTS, result.getResults().toArray(new String[count]));
         }
         catch(Evaluator.EvaluatorException e){
             logAndAudit(AssertionMessages.EVALUATE_JSON_PATH_ERROR, e.getMessage());
