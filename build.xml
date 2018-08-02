@@ -3776,7 +3776,6 @@ ${versionfilecontent}
                 <include name="runtime/modules/assertions/**/GenerateOAuthSignatureBaseStringAssertion-*.aar"/>
                 <include name="runtime/modules/assertions/**/GenerateSecurityHashAssertion-*.aar"/>
                 <include name="runtime/modules/assertions/**/GenericIdentityManagementServiceAssertion-*.aar"/>
-                <include name="runtime/modules/assertions/**/HazelcastEmbeddedProviderAssertion-*.aar"/>
                 <include name="runtime/modules/assertions/**/IdentityAttributesAssertion-*.aar"/>
                 <include name="runtime/modules/assertions/**/JavaScriptAssertion-*.aar"/>
                 <include name="runtime/modules/assertions/**/JSONSchemaAssertion-*.aar"/>

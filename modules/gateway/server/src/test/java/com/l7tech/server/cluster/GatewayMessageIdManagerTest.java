@@ -76,7 +76,7 @@ public class GatewayMessageIdManagerTest {
         messageIdManager.assertMessageIdIsUnique(new MessageId(key, validTime));
 
         verify(messageIdMap, times(1))
-                .putIfCondition(eq(key), eq(validTime), any(), any(Long.class), any(TimeUnit.class));
+                .putIfCondition(eq(key), eq(Long.toString(validTime)), any(), any(Long.class), any(TimeUnit.class));
     }
 
 }

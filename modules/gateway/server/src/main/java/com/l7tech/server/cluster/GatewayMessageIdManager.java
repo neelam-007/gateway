@@ -30,7 +30,7 @@ public class GatewayMessageIdManager implements MessageIdManager {
     private static final String MESSAGE_ID_MAP_NAME = "message-replay-ids";
 
     private final SharedKeyValueStoreProviderRegistry sharedKeyValueStoreProviderRegistry;
-    private SharedKeyValueStore<String, Long> messageIdMap;
+    private SharedKeyValueStore<String, String> messageIdMap;
     private AtomicBoolean initialized = new AtomicBoolean(false);
 
     public GatewayMessageIdManager(final SharedKeyValueStoreProviderRegistry sharedKeyValueStoreProviderRegistry) {
@@ -57,10 +57,10 @@ public class GatewayMessageIdManager implements MessageIdManager {
             final long cacheEntryTtl = expiry - System.currentTimeMillis();
 
             if (cacheEntryTtl > 0) {
-                boolean success = messageIdMap.putIfCondition(key, expiry, new Function<Long, Boolean>() {
+                boolean success = messageIdMap.putIfCondition(key, Long.toString(expiry), new Function<String, Boolean>() {
                     @Override
-                    public Boolean apply(Long value) {
-                        return value == null || isExpired(value);
+                    public Boolean apply(String value) {
+                        return value == null || isExpired(Long.valueOf(value));
                     }
                 }, cacheEntryTtl, MILLISECONDS);
                 if (!success) {
