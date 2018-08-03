@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public final class LocalCounterStore implements SharedCounterStore {
 
-    private ConcurrentHashMap<String, LocalCounter> counterStore;
+    private ConcurrentHashMap<String, Counter> counterStore;
 
     LocalCounterStore() {
         this.counterStore = new ConcurrentHashMap<>();
@@ -37,7 +37,7 @@ public final class LocalCounterStore implements SharedCounterStore {
                 name,
                 (counterName, nullableCounter) -> {
                     if (null == nullableCounter) {
-                        return nullableCounter;
+                        return null;
                     }
 
                     return doGet(counterState, nullableCounter);
@@ -51,16 +51,16 @@ public final class LocalCounterStore implements SharedCounterStore {
         counterStore.compute(
                 name,
                 (counterName, nullableCounter) -> {
-                    LocalCounter counter = createCounterIfNull(counterName, nullableCounter);
+                    Counter counter = createCounterIfNull(counterName, nullableCounter);
                     return doGet(counterState, counter);
                 });
         return counterState.get();
     }
 
     @NotNull
-    private LocalCounter doGet(AtomicReference<SharedCounterState> counterState, @NotNull LocalCounter counter)
+    private Counter doGet(AtomicReference<SharedCounterState> counterState, @NotNull Counter counter)
     {
-        counterState.set(counter.get());
+        counterState.set(counter.getState());
         return counter;
     }
 
@@ -71,18 +71,18 @@ public final class LocalCounterStore implements SharedCounterStore {
         counterStore.compute(
                 name,
                 (counterName, nullableCounter) -> {
-                        LocalCounter counter = createCounterIfNull(counterName, nullableCounter);
+                        Counter counter = createCounterIfNull(counterName, nullableCounter);
                         return doGetField(fieldOfInterest, count, counter);
                 });
         return count.get();
     }
 
     @NotNull
-    private LocalCounter doGetField(CounterFieldOfInterest fieldOfInterest,
-                                    AtomicReference<Long> count,
-                                    @NotNull LocalCounter counter)
+    private Counter doGetField(CounterFieldOfInterest fieldOfInterest,
+                               AtomicReference<Long> count,
+                               @NotNull Counter counter)
     {
-        count.set(counter.get(fieldOfInterest));
+        count.set(counter.getCounterField(fieldOfInterest));
         return counter;
     }
 
@@ -97,20 +97,20 @@ public final class LocalCounterStore implements SharedCounterStore {
         counterStore.compute(
                 name,
                 (counterName, nullableCounter) -> {
-                    LocalCounter counter = createCounterIfNull(counterName, nullableCounter);
+                    Counter counter = createCounterIfNull(counterName, nullableCounter);
                     return doGetAndUpdate(fieldOfInterest, timestamp, delta, oldCounterValue, counter);
                 });
         return oldCounterValue.get();
     }
 
     @NotNull
-    private LocalCounter doGetAndUpdate(CounterFieldOfInterest fieldOfInterest,
-                                        long timestamp, int delta,
-                                        AtomicReference<Long> oldCounterValue,
-                                        @NotNull LocalCounter counter)
+    private Counter doGetAndUpdate(CounterFieldOfInterest fieldOfInterest,
+                                   long timestamp, int delta,
+                                   AtomicReference<Long> oldCounterValue,
+                                   @NotNull Counter counter)
     {
-        oldCounterValue.set(counter.get(fieldOfInterest));
-        counter.updateBy(timestamp, delta);
+        oldCounterValue.set(counter.getCounterField(fieldOfInterest));
+        counter.updateCounter(timestamp, delta);
         return counter;
     }
 
@@ -127,7 +127,7 @@ public final class LocalCounterStore implements SharedCounterStore {
         counterStore.compute(
                 name,
                 (counterName, nullableCounter) -> {
-                    LocalCounter counter = createCounterIfNull(counterName, nullableCounter);
+                    Counter counter = createCounterIfNull(counterName, nullableCounter);
                     return doGetAndUpdateWithLimit(fieldOfInterest, timestamp, delta, limit, oldCounterValue, exception, counter);
                 });
         if (exception.get() != null) {
@@ -137,17 +137,17 @@ public final class LocalCounterStore implements SharedCounterStore {
     }
 
     @NotNull
-    private LocalCounter doGetAndUpdateWithLimit(CounterFieldOfInterest fieldOfInterest,
-                                                 long timestamp,
-                                                 int delta,
-                                                 long limit,
-                                                 AtomicReference<Long> oldCounterValue,
-                                                 AtomicReference<CounterLimitReachedException> exception,
-                                                 @NotNull LocalCounter counter)
+    private Counter doGetAndUpdateWithLimit(CounterFieldOfInterest fieldOfInterest,
+                                            long timestamp,
+                                            int delta,
+                                            long limit,
+                                            AtomicReference<Long> oldCounterValue,
+                                            AtomicReference<CounterLimitReachedException> exception,
+                                            @NotNull Counter counter)
     {
-        oldCounterValue.set(counter.get(fieldOfInterest));
+        oldCounterValue.set(counter.getCounterField(fieldOfInterest));
         try {
-            counter.updateWithoutExceedingLimit(timestamp, delta, fieldOfInterest, limit);
+            counter.updateCounterWithoutExceedingLimit(fieldOfInterest, timestamp, delta, limit);
         } catch (CounterLimitReachedException e) {
             exception.set(e);
         }
@@ -156,7 +156,8 @@ public final class LocalCounterStore implements SharedCounterStore {
 
     @Override
     public void reset(final String name) {
-        counterStore.put(name, new LocalCounter(name));
+        Counter counter = new Counter(name);
+        counterStore.put(name, counter);
     }
 
     @Override
@@ -169,14 +170,14 @@ public final class LocalCounterStore implements SharedCounterStore {
         counterStore.compute(
                 name,
                 (counterName, nullableCounter) -> {
-                    LocalCounter counter = createCounterIfNull(counterName, nullableCounter);
+                    Counter counter = createCounterIfNull(counterName, nullableCounter);
                     return doUpdate(updateTime, delta, counter);
                 });
     }
 
     @NotNull
-    private LocalCounter doUpdate(long updateTime, int delta, LocalCounter counter) {
-        counter.updateBy(updateTime, delta);
+    private Counter doUpdate(long updateTime, int delta, Counter counter) {
+        counter.updateCounter(updateTime, delta);
         return counter;
     }
 
@@ -191,7 +192,7 @@ public final class LocalCounterStore implements SharedCounterStore {
         final AtomicReference<CounterLimitReachedException> exception = new AtomicReference<>(null);
         counterStore.compute(name,
                 (counterName, nullableCounter) -> {
-                    LocalCounter counter = createCounterIfNull(counterName, nullableCounter);
+                    Counter counter = createCounterIfNull(counterName, nullableCounter);
                     return doUpdateWithLimit(fieldOfInterest, timestamp, delta, limit, exception, counter);
                 });
         if (exception.get() != null) {
@@ -200,15 +201,15 @@ public final class LocalCounterStore implements SharedCounterStore {
     }
 
     @NotNull
-    private LocalCounter doUpdateWithLimit(CounterFieldOfInterest fieldOfInterest,
-                                           long timestamp,
-                                           int delta,
-                                           long limit,
-                                           AtomicReference<CounterLimitReachedException> exception,
-                                           @NotNull LocalCounter counter)
+    private Counter doUpdateWithLimit(CounterFieldOfInterest fieldOfInterest,
+                                      long timestamp,
+                                      int delta,
+                                      long limit,
+                                      AtomicReference<CounterLimitReachedException> exception,
+                                      @NotNull Counter counter)
     {
         try {
-            counter.updateWithoutExceedingLimit(timestamp, delta, fieldOfInterest, limit);
+            counter.updateCounterWithoutExceedingLimit(fieldOfInterest, timestamp, delta, limit);
         } catch (CounterLimitReachedException e) {
             exception.set(e);
         }
@@ -226,21 +227,21 @@ public final class LocalCounterStore implements SharedCounterStore {
         counterStore.compute(
                 name,
                 (counterName, nullableCounter) -> {
-                    LocalCounter counter = createCounterIfNull(counterName, nullableCounter);
+                    Counter counter = createCounterIfNull(counterName, nullableCounter);
                     return doUpdateAndGet(fieldOfInterest, timestamp, delta, newCounterValue, counter);
                 });
         return newCounterValue.get();
     }
 
     @NotNull
-    private LocalCounter doUpdateAndGet(CounterFieldOfInterest fieldOfInterest,
-                                        long timestamp,
-                                        int delta,
-                                        AtomicReference<Long> newCounterValue,
-                                        @NotNull LocalCounter counter)
+    private Counter doUpdateAndGet(CounterFieldOfInterest fieldOfInterest,
+                                   long timestamp,
+                                   int delta,
+                                   AtomicReference<Long> newCounterValue,
+                                   @NotNull Counter counter)
     {
-        counter.updateBy(timestamp, delta);
-        newCounterValue.set(counter.get(fieldOfInterest));
+        counter.updateCounter(timestamp, delta);
+        newCounterValue.set(counter.getCounterField(fieldOfInterest));
         return counter;
     }
 
@@ -257,7 +258,7 @@ public final class LocalCounterStore implements SharedCounterStore {
         counterStore.compute(
                 name,
                 (counterName, nullableCounter) -> {
-                    LocalCounter counter = createCounterIfNull(counterName, nullableCounter);
+                    Counter counter = createCounterIfNull(counterName, nullableCounter);
                     return doUpdateAndGetWithLimit(fieldOfInterest, timestamp, delta, limit, newCounterValue, exception, counter);
                 });
         if (exception.get() != null) {
@@ -267,24 +268,25 @@ public final class LocalCounterStore implements SharedCounterStore {
     }
 
     @NotNull
-    private LocalCounter doUpdateAndGetWithLimit(CounterFieldOfInterest fieldOfInterest,
-                                                 long timestamp,
-                                                 int delta,
-                                                 long limit,
-                                                 AtomicReference<Long> newCounterValue,
-                                                 AtomicReference<CounterLimitReachedException> exception,
-                                                 @NotNull LocalCounter counter)
+    private Counter doUpdateAndGetWithLimit(CounterFieldOfInterest fieldOfInterest,
+                                            long timestamp,
+                                            int delta,
+                                            long limit,
+                                            AtomicReference<Long> newCounterValue,
+                                            AtomicReference<CounterLimitReachedException> exception,
+                                            @NotNull Counter counter)
     {
         try {
-            counter.updateWithoutExceedingLimit(timestamp, delta, fieldOfInterest, limit);
+            counter.updateCounterWithoutExceedingLimit(fieldOfInterest, timestamp, delta, limit);
         } catch (CounterLimitReachedException e) {
             exception.set(e);
         }
-        newCounterValue.set(counter.get(fieldOfInterest));
+        newCounterValue.set(counter.getCounterField(fieldOfInterest));
         return counter;
     }
 
-    private LocalCounter createCounterIfNull(String counterName, @Nullable LocalCounter nullableCounter) {
-        return nullableCounter == null ? new LocalCounter(counterName) : nullableCounter;
+    private Counter createCounterIfNull(String counterName, @Nullable Counter nullableCounter) {
+
+        return nullableCounter == null ? new Counter(counterName) : nullableCounter;
     }
 }
