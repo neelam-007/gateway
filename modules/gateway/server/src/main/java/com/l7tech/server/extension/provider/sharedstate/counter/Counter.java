@@ -37,14 +37,14 @@ public class Counter {
 
     private static final Logger LOGGER = Logger.getLogger(Counter.class.getName());
 
-    Counter(){
+    public Counter(){
         for (CounterFieldOfInterest field : FIELDS_OF_INTEREST) {
             map.put(field, 0L);
         }
         this.lastUpdate = Clock.systemUTC().millis();
     }
 
-    Counter(String name){
+    public Counter(String name){
         this();
         this.name = name;
     }
@@ -53,23 +53,23 @@ public class Counter {
         return name;
     }
 
-    void setName(String name) {
+    public void setName(String name) {
         this.name = name;
     }
 
-    long getLastUpdate() {
+    public long getLastUpdate() {
         return lastUpdate;
     }
 
-    void setLastUpdate(long updateTime) {
+    public void setLastUpdate(long updateTime) {
         this.lastUpdate = updateTime;
     }
 
-    long getCounterField(CounterFieldOfInterest field){
+    public long getCounterField(CounterFieldOfInterest field){
         return map.get(field);
     }
 
-    void setCounterField(CounterFieldOfInterest field, long value){
+    public void setCounterField(CounterFieldOfInterest field, long value){
         map.put(field, value);
     }
 
@@ -82,7 +82,7 @@ public class Counter {
      * @param timestamp the time when this method was called
      * @param delta the amount to increment the counter by
      */
-    void updateCounter(long timestamp, long delta){
+    public void updateCounter(long timestamp, long delta){
         resetExpiredFields(timestamp);
         for (CounterFieldOfInterest field : FIELDS_OF_INTEREST) {
             updateField(field, delta);
@@ -96,7 +96,7 @@ public class Counter {
      * @param delta the amount to increment the counter by
      * @param limit the limit for this update
      */
-    void updateCounterWithoutExceedingLimit(CounterFieldOfInterest fieldOfInterest, long timestamp, long delta, long limit) throws CounterLimitReachedException {
+    public void updateCounterWithoutExceedingLimit(CounterFieldOfInterest fieldOfInterest, long timestamp, long delta, long limit) throws CounterLimitReachedException {
         resetExpiredFields(timestamp);
         if(limitExceeded(fieldOfInterest, delta, limit)){
             throw new CounterLimitReachedException("Limit reached for counter " + name);
@@ -204,11 +204,11 @@ public class Counter {
         return getZonedTime(lastUpdate).getYear() == now.getYear() && getZonedTime(lastUpdate).getMonthValue() == now.getMonthValue();
     }
 
-    Map<CounterFieldOfInterest, Long> toMap(){
+    public Map<CounterFieldOfInterest, Long> toMap(){
         return new EnumMap<>(map);
     }
 
-    SharedCounterState getState(){
+    public SharedCounterState toCounterState(){
         return new CounterInfo(name, toMap(), new Date(lastUpdate));
     }
 

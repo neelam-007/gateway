@@ -60,7 +60,7 @@ public final class LocalCounterStore implements SharedCounterStore {
     @NotNull
     private Counter doGet(AtomicReference<SharedCounterState> counterState, @NotNull Counter counter)
     {
-        counterState.set(counter.getState());
+        counterState.set(counter.toCounterState());
         return counter;
     }
 
