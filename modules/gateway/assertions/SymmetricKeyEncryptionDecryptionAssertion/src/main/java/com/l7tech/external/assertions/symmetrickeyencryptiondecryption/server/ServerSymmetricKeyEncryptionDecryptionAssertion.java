@@ -310,9 +310,9 @@ public class ServerSymmetricKeyEncryptionDecryptionAssertion extends AbstractSer
         int toReturn = 0;
 
         if (algorithmName.equalsIgnoreCase(SymmetricKeyEncryptionDecryptionAssertion.ALGORITHM_AES)) {
-            if(SymmetricKeyEncryptionDecryptionAssertion.BLOCK_MODE_GCM.equalsIgnoreCase(blockMode)) {
+            if (SymmetricKeyEncryptionDecryptionAssertion.BLOCK_MODE_GCM.equalsIgnoreCase(blockMode)) {
                 toReturn = IV_BLOCK_SIZE_BYTES_AES_GCM;
-            } else {
+            } else if (SymmetricKeyEncryptionDecryptionAssertion.BLOCK_MODE_CBC.equalsIgnoreCase(blockMode)){
                 toReturn = IV_BLOCK_SIZE_BYTES_AES;
             }
         } else if (algorithmName.equalsIgnoreCase(SymmetricKeyEncryptionDecryptionAssertion.ALGORITHM_DES)
@@ -334,14 +334,17 @@ public class ServerSymmetricKeyEncryptionDecryptionAssertion extends AbstractSer
     private byte[] encrypt(Cipher cipher, SecretKeySpec skeySpec, byte[] inputbytes, String algorithmName, String blockMode) throws InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, ShortBufferException, BadPaddingException {
         byte[] toReturn = new byte[0];
 
-        if (inputbytes == null) {
+        if (inputbytes == null || inputbytes.length <= 0) {
             return toReturn;
         }
 
-        int ivBytesSize = getProperBlockSize(algorithmName, blockMode);
+        if (SymmetricKeyEncryptionDecryptionAssertion.BLOCK_MODE_CBC.equals(blockMode) || SymmetricKeyEncryptionDecryptionAssertion.BLOCK_MODE_GCM.equals(blockMode)) {
+            int ivBytesSize = getProperBlockSize(algorithmName, blockMode);
 
-        if ((SymmetricKeyEncryptionDecryptionAssertion.BLOCK_MODE_CBC.equals(blockMode) || SymmetricKeyEncryptionDecryptionAssertion.BLOCK_MODE_GCM.equals(blockMode))
-                && inputbytes.length > 0 && ivBytesSize > 0) {
+            if (ivBytesSize <= 0) {
+                return toReturn;
+            }
+
             // CBC or GCM means we need an IV
             byte[] ivBytes = new byte[ivBytesSize];
             byte[] interimOutput;
@@ -371,6 +374,9 @@ public class ServerSymmetricKeyEncryptionDecryptionAssertion extends AbstractSer
             toReturn = new byte[interimOutput.length + ivBytesSize];
             System.arraycopy(ivBytes, 0, toReturn, 0, ivBytesSize); // ivyBytes is ivByteSize big and toReturn will be atleast ivBytesSize big
             System.arraycopy(interimOutput, 0, toReturn, ivBytesSize, interimOutput.length); //now toReturn is ready :), toReturn is atleast ivByteSize + interimOutput.length big.
+        } else if (SymmetricKeyEncryptionDecryptionAssertion.BLOCK_MODE_ECB.equals(blockMode)) {
+            cipher.init(Cipher.ENCRYPT_MODE, skeySpec);
+            toReturn = cipher.doFinal(inputbytes);
         }
 
         return toReturn;
@@ -387,29 +393,32 @@ public class ServerSymmetricKeyEncryptionDecryptionAssertion extends AbstractSer
     private byte[] decrypt(Cipher cipher, SecretKeySpec skeySpec, byte[] inputbytes, String algorithmName, String blockMode, byte[] passedIvBytes) throws InvalidKeyException, InvalidAlgorithmParameterException, IllegalBlockSizeException, ShortBufferException, BadPaddingException {
         byte[] toReturn = new byte[0];
 
-        if (inputbytes == null) {
+        if (inputbytes == null || inputbytes.length <= 0) {
             return toReturn;
         }
 
-        int ivBytesSize = getProperBlockSize(algorithmName, blockMode);
-        int sizeOfTextToDecrypt = inputbytes.length - ivBytesSize;
-        boolean fetchIvFromBytes = true;
+        // We will only try to decrypt if the block mode is CBC, the IV size is greater than 0, the input size is greater than 0, and the difference between the IV size and the input size is greater than zero (the amount of text to decrypt)
+        if (SymmetricKeyEncryptionDecryptionAssertion.BLOCK_MODE_CBC.equals(blockMode) || SymmetricKeyEncryptionDecryptionAssertion.BLOCK_MODE_GCM.equals(blockMode)) {
 
-        // Check if ivBytes is the proper length compared to ivBytesSize for the algorithm
-        if (passedIvBytes != null) {
-            if (passedIvBytes.length != ivBytesSize) {
-                logger.log(Level.WARNING, "The user-declared IV is the incorrect size for the selected algorithm.");
-                return toReturn;
+            int ivBytesSize = getProperBlockSize(algorithmName, blockMode);
+            int sizeOfTextToDecrypt = inputbytes.length - ivBytesSize;
+            boolean fetchIvFromBytes = true;
+
+            // Check if ivBytes is the proper length compared to ivBytesSize for the algorithm
+            if (passedIvBytes != null) {
+                if (passedIvBytes.length != ivBytesSize) {
+                    logger.log(Level.WARNING, "The user-declared IV is the incorrect size for the selected algorithm.");
+                    return toReturn;
+                }
+
+                // It is a proper IV.  Guess this means we need to pre-pend it to the passed data to decrypt.
+                sizeOfTextToDecrypt = inputbytes.length;
+                fetchIvFromBytes = false;
             }
 
-            // It is a proper IV.  Guess this means we need to pre-pend it to the passed data to decrypt.
-            sizeOfTextToDecrypt = inputbytes.length;
-            fetchIvFromBytes = false;
-        }
-
-        // We will only try to decrypt if the block mode is CBC, the IV size is greater than 0, the input size is greater than 0, and the difference between the IV size and the input size is greater than zero (the amount of text to decrypt)
-        if ((SymmetricKeyEncryptionDecryptionAssertion.BLOCK_MODE_CBC.equals(blockMode) || SymmetricKeyEncryptionDecryptionAssertion.BLOCK_MODE_GCM.equals(blockMode))
-                && ivBytesSize > 0 && inputbytes.length > 0 && sizeOfTextToDecrypt > 0) {
+            if (ivBytesSize <= 0 || sizeOfTextToDecrypt <= 0) {
+                return toReturn;
+            }
 
             // CBC means we need an IV
             byte[] ivBytes = null;
@@ -442,6 +451,9 @@ public class ServerSymmetricKeyEncryptionDecryptionAssertion extends AbstractSer
             // run the decrypt
             cipher.init(Cipher.DECRYPT_MODE, skeySpec, algorithmParamSpec);
             toReturn = cipher.doFinal(intermedBytes);
+        } else if (SymmetricKeyEncryptionDecryptionAssertion.BLOCK_MODE_ECB.equals(blockMode)) {
+            cipher.init(Cipher.DECRYPT_MODE, skeySpec);
+            toReturn = cipher.doFinal(inputbytes);
         }
 
         return toReturn;

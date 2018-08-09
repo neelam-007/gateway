@@ -7,6 +7,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.test.BugId;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.HexUtils;
 import org.junit.Assert;
@@ -19,6 +20,8 @@ import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.context.ApplicationContext;
 
+import javax.crypto.Cipher;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -926,6 +929,195 @@ public class ServerSymmetricKeyEncryptionDecryptionAssertionTest {
         sass = new ServerSymmetricKeyEncryptionDecryptionAssertion(ass, mockApplicationContext);
         status = sass.checkRequest(mockPolicyEnforcementContext);
         Assert.assertEquals("Decryption should fail!.", AssertionStatus.FAILED, status);
+    }
+
+    @Test
+    public void testAesEcbPkcs5Padding() throws Exception {
+        // Setup test data.
+        String textToSign = "hello world";
+        byte[] key = new byte[128/8]; // 128 bit key.
+        new Random().nextBytes(key);
+        String algorithm = SymmetricKeyEncryptionDecryptionAssertion.TRANS_AES_ECB_PKCS5Padding;
+        String outVariableName = "encrypted";
+
+        // Encrypt.
+        SymmetricKeyEncryptionDecryptionAssertion ass = new SymmetricKeyEncryptionDecryptionAssertion();
+        setUpAssertion(ass, HexUtils.encodeBase64(textToSign.getBytes(Charsets.UTF8)), HexUtils.encodeBase64(key), outVariableName, algorithm, true, null);
+
+        ServerSymmetricKeyEncryptionDecryptionAssertion sass = new ServerSymmetricKeyEncryptionDecryptionAssertion(ass, mockApplicationContext);
+        AssertionStatus status = sass.checkRequest(mockPolicyEnforcementContext);
+        Assert.assertEquals("Encryption failed.", AssertionStatus.NONE, status);
+
+        String encryptedB64 = getOutputString(outVariableName);
+        Assert.assertTrue("Cipher text is empty.", encryptedB64.length() > 0);
+
+        // Decrypt
+        outVariableName = "decrypted";
+        ass = new SymmetricKeyEncryptionDecryptionAssertion();
+        setUpAssertion(ass, encryptedB64, HexUtils.encodeBase64(key), outVariableName, algorithm, false, null);
+
+        sass = new ServerSymmetricKeyEncryptionDecryptionAssertion(ass, mockApplicationContext);
+        status = sass.checkRequest(mockPolicyEnforcementContext);
+        Assert.assertEquals("Decryption failed.", AssertionStatus.NONE, status);
+
+        String decryptedB64 = getOutputString(outVariableName);
+        Assert.assertTrue("Decrypted text is empty.", decryptedB64.length() > 0);
+
+        // Check decrypted text matches original text.
+        String decryptedText = new String(HexUtils.decodeBase64(decryptedB64));
+        Assert.assertEquals(textToSign, decryptedText);
+    }
+
+    @Test
+    public void testAesEcbPkcs7Padding() throws Exception {
+        // Setup test data.
+        String textToSign = "hello world";
+        byte[] key = new byte[128/8]; // 128 bit key.
+        new Random().nextBytes(key);
+        String algorithm = SymmetricKeyEncryptionDecryptionAssertion.TRANS_AES_ECB_PKCS7Padding;
+        String outVariableName = "encrypted";
+
+        // Encrypt.
+        SymmetricKeyEncryptionDecryptionAssertion ass = new SymmetricKeyEncryptionDecryptionAssertion();
+        setUpAssertion(ass, HexUtils.encodeBase64(textToSign.getBytes(Charsets.UTF8)), HexUtils.encodeBase64(key), outVariableName, algorithm, true, null);
+
+        ServerSymmetricKeyEncryptionDecryptionAssertion sass = new ServerSymmetricKeyEncryptionDecryptionAssertion(ass, mockApplicationContext);
+        AssertionStatus status = sass.checkRequest(mockPolicyEnforcementContext);
+        Assert.assertEquals("Encryption failed.", AssertionStatus.NONE, status);
+
+        String encryptedB64 = getOutputString(outVariableName);
+        Assert.assertTrue("Cipher text is empty.", encryptedB64.length() > 0);
+
+        // Decrypt
+        outVariableName = "decrypted";
+        ass = new SymmetricKeyEncryptionDecryptionAssertion();
+        setUpAssertion(ass, encryptedB64, HexUtils.encodeBase64(key), outVariableName, algorithm, false, null);
+
+        sass = new ServerSymmetricKeyEncryptionDecryptionAssertion(ass, mockApplicationContext);
+        status = sass.checkRequest(mockPolicyEnforcementContext);
+        Assert.assertEquals("Decryption failed.", AssertionStatus.NONE, status);
+
+        String decryptedB64 = getOutputString(outVariableName);
+        Assert.assertTrue("Decrypted text is empty.", decryptedB64.length() > 0);
+
+        // Check decrypted text matches original text.
+        String decryptedText = new String(HexUtils.decodeBase64(decryptedB64));
+        Assert.assertEquals(textToSign, decryptedText);
+    }
+
+    @Test
+    @BugId("DE360294")
+    public void testAESECB192Test() throws Exception {
+        final String TEXT = "This is my text to encrypt and decrypt using the AES/ECB/PKCS5Padding";
+        final String ALGORITHM = "AES/ECB/PKCS5Padding";
+        final String KEY_192BIT = "thisour192bitkey192keybi";
+
+        final String ENCRYPT_VAR = "192encryptoutputtest";
+        final String DECRYPT_VAR = "192decryptoutputtest";
+
+        aesTestHelper(TEXT, ALGORITHM, KEY_192BIT, ENCRYPT_VAR, DECRYPT_VAR);
+    }
+
+    @Test
+    @BugId("DE360294")
+    public void testAESECB256Test() throws Exception {
+        final String TEXT = "This is my text to encrypt and decrypt using the AES/ECB/PKCS5Padding";
+        final String ALGORITHM = "AES/ECB/PKCS5Padding";
+        final String KEY_256BIT = "thisour192bitkey192keybit256bitk";
+
+        final String ENCRYPT_VAR = "256encryptoutputtest";
+        final String DECRYPT_VAR = "256decryptoutputtest";
+
+        aesTestHelper(TEXT, ALGORITHM, KEY_256BIT, ENCRYPT_VAR, DECRYPT_VAR);
+    }
+
+
+    private void aesTestHelper(String text, String algorithm, String key, String encryptVariable, String decryptVariable) throws Exception {
+        SymmetricKeyEncryptionDecryptionAssertion encryptAssertion = new SymmetricKeyEncryptionDecryptionAssertion();
+        String b64encodedText = HexUtils.encodeBase64(text.getBytes(Charsets.UTF8));
+        String keyB64 = HexUtils.encodeBase64(key.getBytes(Charsets.UTF8));
+        setUpAssertion(encryptAssertion, b64encodedText, keyB64, encryptVariable, algorithm, true,"");
+
+        ServerSymmetricKeyEncryptionDecryptionAssertion encryptServerAssertion = new ServerSymmetricKeyEncryptionDecryptionAssertion(encryptAssertion, mockApplicationContext);
+        AssertionStatus status = encryptServerAssertion.checkRequest(mockPolicyEnforcementContext);
+        String output = getOutputString(encryptVariable);
+        Assert.assertNotNull(status);
+        Assert.assertEquals("Assertion Status should be NONE", AssertionStatus.NONE.getMessage(), status.getMessage());
+        Assert.assertTrue("Ensure cipher is produced", output.length() > 0);
+
+        SymmetricKeyEncryptionDecryptionAssertion decryptionAssertion = new SymmetricKeyEncryptionDecryptionAssertion();
+        setUpAssertion(decryptionAssertion, output, keyB64, decryptVariable, algorithm, false,"");
+
+        ServerSymmetricKeyEncryptionDecryptionAssertion decryptServerAssertion = new ServerSymmetricKeyEncryptionDecryptionAssertion(decryptionAssertion, mockApplicationContext);
+        status = decryptServerAssertion.checkRequest(mockPolicyEnforcementContext);
+        String finalOutput = getOutputString(decryptVariable);
+
+        Assert.assertNotNull(status);
+        Assert.assertEquals("Assertion Status should be NONE", AssertionStatus.NONE.getMessage(), status.getMessage());
+        Assert.assertEquals("Ensure output matches the original text", finalOutput, b64encodedText);
+    }
+
+    @Test
+    public void testAesEcbPkcs5PaddingDecrypt() throws Exception {
+        // Setup test data.
+        byte[] key = "PUdp6bksv1DngBRK".getBytes();
+        String algorithm = SymmetricKeyEncryptionDecryptionAssertion.TRANS_AES_ECB_PKCS5Padding;
+        String outVariableName = "encrypted";
+        String encryptedB64 = "kcZAP7iML4t/K/kSoKe6sEX/rMzHmLbHvl/MwrSate0=";
+
+        // Decrypt
+        outVariableName = "decrypted";
+        SymmetricKeyEncryptionDecryptionAssertion ass = new SymmetricKeyEncryptionDecryptionAssertion();
+        setUpAssertion(ass, encryptedB64, HexUtils.encodeBase64(key), outVariableName, algorithm, false, null);
+
+        ServerSymmetricKeyEncryptionDecryptionAssertion sass =
+                new ServerSymmetricKeyEncryptionDecryptionAssertion(ass, mockApplicationContext);
+        AssertionStatus status = sass.checkRequest(mockPolicyEnforcementContext);
+        Assert.assertEquals("Decryption failed.", AssertionStatus.NONE, status);
+
+        String decryptedB64 = getOutputString(outVariableName);
+        Assert.assertTrue("Decrypted text is empty.", decryptedB64.length() > 0);
+
+        // Check decrypted text matches original text.
+        String decryptedText = new String(HexUtils.decodeBase64(decryptedB64));
+        Assert.assertEquals("This is my text to encrypt", decryptedText);
+    }
+
+    @Test
+    public void testAesEcbPkcs5PaddingEncrypt() throws Exception {
+        // Setup test data.
+        byte[] key = "PUdp6bksv1DngBRK".getBytes();
+        String algorithm = SymmetricKeyEncryptionDecryptionAssertion.TRANS_AES_ECB_PKCS5Padding;
+        String outVariableName = "encrypted";
+        String textToSign = "This is my text to encrypt";
+
+        // Encrypt.
+        SymmetricKeyEncryptionDecryptionAssertion ass = new SymmetricKeyEncryptionDecryptionAssertion();
+        setUpAssertion(ass, HexUtils.encodeBase64(textToSign.getBytes(Charsets.UTF8)), HexUtils.encodeBase64(key), outVariableName, algorithm, true, null);
+
+        ServerSymmetricKeyEncryptionDecryptionAssertion sass = new ServerSymmetricKeyEncryptionDecryptionAssertion(ass, mockApplicationContext);
+        AssertionStatus status = sass.checkRequest(mockPolicyEnforcementContext);
+        Assert.assertEquals("Encryption failed.", AssertionStatus.NONE, status);
+
+        String encryptedB64 = getOutputString(outVariableName);
+        Assert.assertTrue("Cipher text is empty.", encryptedB64.length() > 0);
+
+        String decrypted = decrypt(encryptedB64, HexUtils.encodeBase64(key));
+        Assert.assertEquals("Encrypt validation failed.", textToSign, decrypted);
+    }
+
+    private String decrypt(String input, String key) {
+        byte[] output = null;
+        try {
+            java.util.Base64.Decoder decoder = java.util.Base64.getDecoder();
+            SecretKeySpec skey = new SecretKeySpec(decoder.decode(key.getBytes()), "AES");
+            Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+            cipher.init(Cipher.DECRYPT_MODE, skey);
+            output = cipher.doFinal(decoder.decode(input));
+        } catch (Exception e) {
+            System.out.println(e.toString());
+        }
+        return new String(output);
     }
 
     /**

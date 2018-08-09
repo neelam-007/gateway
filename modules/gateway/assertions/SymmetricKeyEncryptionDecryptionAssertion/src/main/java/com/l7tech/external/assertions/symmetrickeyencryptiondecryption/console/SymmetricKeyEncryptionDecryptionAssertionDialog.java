@@ -175,6 +175,8 @@ public class SymmetricKeyEncryptionDecryptionAssertionDialog extends AssertionPr
     private void loadAlgorithmComboBox(String selectedAlgorithmDisplay) {
 
         this.algorithmComboBox.addItem(SymmetricKeyEncryptionDecryptionAssertion.TRANS_AES_CBC_PKCS5Padding);
+        this.algorithmComboBox.addItem(SymmetricKeyEncryptionDecryptionAssertion.TRANS_AES_ECB_PKCS5Padding);
+        this.algorithmComboBox.addItem(SymmetricKeyEncryptionDecryptionAssertion.TRANS_AES_ECB_PKCS7Padding);
         this.algorithmComboBox.addItem(SymmetricKeyEncryptionDecryptionAssertion.TRANS_AES_GCM_NoPadding);
         this.algorithmComboBox.addItem(SymmetricKeyEncryptionDecryptionAssertion.TRANS_DES_CBC_PKCS5Padding);
         this.algorithmComboBox.addItem(SymmetricKeyEncryptionDecryptionAssertion.TRANS_DESede_CBC_PKCS5Padding);
