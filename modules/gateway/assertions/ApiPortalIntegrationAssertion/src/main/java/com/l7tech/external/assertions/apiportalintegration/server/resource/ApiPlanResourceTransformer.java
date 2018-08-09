@@ -22,12 +22,38 @@ public class ApiPlanResourceTransformer implements ResourceTransformer<ApiPlanRe
         plan.setPolicyXml(resource.getPolicyXml());
         plan.setDefaultPlan(resource.isDefaultPlan());
         plan.setLastUpdate(resource.getLastUpdate());
+
+        ThroughputQuotaDetails quotaDetails = resource.getPlanDetails().getThroughputQuota();
+        plan.setThroughputQuotaEnabled(quotaDetails.isEnabled());
+        plan.setQuota(quotaDetails.getQuota());
+        plan.setTimeUnit(quotaDetails.getTimeUnit());
+        plan.setCounterStrategy(quotaDetails.getCounterStrategy());
+
+        RateLimitDetails rateLimitDetails = resource.getPlanDetails().getRateLimit();
+        plan.setRateLimitEnabled(rateLimitDetails.isEnabled());
+        plan.setMaxRequestRate(rateLimitDetails.getMaxRequestRate());
+        plan.setWindowSizeInSeconds(rateLimitDetails.getWindowSizeInSeconds());
+        plan.setHardLimit(rateLimitDetails.isHardLimit());
+
         return plan;
     }
 
     @Override
     public ApiPlanResource entityToResource(@NotNull final ApiPlan entity) {
-        return new ApiPlanResource(entity.getName(), entity.getDescription(), entity.getLastUpdate(), entity.getPolicyXml(), entity.isDefaultPlan());
+        return new ApiPlanResource(entity.getName(), entity.getDescription(), entity.getLastUpdate(), entity.getPolicyXml(), 
+            entity.isDefaultPlan(), new PlanDetails(
+                new ThroughputQuotaDetails(
+                    entity.isThroughputQuotaEnabled(),
+                    entity.getQuota(),
+                    entity.getTimeUnit(),
+                    entity.getCounterStrategy()),
+                new RateLimitDetails(
+                    entity.isRateLimitEnabled(),
+                    entity.getMaxRequestRate(),
+                    entity.getWindowSizeInSeconds(),
+                    entity.isHardLimit()
+                )
+            ));
     }
 
     private static ApiPlanResourceTransformer instance;

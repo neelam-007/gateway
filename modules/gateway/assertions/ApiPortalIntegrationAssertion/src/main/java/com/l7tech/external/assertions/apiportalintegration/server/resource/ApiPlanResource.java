@@ -25,13 +25,16 @@ public class ApiPlanResource extends Resource {
     private String policyXml = StringUtils.EMPTY;
     @XmlElement(name = "DefaultPlan", namespace = JAXBResourceMarshaller.NAMESPACE)
     private boolean defaultPlan;
+    @XmlElement(name = "PlanDetails", namespace = JAXBResourceMarshaller.NAMESPACE)
+    private PlanDetails planDetails = new PlanDetails();
 
-    public ApiPlanResource(final String planId, final String planName, final Date lastUpdate, final String policyXml, final boolean defaultPlan) {
+    public ApiPlanResource(final String planId, final String planName, final Date lastUpdate, final String policyXml, final boolean defaultPlan, final PlanDetails planDetails) {
         setPlanId(planId);
         setPlanName(planName);
         setLastUpdate(lastUpdate);
         setPolicyXml(policyXml);
         setDefaultPlan(defaultPlan);
+        setPlanDetails(planDetails);
     }
 
     public ApiPlanResource() {
@@ -89,4 +92,17 @@ public class ApiPlanResource extends Resource {
     public void setDefaultPlan(final boolean defaultPlan) {
         this.defaultPlan = defaultPlan;
     }
+
+    public PlanDetails getPlanDetails() {
+        return planDetails;
+    }
+
+    public void setPlanDetails(PlanDetails planDetails) {
+        if(planDetails == null) {
+            this.planDetails = new PlanDetails();
+        } else {
+            this.planDetails = planDetails;
+        }
+    }
+
 }

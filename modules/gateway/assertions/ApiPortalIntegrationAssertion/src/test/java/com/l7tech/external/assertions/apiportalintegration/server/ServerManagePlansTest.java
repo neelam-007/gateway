@@ -39,6 +39,10 @@ import static org.mockito.Mockito.*;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ServerManagePlansTest {
+    public static final boolean THROUGHPUT_QUOTA_ENABLED = true;
+    public static final int QUOTA_10 = 10;
+    public static final int TIME_UNIT_1 = 1;
+    public static final int COUNTER_STRATEGY_1 = 1;
     private static final Date LAST_UPDATE = new Date();
     private static final String INPUT = "<input>dummy</input>";
     private static final String OUTPUT = "<output>dummy</output>";
@@ -94,7 +98,7 @@ public class ServerManagePlansTest {
     public void checkRequestGetAPIPlan() throws Exception {
         policyContext.setVariable(OPERATION, "GET");
         policyContext.setVariable(RESOURCE_URI, ROOT_URI + "api/plans/p1");
-        final ApiPlanResource resource = new ApiPlanResource("p1", "pName", LAST_UPDATE, "policy xml", true);
+        final ApiPlanResource resource = createApiPlanResource("p1", "pName", LAST_UPDATE, "policy xml", true, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1);
         apiPlanResources.add(resource);
         when(planResourceHandler.get(anyMap())).thenReturn(apiPlanResources);
         when(resourceMarshaller.marshal(any(ApiPlanResource.class))).thenReturn("plan xml");
@@ -131,8 +135,8 @@ public class ServerManagePlansTest {
     public void checkRequestGetAllAPIPlans() throws Exception {
         policyContext.setVariable(OPERATION, "GET");
         policyContext.setVariable(RESOURCE_URI, ROOT_URI + "api/plans");
-        final ApiPlanResource resource1 = new ApiPlanResource("p1", "pName1", LAST_UPDATE, "policyXml1", true);
-        final ApiPlanResource resource2 = new ApiPlanResource("p2", "pName2", LAST_UPDATE, "policyXml2", true);
+        final ApiPlanResource resource1 = createApiPlanResource("p1", "pName1", LAST_UPDATE, "policyXml1", true, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1);
+        final ApiPlanResource resource2 = createApiPlanResource("p2", "pName2", LAST_UPDATE, "policyXml2", true, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1);
         apiPlanResources.add(resource1);
         apiPlanResources.add(resource2);
         when(planResourceHandler.get(anyMap())).thenReturn(apiPlanResources);
@@ -187,7 +191,7 @@ public class ServerManagePlansTest {
     public void checkRequestGetApiPlanJAXBException() throws Exception {
         policyContext.setVariable(OPERATION, "GET");
         policyContext.setVariable(RESOURCE_URI, ROOT_URI + "api/plans/p1");
-        final ApiPlanResource resource = new ApiPlanResource("p1", "pName1", LAST_UPDATE, "policy xml", true);
+        final ApiPlanResource resource = createApiPlanResource("p1", "pName1", LAST_UPDATE, "policy xml", true, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1);
         apiPlanResources.add(resource);
         when(planResourceHandler.get(anyMap())).thenReturn(apiPlanResources);
         when(resourceMarshaller.marshal(any(ApiPlanListResource.class))).thenThrow(new JAXBException("mocking exception"));
@@ -238,7 +242,7 @@ public class ServerManagePlansTest {
     public void checkRequestGetAllAPIPlansJAXBException() throws Exception {
         policyContext.setVariable(OPERATION, "GET");
         policyContext.setVariable(RESOURCE_URI, ROOT_URI + "api/plans");
-        final ApiPlanResource resource = new ApiPlanResource("p1", "pName1", LAST_UPDATE, "policyXml1", true);
+        final ApiPlanResource resource = createApiPlanResource("p1", "pName1", LAST_UPDATE, "policyXml1", true, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1);
         apiPlanResources.add(resource);
         when(planResourceHandler.get(anyMap())).thenReturn(apiPlanResources);
         when(resourceMarshaller.marshal(any(ApiPlanListResource.class))).thenThrow(new JAXBException("mocking exception"));
@@ -258,7 +262,7 @@ public class ServerManagePlansTest {
         policyContext.setVariable(OPERATION, "PUT");
         policyContext.setVariable(RESOURCE_URI, ROOT_URI + "api/plans");
         policyContext.setVariable(RESOURCE, INPUT);
-        apiPlanResources.add(new ApiPlanResource("p1", "pName", null, "policy xml", true));
+        apiPlanResources.add(createApiPlanResource("p1", "pName", null, "policy xml", true, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1));
         when(resourceUnmarshaller.unmarshal(INPUT, ApiPlanListResource.class)).thenReturn(new ApiPlanListResource(apiPlanResources));
         when(planResourceHandler.put(anyList(), anyBoolean())).thenThrow(new SaveException("mocking exception"));
 
@@ -296,7 +300,7 @@ public class ServerManagePlansTest {
         policyContext.setVariable(OPERATION, "PUT");
         policyContext.setVariable(RESOURCE_URI, ROOT_URI + "api/plans");
         policyContext.setVariable(RESOURCE, INPUT);
-        final ApiPlanResource resource = new ApiPlanResource("p1", "pName", null, "policy xml", true);
+        final ApiPlanResource resource = createApiPlanResource("p1", "pName", null, "policy xml", true, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1);
         apiPlanResources.add(resource);
         when(resourceUnmarshaller.unmarshal(INPUT, ApiPlanListResource.class)).thenReturn(new ApiPlanListResource(apiPlanResources));
         when(planResourceHandler.put(apiPlanResources, false)).thenReturn(apiPlanResources);
@@ -318,7 +322,7 @@ public class ServerManagePlansTest {
         policyContext.setVariable(OPERATION, "PUT");
         policyContext.setVariable(RESOURCE_URI, ROOT_URI + "api/plans");
         policyContext.setVariable(RESOURCE, INPUT);
-        apiPlanResources.add(new ApiPlanResource("", "pName", null, "policy xml", false));
+        apiPlanResources.add(createApiPlanResource("", "pName", null, "policy xml", false, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1));
         when(resourceUnmarshaller.unmarshal(INPUT, ApiPlanListResource.class)).thenReturn(new ApiPlanListResource(apiPlanResources));
 
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
@@ -337,7 +341,7 @@ public class ServerManagePlansTest {
         policyContext.setVariable(OPERATION, "PUT");
         policyContext.setVariable(RESOURCE_URI, ROOT_URI + "api/plans");
         policyContext.setVariable(RESOURCE, INPUT);
-        apiPlanResources.add(new ApiPlanResource(null, "pName", null, "policy xml", false));
+        apiPlanResources.add(createApiPlanResource(null, "pName", null, "policy xml", false, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1));
         when(resourceUnmarshaller.unmarshal(INPUT, ApiPlanListResource.class)).thenReturn(new ApiPlanListResource(apiPlanResources));
 
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(policyContext);
@@ -373,9 +377,9 @@ public class ServerManagePlansTest {
         policyContext.setVariable(OPERATION, "PUT");
         policyContext.setVariable(RESOURCE_URI, ROOT_URI + "api/plans");
         policyContext.setVariable(RESOURCE, INPUT);
-        final ApiPlanResource resource1 = new ApiPlanResource("p1", "pName1", null, "policy xml 1", true);
+        final ApiPlanResource resource1 = createApiPlanResource("p1", "pName1", null, "policy xml 1", true, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1);
         apiPlanResources.add(resource1);
-        final ApiPlanResource resource2 = new ApiPlanResource("p2", "pName2", null, "policy xml 2", true);
+        final ApiPlanResource resource2 = createApiPlanResource("p2", "pName2", null, "policy xml 2", true, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1);
         apiPlanResources.add(resource2);
         final ApiPlanListResource listResource = new ApiPlanListResource(apiPlanResources);
         when(resourceUnmarshaller.unmarshal(INPUT, ApiPlanListResource.class)).thenReturn(listResource);
@@ -444,7 +448,7 @@ public class ServerManagePlansTest {
         policyContext.setVariable(OPERATION, "PUT");
         policyContext.setVariable(RESOURCE_URI, ROOT_URI + "api/plans");
         policyContext.setVariable(RESOURCE, INPUT);
-        apiPlanResources.add(new ApiPlanResource("p1", "pName1", null, "policy xml 1", true));
+        apiPlanResources.add(createApiPlanResource("p1", "pName1", null, "policy xml 1", true, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1));
         when(resourceUnmarshaller.unmarshal(INPUT, ApiPlanListResource.class)).thenReturn(new ApiPlanListResource(apiPlanResources));
         when(planResourceHandler.put(apiPlanResources, false)).thenThrow(new UpdateException("mocking exception"));
 
@@ -465,9 +469,9 @@ public class ServerManagePlansTest {
         policyContext.setVariable(RESOURCE_URI, ROOT_URI + "api/plans");
         policyContext.setVariable(RESOURCE, INPUT);
         policyContext.setVariable(OPTION_REMOVE_OMITTED, true);
-        final ApiPlanResource resource1 = new ApiPlanResource("p1", "pName1", null, "policy xml 1", true);
+        final ApiPlanResource resource1 = createApiPlanResource("p1", "pName1", null, "policy xml 1", true, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1);
         apiPlanResources.add(resource1);
-        final ApiPlanResource resource2 = new ApiPlanResource("p2", "pName2", null, "policy xml 2", false);
+        final ApiPlanResource resource2 = createApiPlanResource("p2", "pName2", null, "policy xml 2", false, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1);
         apiPlanResources.add(resource2);
         when(resourceUnmarshaller.unmarshal(INPUT, ApiPlanListResource.class)).thenReturn(new ApiPlanListResource(apiPlanResources));
         when(planResourceHandler.put(apiPlanResources, true)).thenReturn(apiPlanResources);
@@ -493,7 +497,7 @@ public class ServerManagePlansTest {
         policyContext.setVariable(RESOURCE_URI, ROOT_URI + "api/plans");
         policyContext.setVariable(RESOURCE, INPUT);
         policyContext.setVariable(OPTION_REMOVE_OMITTED, "invalid");
-        final ApiPlanResource resource = new ApiPlanResource("p1", "pName1", null, "policy xml 1", true);
+        final ApiPlanResource resource = createApiPlanResource("p1", "pName1", null, "policy xml 1", true, THROUGHPUT_QUOTA_ENABLED, QUOTA_10, TIME_UNIT_1, COUNTER_STRATEGY_1);
         apiPlanResources.add(resource);
         when(resourceUnmarshaller.unmarshal(INPUT, ApiPlanListResource.class)).thenReturn(new ApiPlanListResource(apiPlanResources));
         when(planResourceHandler.put(apiPlanResources, false)).thenReturn(apiPlanResources);
@@ -606,5 +610,26 @@ public class ServerManagePlansTest {
             }
             return false;
         }
+    }
+
+    private ApiPlanResource createApiPlanResource(final String planId, final String planName,
+                                                          final Date lastUpdate, final String policyXml, final boolean defaultPlan,
+                                                          final boolean throughputQuotaEnabled, final int quota, final int timeUnit,
+                                                          final int counterStrategy) {
+        final ApiPlanResource resource = new ApiPlanResource();
+        resource.setPlanId(planId);
+        resource.setPlanName(planName);
+        resource.setLastUpdate(lastUpdate);
+        resource.setPolicyXml(policyXml);
+        resource.setDefaultPlan(defaultPlan);
+        final PlanDetails planDetails = new PlanDetails();
+        final ThroughputQuotaDetails throughputQuotaDetails = new ThroughputQuotaDetails();
+        throughputQuotaDetails.setEnabled(throughputQuotaEnabled);
+        throughputQuotaDetails.setQuota(quota);
+        throughputQuotaDetails.setTimeUnit(timeUnit);
+        throughputQuotaDetails.setCounterStrategy(counterStrategy);
+        planDetails.setThroughputQuota(throughputQuotaDetails);
+        resource.setPlanDetails(planDetails);
+        return resource;
     }
 }

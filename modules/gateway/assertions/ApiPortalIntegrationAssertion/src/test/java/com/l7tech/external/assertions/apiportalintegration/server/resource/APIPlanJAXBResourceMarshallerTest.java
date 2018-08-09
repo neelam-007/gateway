@@ -20,6 +20,9 @@ public class APIPlanJAXBResourceMarshallerTest {
     private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
     private Date lastUpdate;
 
+    private static final ThroughputQuotaDetails QUOTA_DETAILS = new ThroughputQuotaDetails(true, 100, 1, 2);
+    private static final RateLimitDetails RATE_LIMIT_DETAILS = new RateLimitDetails(true, 100, 60, true);
+
     @Before
     public void setup() throws Exception {
         marshaller = new DefaultJAXBResourceMarshaller();
@@ -31,7 +34,7 @@ public class APIPlanJAXBResourceMarshallerTest {
 
     @Test
     public void marshall() throws Exception {
-        plan = new ApiPlanResource("p1", "pName", lastUpdate, "the xml", false);
+        plan = new ApiPlanResource("p1", "pName", lastUpdate, "the xml", false, new PlanDetails(QUOTA_DETAILS, RATE_LIMIT_DETAILS));
 
         final String xml = marshaller.marshal(plan);
 
@@ -40,7 +43,7 @@ public class APIPlanJAXBResourceMarshallerTest {
 
     @Test
     public void marshallNullPlanId() throws Exception {
-        plan = new ApiPlanResource(null, "pName", lastUpdate, "the xml", false);
+        plan = new ApiPlanResource(null, "pName", lastUpdate, "the xml", false, new PlanDetails(QUOTA_DETAILS, RATE_LIMIT_DETAILS));
 
         final String xml = marshaller.marshal(plan);
 
@@ -49,7 +52,7 @@ public class APIPlanJAXBResourceMarshallerTest {
 
     @Test
     public void marshallNullPlanName() throws Exception {
-        plan = new ApiPlanResource("p1", null, lastUpdate, "the xml", false);
+        plan = new ApiPlanResource("p1", null, lastUpdate, "the xml", false, new PlanDetails(QUOTA_DETAILS, RATE_LIMIT_DETAILS));
 
         final String xml = marshaller.marshal(plan);
 
@@ -60,7 +63,7 @@ public class APIPlanJAXBResourceMarshallerTest {
 
     @Test
     public void marshallNullLastUpdate() throws Exception {
-        plan = new ApiPlanResource("p1", "pName", null, "the xml", false);
+        plan = new ApiPlanResource("p1", "pName", null, "the xml", false, new PlanDetails(QUOTA_DETAILS, RATE_LIMIT_DETAILS));
 
         final String xml = marshaller.marshal(plan);
 
@@ -69,7 +72,7 @@ public class APIPlanJAXBResourceMarshallerTest {
 
     @Test
     public void marshallNullPolicyXml() throws Exception {
-        plan = new ApiPlanResource("p1", "pName", lastUpdate, null, false);
+        plan = new ApiPlanResource("p1", "pName", lastUpdate, null, false, new PlanDetails(QUOTA_DETAILS, RATE_LIMIT_DETAILS));
 
         final String xml = marshaller.marshal(plan);
 
@@ -78,7 +81,16 @@ public class APIPlanJAXBResourceMarshallerTest {
 
     @Test
     public void marshallDefaultPlan() throws Exception {
-        plan = new ApiPlanResource("p1", "pName", lastUpdate, "the xml", true);
+        plan = new ApiPlanResource("p1", "pName", lastUpdate, "the xml", true, new PlanDetails(QUOTA_DETAILS, RATE_LIMIT_DETAILS));
+
+        final String xml = marshaller.marshal(plan);
+
+        assertEquals(StringUtils.deleteWhitespace(buildExpectedXml(plan)), StringUtils.deleteWhitespace(xml));
+    }
+
+    @Test
+    public void marshallNullPlanDetails() throws Exception {
+        plan = new ApiPlanResource("p1", "pName", lastUpdate, "the xml", false, null);
 
         final String xml = marshaller.marshal(plan);
 
@@ -107,6 +119,37 @@ public class APIPlanJAXBResourceMarshallerTest {
         stringBuilder.append("<l7:DefaultPlan>");
         stringBuilder.append(plan.isDefaultPlan() ? "true" : "false");
         stringBuilder.append("</l7:DefaultPlan>");
+
+        stringBuilder.append("<l7:PlanDetails>");
+
+        ThroughputQuotaDetails details = plan.getPlanDetails().getThroughputQuota();
+        stringBuilder.append("<l7:ThroughputQuota l7:enabled=\"" + (details.isEnabled() ? "true" : "false") + "\">");
+        stringBuilder.append("<l7:Quota>");
+        stringBuilder.append(details.getQuota());
+        stringBuilder.append("</l7:Quota>");
+        stringBuilder.append("<l7:TimeUnit>");
+        stringBuilder.append(details.getTimeUnit());
+        stringBuilder.append("</l7:TimeUnit>");
+        stringBuilder.append("<l7:CounterStrategy>");
+        stringBuilder.append(details.getCounterStrategy());
+        stringBuilder.append("</l7:CounterStrategy>");
+        stringBuilder.append("</l7:ThroughputQuota>");
+
+        RateLimitDetails rateLimitDetails = plan.getPlanDetails().getRateLimit();
+        stringBuilder.append("<l7:RateLimit l7:enabled=\"" + (rateLimitDetails.isEnabled() ? "true" : "false") + "\">");
+        stringBuilder.append("<l7:MaxRequestRate>");
+        stringBuilder.append(rateLimitDetails.getMaxRequestRate());
+        stringBuilder.append("</l7:MaxRequestRate>");
+        stringBuilder.append("<l7:WindowSizeInSeconds>");
+        stringBuilder.append(rateLimitDetails.getWindowSizeInSeconds());
+        stringBuilder.append("</l7:WindowSizeInSeconds>");
+        stringBuilder.append("<l7:HardLimit>");
+        stringBuilder.append(rateLimitDetails.isHardLimit());
+        stringBuilder.append("</l7:HardLimit>");
+        stringBuilder.append("</l7:RateLimit>");
+
+        stringBuilder.append("</l7:PlanDetails>");
+
         stringBuilder.append("</l7:ApiPlan>");
         return stringBuilder.toString();
     }
