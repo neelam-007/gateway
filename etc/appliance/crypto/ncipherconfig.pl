@@ -54,7 +54,7 @@ my $LIST_KEYSTORE_CONTENTS = q[/opt/SecureSpan/Appliance/libexec/ssgconfig_launc
 
 # we will check that layer7 is in the nfast group, so no sudo needed for nfast commands
 my @NOPCLEARFAIL = qw(/opt/nfast/bin/nopclearfail ca);
-my @NEWWORLD = qw(/opt/nfast/bin/new-world -m 1 -s 0 -Q 2/3 -k rijndael);
+my @NEWWORLD = qw(/opt/nfast/bin/new-world -m 1 -s 0 -Q 2/3 -c DLf3072s256mRijndael);
 my @PROGRAMWORLD = qw(/opt/nfast/bin/new-world --program --module=1);
 my $CHECK_MODE = q[/opt/nfast/bin/enquiry -m 1 | grep "^ mode" | awk '{print $2}'];
 my $CHECK_FIPS = q[/opt/nfast/bin/nfkminfo -w | grep ' StrictFIPS140'];
