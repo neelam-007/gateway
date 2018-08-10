@@ -18,8 +18,7 @@ public interface SharedCounterStore {
 
     /**
      * Get the detailed information of the given counter name.
-     * If there are no counter mapping to the given counter name, return null
-     *
+     * If the counter does not exist it will be NOT be created
      * @param name the counter name
      * @return the the detailed all time unit information of the counter
      */
@@ -27,39 +26,39 @@ public interface SharedCounterStore {
 
     /**
      * Get the detailed information of the given counter name.
-     * If there are no counter mapping to the given counter name, a new counter will be created.
-     *
+     * If the counter does not exist it will be created
      * @param name the counter name
      * @return the the detailed all time unit information of the counter
      */
     SharedCounterState get(String name);
 
     /**
-     * Get the current value associated of the specified counter
+     * Get the current value associated of the specified counter.
+     * If the counter does not exist it will be created
      * @param name the counter name
      * @param counterOperationProperties sync or async configuration get passed in
      * @param fieldOfInterest the key of time unit of the counter
      * @return the current value of interest
-     * @throws NoSuchElementException if counter does not yet exist
      */
     long get(String name, Properties counterOperationProperties, CounterFieldOfInterest fieldOfInterest);
 
     /**
      * Atomically updates the specified counter value by the given delta
      * returning the previous value
+     * If the counter does not exist it will be created
      * @param name the counter name
      * @param counterOperationsProperties sync or async configuration get passed in
      * @param fieldOfInterest the key of time unit of the counter
      * @param timestamp the passed in timestamp of current operation time
      * @param delta the change value
      * @return the previous value of interest
-     * @throws NoSuchElementException if counter does not yet exist
      */
     long getAndUpdate(String name, Properties counterOperationsProperties, CounterFieldOfInterest fieldOfInterest, long timestamp, int delta);
 
     /**
      * Atomically updates the specified counter value with the given value within quota
      * returning the previous value
+     * If the counter does not exist it will be created
      * @param name the counter name
      * @param counterOperationsProperties sync or async configuration get passed in
      * @param fieldOfInterest the key of time unit of the counter
@@ -67,7 +66,6 @@ public interface SharedCounterStore {
      * @param delta the change value
      * @param limit the quota limit for the counter
      * @return the previous value of interest
-     * @throws NoSuchElementException if counter does not yet exist
      */
     long getAndUpdate(
             String name,
@@ -79,24 +77,24 @@ public interface SharedCounterStore {
 
     /**
      * Atomically updates the specified counter value with the given value
+     * If the counter does not exist it will be created
      * @param name the counter name
      * @param counterOperationsProperties sync or async configuration get passed in
      * @param fieldOfInterest the key of time unit of the counter
      * @param timestamp the passed in timestamp of current operation time
      * @param delta the change value
-     * @throws NoSuchElementException if counter does not yet exist
      */
     void update(String name, Properties counterOperationsProperties, CounterFieldOfInterest fieldOfInterest, long timestamp, int delta);
     
     /**
      * Atomically updates the specified counter value with the given value within quota
+     * If the counter does not exist it will be created
      * @param name the counter name
      * @param counterOperationsProperties sync or async configuration get passed in
      * @param fieldOfInterest the key of time unit of the counter
      * @param timestamp the passed in timestamp of current operation time
      * @param delta the change value
      * @param limit the quota limit for the counter
-     * @throws NoSuchElementException if counter does not yet exist
      */
     void update(
             String name,
@@ -109,19 +107,20 @@ public interface SharedCounterStore {
     /**
      * Atomically updates the specified counter value with the given value
      * returning the updated value
+     * If the counter does not exist it will be created
      * @param name the counter name
      * @param counterOperationsProperties sync or async configuration get passed in
      * @param fieldOfInterest the key of time unit of the counter
      * @param timestamp the passed in timestamp of current operation time
      * @param delta the change value
      * @return the updated value
-     * @throws NoSuchElementException if counter does not yet exist
      */
     long updateAndGet(String name, Properties counterOperationsProperties, CounterFieldOfInterest fieldOfInterest, long timestamp, int delta);
     
     /**
      * Atomically updates the specified counter value with the given value within quota
      * returning the updated value
+     * If the counter does not exist it will be created
      * @param name the counter name
      * @param counterOperationsProperties sync or async configuration get passed in
      * @param fieldOfInterest the key of time unit of the counter
@@ -129,7 +128,6 @@ public interface SharedCounterStore {
      * @param delta the change value
      * @param limit the quota limit for the counter
      * @return the updated value
-     * @throws NoSuchElementException if counter does not yet exist
      */
     long updateAndGet(
             String name,
@@ -140,9 +138,9 @@ public interface SharedCounterStore {
             long limit) throws CounterLimitReachedException;
 
     /**
-     * Atomically reset the counter to zero
+     * Atomically reset the counter to zero if it exists
+     * If the counter does not exist, it may or may not be created by implementors.
      * @param name the counter name
-     * @throws NoSuchElementException if counter does not yet exist
      */
     void reset(String name);
 }
