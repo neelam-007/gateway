@@ -17,8 +17,8 @@ public interface SharedCounterStore {
     void init();
 
     /**
-     * Get the detailed information of the given counter name.
-     * If the counter does not exist it will be NOT be created
+     * Get the detailed information of the given counter name, if the counter exists.
+     * If the counter does not exist it will be NOT be created and returns null.
      * @param name the counter name
      * @return the the detailed all time unit information of the counter
      */
@@ -26,7 +26,7 @@ public interface SharedCounterStore {
 
     /**
      * Get the detailed information of the given counter name.
-     * If the counter does not exist it will be created
+     * If the counter does not exist it will be created, then returns all field values for the new counter
      * @param name the counter name
      * @return the the detailed all time unit information of the counter
      */
@@ -34,7 +34,7 @@ public interface SharedCounterStore {
 
     /**
      * Get the current value associated of the specified counter.
-     * If the counter does not exist it will be created
+     * If the counter does not exist it will be created, then returns the field value for the new counter
      * @param name the counter name
      * @param counterOperationProperties sync or async configuration get passed in
      * @param fieldOfInterest the key of time unit of the counter
@@ -45,7 +45,7 @@ public interface SharedCounterStore {
     /**
      * Atomically updates the specified counter value by the given delta
      * returning the previous value
-     * If the counter does not exist it will be created
+     * If the counter does not exist it will be created, updated, and returns pre-update field value for the new counter
      * @param name the counter name
      * @param counterOperationsProperties sync or async configuration get passed in
      * @param fieldOfInterest the key of time unit of the counter
@@ -58,7 +58,7 @@ public interface SharedCounterStore {
     /**
      * Atomically updates the specified counter value with the given value within quota
      * returning the previous value
-     * If the counter does not exist it will be created
+     * If the counter does not exist it will be created, updated, and returns pre-update field value for the new counter
      * @param name the counter name
      * @param counterOperationsProperties sync or async configuration get passed in
      * @param fieldOfInterest the key of time unit of the counter
@@ -77,7 +77,7 @@ public interface SharedCounterStore {
 
     /**
      * Atomically updates the specified counter value with the given value
-     * If the counter does not exist it will be created
+     * If the counter does not exist it will be created and updated
      * @param name the counter name
      * @param counterOperationsProperties sync or async configuration get passed in
      * @param fieldOfInterest the key of time unit of the counter
@@ -88,7 +88,7 @@ public interface SharedCounterStore {
     
     /**
      * Atomically updates the specified counter value with the given value within quota
-     * If the counter does not exist it will be created
+     * If the counter does not exist it will be created and updated
      * @param name the counter name
      * @param counterOperationsProperties sync or async configuration get passed in
      * @param fieldOfInterest the key of time unit of the counter
@@ -107,7 +107,7 @@ public interface SharedCounterStore {
     /**
      * Atomically updates the specified counter value with the given value
      * returning the updated value
-     * If the counter does not exist it will be created
+     * If the counter does not exist it will be created, updated, and returns the updated field value for the new counter.
      * @param name the counter name
      * @param counterOperationsProperties sync or async configuration get passed in
      * @param fieldOfInterest the key of time unit of the counter
@@ -120,7 +120,7 @@ public interface SharedCounterStore {
     /**
      * Atomically updates the specified counter value with the given value within quota
      * returning the updated value
-     * If the counter does not exist it will be created
+     * If the counter does not exist it will be created, updated, and returns the updated field value for the new counter.
      * @param name the counter name
      * @param counterOperationsProperties sync or async configuration get passed in
      * @param fieldOfInterest the key of time unit of the counter
