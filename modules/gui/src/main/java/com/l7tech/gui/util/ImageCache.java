@@ -38,6 +38,9 @@ public final class ImageCache {
     /** this instance classloader */
     private final ClassLoader loader = ImageCache.class.getClassLoader();
 
+    /** name of the default image */
+    private final String DEFAULT_IMAGE_NAME = "com/l7tech/console/resources/star16.gif";
+
     /**
      * @return the singleton instance
      */
@@ -143,7 +146,11 @@ public final class ImageCache {
                 logger.log( Level.WARNING, "Unable to load image resource " + name + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException( e ) );
             }
         }
-        return null;
+
+        /** Default image is used when getIcon() couldn't find an icon from above */
+        Image default_image = imageMap.get(DEFAULT_IMAGE_NAME).get();
+
+        return default_image;
     }
 
     /**
