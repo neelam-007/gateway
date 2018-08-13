@@ -2,7 +2,6 @@ package com.ca.apim.gateway.extension.sharedstate.counter;
 
 import com.ca.apim.gateway.extension.sharedstate.counter.exception.CounterLimitReachedException;
 
-import java.util.NoSuchElementException;
 import java.util.Properties;
 
 /**
