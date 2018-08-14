@@ -147,10 +147,7 @@ public final class ImageCache {
             }
         }
 
-        /** Default image is used when getIcon() couldn't find an icon from above */
-        Image defaultImage = imageMap.get(DEFAULT_IMAGE_NAME).get();
-
-        return defaultImage;
+        return imageMap.get(DEFAULT_IMAGE_NAME).get();
     }
 
     /**
