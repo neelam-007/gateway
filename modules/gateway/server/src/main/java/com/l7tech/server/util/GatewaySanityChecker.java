@@ -16,18 +16,21 @@ import com.l7tech.server.upgrade.UpgradeTask;
 import com.l7tech.util.CollectionUtils;
 import com.l7tech.util.ExceptionUtils;
 import org.hibernate.TransactionException;
+import org.hibernate.exception.LockAcquisitionException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ApplicationEventMulticaster;
 import org.springframework.context.support.ApplicationObjectSupport;
+import org.springframework.orm.hibernate3.HibernateOptimisticLockingFailureException;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.*;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.l7tech.util.CollectionUtils.set;
@@ -285,14 +288,28 @@ public class GatewaySanityChecker extends ApplicationObjectSupport implements In
         } catch (TransactionException e) {
             // Was the underlying cause something under our control?
             if (enonfatal[0] == null && efatal[0] == null) {
-                // No -- treat as non-fatal commit error (maybe a collision with another node)
+                // No -- treat as non-fatal commit error 
                 auditor.logAndAudit(BootMessages.UPGRADE_TASK_NONFATAL,
                                     new String[] { "Unexpected failure during upgrade task: " + ExceptionUtils.getMessage(e) },
                                     e);
                 return;
             }
-
-            // Yes -- FALLTHROUGH and handle it
+            // If two threads are running upgrades concurrently, we might encounter an optimistic locking failure
+        } catch (HibernateOptimisticLockingFailureException | LockAcquisitionException e) {
+            // Fetch the property again to see if another thread has completed this task already
+            try {
+                ClusterProperty refreshedProp = clusterPropertyManager.findByPrimaryKey(propToDelete.getGoid());
+                if (refreshedProp == null) {
+                    logger.log(Level.INFO, "Skipping upgrade task (already completed on another node).");
+                    return;
+                } else {
+                    auditor.logAndAudit(BootMessages.UPGRADE_TASK_FATAL, "Unable to run upgrade task on this node, and it was not successfully completed on another node.");
+                    throw new FatalUpgradeException("Unable to run upgrade task on this node, and it was not successfully completed on another node.");
+                }
+            } catch (FindException findException) {
+                auditor.logAndAudit(BootMessages.UPGRADE_TASK_FATAL, new String[]{"Encountered an unexpected exception while checking if another node has completed this upgrade task"}, e);
+                throw new FatalUpgradeException("Unable to run upgrade task on this node, and could not check if it has been completed successfully on another node.", e);
+            }
         } finally {
             AuditContextUtils.setSystem(wasSystem);
         }
