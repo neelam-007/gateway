@@ -1,31 +1,31 @@
 package com.l7tech.external.assertions.ratelimit.server;
 
+import com.ca.apim.gateway.extension.sharedstate.cluster.ClusterInfoService;
 import com.l7tech.external.assertions.ratelimit.RateLimitAssertion;
 import com.l7tech.gateway.common.audit.AssertionMessages;
 import com.l7tech.gateway.common.audit.Audit;
-import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.policy.variable.Syntax;
-import com.l7tech.server.cluster.ClusterInfoManager;
+import com.l7tech.server.extension.registry.sharedstate.SharedClusterInfoServiceRegistry;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.*;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.util.*;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -41,8 +41,6 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
     static final BigInteger MILLIS_PER_SECOND_BIG = BigInteger.valueOf(MILLIS_PER_SECOND);
     static final long NANOS_PER_SECOND = MILLIS_PER_SECOND * NANOS_PER_MILLI;
     static final BigInteger NANOS_PER_SECOND_BIG = BigInteger.valueOf(NANOS_PER_SECOND);
-    private static final long DEFAULT_CLUSTER_POLL_INTERVAL = 43L * MILLIS_PER_SECOND; // Check every 43 seconds to see if cluster size has changed
-    private static final long DEFAULT_CLUSTER_STATUS_INTERVAL = 8L * MILLIS_PER_SECOND; // Nodes are considered "up" if they are the current node or if they have updated their status row within the last 8 seconds
     private static final int DEFAULT_MAX_QUEUED_THREADS = 20;
     private static final int DEFAULT_CLEANER_PERIOD = 13613;
     private static final int DEFAULT_MAX_NAP_TIME = 4703;
@@ -54,16 +52,13 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
 
     static final AtomicInteger maxSleepThreads = new AtomicInteger(DEFAULT_MAX_QUEUED_THREADS);
 
-    private static final ConcurrentHashMap<String, RateLimitCounter> counters = new ConcurrentHashMap<String, RateLimitCounter>();
+    private static final ConcurrentHashMap<String, RateLimitCounter> counters = new ConcurrentHashMap<>();
     static final AtomicLong lastClusterCheck = new AtomicLong();
-    private static final AtomicReference<BigInteger> clusterSize = new AtomicReference<BigInteger>();
-    private static final Lock clusterCheckLock = new ReentrantLock();
     static final AtomicInteger curSleepThreads = new AtomicInteger();
     static final AtomicLong cleanerPeriod = new AtomicLong( (long) DEFAULT_CLEANER_PERIOD );
     static final AtomicLong maxNapTime = new AtomicLong( (long) DEFAULT_MAX_NAP_TIME );
     private static final AtomicLong maxTotalSleepTime = new AtomicLong( (long) DEFAULT_MAX_TOTAL_SLEEP_TIME );
-    private static final AtomicLong clusterPollInterval = new AtomicLong( DEFAULT_CLUSTER_POLL_INTERVAL );
-    private static final AtomicLong clusterStatusInteval = new AtomicLong( DEFAULT_CLUSTER_STATUS_INTERVAL );
+
     static boolean auditLimitExceeded = true;
     static boolean useNanos = true;
     static boolean autoFallbackFromNanos = !ConfigFactory.getBooleanProperty( "com.l7tech.external.server.ratelimit.forceNanos", false );
@@ -86,7 +81,8 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
 
     interface BigIntFinder extends Functions.Unary<BigInteger, PolicyEnforcementContext> {}
 
-    private final ClusterInfoManager clusterInfoManager;
+    private final ClusterInfoService clusterInfoService;
+    private final SharedClusterInfoServiceRegistry sharedClusterInfoServiceRegistry;
     private final Config config;
 
     private final String[] variablesUsed;
@@ -100,23 +96,34 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
         super(assertion);
         this.variablesUsed = assertion.getVariablesUsed();
         this.counterNameRaw = assertion.getCounterName();
-        this.clusterInfoManager = context.getBean("clusterInfoManager", ClusterInfoManager.class);
-        if (clusterInfoManager == null) throw new PolicyAssertionException(assertion, "Missing clusterInfoManager bean");
+
+        this.sharedClusterInfoServiceRegistry = context.getBean("sharedClusterInfoServiceRegistry", SharedClusterInfoServiceRegistry.class);
+        if (sharedClusterInfoServiceRegistry == null) {
+            throw new PolicyAssertionException(assertion, "Missing SharedClusterInfoRegistry bean");
+        }
+        this.clusterInfoService = this.getClusterInfoService();
 
         this.config = context.getBean("serverConfig", Config.class);
-        if ( config == null) throw new PolicyAssertionException(assertion, "Missing serverConfig bean");
+        if (config == null) {
+            throw new PolicyAssertionException(assertion, "Missing serverConfig bean");
+        }
 
-        this.windowSizeInSecondsFinder = makeBigIntFinder(assertion.getWindowSizeInSeconds(), "Burst spread limit", getAudit(), 1L );
-        this.maxConcurrencyFinder = makeBigIntFinder(assertion.getMaxConcurrency(), "Maximum concurrent requests", getAudit(), 0L );
-        this.maxRequestsPerSecondFinder = makeBigIntFinder(assertion.getMaxRequestsPerSecond(), "Maximum requests per second", getAudit(), 1L );
+        this.windowSizeInSecondsFinder = makeBigIntFinder(assertion.getWindowSizeInSeconds(), "Burst spread limit", getAudit(), 1L);
+        this.maxConcurrencyFinder = makeBigIntFinder(assertion.getMaxConcurrency(), "Maximum concurrent requests", getAudit(), 0L);
+        this.maxRequestsPerSecondFinder = makeBigIntFinder(assertion.getMaxRequestsPerSecond(), "Maximum requests per second", getAudit(), 1L);
         final String blackout = assertion.getBlackoutPeriodInSeconds();
-        this.blackoutSecondsFinder = blackout == null ? null : makeBigIntFinder(blackout, "Blackout period in seconds", getAudit(), 1L );
+        this.blackoutSecondsFinder = blackout == null ? null : makeBigIntFinder(blackout, "Blackout period in seconds", getAudit(), 1L);
     }
 
     @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
-        final String counterName = getConterName(context);
-        final RateLimitCounter counter = findCounter(counterName);
+        final String counterName = getCounterName(context);
+        final RateLimitCounter counter = getCounter(counterName);
+
+        maxSleepThreads.set(config.getIntProperty(RateLimitAssertion.PARAM_MAX_QUEUED_THREADS, DEFAULT_MAX_QUEUED_THREADS));
+        cleanerPeriod.set((long) config.getIntProperty(RateLimitAssertion.PARAM_CLEANER_PERIOD, DEFAULT_CLEANER_PERIOD));
+        maxNapTime.set((long) config.getIntProperty(RateLimitAssertion.PARAM_MAX_NAP_TIME, DEFAULT_MAX_NAP_TIME));
+        maxTotalSleepTime.set((long) config.getIntProperty(RateLimitAssertion.PARAM_MAX_TOTAL_SLEEP_TIME, DEFAULT_MAX_TOTAL_SLEEP_TIME));
 
         if (counter.checkBlackedOut(clock.currentTimeMillis())) {
             logAndAudit( AssertionMessages.RATELIMIT_BLACKED_OUT );
@@ -137,12 +144,7 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
         if (maxConcurrency > 0) {
             // Enforce maximum concurrency for this counter
             final int newConcurrency = counter.concurrency.incrementAndGet();
-            context.runOnClose(new Runnable() {
-                @Override
-                public void run() {
-                    counter.concurrency.decrementAndGet();
-                }
-            });
+            context.runOnClose(decrementAndGetConcurrency(counter));
 
             if (newConcurrency > maxConcurrency) {
                 logAndAudit( AssertionMessages.RATELIMIT_CONCURRENCY_EXCEEDED, counterName );
@@ -182,6 +184,11 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
         return ret;
     }
 
+    @NotNull
+    private Runnable decrementAndGetConcurrency(RateLimitCounter counter) {
+        return () -> counter.concurrency.decrementAndGet();
+    }
+
 
     private AssertionStatus checkNoSleep(BigInteger pps, RateLimitCounter counter, String counterName, BigInteger maxPoints) throws IOException {
         if (BigInteger.ZERO.equals(counter.spend(clock.currentTimeMillis(), pps, maxPoints))) {
@@ -219,8 +226,9 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
                 long now = clock.currentTimeMillis();
 
                 BigInteger shortfall = counter.spend(now, pps, maxPoints);
-                if (shortfall.equals(BigInteger.ZERO))
+                if (shortfall.equals(BigInteger.ZERO)) {
                     return AssertionStatus.NONE;
+                }
 
                 if (isOverslept(startTime, now)) {
                     logAndAudit( AssertionMessages.RATELIMIT_SLEPT_TOO_LONG, counterName );
@@ -233,7 +241,10 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
                 BigInteger sleepTime = dr[0];
                 int sleepNanosInt = dr[1].intValue();
 
-                if (sleepTime.compareTo(maxnap) > 0) sleepTime = maxnap; // don't sleep for too long
+                // don't sleep for too long
+                if (sleepTime.compareTo(maxnap) > 0) {
+                    sleepTime = maxnap;
+                }
 
                 if (!sleepIfPossible(curSleepThreads, maxSleepThreads.get(), sleepTime.longValue(), sleepNanosInt)) {
                     logAndAudit( AssertionMessages.RATELIMIT_NODE_CONCURRENCY, counterName );
@@ -255,11 +266,12 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
     private static boolean sleepIfPossible(AtomicInteger sleepCounter, int maxSleepers, long sleepMillis, int nanos) throws CausedIOException {
         try {
             int sleepers = sleepCounter.incrementAndGet();
-            if (sleepers > maxSleepers)
+            if (sleepers > maxSleepers) {
                 return false;
-
-            if (logger.isLoggable(SUBINFO_LEVEL))
+            }
+            if (logger.isLoggable(SUBINFO_LEVEL)) {
                 logger.log(SUBINFO_LEVEL, "Rate limit: Thread " + Thread.currentThread().getName() + ": sleeping " + sleepMillis + "ms " + nanos + "ns");
+            }
             clock.sleep(sleepMillis, nanos);
             return true;
         } catch (InterruptedException e) {
@@ -272,127 +284,41 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
     int findMaxConcurrency(PolicyEnforcementContext context) throws NoSuchVariableException, NumberFormatException {
         final BigInteger conc = maxConcurrencyFinder.call(context);
         return assertion.isSplitConcurrencyLimitAcrossNodes()
-                ? conc.divide(getClusterSize()).intValue()
+                ? conc.divide(BigInteger.valueOf(clusterInfoService.getActiveNodes().size())).intValue()
                 : conc.intValue();
     }
 
     BigInteger findPointsPerSecond(PolicyEnforcementContext context) throws NoSuchVariableException, NumberFormatException {
         BigInteger rps = maxRequestsPerSecondFinder.call(context);
-        if (rps.compareTo(BigInteger.ONE) < 0) throw new IllegalStateException("Max requests per second cannot be less than 1");
+        if (rps.compareTo(BigInteger.ONE) < 0) {
+            throw new IllegalStateException("Max requests per second cannot be less than 1");
+        }
         final BigInteger pps = POINTS_PER_REQUEST.multiply(rps);
-        return assertion.isSplitRateLimitAcrossNodes() ? pps.divide(getClusterSize()) : pps;
-    }
-
-    // @return the cluster size. always positive
-    private BigInteger getClusterSize() {
-        long now = clock.currentTimeMillis();
-        final long lastCheck = lastClusterCheck.get();
-        final BigInteger oldSize = clusterSize.get();
-
-        if (oldSize == null) {
-            // Never been initialized.  Always pause to get a value, but only one thread will actually
-            // do the work.
-            clusterCheckLock.lock();
-            try {
-                if (clusterSize.get() == null) {
-                    logger.log(SUBINFO_LEVEL, "Initializing cluster size");
-                    clusterSize.set(BigInteger.valueOf( (long) loadClusterSizeFromDb() ));
-                    lastClusterCheck.set(clock.currentTimeMillis());
-                }
-            } finally {
-                clusterCheckLock.unlock();
-            }
-        } else {
-            final long pollInterval = clusterPollInterval.get();
-            if (now - lastCheck >= pollInterval) {
-                // We have an existing value, but it's looking a bit stale.  Have one thread try to fetch an update
-                // while the rest continue working with the existing value.
-                if (clusterCheckLock.tryLock()) {
-                    try {
-                        // See if we still need to do it
-                        if (clock.currentTimeMillis() - lastClusterCheck.get() > pollInterval) {
-                            logger.log(SUBINFO_LEVEL, "Checking current cluster size");
-                            final int newSize = loadClusterSizeFromDb();
-                            clusterSize.set(BigInteger.valueOf( (long) newSize));
-                            lastClusterCheck.set(clock.currentTimeMillis());
-                            if (newSize != oldSize.longValue()) {
-                                logger.info("Rate limit cluster size changed from " + oldSize + " to " + newSize + " active nodes");
-                            }
-                        }
-                    } finally {
-                        clusterCheckLock.unlock();
-                    }
-                }
-            }
-        }
-
-        return clusterSize.get();
-    }
-
-    // Unconditionally load the cluster size from the database.
-    private int loadClusterSizeFromDb() {
-        try {
-            clusterPollInterval.set(config.getLongProperty( RateLimitAssertion.PARAM_CLUSTER_POLL_INTERVAL, DEFAULT_CLUSTER_POLL_INTERVAL ));
-            clusterStatusInteval.set(config.getLongProperty( RateLimitAssertion.PARAM_CLUSTER_STATUS_INTERVAL, DEFAULT_CLUSTER_STATUS_INTERVAL ) );
-            maxSleepThreads.set(config.getIntProperty(RateLimitAssertion.PARAM_MAX_QUEUED_THREADS, DEFAULT_MAX_QUEUED_THREADS));
-            cleanerPeriod.set( (long) config.getIntProperty( RateLimitAssertion.PARAM_CLEANER_PERIOD, DEFAULT_CLEANER_PERIOD ) );
-            maxNapTime.set( (long) config.getIntProperty( RateLimitAssertion.PARAM_MAX_NAP_TIME, DEFAULT_MAX_NAP_TIME ) );
-            maxTotalSleepTime.set( (long) config.getIntProperty( RateLimitAssertion.PARAM_MAX_TOTAL_SLEEP_TIME, DEFAULT_MAX_TOTAL_SLEEP_TIME ) );
-            ClusterNodeInfo selfNodeInf = clusterInfoManager.getSelfNodeInf();
-            String selfNodeId = selfNodeInf == null ? "" : selfNodeInf.getNodeIdentifier();
-            if (selfNodeId == null) selfNodeId = "";
-
-            int upnodes = 1;
-            long now = System.currentTimeMillis();
-            Collection<ClusterNodeInfo> nodes = clusterInfoManager.retrieveClusterStatus();
-            for (ClusterNodeInfo node : nodes) {
-                if (selfNodeId.equals(node.getNodeIdentifier()))
-                    continue;
-
-                if (now - node.getLastUpdateTimeStamp() <= clusterStatusInteval.get())
-                    upnodes++;
-            }
-
-            if (logger.isLoggable(SUBINFO_LEVEL)) logger.log(SUBINFO_LEVEL, "Using cluster size: " + upnodes);
-            return upnodes;
-        } catch (FindException e) {
-            logAndAudit( AssertionMessages.EXCEPTION_SEVERE_WITH_MORE_INFO,
-                    new String[]{ "Unable to check cluster status: " + ExceptionUtils.getMessage( e ) },
-                    e );
-            return 1;
-        }
+        return assertion.isSplitRateLimitAcrossNodes() ? pps.divide(BigInteger.valueOf(clusterInfoService.getActiveNodes().size())) : pps;
     }
 
     // @return the existing counter with this name, creating a new one if necessary.
-    private static RateLimitCounter findCounter(String counterName) {
-        RateLimitCounter counter = findExistingCounter(counterName);
-        if (counter != null)
-            return counter;
-        RateLimitCounter prev = counters.putIfAbsent(counterName, counter = new RateLimitCounter(counterName));
-        return prev != null ? prev : counter;
+    private static RateLimitCounter getCounter(String counterName) {
+        if(!counters.containsKey(counterName)) {
+            counters.put(counterName, new RateLimitCounter(counterName));
+        }
+
+        return counters.get(counterName);
     }
 
-    /**
-     * Find an existing counter, without creating it if it doesn't already exist.
-     *
-     * @param counterName the counter name to look up.
-     * @return the counter, or null if no such counter currently exists.
-     * Note that counters that have not been used recently will be deleted, as part of normal operation.
-     */
-    public static RateLimitCounter findExistingCounter(String counterName) {
+    public static RateLimitCounter queryCounter(String counterName) {
         return counters.get(counterName);
     }
 
 
-
-    private String getConterName(PolicyEnforcementContext context) {
+    private String getCounterName(PolicyEnforcementContext context) {
         return ExpandVariables.process(counterNameRaw, context.getVariableMap(variablesUsed, getAudit()), getAudit());
     }
 
     // Caller should ensure that only one thread at a time ever calls this.
     private static void cleanOldCounters(long now) {
-        Set<Map.Entry<String,RateLimitCounter>> entries = counters.entrySet();
-        final Iterator<Map.Entry<String,RateLimitCounter>> it = entries.iterator();
+        Set<Map.Entry<String, RateLimitCounter>> entries = counters.entrySet();
+        final Iterator<Map.Entry<String, RateLimitCounter>> it = entries.iterator();
         while (it.hasNext()) {
             Map.Entry<String, RateLimitCounter> entry = it.next();
             RateLimitCounter counter = entry.getValue();
@@ -400,7 +326,8 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
                 it.remove();
             } else {
                 if (counter.isStale(now)) {
-                    if (logger.isLoggable(Level.FINE)) logger.log(Level.FINE, "Removing stale rate limiter " + entry.getKey());
+                    if (logger.isLoggable(Level.FINE))
+                        logger.log(Level.FINE, "Removing stale rate limiter " + entry.getKey());
                     it.remove();
                 }
             }
@@ -442,5 +369,19 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
                 }
             };
         }
+    }
+
+    private ClusterInfoService getClusterInfoService() {
+        String providerName = SyspropUtil.getProperty(SharedClusterInfoServiceRegistry.SYSPROP_CLUSTER_INFO_PROVIDER);
+        ClusterInfoService clusterService = sharedClusterInfoServiceRegistry.getExtension(providerName);
+
+        if (clusterService == null) {
+            logger.log(Level.WARNING, "Provider with name {0} cannot be found. Assertion will not work.", providerName);
+            throw new AssertionStatusException(AssertionStatus.FAILED, "Cluster info service provider with name " + providerName + " cannot be found. Policy cannot process request.");
+        } else {
+            logger.log(Level.FINE, "{0} is using cluster info service provider: {1}",
+                    new Object[]{getAssertion().getClass().getSimpleName(), providerName});
+        }
+        return clusterService;
     }
 }

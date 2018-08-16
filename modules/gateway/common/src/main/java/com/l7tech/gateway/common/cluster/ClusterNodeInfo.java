@@ -9,19 +9,18 @@ import java.io.Serializable;
 
 /**
  * Bean representation of a row in the cluster_info table.
- *
+ * <p>
  * Rows are added and deleted at config time when a node is added or removed from the cluster. Properties
  * uptime, avgLoad and lastUpdateTimeStamp are updated by each node at regular interval.
- *
+ * <p>
  * <br/><br/>
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
  * Date: Dec 17, 2003<br/>
- *
  */
 @Entity
-@Proxy(lazy=false)
-@Table(name="cluster_info")
+@Proxy(lazy = false)
+@Table(name = "cluster_info")
 public class ClusterNodeInfo implements Comparable<ClusterNodeInfo>, NameableEntity, Serializable {
 
     /**
@@ -31,7 +30,7 @@ public class ClusterNodeInfo implements Comparable<ClusterNodeInfo>, NameableEnt
      * name combination or.</p>
      */
     @Id
-    @Column(name="nodeid",nullable=false,length=32)
+    @Column(name = "nodeid", nullable = false, length = 32)
     public String getNodeIdentifier() {
         return nodeId;
     }
@@ -46,8 +45,9 @@ public class ClusterNodeInfo implements Comparable<ClusterNodeInfo>, NameableEnt
     /**
      * Name for the node
      */
+    @Override
     @RbacAttribute
-    @Column(name="name", nullable=false, length=128)
+    @Column(name = "name", nullable = false, length = 128)
     public String getName() {
         return name;
     }
@@ -59,7 +59,7 @@ public class ClusterNodeInfo implements Comparable<ClusterNodeInfo>, NameableEnt
     /**
      * mac address of the node
      */
-    @Column(name="mac",nullable=false,length=18)
+    @Column(name = "mac", nullable = false, length = 18)
     public String getMac() {
         return mac;
     }
@@ -74,7 +74,7 @@ public class ClusterNodeInfo implements Comparable<ClusterNodeInfo>, NameableEnt
     /**
      * direct ip address of this node
      */
-    @Column(name="address",nullable=false,length=39)
+    @Column(name = "address", nullable = false, length = 39)
     public String getAddress() {
         return address;
     }
@@ -86,12 +86,12 @@ public class ClusterNodeInfo implements Comparable<ClusterNodeInfo>, NameableEnt
         this.address = address;
     }
 
-    @Column(name="esm_address",nullable=false,length=39)
+    @Column(name = "esm_address", nullable = false, length = 39)
     public String getEsmAddress() {
         return esmAddress;
     }
 
-    public void setEsmAddress( final String esmAddress ) {
+    public void setEsmAddress(final String esmAddress) {
         this.esmAddress = esmAddress;
     }
 
@@ -113,7 +113,7 @@ public class ClusterNodeInfo implements Comparable<ClusterNodeInfo>, NameableEnt
     /**
      * the timestamp of when this node last booted
      */
-    @Column(name="uptime",nullable=false) // This is not a bug, it does map to uptime
+    @Column(name = "uptime", nullable = false) // This is not a bug, it does map to uptime
     public long getBootTime() {
         return boottime;
     }
@@ -131,7 +131,7 @@ public class ClusterNodeInfo implements Comparable<ClusterNodeInfo>, NameableEnt
     /**
      * the avg load of this node for the last minute
      */
-    @Column(name="avgload",nullable=false)
+    @Column(name = "avgload", nullable = false)
     public double getAvgLoad() {
         return avgLoad;
     }
@@ -146,7 +146,7 @@ public class ClusterNodeInfo implements Comparable<ClusterNodeInfo>, NameableEnt
     /**
      * the timestamp of when the avg load was last updated
      */
-    @Column(name="statustimestamp",nullable=false)
+    @Column(name = "statustimestamp", nullable = false)
     public long getLastUpdateTimeStamp() {
         return lastUpdateTimeStamp;
     }
@@ -161,14 +161,14 @@ public class ClusterNodeInfo implements Comparable<ClusterNodeInfo>, NameableEnt
     /**
      * A multicast address for use in the DistributedMessageIdManager.
      */
-    @Column(name="multicast_address",length=39)
+    @Column(name = "multicast_address", length = 39)
     public String getMulticastAddress() {
         return multicastAddress;
     }
 
     /**
      * A multicast address for use in the DistributedMessageIdManager.
-     */ 
+     */
     public void setMulticastAddress(String multicastAddress) {
         this.multicastAddress = multicastAddress;
     }
@@ -219,14 +219,11 @@ public class ClusterNodeInfo implements Comparable<ClusterNodeInfo>, NameableEnt
 
         if (name1 == null && name2 == null) {
             result = 0;
-        }
-        else if (name1 == null) {
+        } else if (name1 == null) {
             result = -1;
-        }
-        else if (name2 == null) {
+        } else if (name2 == null) {
             result = 1;
-        }
-        else {
+        } else {
             result = name1.toLowerCase().compareTo(name2.toLowerCase());
         }
 

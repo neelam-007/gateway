@@ -47,7 +47,7 @@ public class ServerRateLimitQueryAssertion extends AbstractServerAssertion<RateL
     @Override
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         final String counterName = getConterName(context);
-        RateLimitCounter counter = ServerRateLimitAssertion.findExistingCounter(counterName);
+        RateLimitCounter counter = ServerRateLimitAssertion.queryCounter(counterName);
 
         if (counter == null) {
             // TODO should we report different information in this case?

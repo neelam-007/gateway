@@ -1,5 +1,7 @@
 package com.l7tech.server;
 
+import com.ca.apim.gateway.extension.sharedstate.cluster.ClusterInfoService;
+import com.ca.apim.gateway.extension.sharedstate.cluster.ClusterNodeSharedInfo;
 import com.l7tech.gateway.common.cluster.ClusterNodeInfo;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
@@ -7,24 +9,32 @@ import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.cluster.ClusterInfoManager;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.Iterator;
 
 /**
  *
  */
-public class ClusterInfoManagerStub implements ClusterInfoManager {
+public class ClusterInfoManagerStub implements ClusterInfoManager, ClusterInfoService {
 
-    final ClusterNodeInfo cnf = new ClusterNodeInfo();
-    Collection<ClusterNodeInfo> clusterStatus = Collections.emptyList();
+    public static final int CLUSTER_STATUS_INTERVAL = 8000;
+    final ClusterNodeInfo cnf;
 
-    {
+    private Collection<ClusterNodeInfo> clusterStatus;
+
+    public ClusterInfoManagerStub() {
+        cnf = new ClusterNodeInfo();
         cnf.setNodeIdentifier("TestNode-main");
         cnf.setMac("00:0c:11:f0:43:01");
         cnf.setName("SSG1");
         cnf.setAddress("192.128.1.100");
         cnf.setAvgLoad(1.5);
         cnf.setBootTime(System.currentTimeMillis());
+        cnf.setLastUpdateTimeStamp(System.currentTimeMillis());
+
+        clusterStatus = Arrays.asList(cnf);
     }
 
     @Override
@@ -74,7 +84,38 @@ public class ClusterInfoManagerStub implements ClusterInfoManager {
     }
 
     @Override
-    public ClusterNodeInfo getSelfNodeInf( final boolean refresh ) {
+    public ClusterNodeInfo getSelfNodeInf(final boolean refresh) {
         return cnf;
+    }
+
+    @Override
+    public Collection<ClusterNodeSharedInfo> getActiveNodes() {
+        long now = System.currentTimeMillis();
+        cnf.setLastUpdateTimeStamp(now);
+        Iterator<ClusterNodeInfo> it = clusterStatus.iterator();
+        Collection<ClusterNodeSharedInfo> nodes = new ArrayList<>();
+        while (it.hasNext()) {
+            ClusterNodeInfo info = it.next();
+            if (now - info.getLastUpdateTimeStamp() <= CLUSTER_STATUS_INTERVAL) {
+                nodes.add(new ClusterNodeSharedInfo() {
+                    @Override
+                    public String getNodeIdentifier() {
+                        return info.getNodeIdentifier();
+                    }
+
+                    @Override
+                    public String getName() {
+                        return info.getName();
+                    }
+
+                    @Override
+                    public long getLastUpdateTimeStamp() {
+                        return info.getLastUpdateTimeStamp();
+                    }
+                });
+            }
+        }
+
+        return nodes;
     }
 }

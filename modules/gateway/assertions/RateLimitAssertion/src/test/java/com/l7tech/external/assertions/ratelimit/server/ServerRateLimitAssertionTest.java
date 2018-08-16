@@ -15,13 +15,18 @@ import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.ApplicationContexts;
 import com.l7tech.server.ClusterInfoManagerStub;
 import com.l7tech.server.ServerConfigStub;
+import com.l7tech.server.cluster.LocalClusterInfoService;
+import com.l7tech.server.extension.registry.sharedstate.SharedClusterInfoServiceRegistry;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.test.BenchmarkRunner;
 import com.l7tech.test.BugNumber;
-import com.l7tech.util.*;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.TestTimeSource;
+import com.l7tech.util.TimeSource;
+import com.l7tech.util.TimeoutExecutor;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -35,7 +40,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Timer;
 import java.util.concurrent.*;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -50,8 +54,13 @@ import static junit.framework.Assert.*;
  */
 public class ServerRateLimitAssertionTest {
     private static final Logger log = Logger.getLogger(ServerRateLimitAssertionTest.class.getName());
+    private SharedClusterInfoServiceRegistry clusterInfoServiceRegistry;
+    private ClusterInfoManagerStub clusterInfoManager;
 
-    /** A mock system clock for testing purposes. */
+
+    /**
+     * A mock system clock for testing purposes.
+     */
     private static final TestTimeSource clock = new TestTimeSource() {
         public void sleep(long sleepMillis, int nanos) throws InterruptedException {
             sleepHandler.get().sleep(sleepMillis, nanos);
@@ -75,7 +84,7 @@ public class ServerRateLimitAssertionTest {
                 onSleep(sleepMillis, nanos);
             } catch (Exception e) {
                 Thread.currentThread().interrupt();
-                throw (InterruptedException)new InterruptedException("sleep failed: " + ExceptionUtils.getMessage(e)).initCause(e);
+                throw (InterruptedException) new InterruptedException("sleep failed: " + ExceptionUtils.getMessage(e)).initCause(e);
             }
         }
 
@@ -119,6 +128,13 @@ public class ServerRateLimitAssertionTest {
         // Ensure cleaner doesn't run during the test
         serverConfig = applicationContext.getBean("serverConfig", ServerConfigStub.class);
         serverConfig.putProperty(RateLimitAssertion.PARAM_CLEANER_PERIOD, String.valueOf(86400L * 1000L));
+
+        clusterInfoManager = new ClusterInfoManagerStub();
+
+        clusterInfoServiceRegistry = applicationContext.getBean("sharedClusterInfoServiceRegistry", SharedClusterInfoServiceRegistry.class);
+
+        clusterInfoServiceRegistry.unregister(LocalClusterInfoService.KEY);
+        clusterInfoServiceRegistry.register(LocalClusterInfoService.KEY, clusterInfoManager);
 
         // Make test use our fake time source
         ServerRateLimitAssertion.clock = clock;
@@ -209,7 +225,7 @@ public class ServerRateLimitAssertionTest {
      */
     @Test
     @BugNumber(10495)
-    public void testLogOnly() throws Exception{
+    public void testLogOnly() throws Exception {
         doLogOnlyTest(false);
     }
 
@@ -218,7 +234,7 @@ public class ServerRateLimitAssertionTest {
      */
     @Test
     @BugNumber(10495)
-    public void testLogOnlySupersedesShapeRequest() throws Exception{
+    public void testLogOnlySupersedesShapeRequest() throws Exception {
         doLogOnlyTest(true);
     }
 
@@ -230,15 +246,15 @@ public class ServerRateLimitAssertionTest {
         rla.setShapeRequests(shapeRequests);
         final ServerAssertion serverAssertion = makePolicy(rla);
         final TestAudit testAudit = new TestAudit();
-        ApplicationContexts.inject( serverAssertion, Collections.singletonMap( "auditFactory", testAudit.factory() ) );
+        ApplicationContexts.inject(serverAssertion, Collections.singletonMap("auditFactory", testAudit.factory()));
 
         clock.sync();
         for (int i = 0; i < 5; ++i) {
-            assertEquals( AssertionStatus.NONE, serverAssertion.checkRequest( makeContext() ) );
             assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(makeContext()));
             assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(makeContext()));
             assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(makeContext()));
-            assertTrue( testAudit.isAuditPresent( AssertionMessages.RATELIMIT_RATE_EXCEEDED ) );
+            assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(makeContext()));
+            assertTrue(testAudit.isAuditPresent(AssertionMessages.RATELIMIT_RATE_EXCEEDED));
             clock.advanceByNanos(ServerRateLimitAssertion.NANOS_PER_SECOND / 5);
             testAudit.reset();
         }
@@ -415,7 +431,7 @@ public class ServerRateLimitAssertionTest {
         System.out.println("Total requests attempted: " + attemptCount.get());
         int successes = successCount.get();
         System.out.println("Total requests succeeded: " + successes);
-        double seconds = ((double)(clock.nanoTime() - origNanoTime)) / ServerRateLimitAssertion.NANOS_PER_SECOND;
+        double seconds = ((double) (clock.nanoTime() - origNanoTime)) / ServerRateLimitAssertion.NANOS_PER_SECOND;
         System.out.println("Total time spent (virtual): " + seconds + " sec");
         double effectiveReqPerSec = successes / seconds;
         System.out.println("Effective requests per second: " + effectiveReqPerSec);
@@ -604,7 +620,7 @@ public class ServerRateLimitAssertionTest {
 
         sleepHandler.set(new SingleThreadedInstantSleepSimulator());
 
-        final boolean[] finished = { false };
+        final boolean[] finished = {false};
         try {
             TimeoutExecutor.runWithTimeout(new Timer(), timeoutMillis, new Callable<Object>() {
                 public Object call() throws Exception {
@@ -895,11 +911,12 @@ public class ServerRateLimitAssertionTest {
 
     /**
      * Test that pre bug fix 5041 policies can be successfull and correctly parsed
+     *
      * @throws Exception
      */
     @Test
     @BugNumber(5041)
-    public void testRateLimitOldSupport() throws Exception{
+    public void testRateLimitOldSupport() throws Exception {
         //this xml uses an intValue property for MaxConcurrency and MaxRequestsPerSecond, which has been changed
         //to a String. An int setter is provided for the backwards compatabilityss
         String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
@@ -919,8 +936,8 @@ public class ServerRateLimitAssertionTest {
         tmf.registerAssertion(RateLimitAssertion.class);
 
         final RateLimitAssertion rla = (RateLimitAssertion) wspReader.parseStrictly(xml, WspReader.INCLUDE_DISABLED);
-        assertTrue("Invalid maxConcurrency value expected '23' got '" + rla.getMaxConcurrency()+"'", rla.getMaxConcurrency().equals("23"));
-        assertTrue("Invalid maxRequestsPerSecond expected '10076' got '" + rla.getMaxRequestsPerSecond()+"'", rla.getMaxRequestsPerSecond().equals("10076"));
+        assertTrue("Invalid maxConcurrency value expected '23' got '" + rla.getMaxConcurrency() + "'", rla.getMaxConcurrency().equals("23"));
+        assertTrue("Invalid maxRequestsPerSecond expected '10076' got '" + rla.getMaxRequestsPerSecond() + "'", rla.getMaxRequestsPerSecond().equals("10076"));
     }
 
     @Test
@@ -950,22 +967,27 @@ public class ServerRateLimitAssertionTest {
 
         setClusterSize(upnodes, totalnodes);
         ServerRateLimitAssertion sass = (ServerRateLimitAssertion) makePolicy(ass);
-        assertEquals("Max concurrency should be " + expectedConc + " for "  + ass.getCounterName(),
+        assertEquals("Max concurrency should be " + expectedConc + " for " + ass.getCounterName(),
                 expectedConc, sass.findMaxConcurrency(makeContext()));
         assertEquals("Max rate should be " + expectedRate + " for" + ass.getCounterName(),
                 expectedRate, sass.findPointsPerSecond(makeContext()).divide(ServerRateLimitAssertion.POINTS_PER_REQUEST).longValue());
     }
 
     private void setClusterSize(int upnodes, int totalnodes) {
-        ClusterInfoManagerStub clusterInfoManager = applicationContext.getBean("clusterInfoManager", ClusterInfoManagerStub.class);
-        ArrayList<ClusterNodeInfo> nodes = new ArrayList<ClusterNodeInfo>();
+        ArrayList<ClusterNodeInfo> nodes = new ArrayList<>();
         nodes.add(clusterInfoManager.getSelfNodeInf());
-        upnodes--;  // always count ourself as an up node
-        for (int i = 1; i < totalnodes; ++i) {
+        for (int i = 1; i < upnodes; i++) {
             final ClusterNodeInfo info = new ClusterNodeInfo();
-            info.setName("Fake node #" + i);
-            info.setNodeIdentifier("fakenodeid" + i);
-            info.setLastUpdateTimeStamp(upnodes-- > 0 ? clock.currentTimeMillis() : 0);
+            info.setName("Up Node #" + i);
+            info.setNodeIdentifier("upNodeId" + i);
+            info.setLastUpdateTimeStamp(System.currentTimeMillis());
+            nodes.add(info);
+        }
+        for (int i = upnodes; i < totalnodes; i++) {
+            final ClusterNodeInfo info = new ClusterNodeInfo();
+            info.setName("Down node #" + i);
+            info.setNodeIdentifier("downNodeId" + i);
+            info.setLastUpdateTimeStamp(0);
             nodes.add(info);
         }
         clusterInfoManager.setClusterStatus(nodes);

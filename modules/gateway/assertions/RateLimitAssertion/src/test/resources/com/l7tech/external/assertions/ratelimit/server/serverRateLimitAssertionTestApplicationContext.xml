@@ -23,8 +23,6 @@
 
     <bean id="clusterPropertyManager" class="com.l7tech.server.MockClusterPropertyManager"/>
 
-    <bean id="clusterInfoManager" class="com.l7tech.server.ClusterInfoManagerStub"/>
-
     <bean id="auditLogListener" class="com.l7tech.server.log.FilteringAuditLogListener">
         <constructor-arg ref="serverConfig"/>
         <constructor-arg>
@@ -34,5 +32,7 @@
 
     <bean id="auditDetailFilter" class="com.l7tech.server.audit.GatewayAuditDetailFilter">
         <constructor-arg ref="serverConfig"/>
-    </bean>       
+    </bean>
+
+    <bean id="sharedClusterInfoServiceRegistry" class="com.l7tech.server.extension.registry.sharedstate.SharedClusterInfoServiceRegistry"/>
 </beans>

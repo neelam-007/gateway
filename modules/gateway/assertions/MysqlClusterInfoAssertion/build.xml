@@ -1,0 +1,3 @@
+<project name="MysqlClusterInfoAssertion" default="compile">
+    <import file="../assertion-build.xml"/>
+</project>

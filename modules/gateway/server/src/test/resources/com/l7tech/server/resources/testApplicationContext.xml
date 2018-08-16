@@ -110,7 +110,7 @@
                 </constructor-arg>
             </bean>
         </constructor-arg>
-        <constructor-arg index="5" ref="clusterInfoManager"/>
+        <constructor-arg index="5" ref="clusterInfoService"/>
         <constructor-arg index="6"><null/></constructor-arg>
     </bean>
 
@@ -376,7 +376,7 @@
 
     <bean id="stashManagerFactory" class="com.l7tech.server.TestStashManagerFactory" factory-method="getInstance"/>
 
-    <bean id="clusterInfoManager" class="com.l7tech.server.ClusterInfoManagerStub"/>
+    <bean id="clusterInfoService" class="com.l7tech.server.ClusterInfoManagerStub"/>
 
     <bean id="assertionRegistry" class="com.l7tech.policy.AssertionRegistry"/>
 
@@ -867,4 +867,6 @@
     <bean id="gatewayMetricsPublisher" class="com.l7tech.server.message.metrics.GatewayMetricsPublisher"/>
 
     <bean id="sharedCounterProviderRegistry" class="com.l7tech.server.extension.registry.sharedstate.SharedCounterProviderRegistry"/>
+
+    <bean id="sharedClusterInfoServiceRegistry" class="com.l7tech.server.extension.registry.sharedstate.SharedClusterInfoServiceRegistry"/>
 </beans>
