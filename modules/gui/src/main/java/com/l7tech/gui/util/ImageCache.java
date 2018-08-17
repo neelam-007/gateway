@@ -2,13 +2,13 @@ package com.l7tech.gui.util;
 
 import com.l7tech.util.ExceptionUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.TestOnly;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
-import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
@@ -147,14 +147,12 @@ public final class ImageCache {
             }
         }
 
-        Image defaultImage = null;
-
-        try {
-            defaultImage = imageMap.get(DEFAULT_IMAGE_NAME).get();
-        } catch (final Exception e) {
-            logger.log( Level.WARNING, "Unable to find default image resource" + DEFAULT_IMAGE_NAME + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+        imgref = imageMap.get(DEFAULT_IMAGE_NAME);
+        if(imgref == null) {
+            logger.log( Level.WARNING, "Unable to find default image resource" + DEFAULT_IMAGE_NAME);
+            return null;
         }
-        return defaultImage;
+        return imgref.get();
     }
 
     /**
@@ -202,6 +200,7 @@ public final class ImageCache {
     }
 
     /** Variable imageMap getter */
+    @TestOnly
     Map<String, Reference<Image>> getImageMap() {
         return imageMap;
     }
