@@ -39,7 +39,7 @@ public final class ImageCache {
     private final ClassLoader loader = ImageCache.class.getClassLoader();
 
     /** name of the default image */
-    private static final String DEFAULT_IMAGE_NAME = "com/l7tech/console/resources/star16.gif";
+    public static final String DEFAULT_IMAGE_NAME = "com/l7tech/console/resources/star16.gif";
 
     /**
      * @return the singleton instance
@@ -147,7 +147,14 @@ public final class ImageCache {
             }
         }
 
-        return imageMap.get(DEFAULT_IMAGE_NAME).get();
+        Image defaultImage = null;
+
+        try {
+            defaultImage = imageMap.get(DEFAULT_IMAGE_NAME).get();
+        } catch (final Exception e) {
+            logger.log( Level.WARNING, "Unable to find default image resource" + DEFAULT_IMAGE_NAME + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+        }
+        return defaultImage;
     }
 
     /**
@@ -192,5 +199,10 @@ public final class ImageCache {
             model.createCompatibleWritableRaster(width, height),
             model.isAlphaPremultiplied(), null);
         return buffImage;
+    }
+
+    /** Variable imageMap getter */
+    Map<String, Reference<Image>> getImageMap() {
+        return imageMap;
     }
 }
