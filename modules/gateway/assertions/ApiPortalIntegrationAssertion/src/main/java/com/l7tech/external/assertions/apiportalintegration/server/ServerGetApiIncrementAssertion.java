@@ -139,7 +139,7 @@ public class ServerGetApiIncrementAssertion extends AbstractServerAssertion<GetA
             "    a.MODIFY_TS AS MODIFY_TS\n" +
             "FROM\n" +
             "   API a LEFT JOIN API_TENANT_GATEWAY atg on atg.API_UUID = a.UUID and atg.TENANT_ID = a.TENANT_ID \n" +
-            "WHERE a.TENANT_ID = ? and atg.TENANT_GATEWAY_UUID = ?",
+            "WHERE a.TENANT_ID = ? and atg.TENANT_GATEWAY_UUID = ? and a.type != 'ADVANCED'",
         CollectionUtils.list(tenantId, nodeId));
 
     if (results.isEmpty()) {
