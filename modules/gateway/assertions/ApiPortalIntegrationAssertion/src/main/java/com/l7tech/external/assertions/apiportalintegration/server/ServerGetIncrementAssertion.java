@@ -58,6 +58,17 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
         "LEFT JOIN (SELECT ENTITY_UUID, PREVIOUS_STATE, max(CREATE_TS) AS LATEST_REQ, TENANT_ID " +
             "FROM REQUEST GROUP BY ENTITY_UUID, PREVIOUS_STATE, CREATE_TS, TENANT_ID) r ON a.UUID = r.ENTITY_UUID AND a.TENANT_ID = r.TENANT_ID " +
         "WHERE aaagx.API_UUID IS NOT NULL ";
+    private static final String BULK_SYNC_SELECT_WITH_API_PLANS =
+        "SELECT DISTINCT(aaapx.API_UUID), aaapx.API_PLAN_UUID, a.UUID, concat(a.NAME,'-',o.NAME) AS NAME, a.API_KEY, a.KEY_SECRET, " +
+           "coalesce (r.PREVIOUS_STATE, a.STATUS) AS STATUS, a.ORGANIZATION_UUID, o.NAME AS ORGANIZATION_NAME, " +
+           "a.OAUTH_CALLBACK_URL, a.OAUTH_SCOPE, a.OAUTH_TYPE, a.MAG_SCOPE, a.MAG_MASTER_KEY, a.CREATED_BY, a.MODIFIED_BY, r.LATEST_REQ " +
+        "FROM APPLICATION_API_API_PLAN_XREF aaapx " +
+        "JOIN (SELECT * FROM APPLICATION " +
+            "WHERE API_KEY IS NOT NULL AND TENANT_ID ='tenant5' AND STATUS IN ('ENABLED','DISABLED','EDIT_APPLICATION_PENDING_APPROVAL')) a ON aaapx.APPLICATION_UUID = a.UUID AND aaapx.TENANT_ID = a.TENANT_ID " +
+        "JOIN ORGANIZATION o on a.ORGANIZATION_UUID = o.UUID AND a.TENANT_ID = o.TENANT_ID " +
+        "LEFT JOIN (SELECT ENTITY_UUID, PREVIOUS_STATE, max(CREATE_TS) AS LATEST_REQ, TENANT_ID " +
+            "FROM REQUEST GROUP BY ENTITY_UUID, PREVIOUS_STATE, CREATE_TS, TENANT_ID) r ON a.UUID = r.ENTITY_UUID AND a.TENANT_ID = r.TENANT_ID " +
+        "WHERE aaapx.API_UUID IS NOT NULL";
 
     private static final String STATUS_ENABLED = "ENABLED";
     private static final String STATUS_ACTIVE = "active";
@@ -92,6 +103,7 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
             Object sinceStr = vars.get(assertion.getVariablePrefix() + "." + GetIncrementAssertion.SUFFIX_SINCE);
             Object nodeId = vars.get(assertion.getVariablePrefix() + "." + GetIncrementAssertion.SUFFIX_NODE_ID);
             Object tenantId = vars.get(assertion.getVariablePrefix() + "." + GetIncrementAssertion.SUFFIX_TENANT_ID);
+            Object appsWithApiPlans = vars.get(assertion.getVariablePrefix() + "." + GetIncrementAssertion.SUFFIX_APPS_WITH_API_PLANS);
 
             // validate inputs
             if (entityType == null) {
@@ -130,7 +142,7 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
             }
 
             // create result
-            String jsonStr = getJsonMessage(jdbcConnectionName.toString(), since, nodeId.toString(), tenantId.toString());
+            String jsonStr = getJsonMessage(jdbcConnectionName.toString(), since, nodeId.toString(), tenantId.toString(), Boolean.parseBoolean((String)appsWithApiPlans));
 
             // save result
             context.setVariable(assertion.getVariablePrefix() + '.' + GetIncrementAssertion.SUFFIX_JSON, jsonStr);
@@ -145,7 +157,7 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
         return AssertionStatus.NONE;
     }
 
-    String getJsonMessage(final String connName, final Object since, final String nodeId, final String tenantId) throws IOException {
+    String getJsonMessage(final String connName, final Object since, final String nodeId, final String tenantId, boolean appsWithApiPlans) throws IOException {
         ApplicationJson appJsonObj = new ApplicationJson();
         final long incrementStart = System.currentTimeMillis();
         appJsonObj.setIncrementStart(incrementStart);
@@ -155,53 +167,24 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
 
         if (since != null) {
             appJsonObj.setBulkSync(ServerIncrementalSyncCommon.BULK_SYNC_FALSE);
-            // Get deleted IDs - there are two parts to this:
-            // 1. Include applications that are actually deleted by the user
-            // 2. Include applications that have empty API groups (disabled API can be removed from a group even if it's used by an app) and no directly associated APIs
-            // A new feature was introduced and the side effect of it is that an app is now possible to have zero API associated to it, which caused sync to break.
-            // The fix is to treat apps with no API as "deleted" in the payload so that OTK will remove it from their db.
-
-            // Get deleted apps
-            results = (Map<String, List>) queryJdbc(connName, ServerIncrementalSyncCommon.getSyncDeletedEntities(ServerIncrementalSyncCommon.ENTITY_TYPE_APPLICATION, tenantId), CollectionUtils.list(since, incrementStart));
-            List<String> deletedIds = results.get("entity_uuid");
-
-            // Get apps that are not associated to any API, either directly or indirectly
-            results = (Map<String, List>) queryJdbc(connName, ServerIncrementalSyncCommon.SELECT_APP_WITH_NO_API_SQL,
-                CollectionUtils.list(tenantId, tenantId, nodeId, since, incrementStart, since, incrementStart, since, incrementStart, since, incrementStart));
-            List<String> appIdsWithNoApi = results.get("uuid");
-
-            // Merge the app uuids
-            Set mergedAppUuids = new HashSet<String>();
-            if (deletedIds != null && !deletedIds.isEmpty()) {
-                mergedAppUuids.addAll(deletedIds);
-            }
-            if (appIdsWithNoApi != null && !appIdsWithNoApi.isEmpty()) {
-                mergedAppUuids.addAll(appIdsWithNoApi);
-            }
-
-            if (mergedAppUuids.isEmpty()) {
+            Set deletedAppIds = getDeletedAppIds(connName, since, nodeId, tenantId, appsWithApiPlans, incrementStart);
+            if (deletedAppIds.isEmpty()) {
                 appJsonObj.setDeletedIds(new ArrayList<>());
             } else {
-                appJsonObj.setDeletedIds(new ArrayList<>(mergedAppUuids));
+                appJsonObj.setDeletedIds(new ArrayList<>(deletedAppIds));
             }
-
-            // get new or updated or last sync error apps
-            results = (Map<String, List>) queryJdbc(
-                    connName,
-                    ServerIncrementalSyncCommon.getSyncUpdatedAppEntities(
-                            Lists.newArrayList("DISTINCT aaagx.API_UUID", "a.UUID", "concat(a.NAME, '-', o.NAME) as NAME", "a.API_KEY", "a.KEY_SECRET", "coalesce(r.PREVIOUS_STATE, a.STATUS) as STATUS", "a.ORGANIZATION_UUID", "o.NAME as ORGANIZATION_NAME", "a.OAUTH_CALLBACK_URL", "a.OAUTH_SCOPE", "a.OAUTH_TYPE", "a.MAG_SCOPE", "a.MAG_MASTER_KEY", "a.CREATED_BY", "a.MODIFIED_BY"),
-                            tenantId),
-                    CollectionUtils.list(since, incrementStart, since, incrementStart, since, incrementStart, nodeId, since, incrementStart, since, incrementStart));
+            results = getAppsUpdatedWithinIncrement(connName, since, incrementStart, nodeId, tenantId,
+                    appsWithApiPlans);
         } else {
             appJsonObj.setBulkSync(ServerIncrementalSyncCommon.BULK_SYNC_TRUE);
             // bulk, get everything
-            results = (Map<String, List>) queryJdbc(connName, String.format(BULK_SYNC_SELECT, tenantId), Collections.EMPTY_LIST);
+            results = (Map<String, List>) queryJdbc(connName, String.format(appsWithApiPlans ? BULK_SYNC_SELECT_WITH_API_PLANS : BULK_SYNC_SELECT, tenantId), Collections.emptyList());
 
             // do not include deleted list in json response
             appJsonObj.setDeletedIds(null);
         }
 
-        appJsonObj.setNewOrUpdatedEntities(buildApplicationEntityList(results, connName));
+        appJsonObj.setNewOrUpdatedEntities(buildApplicationEntityList(results, connName, appsWithApiPlans));
 
         ObjectMapper mapper = new ObjectMapper();
         mapper.setSerializationInclusion(JsonSerialize.Inclusion.NON_NULL);
@@ -215,7 +198,81 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
         return jsonInString;
     }
 
-    private List buildApplicationEntityList(Map<String, List> results, String connName) throws UnsupportedEncodingException {
+    private Map<String, List> getAppsUpdatedWithinIncrement(String connName, Object since, long incrementStart,
+                                                            String nodeId, String tenantId, boolean appsWithApiPlans) {
+        LinkedList<String> columnsToSelect = getColumnsToSelectForAppsLookupQuery(appsWithApiPlans);
+        List valuesForQueryArguments = getValuesForAppsLookupQuery(since, nodeId, appsWithApiPlans, incrementStart);
+        // get new or updated or last sync error apps
+        return (Map<String, List>) queryJdbc(
+                connName,
+                ServerIncrementalSyncCommon.getSyncUpdatedAppEntities(columnsToSelect, tenantId, appsWithApiPlans),
+                valuesForQueryArguments);
+    }
+
+    @NotNull
+    private List getValuesForAppsLookupQuery(Object since, String nodeId, boolean appsWithApiPlans, long incrementStart) {
+        List valuesForQueryArguments = Lists.newArrayList(since, incrementStart, since, incrementStart, since, incrementStart, nodeId);
+        if (!appsWithApiPlans) {
+            valuesForQueryArguments.addAll(CollectionUtils.list(since, incrementStart, since, incrementStart));
+        }
+        return valuesForQueryArguments;
+    }
+
+    @NotNull
+    private LinkedList<String> getColumnsToSelectForAppsLookupQuery(boolean appsWithApiPlans) {
+        LinkedList<String> columnsToSelect = new LinkedList<>(Lists.newArrayList("a.UUID", "concat(a.NAME, '-', o.NAME) as NAME", "a.API_KEY", "a.KEY_SECRET", "coalesce(r.PREVIOUS_STATE, a.STATUS) as STATUS", "a.ORGANIZATION_UUID", "o.NAME as ORGANIZATION_NAME", "a.OAUTH_CALLBACK_URL", "a.OAUTH_SCOPE", "a.OAUTH_TYPE", "a.MAG_SCOPE", "a.MAG_MASTER_KEY", "a.CREATED_BY", "a.MODIFIED_BY"));
+
+        if (appsWithApiPlans) {
+            columnsToSelect.add(0, "DISTINCT aaapx.API_UUID");
+            columnsToSelect.add(1, "aaapx.API_PLAN_UUID");
+        } else {
+            columnsToSelect.add(0, "DISTINCT aaagx.API_UUID");
+        }
+        return columnsToSelect;
+    }
+
+    /**
+     * Get deleted IDs - there are two parts to this:
+     * 1. Include applications that are actually deleted by the user
+     * 2. Include applications that have empty API groups (disabled API can be removed from a group even if it's used by an app) and no directly associated APIs
+     * A new feature was introduced and the side effect of it is that an app is now possible to have zero API associated to it, which caused sync to break.
+     * The fix is to treat apps with no API as "deleted" in the payload so that OTK will remove it from their db.
+     * @param connName
+     * @param since
+     * @param nodeId
+     * @param tenantId
+     * @param appsWithApiPlans
+     * @param incrementStart
+     * @return
+     */
+    @NotNull
+    private Set getDeletedAppIds(String connName, Object since, String nodeId, String tenantId, boolean
+            appsWithApiPlans, long incrementStart) {
+        Map<String, List> results;// Get deleted apps
+        results = (Map<String, List>) queryJdbc(connName, ServerIncrementalSyncCommon.getSyncDeletedEntities(ServerIncrementalSyncCommon.ENTITY_TYPE_APPLICATION, tenantId), CollectionUtils.list(since, incrementStart));
+        List<String> deletedIds = results.get("entity_uuid");
+
+        // Merge the app uuids
+        Set mergedAppUuids = new HashSet<String>();
+        if (deletedIds != null && !deletedIds.isEmpty()) {
+            mergedAppUuids.addAll(deletedIds);
+        }
+
+        //unnecessary query when API Plans is enabled as app -> API association is defined directly via the
+        //APPLICATION_API_API_GROUP_XREF table (API_UUID)
+        if(!appsWithApiPlans) {
+            // Get apps that are not associated to any API, either directly or indirectly
+            results = (Map<String, List>) queryJdbc(connName, ServerIncrementalSyncCommon.SELECT_APP_WITH_NO_API_SQL, CollectionUtils.list(tenantId, tenantId, nodeId, since, incrementStart, since, incrementStart, since, incrementStart, since, incrementStart));
+            List<String> appIdsWithNoApi = results.get("uuid");
+
+            if (appIdsWithNoApi != null && !appIdsWithNoApi.isEmpty()) {
+                mergedAppUuids.addAll(appIdsWithNoApi);
+            }
+        }
+        return mergedAppUuids;
+    }
+
+    private List buildApplicationEntityList(Map<String, List> results, String connName, boolean appsWithApiPlans) throws UnsupportedEncodingException {
 
         if (results.isEmpty()) {
             return CollectionUtils.list();
@@ -257,6 +314,9 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
 
             ApplicationApi api = new ApplicationApi();
             api.setId((String) results.get("api_uuid").get(i));
+            if (appsWithApiPlans) {
+                api.setPlanId((String) results.get("api_plan_uuid").get(i));
+            }
             appEntity.getApis().add(api);
         }
         appendCustomFields(appMap, connName);
@@ -274,7 +334,7 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
 
     if (!app_uuids.isEmpty()) {
 
-      Map<String, List> results = (Map<String, List>) queryJdbc(connName, CF_QUERY.replace(UUID_PARAM, app_uuids), Collections.EMPTY_LIST);
+      Map<String, List> results = (Map<String, List>) queryJdbc(connName, CF_QUERY.replace(UUID_PARAM, app_uuids), Collections.emptyList());
 
       if(results.size()>0) {
         int elements = results.get(FIELD_ENTITY_UUID).size();

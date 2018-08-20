@@ -4,7 +4,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.l7tech.external.assertions.apiportalintegration.IncrementPostBackAssertion;
-import com.l7tech.external.assertions.apiportalintegration.server.resource.ApplicationJson;
 import com.l7tech.external.assertions.apiportalintegration.server.resource.PortalSyncPostbackJson;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -12,7 +11,6 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.jdbc.JdbcConnectionPoolManager;
 import com.l7tech.server.jdbc.JdbcQueryingManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.util.ArrayUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -27,7 +25,6 @@ import org.springframework.transaction.support.DefaultTransactionDefinition;
 
 import javax.naming.NamingException;
 import javax.sql.DataSource;
-import javax.validation.constraints.AssertTrue;
 import javax.xml.bind.JAXBException;
 import java.io.IOException;
 import java.sql.SQLException;
@@ -198,6 +195,7 @@ public class ServerIncrementPostBackAssertionTest {
                 "         \"msg\": \"error message 2\" }\n"+
                 "       ],\n  \"syncLog\" : "+sync_log+"\n}";
         vars.put(assertion.getVariablePrefix() + "." + IncrementPostBackAssertion.SUFFIX_JSON, jsonPayload);
+        vars.put(assertion.getVariablePrefix() + "." + IncrementPostBackAssertion.SUFFIX_APPS_WITH_API_PLANS, "false");
         final List<String> insertIds = Lists.newArrayList(errorEntityWillBeInserted , "insertdelete2", "insert1");
         final List<String> updateIds = Lists.newArrayList("update1",errorEntityWillBeUpdated, "updatedelete1");
 
@@ -270,6 +268,7 @@ public class ServerIncrementPostBackAssertionTest {
                 "  \"bulkSync\" : \"false\",\n" +
                 "  \"syncLog\" : "+sync_log+"\n}";
         vars.put(assertion.getVariablePrefix() + "." + IncrementPostBackAssertion.SUFFIX_JSON, jsonPayload);
+        vars.put(assertion.getVariablePrefix() + "." + IncrementPostBackAssertion.SUFFIX_APPS_WITH_API_PLANS, "false");
 
         when(jdbcQueryingManager.performJdbcQuery(anyString(), any(DataSource.class), anyString(), anyString(), anyInt(), anyInt(), anyList())).thenAnswer(
                 new Answer<Object>() {
@@ -298,6 +297,85 @@ public class ServerIncrementPostBackAssertionTest {
 
 
         assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(context));
+        verify(transactionManager).commit(status);
+    }
+
+    @Test
+    public void checkRequestTest03WithApiPlans() throws IOException, PolicyAssertionException, JAXBException {
+        //success
+        printStrForDebug("checkRequestTest03- should be successful and commit the transaction ============================");
+
+        serverAssertion = new ServerIncrementPostBackAssertion(assertion, applicationContext, transactionManager);
+        final List<String> successSqlCalls = Lists.newArrayList();
+        final String APPLICATION_TENANT_GATEWAY_TABLE_NAME = "APPLICATION_TENANT_GATEWAY";
+        final String TENANT_GATEWAY_TABLE_NAME = "TENANT_GATEWAY";
+        final String UUID_COLUMN_NAME = "UUID";
+        final String TENANT_GATEWAY_SYNC_TIME_COLUMN_NAME = "APP_SYNC_TIME";
+        final String TENANT_GATEWAY_SYNC_LOG_COLUMN_NAME = "APP_SYNC_LOG";
+        String jdbcConnectionName = "tenant_connection1";
+        final String errorEntityWillBeUpdated = "updateErrorEntity";
+        final String errorEntityWillBeInserted = "insertErrorEntity";
+        final String entity_uuid_column = "entity_uuid";
+        final String uuid_column = "uuid";
+        final String application_uuid_column = "application_uuid";
+        final String sync_log="\"{\\\"count\\\" : \\\"2\\\", \\\"cron\\\" : \\\"*/20 * * * * ?\\\"}\"";
+        final String jsonPayload="{\"incrementStatus\" : \"partial\",\n" +
+                "  \"incrementStart\" : 1234,\n" +
+                "  \"incrementEnd\" : 2453502843060,\n" +
+                "  \"entityType\" : \"APPLICATION\",\n" +
+                "  \"bulkSync\" : \"false\",\n" +
+                "  \"entityErrors\": [\n" +
+                "       { \"id\":\""+errorEntityWillBeUpdated+"\",\n"+
+                "           \"msg\": \"error message 1\" },\n"+
+                "       { \"id\":\""+errorEntityWillBeInserted+"\",\n"+
+                "         \"msg\": \"error message 2\" }\n"+
+                "       ],\n  \"syncLog\" : "+sync_log+"\n}";
+        vars.put(assertion.getVariablePrefix() + "." + IncrementPostBackAssertion.SUFFIX_JSON, jsonPayload);
+        vars.put(assertion.getVariablePrefix() + "." + IncrementPostBackAssertion.SUFFIX_APPS_WITH_API_PLANS, "true");
+        final List<String> insertIds = Lists.newArrayList(errorEntityWillBeInserted , "insertdelete2", "insert1");
+        final List<String> updateIds = Lists.newArrayList("update1",errorEntityWillBeUpdated, "updatedelete1");
+
+        when(jdbcQueryingManager.performJdbcQuery(anyString(), any(DataSource.class), anyString(), anyString(), anyInt(), anyInt(), anyList())).thenAnswer(
+                new Answer<Object>() {
+                    @Override
+                    public Object answer(final InvocationOnMock invocation) throws Throwable {
+                        if (((String) invocation.getArguments()[2]).startsWith(String.format("INSERT INTO %s", APPLICATION_TENANT_GATEWAY_TABLE_NAME))) {
+                            List input = (List) invocation.getArguments()[6];
+                            if (insertIds.contains((String) input.get(3))) {
+                                insertIds.remove((String) input.get(3));
+                                return Integer.valueOf(1);
+                            } else fail("entity id should be updated: " + (String) input.get(3));
+                        } else if (((String) invocation.getArguments()[2]).startsWith(String.format("UPDATE %s", APPLICATION_TENANT_GATEWAY_TABLE_NAME))) {
+                            List input = (List) invocation.getArguments()[6];
+                            input = input.subList(3, input.size());
+                            if (updateIds.containsAll(input)) {
+                                updateIds.removeAll(input);
+                                return Integer.valueOf(1);
+                            }else return Integer.valueOf(0);
+                        } else if (((String) invocation.getArguments()[2]).startsWith(String.format("UPDATE %s SET %s=? , %s=? WHERE %s=?", TENANT_GATEWAY_TABLE_NAME, TENANT_GATEWAY_SYNC_TIME_COLUMN_NAME, TENANT_GATEWAY_SYNC_LOG_COLUMN_NAME, UUID_COLUMN_NAME))) {
+                            List input = (List) invocation.getArguments()[6];
+                            assertEquals("node id is incorrect", NODE_ID, input.get(2));
+                            return Integer.valueOf(1);
+                        } else if (((String) invocation.getArguments()[2]).startsWith("SELECT ENTITY_UUID FROM DELETED_ENTITY WHERE TYPE = 'APPLICATION' AND DELETED_TS > ? AND DELETED_TS <= ?")) {
+                            ImmutableMap<String, ArrayList<String>> result = ImmutableMap.of(entity_uuid_column, Lists.<String>newArrayList("updatedelete1", "insertdelete2"));
+                            return result;
+                        } else if (((String) invocation.getArguments()[2]).startsWith(String.format(ServerIncrementalSyncCommon.SELECT_ENTITIES_SQL_WITH_API_PLANS, "DISTINCT aaapx.API_UUID,a."+uuid_column.toUpperCase(),TENANT_ID ))) {
+                            ImmutableMap<String, ArrayList<String>> result = ImmutableMap.of(uuid_column, Lists.newArrayList("update1", "insert1"));
+                            return result;
+                        }else if (((String) invocation.getArguments()[2]).startsWith(String.format("SELECT  %s FROM APPLICATION_TENANT_GATEWAY WHERE TENANT_GATEWAY_UUID=? and APPLICATION_UUID IN (",
+                                application_uuid_column.toUpperCase()))) {
+                            successSqlCalls.add((String) invocation.getArguments()[2]);
+                            ImmutableMap<String, ArrayList<String>> result = ImmutableMap.of(application_uuid_column, Lists.newArrayList("update1","updatedelete1"));
+                            return result;
+                        }
+                        return null;
+                    }
+                }
+        );
+
+        assertEquals(AssertionStatus.NONE, serverAssertion.checkRequest(context));
+        assertTrue("updateId list should be empty:" + updateIds.toString(), updateIds.isEmpty());
+        assertTrue("insertId list should be empty:"+insertIds.toString(), insertIds.isEmpty());
         verify(transactionManager).commit(status);
     }
 
@@ -380,6 +458,7 @@ public class ServerIncrementPostBackAssertionTest {
                 "         \"msg\": \"error message 2\" }\n"+
                 "       ],\n  \"syncLog\" : "+sync_log+"\n}";
         vars.put(assertion.getVariablePrefix() + "." + IncrementPostBackAssertion.SUFFIX_JSON, jsonPayload);
+        vars.put(assertion.getVariablePrefix() + "." + IncrementPostBackAssertion.SUFFIX_APPS_WITH_API_PLANS, "false");
         final List<String> insertIds = Lists.newArrayList(errorEntityWillBeInserted , "insertdelete2", "insert1");
         final List<String> updateIds = Lists.newArrayList("update1",errorEntityWillBeUpdated, "updatedelete1");
 
@@ -495,7 +574,7 @@ public class ServerIncrementPostBackAssertionTest {
         );
 
         try {
-            serverAssertion.handleApplicationSyncPostback(jdbcConnectionName, postback, nodeId, "");
+            serverAssertion.handleApplicationSyncPostback(jdbcConnectionName, postback, nodeId, "", false);
         } catch (PolicyAssertionException e) {
             fail("should not throw PolicyAssertionException");
         }

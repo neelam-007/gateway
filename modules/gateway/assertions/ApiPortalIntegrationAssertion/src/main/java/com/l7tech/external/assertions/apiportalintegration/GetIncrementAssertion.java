@@ -30,6 +30,7 @@ public class GetIncrementAssertion extends Assertion implements UsesVariables, S
     public static final String SUFFIX_TYPE = "type";
     public static final String SUFFIX_JSON = "json";
     public static final String SUFFIX_TENANT_ID = "tenantId";
+    public static final String SUFFIX_APPS_WITH_API_PLANS = "apps.with.api.plans";
 
 
     public String getVariablePrefix() {
@@ -49,7 +50,8 @@ public class GetIncrementAssertion extends Assertion implements UsesVariables, S
                                             variablePrefix +"."+ SUFFIX_NODE_ID,
                                             variablePrefix +"."+ SUFFIX_JDBC_CONNECTION,
                                             variablePrefix +"."+ SUFFIX_TYPE,
-                                            variablePrefix +"."+ SUFFIX_TENANT_ID).asArray();
+                                            variablePrefix +"."+ SUFFIX_TENANT_ID,
+                                            variablePrefix +"."+ SUFFIX_APPS_WITH_API_PLANS).asArray();
     }
 
     //

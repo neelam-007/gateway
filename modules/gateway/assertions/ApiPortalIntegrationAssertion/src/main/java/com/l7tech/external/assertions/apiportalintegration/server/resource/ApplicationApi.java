@@ -5,6 +5,7 @@ package com.l7tech.external.assertions.apiportalintegration.server.resource;
  */
 public class ApplicationApi {
     private String id;
+    private String planId;
 
     public ApplicationApi() {
     }
@@ -15,5 +16,13 @@ public class ApplicationApi {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public String getPlanId() {
+        return planId;
+    }
+
+    public void setPlanId(String planId) {
+        this.planId = planId;
     }
 }
