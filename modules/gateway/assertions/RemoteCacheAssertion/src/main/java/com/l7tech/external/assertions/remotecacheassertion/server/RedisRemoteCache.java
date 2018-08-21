@@ -1,6 +1,8 @@
 package com.l7tech.external.assertions.remotecacheassertion.server;
 
+import com.google.common.base.Strings;
 import com.l7tech.external.assertions.remotecacheassertion.RemoteCacheEntity;
+import com.l7tech.util.ResourceUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import redis.clients.jedis.HostAndPort;
@@ -8,7 +10,6 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisCluster;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.exceptions.JedisDataException;
-import redis.clients.jedis.exceptions.JedisException;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -45,6 +46,8 @@ public class RedisRemoteCache implements RemoteCache {
     public static final String APACHE_POOL_MAX_IDLE = "maxIdle";
     public static final String APACHE_POOL_MIN_IDLE = "minIdle";
 
+    public static final int DEFAULT_MAX_ATTEMPTS = 5;
+
     private RemoteCacheEntity remoteCacheEntity;
     private JedisCluster cluster = null;
     private JedisPool pool = null;
@@ -54,20 +57,24 @@ public class RedisRemoteCache implements RemoteCache {
         remoteCacheEntity = entity;
         properties = remoteCacheEntity.getProperties();
         final int timeout = remoteCacheEntity.getTimeout();
+        final String password = properties.get(PROPERTY_PASSWORD);
+        final boolean usePassword = !Strings.isNullOrEmpty(password);
 
         GenericObjectPoolConfig poolConfig = createGenericObjectPoolConfig();
         try {
             if (isCluster()) {
                 Set<HostAndPort> hosts = getClusterHosts();
-                cluster = new JedisCluster(hosts, timeout, poolConfig);
+                // All nodes in the cluster must have the same password
+                cluster = usePassword ?
+                        new JedisCluster(hosts, timeout, timeout, DEFAULT_MAX_ATTEMPTS, password, poolConfig) :
+                        new JedisCluster(hosts, timeout, poolConfig);
             } else {
-                String password = properties.get(PROPERTY_PASSWORD);
                 //For JedisPool, we only need one server to connect to. If multiple servers are provided, then the rest of the servers are ignored.
                 String server = getServerList()[0];
                 String address = server.substring(0, server.indexOf(':')).trim();
                 Integer port = Integer.parseInt(server.substring(server.indexOf(':') + 1).trim());
 
-                pool = (password != null && !password.isEmpty()) ?
+                pool = usePassword ?
                         new JedisPool(poolConfig, address, port, timeout, password) :
                         new JedisPool(poolConfig, address, port, timeout);
             }
@@ -271,11 +278,7 @@ public class RedisRemoteCache implements RemoteCache {
      */
     @Override
     public void shutdown() {
-        if (pool != null) {
-            pool.close();
-        }
-        if (cluster != null) {
-            cluster.close();
-        }
+        ResourceUtils.closeQuietly(pool);
+        ResourceUtils.closeQuietly(cluster);
     }
 }

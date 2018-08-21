@@ -71,17 +71,6 @@ public class RedisConfigPanel implements RemoteCacheConfigPanel {
         };
         validator.addRule(serverUrisValidationRule);
 
-        clusterCheckBox.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (clusterCheckBox.isSelected()) {
-                    passwordField.setEnabled(false);
-                } else {
-                    passwordField.setEnabled(true);
-                }
-            }
-        });
-
         addButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(final ActionEvent e) {
