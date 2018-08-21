@@ -8,6 +8,7 @@ import com.l7tech.util.NamespaceFactory;
 import com.l7tech.xml.soap.SoapUtil;
 import org.w3c.dom.Element;
 
+import javax.security.auth.x500.X500Principal;
 import java.security.cert.X509Certificate;
 
 /**
@@ -43,7 +44,7 @@ public class IssuerSerialKeyInfoDetails extends KeyInfoDetails {
         final Element x509DataElement = DomUtils.createAndAppendElementNS(x509DataParent, "X509Data", SoapUtil.DIGSIG_URI, "ds");
         final Element issuerSerialElement = DomUtils.createAndAppendElementNS(x509DataElement, "X509IssuerSerial", SoapUtil.DIGSIG_URI, "ds");
         final Element issuerElement = DomUtils.createAndAppendElementNS(issuerSerialElement, "X509IssuerName", SoapUtil.DIGSIG_URI, "ds");
-        issuerElement.setTextContent(cert.getIssuerDN().getName());
+        issuerElement.setTextContent(cert.getIssuerX500Principal().getName(X500Principal.RFC2253));
         final Element serialElement = DomUtils.createAndAppendElementNS(issuerSerialElement, "X509SerialNumber", SoapUtil.DIGSIG_URI, "ds");
         serialElement.setTextContent(cert.getSerialNumber().toString());
         return keyInfo;
