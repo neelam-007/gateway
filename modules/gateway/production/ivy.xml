@@ -110,6 +110,9 @@
         <dependency org="com.ca.apim.gateway.extension" name="EmbeddedHazelcastSharedStateProviderAssertion" rev="latest.integration" conf="module">
             <artifact name="EmbeddedHazelcastSharedStateProviderAssertion" type="aar"/>
         </dependency>
+        <dependency org="com.ca.apim.gateway.extension" name="ExternalHazelcastSharedStateProviderAssertion" rev="latest.integration" conf="module">
+            <artifact name="ExternalHazelcastSharedStateProviderAssertion" type="aar"/>
+        </dependency>
         <dependency name="MysqlCounterAssertion" rev="latest.integration" conf="module" />
         <dependency name="ThroughputQuotaAssertion" rev="latest.integration" conf="module" />
         <dependency name="MysqlClusterInfoAssertion" rev="latest.integration" conf="module"/>
