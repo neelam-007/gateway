@@ -41,7 +41,7 @@ public class SSGInboundWebSocket extends WebSocketAdapter {
         this.webSocketInboundHandler = webSocketInboundHandler;
         this.webSocketId = webSocketMetadata.getId();
         this.origin = httpServletRequest.getRemoteAddr();
-        this.mockHttpServletRequest = new MockHttpServletRequest(httpServletRequest);
+        this.mockHttpServletRequest = new MockHttpServletRequest(httpServletRequest, webSocketMetadata.getConnectionPolicyHeaders());
         this.authContext = webSocketMetadata.getAuthenticationContext();
         this.protocol = httpServletRequest.getRemoteAddr();
         this.clientId = generateClientId(webSocketMetadata, this.protocol);

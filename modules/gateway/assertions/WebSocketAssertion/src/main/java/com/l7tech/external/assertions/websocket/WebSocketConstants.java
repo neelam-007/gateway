@@ -75,6 +75,9 @@ public class WebSocketConstants {
     public static final String AUTHENTICATION_CONTEXT_REQ_ATTRIB = "AuthenticationContextRequestAttributes";
     public static final String OUTBOUND_URL = "OutboundUrl";
 
+    //Inbound connection policy headers will be stored in this request attribute and passed to Websocket's ServerUpgradeRequest.
+    public static final String REQUEST_HEADERS_FROM_CONN_POLICY_ATTR = "REQUEST_HEADERS_FROM_CONN_POLICY_ATTR";
+
     public static final String[] DEFAULT_TLS_PROTOCOL_LIST = {"TLSv1","TLSv1.1","TLSv1.2"};
     // DE248803- WebSocket Assertion default TLS protocol list must be modfied
 

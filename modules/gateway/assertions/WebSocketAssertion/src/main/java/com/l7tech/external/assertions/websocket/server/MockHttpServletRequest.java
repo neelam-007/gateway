@@ -1,5 +1,6 @@
 package com.l7tech.external.assertions.websocket.server;
 
+import com.l7tech.message.Header;
 import com.l7tech.common.http.HttpMethod;
 import javax.servlet.*;
 import javax.servlet.http.*;
@@ -56,8 +57,8 @@ public class MockHttpServletRequest implements HttpServletRequest {
         requestURL = new StringBuffer();
     }
 
-    public MockHttpServletRequest(HttpServletRequest request) {
-        populateHeaders(request);
+    public MockHttpServletRequest(HttpServletRequest request, Collection connectionPolicyHeaders) {
+        populateHeaders(request, connectionPolicyHeaders);
         populateAttributes(request);
         populateParameters(request);
         populateLocales(request);
@@ -407,7 +408,7 @@ public class MockHttpServletRequest implements HttpServletRequest {
         return localPort;
     }
 
-    private void populateHeaders(HttpServletRequest request) {
+    private void populateHeaders(HttpServletRequest request, Collection connectionPolicyHeaders) {
         Enumeration<String> headerNames = request.getHeaderNames();
 
         while (headerNames.hasMoreElements()) {
@@ -418,6 +419,19 @@ public class MockHttpServletRequest implements HttpServletRequest {
                 v.add(e.nextElement());
             }
             headers.put(header, v);
+        }
+
+        if (connectionPolicyHeaders == null) {
+            return;
+        }
+
+        for (Object connectionPolicyHeaderObj : connectionPolicyHeaders) {
+            if (connectionPolicyHeaderObj instanceof Header) {
+                Header connectionPolicyHeader = (Header)connectionPolicyHeaderObj;
+                Vector v = new Vector();
+                v.add(connectionPolicyHeader.getValue());
+                headers.putIfAbsent(connectionPolicyHeader.getKey(), v);
+            }
         }
     }
 

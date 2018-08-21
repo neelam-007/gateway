@@ -150,8 +150,8 @@ public class WebSocketInboundHandler extends WebSocketHandlerBase {
 					if (processMessageResults.getOutboundUrl() != null ){
 						request.setAttribute(WebSocketConstants.OUTBOUND_URL, processMessageResults.getOutboundUrl());
 					}
-
                     request.setAttribute(WebSocketConstants.AUTHENTICATION_CONTEXT_REQ_ATTRIB, processMessageResults.getWebSocketMsg().getAuthCtx());
+                    request.setAttribute(WebSocketConstants.REQUEST_HEADERS_FROM_CONN_POLICY_ATTR, processMessageResults.getConnectionPolicyHeaders());
                     if (AssertionStatus.AUTH_REQUIRED.getMessage().equals(processMessageResults.getWebSocketMsg().getStatus())) {
                         if (response.containsHeader("WWW-Authenticate")) {
                             logger.log(Level.INFO, "Http Basic Authentication required for WebSocket");
@@ -298,6 +298,7 @@ public class WebSocketInboundHandler extends WebSocketHandlerBase {
 
             AssertionStatus status = messageProcessor.processMessage(context);
             message.setAuthCtx(context.getAuthenticationContext(request));
+            processMessageResults.setConnectionPolicyHeaders(context.getRequest().getHeadersKnob().getHeaders());
 
             processMessageResults.setOutboundUrl(outboundUrl);
 
@@ -428,6 +429,7 @@ public class WebSocketInboundHandler extends WebSocketHandlerBase {
     private class ProcessMessageResults {
         private WebSocketMessage webSocketMessage;
         private String outboundUrl;
+        private Collection<Header> connectionPolicyHeaders;
 
         private WebSocketMessage getWebSocketMsg() {
             return webSocketMessage;
@@ -443,6 +445,14 @@ public class WebSocketInboundHandler extends WebSocketHandlerBase {
 
         private void setOutboundUrl(String url) {
             outboundUrl = url;
+        }
+
+        private Collection getConnectionPolicyHeaders() {
+            return connectionPolicyHeaders;
+        }
+
+        private void setConnectionPolicyHeaders(Collection<Header> connectionPolicyHeaders) {
+            this.connectionPolicyHeaders = connectionPolicyHeaders;
         }
     }
 

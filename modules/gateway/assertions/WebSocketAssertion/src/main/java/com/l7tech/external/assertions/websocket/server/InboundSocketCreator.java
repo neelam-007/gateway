@@ -7,6 +7,7 @@ import org.eclipse.jetty.websocket.servlet.ServletUpgradeResponse;
 import org.eclipse.jetty.websocket.servlet.WebSocketCreator;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.Collection;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -71,8 +72,14 @@ public class InboundSocketCreator implements WebSocketCreator {
 	            outboundUrl = (String) outboundUrlObj;
 	        }
 		}
+        Collection connectionPolicyHeaders = null;
+        final Object connectionPolicyHeadersObj = httpServletRequest.getAttribute(
+                WebSocketConstants.REQUEST_HEADERS_FROM_CONN_POLICY_ATTR);
 
-        return new WebSocketMetadata(gen_webSocketid, authenticationContext, httpServletRequest, outboundUrl);
+        if (connectionPolicyHeadersObj instanceof Collection) {
+            connectionPolicyHeaders = (Collection) connectionPolicyHeadersObj;
+        }
+        return new WebSocketMetadata(gen_webSocketid, authenticationContext, httpServletRequest, outboundUrl, connectionPolicyHeaders);
     }
 
     private String generateWebSocketId(String protocol) {
