@@ -36,8 +36,8 @@ public class FirewallUtils {
      * <p>This should be called on startup before any connections are made.</p>
      */
     public static void initializeFirewall() {
-        runFirewallUpdater( "-", IpProtocol.IPv4, false );
-        runFirewallUpdater( "-", IpProtocol.IPv6, false );
+        runFirewallUpdater( "-", IpProtocol.IPv4, false, FIREWALL_RULES_FILENAME);
+        runFirewallUpdater( "-", IpProtocol.IPv6, false, FIREWALL6_RULES_FILENAME);
     }
 
     /**
@@ -62,8 +62,8 @@ public class FirewallUtils {
             logger.log(Level.WARNING, "Unable to update port list dropfile " + "listen6_ports" + ": " + ExceptionUtils.getMessage(e), e);
         }
 
-        runFirewallUpdater( firewallRules, IpProtocol.IPv4, true );
-        runFirewallUpdater( firewall6Rules, IpProtocol.IPv6, true );
+        runFirewallUpdater( firewallRules, IpProtocol.IPv4, true, FIREWALL_RULES_FILENAME);
+        runFirewallUpdater( firewall6Rules, IpProtocol.IPv6, true, FIREWALL6_RULES_FILENAME);
     }
 
     public static void openFirewallForRules( final File rulesDirectory, final Collection<SsgFirewallRule> rules ) {
@@ -82,8 +82,8 @@ public class FirewallUtils {
             logger.log(Level.WARNING, "Unable to update port list dropfile " + FIREWALL6_RULES_FILENAME + ": " + ExceptionUtils.getMessage(e), e);
         }
 
-        runFirewallUpdater( firewallRules, IpProtocol.IPv4, true );
-        runFirewallUpdater( firewall6Rules, IpProtocol.IPv6, true );
+        runFirewallUpdater( firewallRules, IpProtocol.IPv4, true, FIREWALL_RULES_FILENAME);
+        runFirewallUpdater( firewall6Rules, IpProtocol.IPv6, true, FIREWALL6_RULES_FILENAME);
     }
 
     /**
@@ -94,14 +94,14 @@ public class FirewallUtils {
     public static void closeFirewallForConnectors( final File rulesDirectory ) {
         String firewallRules = new File(rulesDirectory, FIREWALL_RULES_FILENAME).getPath();
         String firewall6Rules = new File(rulesDirectory, FIREWALL6_RULES_FILENAME).getPath();
-        runFirewallUpdater( firewallRules, IpProtocol.IPv4, false );
-        runFirewallUpdater( firewall6Rules, IpProtocol.IPv6, false );
+        runFirewallUpdater( firewallRules, IpProtocol.IPv4, false, FIREWALL_RULES_FILENAME);
+        runFirewallUpdater( firewall6Rules, IpProtocol.IPv6, false, FIREWALL6_RULES_FILENAME);
     }
 
     /**
      * Passes the specified firewall rules file to the firewall updater program, if one is configured.
      */
-    private static void runFirewallUpdater( final String firewallRules, IpProtocol ipProtocol, boolean start ) {
+    private static void runFirewallUpdater(final String firewallRules, IpProtocol ipProtocol, boolean start, String firewallRulesFileName) {
         File sudo = null;
         try {
             sudo = SudoUtils.findSudo();
@@ -122,7 +122,8 @@ public class FirewallUtils {
         logger.log(Level.FINE, "Using firewall rules updater program: sudo " + program);
 
         try {
-            ProcUtils.exec(null, sudo, new String[] { program.getAbsolutePath(), ipProtocol.name().toLowerCase(), firewallRules, start ? "start" : "stop" }, (byte[])null, false);
+            ProcUtils.exec(null, sudo, new String[] { program.getAbsolutePath(), ipProtocol.name().toLowerCase(),
+                    firewallRules, start ? "start" : "stop", firewallRulesFileName}, (byte[])null, false);
         } catch (IOException e) {
             logger.log(Level.WARNING, "Unable to execute firewall rules program: " + program + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e) );
         }
