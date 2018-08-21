@@ -1,7 +1,6 @@
 package com.l7tech.internal.license.console;
 
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.util.SyspropUtil;
 import org.apache.commons.cli.*;
 import org.w3c.dom.Document;
 

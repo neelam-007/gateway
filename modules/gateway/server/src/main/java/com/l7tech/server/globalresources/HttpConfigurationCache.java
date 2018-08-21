@@ -12,7 +12,6 @@ import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
-import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.event.EntityClassEvent;
 import com.l7tech.server.security.keystore.KeystoreFile;

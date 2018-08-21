@@ -1,7 +1,6 @@
 package com.l7tech.server.transport.http;
 
 import com.l7tech.common.io.SSLSocketWrapper;
-import com.l7tech.security.prov.JceProvider;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.InetAddressUtil;

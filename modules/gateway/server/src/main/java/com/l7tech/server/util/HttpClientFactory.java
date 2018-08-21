@@ -3,7 +3,6 @@ package com.l7tech.server.util;
 import com.l7tech.common.http.*;
 import com.l7tech.common.http.prov.apache.components.HttpComponentsClient;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
-import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.util.ConfigFactory;
 import org.apache.http.impl.conn.PoolingClientConnectionManager;
