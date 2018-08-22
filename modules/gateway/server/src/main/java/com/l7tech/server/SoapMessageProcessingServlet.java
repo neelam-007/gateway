@@ -340,7 +340,10 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 if ( gzipResponse && !hresponse.containsHeader( HEADER_CONTENT_ENCODING ) ) {
                     logger.fine("zipping response back to requester");
                     hresponse.setHeader( HEADER_CONTENT_ENCODING, "gzip");
-                    responseos = new GZIPOutputStream(responseos);
+
+                    // Create GZIPOutputStream with syncFlush enabled.  The syncFlush allows the OutputStream to be
+                    // flushed without having the full content
+                    responseos = new GZIPOutputStream(responseos, true);
                     hresponse.setHeader(HEADER_CONTENT_LENGTH, null);
                 }
                 boolean destroyAsRead = canStreamResponse(context);
@@ -351,7 +354,10 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                     // checked at that time.
                     responseMimeKnob.setContentLengthLimit( 0L );
                 }
-                IOUtils.copyStream(responseMimeKnob.getEntireMessageBodyAsInputStream(destroyAsRead), responseos);
+
+                boolean sendInChunks = destroyAsRead && response.getMimeKnob().isBufferingDisallowed();
+                IOUtils.copyStream(responseMimeKnob.getEntireMessageBodyAsInputStream(destroyAsRead), responseos, sendInChunks);
+
                 responseos.close();
                 logger.fine("servlet transport returned status " + routeStat +
                             ". content-type " + responseMimeKnob.getOuterContentType().getFullValue());

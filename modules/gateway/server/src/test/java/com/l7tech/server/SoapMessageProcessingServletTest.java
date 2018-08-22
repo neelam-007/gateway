@@ -606,6 +606,31 @@ public class SoapMessageProcessingServletTest {
         assertTrue("Empty cookies", response.getCookies().length == 0);
     }
 
+    @Test
+    public void testBasicRequestWithoutException() throws Exception {
+        request.setContent("test".getBytes());
+        request.setServerName("test.l7tech.com");
+        request.setServerPort(8080);
+        request.setRequestURI("/test");
+
+        doAnswer(new Answer() {
+            @Override
+            public Object answer(final InvocationOnMock invocationOnMock) throws Throwable {
+                final PolicyEnforcementContext context = (PolicyEnforcementContext) invocationOnMock.getArguments()[0];
+                return AssertionStatus.NONE;
+            }
+        }).when(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
+
+        // The service method has been successfully executed without any exceptions.
+        try {
+            servlet.service(request, response);
+        } catch (Exception e) {
+            fail("should not fail on this method call, service");
+        }
+
+        verify(messageProcessor).processMessageNoAudit(any(PolicyEnforcementContext.class));
+    }
+
     private class TestableSoapMessageProcessingServlet extends SoapMessageProcessingServlet {
         @Override
         SsgConnector getConnector(final HttpServletRequest request) {

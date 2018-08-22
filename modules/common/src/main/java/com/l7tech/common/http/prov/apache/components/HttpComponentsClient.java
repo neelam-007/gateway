@@ -520,15 +520,36 @@ public class HttpComponentsClient implements RerunnableGenericHttpClient{
                             stampBindingIdentity();
                             if(response != null && response.getEntity() != null) {
                                 try {
-                                    if(response.getEntity().getContent() != null) {
-                                        response.getEntity().getContent().close();
+                                    InputStream inputStream = response.getEntity().getContent();
+                                    if(inputStream != null) {
+                                        try {
+                                            // Attempt to read from the stream to see if there is an on-going connection
+                                            if (inputStream.read() >= 0) {
+                                                Header authHeader = requestMethod.getFirstHeader(HttpConstants.HEADER_AUTHORIZATION);
+                                                if (authHeader != null) {
+                                                    String authHeaderValue = authHeader.getValue();
+                                                    // NTLM Authentication requires a handshake back and forth, this allows NTLM Authenticate requests to bypass aborting the request method.
+                                                    if (authHeaderValue == null || !authHeaderValue.trim().startsWith("NTLM")) {
+                                                        // abort the request if it is still in progress
+                                                        requestMethod.abort();
+                                                    }
+                                                }
+                                                else {
+                                                    requestMethod.abort();
+                                                }
+                                            }
+                                        } catch (IOException e) {
+                                            // Read fail might be due to stream already closed.  It is safe to silently ignore
+                                        } finally {
+                                            inputStream.close();
+                                        }
                                     }
                                 } catch (IOException e) {
                                     logger.log(Level.WARNING, "Unable to close response stream");
                                 }
                             }
                             if (requestMethod != null) {
-                                requestMethod.reset();//release connection
+                                requestMethod.reset();//release connectionFailure
                                 requestMethod = null;
                             }
                         }

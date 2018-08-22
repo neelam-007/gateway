@@ -176,7 +176,7 @@ public class IOUtils {
      * @throws java.io.IOException if in could not be read, or out could not be written
      */
     public static long copyStream(InputStream in, OutputStream out) throws IOException {
-        return copyStream(in, out, null);
+        return copyStream(in, out, null, false);
     }
 
     /**
@@ -189,6 +189,33 @@ public class IOUtils {
      * @throws java.io.IOException if in could not be read, or out could not be written
      */
     public static long copyStream(InputStream in, OutputStream out, @Nullable final Functions.UnaryVoidThrows<Long, IOException> limitCallback ) throws IOException {
+        return copyStream(in, out, limitCallback, false);
+    }
+
+    /**
+     * Copy all of the in, right up to EOF, into out.  Does not close either stream.
+     *
+     * @param in  the InputStream to read.  Must not be null.
+     * @param out the OutputStream to write.  Must not be null.
+     * @param flushAfterWrite whether to flush the outputstream after each write
+     * @return the number bytes copied
+     * @throws java.io.IOException if in could not be read, or out could not be written
+     */
+    public static long copyStream(InputStream in, OutputStream out, boolean flushAfterWrite) throws IOException {
+        return copyStream(in, out, null, flushAfterWrite);
+    }
+
+    /**
+     * Copy all of the in, right up to EOF, into out.  Does not close either stream.
+     *
+     * @param in  the InputStream to read.  Must not be null.
+     * @param out the OutputStream to write.  Must not be null.
+     * @param limitCallback function to enforce copy limit. Null for no copy limit.
+     * @param flushAfterWrite whether to flush the outputstream after each write
+     * @return the number bytes copied
+     * @throws java.io.IOException if in could not be read, or out could not be written
+     */
+    public static long copyStream(InputStream in, OutputStream out, @Nullable final Functions.UnaryVoidThrows<Long, IOException> limitCallback, boolean flushAfterWrite ) throws IOException {
         if (in == null || out == null) throw new NullPointerException("in and out must both be non-null");
         byte[] buf = BufferPool.getBuffer(16384);
         try {
@@ -196,6 +223,9 @@ public class IOUtils {
             long total = 0;
             while ((got = in.read(buf)) > 0) {
                 out.write(buf, 0, got);
+                if (flushAfterWrite) {
+                    out.flush();
+                }
                 total += got;
                 if (limitCallback != null) {
                     limitCallback.call(total);

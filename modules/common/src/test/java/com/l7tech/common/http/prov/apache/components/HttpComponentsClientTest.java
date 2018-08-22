@@ -144,16 +144,34 @@ public class HttpComponentsClientTest {
     @Ignore
     @Test
     public void testNtlmAuthentication() throws Exception {
-        URL url = new URL("http://test2008.l7tech.dev/iisstart.htm");
         GenericHttpRequestParams requestParams = new GenericHttpRequestParams();
         requestParams.setContentType(ContentTypeHeader.XML_DEFAULT);
-        requestParams.setNtlmAuthentication(new NtlmAuthentication("ntlm_test", "7layer]".toCharArray(), "L7TECH", ""));
-        requestParams.setTargetUrl(url);
+        requestParams.setNtlmAuthentication(new NtlmAuthentication("administrator", "7layer".toCharArray(), "seattle", "hugh"));
+        requestParams.setTargetUrl(new URL("http://hugh.l7tech.com:82/ACMEWarehouseNTLM/Service1.asmx"));
         GenericHttpRequest request = null;
         try {
             request = fixture.createRequest(HttpMethod.GET, requestParams);
             GenericHttpResponse response = request.getResponse();
             assertEquals(200, response.getStatus());
+            IOUtils.copyStream(response.getInputStream(), System.out);
+        } finally {
+            if (request != null) {
+                request.close();
+            }
+        }
+    }
+
+    @Ignore
+    @Test
+    public void testNoAuthentication() throws Exception {
+        GenericHttpRequestParams requestParams = new GenericHttpRequestParams();
+        requestParams.setContentType(ContentTypeHeader.XML_DEFAULT);
+        requestParams.setTargetUrl(new URL("http://hugh.l7tech.com:82/ACMEWarehouseNTLM/Service1.asmx"));
+        GenericHttpRequest request = null;
+        try {
+            request = fixture.createRequest(HttpMethod.GET, requestParams);
+            GenericHttpResponse response = request.getResponse();
+            assertEquals(401, response.getStatus());
             IOUtils.copyStream(response.getInputStream(), System.out);
         } finally {
             if (request != null) {
