@@ -18,7 +18,7 @@ public class SharedKeyValueStoreProviderRegistry extends AbstractRegistryImpl<Sh
     private static final Logger LOGGER = Logger.getLogger(SharedKeyValueStoreProviderRegistry.class.getName());
 
     private static final String LOCAL_KEY_VALUE_STORE_PROVIDER_NAME = "local";
-    private static final String SYSTEM_PROPERTY_KEY_VALUE_STORE_PROVIDER = "com.l7tech.server.extension.sharedKeyValueStoreProvider";
+    public static final String SYSTEM_PROPERTY_KEY_VALUE_STORE_PROVIDER = "com.l7tech.server.extension.sharedKeyValueStoreProvider";
 
     private final Config config;
 
