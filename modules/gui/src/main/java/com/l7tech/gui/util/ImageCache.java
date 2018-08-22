@@ -2,13 +2,13 @@ package com.l7tech.gui.util;
 
 import com.l7tech.util.ExceptionUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.TestOnly;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
-import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
@@ -37,6 +37,9 @@ public final class ImageCache {
 
     /** this instance classloader */
     private final ClassLoader loader = ImageCache.class.getClassLoader();
+
+    /** name of the default image */
+    public static final String DEFAULT_IMAGE_NAME = "com/l7tech/console/resources/star16.gif";
 
     /**
      * @return the singleton instance
@@ -143,7 +146,13 @@ public final class ImageCache {
                 logger.log( Level.WARNING, "Unable to load image resource " + name + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException( e ) );
             }
         }
-        return null;
+
+        imgref = imageMap.get(DEFAULT_IMAGE_NAME);
+        if(imgref == null) {
+            logger.log( Level.WARNING, "Unable to find default image resource" + DEFAULT_IMAGE_NAME);
+            return null;
+        }
+        return imgref.get();
     }
 
     /**
@@ -188,5 +197,11 @@ public final class ImageCache {
             model.createCompatibleWritableRaster(width, height),
             model.isAlphaPremultiplied(), null);
         return buffImage;
+    }
+
+    /** Variable imageMap getter */
+    @TestOnly
+    Map<String, Reference<Image>> getImageMap() {
+        return imageMap;
     }
 }
