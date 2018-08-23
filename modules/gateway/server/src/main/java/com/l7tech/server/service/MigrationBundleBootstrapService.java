@@ -33,11 +33,15 @@ import org.springframework.context.ApplicationEvent;
 
 import javax.inject.Inject;
 import java.io.*;
-import java.util.Arrays;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Comparator;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Install a RESTMAN migration bundle or SKAR file on startup, if one is found on-disk on startup in a special directory.
@@ -80,6 +84,7 @@ public class MigrationBundleBootstrapService implements PostStartupApplicationLi
         }
     }
 
+    @SuppressWarnings("squid:S1604") // to suppress sonar about convert to lambda. Can't use lambdas since this class is loaded by spring.
     private void installBootstrapBundles() {
         try {
             // Do nothing unless the RESTMAN assertion has been registered
@@ -105,18 +110,22 @@ public class MigrationBundleBootstrapService implements PostStartupApplicationLi
                         File bundleFolder = new File( BOOTSTRAP_BUNDLE_FOLDER );
                         if ( !bundleFolder.exists() ) return false;
                         if ( !bundleFolder.isDirectory() ) return false;
-                        File[] bundleFiles = bundleFolder.listFiles();
-                        if ( bundleFiles == null ) return false;
+                        List<Path> bundleFiles;
+                        try (Stream<Path> bundlesStream = Files.find(bundleFolder.toPath(), Integer.MAX_VALUE, (filePath, fileAttr) -> fileAttr.isRegularFile())) {
+                            bundleFiles = bundlesStream.collect(Collectors.toList());
+                        }
+                        if ( bundleFiles.isEmpty() ) return false;
 
                         //sort in alphabetical order
-                        Arrays.sort(bundleFiles, new Comparator<File>() {
+                        bundleFiles.sort(new Comparator<Path>() {
                             @Override
-                            public int compare(File o1, File o2) {
-                                return o1.getName().compareTo(o2.getName());
+                            public int compare(Path o1, Path o2) {
+                                return o1.compareTo(o2);
                             }
                         });
 
-                        for ( File bundleFile : bundleFiles ) {
+                        for ( Path bundleFilePath : bundleFiles ) {
+                            File bundleFile =  bundleFilePath.toFile();
                             if(bundleFile.isFile()) {
                                 installBundleFile(bundleFile, adminUser);
                             }
