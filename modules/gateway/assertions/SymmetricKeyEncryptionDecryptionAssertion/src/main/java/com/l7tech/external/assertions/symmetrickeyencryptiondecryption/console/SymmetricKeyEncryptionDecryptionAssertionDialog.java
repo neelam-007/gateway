@@ -43,7 +43,12 @@ public class SymmetricKeyEncryptionDecryptionAssertionDialog extends AssertionPr
 
         asciiArmourCheckBox.setSelected(assertion.isAsciiArmourEnabled());
 
-        loadAlgorithmComboBox(assertion.getAlgorithm());
+        String selectedAlgorithmDisplay = assertion.getAlgorithm();
+        if (SymmetricKeyEncryptionDecryptionAssertion.TRANS_PGP.equals(selectedAlgorithmDisplay)) {
+            selectedAlgorithmDisplay = SymmetricKeyEncryptionDecryptionAssertion.TRANS_PGP_AES256;
+        }
+
+        loadAlgorithmComboBox(selectedAlgorithmDisplay);
         loadPgpEncryptionTypeComboBox(assertion.getIsPgpKeyEncryption());
     }
 
@@ -72,7 +77,7 @@ public class SymmetricKeyEncryptionDecryptionAssertionDialog extends AssertionPr
     // Have to override this field to ensure the "OK" button is enabled/disabled propertly when the dialog is first opened
     protected void updateOkButtonEnableState() {
         // call local enable or disable button method.  Also check for Key Text Field
-        enableOrDisableOkButton(true);
+        enableOrDisableOkButton();
     }
 
     @Override
@@ -83,7 +88,7 @@ public class SymmetricKeyEncryptionDecryptionAssertionDialog extends AssertionPr
         // Action Listener called everytime any of the input fields change
         final EventListener genericChangeListener = new RunOnChangeListener(new Runnable() {
             public void run() {
-                enableOrDisableOkButton(true);
+                enableOrDisableOkButton();
                 enableOrDisableProperTextBoxesForPGP();
             }
         });
@@ -100,18 +105,18 @@ public class SymmetricKeyEncryptionDecryptionAssertionDialog extends AssertionPr
         pgpEncryptionComboBox.addItemListener((ItemListener) genericChangeListener);
 
         // initially set the okay button too
-        enableOrDisableOkButton(false);
+        enableOrDisableOkButton();
     }
 
-    //proper PGP setup
-    /*                                                    ;
-    1) if Encrypt, key disables, Passphrase enabled.
-    2) If Decrypt, passphrase enabled and key enabled.
-     -> If key empty, a key is adhocly created.
+    /**
+     * Proper PGP setup
+     * 1) if Encrypt, key disables, Passphrase enabled.
+     * 2) If Decrypt, passphrase enabled and key enabled.
+     *    -> If key empty, a key is adhocly created.
      */
     private void enableOrDisableProperTextBoxesForPGP()
     {
-        if (SymmetricKeyEncryptionDecryptionAssertion.TRANS_PGP.equals(algorithmComboBox.getSelectedItem()))
+        if (isPgpTransformation(algorithmComboBox.getSelectedItem()))
         {
             this.ivTextField.setEnabled(false);
             if (encryptRadioButton.isSelected())
@@ -141,22 +146,21 @@ public class SymmetricKeyEncryptionDecryptionAssertionDialog extends AssertionPr
             this.pgpPassPhrase.setEnabled(false);
             this.asciiArmourCheckBox.setEnabled(false);
             this.keyTextField.setEnabled(true);
-            boolean cbcSelected = SymmetricKeyEncryptionDecryptionAssertion.TRANS_AES_CBC_PKCS5Padding.equals(algorithmComboBox.getSelectedItem());
-            boolean gcmSelected = SymmetricKeyEncryptionDecryptionAssertion.TRANS_AES_GCM_NoPadding.equals(algorithmComboBox.getSelectedItem());
+
             // IV Is only Used for Decrypt, not Encrypt.
-            this.ivTextField.setEnabled(decryptRadioButton.isSelected() && (cbcSelected || gcmSelected));
+            this.ivTextField.setEnabled(decryptRadioButton.isSelected() && isCBCOrGCMMode(algorithmComboBox.getSelectedItem()));
         }
 
     }
 
-    private void enableOrDisableOkButton(boolean checkForKey) {
+    private void enableOrDisableOkButton() {
         boolean enabled =
                 isNonEmptyRequiredTextField(textField.getText()) &&
                         //isNonEmptyRequiredTextField(keyTextField.getText()) &&
                         isNonEmptyRequiredTextField(variableNametextField.getText()) &&
                         (algorithmComboBox.getSelectedItem() != null && !algorithmComboBox.getSelectedItem().toString().trim().isEmpty());
 
-        if (SymmetricKeyEncryptionDecryptionAssertion.TRANS_PGP.equals(algorithmComboBox.getSelectedItem()))
+        if (isPgpTransformation(algorithmComboBox.getSelectedItem()))
         {
             if (isPgpPublicKeyEncryptionSelected()){
                 enabled = enabled && isNonEmptyRequiredTextField(keyTextField.getText());
@@ -174,13 +178,16 @@ public class SymmetricKeyEncryptionDecryptionAssertionDialog extends AssertionPr
 
     private void loadAlgorithmComboBox(String selectedAlgorithmDisplay) {
 
-        this.algorithmComboBox.addItem(SymmetricKeyEncryptionDecryptionAssertion.TRANS_AES_CBC_PKCS5Padding);
-        this.algorithmComboBox.addItem(SymmetricKeyEncryptionDecryptionAssertion.TRANS_AES_ECB_PKCS5Padding);
-        this.algorithmComboBox.addItem(SymmetricKeyEncryptionDecryptionAssertion.TRANS_AES_ECB_PKCS7Padding);
-        this.algorithmComboBox.addItem(SymmetricKeyEncryptionDecryptionAssertion.TRANS_AES_GCM_NoPadding);
-        this.algorithmComboBox.addItem(SymmetricKeyEncryptionDecryptionAssertion.TRANS_DES_CBC_PKCS5Padding);
-        this.algorithmComboBox.addItem(SymmetricKeyEncryptionDecryptionAssertion.TRANS_DESede_CBC_PKCS5Padding);
-        this.algorithmComboBox.addItem(SymmetricKeyEncryptionDecryptionAssertion.TRANS_PGP);
+        this.algorithmComboBox.addItem(SymmetricKeyEncryptionDecryptionAssertion.TRANS_AES_CBC_PKCS5PADDING);
+        this.algorithmComboBox.addItem(SymmetricKeyEncryptionDecryptionAssertion.TRANS_AES_CBC_PKCS7PADDING);
+        this.algorithmComboBox.addItem(SymmetricKeyEncryptionDecryptionAssertion.TRANS_AES_ECB_PKCS5PADDING);
+        this.algorithmComboBox.addItem(SymmetricKeyEncryptionDecryptionAssertion.TRANS_AES_ECB_PKCS7PADDING);
+        this.algorithmComboBox.addItem(SymmetricKeyEncryptionDecryptionAssertion.TRANS_AES_GCM_NOPADDING);
+        this.algorithmComboBox.addItem(SymmetricKeyEncryptionDecryptionAssertion.TRANS_DES_CBC_PKCS5PADDING);
+        this.algorithmComboBox.addItem(SymmetricKeyEncryptionDecryptionAssertion.TRANS_3DES_CBC_PKCS5PADDING);
+        this.algorithmComboBox.addItem(SymmetricKeyEncryptionDecryptionAssertion.TRANS_3DES_ECB_PKCS5PADDING);
+        this.algorithmComboBox.addItem(SymmetricKeyEncryptionDecryptionAssertion.TRANS_PGP_AES256);
+        this.algorithmComboBox.addItem(SymmetricKeyEncryptionDecryptionAssertion.TRANS_PGP_CAST5);
 
         if (selectedAlgorithmDisplay != null && !selectedAlgorithmDisplay.equals("")) {
             this.algorithmComboBox.setSelectedItem(selectedAlgorithmDisplay);
@@ -207,4 +214,30 @@ public class SymmetricKeyEncryptionDecryptionAssertionDialog extends AssertionPr
         return encryptRadioButton.isSelected() && SymmetricKeyEncryptionDecryptionAssertion.PGP_PUBLIC_KEY_ENCRYPT.equals(pgpEncryptionComboBox.getSelectedItem());
     }
 
+    /**
+     * Returns TRUE if the encryption algorithm is one of supported PGP transformation.
+     * @param transformation being applied
+     * @return TRUE if encryption is one of the supported PGP transformation
+     */
+    private boolean isPgpTransformation(final Object transformation) {
+        return SymmetricKeyEncryptionDecryptionAssertion.TRANS_PGP_AES256.equals(transformation)
+                || SymmetricKeyEncryptionDecryptionAssertion.TRANS_PGP_CAST5.equals(transformation);
+    }
+
+    /**
+     * Returns TRUE is the encryption algorithm is being applied in "CBC" or "GCM" mode.
+     * @param transformation being applied
+     * @return TRUE if encryption is being applied in CBC or GCM mode
+     */
+    private boolean isCBCOrGCMMode(final Object transformation) {
+        String mode = "";
+        String cipher = transformation != null ? transformation.toString() : "";
+        /* The mode value is at the 2nd index after the split. Eg. AES/CBC/PKCS5Padding */
+        String[] temp = cipher.split(SymmetricKeyEncryptionDecryptionAssertion.DEFAULT_TRANS_SEPERATOR);
+        if (temp.length > 1) {
+            mode = temp[1];
+        }
+
+        return "GCM".equalsIgnoreCase(mode) || "CBC".equalsIgnoreCase(mode);
+    }
 }

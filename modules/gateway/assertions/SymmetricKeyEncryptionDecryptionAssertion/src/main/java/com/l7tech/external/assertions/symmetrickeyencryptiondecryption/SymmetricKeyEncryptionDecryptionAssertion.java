@@ -41,22 +41,30 @@ public class SymmetricKeyEncryptionDecryptionAssertion extends Assertion impleme
     private String outputVariableName = DEFAULT_VARIABLE_NAME;
 
     // AES Transformation
-    public static final String TRANS_AES_CBC_PKCS5Padding = "AES/CBC/PKCS5Padding";
+    public static final String TRANS_AES_CBC_PKCS5PADDING = "AES/CBC/PKCS5Padding";
 
-    public static final String TRANS_AES_ECB_PKCS5Padding = "AES/ECB/PKCS5Padding";
+    public static final String TRANS_AES_CBC_PKCS7PADDING = "AES/CBC/PKCS7Padding";
 
-    public static final String TRANS_AES_ECB_PKCS7Padding = "AES/ECB/PKCS7Padding";
+    public static final String TRANS_AES_ECB_PKCS5PADDING = "AES/ECB/PKCS5Padding";
 
-    public static final String TRANS_AES_GCM_NoPadding = "AES/GCM/NoPadding";
+    public static final String TRANS_AES_ECB_PKCS7PADDING = "AES/ECB/PKCS7Padding";
+
+    public static final String TRANS_AES_GCM_NOPADDING = "AES/GCM/NoPadding";
 
     // DES Transformation
-    public static final String TRANS_DES_CBC_PKCS5Padding = "DES/CBC/PKCS5Padding";
+    public static final String TRANS_DES_CBC_PKCS5PADDING = "DES/CBC/PKCS5Padding";
 
     // Triple DES also known as DESede transformations
-    public static final String TRANS_DESede_CBC_PKCS5Padding = "DESede/CBC/PKCS5Padding";
+    public static final String TRANS_3DES_CBC_PKCS5PADDING = "DESede/CBC/PKCS5Padding";
 
-    // PGP Transformation
+    public static final String TRANS_3DES_ECB_PKCS5PADDING = "DESede/ECB/PKCS5Padding";
+
+    // PGP Transformations
     public static final String TRANS_PGP = "PGP";
+
+    public static final String TRANS_PGP_AES256 = "PGP/AES256";
+
+    public static final String TRANS_PGP_CAST5 = "PGP/CAST5";
 
     //PGP Encryption types
     public static final String PGP_PASS_ENCRYPT = "Passphrase";
@@ -133,7 +141,7 @@ public class SymmetricKeyEncryptionDecryptionAssertion extends Assertion impleme
     }
 
     public String[] getVariablesUsed() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append(text);
         sb.append(" ").append(key);
         sb.append(" ").append(iv);
@@ -156,11 +164,8 @@ public class SymmetricKeyEncryptionDecryptionAssertion extends Assertion impleme
             return meta;
 
         // Cluster properties used by this assertion
-        Map<String, String[]> props = new HashMap<String, String[]>();
-        //props.put(NAME, new String[] {
-        //        DESCRIPTION,
-        //        DEFAULT
-        //});
+        Map<String, String[]> props = new HashMap<>();
+
         meta.put(AssertionMetadata.CLUSTER_PROPERTIES, props);
 
         // Set description for GUI

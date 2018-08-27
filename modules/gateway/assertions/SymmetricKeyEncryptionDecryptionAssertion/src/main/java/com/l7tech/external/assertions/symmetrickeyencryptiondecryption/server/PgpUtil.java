@@ -190,6 +190,7 @@ public class PgpUtil {
                                final OutputStream outputStream,
                                final String filename,
                                final long fileModified,
+                               final int pgpAlgorithm,
                                final char[] password,
                                final boolean asciiArmour,
                                final boolean integrityCheck,
@@ -203,7 +204,7 @@ public class PgpUtil {
                 new PGPCompressedDataGenerator(PGPCompressedData.ZIP);
         final PGPLiteralDataGenerator literalDataGenerator = new PGPLiteralDataGenerator();
         final PGPEncryptedDataGenerator encryptedDataGenerator = new PGPEncryptedDataGenerator(
-                PGPEncryptedData.AES_256,
+                pgpAlgorithm,
                 integrityCheck,
                 secureRandom,
                 securityProvider);

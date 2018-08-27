@@ -10,6 +10,7 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.test.BugId;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.HexUtils;
+import org.bouncycastle.openpgp.PGPEncryptedData;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -220,7 +221,7 @@ public class ServerSymmetricKeyEncryptionDecryptionAssertionTest {
     }
 
     @Test
-    public void testPGP() throws Exception {
+    public void testPGP_Default() throws Exception {
 
         SymmetricKeyEncryptionDecryptionAssertion encryptassertion = new SymmetricKeyEncryptionDecryptionAssertion();
         String text = "This is what I am encrypt";
@@ -588,6 +589,7 @@ public class ServerSymmetricKeyEncryptionDecryptionAssertionTest {
                 out,
                 "file.txt",
                 123000, // milliseconds not preserved
+                PGPEncryptedData.AES_256,
                 "password".toCharArray(),
                 asciiArmoured,
                 integrityProtected,
@@ -771,7 +773,7 @@ public class ServerSymmetricKeyEncryptionDecryptionAssertionTest {
         String textToSign = "hello world";
         byte[] key = new byte[128/8]; // 128 bit key.
         new Random().nextBytes(key);
-        String algorithm = SymmetricKeyEncryptionDecryptionAssertion.TRANS_AES_GCM_NoPadding;
+        String algorithm = SymmetricKeyEncryptionDecryptionAssertion.TRANS_AES_GCM_NOPADDING;
         String outVariableName = "encrypted";
 
         // Encrypt.
@@ -808,7 +810,7 @@ public class ServerSymmetricKeyEncryptionDecryptionAssertionTest {
         String textToSign = "hello world";
         byte[] key = new byte[128/8]; // 128 bit key.
         new Random().nextBytes(key);
-        String algorithm = SymmetricKeyEncryptionDecryptionAssertion.TRANS_AES_GCM_NoPadding;
+        String algorithm = SymmetricKeyEncryptionDecryptionAssertion.TRANS_AES_GCM_NOPADDING;
         String outVariableName = "encrypted";
 
         // Encrypt.
@@ -860,7 +862,7 @@ public class ServerSymmetricKeyEncryptionDecryptionAssertionTest {
         String textToSign = "hello world";
         byte[] key = new byte[128/8]; // 128 bit key.
         new Random().nextBytes(key);
-        String algorithm = SymmetricKeyEncryptionDecryptionAssertion.TRANS_AES_GCM_NoPadding;
+        String algorithm = SymmetricKeyEncryptionDecryptionAssertion.TRANS_AES_GCM_NOPADDING;
         String outVariableName = "encrypted";
 
         // Encrypt.
@@ -894,7 +896,7 @@ public class ServerSymmetricKeyEncryptionDecryptionAssertionTest {
         String textToSign = "hello world";
         byte[] key = new byte[128/8]; // 128 bit key.
         new Random().nextBytes(key);
-        String algorithm = SymmetricKeyEncryptionDecryptionAssertion.TRANS_AES_GCM_NoPadding;
+        String algorithm = SymmetricKeyEncryptionDecryptionAssertion.TRANS_AES_GCM_NOPADDING;
         String outVariableName = "encrypted";
 
         // Encrypt.
@@ -937,7 +939,7 @@ public class ServerSymmetricKeyEncryptionDecryptionAssertionTest {
         String textToSign = "hello world";
         byte[] key = new byte[128/8]; // 128 bit key.
         new Random().nextBytes(key);
-        String algorithm = SymmetricKeyEncryptionDecryptionAssertion.TRANS_AES_ECB_PKCS5Padding;
+        String algorithm = SymmetricKeyEncryptionDecryptionAssertion.TRANS_AES_ECB_PKCS5PADDING;
         String outVariableName = "encrypted";
 
         // Encrypt.
@@ -974,7 +976,7 @@ public class ServerSymmetricKeyEncryptionDecryptionAssertionTest {
         String textToSign = "hello world";
         byte[] key = new byte[128/8]; // 128 bit key.
         new Random().nextBytes(key);
-        String algorithm = SymmetricKeyEncryptionDecryptionAssertion.TRANS_AES_ECB_PKCS7Padding;
+        String algorithm = SymmetricKeyEncryptionDecryptionAssertion.TRANS_AES_ECB_PKCS7PADDING;
         String outVariableName = "encrypted";
 
         // Encrypt.
@@ -1061,7 +1063,7 @@ public class ServerSymmetricKeyEncryptionDecryptionAssertionTest {
     public void testAesEcbPkcs5PaddingDecrypt() throws Exception {
         // Setup test data.
         byte[] key = "PUdp6bksv1DngBRK".getBytes();
-        String algorithm = SymmetricKeyEncryptionDecryptionAssertion.TRANS_AES_ECB_PKCS5Padding;
+        String algorithm = SymmetricKeyEncryptionDecryptionAssertion.TRANS_AES_ECB_PKCS5PADDING;
         String outVariableName = "encrypted";
         String encryptedB64 = "kcZAP7iML4t/K/kSoKe6sEX/rMzHmLbHvl/MwrSate0=";
 
@@ -1087,7 +1089,7 @@ public class ServerSymmetricKeyEncryptionDecryptionAssertionTest {
     public void testAesEcbPkcs5PaddingEncrypt() throws Exception {
         // Setup test data.
         byte[] key = "PUdp6bksv1DngBRK".getBytes();
-        String algorithm = SymmetricKeyEncryptionDecryptionAssertion.TRANS_AES_ECB_PKCS5Padding;
+        String algorithm = SymmetricKeyEncryptionDecryptionAssertion.TRANS_AES_ECB_PKCS5PADDING;
         String outVariableName = "encrypted";
         String textToSign = "This is my text to encrypt";
 
@@ -1106,14 +1108,150 @@ public class ServerSymmetricKeyEncryptionDecryptionAssertionTest {
         Assert.assertEquals("Encrypt validation failed.", textToSign, decrypted);
     }
 
+    @Test
+    public void testAES_CBC_PKCS7Padding() throws Exception {
+
+        SymmetricKeyEncryptionDecryptionAssertion encryptassertion = new SymmetricKeyEncryptionDecryptionAssertion();
+        String text = "happypathtest";
+        String b64encodedText = HexUtils.encodeBase64(text.getBytes(Charsets.UTF8));
+        String Algorithm = "AES/CBC/PKCS7Padding";
+        String _128bitkey = "thisour128bitkey";
+        String _128bitkeyB64 = HexUtils.encodeBase64(_128bitkey.getBytes(Charsets.UTF8));
+        String variableName = "128bitencryptoutputtest";
+        setUpAssertion(encryptassertion, b64encodedText, _128bitkeyB64, variableName, Algorithm, true,"");
+
+        ServerSymmetricKeyEncryptionDecryptionAssertion encryptserverAssertion = new ServerSymmetricKeyEncryptionDecryptionAssertion(encryptassertion, mockApplicationContext);
+        AssertionStatus status = encryptserverAssertion.checkRequest(mockPolicyEnforcementContext);
+        String output = getOutputString(variableName);
+        Assert.assertNotNull(status);
+        Assert.assertEquals("First Check", AssertionStatus.NONE.getMessage(), status.getMessage());
+        Assert.assertTrue("Second Check - Make sure a cipher is produced", (output).length() > 0);
+
+        String decryptVariableName = "128bitdecryptoutputtest";
+        SymmetricKeyEncryptionDecryptionAssertion decryptionAssertion = new SymmetricKeyEncryptionDecryptionAssertion();
+        setUpAssertion(decryptionAssertion, output, _128bitkeyB64, decryptVariableName, Algorithm, false, "");
+
+        ServerSymmetricKeyEncryptionDecryptionAssertion decryptserverAssertion = new ServerSymmetricKeyEncryptionDecryptionAssertion(decryptionAssertion, mockApplicationContext);
+        status = decryptserverAssertion.checkRequest(mockPolicyEnforcementContext);
+        String finaloutput = getOutputString(decryptVariableName);
+
+
+        Assert.assertNotNull(status);
+        Assert.assertEquals("First Check", AssertionStatus.NONE.getMessage(), status.getMessage());
+        Assert.assertEquals("Second Check  - Make sure output matches the original text", finaloutput, b64encodedText);
+    }
+
+    @Test
+    public void testPGP_AES256() throws Exception {
+
+        SymmetricKeyEncryptionDecryptionAssertion encryptassertion = new SymmetricKeyEncryptionDecryptionAssertion();
+        String text = "This is what I am encrypt";
+        String b64encodedText = HexUtils.encodeBase64(text.getBytes(Charsets.UTF8));
+        String Algorithm = "PGP/AES256";
+        String passphrase = "my7layer";
+        String passphraseB64 = HexUtils.encodeBase64(passphrase.getBytes(Charsets.UTF8));
+        String variableName = "128bitencryptoutputtest";
+        setUpAssertion(encryptassertion, b64encodedText, "", variableName, Algorithm, true,passphraseB64);
+
+        ServerSymmetricKeyEncryptionDecryptionAssertion encryptserverAssertion = new ServerSymmetricKeyEncryptionDecryptionAssertion(encryptassertion, mockApplicationContext);
+        AssertionStatus status = encryptserverAssertion.checkRequest(mockPolicyEnforcementContext);
+        String output = getOutputString(variableName);
+        Assert.assertNotNull(status);
+        Assert.assertEquals("First Check", AssertionStatus.NONE.getMessage(), status.getMessage());
+        Assert.assertTrue("Second Check - Make sure a cipher is produced", (output).length() > 0);
+
+        System.out.println("interimn Output: " + output);
+
+        String decryptVariableName = "128bitdecryptoutputtest";
+        SymmetricKeyEncryptionDecryptionAssertion decryptionAssertion = new SymmetricKeyEncryptionDecryptionAssertion();
+        setUpAssertion(decryptionAssertion, output, "", decryptVariableName, Algorithm, false,passphraseB64);
+
+        ServerSymmetricKeyEncryptionDecryptionAssertion decryptserverAssertion = new ServerSymmetricKeyEncryptionDecryptionAssertion(decryptionAssertion, mockApplicationContext);
+        status = decryptserverAssertion.checkRequest(mockPolicyEnforcementContext);
+        String finaloutput = getOutputString(decryptVariableName);
+
+        Assert.assertNotNull(status);
+        Assert.assertEquals("First Check", AssertionStatus.NONE.getMessage(), status.getMessage());
+        Assert.assertEquals("Second Check  - Make sure output matches the original text", finaloutput, b64encodedText);
+
+        System.out.println("Final Output: " + finaloutput + "   B64Decoded: " + new String(HexUtils.decodeBase64(finaloutput)));
+    }
+
+    @Test
+    public void testPGP_CAST5() throws Exception {
+
+        SymmetricKeyEncryptionDecryptionAssertion encryptassertion = new SymmetricKeyEncryptionDecryptionAssertion();
+        String text = "This is what I am encrypt";
+        String b64encodedText = HexUtils.encodeBase64(text.getBytes(Charsets.UTF8));
+        String Algorithm = "PGP/CAST5";
+        String passphrase = "my7layer";
+        String passphraseB64 = HexUtils.encodeBase64(passphrase.getBytes(Charsets.UTF8));
+        String variableName = "128bitencryptoutputtest";
+        setUpAssertion(encryptassertion, b64encodedText, "", variableName, Algorithm, true,passphraseB64);
+
+        ServerSymmetricKeyEncryptionDecryptionAssertion encryptserverAssertion = new ServerSymmetricKeyEncryptionDecryptionAssertion(encryptassertion, mockApplicationContext);
+        AssertionStatus status = encryptserverAssertion.checkRequest(mockPolicyEnforcementContext);
+        String output = getOutputString(variableName);
+        Assert.assertNotNull(status);
+        Assert.assertEquals("First Check", AssertionStatus.NONE.getMessage(), status.getMessage());
+        Assert.assertTrue("Second Check - Make sure a cipher is produced", (output).length() > 0);
+
+        System.out.println("interimn Output: " + output);
+
+        String decryptVariableName = "128bitdecryptoutputtest";
+        SymmetricKeyEncryptionDecryptionAssertion decryptionAssertion = new SymmetricKeyEncryptionDecryptionAssertion();
+        setUpAssertion(decryptionAssertion, output, "", decryptVariableName, Algorithm, false,passphraseB64);
+
+        ServerSymmetricKeyEncryptionDecryptionAssertion decryptserverAssertion = new ServerSymmetricKeyEncryptionDecryptionAssertion(decryptionAssertion, mockApplicationContext);
+        status = decryptserverAssertion.checkRequest(mockPolicyEnforcementContext);
+        String finaloutput = getOutputString(decryptVariableName);
+
+        Assert.assertNotNull(status);
+        Assert.assertEquals("First Check", AssertionStatus.NONE.getMessage(), status.getMessage());
+        Assert.assertEquals("Second Check  - Make sure output matches the original text", finaloutput, b64encodedText);
+
+        System.out.println("Final Output: " + finaloutput + "   B64Decoded: " + new String(HexUtils.decodeBase64(finaloutput)));
+    }
+
+    @Test
+    public void test3DES_ECBMode() throws Exception {
+
+        SymmetricKeyEncryptionDecryptionAssertion encryptassertion = new SymmetricKeyEncryptionDecryptionAssertion();
+        String text = "happypathtest";
+        String b64encodedText = HexUtils.encodeBase64(text.getBytes(Charsets.UTF8));
+        String Algorithm = "DESede/ECB/PKCS5Padding";
+        String _key = JceProvider.getInstance().isFips140ModeEnabled()? "thisour1thisour1thisour1" : "thisour1";
+        String _keyB64 = HexUtils.encodeBase64(_key.getBytes(Charsets.UTF8));
+        String variableName = "128bitencryptoutputtest";
+        setUpAssertion(encryptassertion, b64encodedText, _keyB64, variableName, Algorithm, true,"");
+
+        ServerSymmetricKeyEncryptionDecryptionAssertion encryptserverAssertion = new ServerSymmetricKeyEncryptionDecryptionAssertion(encryptassertion, mockApplicationContext);
+        AssertionStatus status = encryptserverAssertion.checkRequest(mockPolicyEnforcementContext);
+        String output = getOutputString(variableName);
+        Assert.assertNotNull(status);
+        Assert.assertEquals("First Check", AssertionStatus.NONE.getMessage(), status.getMessage());
+        Assert.assertTrue("Second Check - Make sure a cipher is produced", (output).length() > 0);
+
+        String decryptVariableName = "128bitdecryptoutputtest";
+        SymmetricKeyEncryptionDecryptionAssertion decryptionAssertion = new SymmetricKeyEncryptionDecryptionAssertion();
+        setUpAssertion(decryptionAssertion, output, _keyB64, decryptVariableName, Algorithm, false,"");
+
+        ServerSymmetricKeyEncryptionDecryptionAssertion decryptserverAssertion = new ServerSymmetricKeyEncryptionDecryptionAssertion(decryptionAssertion, mockApplicationContext);
+        status = decryptserverAssertion.checkRequest(mockPolicyEnforcementContext);
+        String finaloutput = getOutputString(decryptVariableName);
+
+        Assert.assertNotNull(status);
+        Assert.assertEquals("First Check", AssertionStatus.NONE.getMessage(), status.getMessage());
+        Assert.assertEquals("Second Check  - Make sure output matches the original text", finaloutput, b64encodedText);
+    }
+
     private String decrypt(String input, String key) {
         byte[] output = null;
         try {
-            java.util.Base64.Decoder decoder = java.util.Base64.getDecoder();
-            SecretKeySpec skey = new SecretKeySpec(decoder.decode(key.getBytes()), "AES");
+            SecretKeySpec skey = new SecretKeySpec(HexUtils.decodeBase64(key), "AES");
             Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
             cipher.init(Cipher.DECRYPT_MODE, skey);
-            output = cipher.doFinal(decoder.decode(input));
+            output = cipher.doFinal(HexUtils.decodeBase64(input));
         } catch (Exception e) {
             System.out.println(e.toString());
         }
