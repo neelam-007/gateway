@@ -94,7 +94,7 @@ CURRENT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 INSTALL_DIR="${CURRENT_DIR}/../.."
 
 LIQUIBASE_JAR="${INSTALL_DIR}/runtime/lib/liquibase-3.2.2.jar"
-MYSQL_JAR="${INSTALL_DIR}/runtime/lib/mysql-connector-java-5.1.20.jar"
+MYSQL_JAR="${INSTALL_DIR}/runtime/lib/mysql-connector-java-5.1.46.jar"
 DERBY_JAR="${INSTALL_DIR}/runtime/lib/derby-10.7.1.1.jar"
 
 case "$type" in 
