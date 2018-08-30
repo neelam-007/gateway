@@ -1,160 +1,175 @@
 package com.ca.siteminder;
 
-import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
+import com.ca.siteminder.util.MockAgentAPIBuilder;
+import com.ca.siteminder.util.MockAgentAPITestConstants;
+import com.ca.siteminder.util.SiteMinderTestUtils;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.MockConfig;
-import netegrity.siteminder.javaagent.ServerDef;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.*;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
-import static com.ca.siteminder.SiteMinderContext.Attribute;
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * Copyright: Layer 7 Technologies, 2013
  * User: ymoiseyenko
  * Date: 6/21/13
  */
-@Ignore("Requires connection to the SiteMinder Policy Server")
 public class SiteMinderAgentTest {
 
-    private static final String AGENT_NAME = "agent1";
+    private SiteMinderLowLevelAgent lowAgent;
+    private SiteMinderHighLevelAgent highAgent;
+    private SiteMinderAgentContextCacheManager cacheManager;
+    private MockAgentAPIBuilder mockAgentAPIBuilder;
+    private SiteMinderContext context;
+    private Map<String, String> ssgProperties = new HashMap<>();
 
-    SiteMinderConfig config = getSiteMinderConfig();
-    SiteMinderLowLevelAgent agent;
-    SiteMinderHighLevelAgent fixture;
-    SiteMinderConfiguration smConfig;
-    SiteMinderAgentContextCacheManager cacheManager;
+    @BeforeClass
+    public static void setupBeforeClass() {
+        ConfigFactory.clearCachedConfig();
+        System.setProperty("com.l7tech.server.siteminder.enableJavaCompatibilityMode", "false");
+    }
 
     @Before
     public void setUp() throws Exception {
-        agent = new SiteMinderLowLevelAgent(config);
+        mockAgentAPIBuilder = MockAgentAPIBuilder.getDefaultBuilder().tokenAuth();
+        lowAgent = new SiteMinderLowLevelAgent(SiteMinderTestUtils.getSiteMinderConfig(), mockAgentAPIBuilder.build());
         cacheManager = new SiteMinderAgentContextCacheManagerImpl();
-        fixture = new SiteMinderHighLevelAgent(new MockConfig(new HashMap<String, String>()), cacheManager);
-        smConfig = new SiteMinderConfiguration();
-        cacheManager.createCache(smConfig.getGoid(), AGENT_NAME,
-                buildSubCaches(10, 300000,
-                        10, 300000,
-                        10, 300000,
-                        10, 300000));
-    }
-
-    private List<SiteMinderAgentContextCache.AgentContextSubCache> buildSubCaches(int resMaxSize, long resMaxAge,
-                                                                                  int authnMaxSize, long authnMaxAge,
-                                                                                  int authzMaxSize, long authzMaxAge,
-                                                                                  int acoMaxSize, long acoMaxAge) {
-        List<SiteMinderAgentContextCache.AgentContextSubCache> subCaches = new ArrayList<>();
-
-        subCaches.add(new SiteMinderAgentContextCache.AgentContextSubCache(null, SiteMinderAgentContextCache.AgentContextSubCacheType.AGENT_CACHE_RESOURCE,
-                resMaxSize, resMaxAge));
-        subCaches.add(new SiteMinderAgentContextCache.AgentContextSubCache(null, SiteMinderAgentContextCache.AgentContextSubCacheType.AGENT_CACHE_AUTHENTICATION,
-                authnMaxSize, authnMaxAge));
-        subCaches.add(new SiteMinderAgentContextCache.AgentContextSubCache(null, SiteMinderAgentContextCache.AgentContextSubCacheType.AGENT_CACHE_AUTHORIZATION,
-                authzMaxSize, authzMaxAge));
-        subCaches.add(new SiteMinderAgentContextCache.AgentContextSubCache(null, SiteMinderAgentContextCache.AgentContextSubCacheType.AGENT_CACHE_ACO,
-                acoMaxSize, acoMaxAge));
-
-        return subCaches;
+        highAgent = new SiteMinderHighLevelAgent(new MockConfig(ssgProperties), cacheManager);
+        context = new SiteMinderContext();
+        context.setAgent(lowAgent);
+        context.setConfig(SiteMinderTestUtils.getSiteMinderConfiguration());
+        context.setTransactionId(UUID.randomUUID().toString());
     }
 
     @After
     public void tearDown() throws Exception {
-       agent.unInitialize();
+       lowAgent.unInitialize();
     }
 
-    @Ignore("Requires connection to the SiteMinder Policy Server")
     @Test
     public void testSiteMinderLowLevelAgent() throws Exception {
-        assertTrue(agent.isInitialized());
+        assertTrue(lowAgent.isInitialized());
     }
 
-
-    @Ignore("Requires connection to the SiteMinder Policy Server")
     @Test
-    public void testSiteMinderHighLevelAgent() throws Exception {
-        SiteMinderContext context = new SiteMinderContext();
-        context.setAgent(agent);
-
-        assertTrue(fixture.checkProtected("127.0.0.1", "layer7-agent", "", "/resfilter*", "POST", context));
-
-        SiteMinderCredentials testCredentials = new SiteMinderCredentials("wssker_tacoma", "7layer");
-        assertEquals(1, fixture.processAuthenticationRequest(testCredentials, "127.0.0.1", null, context, true));
-        for(Attribute attr : context.getAttrList()) {
-            System.out.println(attr.getName() + ": " + attr.getValue());
-        }
-        assertEquals(1, fixture.processAuthorizationRequest("127.0.0.1", null, context, false));
-        System.out.println("SMSESSION=" + context.getSsoToken());
+    public void testCheckProtectedWithPrivateResource() throws Exception {
+        assertTrue(highAgent.checkProtected(
+                MockAgentAPITestConstants.USER_IP,
+                MockAgentAPITestConstants.RESDEF_AGENT,
+                MockAgentAPITestConstants.RESDEF_SERVER,
+                MockAgentAPITestConstants.RESDEF_PRIVATE_RESOURCE,
+                MockAgentAPITestConstants.RESDEF_ACTION,
+                context));
+        assertEquals(MockAgentAPITestConstants.RESDEF_AGENT, context.getResContextDef().getAgent());
+        assertEquals(MockAgentAPITestConstants.RESDEF_PRIVATE_RESOURCE, context.getResContextDef().getResource());
+        assertEquals(MockAgentAPITestConstants.RESDEF_ACTION, context.getResContextDef().getAction());
+        assertEquals(MockAgentAPITestConstants.RESDEF_SERVER, context.getResContextDef().getServer());
     }
 
-    private static SiteMinderConfig getSiteMinderConfig() {
-        return new SiteMinderConfig() {
+    @Test
+    public void testCheckProtectedWithPublicResource() throws Exception {
+        assertFalse(highAgent.checkProtected(
+                MockAgentAPITestConstants.USER_IP,
+                MockAgentAPITestConstants.RESDEF_AGENT,
+                MockAgentAPITestConstants.RESDEF_SERVER,
+                MockAgentAPITestConstants.RESDEF_PUBLIC_RESOURCE,
+                MockAgentAPITestConstants.RESDEF_ACTION,
+                context));
+    }
 
-            @Override
-            public String getAddress() {
-                return "127.0.0.1";
-            }
+    @Test
+    public void testAuthenticateUsingBasicAuthAndSsoToken() throws Exception {
+        highAgent.checkProtected(
+                MockAgentAPITestConstants.USER_IP,
+                MockAgentAPITestConstants.RESDEF_AGENT,
+                MockAgentAPITestConstants.RESDEF_SERVER,
+                MockAgentAPITestConstants.RESDEF_RESOURCE,
+                MockAgentAPITestConstants.RESDEF_ACTION,
+                context);
 
-            @Override
-            public String getSecret() {
-                return "{RC2}AWKd1Ha8fZSLj6fMiOWQqX1d8AN5QGeeWKYpuaSFfKJRD6pg9nqUXP/lVuYI1Pm6rqYxpwHaeja24zrd60Zj4pCJmpTTItGtRFhzvxciEhunW9P8YjA/3Fu5XYg++Kagf7FHThTV5MdRrKx/QIV7i6y5gDp0YwAbQoibCw43SUGwXsPNC+zh5zM76kmVsmr/";
-            }
+        // Try with Basic Auth details
+        final SiteMinderCredentials credentials = new SiteMinderCredentials();
+        credentials.addUsernamePasswordCredentials(MockAgentAPITestConstants.AUTHN_USER_NAME, MockAgentAPITestConstants.AUTHN_PASSWORD);
+        assertEquals(SiteMinderHighLevelAgent.YES,
+                highAgent.processAuthenticationRequest(credentials, MockAgentAPITestConstants.USER_IP, null, context, true));
+        assertTrue(context.getSsoToken().startsWith(MockAgentAPITestConstants.SSO_TOKEN));
+        assertTrue(context.getSsoToken().contains(context.getTransactionId()));
 
-            @Override
-            public boolean isIpCheck() {
-                return false;
-            }
+        // Try with existing SSO token
+        assertEquals(SiteMinderHighLevelAgent.YES,
+                highAgent.processAuthenticationRequest(credentials, MockAgentAPITestConstants.USER_IP, context.getSsoToken(), context, false));
+    }
 
-            @Override
-            public String getHostname() {
-                return "yuri-sm12sp3-native";
-            }
-
-            @Override
-            public int getFipsMode() {
-                return 1;//COMPACT
-            }
-
-            @Override
-            public boolean isNonClusterFailover() {
-                return false;
-            }
-
-            @Override
-            public int getClusterThreshold() {
-                return 50;
-            }
-
-            @Override
-            public boolean isUpdateSSOToken() {
-                return false;
-            }
-
-            @Override
-            public List<ServerDef> getServers() {
-                List<ServerDef> serverDefs = new ArrayList<>();
-                ServerDef serverDef = new ServerDef();
-                serverDef.serverIpAddress = "10.7.34.32";
-                serverDef.authenticationPort = 44442;
-                serverDef.authorizationPort = 44443;
-                serverDef.accountingPort = 44441;
-                serverDef.connectionMin = 1;
-                serverDef.connectionMax = 3;
-                serverDef.connectionStep = 1;
-                serverDef.timeout = 75;
-                serverDefs.add(serverDef);
-                return serverDefs;
-            }
-
-            @Override
-            public boolean isCluster() {
-                return false;
-            }
+    @Test
+    public void testUsingAco() throws Exception {
+        final String[] acoParams = new String[] {
+          "SSOZoneName=SZ1",
+          "CookieDomain=.example.com"
         };
+
+        // Initialize context with ACO name
+        lowAgent = new SiteMinderLowLevelAgent(SiteMinderTestUtils.getSiteMinderConfig(), mockAgentAPIBuilder.withAco(acoParams).build());
+        context.setAgent(lowAgent);
+        context.setAcoName(MockAgentAPITestConstants.ACO_NAME);
+
+        // Check resource and ACO parameters
+        highAgent.checkProtected(
+                MockAgentAPITestConstants.USER_IP,
+                MockAgentAPITestConstants.RESDEF_AGENT,
+                MockAgentAPITestConstants.RESDEF_SERVER,
+                MockAgentAPITestConstants.RESDEF_RESOURCE,
+                MockAgentAPITestConstants.RESDEF_ACTION,
+                context);
+
+        final SiteMinderContext.Attribute zoneAttr = findAttributeByName(context.getAcoAttrList(), SiteMinderAgentConstants.ATTR_ACO_SSOZONE_NAME);
+        assertNotNull(zoneAttr);
+        assertTrue(acoParams[0].endsWith("=" + zoneAttr.getValueAsString()));
+
+        final SiteMinderContext.Attribute cookieDomainAttr = findAttributeByName(context.getAcoAttrList(), SiteMinderAgentConstants.ATTR_ACO_COOKIE_DOMAIN);
+        assertNotNull(cookieDomainAttr);
+        assertTrue(acoParams[1].endsWith("=" + cookieDomainAttr.getValueAsString()));
+
+        // Try with Basic Auth details and enable Cookie String generation
+        final SiteMinderCredentials credentials = new SiteMinderCredentials();
+        credentials.addUsernamePasswordCredentials(MockAgentAPITestConstants.AUTHN_USER_NAME, MockAgentAPITestConstants.AUTHN_PASSWORD);
+        ssgProperties.put(SiteMinderConfig.GENERATE_SESSION_COOKIE_STRING_PROPERTY, "true");
+
+        assertEquals(SiteMinderHighLevelAgent.YES,
+                highAgent.processAuthenticationRequest(credentials, MockAgentAPITestConstants.USER_IP, null, context, true));
+        assertTrue(context.getSsoToken().startsWith(MockAgentAPITestConstants.SSO_TOKEN));
+        assertTrue(context.getSsoToken().contains(context.getTransactionId()));
+
+        final SiteMinderContext.Attribute sessionCookieStringAttr = findAttributeByName(context.getAttrList(), SiteMinderAgentConstants.ATTR_SESSION_COOKIE_STRING);
+        assertNotNull(sessionCookieStringAttr);
+
+        final String sessionCookieString = sessionCookieStringAttr.getValueAsString();
+        assertTrue(sessionCookieString.startsWith("SZ1SESSION=" + context.getSsoToken()));
+        assertTrue(sessionCookieString.contains("Domain=.example.com"));
+
+        assertTrue(cacheManager.
+                getCache(Goid.DEFAULT_GOID, MockAgentAPITestConstants.RESDEF_AGENT).
+                getSubCache(SiteMinderAgentContextCache.AgentContextSubCacheType.AGENT_CACHE_ACO).
+                getCache().size() > 0);
+
+        // Try with existing SSO token
+        assertEquals(SiteMinderHighLevelAgent.YES,
+                highAgent.processAuthenticationRequest(credentials, MockAgentAPITestConstants.USER_IP, context.getSsoToken(), context, false));
     }
+
+    private SiteMinderContext.Attribute findAttributeByName(final List<SiteMinderContext.Attribute> attributes, final String name) {
+        for (SiteMinderContext.Attribute attr : attributes) {
+            if (attr.getName().equals(name)) {
+                return attr;
+            }
+        }
+
+        return null;
+    }
+
 }

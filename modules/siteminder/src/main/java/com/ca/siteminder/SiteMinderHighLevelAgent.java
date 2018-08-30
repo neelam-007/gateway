@@ -161,14 +161,14 @@ public class SiteMinderHighLevelAgent {
         AuthorizationCacheKey cacheKey = new AuthorizationCacheKey(sessionId, reqResource, action);
         final SiteMinderAgentContextCache agentCache = getCache(context.getConfig(), smAgentName);
         final AgentContextSubCache authzSubCache = agentCache.getSubCache(AgentContextSubCacheType.AGENT_CACHE_AUTHORIZATION);
-        final Cache cache = authzSubCache.getCache();
+        final Cache authzCache = authzSubCache.getCache();
 
         //Perform Session Validation
         if (!validateDecodedSession(context.getSessionDef(), currentAgentTimeSeconds)) {
             logger.log(Level.WARNING, "Session validation failed for the following SsoToken: " + ssoCookie);
 
-            if (null != cache) {
-                cache.remove(cacheKey);
+            if (null != authzCache) {
+                authzCache.remove(cacheKey);
             }
 
             return CHALLENGE;
@@ -182,7 +182,7 @@ public class SiteMinderHighLevelAgent {
             SiteMinderContext cachedContext;
             //lookup in cache
             SiteMinderAuthResponseDetails cachedAuthResponseDetails =
-                    getAuthorizationCacheEntry(cache, cacheKey, authzSubCache.getMaxAge());
+                    getAuthorizationCacheEntry(authzCache, cacheKey, authzSubCache.getMaxAge());
 
             if (cachedAuthResponseDetails == null) {
                 // The context will contain attributes from the decode ( UserDn, UserName, ClientIP )
@@ -196,13 +196,10 @@ public class SiteMinderHighLevelAgent {
 
                 cachedContext = context;
                 sessionId = cachedContext.getSessionDef().getId();
-
                 cacheKey = new AuthorizationCacheKey(sessionId, reqResource, action);  // recreate key because session ID should be different
 
-                SiteMinderAuthResponseDetails authResponseDetails =
-                        new SiteMinderAuthResponseDetails(context.getSessionDef(), context.getAttrList());
-
-                cache.store(cacheKey, authResponseDetails);
+                // ensure caching context attributes other than ACO parameters
+                authzCache.store(cacheKey, new SiteMinderAuthResponseDetails(context.getSessionDef(), context.getNonAcoAttrList()));
                 //set stored attribute list to avoid loosing the attributes
                 context.getAttrList().addAll(attrList);
             } else {
@@ -213,11 +210,11 @@ public class SiteMinderHighLevelAgent {
                     //recreate the cache entry with the new attribute list
                     logger.log(Level.FINE, "SiteMinder authorization - updating SiteMinder authorization cache for the key " + cacheKey);
                     SiteMinderAuthResponseDetails cacheEntry = new SiteMinderAuthResponseDetails(context.getSessionDef(), updatedAttributes);
-                    cache.store(cacheKey, cacheEntry);
+                    authzCache.store(cacheKey, cacheEntry);
                 } else if (status != SUCCESS) {
                     logger.log(Level.FINE, "SiteMinder authorization - unable to update attributes. Removing cache entry for the key " + cacheKey + " from the cache");
                     //remove from the cache if attribute update was unsuccessful
-                    cache.remove(cacheKey);
+                    authzCache.remove(cacheKey);
                     return status;//no need to continue
                 }
                 // Ensure the cached SMContext Attributes are available, if a cache hit occurs
@@ -302,7 +299,7 @@ public class SiteMinderHighLevelAgent {
 
         int result = SUCCESS;
 
-        if (attributesToUpdate.size() > 0) {
+        if (!attributesToUpdate.isEmpty()) {
             SiteMinderLowLevelAgent agent = context.getAgent();
 
             result = agent.updateAttributes(userIp, context.getTransactionId(), context, attributesToUpdate, updatedAttributes);
@@ -402,7 +399,7 @@ public class SiteMinderHighLevelAgent {
 
         final SiteMinderAgentContextCache agentCache = getCache(context.getConfig(), context.getResContextDef().getAgent());
         final AgentContextSubCache authnSubCache = agentCache.getSubCache(AgentContextSubCacheType.AGENT_CACHE_AUTHENTICATION);
-        final Cache cache = authnSubCache.getCache();
+        final Cache authnCache = authnSubCache.getCache();
 
         //Obtain the AttributeList encase isAuthN was called before
         List<SiteMinderContext.Attribute> attrList = context.getAttrList();
@@ -440,8 +437,8 @@ public class SiteMinderHighLevelAgent {
             if (!validateDecodedSession(context.getSessionDef(), currentAgentTimeSeconds)) {
                 logger.log(Level.WARNING, "Session validation failed for the following SsoToken: " + ssoCookie);
 
-                if (null != cache) {
-                    cache.remove(cacheKey);
+                if (null != authnCache) {
+                    authnCache.remove(cacheKey);
                 }
 
                 return CHALLENGE;
@@ -453,7 +450,7 @@ public class SiteMinderHighLevelAgent {
             if (authnSubCache.getMaxSize() > 0) {
                 //lookup in cache
                 SiteMinderAuthResponseDetails authResponseDetails =
-                        getAuthenticationCacheEntry(cache, cacheKey, authnSubCache.getMaxAge());
+                        getAuthenticationCacheEntry(authnCache, cacheKey, authnSubCache.getMaxAge());
 
                 if (authResponseDetails == null) {
                     // Cache miss occurred we need to Validate the decoded ssoToken/session
@@ -466,7 +463,9 @@ public class SiteMinderHighLevelAgent {
                     }
 
                     context.getAttrList().addAll(attrList);//we might have some attributes from the contexts needs to be preserved
-                    cache.store(cacheKey, new SiteMinderAuthResponseDetails(context.getSessionDef(), context.getAttrList()));
+
+                    // ensure caching context attributes other than ACO parameters
+                    authnCache.store(cacheKey, new SiteMinderAuthResponseDetails(context.getSessionDef(), context.getNonAcoAttrList()));
                 } else {
                     List<SiteMinderContext.Attribute> updatedAttributes = new ArrayList<>();
                     //Ensure all attributes are updated
@@ -475,11 +474,11 @@ public class SiteMinderHighLevelAgent {
                         //recreate the cache entry with the new attribute list
                         logger.log(Level.FINE, "SiteMinder authentication - updating SiteMinder authorization cache for the key " + cacheKey);
                         SiteMinderAuthResponseDetails cacheEntry = new SiteMinderAuthResponseDetails(context.getSessionDef(), updatedAttributes);
-                        cache.store(cacheKey, cacheEntry);
+                        authnCache.store(cacheKey, cacheEntry);
                     } else if (status != SUCCESS) {
                         logger.log(Level.FINE, "SiteMinder authentication - unable to update attributes. Removing cache entry for the key " + cacheKey + " from the cache");
                         //remove from the cache
-                        cache.remove(cacheKey);
+                        authnCache.remove(cacheKey);
                         return status;//no need to continue
                     }
                     // Ensure the cached SMContext Attributes are available, if a cache hit occurs
@@ -572,10 +571,8 @@ public class SiteMinderHighLevelAgent {
                     //store the smContext to the isAuth Cache
                     context.getSessionDef().setCurrentServerTime(currentAgentTimeSeconds);
 
-                    SiteMinderAuthResponseDetails authResponseDetails =
-                            new SiteMinderAuthResponseDetails(context.getSessionDef(), context.getAttrList());
-
-                    cache.store(cacheKey, authResponseDetails);
+                    // ensure caching context attributes other than ACO parameters
+                    authnCache.store(cacheKey, new SiteMinderAuthResponseDetails(context.getSessionDef(), context.getNonAcoAttrList()));
                 }
             }
         }
@@ -816,12 +813,33 @@ public class SiteMinderHighLevelAgent {
         });
     }
 
-    private void buildSessionCookieStringAttribute(SiteMinderContext context) {
+    /**
+     * Builds the SESSION_COOKIE_STRING attribute. If attribute exists already, it ensures updating the same with new value
+     * @param context SiteMinder context
+     */
+    private void buildSessionCookieStringAttribute(final SiteMinderContext context) {
         if (StringUtils.isNotEmpty(context.getSsoToken()) && config.getBooleanProperty(GENERATE_SESSION_COOKIE_STRING_PROPERTY, false)) {
-            context.getAttrList().add(new SiteMinderContext.Attribute(
-                    SiteMinderAgentConstants.ATTR_SESSION_COOKIE_STRING,
-                    new SiteMinderSessionCookieStringBuilder().build(context)));
+            final SiteMinderContext.Attribute attr = getSiteMinderContextAttributeByName(context, SiteMinderAgentConstants.ATTR_SESSION_COOKIE_STRING);
+            final String attrValue = new SiteMinderSessionCookieStringBuilder().build(context);
+
+            if (attr == null) {
+                context.getAttrList().add(new SiteMinderContext.Attribute(
+                        SiteMinderAgentConstants.ATTR_SESSION_COOKIE_STRING,
+                        attrValue));
+            } else {
+                attr.setValue(attrValue);
+            }
         }
+    }
+
+    private SiteMinderContext.Attribute getSiteMinderContextAttributeByName(final SiteMinderContext context, final String name) {
+        for (SiteMinderContext.Attribute attr : context.getAttrList()) {
+            if (attr.getName().equals(name)) {
+                return attr;
+            }
+        }
+
+        return null;
     }
 
 }

@@ -36,11 +36,11 @@ public class SiteMinderLowLevelAgent {
 
     private boolean initialized = false;
 
-    private AgentAPI agentApi;
+    private final AgentAPI agentApi;
     private String agentIP;
     private boolean agentCheckSessionIP;
     private boolean updateCookie;
-    private SiteMinderConfig agentConfig;
+    private final SiteMinderConfig agentConfig;
 
     static {
         defaultAcoAttrMap.put(SiteMinderAgentConstants.ATTR_ACO_SSOZONE_NAME,
@@ -63,17 +63,18 @@ public class SiteMinderLowLevelAgent {
                 SiteMinderAgentConstants.ATTR_ACO_COOKIE_VALIDATION_PERIOD_DEFAULT_VALUE);
     }
 
-    public SiteMinderLowLevelAgent() {
+    public SiteMinderLowLevelAgent(final SiteMinderConfig config) throws SiteMinderApiClassException {
+        this(config, new AgentAPI());
     }
 
-    public SiteMinderLowLevelAgent(SiteMinderConfig config) throws SiteMinderApiClassException {
+    public SiteMinderLowLevelAgent(final SiteMinderConfig config, final AgentAPI agentAPI) throws SiteMinderApiClassException {
         agentConfig = config;
+        agentApi = agentAPI;
         initialize();
     }
 
-
-    static{
-        if(ConfigFactory.getBooleanProperty("com.l7tech.server.siteminder.enableJavaCompatibilityMode", true)){
+    static {
+        if (ConfigFactory.getBooleanProperty("com.l7tech.server.siteminder.enableJavaCompatibilityMode", true)) {
             AgentAPI.enableJavaCompatibilityMode();//fix clustering issue by enabling java compatibility mode so it can
         }
     }
@@ -86,7 +87,6 @@ public class SiteMinderLowLevelAgent {
             updateCookie = agentConfig.isUpdateSSOToken();
 
             InitDef initDef;
-            agentApi = new AgentAPI();
             Iterator iter = agentConfig.getServers().iterator();
 
             if (iter.hasNext()) {

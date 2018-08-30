@@ -1,8 +1,10 @@
 package com.ca.siteminder;
 
 import com.l7tech.gateway.common.siteminder.SiteMinderConfiguration;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import javax.persistence.Transient;
 import java.util.*;
 
 /**
@@ -179,8 +181,13 @@ public class SiteMinderContext {
         this.resourceProtected = resourceProtected;
     }
 
+    /**
+     * Gets ACO parameters from the context attributes
+     * @return list of ACO parameters
+     */
+    @Transient
     public List<Attribute> getAcoAttrList() {
-        List<Attribute> acoAttrList = new ArrayList<>();
+        final List<Attribute> acoAttrList = new ArrayList<>();
 
         for (Attribute attr : attrList) {
             if (attr.getName().startsWith(Attribute.ACO_ATTRIBUTE_PREFIX)) {
@@ -191,6 +198,28 @@ public class SiteMinderContext {
         return acoAttrList;
     }
 
+    /**
+     * Gets the context attributes other than ACO parameters
+     * @return list of attributes except ACO parameters
+     */
+    @Transient
+    public List<Attribute> getNonAcoAttrList() {
+        final List<Attribute> nonAcoAttrList = new ArrayList<>();
+
+        for (Attribute attr : attrList) {
+            if (!attr.getName().startsWith(Attribute.ACO_ATTRIBUTE_PREFIX)) {
+                nonAcoAttrList.add(attr);
+            }
+        }
+
+        return nonAcoAttrList;
+    }
+
+    /**
+     * Gets the context attributes map
+     * @return attributes map with attribute name as key
+     */
+    @Transient
     public Map<String, Attribute> getAttrMap() {
         final Map<String, Attribute> attrMap = new HashMap<>();
 
@@ -411,7 +440,7 @@ public class SiteMinderContext {
         public static final String COMMON_ATTRIBUTE_PREFIX = "ATTR_";
         public static final String ACO_ATTRIBUTE_PREFIX = COMMON_ATTRIBUTE_PREFIX + "ACO_";
 
-        private String name;
+        private final String name;
         private Object value;
         private final int ttl;//time to live in seconds
         private final int id; //raw attribute id
@@ -419,11 +448,11 @@ public class SiteMinderContext {
         private final byte[] rawValue;// raw value
         private final int flags;///raw flags
 
-        public Attribute(String name, Object value) {
+        public Attribute(@NotNull String name, Object value) {
             this(name, value, 0, 0, "", 0, new byte[0]);
         }
 
-        public Attribute(String name, Object value, int flags, int id, String oid, int ttl, byte[] rawValue) {
+        public Attribute(@NotNull String name, Object value, int flags, int id, String oid, int ttl, byte[] rawValue) {
             this.name = name;
             this.value = value;
             this.ttl = ttl;
@@ -433,12 +462,9 @@ public class SiteMinderContext {
             this.rawValue = rawValue;
         }
 
+        @NotNull
         public String getName() {
             return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
         }
 
         public Object getValue() {

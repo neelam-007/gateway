@@ -42,7 +42,7 @@ public interface SiteMinderAgentConstants {
     public static final String ATTR_ACO_COOKIE_DOMAIN = "ATTR_ACO_CookieDomain";
     public static final String ATTR_ACO_COOKIE_DOMAIN_SCOPE = "ATTR_ACO_CookieDomainScope";
     public static final String ATTR_ACO_USE_SECURE_COOKIES = "ATTR_ACO_UseSecureCookies";
-    public static final String ATTR_ACO_USE_HTTP_ONLY_COOKIES = "ATTR_ACO_UseHttpOnlyCookies";
+    public static final String ATTR_ACO_USE_HTTP_ONLY_COOKIES = "ATTR_ACO_UseHTTPOnlyCookies";
     public static final String ATTR_ACO_PERSISTENT_COOKIES = "ATTR_ACO_PersistentCookies";
     public static final String ATTR_ACO_COOKIE_VALIDATION_PERIOD = "ATTR_ACO_CookieValidationPeriod";
 
