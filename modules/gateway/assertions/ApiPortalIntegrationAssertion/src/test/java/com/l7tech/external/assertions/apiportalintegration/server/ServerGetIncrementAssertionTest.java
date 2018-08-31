@@ -69,6 +69,9 @@ public class ServerGetIncrementAssertionTest {
       assertEquals(AssertionStatus.NONE, result);
 
       verify(queryingManager, times(3)).performJdbcQuery(anyString(), anyString(), anyString(), anyInt(), anyInt(), anyListOf(Object.class));
+      //verify api plan enable selection
+      String settingQuery = queryCaptor.getAllValues().get(0);
+      assertEquals("SELECT value FROM SETTING WHERE name='FEATURE_FLAG_API_PLANS' AND tenant_id = 'tenant1'", settingQuery);
       //verify api plans specific query used for fetching apps with apis
       String appsWithApisQuery = queryCaptor.getAllValues().get(2);
       assertTrue(appsWithApisQuery.contains("DISTINCT aaapx.API_UUID,aaapx.API_PLAN_UUID,a.UUID,concat(a.NAME," +
