@@ -47,28 +47,30 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
      * 3. Remove duplicate APIs
      */
     private static final String BULK_SYNC_SELECT =
-        "SELECT DISTINCT(aaagx.API_UUID), a.UUID, concat(a.NAME,'-',o.NAME) AS NAME, a.API_KEY, a.KEY_SECRET, " +
-               "coalesce (r.PREVIOUS_STATE, a.STATUS) AS STATUS, a.ORGANIZATION_UUID, o.NAME AS ORGANIZATION_NAME, " +
-               "a.OAUTH_CALLBACK_URL, a.OAUTH_SCOPE, a.OAUTH_TYPE, a.MAG_SCOPE, a.MAG_MASTER_KEY, a.CREATED_BY, a.MODIFIED_BY, r.LATEST_REQ " +
-        "FROM APPLICATION_API_API_GROUP_XREF aaagx " +
-        "JOIN (SELECT * FROM APPLICATION " +
-            "WHERE API_KEY IS NOT NULL AND TENANT_ID ='%s' AND STATUS IN ('ENABLED','DISABLED','EDIT_APPLICATION_PENDING_APPROVAL')) a ON aaagx.APPLICATION_UUID = a.UUID AND aaagx.TENANT_ID = a.TENANT_ID " +
-        "JOIN ORGANIZATION o on a.ORGANIZATION_UUID = o.UUID AND a.TENANT_ID = o.TENANT_ID " +
-        "LEFT JOIN API_GROUP ag ON ag.UUID = aaagx.API_GROUP_UUID AND ag.TENANT_ID = aaagx.TENANT_ID " +
-        "LEFT JOIN (SELECT ENTITY_UUID, PREVIOUS_STATE, max(CREATE_TS) AS LATEST_REQ, TENANT_ID " +
-            "FROM REQUEST GROUP BY ENTITY_UUID, PREVIOUS_STATE, CREATE_TS, TENANT_ID) r ON a.UUID = r.ENTITY_UUID AND a.TENANT_ID = r.TENANT_ID " +
-        "WHERE aaagx.API_UUID IS NOT NULL ";
+            "SELECT DISTINCT(aaagx.API_UUID), a.UUID, concat(a.NAME,'-',o.NAME) AS NAME, a.API_KEY, a.KEY_SECRET, " +
+                    "coalesce (r.PREVIOUS_STATE, a.STATUS) AS STATUS, a.ORGANIZATION_UUID, o.NAME AS ORGANIZATION_NAME, " +
+                    "a.OAUTH_CALLBACK_URL, a.OAUTH_SCOPE, a.OAUTH_TYPE, a.MAG_SCOPE, a.MAG_MASTER_KEY, a.CREATED_BY, a.MODIFIED_BY, r.LATEST_REQ " +
+                    "FROM APPLICATION_API_API_GROUP_XREF aaagx " +
+                    "JOIN (SELECT * FROM APPLICATION " +
+                    "WHERE API_KEY IS NOT NULL AND TENANT_ID ='%s' AND STATUS IN ('ENABLED','DISABLED','EDIT_APPLICATION_PENDING_APPROVAL')) a ON aaagx.APPLICATION_UUID = a.UUID AND aaagx.TENANT_ID = a.TENANT_ID " +
+                    "JOIN ORGANIZATION o on a.ORGANIZATION_UUID = o.UUID AND a.TENANT_ID = o.TENANT_ID " +
+                    "LEFT JOIN API_GROUP ag ON ag.UUID = aaagx.API_GROUP_UUID AND ag.TENANT_ID = aaagx.TENANT_ID " +
+                    "LEFT JOIN (SELECT ENTITY_UUID, PREVIOUS_STATE, max(CREATE_TS) AS LATEST_REQ, TENANT_ID " +
+                    "FROM REQUEST GROUP BY ENTITY_UUID, PREVIOUS_STATE, CREATE_TS, TENANT_ID) r ON a.UUID = r.ENTITY_UUID AND a.TENANT_ID = r.TENANT_ID " +
+                    "WHERE aaagx.API_UUID IS NOT NULL ";
     private static final String BULK_SYNC_SELECT_WITH_API_PLANS =
-        "SELECT DISTINCT(aaapx.API_UUID), aaapx.API_PLAN_UUID, a.UUID, concat(a.NAME,'-',o.NAME) AS NAME, a.API_KEY, a.KEY_SECRET, " +
-           "coalesce (r.PREVIOUS_STATE, a.STATUS) AS STATUS, a.ORGANIZATION_UUID, o.NAME AS ORGANIZATION_NAME, " +
-           "a.OAUTH_CALLBACK_URL, a.OAUTH_SCOPE, a.OAUTH_TYPE, a.MAG_SCOPE, a.MAG_MASTER_KEY, a.CREATED_BY, a.MODIFIED_BY, r.LATEST_REQ " +
-        "FROM APPLICATION_API_API_PLAN_XREF aaapx " +
-        "JOIN (SELECT * FROM APPLICATION " +
-            "WHERE API_KEY IS NOT NULL AND TENANT_ID ='tenant5' AND STATUS IN ('ENABLED','DISABLED','EDIT_APPLICATION_PENDING_APPROVAL')) a ON aaapx.APPLICATION_UUID = a.UUID AND aaapx.TENANT_ID = a.TENANT_ID " +
-        "JOIN ORGANIZATION o on a.ORGANIZATION_UUID = o.UUID AND a.TENANT_ID = o.TENANT_ID " +
-        "LEFT JOIN (SELECT ENTITY_UUID, PREVIOUS_STATE, max(CREATE_TS) AS LATEST_REQ, TENANT_ID " +
-            "FROM REQUEST GROUP BY ENTITY_UUID, PREVIOUS_STATE, CREATE_TS, TENANT_ID) r ON a.UUID = r.ENTITY_UUID AND a.TENANT_ID = r.TENANT_ID " +
-        "WHERE aaapx.API_UUID IS NOT NULL";
+            "SELECT DISTINCT(aaapx.API_UUID), aaapx.API_PLAN_UUID, a.UUID, concat(a.NAME,'-',o.NAME) AS NAME, a.API_KEY, a.KEY_SECRET, " +
+                    "coalesce (r.PREVIOUS_STATE, a.STATUS) AS STATUS, a.ORGANIZATION_UUID, o.NAME AS ORGANIZATION_NAME, " +
+                    "a.OAUTH_CALLBACK_URL, a.OAUTH_SCOPE, a.OAUTH_TYPE, a.MAG_SCOPE, a.MAG_MASTER_KEY, a.CREATED_BY, a.MODIFIED_BY, r.LATEST_REQ " +
+                    "FROM APPLICATION_API_API_PLAN_XREF aaapx " +
+                    "JOIN (SELECT * FROM APPLICATION " +
+                    "WHERE API_KEY IS NOT NULL AND TENANT_ID ='tenant5' AND STATUS IN ('ENABLED','DISABLED','EDIT_APPLICATION_PENDING_APPROVAL')) a ON aaapx.APPLICATION_UUID = a.UUID AND aaapx.TENANT_ID = a.TENANT_ID " +
+                    "JOIN ORGANIZATION o on a.ORGANIZATION_UUID = o.UUID AND a.TENANT_ID = o.TENANT_ID " +
+                    "LEFT JOIN (SELECT ENTITY_UUID, PREVIOUS_STATE, max(CREATE_TS) AS LATEST_REQ, TENANT_ID " +
+                    "FROM REQUEST GROUP BY ENTITY_UUID, PREVIOUS_STATE, CREATE_TS, TENANT_ID) r ON a.UUID = r.ENTITY_UUID AND a.TENANT_ID = r.TENANT_ID " +
+                    "WHERE aaapx.API_UUID IS NOT NULL";
+    private static final String API_PLAN_SETTING_ENABLE_STATUS =
+            "SELECT value FROM SETTING WHERE name='FEATURE_FLAG_API_PLANS' AND tenant_id = '%s'";
 
     private static final String STATUS_ENABLED = "ENABLED";
     private static final String STATUS_ACTIVE = "active";
@@ -128,7 +130,7 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
             }
 
             if (tenantId == null) {
-              throw new PolicyAssertionException(assertion, "Assertion must supply a valid tenant prefix");
+                throw new PolicyAssertionException(assertion, "Assertion must supply a valid tenant prefix");
             }
 
             // validate that the connection exists.
@@ -162,6 +164,7 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
         final long incrementStart = System.currentTimeMillis();
         appJsonObj.setIncrementStart(incrementStart);
         appJsonObj.setEntityType(ServerIncrementalSyncCommon.ENTITY_TYPE_APPLICATION);
+        appJsonObj.setApiPlanEnabled(isApiPlanEnabled(connName, tenantId));
 
         Map<String, List> results;
 
@@ -207,6 +210,18 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
                 connName,
                 ServerIncrementalSyncCommon.getSyncUpdatedAppEntities(columnsToSelect, tenantId, appsWithApiPlans),
                 valuesForQueryArguments);
+    }
+
+    private boolean isApiPlanEnabled(final String connName, final String tenantId) {
+        final String SETTING_COL_NAME = "value";
+        boolean isEnabled = false;
+        Map<String, List> isAblePlanEnabledMap =  (Map<String, List>)  queryJdbc(connName,
+                String.format(API_PLAN_SETTING_ENABLE_STATUS, tenantId),
+                new ArrayList<>());
+        if(isAblePlanEnabledMap.containsKey(SETTING_COL_NAME) && !isAblePlanEnabledMap.get(SETTING_COL_NAME).isEmpty()) {
+            isEnabled = Boolean.parseBoolean(isAblePlanEnabledMap.get(SETTING_COL_NAME).get(0).toString());
+        }
+        return isEnabled;
     }
 
     @NotNull
@@ -324,31 +339,31 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
     }
 
 
-  private void appendCustomFields(Map<String, ApplicationEntity> values, String connName) {
-    final String UUID_PARAM = "{{UUID_LIST}}";
-    final String CF_QUERY = "SELECT ENTITY_UUID, SYSTEM_PROPERTY_NAME, VALUE \n" +
-            "from CUSTOM_FIELD cf inner join CUSTOM_FIELD_VALUE cfv on cf.UUID = cfv.CUSTOM_FIELD_UUID \n" +
-            "where ENTITY_UUID in (" + UUID_PARAM + ") AND cf.STATUS='ENABLED'";
+    private void appendCustomFields(Map<String, ApplicationEntity> values, String connName) {
+        final String UUID_PARAM = "{{UUID_LIST}}";
+        final String CF_QUERY = "SELECT ENTITY_UUID, SYSTEM_PROPERTY_NAME, VALUE \n" +
+                "from CUSTOM_FIELD cf inner join CUSTOM_FIELD_VALUE cfv on cf.UUID = cfv.CUSTOM_FIELD_UUID \n" +
+                "where ENTITY_UUID in (" + UUID_PARAM + ") AND cf.STATUS='ENABLED'";
 
-    String app_uuids = "'"+StringUtils.join(((HashMap) values).keySet(), "','")+"'";
+        String app_uuids = "'"+StringUtils.join(((HashMap) values).keySet(), "','")+"'";
 
-    if (!app_uuids.isEmpty()) {
+        if (!app_uuids.isEmpty()) {
 
-      Map<String, List> results = (Map<String, List>) queryJdbc(connName, CF_QUERY.replace(UUID_PARAM, app_uuids), Collections.emptyList());
+            Map<String, List> results = (Map<String, List>) queryJdbc(connName, CF_QUERY.replace(UUID_PARAM, app_uuids), Collections.emptyList());
 
-      if(results.size()>0) {
-        int elements = results.get(FIELD_ENTITY_UUID).size();
+            if(results.size()>0) {
+                int elements = results.get(FIELD_ENTITY_UUID).size();
 
-        for (int i = 0; i < elements; i++) {
-          String entUuid = (String) results.get(FIELD_ENTITY_UUID).get(i);
+                for (int i = 0; i < elements; i++) {
+                    String entUuid = (String) results.get(FIELD_ENTITY_UUID).get(i);
 
-          ApplicationEntity applicationEntity = values.get(entUuid);
-          applicationEntity.getCustomFields().put((String) results.get(FIELD_SYSTEM_PROPERTY_NAME).get(i), (String) results.get(FIELD_VALUE).get(i));
+                    ApplicationEntity applicationEntity = values.get(entUuid);
+                    applicationEntity.getCustomFields().put((String) results.get(FIELD_SYSTEM_PROPERTY_NAME).get(i), (String) results.get(FIELD_VALUE).get(i));
+                }
+            }
         }
-      }
-    }
 
-  }
+    }
 
     static String buildMagScope(String oauthScope, String mag_scope) {
         List<String> scopeList = new ArrayList();
@@ -356,16 +371,16 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
             scopeList.addAll(Arrays.asList(oauthScope.split("\\s")));
         }
         if(mag_scope!=null){
-          scopeList.addAll(Arrays.asList(mag_scope.split("\\s")));
+            scopeList.addAll(Arrays.asList(mag_scope.split("\\s")));
         }
 
         if(!scopeList.contains(APPLICATION_MAG_SCOPE_OPENID)){
             scopeList.add(APPLICATION_MAG_SCOPE_OPENID);
         }
         if(!scopeList.contains(APPLICATION_MAG_SCOPE_MSSO)){
-          scopeList.add(APPLICATION_MAG_SCOPE_MSSO);
+            scopeList.add(APPLICATION_MAG_SCOPE_MSSO);
         }
-       return buildScope(Joiner.on(" ").join(scopeList));
+        return buildScope(Joiner.on(" ").join(scopeList));
     }
 
     static String buildScope(String oauthScope) {
@@ -378,18 +393,18 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
             scopeSet.addAll(Arrays.asList(oauthScope.split("\\s")));
 
             if(Functions.exists(scopeSet, new Functions.Unary<Boolean, String>() {
-                    @Override
-                    public Boolean call(String s) {
-                        return s.equals(APPLICATION_SCOPE_OOB);
-                    }})){
-                scopeSet.removeIf(new Predicate<String>() {
-                  @Override
-                  public boolean test(String s) {
+                @Override
+                public Boolean call(String s) {
                     return s.equals(APPLICATION_SCOPE_OOB);
-                  }
+                }})){
+                scopeSet.removeIf(new Predicate<String>() {
+                    @Override
+                    public boolean test(String s) {
+                        return s.equals(APPLICATION_SCOPE_OOB);
+                    }
                 });
             }
-          return Joiner.on(" ").join(scopeSet);
+            return Joiner.on(" ").join(scopeSet);
         }
     }
 
