@@ -1,6 +1,8 @@
 package com.l7tech.external.assertions.asymmetrickeyencryptiondecryption.server;
 
+import com.l7tech.external.assertions.asymmetrickeyencryptiondecryption.AsymmetricKeyEncryptDecryptUtils;
 import com.l7tech.external.assertions.asymmetrickeyencryptiondecryption.AsymmetricKeyEncryptionDecryptionAssertion;
+import com.l7tech.external.assertions.asymmetrickeyencryptiondecryption.AsymmetricKeyEncryptionDecryptionAssertion.KeySource;
 import com.l7tech.gateway.common.audit.Messages;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.objectmodel.FindException;
@@ -27,8 +29,10 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import java.io.IOException;
 import java.security.*;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAKey;
+import java.security.spec.InvalidKeySpecException;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -60,34 +64,33 @@ public class ServerAsymmetricKeyEncryptionDecryptionAssertion extends AbstractSe
         this.variablesUsed = assertion.getVariablesUsed();
     }
 
-    public AssertionStatus checkRequest( final PolicyEnforcementContext context ) throws IOException, PolicyAssertionException {
+    public AssertionStatus checkRequest( final PolicyEnforcementContext context ) {
 
         Map<String, Object> refVariablesMap = context.getVariableMap(variablesUsed, getAudit());
         String inputText = ExpandVariables.process(Syntax.SYNTAX_PREFIX + assertion.getInputVariable() + Syntax.SYNTAX_SUFFIX, refVariablesMap, getAudit(), true);
 
         byte[] inputData = HexUtils.decodeBase64(inputText);
 
-        byte[] outputData = null;
-        Key key = null;
-        int mode = assertion.getMode();
+        final boolean isEncrypt = assertion.getMode() == Cipher.ENCRYPT_MODE;
+        final KeySource keySource = assertion.getKeySource();
 
+        Key key;
         try {
 
-            //check for valid mode only javax.crypto.Cipher.ENCRYPT_MODE (== 1) and  javax.crypto.Cipher.DECRYPT_MODE (== 2)
-            //allowed
-            if (mode != Cipher.ENCRYPT_MODE && mode != Cipher.DECRYPT_MODE)
-                throw new Exception("Invalid mode selected.");
-
             //retrieve the key to use for encryption/decryption
-            //if mode == javax.crypto.Cipher.ENCRYPT_MODE (== 1) then get public key
-            //if mode == javax.crypto.Cipher.DECRYPT_MODE (== 2) then get private key
-            key = getKey(mode, assertion.getKeyName(), assertion.getKeyGoid());
+            if (keySource == KeySource.FROM_VALUE) {
+                final String keyValue = ExpandVariables.process(assertion.getRsaKeyValue(), refVariablesMap, getAudit(), true);
+                key = getRSAKey(keyValue, isEncrypt);
+            } else {
+                // By default get key from store
+                key = getKey(isEncrypt, assertion.getKeyName(), assertion.getKeyGoid());
+            }
 
             //encrypt/decrypt data
-            outputData = transform(key, inputData, mode, assertion.getAlgorithm());
+            final byte[] outputData = transform(key, inputData, isEncrypt, assertion.getAlgorithm());
 
             //assign to context variable
-            context.setVariable( assertion.getOutputVariable(), HexUtils.encodeBase64(outputData));
+            context.setVariable(assertion.getOutputVariable(), HexUtils.encodeBase64(outputData));
         } catch (Exception e) {
             getAudit().logAndAudit(Messages.EXCEPTION_WARNING_WITH_MORE_INFO, e.getMessage());
             return AssertionStatus.FAILED;
@@ -99,10 +102,11 @@ public class ServerAsymmetricKeyEncryptionDecryptionAssertion extends AbstractSe
     /**
      * @param key the public key if doing encryption, the private key if doing decryption
      * @param inputData data to encrypt and decrypt
-     * @param mode will either be javax.crypto.Cipher.ENCRYPT_MODE (== 1) or javax.crypto.Cipher.DECRYPT_MODE (== 2) as selected through the gui
+     * @param isEncrypt is encrypt mode selected
+     * @param algorithm algorithm to encrypt/decrypt with
      * @return the result of the encryption/decryption
      */
-    private byte[] transform(Key key, byte[] inputData, int mode, String algorithm)
+    private byte[] transform(Key key, byte[] inputData, boolean isEncrypt, String algorithm)
             throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, NoSuchProviderException {
 
         byte[] result;
@@ -118,6 +122,7 @@ public class ServerAsymmetricKeyEncryptionDecryptionAssertion extends AbstractSe
         }
 
         // set initialize the cypher to either encrypt/decrypt, depending on what was selected, with the specified key.
+        final int mode = isEncrypt ? Cipher.ENCRYPT_MODE : Cipher.DECRYPT_MODE;
         cipher.init(mode, key);
         // do the transformation
         result = cipher.doFinal(inputData);
@@ -135,17 +140,21 @@ public class ServerAsymmetricKeyEncryptionDecryptionAssertion extends AbstractSe
     }
 
     /**
-     *
-     * @param mode will either be javax.crypto.Cipher.ENCRYPT_MODE (== 1) or javax.crypto.Cipher.DECRYPT_MODE (== 2) as selected through the gui
+     * @param isEncrypt is encrypt mode selected
      * @param keyName the name of the trusted certificate or the alias for private keys
      * @param keyGoid the oid of the trusted certificate of the keystore id for private keys
      * @return the public or private key
      */
-    private Key getKey(int mode, String keyName, Goid keyGoid) throws FindException, UnrecoverableKeyException, KeyStoreException {
+    private Key getKey(final boolean isEncrypt, String keyName, Goid keyGoid) throws FindException,
+            UnrecoverableKeyException, KeyStoreException {
+        Key key;
 
-        Key key = null;
-
-        if (mode == Cipher.ENCRYPT_MODE) {
+        //if mode == javax.crypto.Cipher.ENCRYPT_MODE (== 1) then get public key
+        //if mode == javax.crypto.Cipher.DECRYPT_MODE (== 2) then get private key
+        if (isEncrypt) {
+            if (keyGoid == null) {
+                throw new IllegalArgumentException("Invalid key provided");
+            }
             //get the public key from the trusted certificate manager
             TrustedCert trustedCertificate = trustedCertManager.findByPrimaryKey(keyGoid);
 
@@ -154,13 +163,38 @@ public class ServerAsymmetricKeyEncryptionDecryptionAssertion extends AbstractSe
                 throw new FindException("Certificate; " + keyName + ", not found.");
 
             key = certificate.getPublicKey();
-        } else if (mode == Cipher.DECRYPT_MODE) {
+        } else {
+            if (keyGoid == null || keyName == null) {
+                throw new IllegalArgumentException("Invalid key provided");
+            }
             //get the private key from the private key store
             SsgKeyEntry ssgKeyEntry = keyStoreManager.lookupKeyByKeyAlias(keyName, keyGoid);
             key = ssgKeyEntry.getPrivateKey();
         }
 
         return key;
+    }
+
+    /**
+     * @param keyString base64 encoded Public or Private RSA key string
+     * @param isEncrypt Is encrypt mode selected
+     * @return the public or the private key
+     * @throws InvalidKeySpecException
+     * @throws NoSuchAlgorithmException
+     * @throws IOException
+     */
+    private Key getRSAKey(final String keyString, final boolean isEncrypt) throws InvalidKeySpecException,
+            NoSuchAlgorithmException, IOException, CertificateException {
+
+        if (keyString != null && !keyString.trim().isEmpty()) {
+            if (isEncrypt) {
+                return AsymmetricKeyEncryptDecryptUtils.parsePublicKeyOrCertificate(keyString);
+            } else {
+                return AsymmetricKeyEncryptDecryptUtils.parsePrivateKey(keyString);
+            }
+        } else {
+            throw new IllegalArgumentException("Invalid base64 key string provided.");
+        }
     }
 
     /**

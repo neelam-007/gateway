@@ -6,50 +6,75 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.variable.Syntax;
 import com.l7tech.policy.wsp.Java5EnumTypeMapping;
 import com.l7tech.policy.wsp.SimpleTypeMappingFinder;
 import com.l7tech.policy.wsp.TypeMapping;
+import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.GoidUpgradeMapper;
 
 import javax.crypto.Cipher;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.logging.Logger;
 
 import static com.l7tech.policy.assertion.AssertionMetadata.POLICY_NODE_NAME_FACTORY;
 import static com.l7tech.policy.assertion.AssertionMetadata.WSP_SUBTYPE_FINDER;
 
 public class AsymmetricKeyEncryptionDecryptionAssertion extends Assertion implements UsesVariables, UsesEntities {
 
-    protected static final Logger logger = Logger.getLogger(AsymmetricKeyEncryptionDecryptionAssertion.class.getName());
+    private static final int DEFAULT_MODE = Cipher.ENCRYPT_MODE;
+    private static final KeySource DEFAULT_KEY_TYPE= KeySource.FROM_STORE;
 
     private String inputVariable = "";
     private String outputVariable = "";
 
+    private KeySource keySource = DEFAULT_KEY_TYPE;
+    private String rsaKeyValue = "";
+
     private String keyName = "";
     private Goid keyGoid = Goid.DEFAULT_GOID;
 
-    private int mode = 0;
+    private int mode = DEFAULT_MODE;
     private RsaModePaddingOption modePaddingOption = null;
     private String algorithm;
 
-    public String[] getVariablesUsed() {
-        return new String[]{inputVariable, outputVariable};
+    public enum KeySource {
+        FROM_STORE,
+        FROM_VALUE
     }
 
-    private static final String baseName = "Asymmetric Key Encryption / Decryption Assertion";
+    public String[] getVariablesUsed() {
+        final String[] refKeyValue = Syntax.getReferencedNames(rsaKeyValue);
+        return ArrayUtils.concat(new String[]{inputVariable, outputVariable}, refKeyValue);
+    }
+
+    private static final String ASSERTION_BASE_NAME = "Asymmetric Key Encryption / Decryption Assertion";
+    private static final String ASSERTION_ENCRYPT_TITLE = "Asymmetric Key Encrypt";
+    private static final String ASSERTION_DECRYPT_TITLE = "Asymmetric Key Decrypt";
 
     private static final AssertionNodeNameFactory<AsymmetricKeyEncryptionDecryptionAssertion> nodeNameFactory = new AssertionNodeNameFactory<AsymmetricKeyEncryptionDecryptionAssertion>() {
         @Override
         public String getAssertionName(AsymmetricKeyEncryptionDecryptionAssertion assertion, boolean decorate) {
-            if (!decorate) return baseName;
+            if (!decorate) return ASSERTION_BASE_NAME;
 
-            StringBuilder sb = new StringBuilder(baseName);
+            StringBuilder sb = new StringBuilder();
+
             if (assertion.getMode() == Cipher.ENCRYPT_MODE) {
-                sb.append(" Cert: ").append(assertion.getKeyName());
+                sb.append(ASSERTION_ENCRYPT_TITLE);
             } else {
-                sb.append(" Key: ").append(assertion.getKeyName());
+                sb.append(ASSERTION_DECRYPT_TITLE);
             }
+            sb.append(" using ");
+
+            if (assertion.getKeySource() == KeySource.FROM_VALUE) {
+                final String value = assertion.getRsaKeyValue().length() > 40 ?
+                            assertion.getRsaKeyValue().substring(0, 40).concat("...") : assertion.getRsaKeyValue();
+                sb.append("Value: ").append(value);
+            } else {
+                // Because default is FROM_STORE store. "Key" represents public or private key
+                sb.append("Key: ").append(assertion.getKeyName());
+            }
+
             return sb.toString();
         }
     };
@@ -65,7 +90,7 @@ public class AsymmetricKeyEncryptionDecryptionAssertion extends Assertion implem
             return meta;
 
         // Set description for GUI
-        meta.put(AssertionMetadata.SHORT_NAME, baseName);
+        meta.put(AssertionMetadata.SHORT_NAME, ASSERTION_BASE_NAME);
 
         // Add to palette folder(s) 
         //   accessControl, transportLayerSecurity, xmlSecurity, xml, routing, 
@@ -77,9 +102,10 @@ public class AsymmetricKeyEncryptionDecryptionAssertion extends Assertion implem
         meta.put(AssertionMetadata.PROPERTIES_EDITOR_CLASSNAME, "com.l7tech.external.assertions.asymmetrickeyencryptiondecryption.console.AsymmetricKeyEncryptionDecryptionAssertionDialog");
         meta.put(AssertionMetadata.PROPERTIES_ACTION_NAME, "Asymmetric Key Encryption / Decryption Assertion Properties");
 
-        Collection<TypeMapping> othermappings = new ArrayList<TypeMapping>();
-        othermappings.add(new Java5EnumTypeMapping(RsaModePaddingOption.class, "rsaModePaddingOption"));
-        meta.put(WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(othermappings));
+        Collection<TypeMapping> otherTypeMappings = new ArrayList<>();
+        otherTypeMappings.add(new Java5EnumTypeMapping(RsaModePaddingOption.class, "rsaModePaddingOption"));
+        otherTypeMappings.add(new Java5EnumTypeMapping(KeySource.class, "keySource"));
+        meta.put(WSP_SUBTYPE_FINDER, new SimpleTypeMappingFinder(otherTypeMappings));
 
         // Enable automatic policy advice (default is no advice unless a matching Advice subclass exists)
         meta.put(AssertionMetadata.POLICY_ADVICE_CLASSNAME, "auto");
@@ -121,6 +147,22 @@ public class AsymmetricKeyEncryptionDecryptionAssertion extends Assertion implem
         this.keyName = keyName;
     }
 
+    public String getRsaKeyValue() {
+        return rsaKeyValue;
+    }
+
+    public void setRsaKeyValue(String rsaKeyValue) {
+        this.rsaKeyValue = rsaKeyValue;
+    }
+
+    public KeySource getKeySource() {
+        return keySource;
+    }
+
+    public void setKeySource(KeySource keySource) {
+        this.keySource = keySource;
+    }
+
     public Goid getKeyGoid() {
         return keyGoid;
     }
@@ -132,6 +174,7 @@ public class AsymmetricKeyEncryptionDecryptionAssertion extends Assertion implem
     /**
      * Needed for backwards serializing compatibility (TAC-444).
      */
+    @SuppressWarnings("unused")
     public void setKeyId(long keyId) {
         this.keyGoid = GoidUpgradeMapper.mapOid(EntityType.SSG_KEY_ENTRY, keyId);
     }
@@ -156,6 +199,10 @@ public class AsymmetricKeyEncryptionDecryptionAssertion extends Assertion implem
                 setAlgorithm(BlockAsymmetricAlgorithm.getAlgorithm(
                         BlockAsymmetricAlgorithm.NAME_RSA, BlockAsymmetricAlgorithm.MODE_ECB, BlockAsymmetricAlgorithm.PADDING_OAEP_WITH_SHA1_AND_MGF1_PADDING));
                 break;
+            default:
+                setAlgorithm(BlockAsymmetricAlgorithm.getAlgorithm(
+                        BlockAsymmetricAlgorithm.NAME_RSA, BlockAsymmetricAlgorithm.MODE_ECB, BlockAsymmetricAlgorithm.PADDING_NO_PADDING));
+
         }
 
         this.modePaddingOption = null;
@@ -180,11 +227,11 @@ public class AsymmetricKeyEncryptionDecryptionAssertion extends Assertion implem
 
     @Override
     public void replaceEntity(EntityHeader oldEntityHeader, EntityHeader newEntityHeader) {
-        if (mode == Cipher.ENCRYPT_MODE) {
-            if (oldEntityHeader.getType().equals(EntityType.TRUSTED_CERT) && oldEntityHeader.getGoid().equals(keyGoid) &&
-                    newEntityHeader.getType().equals(EntityType.TRUSTED_CERT)) {
-                keyGoid = newEntityHeader.getGoid();
-            }
+        if ((mode == Cipher.ENCRYPT_MODE)
+                && oldEntityHeader.getType().equals(EntityType.TRUSTED_CERT)
+                && oldEntityHeader.getGoid().equals(keyGoid)
+                && newEntityHeader.getType().equals(EntityType.TRUSTED_CERT)) {
+            keyGoid = newEntityHeader.getGoid();
         }
     }
 }

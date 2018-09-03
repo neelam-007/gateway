@@ -76,8 +76,7 @@ public class ServerAsymmetricKeyEncryptionDecryptionAssertionTest {
 
     @Before
     public void setup() throws FindException, KeyStoreException, UnrecoverableKeyException, IOException, CertificateException, InvalidKeySpecException, NoSuchAlgorithmException {
-        String[] variablesUses = {"input", "output"};
-        when(mockPolicyContext.getVariableMap(eq(variablesUses), any(Audit.class))).thenReturn(varUsed);
+        when(mockPolicyContext.getVariableMap(any(String[].class), any(Audit.class))).thenReturn(varUsed);
 
         //encrypt
         encryptAssertion = new AsymmetricKeyEncryptionDecryptionAssertion();
@@ -142,17 +141,37 @@ public class ServerAsymmetricKeyEncryptionDecryptionAssertionTest {
     }
 
     /**
-     * Mode: No ECB Padding
-     * Input Length: 5
+     * Mode: ECB PKCS1 Padding
+     * Input Length: 16
      * Key Size: 512
-     *
+     * Using Raw RSA keys - no Cert
      * @throws Exception
      */
     @Test
-    public void testSuccessfulECBNoPaddingWith5LengthInputAnd512Key() throws Exception {
+    public void testSuccessfulWithRsaKey() throws Exception {
         //encrypt
-        varUsed.put("input", input5Encode);
-        encryptAssertion.setModePaddingOption(RsaModePaddingOption.ECB_NO_PADDING);
+        varUsed.put("input", input16Encode);
+        encryptAssertion.setModePaddingOption(RsaModePaddingOption.ECB_PKCS1_PADDING);
+
+         final String RSA_512_PRIVATE_KEY_PEM =
+               "-----BEGIN RSA PRIVATE KEY-----\n" +
+                       "MIIBOwIBAAJBANEGhtwiM7Oiz7ZMjqczRpAokQlZ1GPCrenCRXM5dLTQwtcsVU/A\n" +
+                       "MwZeZVfZekP4JIKpPdd83EJDPwZgFhSbXVsCAwEAAQJAEXzVTZeC8dV+QUc4bB6r\n" +
+                       "GaZ7M+gTD+GawULiopg8/l+OKJMV8VdXICZj9mhk5bQufel5+LvW8S3Z71vV9iMx\n" +
+                       "eQIhAOd9UHAsk51jN1ORGnPKuYuxWlVdtn7L1riXoiylhq9XAiEA5yhPSbviF7Eu\n" +
+                       "oL/1o1i+qGhZ4rkYUh25F00W10XYs50CIA6qacYxjMiT2JV6w+pCFa879TUjUsSF\n" +
+                       "tXzMXoHlmrrRAiEAtsW1o5xuUcNkFfCSHf0ui2QvJkiqRUuBLT5kAAUXKjUCIQCi\n" +
+                       "doi8zK8G2nsI4rIw0T3YxwpIKLB4JbQ5zWW870xsZQ==\n" +
+                       "-----END RSA PRIVATE KEY-----";
+
+        // PEM without '-----BEGIN PUBLIC KEY-----', '-----END PUBLIC KEY-----' header.
+        final String RSA_512_PUBLIC_KEY_B64 = "-----BEGIN PUBLIC KEY-----" +
+                "MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBANEGhtwiM7Oiz7ZMjqczRpAokQlZ1GPC\n" +
+                "renCRXM5dLTQwtcsVU/AMwZeZVfZekP4JIKpPdd83EJDPwZgFhSbXVsCAwEAAQ==" +
+                "-----END PUBLIC KEY-----";
+
+        encryptAssertion.setKeySource(AsymmetricKeyEncryptionDecryptionAssertion.KeySource.FROM_VALUE);
+        encryptAssertion.setRsaKeyValue(RSA_512_PUBLIC_KEY_B64);
 
         encryptServer = new ServerAsymmetricKeyEncryptionDecryptionAssertion(encryptAssertion, null);
         encryptServer.setTrustedCertManager(mockTrustedCertManager);
@@ -164,7 +183,11 @@ public class ServerAsymmetricKeyEncryptionDecryptionAssertionTest {
         //decrypt
         varUsed.clear();
         varUsed.put("input", outputEnc);
-        decryptAssertion.setModePaddingOption(RsaModePaddingOption.ECB_NO_PADDING);
+        varUsed.put("rsa", RSA_512_PRIVATE_KEY_PEM);
+
+        decryptAssertion.setModePaddingOption(RsaModePaddingOption.ECB_PKCS1_PADDING);
+        decryptAssertion.setKeySource(AsymmetricKeyEncryptionDecryptionAssertion.KeySource.FROM_VALUE);
+        decryptAssertion.setRsaKeyValue("${rsa}");
         decryptServer = new ServerAsymmetricKeyEncryptionDecryptionAssertion(decryptAssertion, null);
         decryptServer.setKeyStoreManager(mockSsgKeyStoreManager);
 
@@ -173,7 +196,53 @@ public class ServerAsymmetricKeyEncryptionDecryptionAssertionTest {
         String outputDecDecoded = new String(HexUtils.decodeBase64(outputDec));
 
         Assert.assertEquals(AssertionStatus.NONE, status);
-        Assert.assertEquals(64, outputDecDecoded.length()); //keysize: 512 bits  (64 bytes),  number of input bytes: multiples of 64
+        Assert.assertEquals(input16Encode, outputDec);
+        Assert.assertEquals(16, outputDecDecoded.length());
+    }
+
+    @Test
+    public void testSuccessfulWithRsaPKCS8FormatKey() throws Exception {
+        //encrypt
+        varUsed.put("input", input16Encode);
+        encryptAssertion.setModePaddingOption(RsaModePaddingOption.ECB_PKCS1_PADDING);
+
+        final String RSA_2048_PRIVATE_KEY_PEM = "-----BEGIN PRIVATE KEY-----\n" +
+                TestKeys.RSA_2048_KEY_PKCS8_B64 +
+                "\n-----END PRIVATE KEY-----";
+
+        final String RSA_2048_PUBLIC_KEY = "-----BEGIN CERTIFICATE-----\n" +
+                TestKeys.RSA_2048_CERT_X509_B64 +
+                "\n-----END CERTIFICATE-----";
+
+        varUsed.put("rsa", RSA_2048_PUBLIC_KEY);
+
+        encryptAssertion.setKeySource(AsymmetricKeyEncryptionDecryptionAssertion.KeySource.FROM_VALUE);
+        encryptAssertion.setRsaKeyValue("${rsa}");
+
+        encryptServer = new ServerAsymmetricKeyEncryptionDecryptionAssertion(encryptAssertion, null);
+        encryptServer.setTrustedCertManager(mockTrustedCertManager);
+        AssertionStatus status = encryptServer.checkRequest(mockPolicyContext);
+        String outputEnc = getOutputString();
+
+        Assert.assertEquals(AssertionStatus.NONE, status);
+
+        //decrypt
+        varUsed.clear();
+        varUsed.put("input", outputEnc);
+        varUsed.put("rsa", RSA_2048_PRIVATE_KEY_PEM);
+
+        decryptAssertion.setModePaddingOption(RsaModePaddingOption.ECB_PKCS1_PADDING);
+        decryptAssertion.setKeySource(AsymmetricKeyEncryptionDecryptionAssertion.KeySource.FROM_VALUE);
+        decryptAssertion.setRsaKeyValue("${rsa}");
+        decryptServer = new ServerAsymmetricKeyEncryptionDecryptionAssertion(decryptAssertion, null);
+        decryptServer.setKeyStoreManager(mockSsgKeyStoreManager);
+
+        status = decryptServer.checkRequest(mockPolicyContext);
+        String outputDec = getOutputString();
+        String outputDecDecoded = new String(HexUtils.decodeBase64(outputDec));
+
+        Assert.assertEquals(AssertionStatus.NONE, status);
+        Assert.assertEquals(16, outputDecDecoded.length());
     }
 
     /**

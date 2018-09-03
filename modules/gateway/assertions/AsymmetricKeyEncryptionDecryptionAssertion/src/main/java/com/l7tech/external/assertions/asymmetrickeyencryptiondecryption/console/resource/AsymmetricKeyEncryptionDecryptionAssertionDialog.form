@@ -3,7 +3,7 @@
   <grid id="cbd77" binding="contentPane" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="10" left="10" bottom="10" right="10"/>
     <constraints>
-      <xy x="48" y="54" width="436" height="297"/>
+      <xy x="48" y="54" width="571" height="454"/>
     </constraints>
     <properties/>
     <border type="none"/>
@@ -24,6 +24,46 @@
               <text value="Encrypt"/>
             </properties>
           </component>
+          <component id="3be6e" class="javax.swing.JLabel">
+            <constraints>
+              <grid row="6" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text value="Output Variable"/>
+            </properties>
+          </component>
+          <component id="4891d" class="javax.swing.JLabel">
+            <constraints>
+              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text value="Input Variable"/>
+            </properties>
+          </component>
+          <component id="5e3b9" class="javax.swing.JLabel">
+            <constraints>
+              <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text value="Algorithm Name"/>
+            </properties>
+          </component>
+          <component id="41810" class="javax.swing.JLabel">
+            <constraints>
+              <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text value="Mode"/>
+            </properties>
+          </component>
+          <component id="58a56" class="javax.swing.JLabel">
+            <constraints>
+              <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text value="Padding"/>
+            </properties>
+          </component>
           <component id="de30" class="javax.swing.JRadioButton" binding="decryptRadioButton" default-binding="true">
             <constraints>
               <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
@@ -32,61 +72,11 @@
               <text value="Decrypt"/>
             </properties>
           </component>
-          <component id="29b9a" class="javax.swing.JComboBox" binding="keyComboBox">
-            <constraints>
-              <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
-            </constraints>
-            <properties/>
-          </component>
-          <component id="f445" class="javax.swing.JLabel" binding="keyLabel">
-            <constraints>
-              <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-            </constraints>
-            <properties>
-              <text value="Use Certificate"/>
-            </properties>
-          </component>
-          <component id="3be6e" class="javax.swing.JLabel" binding="outputLabel">
-            <constraints>
-              <grid row="6" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-            </constraints>
-            <properties>
-              <text value="Output"/>
-            </properties>
-          </component>
-          <component id="b6968" class="com.l7tech.console.panels.TargetVariablePanel" binding="inputVariableField">
-            <constraints>
-              <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="7" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-            </constraints>
-            <properties/>
-          </component>
-          <component id="4891d" class="javax.swing.JLabel" binding="inputLabel">
-            <constraints>
-              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-            </constraints>
-            <properties>
-              <text value="Input"/>
-            </properties>
-          </component>
-          <component id="f4ad3" class="com.l7tech.console.panels.TargetVariablePanel" binding="outputVariableField">
-            <constraints>
-              <grid row="6" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="7" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-            </constraints>
-            <properties/>
-          </component>
           <component id="ff346" class="javax.swing.JComboBox" binding="nameComboBox">
             <constraints>
               <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties/>
-          </component>
-          <component id="5e3b9" class="javax.swing.JLabel" binding="nameLabel">
-            <constraints>
-              <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-            </constraints>
-            <properties>
-              <text value="Algorithm Name"/>
-            </properties>
           </component>
           <component id="5aad8" class="javax.swing.JComboBox" binding="modeComboBox">
             <constraints>
@@ -102,22 +92,62 @@
               <editable value="true"/>
             </properties>
           </component>
-          <component id="41810" class="javax.swing.JLabel" binding="modeLabel">
+          <component id="a22e5" class="com.l7tech.console.panels.TargetVariablePanel" binding="inputVariableField">
             <constraints>
-              <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+              <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="7" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
-            <properties>
-              <text value="Mode"/>
-            </properties>
+            <properties/>
           </component>
-          <component id="58a56" class="javax.swing.JLabel" binding="paddingLabel">
+          <component id="c7f1a" class="com.l7tech.console.panels.TargetVariablePanel" binding="outputVariableField">
             <constraints>
-              <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+              <grid row="6" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="7" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
-            <properties>
-              <text value="Padding"/>
-            </properties>
+            <properties/>
           </component>
+          <grid id="feb5" binding="certificatePanel" layout-manager="GridLayoutManager" row-count="2" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+            <margin top="0" left="0" bottom="0" right="0"/>
+            <constraints>
+              <grid row="2" column="0" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties/>
+            <border type="none" title="User Certificate"/>
+            <children>
+              <component id="c829b" class="javax.swing.JRadioButton" binding="fromStoreRadioButton">
+                <constraints>
+                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <text value="From Store"/>
+                </properties>
+              </component>
+              <component id="eea7f" class="javax.swing.JRadioButton" binding="fromValueRadioButton">
+                <constraints>
+                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <text value="From Value"/>
+                </properties>
+              </component>
+              <component id="29b9a" class="javax.swing.JComboBox" binding="keyComboBox">
+                <constraints>
+                  <grid row="0" column="1" row-span="1" col-span="2" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <model/>
+                </properties>
+              </component>
+              <component id="947a7" class="javax.swing.JTextField" binding="keyValueField">
+                <constraints>
+                  <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                    <preferred-size width="150" height="-1"/>
+                  </grid>
+                </constraints>
+                <properties>
+                  <text value=""/>
+                </properties>
+              </component>
+            </children>
+          </grid>
         </children>
       </grid>
     </children>
@@ -126,6 +156,10 @@
     <group name="buttonGroup1">
       <member id="b4c1a"/>
       <member id="de30"/>
+    </group>
+    <group name="encryptionKeyType">
+      <member id="c829b"/>
+      <member id="eea7f"/>
     </group>
   </buttonGroups>
 </form>

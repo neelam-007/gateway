@@ -85,8 +85,7 @@ public class ServerAsymmetricKeyEncryptionDecryptionAssertionHappyPathTest {
         MockitoAnnotations.initMocks(this);
         inputEncoded = HexUtils.encodeBase64(input.getBytes());
         varUsed.put("input", inputEncoded);
-        String[] variablesUses = {"input", "output"};
-        when(mockPolicyContext.getVariableMap(eq(variablesUses), any(Audit.class))).thenReturn(varUsed);
+        when(mockPolicyContext.getVariableMap(any(String[].class), any(Audit.class))).thenReturn(varUsed);
 
         //encrypt
         encryptAssertion = new AsymmetricKeyEncryptionDecryptionAssertion();
