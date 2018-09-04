@@ -212,7 +212,7 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
                 valuesForQueryArguments);
     }
 
-    private boolean isApiPlanEnabled(final String connName, final String tenantId) throws PolicyAssertionException {
+    private boolean isApiPlanEnabled(final String connName, final String tenantId)  {
         boolean isEnabled = false;
         Map<String, List> isAblePlanEnabledMap =  (Map<String, List>)  queryJdbc(connName,
                 String.format(API_PLAN_SETTING_ENABLE_STATUS, tenantId),
