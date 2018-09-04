@@ -212,12 +212,13 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
                 valuesForQueryArguments);
     }
 
-    private boolean isApiPlanEnabled(final String connName, final String tenantId) {
-        final String SETTING_COL_NAME = "value";
+    private boolean isApiPlanEnabled(final String connName, final String tenantId) throws PolicyAssertionException {
         boolean isEnabled = false;
         Map<String, List> isAblePlanEnabledMap =  (Map<String, List>)  queryJdbc(connName,
                 String.format(API_PLAN_SETTING_ENABLE_STATUS, tenantId),
                 new ArrayList<>());
+        //Only one key returned
+        final String SETTING_COL_NAME =  isAblePlanEnabledMap.keySet().iterator().next();
         if(isAblePlanEnabledMap.containsKey(SETTING_COL_NAME) && !isAblePlanEnabledMap.get(SETTING_COL_NAME).isEmpty()) {
             isEnabled = Boolean.parseBoolean(isAblePlanEnabledMap.get(SETTING_COL_NAME).get(0).toString());
         }
