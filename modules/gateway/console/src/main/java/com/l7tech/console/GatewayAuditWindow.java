@@ -197,7 +197,7 @@ public class GatewayAuditWindow extends JFrame implements LogonListener, SheetHo
 
     private void updateFileActions(boolean isViaLookupSelected) {
         getDownloadAuditEventsMenuItem().setEnabled(!isViaLookupSelected);
-        getDeleteAuditEventsMenuItem().setEnabled(isViaLookupSelected == true ? !isViaLookupSelected : new DeleteAuditEventsAction().isAuthorized());
+        getDeleteAuditEventsMenuItem().setEnabled(isViaLookupSelected ? !isViaLookupSelected : new DeleteAuditEventsAction().isAuthorized());
         getStartAuditArchiverMenuItem().setEnabled(!isViaLookupSelected);
     }
 
