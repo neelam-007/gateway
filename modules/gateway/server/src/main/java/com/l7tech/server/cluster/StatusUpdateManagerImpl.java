@@ -72,7 +72,7 @@ public class StatusUpdateManagerImpl extends HibernateDaoSupport implements Stat
     public void clearStaleNodes() {
         //Only the master needs to do cleanup
         if (clusterMaster.isMaster()) {
-            final int staleTimeoutSeconds = config.getIntProperty("com.l7tech.server.clusterStaleNodeCleanupTimeoutSeconds", 3600);
+            final int staleTimeoutSeconds = config.getIntProperty("com.l7tech.server.clusterStaleNodeCleanupTimeoutSeconds", 7776000);
             final Calendar oldestTimestamp = Calendar.getInstance();
             oldestTimestamp.add(Calendar.SECOND, -1 * staleTimeoutSeconds);
             clusterInfoManager.removeStaleNodes(oldestTimestamp.getTime().getTime());
