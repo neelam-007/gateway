@@ -869,4 +869,8 @@
     <bean id="sharedCounterProviderRegistry" class="com.l7tech.server.extension.registry.sharedstate.SharedCounterProviderRegistry"/>
 
     <bean id="sharedClusterInfoServiceRegistry" class="com.l7tech.server.extension.registry.sharedstate.SharedClusterInfoServiceRegistry"/>
+    
+    <bean id="httpStatePoolManager" class="com.l7tech.server.http.HttpStatePoolManager">
+        <constructor-arg index="0" ref="serverConfig"/>
+    </bean>
 </beans>

@@ -31,6 +31,7 @@ import com.l7tech.policy.assertion.HttpPassthroughRuleSet;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.security.MockGenericHttpClient;
 import com.l7tech.server.*;
+import com.l7tech.server.http.HttpStatePoolManager;
 import com.l7tech.server.identity.cert.TestTrustedCertManager;
 import com.l7tech.server.identity.cert.TrustedCertServicesImpl;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -68,6 +69,7 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockServletContext;
 
 import javax.net.ssl.HttpsURLConnection;
+import javax.ws.rs.HEAD;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -84,7 +86,10 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.l7tech.common.http.HttpConstants.HEADER_AUTHORIZATION;
 import static com.l7tech.message.HeadersKnob.HEADER_TYPE_HTTP;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 import static junit.framework.Assert.assertEquals;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -107,6 +112,8 @@ public class ServerHttpRoutingAssertionTest {
     private StashManagerFactory stashManagerFactory;
     @Mock
     private StashManager stashManager;
+    @Mock
+    private HttpStatePoolManager httpStatePoolManager;
 
     @Before
     public void setup() throws Exception {
@@ -337,7 +344,7 @@ public class ServerHttpRoutingAssertionTest {
         assertEquals(AssertionStatus.NONE, result);
 
         assertEquals("<bar/>", new String(pec.getResponse().getMimeKnob().getFirstPart().getBytesIfAvailableOrSmallerThan(Integer.MAX_VALUE)));
-        final Collection<Header> contentEncodingHeaders = pec.getResponse().getHeadersKnob().getHeaders("content-encoding", HeadersKnob.HEADER_TYPE_HTTP);
+        final Collection<Header> contentEncodingHeaders = pec.getResponse().getHeadersKnob().getHeaders("content-encoding", HEADER_TYPE_HTTP);
         assertEquals(1, contentEncodingHeaders.size());
         assertFalse(contentEncodingHeaders.iterator().next().isPassThrough());
     }
@@ -465,7 +472,7 @@ public class ServerHttpRoutingAssertionTest {
         final GenericHttpHeaders responseHeaders = new GenericHttpHeaders(new GenericHttpHeader[0]);
         final MockGenericHttpClient mockClient = new MockGenericHttpClient(200, responseHeaders, ContentTypeHeader.XML_DEFAULT, 6L, (expectedResponse.getBytes()));
 
-        final Map<String, String> actualParameters = new HashMap<String, String>();
+        final Map<String, String> actualParameters = new HashMap<>();
         mockClient.setCreateRequestListener(new MockGenericHttpClient.CreateRequestListener() {
             @Override
             public MockGenericHttpClient.MockGenericHttpRequest onCreateRequest(HttpMethod method, GenericHttpRequestParams params, MockGenericHttpClient.MockGenericHttpRequest request) {
@@ -524,7 +531,7 @@ public class ServerHttpRoutingAssertionTest {
         final GenericHttpHeaders responseHeaders = new GenericHttpHeaders(new GenericHttpHeader[0]);
         final MockGenericHttpClient mockClient = new MockGenericHttpClient(200, responseHeaders, ContentTypeHeader.XML_DEFAULT, 6L, (expectedResponse.getBytes()));
 
-        final Map<String, String> actualParameters = new HashMap<String, String>();
+        final Map<String, String> actualParameters = new HashMap<>();
         mockClient.setCreateRequestListener(new MockGenericHttpClient.CreateRequestListener() {
             @Override
             public MockGenericHttpClient.MockGenericHttpRequest onCreateRequest(HttpMethod method, GenericHttpRequestParams params, MockGenericHttpClient.MockGenericHttpRequest request) {
@@ -563,7 +570,7 @@ public class ServerHttpRoutingAssertionTest {
         final GenericHttpHeaders responseHeaders = new GenericHttpHeaders(new GenericHttpHeader[0]);
         final MockGenericHttpClient mockClient = new MockGenericHttpClient(200, responseHeaders, ContentTypeHeader.XML_DEFAULT, 6L, (expectedResponse.getBytes()));
 
-        final Map<String, String> actualParameters = new HashMap<String, String>();
+        final Map<String, String> actualParameters = new HashMap<>();
         mockClient.setCreateRequestListener(new MockGenericHttpClient.CreateRequestListener() {
             @Override
             public MockGenericHttpClient.MockGenericHttpRequest onCreateRequest(HttpMethod method, GenericHttpRequestParams params, MockGenericHttpClient.MockGenericHttpRequest request) {
@@ -839,12 +846,13 @@ public class ServerHttpRoutingAssertionTest {
                 put("hostnameVerifier", new SslClientHostnameVerifier(new ServerConfigStub(), new TrustedCertServicesImpl(new TestTrustedCertManager())));
                 put("stashManagerFactory", TestStashManagerFactory.getInstance());
                 put(CLIENT_FACTORY, identityBindingHttpClientFactory);
+                put("httpStatePoolManager", httpStatePoolManager);
             }}));
 
             serverPolicyFactory.setApplicationContext(ac);
             //Simulate NTLM request
-            List<HttpHeader> headers = new ArrayList<HttpHeader>();
-            headers.add(new GenericHttpHeader(HttpConstants.HEADER_AUTHORIZATION, "NTLM"));
+            List<HttpHeader> headers = new ArrayList<>();
+            headers.add(new GenericHttpHeader(HEADER_AUTHORIZATION, "NTLM"));
 
             //Simulate Connection ID
             Random r = new Random();
@@ -939,12 +947,13 @@ public class ServerHttpRoutingAssertionTest {
                 put("hostnameVerifier", new SslClientHostnameVerifier(new ServerConfigStub(), new TrustedCertServicesImpl(new TestTrustedCertManager())));
                 put("stashManagerFactory", TestStashManagerFactory.getInstance());
                 put(CLIENT_FACTORY, identityBindingHttpClientFactory);
+                put("httpStatePoolManager", httpStatePoolManager);
             }}));
 
             serverPolicyFactory.setApplicationContext(ac);
             //Simulate Basic request
-            List<HttpHeader> headers = new ArrayList<HttpHeader>();
-            headers.add(new GenericHttpHeader(HttpConstants.HEADER_AUTHORIZATION, "Basic"));
+            List<HttpHeader> headers = new ArrayList<>();
+            headers.add(new GenericHttpHeader(HEADER_AUTHORIZATION, "Basic"));
 
             //Simulate Connection ID
             Random r = new Random();
@@ -1098,6 +1107,7 @@ public class ServerHttpRoutingAssertionTest {
             put("httpRoutingHttpClientFactory", identityBindingHttpClientFactory);
             put("defaultKey", defaultKey);
             put("routingTrustManager", sslClientTrustManager);
+            put("httpStatePoolManager", httpStatePoolManager);
         }}));
 
         serverPolicyFactory.setApplicationContext(ac);
@@ -1145,6 +1155,7 @@ public class ServerHttpRoutingAssertionTest {
             put("hostnameVerifier", new PermissiveHostnameVerifier());
             put("stashManagerFactory", TestStashManagerFactory.getInstance());
             put("httpRoutingHttpClientFactory", identityBindingHttpClientFactory);
+            put("httpStatePoolManager", httpStatePoolManager);
         }}));
 
         serverPolicyFactory.setApplicationContext(ac);
@@ -1210,6 +1221,7 @@ public class ServerHttpRoutingAssertionTest {
             put("httpRoutingHttpClientFactory", identityBindingHttpClientFactory);
             put("defaultKey", defaultKey);
             put("routingTrustManager", sslClientTrustManager);
+            put("httpStatePoolManager", httpStatePoolManager);
         }}));
 
         serverPolicyFactory.setApplicationContext(ac);
@@ -1251,7 +1263,7 @@ public class ServerHttpRoutingAssertionTest {
         final AssertionStatus assertionStatus = serverAssertion.checkRequest(context);
         assertEquals(AssertionStatus.NONE, assertionStatus);
         final HeadersKnob responseHeadersKnob = context.getResponse().getHeadersKnob();
-        assertEquals(3, responseHeadersKnob.getHeaderNames(HeadersKnob.HEADER_TYPE_HTTP).length);
+        assertEquals(3, responseHeadersKnob.getHeaderNames(HEADER_TYPE_HTTP).length);
         final String[] fooValues = responseHeadersKnob.getHeaderValues("foo", HEADER_TYPE_HTTP);
         assertEquals(1, fooValues.length);
         assertEquals("bar", fooValues[0]);
@@ -1374,7 +1386,7 @@ public class ServerHttpRoutingAssertionTest {
         ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
 
         PolicyEnforcementContext pec = createContentTypeTestPec(hra, appContext, "PUT",
-                new Header[] {new Header("Content-Type", "text/html", HeadersKnob.HEADER_TYPE_HTTP)},
+                new Header[] {new Header("Content-Type", "text/html", HEADER_TYPE_HTTP)},
                 new String[] {"text/html"}, true);
 
         final ServerHttpRoutingAssertion routingAssertion = new ServerHttpRoutingAssertion(hra, appContext);
@@ -1406,7 +1418,7 @@ public class ServerHttpRoutingAssertionTest {
         ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
 
         PolicyEnforcementContext pec = createContentTypeTestPec(hra, appContext, "PUT",
-                new Header[] {new Header("Content-Type", "text/html", HeadersKnob.HEADER_TYPE_HTTP, false)},
+                new Header[] {new Header("Content-Type", "text/html", HEADER_TYPE_HTTP, false)},
                 new String[] {"text/html"}, false);
 
         final ServerHttpRoutingAssertion routingAssertion = new ServerHttpRoutingAssertion(hra, appContext);
@@ -1423,7 +1435,7 @@ public class ServerHttpRoutingAssertionTest {
         ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
 
         PolicyEnforcementContext pec = createContentTypeTestPec(hra, appContext, "PUT",
-                new Header[] {new Header("My-Type", "blah", HeadersKnob.HEADER_TYPE_HTTP)}, new String[0], false);
+                new Header[] {new Header("My-Type", "blah", HEADER_TYPE_HTTP)}, new String[0], false);
 
         final ServerHttpRoutingAssertion routingAssertion = new ServerHttpRoutingAssertion(hra, appContext);
         assertEquals(AssertionStatus.NONE, routingAssertion.checkRequest(pec));
@@ -1439,7 +1451,7 @@ public class ServerHttpRoutingAssertionTest {
         ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
 
         PolicyEnforcementContext pec = createContentTypeTestPec(hra, appContext, "POST",
-                new Header[] {new Header("Content-Type", "text/html", HeadersKnob.HEADER_TYPE_HTTP)},
+                new Header[] {new Header("Content-Type", "text/html", HEADER_TYPE_HTTP)},
                 new String[] {"text/html", ContentTypeHeader.XML_DEFAULT.getFullValue()}, false);
 
         final ServerHttpRoutingAssertion routingAssertion = new ServerHttpRoutingAssertion(hra, appContext);
@@ -1600,8 +1612,8 @@ public class ServerHttpRoutingAssertionTest {
 
         Message request = new Message(XmlUtil.stringAsDocument(requestBody));
         request.attachHttpRequestKnob(new HttpServletRequestKnob(mockHttpServletRequest));
-        request.getHeadersKnob().addHeader("Content-Length", "6", HeadersKnob.HEADER_TYPE_HTTP);
-        request.getHeadersKnob().addHeader("Content-Type", "text/xml", HeadersKnob.HEADER_TYPE_HTTP);
+        request.getHeadersKnob().addHeader("Content-Length", "6", HEADER_TYPE_HTTP);
+        request.getHeadersKnob().addHeader("Content-Type", "text/xml", HEADER_TYPE_HTTP);
 
         PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
         pec.setVariable("contextVar", "HEAD");
@@ -1638,8 +1650,8 @@ public class ServerHttpRoutingAssertionTest {
 
         Message request = new Message(XmlUtil.stringAsDocument(requestBody));
         request.attachHttpRequestKnob(new HttpServletRequestKnob(mockHttpServletRequest));
-        request.getHeadersKnob().addHeader("Content-Length", "6", HeadersKnob.HEADER_TYPE_HTTP);
-        request.getHeadersKnob().addHeader("Content-Type", "text/xml", HeadersKnob.HEADER_TYPE_HTTP);
+        request.getHeadersKnob().addHeader("Content-Length", "6", HEADER_TYPE_HTTP);
+        request.getHeadersKnob().addHeader("Content-Type", "text/xml", HEADER_TYPE_HTTP);
 
         PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
         pec.setVariable("contextVar", "HEAD");
@@ -1676,8 +1688,8 @@ public class ServerHttpRoutingAssertionTest {
 
         Message request = new Message(XmlUtil.stringAsDocument(requestBody));
         request.attachHttpRequestKnob(new HttpServletRequestKnob(mockHttpServletRequest));
-        request.getHeadersKnob().addHeader("Content-Length", "6", HeadersKnob.HEADER_TYPE_HTTP);
-        request.getHeadersKnob().addHeader("Content-Type", "text/xml", HeadersKnob.HEADER_TYPE_HTTP);
+        request.getHeadersKnob().addHeader("Content-Length", "6", HEADER_TYPE_HTTP);
+        request.getHeadersKnob().addHeader("Content-Type", "text/xml", HEADER_TYPE_HTTP);
 
         PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
         pec.setVariable("contextVar", "PUT");
@@ -2006,6 +2018,280 @@ public class ServerHttpRoutingAssertionTest {
         assertEquals(200, httpResponse.getStatus());
         assertTrue(headers[0].containsKey("Content-Length"));
         assertEquals(headers[0].getFirst("Content-Length"), String.valueOf(requestMessage.length()));
+    }
+
+    @Test
+    public void testNoAuthorizationNotUsingPoolManager() throws Exception {
+        //Setup Http server
+        MockHttpServer httpServer = new MockHttpServer(18000);
+        httpServer.start();
+
+        try {
+            //Setup applicationcontext
+            final AssertionRegistry assertionRegistry = new AssertionRegistry();
+            assertionRegistry.afterPropertiesSet();
+            final ServerPolicyFactory serverPolicyFactory = new ServerPolicyFactory(new TestLicenseManager(), new MockInjector());
+            final HttpClientFactory identityBindingHttpClientFactory = new HttpClientFactory();
+            final ServerConfigStub serverConfig = new ServerConfigStub();
+            httpStatePoolManager = new HttpStatePoolManager(serverConfig);
+
+            ApplicationContext ac = new GenericApplicationContext(new SimpleSingletonBeanFactory(new HashMap<String, Object>() {{
+                put("assertionRegistry", assertionRegistry);
+                put("policyFactory", serverPolicyFactory);
+                put("auditFactory", new TestAudit().factory());
+                put("messageProcessingEventChannel", new EventChannel());
+                put("serverConfig", new ServerConfigStub());
+                put("hostnameVerifier", new SslClientHostnameVerifier(serverConfig, new TrustedCertServicesImpl(new TestTrustedCertManager())));
+                put("stashManagerFactory", TestStashManagerFactory.getInstance());
+                put(CLIENT_FACTORY, identityBindingHttpClientFactory);
+                put("httpStatePoolManager", httpStatePoolManager);
+            }}));
+
+            serverPolicyFactory.setApplicationContext(ac);
+
+            //Simulate Connection ID
+            HttpRequestKnobStub requestKnob = new HttpRequestKnobStub(emptyList());
+            PolicyEnforcementContext peCtx = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
+            peCtx.getRequest().attachHttpRequestKnob(requestKnob);
+
+            HttpRoutingAssertion assertion = new HttpRoutingAssertion();
+            assertion.setPassthroughHttpAuthentication(true);
+            assertion.setProtectedServiceUrl("http://localhost:" + httpServer.getPort());
+
+            ServerAssertion sass = serverPolicyFactory.compilePolicy(assertion, false);
+
+            httpServer.setResponseCode(HttpsURLConnection.HTTP_OK);
+            sass.checkRequest(peCtx);
+            peCtx.close();
+            // no auth so no use
+            assertEquals(0, httpStatePoolManager.getCacheSize());
+
+            //Resubmit the request
+            peCtx = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
+            peCtx.getRequest().attachHttpRequestKnob(requestKnob);
+            sass.checkRequest(peCtx);
+            peCtx.close();
+            // still no using
+            assertEquals(0, httpStatePoolManager.getCacheSize());
+        } finally {
+            httpServer.stop();
+        }
+    }
+
+    @Test
+    public void testAuthorizationPassthroughUsingPoolManager() throws Exception {
+        //Setup Http server
+        MockHttpServer httpServer = new MockHttpServer(18000);
+        httpServer.start();
+
+        try {
+            //Setup applicationcontext
+            final AssertionRegistry assertionRegistry = new AssertionRegistry();
+            assertionRegistry.afterPropertiesSet();
+            final ServerPolicyFactory serverPolicyFactory = new ServerPolicyFactory(new TestLicenseManager(), new MockInjector());
+            final HttpClientFactory identityBindingHttpClientFactory = new HttpClientFactory();
+            final ServerConfigStub serverConfig = new ServerConfigStub();
+            httpStatePoolManager = new HttpStatePoolManager(serverConfig);
+
+            ApplicationContext ac = new GenericApplicationContext(new SimpleSingletonBeanFactory(new HashMap<String, Object>() {{
+                put("assertionRegistry", assertionRegistry);
+                put("policyFactory", serverPolicyFactory);
+                put("auditFactory", new TestAudit().factory());
+                put("messageProcessingEventChannel", new EventChannel());
+                put("serverConfig", new ServerConfigStub());
+                put("hostnameVerifier", new SslClientHostnameVerifier(serverConfig, new TrustedCertServicesImpl(new TestTrustedCertManager())));
+                put("stashManagerFactory", TestStashManagerFactory.getInstance());
+                put(CLIENT_FACTORY, identityBindingHttpClientFactory);
+                put("httpStatePoolManager", httpStatePoolManager);
+            }}));
+
+            serverPolicyFactory.setApplicationContext(ac);
+
+            String url = "http://localhost:" + httpServer.getPort();
+            HttpRoutingAssertion assertion = new HttpRoutingAssertion();
+            assertion.setPassthroughHttpAuthentication(true);
+            assertion.setProtectedServiceUrl(url);
+
+            ServerHttpRoutingAssertion sass = (ServerHttpRoutingAssertion) serverPolicyFactory.compilePolicy(assertion, false);
+
+            String authorization = "Basic XXX";
+            String authorizationHash = sass.hashAuthorizationAndURL(url, authorization);
+
+            //Simulate Connection ID
+            HttpRequestKnobStub requestKnob = new HttpRequestKnobStub(singletonList(new GenericHttpHeader(HEADER_AUTHORIZATION, authorization)));
+            PolicyEnforcementContext peCtx = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
+            peCtx.getRequest().attachHttpRequestKnob(requestKnob);
+
+            httpServer.setResponseCode(HttpsURLConnection.HTTP_OK);
+            sass.checkRequest(peCtx);
+            peCtx.close();
+            // single state
+            assertEquals(1, httpStatePoolManager.getCacheSize());
+            Object state = httpStatePoolManager.getFromStateCache(authorizationHash);
+            assertNotNull(state);
+
+            //Resubmit the request
+            peCtx = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
+            peCtx.getRequest().attachHttpRequestKnob(requestKnob);
+            sass.checkRequest(peCtx);
+            peCtx.close();
+            // same state
+            assertEquals(1, httpStatePoolManager.getCacheSize());
+            Object state2 = httpStatePoolManager.getFromStateCache(authorizationHash);
+            assertNotNull(state2);
+            assertTrue(state == state2);
+        } finally {
+            httpServer.stop();
+        }
+    }
+
+    @Test
+    public void testAuthorizationNoPassthroughUsingPoolManager() throws Exception {
+        //Setup Http server
+        MockHttpServer httpServer = new MockHttpServer(18000);
+        httpServer.start();
+
+        try {
+            //Setup applicationcontext
+            final AssertionRegistry assertionRegistry = new AssertionRegistry();
+            assertionRegistry.afterPropertiesSet();
+            final ServerPolicyFactory serverPolicyFactory = new ServerPolicyFactory(new TestLicenseManager(), new MockInjector());
+            final HttpClientFactory identityBindingHttpClientFactory = new HttpClientFactory();
+            final ServerConfigStub serverConfig = new ServerConfigStub();
+            httpStatePoolManager = new HttpStatePoolManager(serverConfig);
+
+            ApplicationContext ac = new GenericApplicationContext(new SimpleSingletonBeanFactory(new HashMap<String, Object>() {{
+                put("assertionRegistry", assertionRegistry);
+                put("policyFactory", serverPolicyFactory);
+                put("auditFactory", new TestAudit().factory());
+                put("messageProcessingEventChannel", new EventChannel());
+                put("serverConfig", new ServerConfigStub());
+                put("hostnameVerifier", new SslClientHostnameVerifier(serverConfig, new TrustedCertServicesImpl(new TestTrustedCertManager())));
+                put("stashManagerFactory", TestStashManagerFactory.getInstance());
+                put(CLIENT_FACTORY, identityBindingHttpClientFactory);
+                put("httpStatePoolManager", httpStatePoolManager);
+            }}));
+
+            serverPolicyFactory.setApplicationContext(ac);
+
+            String url = "http://localhost:" + httpServer.getPort();
+            HttpRoutingAssertion assertion = new HttpRoutingAssertion();
+            assertion.setPassthroughHttpAuthentication(false);
+            assertion.setProtectedServiceUrl(url);
+            assertion.setRequestHeaderRules(new HttpPassthroughRuleSet(true, new HttpPassthroughRule[0]));
+
+            ServerHttpRoutingAssertion sass = (ServerHttpRoutingAssertion) serverPolicyFactory.compilePolicy(assertion, false);
+
+            String authorization = "Basic XXX";
+            String authorizationHash = sass.hashAuthorizationAndURL(url, authorization);
+
+            //Simulate Connection ID
+            HeadersKnob headersKnob = new HeadersKnobSupport();
+            headersKnob.addHeader(HEADER_AUTHORIZATION, authorization, HEADER_TYPE_HTTP);
+            HttpRequestKnobStub requestKnob = new HttpRequestKnobStub(singletonList(new GenericHttpHeader(HEADER_AUTHORIZATION, authorization)));
+            PolicyEnforcementContext peCtx = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
+            peCtx.getRequest().attachHttpRequestKnob(requestKnob);
+            peCtx.getRequest().attachKnob(HeadersKnob.class, headersKnob);
+
+            httpServer.setResponseCode(HttpsURLConnection.HTTP_OK);
+            sass.checkRequest(peCtx);
+            peCtx.close();
+            // single state
+            assertEquals(1, httpStatePoolManager.getCacheSize());
+            Object state = httpStatePoolManager.getFromStateCache(authorizationHash);
+            assertNotNull(state);
+
+            //Resubmit the request
+            peCtx = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
+            peCtx.getRequest().attachHttpRequestKnob(requestKnob);
+            peCtx.getRequest().attachKnob(HeadersKnob.class, headersKnob);
+            sass.checkRequest(peCtx);
+            peCtx.close();
+            // same state
+            assertEquals(1, httpStatePoolManager.getCacheSize());
+            Object state2 = httpStatePoolManager.getFromStateCache(authorizationHash);
+            assertNotNull(state2);
+            assertTrue(state == state2);
+        } finally {
+            httpServer.stop();
+        }
+    }
+
+    @Test
+    public void testDifferentAuthorizationPassthroughUsingPoolManager() throws Exception {
+        //Setup Http server
+        MockHttpServer httpServer = new MockHttpServer(18000);
+        httpServer.start();
+
+        try {
+            //Setup applicationcontext
+            final AssertionRegistry assertionRegistry = new AssertionRegistry();
+            assertionRegistry.afterPropertiesSet();
+            final ServerPolicyFactory serverPolicyFactory = new ServerPolicyFactory(new TestLicenseManager(), new MockInjector());
+            final HttpClientFactory identityBindingHttpClientFactory = new HttpClientFactory();
+            final ServerConfigStub serverConfig = new ServerConfigStub();
+            httpStatePoolManager = new HttpStatePoolManager(serverConfig);
+
+            ApplicationContext ac = new GenericApplicationContext(new SimpleSingletonBeanFactory(new HashMap<String, Object>() {{
+                put("assertionRegistry", assertionRegistry);
+                put("policyFactory", serverPolicyFactory);
+                put("auditFactory", new TestAudit().factory());
+                put("messageProcessingEventChannel", new EventChannel());
+                put("serverConfig", new ServerConfigStub());
+                put("hostnameVerifier", new SslClientHostnameVerifier(serverConfig, new TrustedCertServicesImpl(new TestTrustedCertManager())));
+                put("stashManagerFactory", TestStashManagerFactory.getInstance());
+                put(CLIENT_FACTORY, identityBindingHttpClientFactory);
+                put("httpStatePoolManager", httpStatePoolManager);
+            }}));
+
+            serverPolicyFactory.setApplicationContext(ac);
+
+            String url = "http://localhost:" + httpServer.getPort();
+            HttpRoutingAssertion assertion = new HttpRoutingAssertion();
+            assertion.setPassthroughHttpAuthentication(false);
+            assertion.setProtectedServiceUrl(url);
+            assertion.setRequestHeaderRules(new HttpPassthroughRuleSet(true, new HttpPassthroughRule[0]));
+
+            ServerHttpRoutingAssertion sass = (ServerHttpRoutingAssertion) serverPolicyFactory.compilePolicy(assertion, false);
+
+            String authorization = "Basic XXX";
+            String authorizationHash = sass.hashAuthorizationAndURL(url, authorization);
+            String authorization2 = "Basic YYY";
+            String authorizationHash2 = sass.hashAuthorizationAndURL(url, authorization2);
+
+            //Simulate Connection ID
+            HeadersKnob headersKnob = new HeadersKnobSupport();
+            headersKnob.addHeader(HEADER_AUTHORIZATION, authorization, HEADER_TYPE_HTTP);
+            HttpRequestKnobStub requestKnob = new HttpRequestKnobStub(singletonList(new GenericHttpHeader(HEADER_AUTHORIZATION, authorization)));
+            PolicyEnforcementContext peCtx = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
+            peCtx.getRequest().attachHttpRequestKnob(requestKnob);
+            peCtx.getRequest().attachKnob(HeadersKnob.class, headersKnob);
+
+            httpServer.setResponseCode(HttpsURLConnection.HTTP_OK);
+            sass.checkRequest(peCtx);
+            peCtx.close();
+            // single state
+            assertEquals(1, httpStatePoolManager.getCacheSize());
+            Object state = httpStatePoolManager.getFromStateCache(authorizationHash);
+            assertNotNull(state);
+
+            //Resubmit the request
+            headersKnob = new HeadersKnobSupport();
+            headersKnob.addHeader(HEADER_AUTHORIZATION, authorization2, HEADER_TYPE_HTTP);
+            requestKnob = new HttpRequestKnobStub(singletonList(new GenericHttpHeader(HEADER_AUTHORIZATION, authorization2)));
+            peCtx = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
+            peCtx.getRequest().attachHttpRequestKnob(requestKnob);
+            peCtx.getRequest().attachKnob(HeadersKnob.class, headersKnob);
+            sass.checkRequest(peCtx);
+            peCtx.close();
+            // two states
+            assertEquals(2, httpStatePoolManager.getCacheSize());
+            Object state2 = httpStatePoolManager.getFromStateCache(authorizationHash2);
+            assertNotNull(state2);
+            assertTrue(state != state2);
+        } finally {
+            httpServer.stop();
+        }
     }
 
 }

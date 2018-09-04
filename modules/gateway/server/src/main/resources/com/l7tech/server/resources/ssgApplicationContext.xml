@@ -552,6 +552,12 @@
                                 <value>serviceMetricsEventListener.maxPoolSize</value>
                             </list>
                         </entry>
+                        <entry key="httpStatePoolManager">
+                            <list>
+                                <value>ioHttpRoutingAuthorizationStatePoolTimeout</value>
+                                <value>ioHttpRoutingAuthorizationStatePoolSize</value>
+                            </list>
+                        </entry>
                     </map>
                 </constructor-arg>
             </bean>
@@ -2804,4 +2810,8 @@
 
     <bean id="sharedClusterInfoServiceRegistry" class="com.l7tech.server.extension.registry.sharedstate.SharedClusterInfoServiceRegistry"/>
     <!-- End of Registries for sharing state -->
+
+    <bean id="httpStatePoolManager" class="com.l7tech.server.http.HttpStatePoolManager">
+        <constructor-arg index="0" ref="serverConfig"/>
+    </bean>
 </beans>

@@ -212,6 +212,8 @@ public interface ServerConfigParams {
     String PARAM_THROUGHPUTQUOTA_MAX_THROUGHPUT_QUOTA = "throughputQuota.max_throughput_quota";
     String PARAM_IO_JMS_CONSUMER_CONNECTIONS = "ioJmsConsumerConnections";
     String PARAM_IO_HTTP_ALLOW_BACKSLASH = "io.httpAllowBackslash";
+    String PARAM_IO_HTTP_ROUTING_AUTHORIZATION_STATE_POOL_TIMEOUT = "ioHttpRoutingAuthorizationStatePoolTimeout";
+    String PARAM_IO_HTTP_ROUTING_AUTHORIZATION_STATE_POOL_SIZE = "ioHttpRoutingAuthorizationStatePoolSize";
 
     String PARAM_CASSANDRA_MAX_SIMULTANEOUS_REQ_PER_HOST = "cassandra.maxSimultaneousRequestsPerHostThreshold";
     String PARAM_CASSANDRA_HOST_DISTANCE = "cassandra.hostDistance";

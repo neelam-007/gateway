@@ -27,7 +27,9 @@ import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.DefaultStashManagerFactory;
 import com.l7tech.server.StashManagerFactory;
+import com.l7tech.server.http.HttpStatePoolManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.assertion.credential.http.ServerHttpNegotiate;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.server.policy.variable.ServerVariables;
 import com.l7tech.server.security.kerberos.KerberosRoutingClient;
@@ -40,6 +42,7 @@ import org.apache.cxf.common.util.StringUtils;
 import org.apache.http.conn.ClientConnectionManager;
 import org.apache.http.conn.ConnectTimeoutException;
 import org.jaaslounge.decoding.kerberos.KerberosEncData;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
@@ -50,9 +53,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.*;
-import java.security.GeneralSecurityException;
-import java.security.PrivateKey;
-import java.security.Provider;
+import java.security.*;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -62,6 +63,8 @@ import java.util.zip.GZIPInputStream;
 
 import static com.l7tech.common.http.GenericHttpRequestParams.HttpVersion;
 import static com.l7tech.common.http.prov.apache.components.ClientConnectionManagerFactory.ConnectionManagerType.POOLING;
+import static com.l7tech.common.password.Sha512Crypt.crypt;
+import static com.l7tech.common.password.Sha512Crypt.generateSalt;
 
 /**
  * Server-side implementation of HTTP routing assertion.
@@ -103,6 +106,8 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
     private final URL protectedServiceUrl;
     private boolean customURLList;
     private SSLContext sslContext = null;
+    private String hashSalt;
+    private HttpStatePoolManager statePoolManager;
 
     // Only used if state pool enabled (reuses an existing state if there is one, otherwise makes a new one)
     private final Queue<Object> statePool = new ConcurrentLinkedQueue<>();
@@ -255,6 +260,8 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         }
 
         varNames = assertion.getVariablesUsed();
+        hashSalt = generateSalt(new SecureRandom(), 0);
+        statePoolManager = applicationContext.getBean("httpStatePoolManager", HttpStatePoolManager.class);
     }
 
     private String[] getOutBoundCipherSuiteArray(String cipherSuites) {
@@ -638,18 +645,11 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                     varNames);
 
             Object connectionId = null;
+            String hashedStateId = null;
             if (context.getRequest().isHttpRequest()){
-                if (assertion.isPassthroughHttpAuthentication()) {
-                    connectionId = context.getRequest().getHttpRequestKnob().getConnectionIdentifier();
-                } else {
-                    //Fix for bug #10257, do the binding when Authorization is pass through.
-                    for ( final HttpHeader header : routedRequestParams.getExtraHeaders() ) {
-                        if ( HttpConstants.HEADER_AUTHORIZATION.equalsIgnoreCase(header.getName()) ) {
-                            connectionId = context.getRequest().getHttpRequestKnob().getConnectionIdentifier();
-                            break;
-                        }
-                    }
-                }
+                Pair<Object, String> connectionIds = buildConnectionId(context, routedRequestParams, url);
+                connectionId = connectionIds.left;
+                hashedStateId = connectionIds.right;
             }
 
             final HttpProxyConfig proxyConfig = StringUtils.isEmpty(assertion.getProxyHost())
@@ -708,25 +708,14 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 }
             }
 
-            // bypass use of statePool if using dynamic specified credentials or an Authorization header from the Request (e.g. HTTP Basic, Digest, or NTLM)
-            if (specifiedCredentialsUseVariables || assertion.isPassthroughHttpAuthentication()) {
+            // bypass use of statePool if using dynamic specified credentials
+            // or if an Authorization header is provided in the Request (e.g. HTTP Basic, Digest, or NTLM) and (we could not hash or not allowed to)
+            if (specifiedCredentialsUseVariables || (assertion.isPassthroughHttpAuthentication() && hashedStateId == null)) {
                 // no use of state pool at all: pre-pool behaviour - this avoids problems with NTLM as a connection-based authentication protocol
                 routedRequest = httpClient.createRequest(method, routedRequestParams);
-            } else { // otherwise the state pool may be used
-                if (ENABLE_STATE_POOL) { // check state pool for existing state
-                    Object pooledState = statePool.poll();
-
-                    if (pooledState != null) { // if the state is found, set it on the routedRequestParams; if left unset, a new state will be created later
-                        routedRequestParams.setState(new GenericHttpState(pooledState));
-                    }
-                }
-
-                routedRequest = httpClient.createRequest(method, routedRequestParams);
-
-                if (ENABLE_STATE_POOL && routedRequestParams.getState() != null) { // pool the state on PolicyEnforcementContext closure
-                    final Object returnState = routedRequestParams.getState().getStateObject();
-                    context.runOnClose(() -> statePool.offer(returnState));
-                }
+            } else {
+                // otherwise the state pool may be used
+                routedRequest = createRequest(context, routedRequestParams, httpClient, method, hashedStateId);
             }
 
             List<HttpForwardingRuleEnforcer.Param> paramRes = HttpForwardingRuleEnforcer.
@@ -910,6 +899,87 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
         }
 
         return AssertionStatus.FAILED;
+    }
+
+    /**
+     * This method retrieve the connection identifier for a specific request.
+     *
+     * If there is an authorization header in the request, it will be hashed together with the routing url to generate an unique identifier
+     * that allows connection reuse.
+     *
+     * If there is no authorization header but passthrough auth is enabled, we use the connection identifier previously set to the request.
+     *
+     * Otherwise, no connection identifier is used.
+     *
+     * @param context
+     * @param routedRequestParams
+     * @param url
+     * @return a Pair object containing the connection identifier and the hashed url and authorization. Both can be null.
+     */
+    private Pair<Object, String> buildConnectionId(PolicyEnforcementContext context, GenericHttpRequestParams routedRequestParams, URL url) {
+        Object connectionId = null;
+        String hashedStateId = null;
+        if (assertion.isPassthroughHttpAuthentication()) {
+            connectionId = context.getRequest().getHttpRequestKnob().getConnectionIdentifier();
+        }
+        // Fix for bug #10257, Do the binding when Authorization is pass through.
+        for ( final HttpHeader header : routedRequestParams.getExtraHeaders() ) {
+            if ( HttpConstants.HEADER_AUTHORIZATION.equalsIgnoreCase(header.getName()) ) {
+                // Save the original connection ID to keep behaviour
+                connectionId = context.getRequest().getHttpRequestKnob().getConnectionIdentifier();
+
+                // US347099: Skip hashing if is NTLM authorization
+                if (header.getFullValue() != null && !header.getFullValue().startsWith(ServerHttpNegotiate.NTLM_SCHEME)) {
+                    // To hold connections and reuse, we hash the authorization together with the routed url
+                    try {
+                        hashedStateId = hashAuthorizationAndURL(url.toString(), header.getFullValue());
+                        connectionId = hashedStateId;
+                    } catch (NoSuchAlgorithmException e) {
+                        logger.log(Level.WARNING, ExceptionUtils.getDebugException(e), () -> "Error hashing Authorization for connection identification");
+                    }
+                }
+                break;
+            }
+        }
+        return new Pair<>(connectionId, hashedStateId);
+    }
+
+    @NotNull
+    public String hashAuthorizationAndURL(String url, String authorizationHeader) throws NoSuchAlgorithmException {
+        return crypt(MessageDigest.getInstance("SHA-512"), MessageDigest.getInstance("SHA-512"), (url + authorizationHeader).getBytes(), this.hashSalt);
+    }
+
+    private GenericHttpRequest createRequest(PolicyEnforcementContext context, GenericHttpRequestParams routedRequestParams,
+                                                            GenericHttpClient httpClient, HttpMethod method,
+                                                            final String hashedStateId) throws GenericHttpException {
+        // otherwise the state pool may be used
+        if (ENABLE_STATE_POOL) { // check state pool for existing state
+            Object pooledState;
+            // If we have a hashed state id we try to use it to grab an existing pooled state
+            // This will happen if an authorization header is present in the request
+            if (hashedStateId != null) {
+                pooledState = statePoolManager.getFromStateCache(hashedStateId);
+            } else {
+                pooledState = statePool.poll();
+            }
+
+            if (pooledState != null) {
+                // if the state is found, set it on the routedRequestParams; if left unset, a new state will be created later
+                routedRequestParams.setState(new GenericHttpState(pooledState));
+            }
+        }
+
+        GenericHttpRequest routedRequest = httpClient.createRequest(method, routedRequestParams);
+
+        if (ENABLE_STATE_POOL && routedRequestParams.getState() != null) { // pool the state on PolicyEnforcementContext closure
+            final Object returnState = routedRequestParams.getState().getStateObject();
+            if (hashedStateId != null) {
+                context.runOnClose(() -> statePoolManager.putToStateCacheIfAbsent(hashedStateId, returnState));
+            } else {
+                context.runOnClose(() -> statePool.offer(returnState));
+            }
+        }
+        return routedRequest;
     }
 
     private HttpProxyConfig buildHttpProxyConfig(PolicyEnforcementContext context) throws FindException {
