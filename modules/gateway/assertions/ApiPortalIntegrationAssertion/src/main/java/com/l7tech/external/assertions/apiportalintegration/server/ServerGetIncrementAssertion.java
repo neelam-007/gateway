@@ -214,13 +214,18 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
 
     private boolean isApiPlanEnabled(final String connName, final String tenantId)  {
         boolean isEnabled = false;
-        Map<String, List> isAblePlanEnabledMap =  (Map<String, List>)  queryJdbc(connName,
+        Map<String, List> isApiPlanEnabledMap =  (Map<String, List>)  queryJdbc(connName,
                 String.format(API_PLAN_SETTING_ENABLE_STATUS, tenantId),
                 new ArrayList<>());
         //Only one key returned
-        final String SETTING_COL_NAME =  isAblePlanEnabledMap.keySet().iterator().next();
-        if(isAblePlanEnabledMap.containsKey(SETTING_COL_NAME) && !isAblePlanEnabledMap.get(SETTING_COL_NAME).isEmpty()) {
-            isEnabled = Boolean.parseBoolean(isAblePlanEnabledMap.get(SETTING_COL_NAME).get(0).toString());
+        Set<String> isEnabledMap = isApiPlanEnabledMap.keySet();
+        if(isEnabledMap.isEmpty()) {
+            //default as off
+            return false;
+        }
+        final String SETTING_COL_NAME =  isEnabledMap.iterator().next();
+        if(isApiPlanEnabledMap.containsKey(SETTING_COL_NAME) && !isApiPlanEnabledMap.get(SETTING_COL_NAME).isEmpty()) {
+            isEnabled = Boolean.parseBoolean(isApiPlanEnabledMap.get(SETTING_COL_NAME).get(0).toString());
         }
         return isEnabled;
     }
