@@ -9,6 +9,8 @@ import java.util.function.Function;
  * A SharedKeyValueStore provides a way for the gateway to store values indexed by a key, and possibly sharing these information
  * across a cluster.
  * Also provides thread safe and atomicity guarantees on operations on the keys and values.
+ *
+ * In general, any method may throw an unchecked exception.
  */
 public interface SharedKeyValueStore<K extends Serializable, V extends Serializable> {
 

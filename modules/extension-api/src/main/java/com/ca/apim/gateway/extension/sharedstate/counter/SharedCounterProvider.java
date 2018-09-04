@@ -10,6 +10,7 @@ public interface SharedCounterProvider extends Extension {
 
     /**
      * Get the counter store identified by the name or create and return the counter store with the provided configuration
+     * May throw an unchecked exception.
      * @param name the name of the counter store
      * @return SharedCounterStore
      */

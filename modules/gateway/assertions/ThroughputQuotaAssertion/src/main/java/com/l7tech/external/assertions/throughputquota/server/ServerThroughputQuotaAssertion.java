@@ -23,6 +23,7 @@ import com.l7tech.server.policy.assertion.AbstractServerAssertion;
 import com.l7tech.server.policy.assertion.AssertionStatusException;
 import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.Config;
+import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.SyspropUtil;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.context.ApplicationContext;
@@ -87,19 +88,29 @@ public class ServerThroughputQuotaAssertion extends AbstractServerAssertion<Thro
         final long quota = getQuota(context);
         context.setVariable(maxVariable, String.valueOf(quota));
 
-        switch (assertion.getCounterStrategy()) {
-            case ThroughputQuotaAssertion.ALWAYS_INCREMENT:
-                return doIncrementAlways(context, quota);
-            case ThroughputQuotaAssertion.INCREMENT_ON_SUCCESS:
-                return doIncrementOnSuccess(context, quota);
-            case ThroughputQuotaAssertion.DECREMENT:
-                return doDecrement(context);
-            case ThroughputQuotaAssertion.RESET:
-                return doReset(context);
-            default:
-                // not supposed to happen
-                throw new PolicyAssertionException(assertion, "This assertion is not configured properly. " +
-                        "Unsupported counterStrategy: " + assertion.getCounterStrategy());
+        try {
+            switch (assertion.getCounterStrategy()) {
+                case ThroughputQuotaAssertion.ALWAYS_INCREMENT:
+                    return doIncrementAlways(context, quota);
+                case ThroughputQuotaAssertion.INCREMENT_ON_SUCCESS:
+                    return doIncrementOnSuccess(context, quota);
+                case ThroughputQuotaAssertion.DECREMENT:
+                    return doDecrement(context);
+                case ThroughputQuotaAssertion.RESET:
+                    return doReset(context);
+                default:
+                    // not supposed to happen
+                    throw new PolicyAssertionException(assertion, "This assertion is not configured properly. " +
+                            "Unsupported counterStrategy: " + assertion.getCounterStrategy());
+            }
+        } catch (AssertionStatusException e) {
+            throw e;
+        } catch (Exception e) {
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
+                    new String[]{"Unexpected error while updating counter: " + e.getMessage()},
+                    ExceptionUtils.getDebugException(e)
+            );
+            return AssertionStatus.FAILED;
         }
     }
 

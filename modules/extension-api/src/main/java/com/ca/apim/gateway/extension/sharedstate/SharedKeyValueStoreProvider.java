@@ -12,7 +12,7 @@ public interface SharedKeyValueStoreProvider extends Extension {
 
     /**
      * Get the key value store identified by the name or create and return the key value store with the provided configuration
-     *
+     * May throw an unchecked exception.
      * @param name the name of the key value store
      * @param config the configuration of the key value store
      * @return SharedKeyValueStore, never null

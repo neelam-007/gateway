@@ -7,6 +7,8 @@ import java.util.Properties;
 /**
  * A SharedCounterStore provides thread safe and atomicity guarantees on operation of counters it holds
  * Currently, an update operation should consider update 5 long values inside counter object
+ *
+ * In general, any method may throw an unchecked exception.
  */
 public interface SharedCounterStore {
 

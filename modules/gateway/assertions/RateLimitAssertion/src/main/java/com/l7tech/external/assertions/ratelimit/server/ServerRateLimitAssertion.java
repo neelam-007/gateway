@@ -139,6 +139,14 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
         } catch (NumberFormatException e) {
             logAndAudit( AssertionMessages.VARIABLE_INVALID_VALUE, assertion.getMaxConcurrency(), "Integer" );
             return AssertionStatus.FAILED;
+        } catch (AssertionStatusException e) {
+            throw e;
+        } catch (Exception e) {
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
+                    new String[]{"Unexpected error while accessing provider: " + e.getMessage()},
+                    ExceptionUtils.getDebugException(e)
+            );
+            return AssertionStatus.FAILED;
         }
 
         if (maxConcurrency > 0) {
@@ -160,6 +168,14 @@ public class ServerRateLimitAssertion extends AbstractServerAssertion<RateLimitA
             return AssertionStatus.FAILED;
         } catch (NumberFormatException e) {
             logAndAudit( AssertionMessages.VARIABLE_INVALID_VALUE, assertion.getMaxRequestsPerSecond(), "Integer" );
+            return AssertionStatus.FAILED;
+        } catch (AssertionStatusException e) {
+            throw e;
+        } catch (Exception e) {
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
+                    new String[]{"Unexpected error while accessing provider: " + e.getMessage()},
+                    ExceptionUtils.getDebugException(e)
+            );
             return AssertionStatus.FAILED;
         }
 

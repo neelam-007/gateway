@@ -19,7 +19,6 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.context.ApplicationContext;
 import org.springframework.dao.DataAccessException;
 
-import javax.inject.Inject;
 import java.io.IOException;
 import java.util.logging.Level;
 
@@ -67,6 +66,12 @@ public class ServerThroughputQuotaQueryAssertion extends AbstractServerAssertion
         } catch (DataAccessException | HibernateException e) {
             getAudit().logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{"Unable to query counter: " + ExceptionUtils.getMessage(e)}, e);
             return AssertionStatus.SERVER_ERROR;
+        } catch (Exception e) {
+            logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
+                    new String[]{"Unexpected error while querying counter: " + e.getMessage()},
+                    ExceptionUtils.getDebugException(e)
+            );
+            return AssertionStatus.FAILED;
         }
 
         if (counterState == null) {
