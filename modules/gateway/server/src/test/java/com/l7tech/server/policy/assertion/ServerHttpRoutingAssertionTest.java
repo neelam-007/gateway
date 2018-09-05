@@ -13,6 +13,7 @@ import com.l7tech.common.http.prov.apache.components.HttpComponentsClient;
 import com.l7tech.common.io.PermissiveHostnameVerifier;
 import com.l7tech.common.io.TestSSLSocketFactory;
 import com.l7tech.common.io.XmlUtil;
+import com.l7tech.common.io.failover.OrderedStickyFailoverStrategy;
 import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.StashManager;
@@ -197,6 +198,98 @@ public class ServerHttpRoutingAssertionTest {
         final InputStream bodyAsInputStream = response.getMimeKnob().getEntireMessageBodyAsInputStream();
         final String responseAsString = new String(IOUtils.slurpStream(bodyAsInputStream));
         Assert.assertEquals("Incorrect response", expectedResponse, responseAsString);
+    }
+
+    @Test
+    @BugId("DE366529")
+    public void testOverwriteResponseVariableWithMultipleUrls() throws Exception {
+        String url1 = "/url1";
+        String url2 = "/url2";
+        String serverUrl = "http://localhost:17801";
+
+        String[] servers = new String[] {serverUrl + url1, serverUrl + url2};
+        OrderedStickyFailoverStrategy strategy = new OrderedStickyFailoverStrategy(servers);
+        HttpRoutingAssertion hra = new HttpRoutingAssertion();
+        final String responseVariable = "result";
+        hra.setResponseMsgDest(responseVariable);
+        hra.setCustomURLs(servers);
+        hra.setFailoverStrategyName(strategy.getName());
+        hra.setHttpMethod(HttpMethod.GET);
+        hra.setForceIncludeRequestBody(false);
+
+        ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+        TestingHttpClientFactory testingHttpClientFactory = appContext.getBean(CLIENT_FACTORY, TestingHttpClientFactory.class);
+        final MockGenericHttpClient mockClient = new MockGenericHttpClient();
+        mockClient.setCreateRequestListener(new MockGenericHttpClient.CreateRequestListener() {
+            @Override
+            public MockGenericHttpClient.MockGenericHttpRequest onCreateRequest(HttpMethod method, GenericHttpRequestParams params, MockGenericHttpClient.MockGenericHttpRequest request) {
+                if (params.getTargetUrl().getPath().equalsIgnoreCase(url1)) {
+                    mockClient.setResponseStatus(404);
+                    mockClient.setResponseBody("Failed!!".getBytes());
+                } else {
+                    mockClient.setResponseStatus(202);
+                    mockClient.setResponseBody("Success!!".getBytes());
+                }
+                mockClient.setResponseHeaders(new GenericHttpHeaders(new HttpHeader[]{}));
+                return request;
+            }
+        });
+        testingHttpClientFactory.setMockHttpClient(mockClient);
+
+        PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
+        MockHttpServletRequest mockHttpServletRequest = new MockHttpServletRequest();
+        mockHttpServletRequest.setMethod("GET");
+
+        final ServerHttpRoutingAssertion routingAssertion = new ServerHttpRoutingAssertion(hra, appContext);
+        AssertionStatus assertionStatus = routingAssertion.checkRequest(pec);
+        assertEquals(AssertionStatus.NONE, assertionStatus);
+        assertEquals(202, ((Message)pec.getVariable("result")).getHttpResponseKnob().getStatus());
+        assertEquals("Success!!", new String(IOUtils.slurpStream(((Message)pec.getVariable("result")).getMimeKnob()
+                .getEntireMessageBodyAsInputStream())));
+    }
+
+    @Test
+    @BugId("DE366529")
+    public void testOverwriteResponseVariableWithMultipleInvalidUrls() throws Exception {
+        String url1 = "/url1";
+        String url2 = "/url2";
+        String serverUrl = "http://localhost:17801";
+
+        String[] servers = new String[] {serverUrl + url1, serverUrl + url2};
+        OrderedStickyFailoverStrategy strategy = new OrderedStickyFailoverStrategy(servers);
+        HttpRoutingAssertion hra = new HttpRoutingAssertion();
+        final String responseVariable = "result";
+        hra.setResponseMsgDest(responseVariable);
+        hra.setCustomURLs(servers);
+        hra.setFailoverStrategyName(strategy.getName());
+        hra.setHttpMethod(HttpMethod.GET);
+        hra.setForceIncludeRequestBody(false);
+
+        final TestAudit testAudit = new TestAudit();
+        ApplicationContext appContext = ApplicationContexts.getTestApplicationContext();
+        TestingHttpClientFactory testingHttpClientFactory = appContext.getBean(CLIENT_FACTORY, TestingHttpClientFactory.class);
+        final MockGenericHttpClient mockClient = new MockGenericHttpClient();
+        mockClient.setCreateRequestListener(new MockGenericHttpClient.CreateRequestListener() {
+            @Override
+            public MockGenericHttpClient.MockGenericHttpRequest onCreateRequest(HttpMethod method, GenericHttpRequestParams params, MockGenericHttpClient.MockGenericHttpRequest request) {
+                mockClient.setResponseStatus(404);
+                mockClient.setResponseBody("Failed!!".getBytes());
+                mockClient.setResponseHeaders(new GenericHttpHeaders(new HttpHeader[]{}));
+                return request;
+            }
+        });
+        testingHttpClientFactory.setMockHttpClient(mockClient);
+
+        PolicyEnforcementContext pec = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
+        MockHttpServletRequest mockHttpServletRequest = new MockHttpServletRequest();
+        mockHttpServletRequest.setMethod("GET");
+
+        final ServerHttpRoutingAssertion routingAssertion = new ServerHttpRoutingAssertion(hra, appContext);
+        ApplicationContexts.inject(routingAssertion, Collections.singletonMap("auditFactory", testAudit.factory()));
+
+        AssertionStatus assertionStatus = routingAssertion.checkRequest(pec);
+        assertEquals(AssertionStatus.FAILED, assertionStatus);
+        assertTrue(testAudit.isAuditPresentWithParameters(AssertionMessages.HTTPROUTE_RESPONSE_BADSTATUS, "404"));
     }
 
     @Test

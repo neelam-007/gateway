@@ -786,7 +786,8 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
             routedResponseDestination = context.getResponse();
             if (assertion.getResponseMsgDest() != null) {
                 routedResponseDestination = context.getOrCreateTargetMessage( new MessageTargetableSupport(assertion.getResponseMsgDest()), false );
-                if (routedResponseDestination.getKnob(MimeKnob.class) != null) {
+                if (routedResponseDestination.getKnob(MimeKnob.class) != null
+                        || routedResponseDestination.getKnob(HttpResponseKnob.class) != null) {
                     //this Message has already been initialized, close it so it can be reused
                     routedResponseDestination.close();
                 }
