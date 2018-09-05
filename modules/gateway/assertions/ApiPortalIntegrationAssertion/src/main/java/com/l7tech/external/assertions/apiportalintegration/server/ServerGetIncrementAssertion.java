@@ -164,7 +164,7 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
         final long incrementStart = System.currentTimeMillis();
         appJsonObj.setIncrementStart(incrementStart);
         appJsonObj.setEntityType(ServerIncrementalSyncCommon.ENTITY_TYPE_APPLICATION);
-        appJsonObj.setApiPlanEnabled(isApiPlanEnabled(connName, tenantId));
+        appJsonObj.setApiPlansEnabled(isApiPlanEnabled(connName, tenantId));
 
         Map<String, List> results;
 

@@ -146,7 +146,7 @@ public class ServerGetIncrementAssertionTest {
                 "    \"modifiedBy\" : \"user1\",\n" +
                 "    \"custom\" : \"{\\\"TEST2\\\":\\\"1234\\\",\\\"TEST1\\\":\\\"123\\\"}\"" +
                 "  } ],\n" +
-                "  \"apiPlanEnabled\" : false\n" +
+                "  \"apiPlansEnabled\" : false\n" +
                 "}";
 
         when(queryingManager.performJdbcQuery(anyString(), anyString(), anyString(), anyInt(), anyInt(), anyListOf(Object.class)))
@@ -191,7 +191,7 @@ public class ServerGetIncrementAssertionTest {
                 "    \"modifiedBy\" : \"user1\",\n" +
                 "    \"custom\" : \"{\\\"TEST2\\\":\\\"1234\\\",\\\"TEST1\\\":\\\"123\\\"}\"" +
                 "  } ],\n" +
-                "  \"apiPlanEnabled\" : true\n" +
+                "  \"apiPlansEnabled\" : true\n" +
                 "}";
 
         when(queryingManager.performJdbcQuery(anyString(), anyString(), anyString(), anyInt(), anyInt(), anyListOf(Object.class)))
@@ -234,7 +234,7 @@ public class ServerGetIncrementAssertionTest {
         "    \"modifiedBy\" : \"user1\",\n" +
         "    \"custom\" : \"{\\\"TEST2\\\":\\\"1234\\\",\\\"TEST1\\\":\\\"123\\\"}\"" +
         "  } ],\n" +
-        "  \"apiPlanEnabled\" : false\n" +
+        "  \"apiPlansEnabled\" : false\n" +
         "}";
 
     Map<String, List> appWithNoApiResults = new HashMap<>();
@@ -333,7 +333,7 @@ public class ServerGetIncrementAssertionTest {
                 "    \"modifiedBy\" : \"user1\",\n" +
                 "    \"custom\" : \"{}\"\n" +
                 "  } ],\n" +
-                "  \"apiPlanEnabled\" : false\n" +
+                "  \"apiPlansEnabled\" : false\n" +
                 "}";
 
         Map<String, List> results = buildResultsMapWithMultipleApis();
@@ -379,7 +379,7 @@ public class ServerGetIncrementAssertionTest {
                 "    \"modifiedBy\" : \"user1\",\n" +
                 "    \"custom\" : \"{}\"\n" +
                 "  } ],\n" +
-                "  \"apiPlanEnabled\" : false\n" +
+                "  \"apiPlansEnabled\" : false\n" +
                 "}";
 
         Map<String, List> results = buildResultsMapWithMultipleApis();
