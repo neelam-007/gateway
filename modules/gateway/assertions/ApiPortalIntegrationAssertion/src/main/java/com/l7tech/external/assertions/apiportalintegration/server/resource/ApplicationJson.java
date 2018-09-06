@@ -13,6 +13,7 @@ public class ApplicationJson {
     private long incrementStart;
     private String entityType;
     private String bulkSync;
+    private boolean isApiPlansEnabled = false;
     private List<String> deletedIds = new ArrayList<>();
     private List<ApplicationEntity> newOrUpdatedEntities = new ArrayList<>();
 
@@ -57,6 +58,14 @@ public class ApplicationJson {
 
     public void setNewOrUpdatedEntities(List<ApplicationEntity> newOrUpdatedEntities) {
         this.newOrUpdatedEntities = newOrUpdatedEntities;
+    }
+
+    public boolean isApiPlansEnabled() {
+        return isApiPlansEnabled;
+    }
+
+    public void setApiPlansEnabled(boolean apiPlansEnabled) {
+        isApiPlansEnabled = apiPlansEnabled;
     }
 
     /**

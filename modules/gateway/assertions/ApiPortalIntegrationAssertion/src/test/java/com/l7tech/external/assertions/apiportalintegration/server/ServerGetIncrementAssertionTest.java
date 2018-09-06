@@ -63,19 +63,23 @@ public class ServerGetIncrementAssertionTest {
       ArgumentCaptor<String> queryCaptor = ArgumentCaptor.forClass(String.class);
       ArgumentCaptor<List> queryArgumentsCaptor = ArgumentCaptor.forClass(List.class);
       when(queryingManager.performJdbcQuery(anyString(), queryCaptor.capture(), anyString(), anyInt(), anyInt(), queryArgumentsCaptor.capture()))
-                .thenReturn(buildDeletedAppResults(), new HashMap<>(), buildResultsMap(), buildCustomFieldsResults());
+                .thenReturn(buildSettingValueResults(false), buildDeletedAppResults(), new HashMap<>(),
+                        buildResultsMap(), buildCustomFieldsResults());
       AssertionStatus result = serverAssertion.checkRequest(pec);
       assertEquals(AssertionStatus.NONE, result);
 
-      verify(queryingManager, times(2)).performJdbcQuery(anyString(), anyString(), anyString(), anyInt(), anyInt(), anyListOf(Object.class));
+      verify(queryingManager, times(3)).performJdbcQuery(anyString(), anyString(), anyString(), anyInt(), anyInt(), anyListOf(Object.class));
+      //verify api plan enable selection
+      String settingQuery = queryCaptor.getAllValues().get(0);
+      assertEquals("SELECT value FROM SETTING WHERE name='FEATURE_FLAG_API_PLANS' AND tenant_id = 'tenant1'", settingQuery);
       //verify api plans specific query used for fetching apps with apis
-      String appsWithApisQuery = queryCaptor.getAllValues().get(1);
+      String appsWithApisQuery = queryCaptor.getAllValues().get(2);
       assertTrue(appsWithApisQuery.contains("DISTINCT aaapx.API_UUID,aaapx.API_PLAN_UUID,a.UUID,concat(a.NAME," +
               " '-', o.NAME) as NAME,a.API_KEY,a.KEY_SECRET,coalesce(r.PREVIOUS_STATE, a.STATUS) as " +
               "STATUS,a.ORGANIZATION_UUID,o.NAME as ORGANIZATION_NAME,a.OAUTH_CALLBACK_URL,a" +
               ".OAUTH_SCOPE,a.OAUTH_TYPE,a.MAG_SCOPE,a.MAG_MASTER_KEY,a.CREATED_BY,a" +
               ".MODIFIED_BY"));
-      assertEquals(7, queryArgumentsCaptor.getAllValues().get(1).size());
+      assertEquals(7, queryArgumentsCaptor.getAllValues().get(2).size());
     }
 
     @Test
@@ -92,21 +96,22 @@ public class ServerGetIncrementAssertionTest {
       ArgumentCaptor<String> queryCaptor = ArgumentCaptor.forClass(String.class);
       ArgumentCaptor<List> queryArgumentsCaptor = ArgumentCaptor.forClass(List.class);
       when(queryingManager.performJdbcQuery(anyString(), queryCaptor.capture(), anyString(), anyInt(), anyInt(), queryArgumentsCaptor.capture()))
-                .thenReturn(buildDeletedAppResults(), new HashMap<>(), buildResultsMap(), buildCustomFieldsResults());
+                .thenReturn(buildSettingValueResults(false), buildDeletedAppResults(),
+                        new HashMap<>(), buildResultsMap(), buildCustomFieldsResults());
       AssertionStatus result = serverAssertion.checkRequest(pec);
       assertEquals(AssertionStatus.NONE, result);
 
-      verify(queryingManager, times(4)).performJdbcQuery(anyString(), anyString(), anyString(), anyInt(), anyInt(), anyListOf(Object.class));
+      verify(queryingManager, times(5)).performJdbcQuery(anyString(), anyString(), anyString(), anyInt(), anyInt(), anyListOf(Object.class));
       //verify api group specific query used for app with no apis
-      assertEquals(ServerIncrementalSyncCommon.SELECT_APP_WITH_NO_API_SQL, queryCaptor.getAllValues().get(1));
+      assertEquals(ServerIncrementalSyncCommon.SELECT_APP_WITH_NO_API_SQL, queryCaptor.getAllValues().get(2));
       //verify api group specific query used for fetching apps with apis
-      String appsWithApisQuery = queryCaptor.getAllValues().get(2);
+      String appsWithApisQuery = queryCaptor.getAllValues().get(3);
       assertTrue(appsWithApisQuery.contains("DISTINCT aaagx.API_UUID,a.UUID,concat(a.NAME," +
               " '-', o.NAME) as NAME,a.API_KEY,a.KEY_SECRET,coalesce(r.PREVIOUS_STATE, a.STATUS) as " +
               "STATUS,a.ORGANIZATION_UUID,o.NAME as ORGANIZATION_NAME,a.OAUTH_CALLBACK_URL,a" +
               ".OAUTH_SCOPE,a.OAUTH_TYPE,a.MAG_SCOPE,a.MAG_MASTER_KEY,a.CREATED_BY,a" +
               ".MODIFIED_BY"));
-      assertEquals(11, queryArgumentsCaptor.getAllValues().get(2).size());
+      assertEquals(11, queryArgumentsCaptor.getAllValues().get(3).size());
     }
 
     @Test
@@ -140,11 +145,13 @@ public class ServerGetIncrementAssertionTest {
                 "    \"createdBy\" : \"admin\",\n" +
                 "    \"modifiedBy\" : \"user1\",\n" +
                 "    \"custom\" : \"{\\\"TEST2\\\":\\\"1234\\\",\\\"TEST1\\\":\\\"123\\\"}\"" +
-                "  } ]\n" +
+                "  } ],\n" +
+                "  \"apiPlansEnabled\" : false\n" +
                 "}";
 
         when(queryingManager.performJdbcQuery(anyString(), anyString(), anyString(), anyInt(), anyInt(), anyListOf(Object.class)))
-                .thenReturn(buildDeletedAppResults(), new HashMap<>(), buildResultsMap(), buildCustomFieldsResults());
+                .thenReturn(buildSettingValueResults(false), buildDeletedAppResults(),
+                        new HashMap<>(), buildResultsMap(), buildCustomFieldsResults());
 
         String json = serverAssertion.getJsonMessage("conn", "1446501119477", "","", false);
         // remove timestamp for comparison
@@ -183,11 +190,12 @@ public class ServerGetIncrementAssertionTest {
                 "    \"createdBy\" : \"admin\",\n" +
                 "    \"modifiedBy\" : \"user1\",\n" +
                 "    \"custom\" : \"{\\\"TEST2\\\":\\\"1234\\\",\\\"TEST1\\\":\\\"123\\\"}\"" +
-                "  } ]\n" +
+                "  } ],\n" +
+                "  \"apiPlansEnabled\" : true\n" +
                 "}";
 
         when(queryingManager.performJdbcQuery(anyString(), anyString(), anyString(), anyInt(), anyInt(), anyListOf(Object.class)))
-                .thenReturn(buildDeletedAppResults(), buildResultsMap(), buildCustomFieldsResults());
+                .thenReturn(buildSettingValueResults(true), buildDeletedAppResults(), buildResultsMap(), buildCustomFieldsResults());
 
         String json = serverAssertion.getJsonMessage("conn", "1446501119477", "","", true);
         // remove timestamp for comparison
@@ -225,14 +233,15 @@ public class ServerGetIncrementAssertionTest {
         "    \"createdBy\" : \"admin\",\n" +
         "    \"modifiedBy\" : \"user1\",\n" +
         "    \"custom\" : \"{\\\"TEST2\\\":\\\"1234\\\",\\\"TEST1\\\":\\\"123\\\"}\"" +
-        "  } ]\n" +
+        "  } ],\n" +
+        "  \"apiPlansEnabled\" : false\n" +
         "}";
 
     Map<String, List> appWithNoApiResults = new HashMap<>();
     appWithNoApiResults.put("uuid", Arrays.asList("app with no api"));
 
     when(queryingManager.performJdbcQuery(anyString(), anyString(), anyString(), anyInt(), anyInt(), anyListOf(Object.class)))
-        .thenReturn(buildDeletedAppResults(), appWithNoApiResults, buildResultsMap(), buildCustomFieldsResults());
+        .thenReturn(buildSettingValueResults(false), buildDeletedAppResults(), appWithNoApiResults, buildResultsMap(), buildCustomFieldsResults());
 
     String json = serverAssertion.getJsonMessage("conn", "1446501119477", "","", false);
     // remove timestamp for comparison
@@ -269,6 +278,13 @@ public class ServerGetIncrementAssertionTest {
       Map<String, List> results = new HashMap<>();
       results.put("entity_uuid", Arrays.asList("3c2acfb5-8803-4c0c-8de3-a9224cad2595", "066f33d1-7e45-4434-be69-5aa7d20934e1"));
       return results;
+    }
+
+    private Map<String, List> buildSettingValueResults(Boolean isEnabled) {
+        Map<String, List> results = new HashMap<>();
+        if(isEnabled != null)
+            results.put("value", Arrays.asList(Boolean.toString(isEnabled)));
+        return results;
     }
 
     private Map<String, List> buildCustomFieldsResults() {
@@ -316,12 +332,13 @@ public class ServerGetIncrementAssertionTest {
                 "    \"createdBy\" : \"admin\",\n" +
                 "    \"modifiedBy\" : \"user1\",\n" +
                 "    \"custom\" : \"{}\"\n" +
-                "  } ]\n" +
+                "  } ],\n" +
+                "  \"apiPlansEnabled\" : false\n" +
                 "}";
 
         Map<String, List> results = buildResultsMapWithMultipleApis();
         when(queryingManager.performJdbcQuery(anyString(), anyString(), anyString(), anyInt(), anyInt(), anyListOf(Object.class)))
-                .thenReturn(results, new HashMap<String, String>());
+                .thenReturn(buildSettingValueResults(null), results, new HashMap<String, String>());
         String json = serverAssertion.getJsonMessage("conn", null, "","", false);
         // remove timestamp for comparison
         assertEquals(json.replaceFirst("\\d{13}", "").replaceAll("\\s+", ""), ref.replaceAll("\\s+", ""));
@@ -361,12 +378,13 @@ public class ServerGetIncrementAssertionTest {
                 "    \"createdBy\" : \"admin\",\n" +
                 "    \"modifiedBy\" : \"user1\",\n" +
                 "    \"custom\" : \"{}\"\n" +
-                "  } ]\n" +
+                "  } ],\n" +
+                "  \"apiPlansEnabled\" : false\n" +
                 "}";
 
         Map<String, List> results = buildResultsMapWithMultipleApis();
         when(queryingManager.performJdbcQuery(anyString(), anyString(), anyString(), anyInt(), anyInt(), anyListOf(Object.class)))
-                .thenReturn(results, new HashMap<String, String>());
+                .thenReturn(buildSettingValueResults(false), results, new HashMap<String, String>());
         String json = serverAssertion.getJsonMessage("conn", null, "","", true);
         // remove timestamp for comparison
         assertEquals(json.replaceFirst("\\d{13}", "").replaceAll("\\s+", ""), ref.replaceAll("\\s+", ""));
