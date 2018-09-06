@@ -37,11 +37,4 @@
             <where>entity_type='WORK_QUEUE'</where>
         </delete>
     </changeSet>
-    <changeSet author="gateway" id="dropForeignKeyConstraint_workqueue">
-        <dropForeignKeyConstraint baseTableName="work_queue" constraintName="work_queue_security_zone"/>
-    </changeSet>
-    <changeSet author="gateway" id="dropTable_workqueue">
-        <dropTable cascadeConstraints="true"
-                   tableName="work_queue"/>
-    </changeSet>
 </databaseChangeLog>
