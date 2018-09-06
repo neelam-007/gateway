@@ -94,8 +94,7 @@ public class GatewayMessageIdManager implements MessageIdManager {
             LOGGER.log(Level.WARNING, "Provider with name {0} cannot be found. MessageIds cannot be stored.", providerName);
         } else {
             messageIdMap = sharedKeyValueStoreProvider.getKeyValueStore(MESSAGE_ID_MAP_NAME, new Configuration().set(PERSISTED.name(), FALSE.toString()));
-            LOGGER.log(Level.FINE, "MessageIds will be stored using counter provider: {1}",
-                    new Object[]{this.getClass().getSimpleName(), sharedKeyValueStoreProvider.getRegistryKey()});
+            LOGGER.log(Level.FINE, "MessageIds will be stored using counter provider: {0}", sharedKeyValueStoreProvider.getRegistryKey());
         }
         initialized.set(true);
     }
