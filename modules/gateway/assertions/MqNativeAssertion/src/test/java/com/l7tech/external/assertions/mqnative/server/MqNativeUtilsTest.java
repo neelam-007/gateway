@@ -4,25 +4,37 @@ import com.ibm.mq.MQException;
 import com.ibm.mq.MQMessage;
 import com.ibm.mq.headers.MQDataException;
 import com.ibm.mq.headers.MQRFH2;
+import com.l7tech.server.ServerConfig;
+import com.l7tech.server.cluster.ClusterPropertyCache;
 import com.l7tech.test.BugId;
+import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.JdkLoggerConfigurator;
 import com.l7tech.util.Pair;
 import org.jetbrains.annotations.NotNull;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.runners.MockitoJUnitRunner;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 
 import static com.ibm.mq.constants.CMQC.MQFMT_RF_HEADER;
 import static com.ibm.mq.constants.CMQC.MQFMT_RF_HEADER_2;
 import static com.ibm.mq.constants.MQPropertyIdentifiers.*;
+import static com.l7tech.server.ServerConfigParams.PARAM_IO_MQ_CONVERSION_CCSID;
+import static com.l7tech.server.ServerConfigParams.PARAM_IO_MQ_CONVERT_MESSAGE_APPLICATION_DATA_FORMAT;
 import static org.junit.Assert.*;
 
+@RunWith(MockitoJUnitRunner.class)
 public class MqNativeUtilsTest {
     /**
      * PROPCTL=COMPAT expected message format
@@ -53,6 +65,95 @@ public class MqNativeUtilsTest {
         System.arraycopy(bytes1, 0, concatenated, 0, bytes1.length);
         System.arraycopy(bytes2, 0, concatenated, bytes1.length, bytes2.length);
         return concatenated;
+    }
+
+    @Before
+    public void setup() {
+        ClusterPropertyCache clusterPropertyCache = new ClusterPropertyCache();
+        ServerConfig.getInstance().setClusterPropertyCache(clusterPropertyCache);
+    }
+
+    @After
+    public void tearDown() {
+        final String DEFAULT_CCSID = "0";
+        final String DEFAULT_CONVERT_FLAG = "true";
+        setupContentTypeHeaderConfig(DEFAULT_CONVERT_FLAG, DEFAULT_CCSID);
+        ConfigFactory.clearCachedConfig();
+    }
+
+    /**
+     * Setup cluster wide properties for the content type header unit tests
+     *
+     * @param mqConvertMessageApplicationDataFormatVal Flag to turn on MQ_CONVERT
+     * @param mqConversionCCSIDVal MQ CCSID numerical value
+     */
+    private void setupContentTypeHeaderConfig(String mqConvertMessageApplicationDataFormatVal, String mqConversionCCSIDVal) {
+        final ServerConfig sc = ServerConfig.getInstance();
+        List<ServerConfig.PropertyRegistrationInfo> list = new ArrayList<>();
+        list.add(ServerConfig.PropertyRegistrationInfo.prInfo(
+                PARAM_IO_MQ_CONVERT_MESSAGE_APPLICATION_DATA_FORMAT,
+                sc.getClusterPropertyName(PARAM_IO_MQ_CONVERT_MESSAGE_APPLICATION_DATA_FORMAT),
+                "Testing",
+                mqConvertMessageApplicationDataFormatVal));
+        list.add(ServerConfig.PropertyRegistrationInfo.prInfo(
+                PARAM_IO_MQ_CONVERSION_CCSID,
+                sc.getClusterPropertyName(PARAM_IO_MQ_CONVERSION_CCSID),
+                "Testing",
+                mqConversionCCSIDVal));
+        sc.registerServerConfigProperties(list);
+    }
+
+    @Test
+    public void testGetContentTypeHeaderConversion() throws IOException {
+        final String IBM_CCSID_UTF8 = "1208";
+        final String CONVERT_FLAG = "true";
+
+        setupContentTypeHeaderConfig(CONVERT_FLAG, IBM_CCSID_UTF8);
+
+        MQMessage mqMessage = new MQMessage();
+        mqMessage.characterSet = MqNativeUtils.getConversionCCSID();
+        String msgCCSID = String.valueOf(mqMessage.characterSet);
+
+        assertEquals(IBM_CCSID_UTF8, msgCCSID);
+
+        String msgCharset = MqNativeUtils.getContentTypeHeader().getEncoding().toString();
+
+        assertEquals("UTF-8", msgCharset);
+    }
+
+    @Test
+    public void testGetContentTypeHeaderNoConversion() throws IOException {
+        final String IBM_CCSID_UTF8 = "1208";
+        final String CONVERT_FLAG = "false";
+
+        setupContentTypeHeaderConfig(CONVERT_FLAG, IBM_CCSID_UTF8);
+
+        MQMessage mqMessage = new MQMessage();
+        mqMessage.characterSet = MqNativeUtils.getConversionCCSID();
+        String msgCCSID = String.valueOf(mqMessage.characterSet);
+
+        assertEquals("819", msgCCSID);
+
+        String msgCharset = MqNativeUtils.getContentTypeHeader().getEncoding().toString();
+
+        assertEquals("ISO-8859-1", msgCharset);
+    }
+
+    @Test(expected = UnsupportedEncodingException.class)
+    public void testGetContentTypeHeaderUnsupportedEncoding() throws IOException {
+        final String IBM_CCSID_DUMMY = "101";
+        final String CONVERT_FLAG = "true";
+
+        setupContentTypeHeaderConfig(CONVERT_FLAG, IBM_CCSID_DUMMY);
+
+        MQMessage mqMessage = new MQMessage();
+        mqMessage.characterSet = MqNativeUtils.getConversionCCSID();
+        String msgCCSID = String.valueOf(mqMessage.characterSet);
+
+        assertEquals(IBM_CCSID_DUMMY, msgCCSID);
+
+        MqNativeUtils.getContentTypeHeader();
+        fail(); // Expected to throw exception above.
     }
 
     @Test

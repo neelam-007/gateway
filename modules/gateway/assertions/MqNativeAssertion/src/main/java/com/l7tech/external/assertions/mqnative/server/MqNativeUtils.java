@@ -4,9 +4,11 @@ import com.ibm.mq.MQC;
 import com.ibm.mq.MQException;
 import com.ibm.mq.MQManagedObject;
 import com.ibm.mq.MQMessage;
+import com.ibm.mq.headers.CCSID;
 import com.ibm.mq.headers.MQDataException;
 import com.ibm.mq.headers.MQHeaderList;
 import com.ibm.mq.headers.internal.Header;
+import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.external.assertions.mqnative.MqNativeAcknowledgementType;
 import com.l7tech.external.assertions.mqnative.MqNativeConstants;
 import com.l7tech.gateway.common.security.password.SecurePassword;
@@ -41,6 +43,7 @@ import static com.ibm.mq.constants.MQConstants.*;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
 import static com.l7tech.server.ServerConfigParams.PARAM_IO_MQ_CONVERT_MESSAGE_APPLICATION_DATA_FORMAT;
 import static com.l7tech.server.ServerConfigParams.PARAM_IO_MQ_FORCE_RETURN_PROPS_IN_MQRFH2_HEADER;
+import static com.l7tech.server.ServerConfigParams.PARAM_IO_MQ_CONVERSION_CCSID;
 import static com.l7tech.util.Option.none;
 import static com.l7tech.util.Option.some;
 import static com.l7tech.util.TextUtils.isNotEmpty;
@@ -53,6 +56,9 @@ public class MqNativeUtils {
 
     public static final String PREIFX = "mqnative";
     public static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd-HH.mm.ss.SSSSSS");
+    private static final int DEFAULT_CCSID = 819; // IBM CCSID for ISO-8859-1
+    private static final String XML_CONTENT_TYPE_HEADER_TEMPLATE = "text/xml; charset=";
+
     private static final Logger logger = Logger.getLogger(MqNativeUtils.class.getName());
 
     // Some expected reason codes (see more from http://publib.boulder.ibm.com/infocenter/wmqv7/v7r1/topic/com.ibm.mq.doc/fm12030_.htm)
@@ -460,5 +466,55 @@ public class MqNativeUtils {
     public static boolean isForcePropertiesInMQRFH2HeaderEnabled() {
         ServerConfig config = ServerConfig.getInstance();
         return config.getBooleanProperty(PARAM_IO_MQ_FORCE_RETURN_PROPS_IN_MQRFH2_HEADER, false);
+    }
+
+    /**
+     * Returns the CCSID/charset.
+     *
+     * @return the CCSID/charset
+     */
+    public static int getConversionCCSID() {
+        int ccsid = DEFAULT_CCSID;
+
+        if (isMessageDataConversionEnabled()) {
+            ServerConfig config = ServerConfig.getInstance();
+            ccsid = config.getIntProperty(PARAM_IO_MQ_CONVERSION_CCSID, DEFAULT_CCSID);
+        }
+
+        return ccsid;
+    }
+
+    /**
+     * Handles incoming content headers from MQ messages
+     *
+     * @throws IOException if an error occurs while parsing header
+     */
+    public static ContentTypeHeader getContentTypeHeader() throws IOException {
+        return getContentTypeHeader("");
+    }
+
+    /**
+     * Handles incoming content headers from MQ messages
+     *
+     * @param contentTypeValue Content Type Value to be set in this function
+     * @throws IOException if an error occurs while parsing header
+     */
+    public static ContentTypeHeader getContentTypeHeader(final String contentTypeValue) throws IOException {
+        String contentTypeHeaderValue;
+
+        // if the content type is not specified and mq convert is on, it will be set as "text/xml; charset='charset value from io.mqConversionCCSID'"
+        // default is set to "text/xml; charset=ISO-8859-1"
+        if (contentTypeValue == null || contentTypeValue.trim().length() == 0) {
+            int ccsid = getConversionCCSID();
+            String charset = CCSID.getCodepage(ccsid);
+            contentTypeHeaderValue = XML_CONTENT_TYPE_HEADER_TEMPLATE + charset;
+        } else {
+            contentTypeHeaderValue = contentTypeValue;
+        }
+
+        ContentTypeHeader cType = ContentTypeHeader.parseValue(contentTypeHeaderValue);
+        cType.getEncoding();
+
+        return cType;
     }
 }

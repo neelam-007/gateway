@@ -281,9 +281,10 @@ public abstract class MqNativeListener {
     {
         MQMessage readMsg = null;
         try {
-            MQMessage tempReadMsg = new MQMessage();
-            queue.get(tempReadMsg, mqGetMessageOptions);
-            readMsg = tempReadMsg;
+            MQMessage templateReadMsg = new MQMessage();
+            templateReadMsg.characterSet = MqNativeUtils.getConversionCCSID();
+            queue.get(templateReadMsg, mqGetMessageOptions);
+            readMsg = templateReadMsg;
         } catch (MQException readEx) {
             if (readEx.getReason() != MQRC_NO_MSG_AVAILABLE) { // queue is empty
                 throw readEx;

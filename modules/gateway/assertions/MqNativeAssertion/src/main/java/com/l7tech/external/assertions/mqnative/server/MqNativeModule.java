@@ -361,11 +361,7 @@ public class MqNativeModule extends ActiveTransportModule implements Application
         try {
             // get the content type
             String contentTypeValue = connector.getProperty(PROPERTIES_KEY_OVERRIDE_CONTENT_TYPE);
-            // If the content type is not specified, it will be set as the default type, "text/xml".
-            if (contentTypeValue == null || contentTypeValue.trim().length() == 0) {
-                contentTypeValue = ContentTypeHeader.XML_DEFAULT.getFullValue();
-            }
-            ctype = ContentTypeHeader.parseValue(contentTypeValue);
+            ctype = MqNativeUtils.getContentTypeHeader(contentTypeValue);
 
             // parse the headers and payload from request mq message
             mqRequestHeaderPayload = parseHeaderPayload(mqRequestMessage); // message payload in memory

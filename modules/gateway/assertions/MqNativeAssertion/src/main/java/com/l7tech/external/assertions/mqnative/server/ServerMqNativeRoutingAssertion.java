@@ -53,7 +53,6 @@ import static com.ibm.mq.constants.MQConstants.*;
 import static com.l7tech.external.assertions.mqnative.MqNativeConstants.*;
 import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.REPLY_AUTOMATIC;
 import static com.l7tech.external.assertions.mqnative.MqNativeReplyType.REPLY_SPECIFIED_QUEUE;
-import static com.l7tech.external.assertions.mqnative.server.MqNativeEndpointConfig.*;
 import static com.l7tech.external.assertions.mqnative.server.MqNativeUtils.*;
 import static com.l7tech.gateway.common.audit.AssertionMessages.*;
 import static com.l7tech.gateway.common.transport.SsgActiveConnector.*;
@@ -400,8 +399,11 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
                 responseMessage = new HeaderDecorator((MqMessageDecorator)responseMessage);
                 responseMessage = ((MqMessageDecorator) responseMessage).decorate();
 
+                //Set content type of outgoing message
+                ContentTypeHeader cType = MqNativeUtils.getContentTypeHeader();
+
                 //Set the payload
-                gatewayResponseMessage.initialize(stashManager, ContentTypeHeader.XML_DEFAULT, new ByteArrayInputStream(mqResponseHeaderPayload.right));
+                gatewayResponseMessage.initialize(stashManager, cType, new ByteArrayInputStream(mqResponseHeaderPayload.right));
                 logAndAudit(MQ_ROUTING_GOT_RESPONSE);
 
                 //Attach message to Knob
@@ -436,6 +438,7 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
                 logger.fine("Receiving MQ outbound message");
             }
             MQMessage mqResponse = new MQMessage();
+            mqResponse.characterSet = MqNativeUtils.getConversionCCSID();
             try {
                 readQueue.get(mqResponse, gmoOptions);
             } catch (MQException readEx) {
@@ -487,6 +490,7 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
             gmo.matchOptions = MQMO_MATCH_MSG_ID | MQMO_MATCH_CORREL_ID;
             MQMessage mqResponse = new MQMessage();
             mqResponse.correlationId = selector;
+            mqResponse.characterSet = MqNativeUtils.getConversionCCSID();
 
             // wait for and read the reply
             try {
