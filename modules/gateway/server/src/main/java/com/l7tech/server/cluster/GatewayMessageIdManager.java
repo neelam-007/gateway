@@ -11,6 +11,7 @@ import com.l7tech.util.SyspropUtil;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.ca.apim.gateway.extension.sharedstate.Configuration.Param.PERSISTED;
@@ -86,21 +87,22 @@ public class GatewayMessageIdManager implements MessageIdManager {
         if (initialized.get()) {
             return;
         }
-
         String providerName = SyspropUtil.getProperty(SharedKeyValueStoreProviderRegistry.SYSTEM_PROPERTY_KEY_VALUE_STORE_PROVIDER);
-        SharedKeyValueStoreProvider sharedKeyValueStoreProvider = sharedKeyValueStoreProviderRegistry.getExtension();
-        if (sharedKeyValueStoreProvider != null) {
-            messageIdMap = sharedKeyValueStoreProvider.getKeyValueStore(MESSAGE_ID_MAP_NAME, new Configuration().set(PERSISTED.name(), FALSE.toString()));
-            LOGGER.log(FINE,"GatewayMessageIdManager is using shared key value store provider: {0}", providerName);
+        SharedKeyValueStoreProvider sharedKeyValueStoreProvider = sharedKeyValueStoreProviderRegistry.getExtension(providerName);
+
+        if (sharedKeyValueStoreProvider == null) {
+            LOGGER.log(Level.WARNING, "Provider with name {0} cannot be found. MessageIds cannot be stored.", providerName);
         } else {
-            LOGGER.log(WARNING, "No implementation of SharedKeyValueStore was provided, GatewayMessageIdManager will not work");
+            messageIdMap = sharedKeyValueStoreProvider.getKeyValueStore(MESSAGE_ID_MAP_NAME, new Configuration().set(PERSISTED.name(), FALSE.toString()));
+            LOGGER.log(Level.FINE, "MessageIds will be stored using counter provider: {1}",
+                    new Object[]{this.getClass().getSimpleName(), sharedKeyValueStoreProvider.getRegistryKey()});
         }
         initialized.set(true);
     }
 
     private void checkMessageIdMap() throws MessageIdCheckException {
         if (this.messageIdMap == null) {
-            throw new MessageIdCheckException("No implementation of SharedKeyValueStore was provided, messageIdMap is not available");
+            throw new MessageIdCheckException("MessageIds cannot be stored.");
         }
     }
 }

@@ -17,7 +17,6 @@ public class SharedKeyValueStoreProviderRegistry extends AbstractRegistryImpl<Sh
 
     private static final Logger LOGGER = Logger.getLogger(SharedKeyValueStoreProviderRegistry.class.getName());
 
-    private static final String LOCAL_KEY_VALUE_STORE_PROVIDER_NAME = "local";
     public static final String SYSTEM_PROPERTY_KEY_VALUE_STORE_PROVIDER = "com.l7tech.server.extension.sharedKeyValueStoreProvider";
 
     private final Config config;
@@ -28,7 +27,8 @@ public class SharedKeyValueStoreProviderRegistry extends AbstractRegistryImpl<Sh
         requireNonNull(config, "Config cannot be null");
         this.config = config;
 
-        register(LOCAL_KEY_VALUE_STORE_PROVIDER_NAME, new LocalKeyValueStoreProvider());
+        LocalKeyValueStoreProvider localKeyValueStoreProvider = new LocalKeyValueStoreProvider();
+        register(localKeyValueStoreProvider.getRegistryKey(), localKeyValueStoreProvider);
     }
 
     /**
@@ -37,7 +37,7 @@ public class SharedKeyValueStoreProviderRegistry extends AbstractRegistryImpl<Sh
     public SharedKeyValueStoreProvider getExtension() {
         String defaultExt = config.getProperty(SYSTEM_PROPERTY_KEY_VALUE_STORE_PROVIDER);
         if (isBlank(defaultExt)) {
-            defaultExt = LOCAL_KEY_VALUE_STORE_PROVIDER_NAME;
+            defaultExt = LocalKeyValueStoreProvider.REGISTRY_KEY;
         }
 
         return getExtension(defaultExt.trim());
@@ -52,8 +52,8 @@ public class SharedKeyValueStoreProviderRegistry extends AbstractRegistryImpl<Sh
     @Override
     public void unregister(final String key) {
         // Prevent default extension from being unregistered
-        if (LOCAL_KEY_VALUE_STORE_PROVIDER_NAME.equals(key)) {
-            throw new IllegalArgumentException("Default extension '" + LOCAL_KEY_VALUE_STORE_PROVIDER_NAME + "' cannot be unregistered");
+        if (LocalKeyValueStoreProvider.REGISTRY_KEY.equals(key)) {
+            throw new IllegalArgumentException("Default extension '" + LocalKeyValueStoreProvider.REGISTRY_KEY + "' cannot be unregistered");
         }
 
         super.unregister(key);

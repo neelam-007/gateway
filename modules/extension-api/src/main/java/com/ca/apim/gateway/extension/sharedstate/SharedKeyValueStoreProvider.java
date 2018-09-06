@@ -18,4 +18,10 @@ public interface SharedKeyValueStoreProvider extends Extension {
      * @return SharedKeyValueStore, never null
      */
     <K extends Serializable, V extends Serializable> SharedKeyValueStore<K,V> getKeyValueStore(String name, Configuration config);
+
+    /**
+     * @return the key used to register this extension with a registry
+     */
+    String getRegistryKey();
+
 }

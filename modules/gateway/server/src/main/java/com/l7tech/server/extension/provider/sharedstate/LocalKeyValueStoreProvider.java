@@ -10,7 +10,10 @@ import java.util.concurrent.ConcurrentMap;
  * Note: This data provider only works with a single node as data will not be shared between
  *       the cluster.
  */
-public class LocalKeyValueStoreProvider implements SharedKeyValueStoreProvider {
+public final class LocalKeyValueStoreProvider implements SharedKeyValueStoreProvider {
+
+    public static final String REGISTRY_KEY = "local";
+
     private final ConcurrentMap<String, SharedKeyValueStore> kvStores;
 
     public LocalKeyValueStoreProvider() {
@@ -23,5 +26,10 @@ public class LocalKeyValueStoreProvider implements SharedKeyValueStoreProvider {
     @Override
     public SharedKeyValueStore getKeyValueStore(String name, Configuration config) {
         return kvStores.computeIfAbsent(name, key -> new LocalKeyValueStore(name));
+    }
+
+    @Override
+    public String getRegistryKey() {
+        return REGISTRY_KEY;
     }
 }
