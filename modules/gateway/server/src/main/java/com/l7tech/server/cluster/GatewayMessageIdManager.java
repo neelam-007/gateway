@@ -7,6 +7,7 @@ import com.l7tech.server.extension.registry.sharedstate.SharedKeyValueStoreProvi
 import com.l7tech.server.util.MessageId;
 import com.l7tech.server.util.MessageIdManager;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.SyspropUtil;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
@@ -86,10 +87,11 @@ public class GatewayMessageIdManager implements MessageIdManager {
             return;
         }
 
+        String providerName = SyspropUtil.getProperty(SharedKeyValueStoreProviderRegistry.SYSTEM_PROPERTY_KEY_VALUE_STORE_PROVIDER);
         SharedKeyValueStoreProvider sharedKeyValueStoreProvider = sharedKeyValueStoreProviderRegistry.getExtension();
         if (sharedKeyValueStoreProvider != null) {
             messageIdMap = sharedKeyValueStoreProvider.getKeyValueStore(MESSAGE_ID_MAP_NAME, new Configuration().set(PERSISTED.name(), FALSE.toString()));
-            LOGGER.log(INFO,"Initialized MessageIdManager with SharedKeyValueStore implementation {0}", messageIdMap.getClass().getSimpleName());
+            LOGGER.log(FINE,"GatewayMessageIdManager is using shared key value store provider: {0}", providerName);
         } else {
             LOGGER.log(WARNING, "No implementation of SharedKeyValueStore was provided, GatewayMessageIdManager will not work");
         }

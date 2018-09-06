@@ -32,7 +32,7 @@ public class SharedKeyValueStoreProviderRegistry extends AbstractRegistryImpl<Sh
     }
 
     /**
-     * @return the default SharedKeyValueStoreProvider configured.
+     * @return the configured SharedKeyValueStoreProvider. If it is not configured, return the default provider.
      */
     public SharedKeyValueStoreProvider getExtension() {
         String defaultExt = config.getProperty(SYSTEM_PROPERTY_KEY_VALUE_STORE_PROVIDER);
