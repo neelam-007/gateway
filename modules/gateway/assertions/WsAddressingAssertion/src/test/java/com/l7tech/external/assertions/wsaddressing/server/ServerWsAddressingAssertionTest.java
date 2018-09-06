@@ -43,7 +43,6 @@ public class ServerWsAddressingAssertionTest {
     private static final String ADDRESSING_NAMESPACE_200408 = "http://schemas.xmlsoap.org/ws/2004/08/addressing";
 
     static {
-        // init JCE early to use crypto-j in classpath
         JceProvider.init();
     }
 

@@ -4,7 +4,6 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.xml.DomElementCursor;
 import com.l7tech.xml.ElementCursor;
 import com.l7tech.xml.InvalidXpathException;
-import com.rsa.sslj.x.M;
 import org.junit.Before;
 import org.junit.Test;
 import org.w3c.dom.Document;

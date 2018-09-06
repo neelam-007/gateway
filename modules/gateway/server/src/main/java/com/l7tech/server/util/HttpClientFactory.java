@@ -3,7 +3,6 @@ package com.l7tech.server.util;
 import com.l7tech.common.http.*;
 import com.l7tech.common.http.prov.apache.components.HttpComponentsClient;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
-import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.util.ConfigFactory;
 import org.apache.http.impl.conn.PoolingClientConnectionManager;
@@ -92,7 +91,6 @@ public class HttpClientFactory implements GenericHttpClientFactory {
             // no harm done if multiple threads try to create it the very first time.  s'all good.
             if (sslContext != null) return sslContext;
             SSLContext sc = SSLContext.getInstance("TLS");
-            JceProvider.getInstance().prepareSslContext( sc );
             KeyManager[] keyman = keystore.getSslKeyManagers();
             sc.init(keyman, new TrustManager[]{trustManager}, null);
             final int timeout = ConfigFactory.getIntProperty( HttpRoutingAssertion.PROP_SSL_SESSION_TIMEOUT, HttpRoutingAssertion.DEFAULT_SSL_SESSION_TIMEOUT );

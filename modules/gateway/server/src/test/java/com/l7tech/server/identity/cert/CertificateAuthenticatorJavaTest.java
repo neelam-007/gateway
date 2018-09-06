@@ -24,7 +24,6 @@ import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.identity.AuthenticationResult;
 import com.l7tech.server.security.cert.CertValidationProcessor;
 import com.l7tech.xml.saml.SamlAssertionV1;
-import com.rsa.sslj.x.P;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;

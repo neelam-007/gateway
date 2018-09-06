@@ -7,7 +7,6 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
-import javax.net.ssl.SSLContext;
 import java.security.*;
 import java.security.cert.X509Certificate;
 import java.security.spec.AlgorithmParameterSpec;
@@ -48,7 +47,6 @@ public abstract class JceProvider {
     public static final String PKCS11_ENGINE = "com.l7tech.security.prov.pkcs11.Pkcs11JceProviderEngine";
     public static final String LUNA_ENGINE = "com.l7tech.security.prov.luna.LunaJceProviderEngine";
     public static final String NCIPHER_ENGINE = "com.l7tech.security.prov.ncipher.NcipherJceProviderEngine";
-    public static final String RSA_ENGINE = "com.l7tech.security.prov.rsa.RsaJceProviderEngine";
     public static final String GENERIC_ENGINE = "com.l7tech.security.prov.generic.GenericJceProviderEngine";
     public static final String CRYPTOCOMPLY_ENGINE = "com.l7tech.security.prov.ccj.CryptoComplyJceProviderEngine";
     public static final String DEFAULT_ENGINE = "com.l7tech.security.prov.defaultprov.DefaultJceProviderEngine";
@@ -68,7 +66,7 @@ public abstract class JceProvider {
     public static final String SERVICE_SIGNATURE_ECDSA = "Signature.NONEwithECDSA"; // any ECDSA signing or signature verification
     public static final String SERVICE_KEYSTORE_PKCS12 = "KeyStore.PKCS12";
     public static final String SERVICE_TLS10 = "SSLContext.TLSv1";   // Not the real service name, but lets us distinguish
-    public static final String SERVICE_TLS12 = "SSLContext.TLSv1.2"; // SunJSSE from RsaJsse on the basis of which one (currently) support TLSv1.2
+    public static final String SERVICE_TLS12 = "SSLContext.TLSv1.2"; // SunJSSE
     public static final String SERVICE_DIFFIE_HELLMAN_SOFTWARE = "KeyPairGenerator.DiffieHellmanSoftware";
     public static final String SERVICE_KEY_PAIR_GENERATOR_RSA = "KeyPairGenerator.RSA";
 
@@ -93,7 +91,6 @@ public abstract class JceProvider {
         put("default", DEFAULT_ENGINE);
         put("bc", BC_ENGINE);
         put("luna", LUNA_ENGINE);
-        put("rsa", RSA_ENGINE);
         put("ncipher", NCIPHER_ENGINE);
         put("generic", GENERIC_ENGINE);
         put("ccj", DEFAULT_ENGINE);
@@ -511,30 +508,6 @@ public abstract class JceProvider {
         return sp != null ? sp : first( Security.getProviders( service ) ).toNull();
     }
 
-    //For SSL-J the accepted issuers list must be nonempty in order to do client auth for inbound TLS 1.0.
-    public static final String CF_TLSv10_CLIENT_AUTH_REQUIRES_NONEMPTY_CACERTS = "CF_TLSv10_CLIENT_AUTH_REQUIRES_NONEMPTY_CACERTS";
-
-    //For SSL-J accepted issuers list must be nonempty in order to do client auth for inboud TLS versions > 1.0.
-    public static final String CF_TLSv12_CLIENT_AUTH_REQUIRES_NONEMPTY_CACERTS = "CF_TLSv12_CLIENT_AUTH_REQUIRES_NONEMPTY_CACERTS";
-
-    /**
-     * See if this provider requires a special compatibility mode enabled at the application level.
-     * <p/>
-     * Current defined compatbility modes as of 9.2:
-     * <ul>
-     *     <li>{@link #CF_TLSv10_CLIENT_AUTH_REQUIRES_NONEMPTY_CACERTS} - The accepted issuers list must be nonempty in order to do client auth for inbound TLS 1.0.
-     *     The return value will be the Boolean.TRUE if this is the case.</li>
-     *     <li>{@link #CF_TLSv12_CLIENT_AUTH_REQUIRES_NONEMPTY_CACERTS} - The accepted issuers list must be nonempty in order to do client auth for inboud TLS versions > 1.0.
-     *     The return value will be the Boolean.TRUE if this is the case.</li>
-     * </ul>
-     *
-     * @param flagName the name of the compatibility flag to query for.  Required.
-     * @return an object ,or null if the flag is not required or meaningful to the current JceProviderEngine.
-     */
-    public Object getCompatibilityFlag( String flagName ) {
-        return null;
-    }
-
     /**
      * Get the specified MessageDigest from the specified Provider (which may be null).
      *
@@ -606,19 +579,6 @@ public abstract class JceProvider {
      */
     private static KeyStore getKeyStore(String kstype, Provider prov) throws KeyStoreException {
         return prov == null ? KeyStore.getInstance(kstype) : KeyStore.getInstance(kstype, prov);
-    }
-
-    /**
-     * Perform any provider-specific initialization that may be required for the specified newly-created
-     * SSLContext.
-     * <p/>
-     * An example of such initialization is configuring a custom session cache with a more aggressive
-     * replacement policy to avoid running out of memory when using SSL-J with the default session cache.
-     *
-     * @param sslContext an SSLContext to configure.  Required.  Implementors must check to ensure the provided
-     *                   context was created by their JSSE provider and must not assume it was.
-     */
-    public void prepareSslContext( @NotNull SSLContext sslContext ) {
     }
 
     /**

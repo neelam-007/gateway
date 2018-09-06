@@ -5,7 +5,6 @@ import com.l7tech.external.assertions.websocket.WebSocketConnectionEntity;
 import com.l7tech.external.assertions.websocket.WebSocketConstants;
 import com.l7tech.gateway.common.security.keystore.SsgKeyEntry;
 import com.l7tech.objectmodel.Goid;
-import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.DefaultKey;
 import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.transport.tls.ClientTrustingTrustManager;
@@ -311,7 +310,6 @@ public class WebSocketConnectionManager {
         }
 
         SSLContext sslContext = SSLContext.getInstance("TLS");
-        JceProvider.getInstance().prepareSslContext(sslContext);
         sslContext.init(keyManagers, new TrustManager[]{tm}, secureRandom);
 
         return sslContext;

@@ -92,7 +92,6 @@ public class PolicyProcessingTest {
     private Result result;
 
     static {
-        SyspropUtil.setProperty( "com.l7tech.security.prov.rsa.libpath.nonfips", "USECLASSPATH" );
         JceProvider.init();
     }
 
@@ -202,7 +201,6 @@ public class PolicyProcessingTest {
     @AfterClass
     public static void cleanupSystemProperties() {
         SyspropUtil.clearProperties(
-                "com.l7tech.security.prov.rsa.libpath.nonfips",
                 "com.l7tech.server.serviceResolution.strictSoap",
                 "javax.xml.transform.TransformerFactory"
         );

@@ -254,7 +254,8 @@ public class  NewPrivateKeyDialog extends JDialog {
         expiryDaysField.setDocument(new NumberField(7));
         expiryDaysField.setText(DEFAULT_EXPIRY);
 
-        // Some EC curve names commented out because they aren't supported by RSA BSAFE Crypto-J as of version 4.1.0.1
+        // Some EC curve names commented out because they aren't supported by BouncyCastle according to
+        // http://www.bouncycastle.org/wiki/pages/viewpage.action?pageId=362269
         final KeyType dfltk;
         Collection<KeyType> types = new ArrayList<KeyType>(Arrays.asList(
                 rsasize(512, 20, 1),
@@ -265,13 +266,13 @@ public class  NewPrivateKeyDialog extends JDialog {
                 rsasize(3072, 60 * 20, 30),
                 rsasize(4096, 60 * 20, 50),
                 curvename("sect163k1"),
-                //curvename("sect163r1"),
+                curvename("sect163r1"),
                 curvename("sect163r2"),
-                //curvename("sect193r1"),
-                //curvename("sect193r2"),
+                curvename("sect193r1"),
+                curvename("sect193r2"),
                 curvename("sect233k1"),
                 curvename("sect233r1"),
-                //curvename("sect239k1"),
+                curvename("sect239k1"),
                 curvename("sect283k1"),
                 curvename("sect283r1"),
                 curvename("sect409k1"),
@@ -281,11 +282,11 @@ public class  NewPrivateKeyDialog extends JDialog {
                 //curvename("secp160k1"),
                 //curvename("secp160r1"),
                 //curvename("secp160r2"),
-                //curvename("secp192k1"),
+                curvename("secp192k1"),
                 curvename("secp192r1"),
-                //curvename("secp224k1"),
+                curvename("secp224k1"),
                 curvename("secp224r1"),
-                //curvename("secp256k1"),
+                curvename("secp256k1"),
                 curvename("secp256r1"),
                 curvename("secp384r1"),
                 curvename("secp521r1"),

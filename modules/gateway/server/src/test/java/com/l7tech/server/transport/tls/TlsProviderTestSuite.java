@@ -205,8 +205,8 @@ public class TlsProviderTestSuite {
                 "    host <hostname|ip>              server listens on, or client connects to, specified host or address\n" +
                 "    port <port>                     server listens on, or client connects to, specified port\n" +
                 "    tlsversions <TLSv1|TLSv1.2>     comma delimited specific version of TLS to use, otherwise uses defaults\n" +
-                "    tlsprov <sun|rsa>               JSSE provider to use, either SunJSSE or RsaJsse\n" +
-                "    jceprov <sun|rsa|luna4|luna5>   extra JCE provider to register for test\n" +
+                "    tlsprov <sun>               JSSE provider to use, either SunJSSE\n" +
+                "    jceprov <sun|luna4|luna5>   extra JCE provider to register for test\n" +
                 "    tokenPin <token PIN>            Luna partition PIN; required if using jceprov luna4 or luna5\n" +
                 "    ciphers <suite,suite>           comma delimited cipher suites to enable, otherwise uses defaults\n" +
                 "    certtype <rsa|ecc>              whether to use an ECC or RSA key for this side's certificate\n" +
@@ -223,7 +223,7 @@ public class TlsProviderTestSuite {
                 "  client options:\n" +
                 "    clientcert <yes|no>             whether to present a client cert, if challenged by server\n\n" +
                 "Examples:\n" +
-                "  TlsProviderTestSuite server tlsprov rsa tlsversions TLSv1,TLSv1.1,TLSv1.2 certtype ecc clientcert optional &\n" +
+                "  TlsProviderTestSuite server tlsprov sun tlsversions TLSv1,TLSv1.1,TLSv1.2 certtype ecc clientcert optional &\n" +
                 "  TlsProviderTestSuite client tlsprov sun tlsversions TLSv1 certtype rsa clientcert no\n");
         System.exit(1);
     }
@@ -296,22 +296,10 @@ public class TlsProviderTestSuite {
         secretKeysMethod.invoke(manager, true);
     }
 
-    private void initCryptoJFipsMode() throws Exception {
-        Class cryptojClass = Class.forName("com.rsa.jsafe.crypto.CryptoJ");
-        Method setModeMethod = cryptojClass.getMethod("setMode", int.class);
-        int fips140SslEcc = (Integer)cryptojClass.getField("FIPS140_SSL_ECC_MODE").get(null);
-        setModeMethod.invoke(null, fips140SslEcc);
-    }
-
     private void start() throws Exception {
         if (Boolean.valueOf(debug)) System.setProperty( "javax.net.debug", "ssl" );
 
-        if ("rsa".equals(jceprov)) {
-            addProv("com.rsa.jsafe.provider.JsafeJCE", false);
-        } else if ("rsafips".equals(jceprov)) {
-            addProv("com.rsa.jsafe.provider.JsafeJCE", true);
-            initCryptoJFipsMode();
-        } else if ("luna4".equals(jceprov)) {
+        if ("luna4".equals(jceprov)) {
             addProv("com.chrysalisits.cryptox.LunaJCEProvider", true);
             addProv("com.chrysalisits.crypto.LunaJCAProvider", true);
             initLuna(false);
@@ -326,14 +314,7 @@ public class TlsProviderTestSuite {
             throw new IllegalArgumentException("Unknown jceprov: " + jceprov);
         }
 
-        String expectTlsProv = null;
-        if ("rsa".equals(tlsprov)) {
-            Security.removeProvider("SunJSSE");
-            addProv("com.rsa.jsse.JsseProvider", true);
-            expectTlsProv = "RsaJsse";
-        } else if ("sun".equals(tlsprov)) {
-            expectTlsProv = "SunJSSE";
-        }
+        final String expectTlsProv = "SunJSSE";
 
         addProvs(additionalProviders, false);
         addProvs(firstPlaceProviders, true);
@@ -341,7 +322,7 @@ public class TlsProviderTestSuite {
         SSLContext sslContext = SSLContext.getInstance("TLS");
         String gotTlsProv = sslContext.getProvider().getName();
         System.out.println("Using TLS provider: " + gotTlsProv);
-        if (expectTlsProv != null) assertEquals(expectTlsProv, gotTlsProv);
+        assertEquals(expectTlsProv, gotTlsProv);
 
         X509KeyManager[] km = {new SingleCertX509KeyManager(getCertificate(certtype), getPrivateKey(certtype))};
         if (!server && !"yes".equals(clientcert)) km = null;

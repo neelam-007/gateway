@@ -13,7 +13,6 @@ import com.l7tech.gateway.common.security.password.SecurePassword;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.security.prov.JceProvider;
 import com.l7tech.server.ServerConfigParams;
 import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.server.util.ManagedTimer;
@@ -569,7 +568,6 @@ public class CassandraConnectionManagerImpl implements CassandraConnectionManage
             TrustManager[] trustManagers = new TrustManager[]{trustManager};
 
             SSLContext sslContext = SSLContext.getInstance("TLS");
-            JceProvider.getInstance().prepareSslContext( sslContext );
 
             //initialize the SSLContext with the an array of trustmanager, and random number generator
             sslContext.init(null, trustManagers, secureRandom);

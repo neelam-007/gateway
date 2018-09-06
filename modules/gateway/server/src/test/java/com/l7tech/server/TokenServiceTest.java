@@ -63,7 +63,7 @@ public class TokenServiceTest {
 
     @BeforeClass
     public static void init() {
-        JceProvider.init(); // Init jce provider before overridden crypto-j lib paths are configured by serverconfig, so that it will just look for the crypto-j in the current classpath
+        JceProvider.init();
         applicationContext = ApplicationContexts.getTestApplicationContext();
     }
 

@@ -146,7 +146,6 @@ public class DefaultHttpCiphers {
             final KeyManager[] keyManagers;
             keyManagers = defaultKeystore.getSslKeyManagers();
             sslContext = provider == null ? SSLContext.getInstance("TLS") : SSLContext.getInstance("TLS", provider);
-            JceProvider.getInstance().prepareSslContext( sslContext );
             sslContext.init(keyManagers, null, null);
             SSLContext ret = testSslContextByProviderName.putIfAbsent(providerName, sslContext);
             return ret != null ? ret : sslContext;

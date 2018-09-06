@@ -38,7 +38,6 @@ public class ServerBuildRstrSoapResponseTest {
     private static final Logger logger = Logger.getLogger( ServerBuildRstrSoapResponseTest.class.getName() );
 
     static {
-        // Init jce provider early to use crypto-j from classpath for test purposes
         JceProvider.init();
     }
 
