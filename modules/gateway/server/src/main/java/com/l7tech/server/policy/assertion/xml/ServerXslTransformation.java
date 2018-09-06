@@ -46,7 +46,6 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.ErrorListener;
 import javax.xml.transform.TransformerException;
@@ -66,10 +65,10 @@ import java.util.logging.Logger;
 public class ServerXslTransformation
         extends AbstractServerAssertion<XslTransformation>
 {
-    private static final SAXParserFactory piParser = SAXParserFactory.newInstance();
+    private static final SAXParserFactory saxParserFactory = SAXParserFactory.newInstance();
     static {
-        piParser.setNamespaceAware(false);
-        piParser.setValidating(false);
+        saxParserFactory.setNamespaceAware(false);
+        saxParserFactory.setValidating(false);
     }
 
     private static final CompiledXpath findStylesheetPIs;
@@ -485,11 +484,9 @@ public class ServerXslTransformation
     @Nullable
     private String extractHref(String attrlist) throws SAXException {
         try {
-            String fakeXml = "<dummy " + attrlist + " />";
-            SAXParser parser = piParser.newSAXParser();
-
+            final String fakeXml = "<dummy " + attrlist + " />";
             final String[] found = new String[] { null, null }; // name, type
-            parser.parse(new ByteArrayInputStream(fakeXml.getBytes()), new DefaultHandler() {
+            parseXml(fakeXml, new DefaultHandler() {
                 @Override
                 public void startElement(String uri, String localName, String qName, Attributes attributes) {
                     int numAttrs = attributes.getLength();
@@ -524,6 +521,23 @@ public class ServerXslTransformation
         }
     }
 
+    /**
+     * To parse the input xml in secure mode.
+     * @param inputXml xml to be parsed
+     * @param defaultHandler handler to be used while parsing the input
+     * @throws IOException if the input is not well formed
+     * @throws SAXException if the input is not well formed
+     * @throws ParserConfigurationException if the input is not well formed
+     */
+    void parseXml(final String inputXml, DefaultHandler defaultHandler) throws IOException, SAXException, ParserConfigurationException {
+        // CWE 611 - Improper Restriction of XML External Entity Reference ('XXE')
+        // Configure the XML parser to disable external entity resolution.
+        saxParserFactory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+        saxParserFactory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+        saxParserFactory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+        saxParserFactory.newSAXParser().parse(new ByteArrayInputStream(inputXml.getBytes()), defaultHandler);
+    }
+
     private static TransformInput makeFirstPartTransformInput(XmlKnob xmlKnob, Functions.Unary<Object, String> variableGetter) throws IOException, SAXException {
         return new TransformInput(xmlKnob, null, variableGetter);
     }
@@ -534,8 +548,8 @@ public class ServerXslTransformation
      */
     private TransformInput makePartInfoTransformInput(PartInfo partInfo, Functions.Unary<Object, String> variableGetter) throws IOException, SAXException {
         try {
-            // Destructively parse the part, since it will be overwritten with the transformation output
-            Message partMessage = new Message(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, partInfo.getInputStream(true));
+            // Read the part content non-destructively so that content will not be lost if XSL transformation fails for any reason.
+            final Message partMessage = new Message(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, partInfo.getInputStream(false));
             return new TransformInput(partMessage.getXmlKnob(), partMessage, variableGetter);
         } catch (NoSuchPartException e) {
             throw new IOException("MIME part has already been destructively read");

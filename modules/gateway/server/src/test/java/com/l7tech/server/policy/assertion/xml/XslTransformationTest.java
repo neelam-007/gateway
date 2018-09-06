@@ -5,10 +5,7 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.gateway.common.audit.Audit;
 import com.l7tech.message.Message;
-import com.l7tech.policy.AssertionResourceInfo;
-import com.l7tech.policy.MessageUrlResourceInfo;
-import com.l7tech.policy.SingleUrlResourceInfo;
-import com.l7tech.policy.StaticResourceInfo;
+import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.TargetMessageType;
@@ -38,7 +35,10 @@ import com.l7tech.xml.xslt.CompiledStylesheet;
 import org.junit.*;
 import org.springframework.beans.factory.BeanFactory;
 import org.w3c.dom.Document;
+import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
+import org.xml.sax.helpers.DefaultHandler;
 
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
@@ -56,6 +56,8 @@ import java.util.HashMap;
 import java.util.logging.Logger;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.fail;
 
 /**
  * Tests ServerXslTransformation and XslTransformation classes.
@@ -90,6 +92,7 @@ public class XslTransformationTest {
             "</soap:Envelope>";
 
     private Auditor auditor = new Auditor(this, null, logger);
+    private TestHelper helper = new TestHelper();
 
     private Document transform(String xslt, String src) throws Exception {
         TransformerFactory transfoctory = TransformerFactory.newInstance();
@@ -216,12 +219,9 @@ public class XslTransformationTest {
     }
 
     private String toString(Message req) throws Exception {
-        PoolByteArrayOutputStream baos = new PoolByteArrayOutputStream();
-        try {
+        try (PoolByteArrayOutputStream baos = new PoolByteArrayOutputStream()) {
             IOUtils.copyStream(req.getMimeKnob().getEntireMessageBodyAsInputStream(), baos);
             return baos.toString(Charsets.UTF8);
-        } finally {
-            baos.close();
         }
     }
 
@@ -691,5 +691,110 @@ public class XslTransformationTest {
 
         String output = new String( IOUtils.slurpStream( context.getRequest().getMimeKnob().getEntireMessageBodyAsInputStream() ), Charsets.UTF8 );
         assertEquals( "<th colspan=\"2\"></th>" + System.lineSeparator(), output );
+    }
+
+    @BugId("DE364342")
+    @Test
+    public void testXsltTransformForInvalidSoapXmlInMainPart() throws Exception {
+        final String inputXml = DUMMY_SOAP_XML.replace("<soap:Body>", "<Body>");
+        final PolicyEnforcementContext context = helper.createContext(helper.createMessage(inputXml));
+        final AssertionStatus status = helper.checkRequest(helper.createAssertion(), context);
+
+        assertNotEquals(AssertionStatus.NONE, status);
+        assertEquals("Should be able to read the request", inputXml, helper.readMessage(context.getRequest()));
+    }
+
+    @BugId("DE364342")
+    @Test
+    public void testXsltTransformForInvalidSoapXmlInPart1() throws Exception {
+        final String contentType = "multipart/form-data; boundary=simple";
+        final String multipartMessage = "--simple\r\n" +
+                "Content-Type: text/xml\r\n" +
+                "Content-Disposition: form-data; name=\"part0\"\r\n" +
+                "\r\n" +
+                DUMMY_SOAP_XML + "\r\n" +
+                "--simple\r\n" +
+                "Content-Type: text/xml\r\n" +
+                "Content-Disposition: form-data; name=\"part1\"\r\n" +
+                "\r\n" +
+                DUMMY_SOAP_XML.replace("<soap:Body>", "<Body>") + "\r\n" +
+                "--simple--";
+        final PolicyEnforcementContext context = helper.createContext(helper.createMessage(contentType, multipartMessage));
+        final AssertionStatus status = helper.checkRequest(helper.createAssertion(1), context);
+
+        assertNotEquals(AssertionStatus.NONE, status);
+        assertEquals("Should be able to read the request", multipartMessage, helper.readMessage(context.getRequest()).trim());
+    }
+
+    @Test (expected = SAXParseException.class)
+    public void testXsltTranformParseXmlContainingDocTypeDeclarations() throws Exception {
+        final XslTransformation assertion = new XslTransformation();
+        assertion.setTarget(TargetMessageType.REQUEST);
+        AssertionResourceInfo ri = new StaticResourceInfo(XSLT_IDENTITY_WITH_MESSAGE);
+        assertion.setResourceInfo(ri);
+
+        final String inputXml =
+                "<!DOCTYPE foo [\n" +
+                "  <!ELEMENT foo (#PCDATA)>\n" +
+                "  <!ENTITY bar \"Hello World\">\n" +
+                "]>\n" +
+                "<foo>&bar;</foo>";
+        final ServerXslTransformation serverAssertion = new TestStaticOnlyServerXslTransformation(assertion);
+        serverAssertion.parseXml(inputXml, new DefaultHandler() {
+            public void startElement (String uri, String localName,
+                                      String qName, Attributes attributes)
+                    throws SAXException {
+                fail("DOCTYPE declarations are disallowed and hence XML shouldn't be parsed");
+            }
+        });
+    }
+
+    private class TestHelper {
+
+        public XslTransformation createAssertion(final String xsltVersion) {
+            final XslTransformation assertion = new XslTransformation();
+
+            assertion.setTarget(TargetMessageType.REQUEST);
+            assertion.setResourceInfo(new StaticResourceInfo(XSLT_IDENTITY_WITH_MESSAGE));
+            assertion.setMsgVarPrefix("pfx");
+            assertion.setXsltVersion(xsltVersion);
+
+            return assertion;
+        }
+
+        public XslTransformation createAssertion() {
+            return createAssertion("1.0");
+        }
+
+        public XslTransformation createAssertion(final int partIndex) {
+            final XslTransformation assertion = createAssertion();
+            assertion.setWhichMimePart(partIndex);
+            return assertion;
+        }
+
+        public PolicyEnforcementContext createContext(final Message request) {
+            return PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
+        }
+
+        public Message createMessage(final String xml) throws IOException {
+            final Message message = new Message();
+            message.initialize(ContentTypeHeader.XML_DEFAULT, xml.getBytes("UTF-8"));
+            return message;
+        }
+
+        public Message createMessage(final String contentType, final String content) throws IOException {
+            final Message message = new Message();
+            message.initialize(ContentTypeHeader.create(contentType), content.getBytes("UTF-8"));
+            return message;
+        }
+
+        public String readMessage(final Message message) throws Exception {
+            return XslTransformationTest.this.toString(message);
+        }
+
+        public AssertionStatus checkRequest(final XslTransformation assertion, final PolicyEnforcementContext context) throws PolicyAssertionException, IOException {
+            return new TestStaticOnlyServerXslTransformation(assertion).checkRequest(context);
+        }
+
     }
 }

@@ -108,7 +108,8 @@ public class CompiledStylesheet {
     }
 
     private void transformSax(TransformInput t, TransformOutput output, ErrorListener errorListener) throws SAXException, IOException, TransformerException {
-        final InputSource input = t.getXmlKnob().getInputSource(true);
+        // Read the part content non-destructively so that content will not be lost if parser/transformer fails for any reason.
+        final InputSource input = t.getXmlKnob().getInputSource(false);
         input.setSystemId( SYSTEM_ID_MESSAGE ); // used to identify parse errors in message
         final XMLReader xmlReader = XMLReaderFactory.createXMLReader();
         xmlReader.setFeature( "http://xml.org/sax/features/namespaces", true );
