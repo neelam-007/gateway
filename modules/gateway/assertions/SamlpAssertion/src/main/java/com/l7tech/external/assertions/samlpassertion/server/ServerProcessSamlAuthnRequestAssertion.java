@@ -68,6 +68,7 @@ import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
+import java.util.zip.ZipException;
 
 /**
  * Server assertion for Process SAML AuthnRequest assertion
@@ -215,7 +216,7 @@ public class ServerProcessSamlAuthnRequestAssertion extends AbstractMessageTarge
                     samlRequestIn = new ByteOrderMarkInputStream( samlRequestIn );
                     authnRequestElement = XmlUtil.parse( samlRequestIn ).getDocumentElement();
                 }
-            } catch ( SAXException e ) {
+            } catch ( SAXException | ZipException e) {
                 logAndAudit( AssertionMessages.SAMLP_PROCREQ_BINDING_ERROR,
                         new String[]{assertion.getSamlProtocolBinding().toString(), "Error parsing request - " + ExceptionUtils.getMessage( e )},
                         ExceptionUtils.getDebugException( e ) );
