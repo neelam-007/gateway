@@ -17,7 +17,8 @@
         <dependency name="layer7-ntlm" rev="latest.integration" conf="core;test"/>
         <dependency name="layer7-test" rev="latest.integration" conf="test"/>
         <dependency org="apache-harmony" name="apache-harmony-asn1" rev="0.1" force="true" conf="core"/>
-        <dependency org="bouncycastle" name="bcprov-jdk16" rev="1.46" force="true" conf="core"/>
+        <dependency org="bouncycastle" name="bcprov-jdk15on" rev="1.60" force="true" conf="core"/>
+        <dependency org="bouncycastle" name="bcpkix-jdk15on" rev="1.60" force="true" conf="core"/>
         <dependency org="commons-collections" name="commons-collections" rev="3.2.2" force="true" conf="core"/>
         <dependency org="commons-lang" name="commons-lang" rev="2.6" force="true" conf="core"/>
         <dependency org="javax.mail" name="mail" rev="1.6.1" force="true" conf="core"/>

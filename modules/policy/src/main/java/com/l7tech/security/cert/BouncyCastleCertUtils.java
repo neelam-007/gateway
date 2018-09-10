@@ -8,18 +8,25 @@ import com.l7tech.security.prov.CertificateRequest;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.prov.bc.BouncyCastleCertificateRequest;
 import com.l7tech.util.ConfigFactory;
+import com.l7tech.util.ExceptionUtils;
 import org.bouncycastle.asn1.*;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.*;
-import org.bouncycastle.jce.PKCS10CertificationRequest;
-import org.bouncycastle.x509.extension.X509ExtensionUtil;
+import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
+import org.bouncycastle.operator.ContentSigner;
+import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
+import org.bouncycastle.pkcs.PKCS10CertificationRequestBuilder;
+import org.bouncycastle.pkcs.jcajce.JcaPKCS10CertificationRequestBuilder;
 
 import javax.security.auth.x500.X500Principal;
 import java.io.IOException;
 import java.security.*;
 import java.security.cert.X509Certificate;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Certificate utility methods that require static imports of Bouncy Castle classes.
@@ -28,6 +35,8 @@ public class BouncyCastleCertUtils  {
 
     // true to set attrs to null (pre-6.0-2 behavior); false to set attrs to empty DERSet (Bug #10534)
     private static final boolean omitAttrs = ConfigFactory.getBooleanProperty( "com.l7tech.security.cert.csr.omitAttrs", false );
+    private static final Logger LOGGER = Logger.getLogger(BouncyCastleCertUtils.class.getName());
+
 
     /**
      * Generate a self-signed certificate from the specified KeyPair and the specified cert generation parameters.
@@ -50,42 +59,38 @@ public class BouncyCastleCertUtils  {
      * @param keyPair  a key pair to use for the CSR.  Required.
      * @return a new PKCS#10 certification request including the specified DN and public key, signed with the
      *         specified private key.  Never null.
-     * @throws SignatureException        if there is a problem signing the cert
-     * @throws InvalidKeyException       if there is a problem with the provided key pair
-     * @throws NoSuchProviderException   if the current asymmetric JCE provider is incorrect
-     * @throws NoSuchAlgorithmException  if a required algorithm is not available in the current asymmetric JCE provider
+     * @throws SignatureException        if there is a problem signing the certificate request.
      */
-    public static CertificateRequest makeCertificateRequest(CertGenParams certGenParams, KeyPair keyPair) throws SignatureException, InvalidKeyException, NoSuchProviderException, NoSuchAlgorithmException {
+    public static CertificateRequest makeCertificateRequest(CertGenParams certGenParams, KeyPair keyPair) throws SignatureException {
+
         if (certGenParams.getSubjectDn() == null)
             throw new IllegalArgumentException("certGenParams must include a subject DN for the CSR");
-        Provider sigProvider = JceProvider.getInstance().getProviderFor(JceProvider.SERVICE_CSR_SIGNING);
-        X500Principal subject = certGenParams.getSubjectDn();
-        DERSet attrSet;
-        //get extensions i.e. SAN (Subject Alternative Names)
-        X509Extensions extensions = getSubjectAlternativeNamesExtensions(certGenParams);
-        if(extensions != null ) {
-            Attribute attribute = new Attribute(
-                    PKCSObjectIdentifiers.pkcs_9_at_extensionRequest,
-                    new DERSet(extensions));
-            attrSet = new DERSet(attribute);
-        }
-        else {
-            attrSet = new DERSet(new ASN1EncodableVector());
-        }
 
-        ASN1Set attrs = omitAttrs ? null : attrSet;
-        PublicKey publicKey = keyPair.getPublic();
-        PrivateKey privateKey = keyPair.getPrivate();
+        final Provider sigProvider = JceProvider.getInstance().getProviderFor(JceProvider.SERVICE_CSR_SIGNING);
+        final X500Principal subject = certGenParams.getSubjectDn();
+
+        //get extensions i.e. SAN (Subject Alternative Names)
+        final Extensions extensions = getSubjectAlternativeNamesExtensions(certGenParams);
 
         String sigAlg = certGenParams.getSignatureAlgorithm();
         if (sigAlg == null)
-            sigAlg = ParamsCertificateGenerator.getSigAlg(publicKey, certGenParams.getHashAlgorithm(), sigProvider);
+            sigAlg = ParamsCertificateGenerator.getSigAlg(keyPair.getPublic(), certGenParams.getHashAlgorithm(), sigProvider);
 
         // Generate request
-        final PKCS10CertificationRequest certReq = sigProvider == null
-                ? new PKCS10CertificationRequest(sigAlg, subject, publicKey, attrs, privateKey, null)
-                : new PKCS10CertificationRequest(sigAlg, subject, publicKey, attrs, privateKey, sigProvider.getName());
-        return new BouncyCastleCertificateRequest(certReq, publicKey);
+        final X500Name x500Name = new X500Name(subject.getName(X500Principal.RFC2253));
+        final PKCS10CertificationRequestBuilder requestBuilder = new JcaPKCS10CertificationRequestBuilder(
+                x500Name, keyPair.getPublic());
+        if (!omitAttrs && extensions != null){
+            requestBuilder.addAttribute(PKCSObjectIdentifiers.pkcs_9_at_extensionRequest, extensions);
+        }
+
+        try {
+            final ContentSigner signer = getContentSigner(sigAlg, keyPair, sigProvider);
+            return new BouncyCastleCertificateRequest(requestBuilder.build(signer), keyPair.getPublic());
+
+        } catch (OperatorCreationException e) {
+            throw new SignatureException("The content signer failed to build." + ExceptionUtils.getMessage(e));
+        }
     }
 
     /**
@@ -93,29 +98,30 @@ public class BouncyCastleCertUtils  {
      * @param certGenParams Certificate General Parameters
      * @return X509Extensions object or null if no extensions found
      */
-    protected static X509Extensions getSubjectAlternativeNamesExtensions(CertGenParams certGenParams) {
+    protected static Extensions getSubjectAlternativeNamesExtensions(final CertGenParams certGenParams) {
         List<X509GeneralName> sans = certGenParams.getSubjectAlternativeNames();
+
         // check if we have any SANs in the request
-        if(sans != null && sans.size() > 0) {
-            List<ASN1Encodable> asn1EncodableList = new ArrayList<>();
-            for (X509GeneralName san : sans) {
-                asn1EncodableList.add(new GeneralName(san.getType().getTag(), san.getStringVal()));
-            }
-
-            ASN1Encodable[] asn1Encodables = asn1EncodableList.toArray(new ASN1Encodable[0]);
-            ASN1Sequence sequence = new DERSequence(asn1Encodables);
-            GeneralNames subjectAltName = new GeneralNames(sequence);
-            // create the extensions object and add it as an attribute
-            Vector oids = new Vector();
-            Vector values = new Vector();
-
-            oids.add(X509Extensions.SubjectAlternativeName);
-            values.add(new X509Extension(false, new DEROctetString(subjectAltName)));
-
-            return new X509Extensions(oids, values);
+        if (sans == null || sans.isEmpty()) {
+            return null;
         }
 
-        return null;
+        final List<GeneralName> generalNameList = new ArrayList<>();
+        for (final X509GeneralName san : sans) {
+            generalNameList.add(new GeneralName(san.getType().getTag(), san.getStringVal()));
+        }
+
+        final GeneralNames subjectAltNames = GeneralNames.getInstance(new DERSequence(generalNameList.toArray(new GeneralName[] {})));
+        ExtensionsGenerator extGen = new ExtensionsGenerator();
+        try {
+            extGen.addExtension(Extension.subjectAlternativeName, false, subjectAltNames);
+        } catch (IOException e) {
+            LOGGER.log(Level.WARNING,
+                    "Error processing object: " + ExceptionUtils.getMessage(e),
+                    ExceptionUtils.getDebugException(e));
+            return null;
+        }
+        return extGen.generate();
     }
 
     /**
@@ -125,24 +131,35 @@ public class BouncyCastleCertUtils  {
      * @param keyPair the public and private keys
      * @param provider provider to use for crypto operations, or null to use best preferences.
      * @return a new CertificateRequest instance.  Never null.
-     * @throws java.security.InvalidKeyException  if a CSR cannot be created using the specified keypair
-     * @throws java.security.SignatureException   if the CSR cannot be signed
+     * @throws SignatureException        if there is a problem signing the certificate request.
      */
-    public static CertificateRequest makeCertificateRequest(String username, KeyPair keyPair, Provider provider) throws InvalidKeyException, SignatureException {
-        X509Name subject = new X509Name("cn=" + username);
-        ASN1Set attrs = omitAttrs ? null : new DERSet(new ASN1EncodableVector());
-        PublicKey publicKey = keyPair.getPublic();
-        PrivateKey privateKey = keyPair.getPrivate();
+    public static CertificateRequest makeCertificateRequest(String username, KeyPair keyPair, Provider provider) throws SignatureException {
+
+        X500Name subject = new X500Name("cn=" + username);
 
         // Generate request
         try {
-            PKCS10CertificationRequest certReq = new PKCS10CertificationRequest(JceProvider.DEFAULT_CSR_SIG_ALG, subject, publicKey, attrs, privateKey, provider == null ? null : provider.getName());
-            return new BouncyCastleCertificateRequest(certReq, publicKey);
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        } catch (NoSuchProviderException e) {
-            throw new RuntimeException(e);
+            final PKCS10CertificationRequestBuilder requestBuilder = new JcaPKCS10CertificationRequestBuilder(subject, keyPair.getPublic());
+            final ContentSigner signer = getContentSigner(JceProvider.DEFAULT_CSR_SIG_ALG, keyPair, provider);
+            return new BouncyCastleCertificateRequest(requestBuilder.build(signer), keyPair.getPublic());
+
+        } catch (OperatorCreationException e) {
+            throw new SignatureException("The content signer failed to build." + ExceptionUtils.getMessage(e));
         }
+    }
+
+    /**
+     *
+     * @param sigAlg The signature algorithm name
+     * @param keyPair The key pair
+     * @param provider The provider used, ie: Bouncy Castle, CCJ. Leave as null for default.
+     * @return The JcaContentSigner
+     * @throws OperatorCreationException If there is an error while creating the content signer
+     */
+    private static ContentSigner getContentSigner(String sigAlg, KeyPair keyPair, Provider provider) throws OperatorCreationException {
+        return provider == null ?
+                new JcaContentSignerBuilder(sigAlg).build(keyPair.getPrivate())
+                : new JcaContentSignerBuilder(sigAlg).setProvider(provider).build(keyPair.getPrivate());
     }
 
     /**
@@ -155,29 +172,29 @@ public class BouncyCastleCertUtils  {
     {
         if (attr == null || attr.size() < 1)
         {
-            return Collections.EMPTY_LIST;
+            return Collections.emptyList();
         }
 
         DERSequence encodable = (DERSequence) attr.getObjectAt(0);
         if(encodable == null) return Collections.emptyList();
 
         DERSet set = (DERSet) encodable.getObjectAt(1);
-        if(set == null) return Collections.EMPTY_LIST;
+        if(set == null) return Collections.emptyList();
 
         DERSequence seq1 = (DERSequence) set.getObjectAt(0);
-        if(seq1 == null) return Collections.EMPTY_LIST;
+        if(seq1 == null) return Collections.emptyList();
 
         DERSequence seq2 = (DERSequence) seq1.getObjectAt(0);
-        if(seq2 == null) return Collections.EMPTY_LIST;
+        if(seq2 == null) return Collections.emptyList();
 
         DEROctetString octetStr = (DEROctetString) seq2.getObjectAt(1);
-        if(octetStr == null) return Collections.EMPTY_LIST;
+        if(octetStr == null) return Collections.emptyList();
 
         byte[] extVal = octetStr.getEncoded();
-        if(extVal == null) return Collections.EMPTY_LIST;
+        if(extVal == null) return Collections.emptyList();
 
         List<X509GeneralName> temp = new ArrayList<>();
-        Enumeration it = DERSequence.getInstance(X509ExtensionUtil.fromExtensionValue(extVal)).getObjects();
+        Enumeration it = DERSequence.getInstance(JcaX509ExtensionUtils.parseExtensionValue(extVal)).getObjects();
         while (it.hasMoreElements())
         {
             GeneralName genName = GeneralName.getInstance(it.nextElement());
@@ -187,7 +204,7 @@ public class BouncyCastleCertUtils  {
                 case GeneralName.ediPartyName:
                 case GeneralName.x400Address:
                 case GeneralName.otherName:
-                    temp.add(new X509GeneralName(type, genName.getDEREncoded()));
+                    temp.add(new X509GeneralName(type, genName.getEncoded(ASN1Encoding.DER)));
                     break;
                 case GeneralName.directoryName:
                     temp.add(new X509GeneralName(type, X500Name.getInstance(genName.getName()).toString()));
@@ -201,7 +218,7 @@ public class BouncyCastleCertUtils  {
                     temp.add(new X509GeneralName(type, ASN1ObjectIdentifier.getInstance(genName.getName()).getId()));
                     break;
                 case GeneralName.iPAddress:
-                    temp.add(new X509GeneralName(type, DEROctetString.getInstance(genName.getName()).getDEREncoded()));
+                    temp.add(new X509GeneralName(type, DEROctetString.getInstance(genName.getName()).getEncoded(ASN1Encoding.DER)));
                     break;
                 default:
                     throw new IOException("Bad tag number: " + genName.getTagNo());

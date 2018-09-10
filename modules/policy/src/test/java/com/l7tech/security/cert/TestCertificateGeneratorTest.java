@@ -8,7 +8,9 @@ import com.l7tech.util.Pair;
 import org.bouncycastle.asn1.*;
 import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.jce.X509KeyUsage;
-import org.bouncycastle.x509.extension.X509ExtensionUtil;
+import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
+import org.bouncycastle.operator.DefaultSignatureAlgorithmIdentifierFinder;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -134,25 +136,31 @@ public class TestCertificateGeneratorTest {
         X509Certificate decoded = CertUtils.decodeFromPEM(CertUtils.encodeAsPEM(generated));
 
         assertTrue("CertificatePolicies extension prsent", decoded.getCriticalExtensionOIDs().contains("2.5.29.32"));
-        ASN1Object policiesExtension = X509ExtensionUtil.fromExtensionValue(decoded.getExtensionValue("2.5.29.32"));
+        ASN1Primitive policiesExtension = JcaX509ExtensionUtils.parseExtensionValue(decoded.getExtensionValue("2.5.29.32"));
 
         assertTrue("CertificatePolicies extension is a ASN1 sequence", policiesExtension instanceof ASN1Sequence);
-        DERObject derObject = ((ASN1Sequence) policiesExtension).getObjectAt(0).getDERObject();
-        assertEquals("Expected configured value", derObject, new DERSequence(new DERObjectIdentifier("1.2.3.4")));
+        ASN1Primitive asn1Primitive = ((ASN1Sequence) policiesExtension).getObjectAt(0).toASN1Primitive();
+        assertEquals("Expected configured value", asn1Primitive, new DERSequence(new ASN1ObjectIdentifier("1.2.3.4")));
 
         System.out.println("Decoded cert: " + decoded);
     }
 
     @Test
     public void testGenerateEccCert() throws Exception {
+
+        final String SIGNATURE_ALG = "SHA1withECDSA";
+
         Pair<X509Certificate, PrivateKey> got =
                 new TestCertificateGenerator().
                         curveName("secp384r1").
                         subject("cn=test_ecc_secp384r1_sha1").
-                        signatureAlgorithm("SHA1withECDSA").
+                        signatureAlgorithm(SIGNATURE_ALG).
                         generateWithKey();
 
         System.out.println("Cert: " + got.left + "\n" + CertUtils.encodeAsPEM(got.left));
+
+        DefaultSignatureAlgorithmIdentifierFinder sigAlgIdFinder = new DefaultSignatureAlgorithmIdentifierFinder();
+        Assert.assertEquals((got.left).getSigAlgOID(), sigAlgIdFinder.find(SIGNATURE_ALG).getAlgorithm().getId());
 
         assertEquals("PKCS#8", got.right.getFormat());
         System.out.println("Private key: " + HexUtils.encodeBase64(got.right.getEncoded()));

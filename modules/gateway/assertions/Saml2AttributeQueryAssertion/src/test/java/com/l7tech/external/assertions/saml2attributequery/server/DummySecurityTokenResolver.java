@@ -4,7 +4,8 @@ import com.l7tech.security.token.KerberosSigningSecurityToken;
 import com.l7tech.security.xml.SignerInfo;
 import com.l7tech.server.SecurityTokenResolverSupport;
 import org.apache.commons.codec.binary.Base64;
-import org.bouncycastle.x509.extension.SubjectKeyIdentifierStructure;
+import org.bouncycastle.asn1.x509.SubjectKeyIdentifier;
+import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
 
 import javax.security.auth.x500.X500Principal;
 import java.math.BigInteger;
@@ -31,10 +32,12 @@ public class DummySecurityTokenResolver extends SecurityTokenResolverSupport {
         return null;
     }
 
-    public X509Certificate lookupBySki(String ski) {
+    public X509Certificate lookupBySki(final String ski) {
         try {
-            SubjectKeyIdentifierStructure skis = new SubjectKeyIdentifierStructure(certificate.getPublicKey());
-            String certSki = new String(Base64.encodeBase64(skis.getKeyIdentifier(), false), "UTF-8");
+            final SubjectKeyIdentifier subjectKeyIdentifier = new JcaX509ExtensionUtils()
+                    .createSubjectKeyIdentifier(certificate.getPublicKey());
+            final String certSki = new String(
+                    Base64.encodeBase64(subjectKeyIdentifier.getKeyIdentifier(), false), "UTF-8");
             if(ski.equals(certSki)) {
                 return certificate;
             }
@@ -58,10 +61,12 @@ public class DummySecurityTokenResolver extends SecurityTokenResolverSupport {
         return null;
     }
 
-    public SignerInfo lookupPrivateKeyBySki(String ski) {
+    public SignerInfo lookupPrivateKeyBySki(final String ski) {
         try {
-            SubjectKeyIdentifierStructure skis = new SubjectKeyIdentifierStructure(certificate.getPublicKey());
-            String certSki = new String(Base64.encodeBase64(skis.getKeyIdentifier(), false), "UTF-8");
+            final SubjectKeyIdentifier subjectKeyIdentifier = new JcaX509ExtensionUtils()
+                    .createSubjectKeyIdentifier(certificate.getPublicKey());
+            final String certSki = new String(
+                    Base64.encodeBase64(subjectKeyIdentifier.getKeyIdentifier(), false), "UTF-8");
             if(ski.equals(certSki)) {
                 return new SignerInfo(privateKey, new X509Certificate[] {certificate});
             }

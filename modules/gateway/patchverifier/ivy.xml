@@ -27,7 +27,7 @@
         <dependency org="commons-lang" name="commons-lang" rev="2.6" force="true" conf="core"/>
         <dependency org="commons-codec" name="commons-codec" rev="1.6" force="true" conf="core"/>
         <dependency org="commons-configuration" name="commons-configuration" rev="1.8" force="true" conf="core"/>
-        <dependency org="bouncycastle" name="bcprov-jdk16" rev="1.46" force="true" conf="core->default"/>
+        <dependency org="bouncycastle" name="bcprov-jdk15on" rev="1.60" force="true" conf="core->default"/>
         <dependency org="liquibase" name="liquibase" rev="3.2.2" force="true" conf="core->default"/>
 
         <exclude org="org.apache.geronimo.specs" module="geronimo-javamail_1.4_spec"/>

@@ -37,8 +37,7 @@ import com.l7tech.util.Functions.UnaryVoid;
 import com.l7tech.util.Functions.UnaryVoidThrows;
 import org.apache.commons.lang.NotImplementedException;
 import org.bouncycastle.asn1.pkcs.CertificationRequestInfo;
-import org.bouncycastle.asn1.x509.X509Name;
-import org.bouncycastle.jce.PKCS10CertificationRequest;
+import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -349,10 +348,10 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
                             }
                         }
                     } );
-                    final Collection<SpecialKeyType> currentTypes = new ArrayList<SpecialKeyType>();
+                    final Collection<SpecialKeyType> currentTypes = new ArrayList<>();
                     final String externalId = toClusterPropertyValue( entry.getKeystoreId(), entry.getAlias() );
                     final Unary<Boolean,ClusterProperty> forThisKey = clusterPropertyValueMatchPredicate( externalId );
-                    final Collection<ClusterProperty> forUpdate = new ArrayList<ClusterProperty>();
+                    final Collection<ClusterProperty> forUpdate = new ArrayList<>();
                     foreach( speciaKeysAndProperties(forUpdateLookup()), false, new UnaryVoidThrows<Triple<SpecialKeyType,String,Either<FindException,Option<ClusterProperty>>>, ObjectModelException>() {
                         @Override
                         public void call( final Triple<SpecialKeyType,String,Either<FindException,Option<ClusterProperty>>> keyAndProperty ) throws ObjectModelException {
@@ -428,13 +427,7 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
                                         false,
                                         signatureHashAlgorithm.map( getSignatureAlgorithmMapper( entry.getPrivateKey().getAlgorithm() ) ).toNull() ) );
                         csrData = res.getEncoded();
-                    } catch ( SignatureException e ) {
-                        throw new ResourceAccessException( ExceptionUtils.getMessage( e ), e );
-                    } catch ( KeyStoreException e ) {
-                        throw new ResourceAccessException( ExceptionUtils.getMessage( e ), e );
-                    } catch ( InvalidKeyException e ) {
-                        throw new ResourceAccessException( ExceptionUtils.getMessage( e ), e );
-                    } catch ( UnrecoverableKeyException e ) {
+                    } catch ( SignatureException | IOException | KeyStoreException | InvalidKeyException | UnrecoverableKeyException e ) {
                         throw new ResourceAccessException( ExceptionUtils.getMessage( e ), e );
                     } catch ( IllegalArgumentException e) {
                         throw new InvalidResourceException(ExceptionType.INVALID_VALUES, ExceptionUtils.getMessage(e));
@@ -474,8 +467,8 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
                         final X500Principal subject;
                         if(subjectDN == null || subjectDN.isEmpty()) {
                             PKCS10CertificationRequest pkcs10 = new PKCS10CertificationRequest(decodedCsrBytes);
-                            CertificationRequestInfo certReqInfo = pkcs10.getCertificationRequestInfo();
-                            subject = new X500Principal(certReqInfo.getSubject().toString(true, X509Name.DefaultSymbols));
+                            CertificationRequestInfo certReqInfo = pkcs10.toASN1Structure().getCertificationRequestInfo();
+                            subject = new X500Principal(certReqInfo.getSubject().toString());
                         } else {
                             subject = new X500Principal(subjectDN);
                         }
@@ -575,11 +568,10 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
                                 makeCaCert,
                                 signatureHashAlgorithm.map( getSignatureAlgorithmMapper( keyGenParams.getAlgorithm() ) ).toNull())
                                 .get();
-                    } catch ( GeneralSecurityException e ) {
+                    } catch ( GeneralSecurityException | ExecutionException e) {
                         throw new ResourceAccessException( ExceptionUtils.getMessage(e), e );
-                    } catch ( InterruptedException e ) {
-                        throw new ResourceAccessException( ExceptionUtils.getMessage(e), e );
-                    } catch ( ExecutionException e ) {
+                    } catch (InterruptedException e ) {
+                        Thread.currentThread().interrupt();
                         throw new ResourceAccessException( ExceptionUtils.getMessage(e), e );
                     } catch (IllegalArgumentException e) {
                         return left(new InvalidResourceException(ExceptionType.INVALID_VALUES, e.getMessage()));
@@ -639,7 +631,10 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
                 } catch ( MultipleAliasesException e ) {
                     return left( new InvalidResourceException( InvalidResourceException.ExceptionType.INVALID_VALUES, "Alias must be specified : " + Arrays.asList( e.getAliases() ) ) );
                 } catch ( IOException | CertificateException | NoSuchAlgorithmException | UnrecoverableKeyException |
-                          ExecutionException | InterruptedException | NoSuchProviderException | KeyStoreException e ) {
+                          ExecutionException | NoSuchProviderException | KeyStoreException e ) {
+                    throw new ResourceAccessException( ExceptionUtils.getMessage( e ), e );
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                     throw new ResourceAccessException( ExceptionUtils.getMessage( e ), e );
                 }
             }
@@ -723,7 +718,7 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
             alias = identifier;
         }
 
-        return new Pair<Goid,String>( keyStoreId, alias );
+        return new Pair<>( keyStoreId, alias );
     }
 
     static String toExternalId( final Goid keyStoreId, final String alias ) {
@@ -806,9 +801,7 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
                     }
                 }
             }
-        } catch ( KeyStoreException e ) {
-            throw new ResourceAccessException(e);
-        } catch ( FindException e ) {
+        } catch ( KeyStoreException | FindException e ) {
             throw new ResourceAccessException(e);
         }
 
@@ -873,7 +866,7 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
     }
 
     public X509Certificate[] toCertificateArray( final List<CertificateData> certificateChain ) throws InvalidResourceException {
-        List<X509Certificate> certificates = new ArrayList<X509Certificate>();
+        List<X509Certificate> certificates = new ArrayList<>();
 
         for ( final CertificateData certificateData : certificateChain ) {
             certificates.add( getCertificate( certificateData ) );
@@ -904,7 +897,7 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
     }
 
     private List<CertificateData> buildCertificateChain( final SsgKeyEntry ssgKeyEntry ) {
-        List<CertificateData> data = new ArrayList<CertificateData>();
+        List<CertificateData> data = new ArrayList<>();
 
         for ( X509Certificate certificate : ssgKeyEntry.getCertificateChain() ) {
             try {
@@ -965,7 +958,7 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
 
     private Map<String, Object> buildProperties( final SsgKeyEntry ssgKeyEntry,
                                                  final Option<Collection<SpecialKeyType>> keyTypes ) {
-        final Map<String,Object> properties = new HashMap<String,Object>();
+        final Map<String,Object> properties = new HashMap<>();
         optional( ssgKeyEntry.getPublic() ).foreach( new UnaryVoid<PublicKey>() {
             @Override
             public void call( final PublicKey publicKey ) {
@@ -973,7 +966,7 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
             }
         } );
 
-        final Collection<SpecialKeyType> types = new LinkedHashSet<SpecialKeyType>();
+        final Collection<SpecialKeyType> types = new LinkedHashSet<>();
         final String externalId = toClusterPropertyValue( ssgKeyEntry.getKeystoreId(), ssgKeyEntry.getAlias() );
         final Unary<Boolean,ClusterProperty> forThisKey = clusterPropertyValueMatchPredicate( externalId );
         for ( final Triple<SpecialKeyType,String,Option<ClusterProperty>> keyAndProperty : speciaKeysAndProperties(cacheLookup()) ) {
@@ -1020,7 +1013,7 @@ public class PrivateKeyResourceFactory extends ResourceFactorySupport<PrivateKey
             @Override
             public Triple<SpecialKeyType, String,T> call( final SpecialKeyType specialKeyType ) {
                 final String propertyName = PrivateKeyAdminHelper.getClusterPropertyForSpecialKeyType( specialKeyType );
-                return new Triple<SpecialKeyType, String, T>(
+                return new Triple<>(
                         specialKeyType,
                         propertyName,
                         lookup.call( propertyName )

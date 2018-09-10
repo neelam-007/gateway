@@ -11,20 +11,21 @@ import com.l7tech.util.TimeUnit;
 import org.bouncycastle.asn1.*;
 import org.bouncycastle.asn1.ocsp.CertID;
 import org.bouncycastle.asn1.ocsp.OCSPObjectIdentifiers;
-import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.asn1.x509.X509Extension;
-import org.bouncycastle.asn1.x509.X509Extensions;
-import org.bouncycastle.jce.PrincipalUtil;
-import org.bouncycastle.jce.X509Principal;
-import org.bouncycastle.ocsp.*;
+import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
+import org.bouncycastle.asn1.x509.*;
+import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
+import org.bouncycastle.cert.ocsp.*;
+import org.bouncycastle.operator.DefaultAlgorithmNameFinder;
 
+import javax.security.auth.x500.X500Principal;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.*;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.logging.Level;
@@ -209,28 +210,39 @@ public class OCSPClient {
 
     //- PACKAGE
 
-    static CertID buildCertID( final X509Certificate issuerCertificate, final BigInteger serialNumber ) throws OCSPException { 
+    static CertID buildCertID( final X509Certificate issuerCertificate, final BigInteger serialNumber ) throws OCSPException {
+
+        final AlgorithmIdentifier algorithmidentifier;
+        final MessageDigest messagedigest;
+        final PublicKey publickey;
+        final DEROctetString deroctetstring;
+
         try {
-            final AlgorithmIdentifier algorithmidentifier =
-                    new AlgorithmIdentifier(new DERObjectIdentifier(CertificateID.HASH_SHA1), new DERNull());
+            algorithmidentifier = new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1, DERNull.INSTANCE);
 
-            final MessageDigest messagedigest = JceProvider.getMessageDigest("SHA-1", null);
-            final X509Principal x509principal = PrincipalUtil.getSubjectX509Principal(issuerCertificate);
-            messagedigest.update(x509principal.getEncoded());
-            final DEROctetString deroctetstring = new DEROctetString(messagedigest.digest());
+            messagedigest = JceProvider.getMessageDigest("SHA-1", null);
+            final X500Principal x500principal = issuerCertificate.getSubjectX500Principal();
+            messagedigest.update(x500principal.getEncoded());
+            deroctetstring = new DEROctetString(messagedigest.digest());
+            publickey = issuerCertificate.getPublicKey();
 
-            final PublicKey publickey = issuerCertificate.getPublicKey();
-            final ASN1InputStream asn1inputstream = new ASN1InputStream(publickey.getEncoded());
+        } catch (NoSuchAlgorithmException e) {
+            throw new OCSPException((new StringBuilder()).append("problem creating ID: ").append(e).toString(), e);
+        }
+
+        try (ASN1InputStream asn1inputstream = new ASN1InputStream(publickey.getEncoded())) {
+
             final SubjectPublicKeyInfo subjectpublickeyinfo =
                     SubjectPublicKeyInfo.getInstance(asn1inputstream.readObject());
             messagedigest.update(subjectpublickeyinfo.getPublicKeyData().getBytes());
+
             final DEROctetString deroctetstring1 = new DEROctetString(messagedigest.digest());
+            final ASN1Integer derinteger = new ASN1Integer(serialNumber);
 
-            final DERInteger derinteger = new DERInteger(serialNumber);
+            return new CertID(algorithmidentifier, deroctetstring, deroctetstring1, derinteger);
 
-            return new CertID( algorithmidentifier, deroctetstring, deroctetstring1, derinteger );
-        } catch( Exception exception ) {
-            throw new OCSPException((new StringBuilder()).append("problem creating ID: ").append(exception).toString(), exception);
+        } catch (IOException e) {
+            throw new OCSPException((new StringBuilder()).append("problem creating certificate ID: ").append(e).toString(), e);
         }
     }
 
@@ -281,45 +293,45 @@ public class OCSPClient {
         try {
             CertificateID certId = new CertificateID(buildCertID( issuerCertificate, certificate.getSerialNumber()));
             byte[] nonceBytes = nonce ? generateNonce() : null;
-            OCSPReq request = generateOCSPRequest(certId,  nonceBytes);
+            final OCSPReq request = buildOCSPRequest(certId,  nonceBytes);
             status = sendRequest(url, request, certId, signed, nonceBytes);
-        } catch ( OCSPException oe ) {
-            throw new OCSPClientException("Error generating OCSP request for certificate.", oe);
+        } catch (final OCSPException | IOException e ) {
+            throw new OCSPClientException("Error building OCSP request for certificate.", e);
         }
 
         return status;
     }
 
     /**
-     * Generate an OCSP request with the given info.
+     * Build an OCSP request with the given info.
      */
-    private static OCSPReq generateOCSPRequest( final CertificateID id,
-                                                final byte[] nonceBytes ) throws OCSPException {
-        // create generator
-        final OCSPReqGenerator generator = new OCSPReqGenerator();
+    private static OCSPReq buildOCSPRequest(final CertificateID id,
+                                            final byte[] nonceBytes ) throws OCSPException, IOException {
+        // create builder
+        final OCSPReqBuilder builder = new OCSPReqBuilder();
 
         // Add the ID for the certificate we are looking for
-        generator.addRequest(id);
+        builder.addRequest(id);
 
         // Extension holders
-        final Vector<DERObjectIdentifier> oids = new Vector<DERObjectIdentifier>();
-        final Vector<X509Extension> values = new Vector<X509Extension>();
+        final List<Extension> extensions = new ArrayList<>();
 
         // Only support basic responses
-        oids.add(OCSPObjectIdentifiers.id_pkix_ocsp_response);
-        values.add(new X509Extension(false, new DEROctetString(new DERSequence(new ASN1Encodable[]{OCSPObjectIdentifiers.id_pkix_ocsp_basic}).getDEREncoded())));
+        extensions.add(
+                new Extension(OCSPObjectIdentifiers.id_pkix_ocsp_response, false, new DEROctetString(
+                        new DERSequence(
+                                new ASN1Object[]{OCSPObjectIdentifiers.id_pkix_ocsp_basic}).getEncoded(ASN1Encoding.DER))));
 
         // Optionally add nonce extension
         if ( nonceBytes != null ) {
-            oids.add(OCSPObjectIdentifiers.id_pkix_ocsp_nonce);
-            values.add(new X509Extension(false, new DEROctetString(nonceBytes)));
+            extensions.add(new Extension(OCSPObjectIdentifiers.id_pkix_ocsp_nonce, false, new DEROctetString(nonceBytes)));
         }
 
         // Add extensions
-        if ( !oids.isEmpty() )
-            generator.setRequestExtensions(new X509Extensions(oids, values));
+        if ( !extensions.isEmpty() )
+            builder.setRequestExtensions(new Extensions(extensions.toArray(new Extension[extensions.size()])));
 
-        return generator.generate();
+        return builder.build();
     }
 
     /**
@@ -379,8 +391,7 @@ public class OCSPClient {
     private OCSPStatus handleResponse(final OCSPResp ocspResponse,
                                       final CertificateID certId,
                                       final boolean signed,
-                                      final byte[] nonceBytes) throws OCSPClientException
-    {
+                                      final byte[] nonceBytes) throws OCSPClientException, IOException {
         final OCSPStatus status;
 
         // process response
@@ -419,8 +430,7 @@ public class OCSPClient {
     private OCSPStatus processOCSPResponse(final OCSPResp ocspResponse,
                                            final CertificateID certId,
                                            final boolean signed,
-                                           final byte[] nonceBytes) throws OCSPClientException
-    {
+                                           final byte[] nonceBytes) throws OCSPClientException, IOException {
         OCSPStatus status = null;
 
         // get response data
@@ -444,10 +454,10 @@ public class OCSPClient {
         // check the nonce
         if ( nonceBytes != null ) {
             byte[] responseNonce = null;
-            byte[] value = basicOcspResp.getExtensionValue( OCSPObjectIdentifiers.id_pkix_ocsp_nonce.getId() );
+            byte[] value = basicOcspResp.getExtension(OCSPObjectIdentifiers.id_pkix_ocsp_nonce).getExtnValue().getEncoded();
             if ( value != null ) {
-                try {
-                    ASN1OctetString extensionOctetString = (ASN1OctetString) new ASN1InputStream( value ).readObject();
+                try (ASN1InputStream asn1InputStream = new ASN1InputStream( value )) {
+                    ASN1OctetString extensionOctetString = ASN1OctetString.getInstance(asn1InputStream.readObject());
                     responseNonce = extensionOctetString.getOctets();
                 } catch ( IOException e ) {
                     throw new OCSPClientException("Error processing response nonce", e);
@@ -508,22 +518,20 @@ public class OCSPClient {
      */
     private void validateSignature(final BasicOCSPResp basicOcspResp,
                                    final boolean requireSignature) throws OCSPClientException {
-        final String sigAlg = basicOcspResp.getSignatureAlgName();
+        final String sigAlg = new DefaultAlgorithmNameFinder().getAlgorithmName(basicOcspResp.getSignatureAlgorithmID());
         final X509Certificate signer;
-        X509Certificate[] signerCerts;
+        final List<X509Certificate> signerCerts = new ArrayList<>();
+        final JcaX509CertificateConverter certConverter = new JcaX509CertificateConverter().setProvider(ConfigFactory.getProperty(SYSPROP_PROVIDER, DEFAULT_PROVIDER));
 
-        try {
-            signerCerts = basicOcspResp.getCerts( ConfigFactory.getProperty( SYSPROP_PROVIDER, DEFAULT_PROVIDER ) );
-        } catch (OCSPException oe) {
-            throw new OCSPClientException("Error processing certificates in OCSP response.", oe);
-        } catch (NoSuchProviderException nspe) {
-            throw new OCSPClientException("Security provider error when processing certificates in OCSP response", nspe);
+        for (final X509CertificateHolder x509CertificateHolder : basicOcspResp.getCerts()) {
+            try {
+                signerCerts.add(certConverter.getCertificate(x509CertificateHolder));
+            } catch (final CertificateException e) {
+                throw new OCSPClientException("Error processing certificates in OCSP response.", e);
+            }
         }
 
-        //
-        if (signerCerts == null)
-            signerCerts = new X509Certificate[0];
-        signer = certificateAuthorizer.getAuthorizedSigner(this, signerCerts);
+        signer = certificateAuthorizer.getAuthorizedSigner(this, signerCerts.toArray(new X509Certificate[signerCerts.size()]));
 
         // Perform signature validation
         try {
@@ -542,8 +550,6 @@ public class OCSPClient {
             } else if ( requireSignature ) {
                 throw new OCSPClientException("OCSP response not signed and signature is required.");
             }
-        } catch (OCSPException oe) {
-            throw new OCSPClientException("Invalid OCSP response.", oe);    
         } catch (GeneralSecurityException gse) {
             throw new OCSPClientException("Error verifying OCSP response signature.", gse);    
         }

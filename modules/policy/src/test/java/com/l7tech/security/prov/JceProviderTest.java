@@ -18,7 +18,9 @@ import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.security.xml.processor.WssProcessorImpl;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.SyspropUtil;
-import org.bouncycastle.jce.PKCS10CertificationRequest;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
+import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Test;
@@ -159,7 +161,11 @@ public class JceProviderTest {
                 log.info("pretest: loading a certificate signing request...");
                 byte[] bytes = IOUtils.slurpStream( new FileInputStream("/" + dir + "ssl.cer"));
                 final PKCS10CertificationRequest creq = new PKCS10CertificationRequest(bytes);
-                csr = new BouncyCastleCertificateRequest(creq, creq.getPublicKey());
+
+                SubjectPublicKeyInfo pkInfo = creq.getSubjectPublicKeyInfo();
+                JcaPEMKeyConverter converter = new JcaPEMKeyConverter();
+                PublicKey pubKey = converter.getPublicKey(pkInfo);
+                csr = new BouncyCastleCertificateRequest(creq, pubKey);
             } else {
                 // Make our own CSR
                 log.info("pretest: generating certificate signing requset...");

@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ivy-module version="2.0">
+<ivy-module version="1.0">
 	<info organisation="bouncycastle"
-		module="bcpg-jdk16"
-		revision="1.46"
+		module="bcpkix-jdk15on"
+		revision="1.60"
 		status="release"
-		publication="20110318122421"
+		publication="20180712162421"
 		default="true"
 	/>
 	<configurations>
 		<conf name="default" visibility="public"/>
 	</configurations>
 	<publications>
-		<artifact name="bcpg-jdk16" type="jar" ext="jar" conf="default"/>
+		<artifact name="bcpkix-jdk15on" type="jar" ext="jar" conf="default"/>
 	</publications>
 	<dependencies>
-		<dependency org="bouncycastle" name="bcprov-jdk16" rev="1.46" force="true" conf="default"/>
+		<dependency org="bouncycastle" name="bcprov-jdk15on" rev="1.60" force="true" conf="default"/>
 	</dependencies>
 </ivy-module>

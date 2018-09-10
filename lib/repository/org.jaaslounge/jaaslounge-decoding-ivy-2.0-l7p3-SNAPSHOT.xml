@@ -2,9 +2,9 @@
 <ivy-module version="2.0">
 	<info organisation="org.jaaslounge"
 		module="jaaslounge-decoding"
-		revision="2.0-l7p2-SNAPSHOT"
+		revision="2.0-l7p3-SNAPSHOT"
 		status="release"
-		publication=" 20171002115444"
+		publication="20180728115444"
 		default="true"
 	/>
 	<configurations>

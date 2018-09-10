@@ -64,11 +64,11 @@ class EcdsaSignatureMethod extends SignatureMethod {
         System.arraycopy(rs, 0, rb, 0, sidx);
         System.arraycopy(rs, sidx, sb, 0, sidx);
 
-        DERInteger r = new DERInteger(new BigInteger(1, rb));
-        DERInteger s = new DERInteger(new BigInteger(1, sb));
-        DERSequence seq = new DERSequence(new ASN1Encodable[] { r, s });
+        ASN1Integer r = new ASN1Integer(new BigInteger(1, rb));
+        ASN1Integer s = new ASN1Integer(new BigInteger(1, sb));
+        DERSequence seq = new DERSequence(new ASN1Primitive[] { r, s });
         try {
-            return seq.getEncoded(ASN1Encodable.DER);
+            return seq.getEncoded(ASN1Encoding.DER);
         } catch (IOException e) {
             throw new SignatureException("Invalid ECDSA SignatureValue: Unable to encode (r,s) pair as DER: " + ExceptionUtils.getMessage(e), e);
         }
@@ -76,17 +76,17 @@ class EcdsaSignatureMethod extends SignatureMethod {
 
     static byte[] getIntegerOctetStringFromSequence(ASN1Sequence seq, int index) throws SignatureException {
         Object obj = seq.getObjectAt(index);
-        if (obj instanceof DERInteger) {
-            DERInteger integer = (DERInteger) obj;
+        if (obj instanceof ASN1Integer) {
+            ASN1Integer integer = (ASN1Integer) obj;
             return integer.getPositiveValue().toByteArray();
         } else {
-            throw new SignatureException("Internal error generating ECDSA signature: Unable to decode (r,s) pair from DER: sequence element was not a DERInteger");
+            throw new SignatureException("Internal error generating ECDSA signature: Unable to decode (r,s) pair from DER: sequence element was not a ASN1Integer");
         }
     }
 
     static byte[] decodeAsn1(byte[] asn1) throws SignatureException {
         try {
-            ASN1Object got = ASN1Sequence.fromByteArray(asn1);
+            ASN1Primitive got = ASN1Sequence.fromByteArray(asn1);
             if (got instanceof ASN1Sequence) {
                 ASN1Sequence seq = (ASN1Sequence) got;
                 if (seq.size() != 2)

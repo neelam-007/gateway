@@ -5,15 +5,16 @@ import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
 import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.*;
+import org.bouncycastle.openpgp.bc.BcPGPObjectFactory;
+import org.bouncycastle.openpgp.bc.BcPGPSecretKeyRingCollection;
+import org.bouncycastle.openpgp.operator.*;
+import org.bouncycastle.openpgp.operator.bc.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.security.NoSuchProviderException;
-import java.security.Provider;
 import java.security.SecureRandom;
 import java.util.Date;
 import java.util.Iterator;
@@ -58,32 +59,27 @@ public class PgpUtil {
         if (outputStream == null) throw new PgpException("Output is required");
         if (password == null) throw new PgpException("Password is required");
 
-        final InputStream in = PGPUtil.getDecoderStream(inputStream);
-        final boolean asciiArmour = in instanceof ArmoredInputStream;
-        final PGPObjectFactory pgpF = new PGPObjectFactory(in);
-        final PGPEncryptedDataList enc = findObject(pgpF, PGPEncryptedDataList.class);
-
-        if (enc.size() < 1) {
-            failInvalid();
-        }
-
+        InputStream in = null;
+        InputStream clear = null;
+        InputStream unc = null;
         try {
-            final PGPPBEEncryptedData pbe = cast(enc.get(0), PGPPBEEncryptedData.class);
-            final InputStream clear = pbe.getDataStream(password, securityProvider);
-            PGPObjectFactory pgpFact = new PGPObjectFactory(clear);
+            in = PGPUtil.getDecoderStream(inputStream);
+            final boolean asciiArmour = in instanceof ArmoredInputStream;
+            final PGPObjectFactory pgpF = new BcPGPObjectFactory(in);
+            final PGPEncryptedDataList enc = findObject(pgpF, PGPEncryptedDataList.class);
 
-            // Compression is optional
-            final Object literalOrCompressed = pgpFact.nextObject();
-            final PGPLiteralData ld;
-            if (literalOrCompressed instanceof PGPCompressedData) {
-                final PGPCompressedData cData = (PGPCompressedData) literalOrCompressed;
-                pgpFact = new PGPObjectFactory(cData.getDataStream());
-                ld = cast(pgpFact.nextObject(), PGPLiteralData.class);
-            } else {
-                ld = cast(literalOrCompressed, PGPLiteralData.class);
+            if (enc.size() < 1) {
+                failInvalid();
             }
 
-            final InputStream unc = ld.getInputStream();
+            final PGPPBEEncryptedData pbe = cast(enc.get(0), PGPPBEEncryptedData.class);
+            final PBEDataDecryptorFactory pbeDataDecryptorFactory = new BcPBEDataDecryptorFactory(password, new BcPGPDigestCalculatorProvider());
+            clear = pbe.getDataStream(pbeDataDecryptorFactory);
+            PGPObjectFactory pgpFact = new BcPGPObjectFactory(clear);
+
+            final PGPLiteralData ld = getPgpLiteralData(pgpFact.nextObject());
+
+            unc = ld.getInputStream();
             int ch;
             while ((ch = unc.read()) >= 0) {
                 outputStream.write(ch);
@@ -99,6 +95,10 @@ public class PgpUtil {
         } catch (ArrayIndexOutOfBoundsException e) {
             // See bug 10325, this can occur when a file is incorrectly treated as Base64
             throw new PgpException(ExceptionUtils.getMessage(e), e);
+        } finally {
+            ResourceUtils.closeQuietly(in);
+            ResourceUtils.closeQuietly(clear);
+            ResourceUtils.closeQuietly(unc);
         }
     }
 
@@ -113,7 +113,7 @@ public class PgpUtil {
 
         final InputStream in = PGPUtil.getDecoderStream(inputStream);
         final boolean asciiArmour = in instanceof ArmoredInputStream;
-        final PGPObjectFactory pgpF = new PGPObjectFactory(in);
+        final PGPObjectFactory pgpF = new BcPGPObjectFactory(in);
         final PGPEncryptedDataList enc = findObject(pgpF, PGPEncryptedDataList.class);
 
         if (enc.size() < 1) {
@@ -126,34 +126,24 @@ public class PgpUtil {
             Iterator it = enc.getEncryptedDataObjects();
             PGPPrivateKey sKey = null;
             PGPPublicKeyEncryptedData pbe = null;
-            PGPSecretKeyRingCollection pgpSec = null;
-
-            pgpSec = new PGPSecretKeyRingCollection(PGPUtil.getDecoderStream(key));
+            final PGPSecretKeyRingCollection pgpSec = new BcPGPSecretKeyRingCollection(PGPUtil.getDecoderStream(key));
+            final PBESecretKeyDecryptor pbeSecretKeyDecryptor = new BcPBESecretKeyDecryptorBuilder(
+                    new BcPGPDigestCalculatorProvider()).build(password);
 
             while (sKey == null && it.hasNext()) {
                 pbe = (PGPPublicKeyEncryptedData) it.next();
 
                 PGPSecretKey pgpSecKey = pgpSec.getSecretKey(pbe.getKeyID());
-                sKey = pgpSecKey.extractPrivateKey(password, securityProvider);
+                sKey = pgpSecKey.extractPrivateKey(pbeSecretKeyDecryptor);
             }
 
             if (sKey == null) {
                 throw new PgpException("PGP Private key for message not found.");
             }
 
-            final InputStream clear = pbe.getDataStream(sKey, securityProvider);
-            PGPObjectFactory pgpFact = new PGPObjectFactory(clear);
-
-            // Compression is optional
-            final Object literalOrCompressed = pgpFact.nextObject();
-            final PGPLiteralData ld;
-            if (literalOrCompressed instanceof PGPCompressedData) {
-                final PGPCompressedData cData = (PGPCompressedData) literalOrCompressed;
-                pgpFact = new PGPObjectFactory(cData.getDataStream());
-                ld = cast(pgpFact.nextObject(), PGPLiteralData.class);
-            } else {
-                ld = cast(literalOrCompressed, PGPLiteralData.class);
-            }
+            final InputStream clear = pbe.getDataStream(new BcPublicKeyDataDecryptorFactory(sKey));
+            final PGPObjectFactory pgpFact = new BcPGPObjectFactory(clear);
+            final PGPLiteralData ld = getPgpLiteralData(pgpFact.nextObject());
 
             final InputStream unc = ld.getInputStream();
             int ch;
@@ -204,22 +194,21 @@ public class PgpUtil {
                 new PGPCompressedDataGenerator(PGPCompressedData.ZIP);
         final PGPLiteralDataGenerator literalDataGenerator = new PGPLiteralDataGenerator();
         final PGPEncryptedDataGenerator encryptedDataGenerator = new PGPEncryptedDataGenerator(
-                pgpAlgorithm,
-                integrityCheck,
-                secureRandom,
-                securityProvider);
+                new BcPGPDataEncryptorBuilder(pgpAlgorithm)
+                        .setSecureRandom(secureRandom)
+                        .setWithIntegrityPacket(integrityCheck)
+        );
 
         if (publicKeyStream != null){
-            try {
-                PGPPublicKey key = getPgpPublicKey(publicKeyStream);
-                encryptedDataGenerator.addMethod(key);
-            } catch (NoSuchProviderException | PGPException e) {
-                throw new PgpException(ExceptionUtils.getMessage(e), e);
-            }
+            PGPPublicKey key = getPgpPublicKey(publicKeyStream);
+            encryptedDataGenerator.addMethod(new BcPublicKeyKeyEncryptionMethodGenerator(key));
         } else if (password != null) {
             try {
-                encryptedDataGenerator.addMethod(password, PGPEncryptedDataGenerator.S2K_SHA512);
-            } catch (NoSuchProviderException | PGPException e) {
+                encryptedDataGenerator.addMethod(
+                        new BcPBEKeyEncryptionMethodGenerator(
+                                password,
+                                new BcPGPDigestCalculatorProvider().get(PGPEncryptedDataGenerator.S2K_SHA512)));
+            } catch (PGPException e) {
                 throw new PgpException(ExceptionUtils.getMessage(e), e);
             }
         } else {
@@ -265,7 +254,7 @@ public class PgpUtil {
 
     private static PGPPublicKey getPgpPublicKey(InputStream publicKeyStream) throws PgpException {
         try (InputStream publicKeyStreamDecoder = PGPUtil.getDecoderStream(publicKeyStream)) {
-            PGPPublicKeyRingCollection pgpPub = new PGPPublicKeyRingCollection(publicKeyStreamDecoder);
+            final PGPPublicKeyRingCollection pgpPub = new PGPPublicKeyRingCollection(publicKeyStreamDecoder, new BcKeyFingerprintCalculator());
             PGPPublicKey key = null;
             Iterator rIt = pgpPub.getKeyRings();
             while (key == null && rIt.hasNext()) {
@@ -360,7 +349,6 @@ public class PgpUtil {
     //- PRIVATE
 
     private static final SecureRandom secureRandom = new SecureRandom();
-    private static final Provider securityProvider = new BouncyCastleProvider();
 
     private static DecryptionMetadata failInvalid() throws PgpException {
         throw new PgpException("Invalid encrypted data");
@@ -398,5 +386,18 @@ public class PgpUtil {
             failInvalid();
             return null; // not reached
         }
+    }
+
+    private static PGPLiteralData getPgpLiteralData(final Object literalOrCompressed) throws IOException, PGPException, PgpException {
+        final PGPLiteralData ld;
+        // Compression is optional
+        if (literalOrCompressed instanceof PGPCompressedData) {
+            final PGPCompressedData cData = (PGPCompressedData) literalOrCompressed;
+            final PGPObjectFactory pgpFactory = new BcPGPObjectFactory(cData.getDataStream());
+            ld = cast(pgpFactory.nextObject(), PGPLiteralData.class);
+        } else {
+            ld = cast(literalOrCompressed, PGPLiteralData.class);
+        }
+        return ld;
     }
 }

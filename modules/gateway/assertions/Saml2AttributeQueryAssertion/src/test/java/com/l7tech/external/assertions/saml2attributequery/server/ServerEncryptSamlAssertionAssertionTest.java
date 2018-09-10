@@ -3,7 +3,7 @@ package com.l7tech.external.assertions.saml2attributequery.server;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.xml.soap.SoapUtil;
 import org.apache.commons.codec.binary.Base64;
-import org.bouncycastle.openssl.PEMReader;
+import org.bouncycastle.openssl.PEMParser;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.w3c.dom.Document;
@@ -111,10 +111,10 @@ public class ServerEncryptSamlAssertionAssertionTest {
 
         Document doc = parser.parse(new ByteArrayInputStream(BASE_XML.getBytes("UTF-8")));
 
-        PEMReader pemReader = new PEMReader(new StringReader(CERTIFICATE_PEM));
-        X509Certificate cert = (X509Certificate)pemReader.readObject();
-        pemReader = new PEMReader(new StringReader(PRIVATE_KEY_PEM));
-        KeyPair keyPair = (KeyPair)pemReader.readObject();
+        PEMParser pemParser = new PEMParser(new StringReader(CERTIFICATE_PEM));
+        X509Certificate cert = (X509Certificate)pemParser.readObject();
+        pemParser = new PEMParser(new StringReader(PRIVATE_KEY_PEM));
+        KeyPair keyPair = (KeyPair)pemParser.readObject();
 
         // TODO this test apparently needs to be rewritten, below line does not compile and does not appear to make enough sense to be easily fixable
         //      It looks like there used to be a signRequest() method in the original version of the ServerEncryptSamlAssertionAssertion but it was removed

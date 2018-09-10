@@ -6,10 +6,10 @@ import org.apache.harmony.security.asn1.ASN1Sequence;
 import org.apache.harmony.security.asn1.ASN1Type;
 import org.bouncycastle.asn1.*;
 import org.bouncycastle.asn1.x509.*;
-import org.bouncycastle.x509.extension.AuthorityKeyIdentifierStructure;
-import org.bouncycastle.x509.extension.X509ExtensionUtil;
+import org.bouncycastle.cert.X509CRLHolder;
+import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
 import org.jetbrains.annotations.NotNull;
-import sun.security.util.DerValue;
 
 import javax.naming.InvalidNameException;
 import javax.naming.ldap.LdapName;
@@ -24,7 +24,6 @@ import java.net.UnknownHostException;
 import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.*;
-import java.security.cert.X509Extension;
 import java.security.interfaces.*;
 import java.security.spec.ECParameterSpec;
 import java.security.spec.InvalidKeySpecException;
@@ -79,7 +78,6 @@ public class CertUtils {
     public static final String X509_OID_NETSCAPE_CRL_URL = "2.16.840.1.113730.1.4";
     public static final String X509_OID_SUBJECTKEYID = "2.5.29.14";
     public static final String X509_OID_AUTHORITYKEYID = "2.5.29.35";
-    public static final String X509_OID_AUTHORITY_INFORMATION_ACCESS = "1.3.6.1.5.5.7.1.1";
     public static final String X509_OID_AIA_OCSP_URL = "1.3.6.1.5.5.7.48.1";
     public static final String X509_OID_BASIC_CONSTRAINTS = "2.5.29.19";
 
@@ -282,22 +280,6 @@ public class CertUtils {
                     "the certificate [" + getCertIdentifyingInformation(cert) + "].");
     }
 
-    public static X509Certificate[] parsePemChain(String[] pemChain) throws CertificateException {
-        if (pemChain == null || pemChain.length < 1)
-            throw new IllegalArgumentException("PEM chain must contain at least one certificate");
-
-        X509Certificate[] safeChain = new X509Certificate[pemChain.length];
-        try {
-            for (int i = 0; i < pemChain.length; i++) {
-                String pem = pemChain[i];
-                safeChain[i] = CertUtils.decodeFromPEM(pem);
-            }
-        } catch (IOException e) {
-            throw new CertificateException("error setting new cert", e);
-        }
-        return safeChain;
-    }
-
     /**
      * Produce an X509Certificate array from a Certificate array that contains nothing but X509Certificates.
      *
@@ -315,18 +297,6 @@ public class CertUtils {
             ret[i] = x509Cert;
         }
         return ret;
-    }
-
-    public static X509Certificate[] decodeCertChain(byte[] bytes) throws CertificateException {
-        Collection<? extends Certificate> list = getFactory().generateCertificates(new ByteArrayInputStream(bytes));
-        List<X509Certificate> certs = new ArrayList<X509Certificate>(list.size());
-        for (Certificate certificate : list) {
-            if (certificate instanceof X509Certificate)
-                certs.add((X509Certificate)certificate);
-            else
-                throw new IllegalArgumentException("Certificate in chain was not X.509");
-        }
-        return certs.toArray(new X509Certificate[certs.size()]);
     }
 
     public synchronized static CertificateFactory getFactory() {
@@ -970,7 +940,7 @@ public class CertUtils {
 
                 if ( nameTokenizer.countTokens() == patternTokenizer.countTokens() ) {
                     match = true;
-                    boolean isFirst = true;               
+                    boolean isFirst = true;
                     while ( nameTokenizer.hasMoreTokens() ) {
                         final String nameToken = nameTokenizer.nextToken();
                         final String patternToken = patternTokenizer.nextToken();
@@ -1196,16 +1166,14 @@ public class CertUtils {
      */
     private static String getSubjectAlternativeName(List san) {
         Integer type = (Integer) san.get(0);
-        String value = "";
+        final String value;
 
         if (san.get(1) instanceof String) {
             value = (String) san.get(1);
         } else if (san.get(1) instanceof byte[] ){
-            byte[] b = (byte[]) san.get(1);
-            ASN1InputStream ais = new ASN1InputStream(b);
-            try {
-                DERObject o = ais.readObject();
-                value = o.toString();
+            final byte[] b = (byte[]) san.get(1);
+            try (final ASN1InputStream ais = new ASN1InputStream(b)){
+                value = ais.readObject().toString();
             } catch (IOException e) {
                 return null;
             }
@@ -1991,48 +1959,92 @@ public class CertUtils {
      *
      * @return an array of zero or more CRL URLs from the certificate
      */
-    public static String[] getCrlUrls(X509Certificate cert) throws IOException {
-        Set<String> urls = new LinkedHashSet<String>();
-        byte[] distibutionPointBytes = cert.getExtensionValue(X509_OID_CRL_DISTRIBUTION_POINTS);
-        if ( distibutionPointBytes != null && distibutionPointBytes.length > 0 ) {
-            ASN1Encodable asn1 = X509ExtensionUtil.fromExtensionValue(distibutionPointBytes);
-            DERObject obj = asn1.getDERObject();
-            CRLDistPoint distPoint = CRLDistPoint.getInstance(obj);
-            DistributionPoint[] points = distPoint.getDistributionPoints();
-            for (DistributionPoint point : points) {
-                DistributionPointName dpn = point.getDistributionPoint();
-                if ( dpn == null ) continue;
-                obj = dpn.getName().toASN1Object();
-                org.bouncycastle.asn1.ASN1Sequence seq = org.bouncycastle.asn1.ASN1Sequence.getInstance(obj);
-                Enumeration objs = seq.getObjects();
-                if (objs != null) while (objs.hasMoreElements()) {
-                    DEREncodable first = (DEREncodable)objs.nextElement();
-                    if (first instanceof GeneralName) {
-                        GeneralName generalName = (GeneralName) first;
-                        urls.add(generalName.getName().toString().trim());
-                    } else if (first instanceof ASN1Encodable) {
-                        ASN1Encodable tag = (ASN1Encodable) first;
-                        DERObject foo = tag.getDERObject().getDERObject();
-                        if (foo instanceof DEROctetString) {
-                            DEROctetString derOctetString = (DEROctetString) foo;
-                            distibutionPointBytes = derOctetString.getOctets();
-                            urls.add(new String(distibutionPointBytes, "ISO8859-1"));
-                        }
-                    }
+    public static String[] getCrlUrls(final X509Certificate cert) throws IOException {
+        final Set<String> urls = new LinkedHashSet<>();
+        urls.addAll(getCrlDistributionPoints(cert));
+        urls.addAll(getNetscapeCrlUrls(cert));
+        return urls.toArray(new String[urls.size()]);
+    }
+
+    /**
+     * Get the CRL Distribution points
+     *
+     * Structure of CRLDistributionPoints from https://tools.ietf.org/html/rfc5280#section-4.2.1.13
+     *
+     * CRLDistributionPoints ::= SEQUENCE SIZE (1..MAX) OF DistributionPoint
+     *
+     * DistributionPoint ::= SEQUENCE {
+     * distributionPoint       [0]     DistributionPointName OPTIONAL,
+     * reasons                 [1]     ReasonFlags OPTIONAL,
+     * cRLIssuer               [2]     GeneralNames OPTIONAL }
+     *
+     * DistributionPointName ::= CHOICE {
+     * fullName                [0]     GeneralNames,
+     * nameRelativeToCRLIssuer [1]     RelativeDistinguishedName }
+     *
+     * Currently we only support retrieving the full name of distribution points, and not nameRelativeToCrlIssuer
+     *
+     * @param cert the X509Certificate
+     * @return Set<String> CRL urls
+     * @throws IOException if there is an error while parsing the extension value
+     */
+    private static Set<String> getCrlDistributionPoints(final X509Certificate cert) throws IOException {
+        final Set<String> urls = new LinkedHashSet<>();
+        final byte[] distibutionPointBytes = cert.getExtensionValue(X509_OID_CRL_DISTRIBUTION_POINTS);
+        if (distibutionPointBytes != null && distibutionPointBytes.length > 0) {
+            final CRLDistPoint distPoint = CRLDistPoint.getInstance(JcaX509ExtensionUtils.parseExtensionValue(distibutionPointBytes));
+            for (final DistributionPoint point : distPoint.getDistributionPoints()) {
+                final DistributionPointName dpn = point.getDistributionPoint();
+                if (dpn != null && dpn.getType() == DistributionPointName.FULL_NAME) {
+                    urls.addAll(processGeneralNameString(dpn));
                 }
             }
         }
+        return urls;
+    }
 
-        byte[] netscapeCrlUrlBytes = cert.getExtensionValue(X509_OID_NETSCAPE_CRL_URL);
+    /**
+     * Retrieve all the general names as a string
+     *
+     * @param dpn the distribution point name to extract general names from
+     * @return urls from the general name
+     */
+    private static Set<String> processGeneralNameString(final DistributionPointName dpn) {
+        final Set<String> urls = new LinkedHashSet<>();
+        final GeneralName[] generalNames = GeneralNames.getInstance(dpn.getName()).getNames();
+        for (final GeneralName generalName : generalNames) {
+            //Don't need to check for uri type (GeneralName.uniformResourceIdentifier)
+            urls.add(generalName.getName().toString().trim());
+        }
+        return urls;
+    }
+
+    /**
+     * Get Netscape specific Crl Urls.
+     *
+     * OID description:
+     * It is a relative or absolute URL that can be used to check the revocation
+     * status of any certificates that are signed by the CA that this certificate belongs to.
+     *
+     * This extension is only valid in CA certificates.
+     * The use of this extension is the same as the netscape-revocation-url extension.
+     *
+     * @param cert The X509Certificate
+     * @return Set<String> of crl urls
+     * @throws IOException if there is an error while parsing the extension value
+     */
+    private static Set<String> getNetscapeCrlUrls(final X509Certificate cert) throws IOException {
+        final Set<String> urls = new LinkedHashSet<>();
+        final byte[] netscapeCrlUrlBytes = cert.getExtensionValue(X509_OID_NETSCAPE_CRL_URL);
         if (netscapeCrlUrlBytes != null && netscapeCrlUrlBytes.length > 0) {
-            ASN1Encodable asn1 = X509ExtensionUtil.fromExtensionValue(netscapeCrlUrlBytes);
-            if (asn1 instanceof DERString) {
-                urls.add(((DERString) asn1).getString());
+            final ASN1Primitive asn1 = JcaX509ExtensionUtils.parseExtensionValue(netscapeCrlUrlBytes);
+            if (asn1 instanceof ASN1String) {
+                urls.add(asn1.toString());
             } else {
                 throw new IOException("Netscape CRL URL extension value is not a String");
             }
         }
-        return urls.toArray(new String[urls.size()]);
+        return urls;
     }
 
     /**
@@ -2056,67 +2068,82 @@ public class CertUtils {
      */
     public static String[] getAuthorityInformationAccessUris(final X509Certificate certificate,
                                                              final String accessMethodOid) throws CertificateException {
-        Set<String> uris = new LinkedHashSet<String>();
+        final Set<String> uris = new LinkedHashSet<>();
 
-        byte[] aiaBytes = certificate.getExtensionValue(X509_OID_AUTHORITY_INFORMATION_ACCESS);
-        if (aiaBytes != null) {
-            try {
-                // Process AIA extension
-                ASN1Object extensionObject = ASN1Object.fromByteArray(aiaBytes);
-                if (!(extensionObject instanceof DEROctetString))
-                    throw new CertificateException("Certificate [" + getCertIdentifyingInformation(certificate) + "] " +
-                            "authority information access extension is not of the expected type: " +
-                            extensionObject.getClass().getName());
+        X509CertificateHolder certHolder;
+        final AuthorityInformationAccess aia;
+        try {
+            certHolder = new X509CertificateHolder(certificate.getEncoded());
+            aia = AuthorityInformationAccess.fromExtensions(certHolder.getExtensions());
 
-                DEROctetString derOS = (DEROctetString) extensionObject;
-                ASN1Object extensionSequenceObject =  ASN1Object.fromByteArray(derOS.getOctets());
-                if (!(extensionSequenceObject instanceof DERSequence))
-                    throw new CertificateException("Certificate [" + getCertIdentifyingInformation(certificate) + "] " +
-                            "authority information access extension content is not of the expected type: " +
-                            extensionSequenceObject.getClass().getName());
-
-                // Create AIA from sequence
-                DERSequence sequence = (DERSequence) extensionSequenceObject;
-                AuthorityInformationAccess aia = new AuthorityInformationAccess(sequence);
-                AccessDescription[] accessDescriptions = aia.getAccessDescriptions();
-
-                if (accessDescriptions.length == 0)
+            if (aia != null) {
+                final AccessDescription[] accessDescriptions = aia.getAccessDescriptions();
+                if (accessDescriptions.length == 0) {
                     throw new CertificateException("Certificate [" + getCertIdentifyingInformation(certificate) + "] " +
                             "authority information access extension is empty.");
-
-                for (AccessDescription accessDescription : accessDescriptions) {
-                    if(accessMethodOid.equals(accessDescription.getAccessMethod().getId())) {
-                        GeneralName name = accessDescription.getAccessLocation();
-                        // GeneralName ::= CHOICE { ... uniformResourceIdentifier       [6]     IA5String,
-                        if (name.getTagNo() == 6) {
-                            DEREncodable nameObject = name.getName();
-                            if (!(nameObject instanceof DERIA5String))
-                                throw new CertificateException("Certificate [" + getCertIdentifyingInformation(certificate) + "] " +
-                                        "authority information access extension has access description location with " +
-                                        "incorrect name type " + nameObject.getClass().getName());
-
-                            DERIA5String urlDer = (DERIA5String) nameObject;
-                            uris.add(urlDer.getString());
-                        }
-                    }
                 }
-            } catch (IllegalArgumentException | IOException iae) { // IllegalArgumentException can be thrown from AuthorityInformationAccess constructor
-                throw new CertificateException("Error processing certificate [" +
-                        getCertIdentifyingInformation(certificate) + "] authority information access extension.", iae);
+                uris.addAll(getUrlsFromAccessDescriptions(certificate, accessMethodOid, accessDescriptions));
             }
+        } catch (IOException e) {
+            throw new CertificateException("Error processing certificate [" +
+                    getCertIdentifyingInformation(certificate) + "] authority information access extension.", e);
         }
 
         return uris.toArray(new String[uris.size()]);
     }
 
-    public static AuthorityKeyIdentifierStructure getAKIStructure(X509Certificate cert) throws IOException {
-        if (cert.getVersion() < 3) return null;
-        return doGetAKIStructure(cert);
+    /**
+     * Get all the uris from an array from AccessDescription
+     * @param certificate used for throwing exception message in getUrlDerFromAccessDescription
+     * @param accessMethodOid the oid of the desired access method
+     * @param accessDescriptions The Access Descriptions from a cert
+     * @return
+     * @throws CertificateException
+     */
+    private static Set<String> getUrlsFromAccessDescriptions(final X509Certificate certificate,
+                                                             final String accessMethodOid,
+                                                             final AccessDescription[] accessDescriptions) throws CertificateException {
+        final Set<String> uris = new LinkedHashSet<>();
+        for (final AccessDescription accessDescription : accessDescriptions) {
+            if (accessMethodOid.equals(accessDescription.getAccessMethod().getId())) {
+                final DERIA5String urlDer = getUrlDerFromAccessDescription(accessDescription, certificate);
+                if (urlDer != null) {
+                    uris.add(urlDer.getString());
+                }
+            }
+        }
+        return uris;
     }
 
-    public static AuthorityKeyIdentifierStructure getAKIStructure(X509CRL crl) throws IOException {
+    /**
+     * Retrieve the url from the Access Description
+     * @param accessDescription
+     * @param certificate used for exception message
+     * @return the url from the Access Description as a DERIA5String
+     * @throws CertificateException thrown exception
+     */
+    private static DERIA5String getUrlDerFromAccessDescription(final AccessDescription accessDescription, final X509Certificate certificate) throws CertificateException {
+        final GeneralName name = accessDescription.getAccessLocation();
+        if (name.getTagNo() == GeneralName.uniformResourceIdentifier) {
+            final ASN1Encodable nameObject = name.getName();
+            if (!(nameObject instanceof DERIA5String))
+                throw new CertificateException("Certificate [" + getCertIdentifyingInformation(certificate) + "] " +
+                        "authority information access extension has access description location with " +
+                        "incorrect name type " + nameObject.getClass().getName());
+
+            return (DERIA5String) nameObject;
+        }
+        return null;
+    }
+
+    public static AuthorityKeyIdentifier getAKI(X509Certificate cert) throws CertificateEncodingException, NoSuchAlgorithmException {
+        if (cert.getVersion() < 3) return null;
+        return doGetAKI(cert);
+    }
+
+    public static AuthorityKeyIdentifier getAKI(X509CRL crl) throws CRLException, IOException {
         if (crl.getVersion() < 2) return null;
-        return doGetAKIStructure(crl);
+        return doGetAKI(crl);
     }
 
     /**
@@ -2127,7 +2154,7 @@ public class CertUtils {
      * @param akis The structure from which to get the key identifier
      * @return The key identifier or null if there is none
      */
-    public static String getAKIKeyIdentifier(AuthorityKeyIdentifierStructure akis) {
+    public static String getAKIKeyIdentifier(AuthorityKeyIdentifier akis) {
         String ski = null;
 
         byte[] skiBytes =  akis.getKeyIdentifier();
@@ -2146,7 +2173,7 @@ public class CertUtils {
      * @param akis The structure from which to get the serial number
      * @return The serial number or null if there is none
      */
-    public static BigInteger getAKIAuthorityCertSerialNumber(AuthorityKeyIdentifierStructure akis) {
+    public static BigInteger getAKIAuthorityCertSerialNumber(AuthorityKeyIdentifier akis) {
         return akis.getAuthorityCertSerialNumber();
     }
 
@@ -2159,19 +2186,19 @@ public class CertUtils {
      * @return The Issuer DN or null if there is none
      * @throws java.security.cert.CertificateException if the issuerDn is present but invalid.
      */
-    public static String getAKIAuthorityCertIssuer(AuthorityKeyIdentifierStructure akis) throws CertificateException {
+    public static String getAKIAuthorityCertIssuer(AuthorityKeyIdentifier akis) throws CertificateException {
         String issuerDn = null;
 
-        GeneralNames names = akis.getAuthorityCertIssuer();
+        final GeneralNames names = akis.getAuthorityCertIssuer();
         if (names != null) {
-            for ( GeneralName name : names.getNames() ) {
-                if (name.getTagNo()==4) { // need a directory name
+            for (final GeneralName name : names.getNames()) {
+                if (name.getTagNo() == GeneralName.directoryName) {
                     try {
-                        X500Principal x500Name = new X500Principal(name.getName().getDERObject().getDEREncoded());
+                        final X500Principal x500Name = new X500Principal(name.getName().toASN1Primitive().getEncoded(ASN1Encoding.DER));
                         issuerDn = x500Name.getName(X500Principal.CANONICAL);
                     }
-                    catch(IllegalArgumentException iae) {
-                        throw new CertificateException("Could not parse issuer as directory name.", iae);
+                    catch(IllegalArgumentException | IOException e) {
+                        throw new CertificateException("Could not parse issuer as directory name.", e);
                     }
                 }
             }
@@ -2203,11 +2230,15 @@ public class CertUtils {
     }
 
     // This method was originally migrated from ServerCertUtils.
-    private static AuthorityKeyIdentifierStructure doGetAKIStructure(X509Extension x509Extendable) throws IOException {
-        byte[] aki = x509Extendable.getExtensionValue(X509Extensions.AuthorityKeyIdentifier.getId());
-        if (aki == null) return null;
-        return new AuthorityKeyIdentifierStructure(aki);
+    private static AuthorityKeyIdentifier doGetAKI(final X509Certificate cert) throws NoSuchAlgorithmException, CertificateEncodingException {
+        JcaX509ExtensionUtils jcaX509ExtensionUtils = new JcaX509ExtensionUtils();
+        return jcaX509ExtensionUtils.createAuthorityKeyIdentifier(cert);
     }
+
+    private static AuthorityKeyIdentifier doGetAKI(X509CRL x509Crl) throws CRLException, IOException {
+        return AuthorityKeyIdentifier.fromExtensions(new X509CRLHolder(x509Crl.getEncoded()).getExtensions());
+    }
+
 
     private static final String FACTORY_ALGORITHM = "X.509";
 

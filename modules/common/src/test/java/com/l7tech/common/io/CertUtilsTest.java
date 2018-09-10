@@ -8,7 +8,7 @@ import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.HexUtils;
 import com.l7tech.util.NameValuePair;
 import com.l7tech.util.Pair;
-import org.bouncycastle.x509.extension.AuthorityKeyIdentifierStructure;
+import org.bouncycastle.asn1.x509.AuthorityKeyIdentifier;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -349,6 +349,104 @@ public class CertUtilsTest {
     }
 
     @Test
+    public void testNetScapeCRLURL() throws Exception {
+        String NETSCAPE_CRL_PEM = "-----BEGIN CERTIFICATE-----\n" +
+                "MIIHPTCCBSWgAwIBAgIBADANBgkqhkiG9w0BAQQFADB5MRAwDgYDVQQKEwdSb290\n" +
+                "IENBMR4wHAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5vcmcxIjAgBgNVBAMTGUNB\n" +
+                "IENlcnQgU2lnbmluZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEWEnN1cHBvcnRA\n" +
+                "Y2FjZXJ0Lm9yZzAeFw0wMzAzMzAxMjI5NDlaFw0zMzAzMjkxMjI5NDlaMHkxEDAO\n" +
+                "BgNVBAoTB1Jvb3QgQ0ExHjAcBgNVBAsTFWh0dHA6Ly93d3cuY2FjZXJ0Lm9yZzEi\n" +
+                "MCAGA1UEAxMZQ0EgQ2VydCBTaWduaW5nIEF1dGhvcml0eTEhMB8GCSqGSIb3DQEJ\n" +
+                "ARYSc3VwcG9ydEBjYWNlcnQub3JnMIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIIC\n" +
+                "CgKCAgEAziLA4kZ97DYoB1CW8qAzQIxL8TtmPzHlawI229Z89vGIj053NgVBlfkJ\n" +
+                "8BLPRoZzYLdufujAWGSuzbCtRRcMY/pnCujW0r8+55jE8Ez64AO7NV1sId6eINm6\n" +
+                "zWYyN3L69wj1x81YyY7nDl7qPv4coRQKFWyGhFtkZip6qUtTefWIonvuLwphK42y\n" +
+                "fk1WpRPs6tqSnqxEQR5YYGUFZvjARL3LlPdCfgv3ZWiYUQXw8wWRBB0bF4LsyFe7\n" +
+                "w2t6iPGwcswlWyCR7BYCEo8y6RcYSNDHBS4CMEK4JZwFaz+qOqfrU0j36NK2B5jc\n" +
+                "G8Y0f3/JHIJ6BVgrCFvzOKKrF11myZjXnhCLotLddJr3cQxyYN/Nb5gznZY0dj4k\n" +
+                "epKwDpUeb+agRThHqtdB7Uq3EvbXG4OKDy7YCbZZ16oE/9KTfWgu3YtLq1i6L43q\n" +
+                "laegw1SJpfvbi1EinbLDvhG+LJGGi5Z4rSDTii8aP8bQUWWHIbEZAWV/RRyH9XzQ\n" +
+                "QUxPKZgh/TMfdQwEUfoZd9vUFBzugcMd9Zi3aQaRIt0AUMyBMawSB3s42mhb5ivU\n" +
+                "fslfrejrckzzAeVLIL+aplfKkQABi6F1ITe1Yw1nPkZPcCBnzsXWWdsC4PDSy826\n" +
+                "YreQQejdIOQpvGQpQsgi3Hia/0PsmBsJUUtaWsJx8cTLc6nloQsCAwEAAaOCAc4w\n" +
+                "ggHKMB0GA1UdDgQWBBQWtTIb1Mfz4OaO873SsDrusjkY0TCBowYDVR0jBIGbMIGY\n" +
+                "gBQWtTIb1Mfz4OaO873SsDrusjkY0aF9pHsweTEQMA4GA1UEChMHUm9vdCBDQTEe\n" +
+                "MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0\n" +
+                "IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy\n" +
+                "dC5vcmeCAQAwDwYDVR0TAQH/BAUwAwEB/zAyBgNVHR8EKzApMCegJaAjhiFodHRw\n" +
+                "czovL3d3dy5jYWNlcnQub3JnL3Jldm9rZS5jcmwwMAYJYIZIAYb4QgEEBCMWIWh0\n" +
+                "dHBzOi8vd3d3LmNhY2VydC5vcmcvcmV2b2tlLmNybDA0BglghkgBhvhCAQgEJxYl\n" +
+                "aHR0cDovL3d3dy5jYWNlcnQub3JnL2luZGV4LnBocD9pZD0xMDBWBglghkgBhvhC\n" +
+                "AQ0ESRZHVG8gZ2V0IHlvdXIgb3duIGNlcnRpZmljYXRlIGZvciBGUkVFIGhlYWQg\n" +
+                "b3ZlciB0byBodHRwOi8vd3d3LmNhY2VydC5vcmcwDQYJKoZIhvcNAQEEBQADggIB\n" +
+                "ACjH7pyCArpcgBLKNQodgW+JapnM8mgPf6fhjViVPr3yBsOQWqy1YPaZQwGjiHCc\n" +
+                "nWKdpIevZ1gNMDY75q1I08t0AoZxPuIrA2jxNGJARjtT6ij0rPtmlVOKTV39O9lg\n" +
+                "18p5aTuxZZKmxoGCXJzN600BiqXfEVWqFcofN8CCmHBh22p8lqOOLlQ+TyGpkO/c\n" +
+                "gr/c6EWtTZBzCDyUZbAEmXZ/4rzCahWqlwQ3JNgelE5tDlG+1sSPypZt90Pf6DBl\n" +
+                "Jzt7u0NDY8RD97LsaMzhGY4i+5jhe1o+ATc7iwiwovOVThrLm82asduycPAtStvY\n" +
+                "sONvRUgzEv/+PDIqVPfE94rwiCPCR/5kenHA0R6mY7AHfqQv0wGP3J8rtsYIqQ+T\n" +
+                "SCX8Ev2fQtzzxD72V7DX3WnRBnc0CkvSyqD/HMaMyRa+xMwyN2hzXwj7UfdJUzYF\n" +
+                "CpUCTPJ5GhD22Dp1nPMd8aINcGeGG7MW9S/lpOt5hvk9C8JzC6WZrG/8Z7jlLwum\n" +
+                "GCSNe9FINSkYQKyTYOGWhlC0elnYjyELn8+CkcY7v2vcB5G5l1YjqrZslMZIBjzk\n" +
+                "zk6q5PYvCdxTby78dOs6Y5nCpqyJvKeyRKANihDjbPIky/qbn3BHLt4Ui9SyIAmW\n" +
+                "omTxJBzcoTWcFbLUvFUufQb1nA5V9FrWk9p2rSVzTMVD\n" +
+                "-----END CERTIFICATE-----";
+
+        X509Certificate certificate = CertUtils.decodeFromPEM(NETSCAPE_CRL_PEM);
+
+        String[] crlUrls = CertUtils.getCrlUrls(certificate);
+        assertNotNull("Null CRL urls", crlUrls);
+        assertTrue("Empty CRL urls", crlUrls.length > 0);
+        assertEquals("CRL url missing or invalid", "https://www.cacert.org/revoke.crl", crlUrls[0]);
+    }
+
+    @Test
+    public void testCrlRelName() throws Exception {
+        /**
+         * Test cert with relative names in CRL
+         */
+        final String CRL_RELNAME_PEM =
+                "-----BEGIN CERTIFICATE-----\n" +
+                "MIIFtzCCA5+gAwIBAgIJANIdGu5YNrI1MA0GCSqGSIb3DQEBBQUAMIGKMQswCQYD\n" +
+                "VQQGEwJDQTEZMBcGA1UECAwQQnJpdGlzaCBDb2x1bWJpYTESMBAGA1UEBwwJVmFu\n" +
+                "Y291dmVyMRAwDgYDVQQKDAdDYSB0ZWNoMQ0wCwYDVQQLDARBUElNMQ8wDQYDVQQD\n" +
+                "DAZjYS5jb20xGjAYBgkqhkiG9w0BCQEWC3l2ZXNAY2EuY29tMB4XDTE4MDgwOTE3\n" +
+                "MzMzMVoXDTE4MDkwODE3MzMzMVowgYoxCzAJBgNVBAYTAkNBMRkwFwYDVQQIDBBC\n" +
+                "cml0aXNoIENvbHVtYmlhMRIwEAYDVQQHDAlWYW5jb3V2ZXIxEDAOBgNVBAoMB0Nh\n" +
+                "IHRlY2gxDTALBgNVBAsMBEFQSU0xDzANBgNVBAMMBmNhLmNvbTEaMBgGCSqGSIb3\n" +
+                "DQEJARYLeXZlc0BjYS5jb20wggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoIC\n" +
+                "AQCytUFfPB4BcKclyGnzORx/t1jGoBAE0JHC92+MSpcyleGVB/kwgljDl1+9iYez\n" +
+                "x0eTlp8iJ7xXrdVByOFo7jXV2dx+TBjBzcHUXcbr88ER78AZNaOIFjWbA+m4dQVy\n" +
+                "W0gPy+EOb+voQDTXY6TtKph3DUbSJAEJR9SUza74Fnf0Pqz4+LgxMGz3Q+KSVCN6\n" +
+                "8CINC2TfvIIxUxaG2jhpOG1u7VW/VPP+FlcPigpEqAZ9Upgc0DfGFIu60iIeKTGo\n" +
+                "wfsvGpuX4rzxizhV24TYTH+iTFES2HQtbNChNUUT9AUW62BTB3JdJZTbmmkH1n7l\n" +
+                "tmCt9s9soxFu+xXxSf8NQ3ilkuJog/WrTdVuSTeyXIekTpv44xwD6R/xyl9pkPrp\n" +
+                "Yo3vJDTeTrUk4KIqrIH8w2UaIO7bpkaVDLt6nnCxqPBpWLA9q5vDf4+Wpbmp9Xe3\n" +
+                "KoGFGEo9vvrdYlNXjudj60533QSy+SlePXjf3xKkJZyNWAnOY9tpE+f2UCHXq2H/\n" +
+                "BDZS60IRjFHrir4S2WVrQtq5sN4q7F0KtHJxJNc09kRYxstejOdGb/XXROmoyI81\n" +
+                "HA+4kVL0N6QptDFjIKn8IyESfSLKSOmUjVPQvkVqmQYW/i+bCPhNyI0gmnWttAhv\n" +
+                "gzUAopIJkiLgVUFembIP9Y3OclOQgMuuQ1NQDTVSzBxRHwIDAQABox4wHDAaBgNV\n" +
+                "HR8EEzARMA+gDaELMAkGA1UEBhMCVVMwDQYJKoZIhvcNAQEFBQADggIBAFq6Vh0P\n" +
+                "6rfBI026G9ftrMq9Ym4QQmf52/PgK7Lo9uz0aEtz8wzcFK7lE/wycoRGCOSkFeLp\n" +
+                "qpOvBfQyciTyUxU1+azbiH9WE4EdAFKumEG+FR6rj9S848TpQTa8llpp+mUEt2lE\n" +
+                "71YqXLxg4X2FPIEsCeNXQpfXohnfbm8QQvUue7+2SbuQmrtau8/cddSSv2HhiBG7\n" +
+                "+/JCcfZqVWJbcqPSYJSMgVODdL8AQWZBiybjMa2+DVgxmc1g8nhOX8jrrnxPrqXI\n" +
+                "n69xcK+6g+8Mgpjbd2r7zYZyg9KRyQmuTG58Rgocfl7VfSgWqx5cFy/rS/YFNRLg\n" +
+                "rHOXaXXtM6Rz1gClWpTeNSOcJ/rAXqfcmFAXXkHwQ9VljLyA3hIHv80W6hvYP7eF\n" +
+                "CtANQWbjIuOqHFyClyxo42Jn93UbPyPOe07XS9oWa5iuFoOej7mUA7R07VCveQJf\n" +
+                "FLKJgLxWqFM+p+CqgdjddL7EB/rGuCpV7DQSBh6f9nx5/bduzBKTY560C686Frrs\n" +
+                "dyMWjywPTIC48uQmaXQ8qiCJT2EqxPnntavcoXaYWdm5iE0TB1oChVJm7NEKG9WY\n" +
+                "ffA+SxBRpL+sh01VpaOIbAPHVNfRhZJqqChoZy0FSFFWS5qEZrgm2bKPRDEUGHG6\n" +
+                "RTSMjV26J+Kewd+B+/AMDP2xRierT4jlIlgA\n" +
+                "-----END CERTIFICATE-----\n";
+
+        X509Certificate certificate = CertUtils.decodeFromPEM(CRL_RELNAME_PEM);
+        String[] crlUrls = CertUtils.getCrlUrls(certificate);
+        assertNotNull("Null CRL urls", crlUrls);
+        assertTrue("Empty CRL urls, since relative name is not supported", crlUrls.length == 0);
+    }
+
+    @Test
     @BugNumber(10713)
     public void testCRLURLAlice() throws Exception {
         X509Certificate certificate = TestDocuments.getWssInteropAliceCert();
@@ -455,7 +553,7 @@ public class CertUtilsTest {
     public void testAuthorityKeyIdentifierIssuerAndSerial() throws Exception {
         X509Certificate certificate = CertUtils.decodeFromPEM(REDHAT_PEM);
 
-        AuthorityKeyIdentifierStructure aki = CertUtils.getAKIStructure(certificate);
+        AuthorityKeyIdentifier aki = CertUtils.getAKI(certificate);
         BigInteger serial = CertUtils.getAKIAuthorityCertSerialNumber(aki);
         String issuerDn = CertUtils.getAKIAuthorityCertIssuer(aki);
 
@@ -467,7 +565,7 @@ public class CertUtilsTest {
     public void testAuthorityKeyIdentifierKeyIdentifier() throws Exception {
         X509Certificate certificate = CertUtils.decodeFromPEM(REDHAT_PEM);
 
-        AuthorityKeyIdentifierStructure aki = CertUtils.getAKIStructure(certificate);
+        AuthorityKeyIdentifier aki = CertUtils.getAKI(certificate);
         String base64KI = CertUtils.getAKIKeyIdentifier(aki);
 
         assertEquals("KeyIdentifier not correctly processed", "VBXNnyz37A0f0qi+TAesiD77mwo=", base64KI);

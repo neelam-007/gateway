@@ -6,6 +6,7 @@
 
 package com.l7tech.security.prov;
 
+import java.io.IOException;
 import java.security.PublicKey;
 import java.security.InvalidKeyException;
 import java.security.NoSuchProviderException;
@@ -25,7 +26,7 @@ public interface CertificateRequest {
     /**
      * @return the bytes of the encoded form of this certificate request
      */
-    byte[] getEncoded();
+    byte[] getEncoded() throws IOException;
 
     /**
      * @return the public key in this certificate request

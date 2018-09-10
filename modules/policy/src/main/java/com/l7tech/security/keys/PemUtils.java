@@ -1,29 +1,25 @@
 package com.l7tech.security.keys;
 
 import com.l7tech.security.prov.JceProvider;
+
 import com.l7tech.util.ExceptionUtils;
-import static com.l7tech.util.Option.optional;
-import com.l7tech.util.ResourceUtils;
 import com.l7tech.util.SyspropUtil;
-import org.bouncycastle.openssl.PEMReader;
-import org.bouncycastle.openssl.PEMWriter;
+import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
+import org.bouncycastle.openssl.PEMKeyPair;
+import org.bouncycastle.openssl.PEMParser;
+import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
+import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.crypto.NoSuchPaddingException;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.StringWriter;
+import java.io.*;
 import java.security.KeyPair;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.Provider;
 import java.security.PublicKey;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -57,37 +53,41 @@ public class PemUtils {
     }
 
     /**
-     * Get the provider name for AES service.
-     *
-     * @return a String for the provider name
-     */
-    @Nullable
-    public static String getSymProvider() throws NoSuchProviderException, NoSuchAlgorithmException, NoSuchPaddingException {
-        return getProviderNameForService( "Cipher.AES" );
-    }
-
-    /**
-     * Get the provider name for RSA service.
-     * Note: Cipher.getInstance("RSA").getProvider().getName() throws error when using Bouncy Castle's PEMReader
-     * @return a String for the provider name
-     */
-    @Nullable
-    public static String getAsymProvider() throws NoSuchProviderException, NoSuchAlgorithmException, NoSuchPaddingException {
-        return getProviderNameForService( "Cipher." + optional( JceProvider.getInstance().getRsaNoPaddingCipherName()).orSome( "RSA/NONE/NoPadding" ) );
-    }
-
-    /**
      * Read a key pair from a PEM format.
      *
      * @param privateKey The key to read (required)
      * @return The key pair
-     * @throws Exception If an error occurs
+     * @throws IOException If an error occurs
      */
     @NotNull
-    public static KeyPair doReadKeyPair( final String privateKey ) throws Exception {
-        InputStream is = new ByteArrayInputStream(privateKey.getBytes());
-        PEMReader r = new PEMReader(new InputStreamReader(is), null, getSymProvider(), getAsymProvider());
-        return (KeyPair) r.readObject();
+    public static KeyPair doReadKeyPair( final String privateKey ) throws IOException {
+        final Reader reader = new StringReader(privateKey);
+        try (final PEMParser pemParser = new PEMParser(reader)) {
+            final Object obj = pemParser.readObject();
+            if (!(obj instanceof PEMKeyPair)) {
+                throw new IOException("A valid key pair was not found.");
+            }
+            return new JcaPEMKeyConverter().getKeyPair((PEMKeyPair) obj);
+        }
+    }
+
+    /**
+     * Read a certificate from a PEM format.
+     *
+     * @param certificate The certificate to read (required)
+     * @return X509Certificate
+     * @throws IOException If an error occurs while reading
+     */
+    @NotNull
+    public static X509Certificate doReadCertificate(final String certificate) throws CertificateException, IOException {
+        final Reader reader = new StringReader(certificate);
+        try (final PEMParser pemParser = new PEMParser(reader)) {
+            final Object obj = pemParser.readObject();
+            if (!(obj instanceof X509CertificateHolder)) {
+                throw new CertificateException("A valid certificate was not found.");
+            }
+            return new JcaX509CertificateConverter().getCertificate((X509CertificateHolder) obj);
+        }
     }
 
     /**
@@ -98,14 +98,14 @@ public class PemUtils {
      *
      * @param privateKey The private key to write (required)
      * @return The PEM private key
-     * @throws Exception If an error occurs
+     * @throws IOException If an error occurs while writing
      */
     @NotNull
-    public static String doWriteKeyPair( final PrivateKey privateKey ) throws Exception {
+    public static String doWriteKeyPair( final PrivateKey privateKey ) throws IOException {
         final StringWriter writer = new StringWriter();
-        final PEMWriter pemWriter = new PEMWriter( writer, getAsymProvider());
-        pemWriter.writeObject( privateKey );
-        pemWriter.close();
+        try (final JcaPEMWriter pemWriter = new JcaPEMWriter(writer)) {
+            pemWriter.writeObject(privateKey);
+        }
         return writer.toString();
     }
 
@@ -118,20 +118,17 @@ public class PemUtils {
      */
     @Nullable
     public static String writeKey( final PublicKey publicKey, final boolean newlines ) {
-        OutputStream os = new ByteArrayOutputStream();
-        try {
-            PEMWriter w = new PEMWriter(new OutputStreamWriter(os));
-            w.writeObject(publicKey);
-            w.flush();
+        final OutputStream os = new ByteArrayOutputStream();
+        try (final JcaPEMWriter pemWriter = new JcaPEMWriter(new OutputStreamWriter(os))) {
+            pemWriter.writeObject(publicKey);
+            pemWriter.flush();
             String pemKey = os.toString();
-            if ( !newlines ) {
-                pemKey = pemKey.replace( SyspropUtil.getProperty( "line.separator" ), "");
+            if (!newlines) {
+                pemKey = pemKey.replace(SyspropUtil.getProperty("line.separator"), "");
             }
             return pemKey;
-        } catch (Exception e) {
-            LOG.log( Level.INFO, "Unable to write key: ", ExceptionUtils.getDebugException( e ));
-        } finally {
-            ResourceUtils.closeQuietly( os );
+        } catch (IOException e) {
+            LOG.log(Level.INFO, "Unable to write key: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
         }
         return null;
     }

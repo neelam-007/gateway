@@ -36,7 +36,7 @@
         <dependency org="org.snmp4j" name="snmp4j" rev="1.11.3" force="true" conf="core"/>
         <dependency org="org.springframework" name="spring-web" rev="3.0.7.RELEASE" force="true" conf="core"/>
 
-        <dependency org="bouncycastle" name="bcprov-jdk16" rev="1.46" force="true" conf="core"/>
+        <dependency org="bouncycastle" name="bcprov-jdk15on" rev="1.60" force="true" conf="core"/>
 
         <!-- Hibernate annotations used on beans that we use, so we need the hibernate JAR to compile -->
         <dependency org="org.hibernate" name="hibernate-core" rev="3.6.9.Final" force="true" conf="compile->master"/>
@@ -52,7 +52,7 @@
         <exclude org="com.sun.xml.fastinfoset" module="FastInfoset" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
 
         <!-- This needs the signed version of bouncy castle because it registers it as a provider. -->
-        <exclude org="bouncycastle" module="bcprov-unsigned-jdk16" artifact="*" type="*" ext="jar" conf="*" matcher="exact" />
+        <exclude org="bouncycastle" module="bcprov-unsigned-jdk15on" artifact="*" type="*" ext="jar" conf="*" matcher="exact" />
         <exclude org="commons-logging" module="commons-logging" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
         <exclude org="log4j" module="log4j" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
 

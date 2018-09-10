@@ -4,17 +4,26 @@ import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import org.bouncycastle.asn1.*;
+import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.bouncycastle.asn1.x509.*;
+import org.bouncycastle.cert.X509v3CertificateBuilder;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
+import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
+import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
 import org.bouncycastle.jce.X509KeyUsage;
-import org.bouncycastle.x509.X509V3CertificateGenerator;
-import org.bouncycastle.x509.extension.AuthorityKeyIdentifierStructure;
-import org.bouncycastle.x509.extension.SubjectKeyIdentifierStructure;
+import org.bouncycastle.operator.AlgorithmNameFinder;
+import org.bouncycastle.operator.ContentSigner;
+import org.bouncycastle.operator.DefaultAlgorithmNameFinder;
+import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 
-import javax.security.auth.x500.X500Principal;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.CertificateEncodingException;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.*;
 import java.util.*;
@@ -70,83 +79,120 @@ public class ParamsCertificateGenerator {
      * @throws CertificateGeneratorException if a certificate cannot be generated using the current CertGenParams with the provided arguments.
      */
     public X509Certificate generateCertificate(PublicKey subjectPublicKey, PrivateKey issuerPrivateKey, X509Certificate issuerCertificate) throws CertificateGeneratorException {
-        X500Principal subjectDn = c.getSubjectDn();
+
+        final X500Name subjectX500Name = X500Name.getInstance(c.getSubjectDn().getEncoded());
 
         // If the hash algorithm is set to "Automatic", then it will be reset to null and the signature algorithm wil be determined
         // by using the previous manner (See the method getSignAlg).
         String hashAlgorithm = c.getHashAlgorithm();
-        if ("Automatic".equals(hashAlgorithm)) {
+        if ("Automatic" .equals(hashAlgorithm)) {
             hashAlgorithm = null;
         }
 
-        String sigAlg = c.getSignatureAlgorithm() != null ? c.getSignatureAlgorithm()
-                :  getSigAlg(issuerCertificate == null ? subjectPublicKey : issuerCertificate.getPublicKey(), hashAlgorithm, null);
-        X500Principal issuerDn = issuerCertificate != null ? issuerCertificate.getSubjectX500Principal() : subjectDn;
-        PublicKey issuerPublicKey = issuerCertificate != null ? issuerCertificate.getPublicKey() : subjectPublicKey;
-        int daysUntilExpiry = c.getDaysUntilExpiry() > 0 ? c.getDaysUntilExpiry() : 5 * 365; // default: five years
-        Date notBefore = c.getNotBefore() != null ? c.getNotBefore()
+        final String sigAlg = c.getSignatureAlgorithm() != null ? c.getSignatureAlgorithm()
+                : getSigAlg(issuerCertificate == null ? subjectPublicKey : issuerCertificate.getPublicKey(), hashAlgorithm, null);
+
+        final X500Name issuerX500Name;
+        if (issuerCertificate != null) {
+            try {
+                issuerX500Name = new JcaX509CertificateHolder(issuerCertificate).getSubject();
+            } catch (CertificateEncodingException e) {
+                throw new CertificateGeneratorException(e);
+            }
+        } else {
+            issuerX500Name = subjectX500Name;
+        }
+
+        final PublicKey issuerPublicKey = issuerCertificate != null ? issuerCertificate.getPublicKey() : subjectPublicKey;
+        final int daysUntilExpiry = c.getDaysUntilExpiry() > 0 ? c.getDaysUntilExpiry() : 5 * 365; // default: five years
+        final Date notBefore = c.getNotBefore() != null ? c.getNotBefore()
                 : new Date(new Date().getTime() - (10 * 60 * 1000L)); // default: 10 min ago
-        Date notAfter = c.getNotAfter() != null ? c.getNotAfter()
+        final Date notAfter = c.getNotAfter() != null ? c.getNotAfter()
                 : new Date(notBefore.getTime() + (daysUntilExpiry * 24 * 60 * 60 * 1000L)); // default: daysUntilExpiry days after notBefore
-        BigInteger serialNumber = c.getSerialNumber() != null ? c.getSerialNumber() : new BigInteger(64, rand).abs();
+        final BigInteger serialNumber = c.getSerialNumber() != null ? c.getSerialNumber() : new BigInteger(64, rand).abs();
 
-        X509V3CertificateGenerator certgen = new X509V3CertificateGenerator();
-
-        certgen.setSerialNumber(serialNumber);
-        certgen.setNotBefore(notBefore);
-        certgen.setNotAfter(notAfter);
-        certgen.setSignatureAlgorithm(sigAlg);
-        certgen.setSubjectDN(subjectDn);
-        certgen.setIssuerDN(issuerDn);
-        certgen.setPublicKey(subjectPublicKey);
-
-        if (c.isIncludeBasicConstraints())
-            certgen.addExtension(X509Extensions.BasicConstraints, true, createBasicConstraints());
-
-        if (c.isIncludeKeyUsage())
-            certgen.addExtension(X509Extensions.KeyUsage, c.isKeyUsageCritical(), new X509KeyUsage(c.getKeyUsageBits()));
-
-        if (c.isIncludeExtendedKeyUsage())
-            certgen.addExtension(X509Extensions.ExtendedKeyUsage, c.isExtendedKeyUsageCritical(), createExtendedKeyUsage(c.getExtendedKeyUsageKeyPurposeOids()));
-
-        if (c.isIncludeSki())
-            certgen.addExtension(X509Extensions.SubjectKeyIdentifier, false, createSki(subjectPublicKey));
-
-        if (c.isIncludeAki())
-            certgen.addExtension(X509Extensions.AuthorityKeyIdentifier, false, createAki(issuerPublicKey));
-
-        if (c.isIncludeSubjectDirectoryAttributes())
-            certgen.addExtension(X509Extensions.SubjectDirectoryAttributes, c.isSubjectDirectoryAttributesCritical(), createSubjectDirectoryAttributes(c.getCountryOfCitizenshipCountryCodes()));
-
-        if (c.isIncludeCertificatePolicies())
-            certgen.addExtension(X509Extensions.CertificatePolicies, c.isCertificatePoliciesCritical(), createCertificatePolicies(c.getCertificatePolicies()));
-
-        if (c.isIncludeSubjectAlternativeName())
-            certgen.addExtension(X509Extensions.SubjectAlternativeName, c.isSubjectAlternativeNameCritical(), createSubjectAlternativeName(c.getSubjectAlternativeNames()));
-
-        if (c.isIncludeAuthorityInfoAccess()) {
-            certgen.addExtension(X509Extensions.AuthorityInfoAccess, c.isAuthorityInfoAccessCritical(), createAuthorityInfoAccess(c.getAuthorityInfoAccessOcspUrls()));
-        }
-
-        if (c.isIncludeCrlDistributionPoints()) {
-            certgen.addExtension(X509Extensions.CRLDistributionPoints, c.isCrlDistributionPointsCritical(), createCrlDistributionPoints(c.getCrlDistributionPointsUrls()));
-        }
+        final X509v3CertificateBuilder certBldr = new JcaX509v3CertificateBuilder(
+                issuerX500Name,
+                serialNumber,
+                notBefore,
+                notAfter,
+                subjectX500Name,
+                subjectPublicKey);
 
         try {
-            return signatureProviderName == null
-                    ? certgen.generate(issuerPrivateKey)
-                    : certgen.generate(issuerPrivateKey, signatureProviderName);
-        } catch (CertificateEncodingException e) {
-            throw new CertificateGeneratorException(e);
-        } catch (NoSuchAlgorithmException e) {
-            throw new CertificateGeneratorException(e);
-        } catch (SignatureException e) {
-            throw new CertificateGeneratorException(e);
-        } catch (InvalidKeyException e) {
-            throw new CertificateGeneratorException(e);
-        } catch (NoSuchProviderException e) {
+
+            if (c.isIncludeBasicConstraints())
+                certBldr.addExtension(Extension.basicConstraints, true, createBasicConstraints());
+
+            if (c.isIncludeKeyUsage())
+                certBldr.addExtension(Extension.keyUsage, c.isKeyUsageCritical(), new X509KeyUsage(c.getKeyUsageBits()));
+
+            if (c.isIncludeExtendedKeyUsage())
+                certBldr.addExtension(Extension.extendedKeyUsage, c.isExtendedKeyUsageCritical(), createExtendedKeyUsage(c.getExtendedKeyUsageKeyPurposeOids()));
+
+            if (c.isIncludeSki())
+                certBldr.addExtension(Extension.subjectKeyIdentifier, false, createSubjectKeyIdentifier(subjectPublicKey));
+
+            if (c.isIncludeAki())
+                certBldr.addExtension(Extension.authorityKeyIdentifier, false, createAuthorityKeyIdentifier(issuerPublicKey));
+
+            if (c.isIncludeSubjectDirectoryAttributes())
+                certBldr.addExtension(Extension.subjectDirectoryAttributes, c.isSubjectDirectoryAttributesCritical(), createSubjectDirectoryAttributes(c.getCountryOfCitizenshipCountryCodes()));
+
+            if (c.isIncludeCertificatePolicies())
+                certBldr.addExtension(Extension.certificatePolicies, c.isCertificatePoliciesCritical(), createCertificatePolicies(c.getCertificatePolicies()));
+
+            if (c.isIncludeSubjectAlternativeName())
+                certBldr.addExtension(Extension.subjectAlternativeName, c.isSubjectAlternativeNameCritical(), createSubjectAlternativeName(c.getSubjectAlternativeNames()));
+
+            if (c.isIncludeAuthorityInfoAccess()) {
+                certBldr.addExtension(Extension.authorityInfoAccess, c.isAuthorityInfoAccessCritical(), createAuthorityInfoAccess(c.getAuthorityInfoAccessOcspUrls()));
+            }
+
+            if (c.isIncludeCrlDistributionPoints()) {
+                certBldr.addExtension(Extension.cRLDistributionPoints, c.isCrlDistributionPointsCritical(), createCrlDistributionPoints(c.getCrlDistributionPointsUrls()));
+            }
+
+            final String sigAlgName;
+            // Test if sigAlgName is an OID.  This test allows for backwards compatibility with the old behaviour of sigAlg storing/using OID
+            if (isOID(sigAlg)) {
+                final AlgorithmNameFinder nameFinder = new DefaultAlgorithmNameFinder();
+                sigAlgName = nameFinder.getAlgorithmName(new ASN1ObjectIdentifier(sigAlg));
+            } else {
+                sigAlgName = sigAlg;
+            }
+
+            final ContentSigner signer;
+            final X509Certificate x509Certificate;
+            if (signatureProviderName == null) {
+                signer = new JcaContentSignerBuilder(sigAlgName).build(issuerPrivateKey);
+                x509Certificate = new JcaX509CertificateConverter().getCertificate(certBldr.build(signer));
+
+            } else {
+                signer = new JcaContentSignerBuilder(sigAlgName).setProvider(signatureProviderName).build(issuerPrivateKey);
+                x509Certificate = new JcaX509CertificateConverter().setProvider(signatureProviderName)
+                        .getCertificate(certBldr.build(signer));
+            }
+
+            return x509Certificate;
+
+        } catch (OperatorCreationException | CertificateException | IOException e) {
             throw new CertificateGeneratorException(e);
         }
+    }
+
+    /**
+     * Returns whether the string provided is an oid.
+     * @param oid
+     * @return true the string provided is an oid.  False otherwise.
+     */
+    private boolean isOID(String oid) {
+        try {
+            new ASN1ObjectIdentifier(oid);
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+        return true;
     }
 
     protected BasicConstraints createBasicConstraints() {
@@ -161,95 +207,90 @@ public class ParamsCertificateGenerator {
         return bc;
     }
 
-    protected AuthorityKeyIdentifier createAki(PublicKey issuerPublicKey) throws CertificateGeneratorException {
+    protected AuthorityKeyIdentifier createAuthorityKeyIdentifier(PublicKey issuerPublicKey) throws CertificateGeneratorException  {
         try {
-            return new AuthorityKeyIdentifierStructure(issuerPublicKey);
-        } catch (InvalidKeyException e) {
+            JcaX509ExtensionUtils extUtils = new JcaX509ExtensionUtils();
+            return extUtils.createAuthorityKeyIdentifier(issuerPublicKey);
+
+        } catch (NoSuchAlgorithmException e) {
             throw new CertificateGeneratorException("Unable to create AKI from issuer public key: " + ExceptionUtils.getMessage(e), e);
         }
     }
 
-    protected SubjectKeyIdentifier createSki(PublicKey subjectPublicKey) throws CertificateGeneratorException {
+    protected SubjectKeyIdentifier createSubjectKeyIdentifier(final PublicKey subjectPublicKey) throws CertificateGeneratorException {
         try {
-            return new SubjectKeyIdentifierStructure(subjectPublicKey);
-        } catch ( InvalidKeyException e ) {
+            return new JcaX509ExtensionUtils().createSubjectKeyIdentifier(subjectPublicKey);
+        } catch (NoSuchAlgorithmException e) {
             throw new CertificateGeneratorException("Unable to create SKI from subject public key: " + ExceptionUtils.getMessage(e), e);
         }
     }
 
-    protected ExtendedKeyUsage createExtendedKeyUsage(List<String> keyPurposeOids) {
-        Collection<DERObject> derObjects = new ArrayList<DERObject>();
+    protected ExtendedKeyUsage createExtendedKeyUsage(final List<String> keyPurposeOids) {
+        int i = 0;
+        final KeyPurposeId[] kps = new KeyPurposeId[keyPurposeOids.size()];
+        for (final String oid : keyPurposeOids) {
+            kps[i++] = KeyPurposeId.getInstance(new ASN1ObjectIdentifier(oid));
+        }
 
-        for (String oid : keyPurposeOids)
-            derObjects.add(new DERObjectIdentifier(oid));
-
-        return new ExtendedKeyUsage(new Vector<DERObject>(derObjects));
+        return new ExtendedKeyUsage(kps);
     }
 
     protected SubjectDirectoryAttributes createSubjectDirectoryAttributes(List<String> citizenshipCountryCodes) {
-        Vector<Attribute> attrs = new Vector<Attribute>();
+        final List<Attribute> attrs = new ArrayList<>();
 
         // Add countries of citizenship
-        if (citizenshipCountryCodes != null) for (String code : citizenshipCountryCodes)
-            attrs.add(new Attribute(X509Name.COUNTRY_OF_CITIZENSHIP, new DERSet(new DERPrintableString(code))));
+        if (citizenshipCountryCodes != null) for (String code : citizenshipCountryCodes){
+            attrs.add(new Attribute(BCStyle.COUNTRY_OF_CITIZENSHIP, new DERSet(new DERPrintableString(code))));
+        }
 
         // Add further supported attrs here, if any
 
-        return new SubjectDirectoryAttributes(attrs);
+        return new SubjectDirectoryAttributes(new Vector<>(attrs));
     }
 
-    private DERSequence createCertificatePolicies(List<String> certificatePolicies) {
+    private DERSequence createCertificatePolicies(final List<String> certificatePolicies) {
         return new DERSequence(
-            Functions.map(certificatePolicies, new Functions.Unary<PolicyInformation, String>() {
-                @Override
-                public PolicyInformation call(String certificatePolicyOID) {
-                    return new PolicyInformation(new DERObjectIdentifier(certificatePolicyOID));
-                }
-            }).toArray(new ASN1Encodable[certificatePolicies.size()])
+            Functions.map(certificatePolicies, (Functions.Unary<PolicyInformation, String>) certificatePolicyOID ->
+                    new PolicyInformation(new ASN1ObjectIdentifier(certificatePolicyOID))).toArray(new ASN1Object[certificatePolicies.size()])
         );
     }
 
-    private DEREncodable createSubjectAlternativeName(List<X509GeneralName> names) {
-        List<ASN1Encodable> generalNames = Functions.map(names, new Functions.Unary<ASN1Encodable, X509GeneralName>() {
-            @Override
-            public ASN1Encodable call(X509GeneralName name) {
-                if (name.isString()) {
-                    return new GeneralName(name.getType().getTag(), name.getStringVal());
-                } else {
-                    try {
-                        return new GeneralName(name.getType().getTag(), ASN1Object.fromByteArray(name.getDerVal()));
-                    } catch (IOException e) {
-                        throw new IllegalArgumentException("Invalid DER value for X509GeneralName: " + ExceptionUtils.getMessage(e), e);
-                    }
+    private ASN1Encodable createSubjectAlternativeName(final List<X509GeneralName> names) {
+        final List<GeneralName> generalNames = Functions.map(names, (Functions.Unary<GeneralName, X509GeneralName>) name -> {
+            if (name.isString()) {
+                return new GeneralName(name.getType().getTag(), name.getStringVal());
+            } else {
+                try {
+                    return new GeneralName(name.getType().getTag(), ASN1Primitive.fromByteArray(name.getDerVal()));
+                } catch (IOException e) {
+                    throw new IllegalArgumentException("Invalid DER value for X509GeneralName: " + ExceptionUtils.getMessage(e), e);
                 }
             }
         });
 
-        return new GeneralNames(new DERSequence(generalNames.toArray(new ASN1Encodable[generalNames.size()])));
+        return new GeneralNames(generalNames.toArray(new GeneralName[generalNames.size()]));
     }
 
-    private DEREncodable createCrlDistributionPoints(List<List<String>> crlDistributionPointsUrls) {
-        List<DistributionPoint> distPoints = new ArrayList<DistributionPoint>();
+    private ASN1Encodable createCrlDistributionPoints(final List<List<String>> crlDistributionPointsUrls) {
+        final List<DistributionPoint> distPoints = new ArrayList<>();
 
-        for (List<String> urls : crlDistributionPointsUrls) {
-            List<GeneralName> generalNames = new ArrayList<GeneralName>();
+        for (final List<String> urls : crlDistributionPointsUrls) {
+            final List<GeneralName> generalNames = new ArrayList<>();
             for (String url : urls) {
                 generalNames.add(new GeneralName(GeneralName.uniformResourceIdentifier, url));
             }
-            final ASN1Encodable[] generalNamesArray = generalNames.toArray(new ASN1Encodable[generalNames.size()]);
-            final DERSequence generalNamesSeq = new DERSequence(generalNamesArray);
-            distPoints.add(new DistributionPoint(new DistributionPointName(new GeneralNames(generalNamesSeq)), null, null));
+            distPoints.add(new DistributionPoint(new DistributionPointName(new GeneralNames(generalNames.toArray(new GeneralName[generalNames.size()]))), null, null));
         }
 
         return new CRLDistPoint(distPoints.toArray(new DistributionPoint[distPoints.size()]));
     }
 
-    private DEREncodable createAuthorityInfoAccess(List<String> authorityInfoAccessUrls) {
-        List<AccessDescription> accessDescriptions = new ArrayList<AccessDescription>();
-        for (String url : authorityInfoAccessUrls) {
+    private ASN1Encodable createAuthorityInfoAccess(final List<String> authorityInfoAccessUrls) {
+        final List<AccessDescription> accessDescriptions = new ArrayList<>();
+        for (final String url : authorityInfoAccessUrls) {
             accessDescriptions.add(new AccessDescription(AccessDescription.id_ad_ocsp, new GeneralName(GeneralName.uniformResourceIdentifier, url)));
         }
-        return new AuthorityInformationAccess(new DERSequence(accessDescriptions.toArray(new AccessDescription[accessDescriptions.size()])));
+        return new AuthorityInformationAccess(accessDescriptions.toArray(new AccessDescription[accessDescriptions.size()]));
     }
 
     /**

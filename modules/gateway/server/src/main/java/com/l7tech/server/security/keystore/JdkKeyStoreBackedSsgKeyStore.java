@@ -364,8 +364,6 @@ public abstract class JdkKeyStoreBackedSsgKeyStore implements SsgKeyStore {
             throw new InvalidKeyException("Keystore contains no key with alias " + alias, e);
         } catch (UnrecoverableKeyException e) {
             throw new KeyStoreException(e);
-        } catch (NoSuchProviderException e) {
-            throw new KeyStoreException(e);
         }
     }
 

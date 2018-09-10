@@ -26,10 +26,10 @@
         <dependency name="layer7-utility" rev="latest.integration" conf="core"/>
         <dependency name="layer7-wsdl" rev="latest.integration" conf="core"/>
         <dependency name="layer7-json" rev="latest.integration" conf="core"/>
-        <dependency org="bouncycastle" name="bcprov-unsigned-jdk16" rev="1.46" force="true" conf="runtime"/> <!-- use unsigned BC jar to be same as applet -->
+        <dependency org="bouncycastle" name="bcprov-unsigned-jdk15on" rev="1.60" force="true" conf="runtime"/> <!-- use unsigned BC jar to be same as applet -->
         <exclude org="com.safelogic.cryptocomply" module="cryptocomply" artifact="*" type="*" ext="jar" conf="*" matcher="exact" />
         <exclude org="com.safelogic.cryptocomply" module="HMacSP800DRBGResync" artifact="*" type="*" ext="jar" conf="*" matcher="exact" />
-        <exclude org="bouncycastle" module="bcprov-jdk16" artifact="*" type="*" ext="jar" conf="*" matcher="exact" />  <!-- exclude signed BC jar -->
+        <exclude org="bouncycastle" module="bcprov-jdk15on" artifact="*" type="*" ext="jar" conf="*" matcher="exact" />  <!-- exclude signed BC jar -->
         <exclude org="commons-logging" module="commons-logging" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
         <exclude org="log4j" module="log4j" artifact="*" type="*" ext="*" conf="" matcher="exact"/>
         <exclude org="com.l7tech"/>

@@ -8,8 +8,8 @@ package com.l7tech.security.prov.bc;
 import com.l7tech.common.io.CertGenParams;
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.X509GeneralName;
-import com.l7tech.security.cert.BouncyCastleCertUtils;
 import com.l7tech.common.io.ParamsCertificateGenerator;
+import com.l7tech.security.cert.BouncyCastleCertUtils;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.prov.RsaSignerEngine;
 import org.bouncycastle.asn1.DERBitString;
@@ -18,10 +18,13 @@ import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
-import org.bouncycastle.jce.PKCS10CertificationRequest;
+import org.bouncycastle.operator.ContentVerifierProvider;
+import org.bouncycastle.operator.jcajce.JcaContentVerifierProviderBuilder;
+import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 
 import javax.security.auth.x500.X500Principal;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
@@ -64,7 +67,7 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
     @Override
     public Certificate createCertificate(byte[] pkcs10req, CertGenParams certGenParams) throws Exception {
         PKCS10CertificationRequest pkcs10 = new PKCS10CertificationRequest(pkcs10req);
-        CertificationRequestInfo certReqInfo = pkcs10.getCertificationRequestInfo();
+        CertificationRequestInfo certReqInfo = pkcs10.toASN1Structure().getCertificationRequestInfo();
 
         if (certGenParams == null)
             certGenParams = new CertGenParams();
@@ -75,16 +78,25 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
         if(certGenParams.getSubjectAlternativeNames() == null) {
             logger.log(Level.FINE,"Extracting SANs from the CSR info...");
             List<X509GeneralName> sANs = BouncyCastleCertUtils.extractSubjectAlternativeNamesFromCsrInfoAttr(certReqInfo.getAttributes());
-            if(sANs.size() > 0) {
+            if(!sANs.isEmpty()) {
                 certGenParams.setIncludeSubjectAlternativeName(true);
                 certGenParams.setSubjectAlternativeNames(sANs);
-                logger.info(sANs.size() + " SANs are added to the certificate");
+                if (logger.isLoggable(Level.FINE)) {
+                    logger.fine(sANs.size() + " SANs are added to the certificate");
+                }
             }
         }
         logger.info("Signing cert for subject DN = " + certGenParams.getSubjectDn());
 
         PublicKey publicKey = getPublicKey(pkcs10);
-        if (!pkcs10.verify(publicKey, signatureProvider == null ? null : signatureProvider.getName())) {
+        ContentVerifierProvider verifierProvider;
+        if (signatureProvider == null) {
+            verifierProvider =  new JcaContentVerifierProviderBuilder().build(publicKey);
+        } else {
+            verifierProvider =  new JcaContentVerifierProviderBuilder().setProvider(signatureProvider).build(publicKey);
+        }
+
+        if (!pkcs10.isSignatureValid(verifierProvider)) {
             logger.severe("POPO verification failed for " + certGenParams.getSubjectDn());
             throw new Exception("Verification of signature (popo) on PKCS10 request failed.");
         }
@@ -102,13 +114,13 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
         return cert;
     }
 
-    public static PublicKey getPublicKey(PKCS10CertificationRequest pkcs10) throws NoSuchAlgorithmException, NoSuchProviderException, InvalidKeyException, InvalidKeySpecException {
-        CertificationRequestInfo reqInfo = pkcs10.getCertificationRequestInfo();
+    public static PublicKey getPublicKey(PKCS10CertificationRequest pkcs10) throws NoSuchAlgorithmException, InvalidKeySpecException, IOException {
+        CertificationRequestInfo reqInfo = pkcs10.toASN1Structure().getCertificationRequestInfo();
         SubjectPublicKeyInfo subjectPKInfo = reqInfo.getSubjectPublicKeyInfo();
         X509EncodedKeySpec xspec = new X509EncodedKeySpec(new DERBitString(subjectPKInfo).getBytes());
-        AlgorithmIdentifier keyAlg = subjectPKInfo.getAlgorithmId();
+        AlgorithmIdentifier keyAlg = subjectPKInfo.getAlgorithm();
 
-        String alg = keyAlg.getObjectId().getId();
+        String alg = keyAlg.getAlgorithm().getId();
         if (PKCSObjectIdentifiers.rsaEncryption.getId().equals(alg))
             alg = "RSA";
         else if (X9ObjectIdentifiers.id_dsa.getId().equals(alg))

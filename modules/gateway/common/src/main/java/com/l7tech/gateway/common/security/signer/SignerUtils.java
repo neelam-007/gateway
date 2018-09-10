@@ -223,6 +223,7 @@ public class SignerUtils {
      * @throws SignatureException        if there is a problem signing the cert
      * @throws NoSuchProviderException   if "the current asymmetric JCE provider is incorrect" (likely can't happen)
      * @throws NoSuchAlgorithmException  if a required algorithm is not available in the current asymmetric JCE provider
+     * @throws IOException               if the certificate request fails to be encoded to bytes.
      */
     @NotNull
     public static byte[] generatePkcs10CertificateSigningRequest(
@@ -230,7 +231,7 @@ public class SignerUtils {
             @NotNull final String subjectDn,
             int expiryDays,
             @Nullable final String sigAlg
-    ) throws NoSuchProviderException, SignatureException, NoSuchAlgorithmException, InvalidKeyException {
+    ) throws SignatureException, IOException {
         final CertGenParams params = new CertGenParams(new X500Principal(subjectDn), expiryDays, false, sigAlg);
         return BouncyCastleCertUtils.makeCertificateRequest(params, keyPair).getEncoded();
     }

@@ -7,10 +7,10 @@
 package com.l7tech.security.prov.bc;
 
 import com.l7tech.security.prov.CertificateRequest;
-import org.bouncycastle.asn1.ASN1Set;
-import org.bouncycastle.asn1.x509.X509Name;
-import org.bouncycastle.jce.PKCS10CertificationRequest;
+import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 
+
+import java.io.IOException;
 import java.security.*;
 
 /**
@@ -47,14 +47,14 @@ public class BouncyCastleCertificateRequest implements CertificateRequest {
      */
     @Override
     public String getSubjectAsString() {
-        return certReq.getCertificationRequestInfo().getSubject().toString();
+        return certReq.getSubject().toString();
     }
 
     /**
      * @return the bytes of the encoded form of this certificate request
      */
     @Override
-    public byte[] getEncoded() {
+    public byte[] getEncoded() throws IOException {
         return certReq.getEncoded();
     }
 

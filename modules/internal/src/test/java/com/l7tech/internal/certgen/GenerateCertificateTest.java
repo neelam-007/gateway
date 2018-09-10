@@ -4,7 +4,7 @@ import com.l7tech.common.io.CertUtils;
 import com.l7tech.common.io.X509GeneralName;
 import com.l7tech.security.cert.TestCertificateGenerator;
 import com.l7tech.util.Pair;
-import org.bouncycastle.asn1.x509.X509Extensions;
+import org.bouncycastle.asn1.x509.Extension;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
@@ -147,27 +147,27 @@ public class GenerateCertificateTest {
     @Test
     public void testCountriesOfCitizenship() throws Exception {
         X509Certificate got = CertUtils.decodeFromPEM(generate("-countriesOfCitizenship", "ca", "-countriesOfCitizenship", "jp"));
-        assertNotNull(got.getExtensionValue(X509Extensions.SubjectDirectoryAttributes.getId()));
+        assertNotNull(got.getExtensionValue(Extension.subjectDirectoryAttributes.getId()));
     }
 
     @Test
     public void testBasicConstraintsCa() throws Exception {
         X509Certificate got = CertUtils.decodeFromPEM(generate("-basicConstraintsCa", "4", "-keyUsage", "keyCertSign"));
-        assertNotNull(got.getExtensionValue(X509Extensions.BasicConstraints.getId()));
+        assertNotNull(got.getExtensionValue(Extension.basicConstraints.getId()));
         assertEquals(got.getBasicConstraints(), 4);
     }
 
     @Test
     public void testBasicConstraintsNoCa() throws Exception {
         X509Certificate got = CertUtils.decodeFromPEM(generate("-basicConstraintsNoCa"));
-        assertNotNull(got.getExtensionValue(X509Extensions.BasicConstraints.getId()));
+        assertNotNull(got.getExtensionValue(Extension.basicConstraints.getId()));
         assertEquals(got.getBasicConstraints(), -1);
     }
 
     @Test
     public void testCertPolicies() throws Exception {
         X509Certificate got = CertUtils.decodeFromPEM(generate("-certificatePolicies", "1.2.3.4", "-certificatePolicies", "1.2.3.5.6.7"));
-        assertNotNull(got.getExtensionValue(X509Extensions.CertificatePolicies.getId()));
+        assertNotNull(got.getExtensionValue(Extension.certificatePolicies.getId()));
         assertTrue(got.toString().contains("CertificatePolicies ["));
         assertTrue(got.toString().contains("  [CertificatePolicyId: [1.2.3.4]"));
         assertTrue(got.toString().contains("  [CertificatePolicyId: [1.2.3.5.6.7]"));
@@ -176,8 +176,8 @@ public class GenerateCertificateTest {
     @Test
     public void testOcspUrls() throws Exception {
         X509Certificate got = CertUtils.decodeFromPEM(generate("-ocspUrl", "http://ocsp1.blah/asdf", "-ocspUrl", "http://ocsp2.blah/qwer"));
-        assertNotNull("AIA ext shall be present", got.getExtensionValue(X509Extensions.AuthorityInfoAccess.getId()));
-        assertFalse("AIA shall not be critical by default", got.getCriticalExtensionOIDs().contains(X509Extensions.AuthorityInfoAccess.getId()));
+        assertNotNull("AIA ext shall be present", got.getExtensionValue(Extension.authorityInfoAccess.getId()));
+        assertFalse("AIA shall not be critical by default", got.getCriticalExtensionOIDs().contains(Extension.authorityInfoAccess.getId()));
         String[] urls = CertUtils.getAuthorityInformationAccessUris(got, "1.3.6.1.5.5.7.48.1"); // OID_AIA_OCSP
         assertEquals(2, urls.length);
         assertEquals("http://ocsp1.blah/asdf", urls[0]);
@@ -187,8 +187,8 @@ public class GenerateCertificateTest {
     @Test
     public void testOcspUrlsCritical() throws Exception {
         X509Certificate got = CertUtils.decodeFromPEM(generate("-ocspUrl", "http://ocsp1.blah/asdf", "-ocspUrlCritical", "true"));
-        assertNotNull("AIA ext shall be present", got.getExtensionValue(X509Extensions.AuthorityInfoAccess.getId()));
-        assertTrue("AIA shall be critical when requested", got.getCriticalExtensionOIDs().contains(X509Extensions.AuthorityInfoAccess.getId()));
+        assertNotNull("AIA ext shall be present", got.getExtensionValue(Extension.authorityInfoAccess.getId()));
+        assertTrue("AIA shall be critical when requested", got.getCriticalExtensionOIDs().contains(Extension.authorityInfoAccess.getId()));
         String[] urls = CertUtils.getAuthorityInformationAccessUris(got, "1.3.6.1.5.5.7.48.1"); // OID_AIA_OCSP
         assertEquals(1, urls.length);
         assertEquals("http://ocsp1.blah/asdf", urls[0]);

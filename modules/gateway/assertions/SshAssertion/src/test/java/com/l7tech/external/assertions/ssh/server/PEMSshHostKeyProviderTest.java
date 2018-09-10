@@ -4,14 +4,9 @@ import com.l7tech.external.assertions.ssh.server.keyprovider.PemSshHostKeyProvid
 import com.l7tech.security.keys.PemUtils;
 import com.l7tech.util.SyspropUtil;
 import org.apache.sshd.common.KeyPairProvider;
-import org.bouncycastle.openssl.PEMReader;
 import org.junit.Test;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.security.KeyPair;
-import java.security.PublicKey;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -108,26 +103,20 @@ public class PEMSshHostKeyProviderTest {
     @Test
     public void testRsaPemReadWrite() throws Exception {
         // pem read rsa private key
-        InputStream is = new ByteArrayInputStream(sshRsaPrivateKey.getBytes());
-        PEMReader r = new PEMReader(new InputStreamReader(is), null, PemUtils.getSymProvider(), PemUtils.getAsymProvider());
-        KeyPair keyPair =  (KeyPair) r.readObject();
-        PublicKey publicKey = keyPair.getPublic();
+        final KeyPair keyPair = PemUtils.doReadKeyPair(sshRsaPrivateKey);
 
         // pem write rsa public key should match
-        String writtenRemRsaPublicKey = PemUtils.writeKey( publicKey );
+        final String writtenRemRsaPublicKey = PemUtils.writeKey(keyPair.getPublic());
         assertTrue(writtenRemRsaPublicKey.contains(sshRsaPemPublicKey));
     }
 
     @Test
     public void testDsaPemReadWrite() throws Exception {
         // pem read dsa private key
-        InputStream is = new ByteArrayInputStream(sshDsaPrivateKey.getBytes());
-        PEMReader r = new PEMReader(new InputStreamReader(is), null, PemUtils.getSymProvider(), PemUtils.getAsymProvider());
-        KeyPair keyPair =  (KeyPair) r.readObject();
-        PublicKey publicKey = keyPair.getPublic();
+        final KeyPair keyPair = PemUtils.doReadKeyPair(sshDsaPrivateKey);
 
         // pem write dsa public key should match
-        String writtenRemDsaPublicKey = PemUtils.writeKey( publicKey );
+        final String writtenRemDsaPublicKey = PemUtils.writeKey(keyPair.getPublic());
         assertTrue(writtenRemDsaPublicKey.contains(sshDsaPemPublicKey));
     }
 

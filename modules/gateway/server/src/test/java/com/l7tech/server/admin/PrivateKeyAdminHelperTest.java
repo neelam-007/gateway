@@ -25,6 +25,7 @@ import org.mockito.ArgumentMatcher;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.KeyStoreException;
 import java.security.cert.X509Certificate;
@@ -76,7 +77,7 @@ public class PrivateKeyAdminHelperTest {
         });
     }
 
-    @Test(expected = KeyStoreException.class)
+    @Test(expected = IOException.class)
     @BugId("SSM-4370")
     public void testImportCertificateAsKeyStore() throws Exception {
         byte[] certFileBytes = TestKeys.getCert(TestKeys.RSA_1024_CERT_X509_B64).getEncoded();

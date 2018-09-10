@@ -10,15 +10,15 @@ import com.l7tech.test.BugId;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.Pair;
 import com.l7tech.util.TimeUnit;
-import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.ocsp.OCSPObjectIdentifiers;
-import org.bouncycastle.asn1.x509.KeyPurposeId;
-import org.bouncycastle.asn1.x509.X509Extension;
-import org.bouncycastle.asn1.x509.X509Extensions;
-import org.bouncycastle.ocsp.*;
+import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x509.*;
+import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.ocsp.*;
 import static org.junit.Assert.*;
 
+import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -187,25 +187,28 @@ public class OCSPClientTest {
                                                     final Date thisUpdate,
                                                     final Date nextUpdate ) throws Exception
     {
-        Pair<X509Certificate, PrivateKey> ik = makeIssuerCert();
+        final Pair<X509Certificate, PrivateKey> ik = makeIssuerCert();
         final PrivateKey issuerKey = ik.right;
         final X509Certificate issuerCert = ik.left;
 
-        String sha1rsaprovider = Signature.getInstance("SHA1WithRSA").getProvider().getName();
-        BasicOCSPRespGenerator responseGenerator = new BasicOCSPRespGenerator( new RespID( issuerCert.getSubjectX500Principal() ) );
-        CertificateID certId = new CertificateID( OCSPClient.buildCertID( issuerCert, subjectCert.getSerialNumber() ) );
-        responseGenerator.addResponse( certId, CertificateStatus.GOOD, thisUpdate, nextUpdate, null );
+        final String sha1rsaprovider = Signature.getInstance("SHA1WithRSA").getProvider().getName();
+        final BasicOCSPRespBuilder responseBuilder = new BasicOCSPRespBuilder(
+                new RespID(
+                        X500Name.getInstance(issuerCert.getSubjectX500Principal().getEncoded())));
+        final CertificateID certId = new CertificateID(OCSPClient.buildCertID(issuerCert, subjectCert.getSerialNumber()));
+        responseBuilder.addResponse(certId, CertificateStatus.GOOD, thisUpdate, nextUpdate, null);
         if ( responseNonceBytes != null ) {
-            final Vector<DERObjectIdentifier> oids = new Vector<DERObjectIdentifier>();
-            final Vector<X509Extension> values = new Vector<X509Extension>();
-            oids.add(OCSPObjectIdentifiers.id_pkix_ocsp_nonce);
-            values.add(new X509Extension(false, new DEROctetString(responseNonceBytes)));
-            responseGenerator.setResponseExtensions(new X509Extensions(oids, values));
+            final Vector<Extension> values = new Vector<>();
+            values.add(new Extension(OCSPObjectIdentifiers.id_pkix_ocsp_nonce, false, new DEROctetString(responseNonceBytes)));
+            responseBuilder.setResponseExtensions(new Extensions(values.toArray(new Extension[values.size()])));
         }
-        BasicOCSPResp response = responseGenerator.generate( "SHA1WithRSA", issuerKey, new X509Certificate[]{ issuerCert }, thisUpdate, sha1rsaprovider );
-        OCSPRespGenerator respGen = new OCSPRespGenerator();
-        OCSPResp resp = respGen.generate( 0, response );
-        byte[] body = resp.getEncoded();
+        final BasicOCSPResp response = responseBuilder.build(
+                new JcaContentSignerBuilder("SHA1WithRSA").setProvider(sha1rsaprovider).build(issuerKey),
+                new X509CertificateHolder[]{new X509CertificateHolder(issuerCert.getEncoded())},
+                thisUpdate );
+        final OCSPRespBuilder respBuilder = new OCSPRespBuilder();
+        final OCSPResp resp = respBuilder.build(0, response);
+        final byte[] body = resp.getEncoded();
         if (breakResponseSignature)
             body[body.length / 3]++;
 

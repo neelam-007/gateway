@@ -1797,7 +1797,7 @@ ${versionfilecontent}
         <pack-mac jarfile="${build.dir}/managerapplet/lib/antlr-2.7.7-l7p1.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/aopalliance-1.0.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/apache-harmony-asn1-0.1.jar"/>
-        <pack-mac jarfile="${build.dir}/managerapplet/lib/bcprov-unsigned-jdk16-1.46.jar"/>
+        <pack-mac jarfile="${build.dir}/managerapplet/lib/bcprov-unsigned-jdk15on-1.60.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/browser-launcher-1.0rc4.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/commons-codec-1.6.jar"/>
         <pack-mac jarfile="${build.dir}/managerapplet/lib/commons-collections-3.2.2.jar"/>

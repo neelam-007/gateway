@@ -1,11 +1,17 @@
 package com.l7tech.skunkworks;
 
-import org.bouncycastle.asn1.x509.X509Extensions;
-import org.bouncycastle.x509.X509V3CertificateGenerator;
-import org.bouncycastle.x509.extension.AuthorityKeyIdentifierStructure;
-import org.bouncycastle.x509.extension.SubjectKeyIdentifierStructure;
+import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x509.*;
+import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.X509v3CertificateBuilder;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
+import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
+import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 
-import javax.security.auth.x500.X500Principal;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -114,21 +120,31 @@ public class SelfSignedCertGenerator {
     @SuppressWarnings( "deprecation" )
     void generate() throws GeneralSecurityException {
         // Generate key pair
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance( "RSA" );
+        final KeyPairGenerator kpg = KeyPairGenerator.getInstance( "RSA" );
         kpg.initialize( rsaSize, secureRandom );
         keyPair = kpg.generateKeyPair();
+        final ByteArrayInputStream bIn = new ByteArrayInputStream(keyPair.getPublic().getEncoded());
 
-        // Generate self-signed cert
-        X509V3CertificateGenerator gen = new X509V3CertificateGenerator();
-        gen.setSerialNumber( new BigInteger( 64, secureRandom ).abs() ); // random serial number
-        gen.setNotBefore( new Date( new Date().getTime() - ( 10 * 60 * 1000L ) ) ); // become valid as of 10 minutes ago
-        gen.setNotAfter( new Date( new Date().getTime() + ( daysUntilExpiry * 24 * 60 * 60 * 1000L ) ) ); // lasts for specified number of days
-        gen.setSignatureAlgorithm( "SHA256withRSA" );
-        gen.setSubjectDN( new X500Principal( subjectDn ) );
-        gen.setIssuerDN( new X500Principal( subjectDn ) );
-        gen.setPublicKey( keyPair.getPublic() );
-        gen.addExtension( X509Extensions.SubjectKeyIdentifier, false, new SubjectKeyIdentifierStructure( keyPair.getPublic() ) );
-        gen.addExtension( X509Extensions.AuthorityKeyIdentifier, false, new AuthorityKeyIdentifierStructure( keyPair.getPublic() ) );
-        cert = gen.generate( keyPair.getPrivate(), secureRandom );
+        try (ASN1InputStream asn1InputStream = new ASN1InputStream(bIn)){
+
+            // Generate self-signed cert
+            final X509v3CertificateBuilder builder = new X509v3CertificateBuilder(
+                new X500Name(subjectDn),
+                new BigInteger(64, secureRandom ).abs(), // random serial number
+                new Time(new Date(new Date().getTime() - (10*60*1000L))), // become valid as of 10 minutes ago
+                new Time(new Date(new Date().getTime() + (daysUntilExpiry*24*60*60*1000L))), // lasts for specified number of days
+                new X500Name(subjectDn),
+                new SubjectPublicKeyInfo((ASN1Sequence) asn1InputStream.readObject()));
+            builder.addExtension(Extension.subjectKeyIdentifier, false, new JcaX509ExtensionUtils().createSubjectKeyIdentifier(keyPair.getPublic()));
+            builder.addExtension(Extension.authorityKeyIdentifier, false, new JcaX509ExtensionUtils().createAuthorityKeyIdentifier(keyPair.getPublic()));
+            final X509CertificateHolder certHolder = builder.build(
+                    new JcaContentSignerBuilder("SHA256withRSA")
+                            .setSecureRandom(secureRandom)
+                            .build(keyPair.getPrivate()));
+            cert = new JcaX509CertificateConverter().getCertificate(certHolder);
+        } catch (OperatorCreationException | IOException e) {
+            //Generic throws
+            throw new GeneralSecurityException(e);
+        }
     }
 }

@@ -1,5 +1,6 @@
 package com.l7tech.server.admin;
 
+
 import com.l7tech.common.io.*;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.gateway.common.LicenseManager;
@@ -36,8 +37,7 @@ import com.l7tech.server.security.password.SecurePasswordManager;
 import com.l7tech.util.*;
 import org.apache.commons.lang.ObjectUtils;
 import org.bouncycastle.asn1.pkcs.CertificationRequestInfo;
-import org.bouncycastle.asn1.x509.X509Name;
-import org.bouncycastle.jce.PKCS10CertificationRequest;
+import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -62,8 +62,13 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.l7tech.server.event.AdminInfo.find;
+import static com.l7tech.util.ExceptionUtils.getDebugException;
+import static com.l7tech.util.ExceptionUtils.getMessage;
 
 public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements ApplicationEventPublisherAware, TrustedCertAdmin {
+
+    private static final String ERROR_KEYSTORE = "error getting keystore";
+    private static final String UNSET = "unset";
 
     private final DefaultKey defaultKey;
     private final LicenseManager licenseManager;
@@ -129,7 +134,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
 
     @Override
     public List<TrustedCert> findAllCerts() throws FindException {
-        return new ArrayList<TrustedCert>(getManager().findAll());
+        return new ArrayList<>(getManager().findAll());
     }
 
     @Override
@@ -176,7 +181,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
 
     @Override
     public List<RevocationCheckPolicy> findAllRevocationCheckPolicies() throws FindException {
-        return new ArrayList<RevocationCheckPolicy>(getRevocationCheckPolicyManager().findAll());
+        return new ArrayList<>(getRevocationCheckPolicyManager().findAll());
     }
 
     @Override
@@ -262,7 +267,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
     @Override
     public List<KeystoreFileEntityHeader> findAllKeystores(boolean includeHardware) throws IOException, FindException, KeyStoreException {
         List<SsgKeyFinder> finders = ssgKeyStoreManager.findAll();
-        List<KeystoreFileEntityHeader> list = new ArrayList<KeystoreFileEntityHeader>();
+        List<KeystoreFileEntityHeader> list = new ArrayList<>();
         for (SsgKeyFinder ssgKeyFinder : finders) {
             if (!includeHardware && ssgKeyFinder.getType() == SsgKeyFinder.SsgKeyStoreType.PKCS11_HARDWARE) {
                 continue;   // skip
@@ -281,7 +286,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
         try {
             SsgKeyFinder keyFinder = ssgKeyStoreManager.findByPrimaryKey(keystoreId);
 
-            List<SsgKeyEntry> list = new ArrayList<SsgKeyEntry>();
+            List<SsgKeyEntry> list = new ArrayList<>();
             List<String> aliases = keyFinder.getAliases();
             for (String alias : aliases) {
                 SsgKeyEntry entry = keyFinder.getCertificateChain(alias);
@@ -360,23 +365,23 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
         try {
             keyFinder = ssgKeyStoreManager.findByPrimaryKey(keystoreId);
         } catch (KeyStoreException e) {
-            logger.log(Level.WARNING, "error getting keystore", e);
-            throw new FindException("error getting keystore", e);
+            logger.log(Level.WARNING, ERROR_KEYSTORE, e);
+            throw new FindException(ERROR_KEYSTORE, e);
         } catch (ObjectNotFoundException e) {
-            throw new FindException("error getting keystore", e);
+            throw new FindException(ERROR_KEYSTORE, e);
         }
         SsgKeyStore keystore;
         if (keyFinder != null) {
             keystore = keyFinder.getKeyStore();
         } else {
-            logger.log(Level.WARNING, "error getting keystore");
-            throw new FindException("cannot find keystore");
+            logger.log(Level.WARNING, ERROR_KEYSTORE);
+            throw new FindException(ERROR_KEYSTORE);
         }
         try {
             CertificateRequest res = keystore.makeCertificateSigningRequest(alias, params);
             return res.getEncoded();
         } catch (Exception e) {
-            logger.log(Level.WARNING, "error getting keystore", e);
+            logger.log(Level.WARNING, ERROR_KEYSTORE, e);
             throw new FindException("error making CSR", e);
         }
     }
@@ -388,16 +393,16 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
         try {
             keyFinder = ssgKeyStoreManager.findByPrimaryKey(keystoreId);
         } catch (KeyStoreException e) {
-            logger.log(Level.WARNING, "error getting keystore", e);
-            throw new FindException("error getting keystore", e);
+            logger.log(Level.WARNING, ERROR_KEYSTORE, e);
+            throw new FindException(ERROR_KEYSTORE, e);
         } catch (ObjectNotFoundException e) {
-            throw new FindException("error getting keystore", e);
+            throw new FindException(ERROR_KEYSTORE, e);
         }
         SsgKeyStore keystore;
         if (keyFinder != null) {
             keystore = keyFinder.getKeyStore();
         } else {
-            logger.log(Level.WARNING, "error getting keystore");
+            logger.log(Level.WARNING, ERROR_KEYSTORE);
             throw new FindException("cannot find keystore");
         }
 
@@ -406,14 +411,16 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
         RsaSignerEngine signer = JceProvider.getInstance().createRsaSignerEngine(entry.getPrivateKey(), entry.getCertificateChain());
 
         X509Certificate cert;
+        byte[] decodedCsrBytes;
+
         try {
-            byte[] decodedCsrBytes;
-            try {
-                decodedCsrBytes = CertUtils.csrPemToBinary(csrBytes);
-            } catch (IOException e) {
-                // Try as DER
-                decodedCsrBytes = csrBytes;
-            }
+            decodedCsrBytes = CertUtils.csrPemToBinary(csrBytes);
+        } catch (IOException e) {
+            // Try as DER
+            decodedCsrBytes = csrBytes;
+        }
+
+        try {
             final CertGenParams certGenParams = new CertGenParams(subjectDn, expiryDays, false, sigAlg);
             // If sigAlg is not specified, then hashAlg will be used to derived the signature algorithm.
             certGenParams.setHashAlgorithm(hashAlg);
@@ -506,19 +513,14 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
 
         } catch (IOException e) {
             throw new KeyStoreException(ExceptionUtils.getMessage( e ), e);
-        } catch (NoSuchAlgorithmException e) {
-            throw new KeyStoreException(e);
-        } catch (CertificateException e) {
-            throw new KeyStoreException(e);
-        } catch (UnrecoverableKeyException e) {
-            throw new KeyStoreException(e);
-        } catch (ExecutionException e) {
-            throw new KeyStoreException(e);
-        } catch (InterruptedException e) {
+        } catch (NoSuchAlgorithmException | CertificateException | UnrecoverableKeyException | ExecutionException e) {
             throw new KeyStoreException(e);
         } catch (NoSuchProviderException e) {
             //noinspection ThrowableResultOfMethodCallIgnored
             logger.log(Level.WARNING, "Invalid " + PrivateKeyAdminHelper.PROP_PKCS12_PARSING_PROVIDER + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+            throw new KeyStoreException(e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             throw new KeyStoreException(e);
         } finally {
             if (keyStoreBytes != null)
@@ -567,16 +569,16 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
         // We'll assume a designation is mutable unless it was set via its system property (instead of its cluster property)
         switch (keyType) {
             case SSL:
-                return "unset".equals(SyspropUtil.getString("com.l7tech.server.keyStore.defaultSsl.alias", "unset"));
+                return UNSET.equals(SyspropUtil.getString("com.l7tech.server.keyStore.defaultSsl.alias", UNSET));
 
             case CA:
-                return "unset".equals(SyspropUtil.getString("com.l7tech.server.keyStore.defaultCa.alias", "unset"));
+                return UNSET.equals(SyspropUtil.getString("com.l7tech.server.keyStore.defaultCa.alias", UNSET));
 
             case AUDIT_VIEWER:
-                return "unset".equals(SyspropUtil.getString("com.l7tech.server.keyStore.auditViewer.alias", "unset"));
+                return UNSET.equals(SyspropUtil.getString("com.l7tech.server.keyStore.auditViewer.alias", UNSET));
 
             case AUDIT_SIGNING:
-                return "unset".equals(SyspropUtil.getString("com.l7tech.server.keyStore.auditSigning.alias", "unset"));
+                return UNSET.equals(SyspropUtil.getString("com.l7tech.server.keyStore.auditSigning.alias", UNSET));
 
             default:
                 return false;
@@ -605,18 +607,14 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
                 prop.setValue(propValue);
                 clusterPropertyManager.update(prop);
             }
-        } catch (FindException e) {
-            throw new UpdateException(e);
-        } catch (SaveException e) {
-            throw new UpdateException(e);
-        } catch (KeyStoreException e) {
+        } catch (FindException | SaveException | KeyStoreException e) {
             throw new UpdateException(e);
         }
     }
 
     @Override
     public List<SecurePassword> findAllSecurePasswords() throws FindException {
-        List<SecurePassword> ret = new ArrayList<SecurePassword>();
+        List<SecurePassword> ret = new ArrayList<>();
         Collection<SecurePassword> securePasswords = securePasswordManager.findAll();
         for (SecurePassword securePassword : securePasswords) {
             securePassword.setEncodedPassword(null); // blank password before returning
@@ -677,7 +675,7 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
         // Verify that password exists and is the correct type
         getSecurePasswordOfType( securePasswordGoid, SecurePasswordType.PEM_PRIVATE_KEY );
 
-        final FutureTask<Boolean> keyGenerator = new FutureTask<Boolean>( find( false ).wrapCallable( new Callable<Boolean>(){
+        final FutureTask<Boolean> keyGenerator = new FutureTask<>( find( false ).wrapCallable( new Callable<Boolean>(){
             @Override
             public Boolean call() throws Exception {
                 final KeyPairGenerator generator = KeyPairGenerator.getInstance( "RSA", new BouncyCastleProvider() );
@@ -745,15 +743,21 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
             decodedCsrBytes = csrBytes;
         }
 
-        PKCS10CertificationRequest pkcs10 = new PKCS10CertificationRequest(decodedCsrBytes);
-        CertificationRequestInfo certReqInfo = pkcs10.getCertificationRequestInfo();
+        PKCS10CertificationRequest pkcs10;
+        try {
+            pkcs10 = new PKCS10CertificationRequest(decodedCsrBytes);
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "Unable to create the PKCS10CertificationRequest from the decoded CSR bytes.");
+            return null;
+        }
+        CertificationRequestInfo certReqInfo = pkcs10.toASN1Structure().getCertificationRequestInfo();
 
         // Subject DN:
-        csrProps.put(CSR_PROP_SUBJECT_DN, certReqInfo.getSubject().toString(true, X509Name.DefaultSymbols));
+        csrProps.put(CSR_PROP_SUBJECT_DN, certReqInfo.getSubject().toString());
         // Subject Alternative Names
         try {
             List<X509GeneralName> sANs = BouncyCastleCertUtils.extractSubjectAlternativeNamesFromCsrInfoAttr(certReqInfo.getAttributes());
-            if(sANs.size() > 0) {
+            if(!sANs.isEmpty()) {
                 List<NameValuePair> sansList = new ArrayList<>();
                 for (X509GeneralName san : sANs) {
                     sansList.add(CertUtils.convertFromX509GeneralName(san));
@@ -807,16 +811,16 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
         try {
             keyFinder = ssgKeyStoreManager.findByPrimaryKey(keystoreId);
         } catch (KeyStoreException e) {
-            logger.log(Level.WARNING, "error getting keystore", e);
-            throw new FindException("error getting keystore", e);
+            logger.log(Level.WARNING, ERROR_KEYSTORE, e);
+            throw new FindException(ERROR_KEYSTORE, e);
         } catch (ObjectNotFoundException e) {
-            throw new FindException("error getting keystore", e);
+            throw new FindException(ERROR_KEYSTORE, e);
         }
         SsgKeyStore keystore;
         if (keyFinder != null) {
             keystore = keyFinder.getKeyStore();
         } else {
-            logger.log(Level.WARNING, "error getting keystore");
+            logger.log(Level.WARNING, ERROR_KEYSTORE);
             throw new FindException("cannot find keystore");
         }
 

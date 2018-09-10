@@ -427,10 +427,11 @@ public class SkarSigner {
      * @throws SignatureException        if there is a problem signing the cert
      * @throws NoSuchProviderException   if "the current asymmetric JCE provider is incorrect" (likely can't happen)
      * @throws NoSuchAlgorithmException  if a required algorithm is not available in the current asymmetric JCE provider
+     * @throws IOException               if there is a problem with getting the byte [] from the cert
      */
     @NotNull
     public static byte[] generatePkcs10CertificateSigningRequest( KeyPair keyPair, String subjectDn )
-            throws NoSuchProviderException, SignatureException, NoSuchAlgorithmException, InvalidKeyException
+            throws NoSuchProviderException, SignatureException, NoSuchAlgorithmException, InvalidKeyException, IOException
     {
         CertGenParams params = new CertGenParams( new X500Principal( subjectDn ), 30 * 365, false, null );
         return BouncyCastleCertUtils.makeCertificateRequest( params, keyPair ).getEncoded();

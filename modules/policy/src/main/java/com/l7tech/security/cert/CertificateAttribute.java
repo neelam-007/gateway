@@ -2,13 +2,14 @@ package com.l7tech.security.cert;
 
 import com.l7tech.common.io.CertUtils;
 import com.l7tech.util.*;
-import org.bouncycastle.asn1.DERObjectIdentifier;
-import org.bouncycastle.asn1.DERPrintableString;
-import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.asn1.DERSet;
-import org.bouncycastle.asn1.x509.X509Extensions;
-import org.bouncycastle.asn1.x509.X509Name;
-import org.bouncycastle.x509.extension.X509ExtensionUtil;
+import org.apache.commons.lang3.StringUtils;
+import org.bouncycastle.asn1.*;
+import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.ASN1Set;
+import org.bouncycastle.asn1.x500.style.BCStyle;
+import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
 import org.jetbrains.annotations.Nullable;
 import sun.security.util.DerValue;
 
@@ -49,7 +50,7 @@ public enum CertificateAttribute {
             } catch (CertificateEncodingException e) {
                 logger.log(Level.WARNING, "Error getting DER-encoded certificate" +
                                           ExceptionUtils.getMessage(e) + "'.", ExceptionUtils.getDebugException(e));
-                return new HashMap<String, Collection<Object>>();
+                return new HashMap<>();
             }
         }},
 
@@ -64,7 +65,7 @@ public enum CertificateAttribute {
             } catch (CertificateEncodingException e) {
                 logger.log(Level.WARNING, "Error getting BASE64-encoded certificate" +
                                           ExceptionUtils.getMessage(e) + "'.", ExceptionUtils.getDebugException(e));
-                return new HashMap<String, Collection<Object>>();
+                return new HashMap<>();
             }
         }},
 
@@ -79,7 +80,7 @@ public enum CertificateAttribute {
             } catch (Exception e) {
                 logger.log(Level.WARNING, "Error getting PEM-encoded certificate" +
                                           ExceptionUtils.getMessage(e) + "'.", ExceptionUtils.getDebugException(e));
-                return new HashMap<String, Collection<Object>>();
+                return new HashMap<>();
             }
         }},
 
@@ -413,7 +414,7 @@ public enum CertificateAttribute {
             } catch (CertificateEncodingException e) {
                 logger.log(Level.WARNING, "Error getting DER-encoded certificate" +
                                           ExceptionUtils.getMessage(e) + "'.", ExceptionUtils.getDebugException(e));
-                return new HashMap<String, Collection<Object>>();
+                return new HashMap<>();
             }
         }},
 
@@ -428,7 +429,7 @@ public enum CertificateAttribute {
             } catch (CertificateEncodingException e) {
                 logger.log(Level.WARNING, "Error getting DER-encoded certificate" +
                         ExceptionUtils.getMessage(e) + "'.", ExceptionUtils.getDebugException(e));
-                return new HashMap<String, Collection<Object>>();
+                return new HashMap<>();
             }
         }},
 
@@ -563,7 +564,7 @@ public enum CertificateAttribute {
     EXTENDED_KEY_USAGE_VALUES("extendedKeyUsageValues", false, true, "extendedKeyUsage") {
         @Override
         public Map<String, Collection<Object>> extractValues(X509Certificate certificate) {
-            List<String> usages = new ArrayList<String>();
+            List<String> usages = new ArrayList<>();
             try {
                 usages = certificate.getExtendedKeyUsage();
             } catch (CertificateParsingException e) {
@@ -624,7 +625,7 @@ public enum CertificateAttribute {
         return attributeName;
     }
 
-    private static final Map<String,CertificateAttribute> stringToEnum = new HashMap<String, CertificateAttribute>();
+    private static final Map<String,CertificateAttribute> stringToEnum = new HashMap<>();
     static {
         for (CertificateAttribute a : values()) {
             stringToEnum.put(a.toString().toLowerCase(), a);
@@ -679,7 +680,7 @@ public enum CertificateAttribute {
     // - PRIVATE UTILS
 
     private static Map<String,Collection<Object>> makeMap(final String key, final Object value) {
-        Map<String,Collection<Object>> result = new HashMap<String, Collection<Object>>();
+        final Map<String,Collection<Object>> result = new HashMap<>();
 
         if (key == null) return result;
 
@@ -705,11 +706,11 @@ public enum CertificateAttribute {
     }
 
     private static Map<String,Collection<Object>> getValuesFromsX500Principal(X500Principal x500Principal, String attrName) {
-        Map<String,Collection<Object>> result = new HashMap<String, Collection<Object>>();
+        final Map<String,Collection<Object>> result = new HashMap<>();
         try {
             if (x500Principal != null) {
                 addToMap(result, attrName, x500Principal.toString());
-                List<Rdn> rdns = new ArrayList<Rdn>(new LdapName(x500Principal.getName(X500Principal.RFC2253, DN_OID_MAP)).getRdns());
+                final List<Rdn> rdns = new ArrayList<>(new LdapName(x500Principal.getName(X500Principal.RFC2253, DN_OID_MAP)).getRdns());
                 int rdnPos = rdns.size();
                 Collections.reverse(rdns);
                 for (Rdn rdn : rdns) {
@@ -819,17 +820,17 @@ public enum CertificateAttribute {
     }
 
     private static List<String> extractCertificatePolicies(X509Certificate certificate) {
-        List<String> policies = new ArrayList<String>();
-        byte[] extensionBytes = certificate.getExtensionValue(X509Extensions.CertificatePolicies.getId());
+        List<String> policies = new ArrayList<>();
+        byte[] extensionBytes = certificate.getExtensionValue(Extension.certificatePolicies.getId());
         if(extensionBytes != null && extensionBytes.length > 0) {
             try {
-                Object extensionValue = X509ExtensionUtil.fromExtensionValue(extensionBytes);
-                    if(extensionValue != null && extensionValue instanceof DERSequence) {
+                ASN1Primitive extensionValue = JcaX509ExtensionUtils.parseExtensionValue(extensionBytes);
+                    if(extensionValue instanceof DERSequence) {
                         DERSequence policiesSequence = (DERSequence)extensionValue;
                         for(int i = 0;i < policiesSequence.size();i++) {
                             DERSequence oidSequence = (DERSequence)policiesSequence.getObjectAt(i);
                             if(oidSequence.size() > 0) {
-                                policies.add(((DERObjectIdentifier)oidSequence.getObjectAt(0)).getId());
+                                policies.add((ASN1ObjectIdentifier.getInstance(oidSequence.getObjectAt(0))).getId());
                             }
                         }
                     }
@@ -857,57 +858,76 @@ public enum CertificateAttribute {
          * @return a List containing zero or more ISO country codes (ie, "US", "CA")
          */
         private static Map<String, Collection<Object>> extractCitizenshipCountries(final X509Certificate cert, String attrName) {
-            Map<String, Collection<Object>> citizenshipCountries = new HashMap<String, Collection<Object>>();
-            citizenshipCountries.put(attrName, new ArrayList<Object>());
+            final Map<String, Collection<Object>> citizenshipCountries = new HashMap<>();
+            citizenshipCountries.put(attrName, new ArrayList<>());
+            ASN1Sequence subjectDirAttrs;
             try {
-                byte[] extensionBytes = cert.getExtensionValue(X509Extensions.SubjectDirectoryAttributes.getId());
-                if(extensionBytes == null || extensionBytes.length == 0) {
+                final byte[] extensionBytes = cert.getExtensionValue(Extension.subjectDirectoryAttributes.getId());
+                if (extensionBytes == null || extensionBytes.length == 0) {
                     return citizenshipCountries;
                 }
 
-                Object extensionValue = X509ExtensionUtil.fromExtensionValue(extensionBytes);
-                if(extensionValue == null || !(extensionValue instanceof DERSequence)) {
+                final ASN1Primitive extensionValue = JcaX509ExtensionUtils.parseExtensionValue(extensionBytes);
+
+                if (!(extensionValue instanceof ASN1Sequence)){
                     return citizenshipCountries;
                 }
-                DERSequence subjectDirAttrs = (DERSequence)extensionValue;
-                for(int i = 0;i < subjectDirAttrs.size();i++) {
-                    if(!(subjectDirAttrs.getObjectAt(i) instanceof DERSequence)) {
-                        continue;
-                    }
+                subjectDirAttrs = ASN1Sequence.getInstance(extensionValue);
 
-                    DERSequence seq = (DERSequence)subjectDirAttrs.getObjectAt(i);
-                    if(seq.size() < 2 || !(seq.getObjectAt(0) instanceof DERObjectIdentifier)) {
-                        continue;
-                    }
-
-                    DERObjectIdentifier id = (DERObjectIdentifier)seq.getObjectAt(0);
-			        if(id.equals(X509Name.COUNTRY_OF_CITIZENSHIP) || (ConfigFactory.getBooleanProperty(ALLOW_X509_C, true) && id.equals(X509Name.C))) {
-                        if(!(seq.getObjectAt(1) instanceof DERSet)) {
-                            continue;
-                        }
-
-                        DERSet cocSet = (DERSet)seq.getObjectAt(1);
-				        for(int j = 0;j < cocSet.size();j++) {
-                            if(!(cocSet.getObjectAt(j) instanceof DERPrintableString)) {
-                                continue;
-                            }
-
-                            DERPrintableString countryCode = (DERPrintableString)cocSet.getObjectAt(j);
-                            addToMap(citizenshipCountries, attrName, countryCode.getString());
-                        }
-                    }
-		        }
-
-                return citizenshipCountries;
-            } catch(IOException ioe) {
-                if ( logger.isLoggable(Level.FINE) ) {
-                    logger.log( Level.FINE, "Could not extract citizenship countries from certificate '"+ExceptionUtils.getMessage(ioe)+"'.", ExceptionUtils.getDebugException(ioe));
+            } catch (IOException ioe) {
+                if (logger.isLoggable(Level.FINE)) {
+                    logger.log(Level.FINE, "Could not extract citizenship countries from certificate '" + ExceptionUtils.getMessage(ioe) + "'.", ExceptionUtils.getDebugException(ioe));
                 }
-
                 return citizenshipCountries;
             }
+
+            if (subjectDirAttrs==null){
+                return citizenshipCountries;
+            }
+
+            for (int i = 0; i < subjectDirAttrs.size(); i++) {
+
+                try {
+                    final ASN1Sequence subjectDirAttr = ASN1Sequence.getInstance(subjectDirAttrs.getObjectAt(i));
+                    final String countryOfCitizenship = getCountryOfCitizenshipFromSequence(subjectDirAttr);
+                    if (!StringUtils.isEmpty(countryOfCitizenship)) {
+                        addToMap(citizenshipCountries, attrName, countryOfCitizenship);
+                    }
+                } catch (IllegalArgumentException e) {
+                    logger.log(Level.WARNING, "Could not get the country of citizenship from sequence.");
+                }
+            }
+            return citizenshipCountries;
+
+
+        }
+
+        /**
+         * Returns the country codes from the Country of citizenship attribute for the provided ASN1Sequence
+         * @param asn1Sequence that contains the Country of cititzenship attribute.
+         * @return The Country code string.
+         */
+        private static String getCountryOfCitizenshipFromSequence(final ASN1Sequence asn1Sequence){
+
+            if (asn1Sequence.size() < 2) {
+                return null;
+            }
+            final ASN1ObjectIdentifier id = ASN1ObjectIdentifier.getInstance(asn1Sequence.getObjectAt(0));
+            if (id.equals(BCStyle.COUNTRY_OF_CITIZENSHIP) || (ConfigFactory.getBooleanProperty(ALLOW_X509_C, true) && id.equals(BCStyle.C))) {
+                final ASN1Primitive prim = (ASN1Primitive) asn1Sequence.getObjectAt(1);
+                if (prim instanceof ASN1Set) {
+                    final ASN1Set countryOfCitizenshipSet = ASN1Set.getInstance(asn1Sequence.getObjectAt(1));
+                    if (countryOfCitizenshipSet.getObjectAt(0) instanceof DERPrintableString) {
+                        final DERPrintableString countryCode = DERPrintableString.getInstance(countryOfCitizenshipSet.getObjectAt(0));
+                        return countryCode.toString();
+                    }
+                }
+            }
+            return null;
         }
     }
+
+
 
     private static String[] prefixLegacyNames(String prefix) {
         // Suffixes to support directly on subject and issuer for backward compat with 4.6.6 documentation.

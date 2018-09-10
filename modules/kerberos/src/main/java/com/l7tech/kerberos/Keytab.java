@@ -3,8 +3,6 @@ package com.l7tech.kerberos;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.ResourceUtils;
-import sun.security.krb5.internal.ktab.KeyTab;
-import sun.security.krb5.internal.ktab.KeyTabEntry;
 
 import javax.security.auth.kerberos.KerberosKey;
 import javax.security.auth.kerberos.KerberosPrincipal;

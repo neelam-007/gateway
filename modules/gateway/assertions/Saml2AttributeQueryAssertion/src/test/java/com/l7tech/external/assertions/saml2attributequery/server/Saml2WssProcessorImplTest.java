@@ -1,12 +1,12 @@
 package com.l7tech.external.assertions.saml2attributequery.server;
 
 import com.l7tech.message.Message;
+import com.l7tech.security.keys.PemUtils;
 import com.l7tech.security.saml.SamlConstants;
 import com.l7tech.security.token.SignedElement;
 import com.l7tech.security.xml.processor.ProcessorResult;
 import com.l7tech.xml.soap.SoapUtil;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.openssl.PEMReader;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.w3c.dom.Document;
@@ -16,7 +16,6 @@ import org.w3c.dom.NodeList;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.ByteArrayInputStream;
-import java.io.StringReader;
 import java.security.KeyPair;
 import java.security.Security;
 import java.security.cert.X509Certificate;
@@ -104,24 +103,22 @@ public class Saml2WssProcessorImplTest {
         Document doc = parser.parse(new ByteArrayInputStream(QUERY_XML.getBytes("UTF-8")));
         Message message = new Message(doc);
 
-        PEMReader pemReader = new PEMReader(new StringReader(CERTIFICATE_PEM));
-        X509Certificate cert = (X509Certificate)pemReader.readObject();
-        pemReader = new PEMReader(new StringReader(PRIVATE_KEY_PEM));
-        KeyPair keyPair = (KeyPair)pemReader.readObject();
+        final X509Certificate cert = PemUtils.doReadCertificate(CERTIFICATE_PEM);
+        final KeyPair keyPair = PemUtils.doReadKeyPair(PRIVATE_KEY_PEM);
 
         Saml2WssProcessorImpl securityProcessor = new Saml2WssProcessorImpl(message);
         securityProcessor.setSecurityTokenResolver(new DummySecurityTokenResolver(cert, keyPair.getPrivate()));
 
         NodeList nodes = doc.getElementsByTagNameNS(SamlConstants.NS_SAMLP2, "AttributeQuery");
-        Element signedElement = (Element)nodes.item(0);
+        Element signedElement = (Element) nodes.item(0);
         nodes = doc.getElementsByTagNameNS(SoapUtil.DIGSIG_URI, "Signature");
-        Element signatureElement = (Element)nodes.item(0);
+        Element signatureElement = (Element) nodes.item(0);
 
         securityProcessor.checkSigningCertValidity = false; // test cert has expired, so need to turn off validity check
         ProcessorResult result = securityProcessor.processMessage(signedElement, signatureElement);
         boolean signatureFound = false;
-        for(SignedElement s : result.getElementsThatWereSigned()) {
-            if(s.asElement() == signedElement) {
+        for (SignedElement s : result.getElementsThatWereSigned()) {
+            if (s.asElement() == signedElement) {
                 signatureFound = true;
                 break;
             }
@@ -139,10 +136,8 @@ public class Saml2WssProcessorImplTest {
         Document doc = parser.parse(new ByteArrayInputStream(QUERY_XML.getBytes("UTF-8")));
         Message message = new Message(doc);
 
-        PEMReader pemReader = new PEMReader(new StringReader(CERTIFICATE_PEM));
-        X509Certificate cert = (X509Certificate)pemReader.readObject();
-        pemReader = new PEMReader(new StringReader(PRIVATE_KEY_PEM));
-        KeyPair keyPair = (KeyPair)pemReader.readObject();
+        final X509Certificate cert = PemUtils.doReadCertificate(CERTIFICATE_PEM);
+        final KeyPair keyPair = PemUtils.doReadKeyPair(PRIVATE_KEY_PEM);
 
         Saml2WssProcessorImpl securityProcessor = new Saml2WssProcessorImpl(message);
         securityProcessor.setSecurityTokenResolver(new DummySecurityTokenResolver(cert, keyPair.getPrivate()));

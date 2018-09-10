@@ -5,9 +5,10 @@ package com.l7tech.skunkworks;
  *
  */
 
-import org.bouncycastle.openssl.PEMReader;
-import org.bouncycastle.openssl.PasswordFinder;
+import org.bouncycastle.openssl.*;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
+import org.bouncycastle.openssl.jcajce.JcePEMDecryptorProviderBuilder;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
@@ -15,14 +16,10 @@ import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
 import java.io.*;
 import java.net.Socket;
-import java.security.Principal;
-import java.security.PrivateKey;
-import java.security.KeyPair;
-import java.security.Security;
+import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateFactory;
-import java.security.interfaces.RSAPrivateKey;
 
 /**
  * Test command line utility that posts a post file to a URL with a client cert.
@@ -63,25 +60,24 @@ public class SslPost {
         copyStream(sock.getInputStream(), System.out);
     }
 
-    private static PrivateKey loadClientKey(String clientKeyPath, final char[] keyPass) throws IOException
-    {
-        PEMReader pemReader = new PEMReader(new InputStreamReader(new FileInputStream(clientKeyPath)), new PasswordFinder() {
-            @Override
-            public char[] getPassword() {
-                return keyPass;
-            }
-        });
+    private static PrivateKey loadClientKey(String clientKeyPath, final char[] keyPass) throws IOException {
 
-        Object object = pemReader.readObject();
-        if (object == null)
+        File privateKeyFile = new File(clientKeyPath); // private key file in PEM forma
+        PEMParser pemParser = new PEMParser(new FileReader(privateKeyFile));
+        Object object = pemParser.readObject();
+        PEMDecryptorProvider decProv = new JcePEMDecryptorProviderBuilder().build(keyPass);
+        JcaPEMKeyConverter converter = new JcaPEMKeyConverter().setProvider("BC");
+
+        if (object == null) {
             throw new IllegalArgumentException("Client cert private key PEM file didn't contain any recognizable object"); // shouldn't be possible
-        if (object instanceof KeyPair)
-            object = ((KeyPair)object).getPrivate();
-        if (!(object instanceof RSAPrivateKey))
+        } else if (object instanceof PEMEncryptedKeyPair) {
+            System.out.println("Encrypted key - we will use provided password");
+            KeyPair kp = converter.getKeyPair(((PEMEncryptedKeyPair) object).decryptKeyPair(decProv));
+            return kp.getPrivate();
+        } else {
             throw new IllegalArgumentException("Client cert private key PEM file did not contain an RSAPrivateKey.  Instead it contained: " + object.getClass());
-        return (PrivateKey)object;
+        }
     }
-
     private static X509Certificate loadClientCert(String clientCertPath) throws FileNotFoundException, CertificateException {
         return (X509Certificate)CertificateFactory.getInstance("X.509").generateCertificate(new FileInputStream(clientCertPath));
     }

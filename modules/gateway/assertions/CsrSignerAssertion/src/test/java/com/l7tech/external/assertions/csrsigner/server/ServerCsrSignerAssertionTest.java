@@ -364,13 +364,13 @@ public class ServerCsrSignerAssertionTest {
     @BugId("DE337487")
     public void testSuccess_csrValidSigningWithSpecifiedExpiryAgeNoDnOverride() throws Exception {
 
-        final String EXPIRED_AGE = "20";
+        final String EXPIRY_AGE_DAYS = "20";
 
         haveCaKey();
         context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(null, null);
         Message mess = new Message(new ByteArrayStashManager(), ContentTypeHeader.OCTET_STREAM_DEFAULT, new ByteArrayInputStream(csrBytes));
         context.setVariable("csr_var", mess);
-        ass.setExpiryAgeDays(EXPIRED_AGE);
+        ass.setExpiryAgeDays(EXPIRY_AGE_DAYS);
 
         checkRequest(sass(), context, AssertionStatus.NONE);
 
@@ -378,7 +378,7 @@ public class ServerCsrSignerAssertionTest {
         assertNotNull(cert);
         assertEquals(cert.getSubjectX500Principal().getName(X500Principal.CANONICAL), new X500Principal("cn=joeblow").getName(X500Principal.CANONICAL));
 
-        validateCertificateExpiryYearAndExpiryDaysOfYear(cert,Integer.parseInt(EXPIRED_AGE));
+        validateCertificateExpiryYearAndExpiryDaysOfYear(cert,Integer.parseInt(EXPIRY_AGE_DAYS));
     }
 
 
@@ -389,7 +389,7 @@ public class ServerCsrSignerAssertionTest {
     public void testSuccess_csrValidSigningWithSpecifiedExpiryAgeAndDnOverride() throws Exception {
 
         haveCaKey();
-        final String EXPIRED_AGE = "22";
+        final String EXPIRY_AGE_DAYS = "22";
 
         context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(null, null);
         Message mess = new Message(new ByteArrayStashManager(), ContentTypeHeader.OCTET_STREAM_DEFAULT, new ByteArrayInputStream(csrBytes));
@@ -397,7 +397,7 @@ public class ServerCsrSignerAssertionTest {
         context.setVariable("csr_override_dn_var", OVERRIDE_SUBJECT_DN);
         context.setVariable("csr_var", mess);
         ass.setCertDNVariableName("csr_override_dn_var");
-        ass.setExpiryAgeDays(EXPIRED_AGE);
+        ass.setExpiryAgeDays(EXPIRY_AGE_DAYS);
 
         checkRequest(sass(), context, AssertionStatus.NONE);
 
@@ -405,7 +405,7 @@ public class ServerCsrSignerAssertionTest {
         assertNotNull(cert);
         assertEquals(cert.getSubjectX500Principal().getName(X500Principal.CANONICAL), new X500Principal(OVERRIDE_SUBJECT_DN).getName(X500Principal.CANONICAL));
 
-        validateCertificateExpiryYearAndExpiryDaysOfYear(cert,Integer.parseInt(EXPIRED_AGE));
+        validateCertificateExpiryYearAndExpiryDaysOfYear(cert,Integer.parseInt(EXPIRY_AGE_DAYS));
     }
 
 
@@ -416,14 +416,14 @@ public class ServerCsrSignerAssertionTest {
     public void testSuccess_csrValidSigningWithSpecifiedExpiryAgeUsingContextVarAndDnOverride() throws Exception {
 
         haveCaKey();
-        final String EXPIRED_AGE = "22";
+        final String EXPIRY_AGE_DAYS = "22";
 
         context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(null, null);
         Message mess = new Message(new ByteArrayStashManager(), ContentTypeHeader.OCTET_STREAM_DEFAULT, new ByteArrayInputStream(csrBytes));
 
         context.setVariable("csr_override_dn_var", OVERRIDE_SUBJECT_DN);
         context.setVariable("csr_var", mess);
-        context.setVariable("expiry_age", EXPIRED_AGE);
+        context.setVariable("expiry_age", EXPIRY_AGE_DAYS);
         ass.setCertDNVariableName("csr_override_dn_var");
         ass.setExpiryAgeDays("${expiry_age}");
 
@@ -433,7 +433,7 @@ public class ServerCsrSignerAssertionTest {
         assertNotNull(cert);
         assertEquals(cert.getSubjectX500Principal().getName(X500Principal.CANONICAL), new X500Principal(OVERRIDE_SUBJECT_DN).getName(X500Principal.CANONICAL));
 
-        validateCertificateExpiryYearAndExpiryDaysOfYear(cert,Integer.parseInt(EXPIRED_AGE));
+        validateCertificateExpiryYearAndExpiryDaysOfYear(cert,Integer.parseInt(EXPIRY_AGE_DAYS));
     }
 
 
@@ -443,14 +443,14 @@ public class ServerCsrSignerAssertionTest {
     public void test_csrInvalidSigningWithExpiryAgeExceedingMaxAndDnOverride() throws Exception {
 
         haveCaKey();
-        final String EXPIRED_AGE = String.valueOf(CsrSignerAssertion.MAX_CSR_AGE + 1);
+        final String EXPIRY_AGE_DAYS = String.valueOf(CsrSignerAssertion.MAX_CSR_AGE + 1);
 
         context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(null, null);
         Message mess = new Message(new ByteArrayStashManager(), ContentTypeHeader.OCTET_STREAM_DEFAULT, new ByteArrayInputStream(csrBytes));
 
         context.setVariable("csr_override_dn_var", OVERRIDE_SUBJECT_DN);
         context.setVariable("csr_var", mess);
-        context.setVariable("expiry_age", EXPIRED_AGE);
+        context.setVariable("expiry_age", EXPIRY_AGE_DAYS);
         ass.setCertDNVariableName("csr_override_dn_var");
         ass.setExpiryAgeDays("${expiry_age}");
 
@@ -469,14 +469,14 @@ public class ServerCsrSignerAssertionTest {
     public void test_csrInvalidSigningWithExpiryAgeUnderMinimumAndDnOverride() throws Exception {
 
         haveCaKey();
-        final String EXPIRED_AGE = String.valueOf(CsrSignerAssertion.MAX_CSR_AGE + 1);
+        final String EXPIRY_AGE_DAYS = String.valueOf(CsrSignerAssertion.MAX_CSR_AGE + 1);
 
         context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(null, null);
         Message mess = new Message(new ByteArrayStashManager(), ContentTypeHeader.OCTET_STREAM_DEFAULT, new ByteArrayInputStream(csrBytes));
 
         context.setVariable("csr_override_dn_var", OVERRIDE_SUBJECT_DN);
         context.setVariable("csr_var", mess);
-        context.setVariable("expiry_age", EXPIRED_AGE);
+        context.setVariable("expiry_age", EXPIRY_AGE_DAYS);
         ass.setCertDNVariableName("csr_override_dn_var");
         ass.setExpiryAgeDays("${expiry_age}");
 
@@ -490,12 +490,12 @@ public class ServerCsrSignerAssertionTest {
 
 
     // This is a helper method to validate the expiry date of a given cert.  The year and the days of year
-    // of the expiry date are compared with the expected expiry date computed from the given the targetExpiredAge.
-    private void validateCertificateExpiryYearAndExpiryDaysOfYear(X509Certificate cert, int targetExpiredAge) {
+    // of the expiry date are compared with the expected expiry date computed from the given the targetExpiryAgeDays.
+    private void validateCertificateExpiryYearAndExpiryDaysOfYear(X509Certificate cert, int targetExpiryAgeDays) {
 
-        // Get the current date and add the target EXPIRED_AGE.
+        // Get the current date and add the target expiry age in days.
         LocalDate currDt = LocalDate.now();
-        LocalDate targetDt = currDt.plusDays(targetExpiredAge);
+        LocalDate targetDt = currDt.plusDays(targetExpiryAgeDays);
 
         // Get the NotAfter (the last day the cert is valid) from the certificate
         Date signedValidityNotAfterDate = cert.getNotAfter();

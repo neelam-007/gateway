@@ -16,7 +16,7 @@ import com.l7tech.security.types.CertificateValidationType;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Functions;
 import com.whirlycott.cache.Cache;
-import org.bouncycastle.x509.extension.AuthorityKeyIdentifierStructure;
+import org.bouncycastle.asn1.x509.AuthorityKeyIdentifier;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -600,9 +600,9 @@ public class RevocationCheckerFactory {
                 CertValidationProcessor certValidationProcessor =  getCertValidationProcessor();
                 X509Certificate crlCertificate;
                 // Check CRL signature using Authority Key Identifier extension to id signer cert (if present)
-                AuthorityKeyIdentifierStructure akis = CertUtils.getAKIStructure(crl);
-                if (akis != null) {
-                    String keyIdentifier = CertUtils.getAKIKeyIdentifier(akis);
+                final AuthorityKeyIdentifier authorityKeyIdentifier = CertUtils.getAKI(crl);
+                if (authorityKeyIdentifier != null) {
+                    String keyIdentifier = CertUtils.getAKIKeyIdentifier(authorityKeyIdentifier);
                     if ( keyIdentifier != null) {
                         crlCertificate = certValidationProcessor.getCertificateBySKI(keyIdentifier);
                         if (crlCertificate == null) {
@@ -610,8 +610,8 @@ public class RevocationCheckerFactory {
                             return CertificateValidationResult.REVOKED;
                         }
                     } else {
-                        String certIssuerDn = CertUtils.getAKIAuthorityCertIssuer(akis);
-                        BigInteger certSerial = CertUtils.getAKIAuthorityCertSerialNumber(akis);
+                        final String certIssuerDn = CertUtils.getAKIAuthorityCertIssuer(authorityKeyIdentifier);
+                        final BigInteger certSerial = CertUtils.getAKIAuthorityCertSerialNumber(authorityKeyIdentifier);
 
                         if (certIssuerDn == null || certSerial==null) {
                             throw new CRLException("CRL Authority Key Identifier must have both a serial number and issuer name.");

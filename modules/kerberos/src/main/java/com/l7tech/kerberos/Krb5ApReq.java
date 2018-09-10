@@ -1,9 +1,6 @@
 package com.l7tech.kerberos;
 
-import com.l7tech.util.Config;
-import com.l7tech.util.ConfigFactory;
-import com.l7tech.util.HexUtils;
-import com.l7tech.util.JdkLoggerConfigurator;
+import com.l7tech.util.*;
 import org.bouncycastle.asn1.*;
 
 import java.io.IOException;
@@ -74,23 +71,28 @@ public class Krb5ApReq {
     }
 
     private void verifyAndParse(byte[] ticket) {
+        ASN1InputStream ain= null;
+        ASN1InputStream wrappedStream = null;
+        ASN1InputStream apReqStream = null;
+        ASN1InputStream innerTicketStream = null;
+
         try {
-            ASN1InputStream ain = new ASN1InputStream(ticket);
-            DERApplicationSpecific gssApiWrap = (DERApplicationSpecific) ain.readObject();
+            ain = new ASN1InputStream(ticket);
+            final DERApplicationSpecific gssApiWrap = (DERApplicationSpecific) ain.readObject();
 
             if ( ! (gssApiWrap.isConstructed() && gssApiWrap.getApplicationTag() == GSSAPI_APP_ID ) ) {
                 throw new Krb5ApReqException();
             }
 
             byte[] gssapiContents = gssApiWrap.getContents();
-            ASN1InputStream wrappedStream = new ASN1InputStream(gssapiContents);
-            DERObjectIdentifier gssapioid = (DERObjectIdentifier)wrappedStream.readObject();
+            wrappedStream = new ASN1InputStream(gssapiContents);
+            ASN1ObjectIdentifier gssapioid = ASN1ObjectIdentifier.getInstance(wrappedStream.readObject());
 
             if ( gssapioid == null || gssapiContents == null  || ! gssapioid.toString().equals(GSSAPI_TOKEN_OID) ) {
                 throw new Krb5ApReqException();
             }
 
-            int tag = (wrappedStream.read() << 8) | wrappedStream.read();
+            final int tag = (wrappedStream.read() << 8) | wrappedStream.read();
             if ( tag != 0x100 ) {
                 throw new Krb5ApReqException();
             }
@@ -102,20 +104,20 @@ public class Krb5ApReq {
             }
 
             byte[] apReqContents = apReq.getContents();
-            ASN1InputStream apReqStream = new ASN1InputStream(apReqContents);
-            DERSequence apReqSeq = (DERSequence)apReqStream.readObject();
-            DERApplicationSpecific innerTicket = (DERApplicationSpecific)((DERTaggedObject)apReqSeq.getObjectAt(3).getDERObject()).getObject();
+            apReqStream = new ASN1InputStream(apReqContents);
+            ASN1Sequence apReqSeq = ASN1Sequence.getInstance(apReqStream.readObject());
+            DERApplicationSpecific innerTicket = (DERApplicationSpecific) (((DERTaggedObject) apReqSeq.getObjectAt(3)).getObject());
 
             if ( innerTicket.getApplicationTag() != KRB5_TICKET_ID ) {
                 throw new Krb5ApReqException();
             }
 
-            ASN1InputStream innerTicketStream = new ASN1InputStream(innerTicket.getContents());
-            DERSequence ticketSeq = (DERSequence)innerTicketStream.readObject();
-            DERString realmDERString = (DERString)((DERTaggedObject)ticketSeq.getObjectAt(1)).getObject();
+            innerTicketStream = new ASN1InputStream(innerTicket.getContents());
+            ASN1Sequence ticketSeq = ASN1Sequence.getInstance(innerTicketStream.readObject());
+            ASN1String realmDERString = (ASN1String) ((DERTaggedObject) ticketSeq.getObjectAt(1)).getObject();
             this.realm = realmDERString.getString();
-            DERSequence sname = (DERSequence)((DERTaggedObject)ticketSeq.getObjectAt(2)).getObject();
-            DERSequence namelist = (DERSequence)((DERTaggedObject)sname.getObjectAt(1)).getObject();
+            final ASN1Sequence sname = ASN1Sequence.getInstance(((DERTaggedObject)ticketSeq.getObjectAt(2)).getObject());
+            final ASN1Sequence namelist = ASN1Sequence.getInstance(((DERTaggedObject)sname.getObjectAt(1)).getObject());
 
             int namesz = namelist.size();
             if ( namesz != 2 ) {
@@ -131,6 +133,11 @@ public class Krb5ApReq {
         } catch (IOException e) {
             LOGGER.log(Level.WARNING, "Could not parse the kerberos token.", e);
             throw new Krb5ApReqException();
+        } finally {
+            ResourceUtils.closeQuietly(ain);
+            ResourceUtils.closeQuietly(wrappedStream);
+            ResourceUtils.closeQuietly(apReqStream);
+            ResourceUtils.closeQuietly(innerTicketStream);
         }
     }
 
