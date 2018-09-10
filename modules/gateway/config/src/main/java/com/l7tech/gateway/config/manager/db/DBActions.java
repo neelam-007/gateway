@@ -1127,10 +1127,18 @@ public class DBActions {
 
         @NotNull
         public String getPermissionStatement(@NotNull final String hostname) {
+            // trim node username up to @ as username on some hosts (azure) would
+            // be of the format username@hostname where as we are expecting (gateway) username
+            // without hostname qualifier for those created internally by Gateway.
+            final String nodeUsername = databaseConfig.getNodeUsername();
+            final String trimmedNodeUsername = nodeUsername.split("@", 2)[0];
+            if (trimmedNodeUsername.length() != nodeUsername.length()) {
+                logger.log(Level.INFO, "The ssg database username has been trimmed");
+            }
             return (isGrant ? SQL_GRANT_ALL : SQL_REVOKE_ALL) +
                     databaseConfig.getName() + ".* " +
                     (isGrant ? "to " : "from ") +
-                    databaseConfig.getNodeUsername() + "@'" + hostname + "'" +
+                    trimmedNodeUsername + "@'" + hostname + "'" +
                     (isGrant ? " identified by '" + databaseConfig.getNodePassword() + "'" : "");
         }
 
@@ -1143,7 +1151,6 @@ public class DBActions {
         private String[] getStatements() {
             final List<String> list = new ArrayList<>();
             list.add(getPermissionStatement("%"));
-
 
             final Set<String> allhosts = new HashSet<>();
             allhosts.add(databaseConfig.getHost());
@@ -1186,7 +1193,6 @@ public class DBActions {
         ProgressTimerTask(DBActionsListener ui) {
             this.ui = ui;
         }
-
 
         @Override
         public void run() {

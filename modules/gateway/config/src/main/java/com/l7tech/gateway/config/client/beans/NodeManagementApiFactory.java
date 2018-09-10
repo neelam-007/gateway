@@ -101,6 +101,7 @@ public class NodeManagementApiFactory {
 
     private static final String DEFAULT_PC_HOSTCONFIG_PATH = "/opt/SecureSpan/Controller/etc/host.properties";
     private static final String PC_HOSTCONFIG_PATH = ConfigFactory.getProperty( "com.l7tech.gateway.config.pcHostProperties", DEFAULT_PC_HOSTCONFIG_PATH );
+    static final long DEFAULT_NODE_API_CALL_TIMEOUT_MILLIS = 10L * 60L * 1000L; // 600000 milliseconds = 10 mins
 
     private final URL nodeManagementUrl;
     private NodeManagementApi managementService;
@@ -111,7 +112,8 @@ public class NodeManagementApiFactory {
             protected ClientProxy clientClientProxy( final Client c ) {
                 HTTPConduit hc = (HTTPConduit)c.getConduit();
                 HTTPClientPolicy policy = hc.getClient();
-                policy.setCookie( "PC-AUTH="+getHostSecret() );                
+                policy.setReceiveTimeout(getNodeApiTimeout(PC_HOSTCONFIG_PATH));
+                policy.setCookie( "PC-AUTH="+getHostSecret() );
                 hc.setTlsClientParameters(new TLSClientParameters() {
                     @Override
                     public TrustManager[] getTrustManagers() {
@@ -138,6 +140,26 @@ public class NodeManagementApiFactory {
         factory.setAddress(url);
 
         return (NodeManagementApi) factory.create();
+    }
+
+    long getNodeApiTimeout(String path) {
+        long timeout = DEFAULT_NODE_API_CALL_TIMEOUT_MILLIS;
+        final File propertiesFile = new File(path);
+        if (propertiesFile.exists()) {
+            try {
+                final Properties properties = loadProperties(propertiesFile);
+                timeout = Long.parseLong(properties.getProperty("host.node.api.timeout.millis", String.valueOf(DEFAULT_NODE_API_CALL_TIMEOUT_MILLIS)).trim());
+
+                if (timeout <= 0L) {
+                    logger.warning("Specified node api timeout is 0 or less than 0. Using default timeout.");
+                    timeout = DEFAULT_NODE_API_CALL_TIMEOUT_MILLIS;
+                }
+            } catch (IOException | NumberFormatException e) {
+                logger.warning("Unable to load node api timeout '" + ExceptionUtils.getMessage(e) + "'. Using default timeout.");
+                timeout = DEFAULT_NODE_API_CALL_TIMEOUT_MILLIS;
+            }
+        }
+        return timeout;
     }
 
     private String getHostSecret() {
