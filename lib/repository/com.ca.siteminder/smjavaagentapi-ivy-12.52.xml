@@ -4,7 +4,7 @@
 		module="smjavaagentapi"
 		revision="12.52"
 		status="release"
-		publication="20131225131304"
+		publication="20183008131304"
 		default="true"
 	/>
 	<configurations>

@@ -4,7 +4,7 @@
 		module="smjavasdk2"
 		revision="12.52"
 		status="release"
-		publication="20131225131351"
+		publication="20183008131351"
 		default="true"
 	/>
 	<configurations>
