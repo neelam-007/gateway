@@ -5,7 +5,6 @@ import com.l7tech.gateway.common.cluster.ServiceUsage;
 import com.l7tech.gateway.common.service.PublishedService;
 import com.l7tech.gateway.common.service.ServiceStatistics;
 import com.l7tech.message.Message;
-import com.l7tech.message.XmlKnob;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.objectmodel.ObjectModelException;
@@ -32,7 +31,6 @@ import com.l7tech.server.util.PostStartupApplicationListener;
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
-import com.l7tech.xml.TarariLoader;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
@@ -221,7 +219,6 @@ public class ServiceCache
                 PersistentEntityUtil.lock(publishedService);
                 PersistentEntityUtil.lock(publishedService.getPolicy());
                 cache(publishedService);
-                TarariLoader.compile();
             } catch (Exception e) {
                 logger.log(Level.WARNING, "could not update service cache: " + ExceptionUtils.getMessage(e), e);
             }
@@ -257,7 +254,6 @@ public class ServiceCache
                         logger.log(Level.WARNING, msg, e);
                     }
                 }
-                TarariLoader.compile();
                 logger.info("Built service cache in " + (System.currentTimeMillis()-startTime) + "ms.");
             }
             // make sure the integrity check is running
@@ -383,10 +379,6 @@ public class ServiceCache
             return policyMetadata.isMultipart();
         }
 
-        public boolean isTarariWanted() {
-            return policyMetadata.isTarariWanted();
-        }
-
         public boolean isWssInPolicy() {
             return policyMetadata.isWssInPolicy();
         }
@@ -473,11 +465,6 @@ public class ServiceCache
 
             @Override
             public void notifyMessageValidation( final Message req, final PublishedService service ) {
-                // avoid re-Tarari-ing request that's already DOM parsed unless some assertions need it bad
-                XmlKnob xk = req.getKnob(XmlKnob.class);
-                if ( xk != null ) {
-                    xk.setTarariWanted( getServiceMetadata(service).isTarariWanted() );
-                }
             }
         }, serviceSet );
     }
@@ -514,8 +501,6 @@ public class ServiceCache
             // use defaults
             final PolicyHeader policyHeader = policy == null ? null : new PolicyHeader(policy);
             policyMetadata = new PolicyMetadata() {
-                @Override
-                public boolean isTarariWanted() { return false; }
                 @Override
                 public boolean isWssInPolicy() { return false; }
                 @Override
@@ -864,9 +849,6 @@ public class ServiceCache
     }
 
     private void checkIntegrity() {
-        if (needXpathCompile.getAndSet(false))
-            TarariLoader.compile();
-
         // Collect information about what has happened to services in the system since the last integrity check, so that
         // listeners can be notified outside our lock, and in a different thread
 
@@ -964,8 +946,6 @@ public class ServiceCache
                             }
                         } // otherwise, next integrity check shall delete this service from cache
                     }
-                    // Trigger xpath compilation if the set of registered xpaths has changed
-                    TarariLoader.compile();
                     for (Goid key : deletions) {
                         PublishedService serviceToDelete = services.get(key);
                         if ( serviceToDelete != null ) {

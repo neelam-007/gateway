@@ -9,7 +9,6 @@ import com.l7tech.common.io.XmlUtil;
 import com.l7tech.util.ArrayUtils;
 import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.util.TooManyChildElementsException;
-import com.l7tech.xml.tarari.TarariMessageContext;
 import com.l7tech.xml.xpath.CompiledXpath;
 import com.l7tech.xml.xpath.XpathResult;
 import com.l7tech.xml.xpath.XpathVariableFinder;
@@ -331,16 +330,6 @@ public abstract class ElementCursor {
      */
     public Element asDomElement() {
         return asDomElement(XmlUtil.createEmptyDocument());
-    }
-
-    /**
-     * Get the TarariMessageContext representation of the message to which this cursor belongs, if this
-     * is a Tarari-based ElementCursor.
-     *
-     * @return the TarariMessageContext for this cursor, or null if this is not a Tarari-based cursor.
-     */
-    public TarariMessageContext getTarariMessageContext() {
-        return null;
     }
 
     /**

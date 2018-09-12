@@ -303,8 +303,7 @@ public class XmlUtilTest {
     }
 
     @Test
-    public void testProcessingInstructionMaybeTarari() throws Exception {
-        TarariLoader.compile();
+    public void testProcessingInstruction() throws Exception {
         Message msg = new Message(new ByteArrayStashManager(),
             ContentTypeHeader.XML_DEFAULT,
             new ByteArrayInputStream(PI_XML.getBytes("UTF-8"))

@@ -46,12 +46,10 @@ public class GetKnobTest {
                         cc += request.getKnob(HttpRequestKnob.class).hashCode();
                         cc += response.getKnob(HttpResponseKnob.class).hashCode();
                         cc += response.getKnob(HttpResponseKnob.class).hashCode();
-                        response.getKnob(TarariKnob.class);
                         cc += response.getKnob(HttpResponseKnob.class).hashCode();
                         cc += request.getKnob(TcpKnob.class).hashCode();
                         cc += response.getKnob(MimeKnob.class).hashCode();
                         cc += response.getKnob(HttpResponseKnob.class).hashCode();
-                        request.getKnob(TarariKnob.class);
                         cc += request.getKnob(TcpKnob.class).hashCode();
                         cc += request.getKnob(HttpServletRequestKnob.class).hashCode();
                         cc += response.getKnob(HttpServletResponseKnob.class).hashCode();
@@ -73,7 +71,6 @@ public class GetKnobTest {
                         cc += request.getKnob(HttpRequestKnob.class).hashCode();
                         cc += request.getKnob(HttpRequestKnob.class).hashCode();
                         cc += response.getKnob(HttpResponseKnob.class).hashCode();
-                        request.getKnob(TarariKnob.class);
                         cc += request.getKnob(HttpRequestKnob.class).hashCode();
                         cc += request.getKnob(HttpRequestKnob.class).hashCode();
                         cc += request.getKnob(HttpRequestKnob.class).hashCode();

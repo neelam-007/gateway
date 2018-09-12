@@ -42,8 +42,6 @@
         <dependency org="com.intel" name="intel-xss" rev="1.1.0" force="true" conf="core"/>
         <dependency org="com.ximpleware" name="vtd-xml" rev="2.4" force="true" conf="core"/>
         <dependency org="com.infonyte" name="infonyte-db" rev="3.5.9" force="true" conf="core"/>
-        <dependency org="com.tarari" name="tarari-raxj" rev="4.4.3.31" force="true"
-                    conf="optional->compile(*),master(*)"/>
         <dependency org="org.springframework" name="spring-test" rev="3.0.7.RELEASE" force="true" conf="core"/>
         <dependency org="net.sf.jasperreports" name="jasperreports" rev="6.1.0-p1" force="true" conf="core"/>
         <dependency org="mysql" name="mysql-connector-java" rev="5.1.46" force="true" conf="core"/>

@@ -37,7 +37,6 @@ import com.l7tech.xml.InvalidXpathException;
 import com.l7tech.xml.soap.SoapMessageGenerator;
 import com.l7tech.xml.soap.SoapMessageGenerator.Message;
 import com.l7tech.xml.soap.SoapUtil;
-import com.l7tech.xml.tarari.util.TarariXpathConverter;
 import com.l7tech.xml.xpath.*;
 import org.dom4j.DocumentException;
 import org.jaxen.XPathSyntaxException;
@@ -120,10 +119,8 @@ public class DecryptElementAssertionPropertiesDialog extends JDialog {
     private XmlViewer messageViewer;
     private XpathBasedAssertionPropertiesDialog.XpathToolBar messageViewerToolBar;
     private ActionListener okActionListener;
-    private boolean haveTarari;
     private org.w3c.dom.Document testEvaluator;
     private JButton namespaceButton;
-    private JLabel hardwareAccelStatusLabel;
     private JPanel speedIndicatorPanel;
     private SpeedIndicator speedIndicator;
     private JComboBox sampleMessagesCombo;
@@ -138,7 +135,6 @@ public class DecryptElementAssertionPropertiesDialog extends JDialog {
     };
     private BindingOperation currentOperation;
     private JButton editSampleButton;
-    private final boolean showHardwareAccelStatus;
 
     private static final String NON_SOAP_NAME = "<Non-SOAP service>";
     private static final WsdlTreeNode NON_SOAP_NODE = new WsdlTreeNode(NON_SOAP_NAME, new WsdlTreeNode.Options()) {
@@ -200,13 +196,11 @@ public class DecryptElementAssertionPropertiesDialog extends JDialog {
                                                final AssertionTreeNode n,
                                                final DecryptElementAssertion assertion,
                                                final ActionListener okListener,
-                                               final boolean showHardwareAccelStatus,
                                                final boolean readOnly) {
         super(owner, modal);
         if (n == null) {
             throw new IllegalArgumentException();
         }
-        this.showHardwareAccelStatus = showHardwareAccelStatus;
         construct(n, assertion, okListener, readOnly);
     }
 
@@ -402,21 +396,9 @@ public class DecryptElementAssertionPropertiesDialog extends JDialog {
             }
         });
 
-        haveTarari = checkForTarari();
         speedIndicator = new SpeedIndicator(0);
         speedIndicatorPanel.setLayout(new BorderLayout());
         speedIndicatorPanel.add(speedIndicator, BorderLayout.CENTER);
-    }
-
-    private boolean checkForTarari() {
-        try {
-            final ClusterStatusAdmin clusterStatusAdmin = Registry.getDefault().getClusterStatusAdmin();
-            String accel = clusterStatusAdmin.getHardwareCapability(ClusterStatusAdmin.CAPABILITY_HWXPATH);
-            return ClusterStatusAdmin.CAPABILITY_VALUE_HWXPATH_TARARI.equals(accel);
-        } catch (Exception e) {
-            // Oh well, it's cosmetic anyway
-            return false;
-        }
     }
 
     private void showSampleMessageDialog(SampleMessage sm, final Functions.UnaryVoid<SampleMessageDialog> result) {
@@ -880,47 +862,6 @@ public class DecryptElementAssertionPropertiesDialog extends JDialog {
             processFeedBack(feedBack, xpathField);
         }
 
-        private void processHardwareFeedBack(XpathFeedBack hardwareFeedBack, JTextField xpathField) {
-            if (!showHardwareAccelStatus) {
-                hardwareAccelStatusLabel.setVisible(false);
-                speedIndicator.setVisible(false);
-                return;
-            }
-
-            if (!haveTarari) {
-                hardwareAccelStatusLabel.setText("");
-                hardwareAccelStatusLabel.setToolTipText(null);
-                speedIndicator.setSpeed(SpeedIndicator.SPEED_FAST);
-                String n = hardwareFeedBack == null ? "" : " be too complex to";
-                speedIndicator.setToolTipText("Hardware accelerated XPath not present on Gateway, but if it were, this expression would" + n + " run in parallel at full speed");
-                return;
-            }
-
-            if (hardwareFeedBack == null) {
-                hardwareAccelStatusLabel.setText("");
-                hardwareAccelStatusLabel.setToolTipText(null);
-                speedIndicator.setSpeed(SpeedIndicator.SPEED_FASTEST);
-                speedIndicator.setToolTipText("Expression will be hardware accelerated in parallel at full speed");
-            } else {
-                hardwareAccelStatusLabel.setText("");
-                hardwareAccelStatusLabel.setToolTipText(null);
-                speedIndicator.setSpeed(SpeedIndicator.SPEED_FASTER);
-                speedIndicator.setToolTipText("Expression will be hardware accelerated, but is too complex to run in parallel at full speed");
-
-                // Squiggles and detailed parse error messages are disabled for now
-                if (false && xpathField instanceof SquigglyField) {
-                    SquigglyField squigglyField = (SquigglyField)xpathField;
-                    int pos = hardwareFeedBack.errorPosition;
-                    if (pos >= 0)
-                        squigglyField.setRange(pos - 1, pos + 1);
-                    else
-                        squigglyField.setAll();
-                    squigglyField.setStraight();
-                    squigglyField.setColor(Color.BLUE);
-                }
-            }
-        }
-
         private void processFeedBack(XpathFeedBack feedBack, JTextField xpathField) {
             if (feedBack == null) feedBack = new XpathFeedBack(-1, null, null, null); // NPE guard
 
@@ -930,11 +871,9 @@ public class DecryptElementAssertionPropertiesDialog extends JDialog {
                     squigglyField.setNone();
                 }
                 xpathField.setToolTipText(null);
-                processHardwareFeedBack(feedBack.hardwareAccelFeedback, xpathField);
                 return;
             }
 
-            processHardwareFeedBack(feedBack.hardwareAccelFeedback, xpathField);
             speedIndicator.setSpeed(0);
             speedIndicator.setToolTipText(null);
             StringBuffer tooltip = new StringBuffer();
@@ -978,7 +917,6 @@ public class DecryptElementAssertionPropertiesDialog extends JDialog {
             final Set<String> variables = SsmPolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet();
             XpathUtil.testXpathExpression(testEvaluator, xpath, getXpathVersion(), namespaces, buildXpathVariableFinder(variables));
             XpathFeedBack feedback = new XpathFeedBack(-1, xpath, null, null);
-            feedback.hardwareAccelFeedback = getHardwareAccelFeedBack(nsMap, xpath);
             return feedback;
         } catch (InvalidXpathException e) {
             return getXpathFeedBackForInvalidXpathException(xpath, e);
@@ -1025,41 +963,12 @@ public class DecryptElementAssertionPropertiesDialog extends JDialog {
         };
     }
 
-    /**
-     * @return feedback for hardware accel problems, or null if no hardware accel problems detected.
-     */
-    private XpathFeedBack getHardwareAccelFeedBack(Map nsMap, String xpath) {
-        final XpathVersion xpathVersion = getXpathVersion();
-        if (XpathVersion.XPATH_2_0.equals(xpathVersion)) {
-            return new XpathFeedBack(-1, xpath, "Parallel XPath processing not available for XPath 2.0 expression", null);
-        }
-
-        XpathFeedBack hardwareFeedback;
-        // Check if hardware accel is known not to work with this xpath
-        String convertedXpath = xpath;
-        try {
-            final Set<String> variables = SsmPolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet();
-            FastXpath fastXpath = TarariXpathConverter.convertToFastXpath(nsMap, xpath);
-            convertedXpath = fastXpath.getExpression();
-            XpathUtil.testXpathExpression(testEvaluator, convertedXpath, xpathVersion, namespaces, buildXpathVariableFinder(variables));
-            hardwareFeedback = null;
-        } catch (ParseException e) {
-            hardwareFeedback = new XpathFeedBack(e.getErrorOffset(), convertedXpath, e.getMessage(), e.getMessage());
-        } catch (InvalidXpathException e) {
-            return getXpathFeedBackForInvalidXpathException(xpath, e);
-        } catch (RuntimeException e) { // sometimes NPE, sometimes NFE
-            hardwareFeedback = new XpathFeedBack(-1, convertedXpath, "XPath expression error '" + convertedXpath + "'", null);
-        }
-        return hardwareFeedback;
-    }
-
     private static class XpathFeedBack {
         private static final String EMPTY_MSG = "Empty XPath expression";
         int errorPosition = -1;
         String shortMessage = null;
         String detailedMessage = null;
         String xpathExpression = null;
-        XpathFeedBack hardwareAccelFeedback = null;
 
         public XpathFeedBack(int errorPosition, String expression, String sm, String lm) {
             this.errorPosition = errorPosition;

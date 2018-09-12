@@ -8,7 +8,6 @@ import com.l7tech.server.policy.variable.ExpandVariables;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.xml.InvalidXpathException;
 import com.l7tech.xml.xpath.CompiledXpath;
-import com.l7tech.xml.xpath.FastXpath;
 import com.l7tech.xml.xpath.XpathExpression;
 import com.l7tech.xml.xpath.XpathVersion;
 
@@ -69,14 +68,7 @@ public abstract class ServerXpathBasedAssertion<AT extends XpathBasedAssertion> 
         final XpathExpression axp = assertion.getXpathExpression();
         XpathVersion xpathVersion = axp == null ? XpathVersion.UNSPECIFIED : axp.getXpathVersion();
         Map<String, String> nsmap = axp == null ? null : axp.getNamespaces();
-        XpathExpression xpathExpression = new XpathExpression(expression, xpathVersion, nsmap) {
-            @Override
-            public FastXpath toTarariNormalForm() {
-                // Disable FastXpath for fully-dynamic expressions so we don't thrash the FPGA with constant rebuilds
-                return null;
-            }
-        };
-
+        XpathExpression xpathExpression = new XpathExpression(expression, xpathVersion, nsmap);
         CompiledXpath compiledXpath;
         try {
             compiledXpath = xpathExpression.compile();

@@ -3,12 +3,10 @@ package com.l7tech.server.policy;
 import com.l7tech.gateway.common.LicenseException;
 import com.l7tech.policy.AssertionLicense;
 import com.l7tech.policy.assertion.*;
-import com.l7tech.server.policy.assertion.ServerAcceleratedOversizedTextAssertion;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.util.Injector;
 import com.l7tech.util.ConstructorInvocation;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.xml.TarariLoader;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
@@ -139,17 +137,6 @@ public class ServerPolicyFactory implements ApplicationContextAware {
                 throw new ServerPolicyException(genericAssertion, "Assertion cannot be compiled because it is disabled");
             if (genericAssertion instanceof CommentAssertion)
                 throw new ServerPolicyException(genericAssertion, "Assertion cannot be compiled because it is a comment assertion");
-
-            // Prevent Tarari assertions from being loaded on non-Tarari SSGs
-            // TODO find an abstraction for this assertion censorship
-            if (TarariLoader.getGlobalContext() != null) {
-                if (genericAssertion instanceof OversizedTextAssertion) {
-                    final ServerAcceleratedOversizedTextAssertion serverAssertion =
-                            new ServerAcceleratedOversizedTextAssertion((OversizedTextAssertion)genericAssertion, applicationContext);
-                    injector.inject( serverAssertion );
-                    return serverAssertion;
-                }
-            }
 
             Class genericAssertionClass = genericAssertion.getClass();
             String productClassname = (String)genericAssertion.meta().get(AssertionMetadata.SERVER_ASSERTION_CLASSNAME);

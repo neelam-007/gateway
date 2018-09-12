@@ -9,7 +9,6 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Triple;
 import com.l7tech.xml.DomElementCursor;
 import com.l7tech.xml.ElementCursor;
-import com.l7tech.xml.tarari.TarariMessageContext;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -23,7 +22,6 @@ import java.io.InputStream;
 public class XmlFacet extends MessageFacet {
     private Document originalDocument = null;  // the original Document
     private DomElementCursor workingDocument = null;  // the working Document
-    private boolean tarariWanted;
 
     /** Can be assumed to be true if {@link #workingDocument} == null */
     private boolean firstPartValid = true;
@@ -322,21 +320,6 @@ public class XmlFacet extends MessageFacet {
         }
 
         public ElementCursor getElementCursor() throws SAXException, IOException {
-            // Use a Tarari accelerated cursor if possible
-            getMessage().isSoap(); // force Tarari evaluation, if hardware is available
-            TarariKnob tk = getMessage().getKnob(TarariKnob.class);
-            if (tk != null) {
-                try {
-                    TarariMessageContext tmc = tk.getContext();
-                    if (tmc != null)
-                        return tmc.getElementCursor();
-                    /** FALLTHROUGH to software - no Tarari message context could be created */
-                } catch (NoSuchPartException e) {
-                    throw new SAXException("Unable to parse XML: " + ExceptionUtils.getMessage(e), e);
-                }
-            }
-
-            // Fall back to the DOM cursor
             getDocumentReadOnly();
             return workingDocument;
         }
@@ -394,18 +377,5 @@ public class XmlFacet extends MessageFacet {
             return workingDocument != null;
         }
 
-        @Override
-        public boolean isTarariParsed() {
-            TarariKnob tarariKnob = getMessage().getKnob(TarariKnob.class);
-            return tarariKnob != null && tarariKnob.isContextPresent();
-        }
-
-        public void setTarariWanted(boolean pref) {
-            tarariWanted = pref;
-        }
-
-        public boolean isTarariWanted() {
-            return tarariWanted;
-        }
     }
 }

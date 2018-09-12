@@ -21,10 +21,6 @@ import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.SyspropUtil;
 import com.l7tech.wsdl.WsdlSchemaAnalizer;
-import com.l7tech.xml.TarariLoader;
-import com.l7tech.xml.tarari.GlobalTarariContextImpl;
-import com.tarari.xml.rax.schema.SchemaLoader;
-import com.tarari.xml.rax.schema.SchemaResolver;
 import org.junit.*;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
@@ -62,19 +58,11 @@ public class SchemaValidationTest {
 
     @Before
     public void setUp() throws Exception {
-        SyspropUtil.setProperty( "com.l7tech.common.xml.tarari.enable", "true" );
-        GlobalTarariContextImpl context = (GlobalTarariContextImpl) TarariLoader.getGlobalContext();
-        if (context != null) {
-            context.compileAllXpaths();
-        }
         testApplicationContext = ApplicationContexts.getTestApplicationContext();
     }
 
     @AfterClass
     public static void cleanupSystemProperties() {
-        SyspropUtil.clearProperties(
-            "com.l7tech.common.xml.tarari.enable"
-        );
     }
 
     @Test
@@ -137,23 +125,6 @@ public class SchemaValidationTest {
         }
     }
 
-    @Test
-    @Ignore("Tarari only test")
-    public void testTarariSchemaImportsWithInlineNamespaceDecl() throws Exception {
-        SchemaResolver resolver = new SchemaResolver() {
-            @Override
-            public byte[] resolveSchema(String string, String string1, String string2) {
-                throw new RuntimeException("Screw you!");
-            }
-        };
-
-        SchemaLoader.setSchemaResolver(resolver);
-        SchemaLoader.unloadAllSchemas();
-
-        InputStream is = new URL(REUTERS_SCHEMA_URL).openStream();
-        String schemaDoc = new String(IOUtils.slurpStream(is));
-        SchemaLoader.loadSchema(schemaDoc);
-    }
 
     @Test
     @Ignore("Developer only test")

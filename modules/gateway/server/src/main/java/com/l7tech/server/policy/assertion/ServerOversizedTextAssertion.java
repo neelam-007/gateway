@@ -53,24 +53,21 @@ public class ServerOversizedTextAssertion extends AbstractMessageTargetableServe
     private final int nsPrefixCountLimit;
 
     /**
-     * Create assertion instance which might be a subassertion handling only the non-Tarari-specific constraints.
+     * Create assertion instance.
      *
      * @param data             assertion bean instance configuring the constraints to check.  Must not be null.
      * @param springContext    spring context for getting access to server beans.  Must not be null.
-     * @param omitTarariTests  true if this assertion instance should not bother initializing xpaths for the Tarari-specific tests;
-     *                         this will only be the case if a ServerAcceleratedOversizedTextAssertion is invoking this
-     *                         constructor and intends to do those tests itself.
      * @throws ServerPolicyException if the provided assertion bean produced an invalid XPath.  Normally not possible.
      */
-    ServerOversizedTextAssertion(OversizedTextAssertion data, ApplicationContext springContext, boolean omitTarariTests) throws ServerPolicyException {
+    public ServerOversizedTextAssertion(OversizedTextAssertion data, ApplicationContext springContext) throws ServerPolicyException {
         super(data);
         auditor = new Auditor(this, springContext, ServerOversizedTextAssertion.logger);
 
         // These three tests might be taken over by ServerAcceleratedOversizedTextAssertion
-        final String textXpath = omitTarariTests ? null : data.makeTextXpath();
-        final long attrLimit = omitTarariTests ? -1 : (data.isLimitAttrChars() ? data.getMaxAttrChars() : -1);
-        final int attrNameLimit = omitTarariTests ? -1 : (data.isLimitAttrNameChars() ? data.getMaxAttrNameChars() : -1);
-        final String nestingXpath = omitTarariTests ? null : data.makeNestingXpath();
+        final String textXpath =  data.makeTextXpath();
+        final long attrLimit =  (data.isLimitAttrChars() ? data.getMaxAttrChars() : -1);
+        final int attrNameLimit = (data.isLimitAttrNameChars() ? data.getMaxAttrNameChars() : -1);
+        final String nestingXpath = data.makeNestingXpath();
 
         final String payloadXpath = data.makePayloadLimitXpath();
         try {
@@ -91,16 +88,6 @@ public class ServerOversizedTextAssertion extends AbstractMessageTargetableServe
         this.nsPrefixCountLimit = (data.isLimitNamespacePrefixCount() ? data.getMaxNamespacePrefixCount() : -1);
     }
 
-    /**
-     * Create normal assertion instance.
-     *
-     * @param data             assertion bean instance configuring the constraints to check.  Must not be null.
-     * @param springContext    spring context for getting access to server beans.  Must not be null.
-     * @throws ServerPolicyException if the provided assertion bean produced an invalid XPath.  Normally not possible.
-     */
-    public ServerOversizedTextAssertion(OversizedTextAssertion data, ApplicationContext springContext) throws ServerPolicyException {
-        this(data, springContext, false);
-    }
 
     @Override
     protected AssertionStatus doCheckRequest( final PolicyEnforcementContext context,

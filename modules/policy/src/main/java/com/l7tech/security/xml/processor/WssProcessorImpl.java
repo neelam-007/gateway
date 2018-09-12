@@ -600,7 +600,7 @@ public class WssProcessorImpl implements WssProcessor {
     /**
      * Call this before modifying processedDocument in any way.  This will upgrade the document to writable,
      * which will set various flags inside the Message
-     * (for reserializing the document later, and possibly building a new TarariMessageContext), and will
+     * (for reserializing the document later, and will
      * possibly cause a copy of the current document to be cloned and saved.
      */
     private void setDocumentModified() {

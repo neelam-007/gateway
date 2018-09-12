@@ -11,7 +11,6 @@ import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.SingleUrlResourceInfo;
 import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.assertion.annotation.HardwareAccelerated;
 import com.l7tech.policy.assertion.annotation.RequiresXML;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.VariableMetadata;
@@ -28,7 +27,6 @@ import static com.l7tech.policy.assertion.AssertionMetadata.WSP_SUBTYPE_FINDER;
  * At runtime, the element being validated is always the child of the soap body element.
  */
 @RequiresXML
-@HardwareAccelerated( type=HardwareAccelerated.Type.SCHEMA )
 public class SchemaValidation extends MessageTargetableAssertion implements UsesResourceInfo, UsesVariables, SetsVariables {
     public static final String SCHEMA_FAILURE_VARIABLE = "schema.failure";
 
@@ -61,7 +59,6 @@ public class SchemaValidation extends MessageTargetableAssertion implements Uses
      * @param applyToArguments set true to apply to arguments, false to apply to whole body.
      *                         The default is false.
      * @deprecated replaced by schemaTarget property
-     * @see #setSchemaTarget()
      * @see #isApplyToArguments()
      */
     @Deprecated

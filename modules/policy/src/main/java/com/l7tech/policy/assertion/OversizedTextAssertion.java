@@ -7,7 +7,6 @@ package com.l7tech.policy.assertion;
 
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidatorResult;
-import com.l7tech.policy.assertion.annotation.HardwareAccelerated;
 import com.l7tech.policy.assertion.annotation.RequiresXML;
 import com.l7tech.policy.validator.AssertionValidator;
 import com.l7tech.policy.validator.PolicyValidationContext;
@@ -18,13 +17,11 @@ import java.util.EnumSet;
 import java.util.Set;
 
 import static com.l7tech.policy.assertion.AssertionMetadata.*;
-import static com.l7tech.policy.assertion.annotation.HardwareAccelerated.Type.TOKENSCAN;
 
 /**
  * Assertion that can limit length of attribute and text nodes.
  */
 @RequiresXML
-@HardwareAccelerated(type=TOKENSCAN)
 public class OversizedTextAssertion extends MessageTargetableAssertion {
     public static final long DEFAULT_ATTR_LIMIT = 2048;
     public static final long DEFAULT_TEXT_LIMIT = 16384;
@@ -190,7 +187,7 @@ public class OversizedTextAssertion extends MessageTargetableAssertion {
     }
 
     /**
-     * @return a parallelizable Tarari normal form XPath that matches the first node whose nesting depth exceeds
+     * @return a XPath that matches the first node whose nesting depth exceeds
      *         the configured limit, or null if limitNestingDepth is false.
      */
     public String makeNestingXpath() {
@@ -213,7 +210,7 @@ public class OversizedTextAssertion extends MessageTargetableAssertion {
     }
 
     /**
-     * @return a parallelizable Tarari normal form XPath that matches the first payload element beyond the
+     * @return a XPath that matches the first payload element beyond the
      *         configured maximum, or null if maxPayloadElements is zero.
      */
     public String makePayloadLimitXpath() {

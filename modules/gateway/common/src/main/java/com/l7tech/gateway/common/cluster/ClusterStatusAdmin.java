@@ -728,15 +728,6 @@ public interface ClusterStatusAdmin extends AsyncAdminMethods {
     public ServerModuleConfig getServerModuleConfig();
 
     /**
-     * Query for this capability to see if hardware XPath acceleration is available.
-     * The return value will be either null, or the type of Xpath acceleration, ie {@link #CAPABILITY_VALUE_HWXPATH_TARARI}.
-     */
-    public static final String CAPABILITY_HWXPATH = "hardwareXpath";
-
-    /** Value returned from a query for {@link #CAPABILITY_HWXPATH} if Tarari XPath acceleration is available. */
-    public static final String CAPABILITY_VALUE_HWXPATH_TARARI = "tarari";
-
-    /**
      * Query for this capability to see if the SafeNet HSM (formerly Luna) client libraries are installed and available.
      * The return value will be either null, or "true" if Luna client libraries are detected.
      */

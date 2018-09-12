@@ -41,7 +41,6 @@ import com.l7tech.xml.InvalidXpathException;
 import com.l7tech.xml.soap.SoapMessageGenerator;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.soap.SoapVersion;
-import com.l7tech.xml.tarari.util.TarariXpathConverter;
 import com.l7tech.xml.xpath.*;
 import org.dom4j.DocumentException;
 import org.jaxen.XPathSyntaxException;
@@ -110,7 +109,6 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
     private XpathToolBar messageViewerToolBar;
     private ActionListener okActionListener;
     private boolean isEncryption;
-    private boolean haveTarari;
     private org.w3c.dom.Document testEvaluator;
     private JButton namespaceButton;
     private JPanel speedIndicatorPanel;
@@ -501,8 +499,6 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
                 }
             }
         });
-
-        haveTarari = checkForTarari();
     }
 
     /**
@@ -511,17 +507,6 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
     private void refreshDialog() {
         if (getSize().width < mainPanel.getMinimumSize().width) {
             setSize(mainPanel.getMinimumSize().width, getSize().height);
-        }
-    }
-
-    private boolean checkForTarari() {
-        try {
-            final ClusterStatusAdmin clusterStatusAdmin = Registry.getDefault().getClusterStatusAdmin();
-            String accel = clusterStatusAdmin.getHardwareCapability(ClusterStatusAdmin.CAPABILITY_HWXPATH);
-            return ClusterStatusAdmin.CAPABILITY_VALUE_HWXPATH_TARARI.equals(accel);
-        } catch (Exception e) {
-            // Oh well, it's cosmetic anyway
-            return false;
         }
     }
 
@@ -1373,34 +1358,6 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
         processFeedBack(feedBack, xpathField);
     }
 
-    private void updateHardwareAccelSpeedIndicator(XpathFeedBack hardwareFeedBack) {
-        if (!showHardwareAccelStatus) {
-            speedIndicator.setVisible(false);
-            return;
-        }
-
-        if (!haveTarari) {
-            speedIndicator.setSpeed(SpeedIndicator.SPEED_FAST);
-            if (hardwareFeedBack != null && hardwareFeedBack.fullyDynamic) {
-                speedIndicator.setToolTipText("Expression is fully-dynamic and not eligible for parallel acceleration");
-            } else {
-                String n = hardwareFeedBack == null ? "" : " be too complex to";
-                speedIndicator.setToolTipText("Accelerated XPath not present on Gateway, but if it were, this expression would" + n + " be accelerated at full speed");
-            }
-            return;
-        }
-
-        if (hardwareFeedBack == null) {
-            speedIndicator.setSpeed(SpeedIndicator.SPEED_FASTEST);
-            speedIndicator.setToolTipText("Expression will be accelerated at full speed");
-        } else if (hardwareFeedBack.fullyDynamic) {
-            speedIndicator.setSpeed(SpeedIndicator.SPEED_FAST);
-            speedIndicator.setToolTipText("Expression is fully-dynamic and will not be accelerated");
-        } else {
-            speedIndicator.setSpeed(SpeedIndicator.SPEED_FASTER);
-            speedIndicator.setToolTipText("Expression will be accelerated, but is too complex to run at full speed");
-        }
-    }
 
     private void processFeedBack(XpathFeedBack feedBack, JTextField xpathField) {
         if (feedBack == null) feedBack = new XpathFeedBack(-1, null, null, null); // NPE guard
@@ -1411,11 +1368,9 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
                 squigglyField.setNone();
             }
             xpathField.setToolTipText(null);
-            updateHardwareAccelSpeedIndicator(feedBack.hardwareAccelFeedback);
             return;
         }
 
-        updateHardwareAccelSpeedIndicator(feedBack.hardwareAccelFeedback);
         speedIndicator.setSpeed(0);
         speedIndicator.setToolTipText(null);
         StringBuffer tooltip = new StringBuffer();
@@ -1462,8 +1417,6 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
             }
 
             XpathFeedBack feedback = new XpathFeedBack(-1, xpath, null, null);
-            feedback.hardwareAccelFeedback = new XpathFeedBack(-1, xpath, "Parallel XPath processing not available for fully-dynamic XPath from context variable", null);
-            feedback.hardwareAccelFeedback.fullyDynamic = true;
             return feedback;
         }
 
@@ -1482,7 +1435,6 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
                 XpathUtil.testXpathExpression(testEvaluator, xpath, xpathVersion, namespaces, buildXpathVariableFinder(variables));
             }
             XpathFeedBack feedback = new XpathFeedBack(-1, xpath, null, null);
-            feedback.hardwareAccelFeedback = getHardwareAccelFeedBack(nsMap, xpath);
             return feedback;
         } catch (InvalidXpathException e) {
             Exception c;
@@ -1509,39 +1461,6 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
         }
     }
 
-    /**
-     * @return feedback for hardware accel problems, or null if no hardware accel problems detected.
-     */
-    private XpathFeedBack getHardwareAccelFeedBack(Map nsMap, String xpath) {
-        if (XpathVersion.XPATH_2_0.equals(getXpathVersion())) {
-            return new XpathFeedBack(-1, xpath, "Parallel XPath processing not available for XPath 2.0", null);
-        }
-
-        XpathFeedBack hardwareFeedback;
-        // Check if hardware accel is known not to work with this xpath
-        String convertedXpath = xpath;
-        try {
-            final Set<String> variables = SsmPolicyVariableUtils.getVariablesSetByPredecessors(assertion).keySet();
-            FastXpath fastXpath = TarariXpathConverter.convertToFastXpath(nsMap, xpath);
-            convertedXpath = fastXpath.getExpression();
-            XpathUtil.testXpathExpression(testEvaluator, convertedXpath, XpathVersion.XPATH_1_0, namespaces, buildXpathVariableFinder(variables));
-            hardwareFeedback = null;
-        } catch (ParseException e) {
-            return new XpathFeedBack(e.getErrorOffset(), convertedXpath, e.getMessage(), e.getMessage());
-        } catch (InvalidXpathException e) {
-            @SuppressWarnings("ThrowableResultOfMethodCallIgnored")
-            XPathSyntaxException pe = ExceptionUtils.getCauseIfCausedBy(e, XPathSyntaxException.class);
-            if (pe != null) {
-                return new XpathFeedBack(pe.getPosition(), convertedXpath, pe.getMessage(), pe.getMessage());
-            } else {
-                hardwareFeedback = new XpathFeedBack(-1, convertedXpath, "XPath expression error '" + convertedXpath + "'", null);
-            }
-        } catch (RuntimeException e) { // sometimes NPE, sometimes NFE
-            hardwareFeedback = new XpathFeedBack(-1, convertedXpath, "XPath expression error '" + convertedXpath + "'", null);
-        }
-        return hardwareFeedback;
-    }
-
     private XpathVariableFinder buildXpathVariableFinder( final Set<String> variables ) {
         return new XpathVariableFinder(){
             @Override
@@ -1564,7 +1483,6 @@ public class XpathBasedAssertionPropertiesDialog extends AssertionPropertiesEdit
         String shortMessage = null;
         String detailedMessage = null;
         String xpathExpression = null;
-        XpathFeedBack hardwareAccelFeedback = null;
         boolean fullyDynamic = false;
 
         private XpathFeedBack(int errorPosition, String expression, String sm, String lm) {

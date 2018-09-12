@@ -694,10 +694,6 @@ public abstract class Assertion implements Cloneable, Serializable {
         return false;
     }
 
-    public static boolean isHardwareAccelerated(Assertion assertion) {
-        return hasAnnotation(assertion, HardwareAccelerated.class);
-    }
-
     public static boolean isMultipart(Assertion assertion) {
         return hasAnnotation(assertion, ProcessesMultipart.class);
     }

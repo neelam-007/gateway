@@ -9,11 +9,9 @@ import com.l7tech.util.InvalidDocumentFormatException;
 import com.l7tech.xml.ElementCursor;
 import com.l7tech.xml.SoapFaultDetail;
 import com.l7tech.xml.SoftwareFallbackException;
-import com.l7tech.xml.TarariLoader;
 import com.l7tech.xml.soap.SoapFaultUtils;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.soap.SoapVersion;
-import com.l7tech.xml.tarari.TarariMessageContext;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -33,7 +31,6 @@ class SoapFacet extends MessageFacet {
     private String envelopeNs;
     private SoapVersion soapVersion;
 
-    private static final Logger logger = Logger.getLogger(SoapFacet.class.getName());
     private static final QName[] EMPTY_QNAMES = new QName[0];
 
 
@@ -60,43 +57,11 @@ class SoapFacet extends MessageFacet {
      * @return the SoapInfo for this Message.  Never null.  See {@link SoapInfo#isSoap()}
      * @throws IOException if there is a problem reading the Message data.
      * @throws SAXException if the XML is not well formed or has invalid namespace declarations
-     * @throws NoSuchPartException if the Message first part has already been destructively read
      */
-    static SoapInfo getSoapInfo(Message message) throws IOException, SAXException, NoSuchPartException {
+    static SoapInfo getSoapInfo(Message message) throws IOException, SAXException {
         HasSoapAction haver = message.getKnob(HasSoapAction.class);
         final String soapAction = haver == null ? null : haver.getSoapAction();
 
-        XmlKnob xk = message.getKnob(XmlKnob.class);
-        if (xk != null && xk.isDomParsed() && !xk.isTarariWanted()) {
-            // Performance hack... If this policy doesn't strongly prefer Tarari, use the DOM that's already present for
-            // SOAP identification purposes
-            return getSoapInfoDom(message.getXmlKnob().getDocumentReadOnly(), soapAction);
-        }
-
-        TarariMessageContextFactory mcfac = TarariLoader.getMessageContextFactory();
-        if (mcfac != null) {
-            try {
-                // Not safe to destory-as-read because mcfac might consume an unknown amount of the input stream
-                // before throwing SoftwareFallbackException
-                InputStream inputStream = message.getMimeKnob().getFirstPart().getInputStream(false);
-                TarariMessageContext mc = mcfac.makeMessageContext(inputStream);
-                SoapInfo soapInfo = mc.getSoapInfo(soapAction);
-                TarariKnob tarariKnob = message.getKnob(TarariKnob.class);
-                if (tarariKnob == null) {
-                    message.attachKnob(TarariKnob.class, new TarariKnob(message, mc, soapInfo));
-                } else {
-                    tarariKnob.setContext(mc, soapInfo);
-                }
-
-                return soapInfo;
-            } catch (SoftwareFallbackException e) {
-                if (logger.isLoggable(Level.FINE)) {
-                    //noinspection ThrowableResultOfMethodCallIgnored
-                    logger.log(Level.INFO, "Falling back from hardware to software processing: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                }                
-                // fallthrough to software
-            }
-        }
         return getSoapInfoDom(message.getXmlKnob().getDocumentReadOnly(), soapAction);
     }
 

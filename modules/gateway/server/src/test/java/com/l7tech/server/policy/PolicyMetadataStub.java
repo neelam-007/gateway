@@ -7,10 +7,6 @@ import com.l7tech.policy.variable.VariableMetadata;
  *
  */
 public class PolicyMetadataStub implements PolicyMetadata {
-    @Override
-    public boolean isTarariWanted() {
-        return false;
-    }
 
     @Override
     public boolean isWssInPolicy() {

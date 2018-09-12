@@ -123,20 +123,4 @@ public interface XmlKnob extends MessageKnob {
      */
     boolean isDomParsed();
 
-    /**
-     * @return true if this XmlKnob holds an already-parsed Tarari RAX document.
-     */
-    boolean isTarariParsed();
-
-    /**
-     * Indicate whether the policy that will be processing this message has any assertions that rely so heavily on
-     * Tarari that it's worth discarding an already-parsed DOM tree.
-     */
-    void setTarariWanted(boolean pref);
-
-    /**
-     * Indicates whether the policy that will be processing this message has any assertions that rely so heavily on 
-     * Tarari that it's worth discarding an already-parsed DOM tree.
-     */
-    boolean isTarariWanted();
 }

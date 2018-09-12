@@ -53,10 +53,6 @@
     <!-- project classpath -->
     <path id="project.classpath">
         <fileset dir="lib/repository/bouncycastle">
-            <!--
-              include bc provider before tarari_jce_provider since that
-              contains old copies of the bc classes.
-            -->
             <include name="**/bcprov-*.jar"/>
         </fileset>
         <fileset dir="lib/repository"/>
@@ -1110,7 +1106,6 @@
             <exclude name="net.*"/>
             <exclude name="com.whirlycott.*"/>
             <exclude name="com.tibco.*"/>
-            <exclude name="com.tarari.*"/>
             <exclude name="com.sun.*"/>
             <exclude name="com.safelogic.cryptocomply.*"/>
             <exclude name="com.ncipher.*"/>
@@ -3155,8 +3150,8 @@ ${versionfilecontent}
     </target>
 
     <target name="tar"
-            description="Build TARs for use in Solaris/Tarari builds"
-            depends="ssg-install-full-init,INTERNAL-ssg-install,package.solaris.tar,package.tarari.tar"/>
+            description="Build TARs for use in Solaris builds"
+            depends="ssg-install-full-init,INTERNAL-ssg-install,package.solaris.tar"/>
 
     <!--
       Set the standard options for an official build.
@@ -3868,16 +3863,7 @@ ${versionfilecontent}
         </tar>
     </target>
 
-    <!-- Create the TAR used when building the Tarari rpm -->
-    <target name="package.tarari.tar" depends="init">
-        <echo level="info">Creating Tarari Gateway Tar ...</echo>
-        <tar destfile="${build.dir}/tarari.tar.gz" compression="gzip" longfile="gnu">
-            <tarfileset dir="${src.root}" username="root" group="root" mode="644">
-                <include name="etc/appliance/tarari/tarari-initd"/>
-                <include name="etc/appliance/tarari/tarariopts.sh"/>
-            </tarfileset>
-        </tar>
-    </target>
+
 
     <!--
       Initialization for the pre-official build (set versions, etc)

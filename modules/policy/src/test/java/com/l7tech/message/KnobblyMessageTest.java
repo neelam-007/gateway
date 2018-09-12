@@ -13,10 +13,7 @@ import com.l7tech.util.Charsets;
 import com.l7tech.util.DomUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.xml.MessageNotSoapException;
-import com.l7tech.xml.TarariLoader;
 import com.l7tech.xml.soap.SoapUtil;
-import com.l7tech.xml.tarari.GlobalTarariContextImpl;
-import com.tarari.xml.XmlSource;
 import org.junit.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
@@ -143,35 +140,6 @@ public class KnobblyMessageTest {
         }
     }
 
-    @Test
-    @BugNumber(2198)
-    public void test2198Anomaly() throws Exception {
-        String initial = "<getquote>MSFT</getquote>";
-        String newMsg = "<getquote>L7</getquote>";
-
-        // create a message
-        Message msg = new Message(new ByteArrayStashManager(),
-                                  ContentTypeHeader.XML_DEFAULT,
-                                  new ByteArrayInputStream(initial.getBytes()));
-
-        // msg processor gets document read only to process security decorations
-        msg.getXmlKnob().getDocumentReadOnly();
-
-        // xsl gets bytes and does a transformation and sets the output of transformation as new bytes
-        new XmlSource(msg.getMimeKnob().getPart(0).getInputStream(false));
-        msg.getMimeKnob().getPart(0).setBodyBytes(newMsg.getBytes());
-
-        // routing assertion notices there were wssprocessor results and gets document in write mode to delete the security header (or simlpy change actor)
-        // this here is the problem. you'd think this doc writable would be based on the new bytes set in previous statement
-        // but apparantly, it's not
-        // if you comment this statement, the test succeeds
-        msg.getXmlKnob().getDocumentWritable();
-
-        // routing assertion routes the wrong document as per failure of assert below
-        InputStream aftertransformstream = msg.getMimeKnob().getEntireMessageBodyAsInputStream();
-        String output = new String (IOUtils.slurpStream(aftertransformstream));
-        assertEquals(output, newMsg);
-    }
 
     @Test
     public void testCombinedDomAndByteOperations() throws Exception {
@@ -313,11 +281,6 @@ public class KnobblyMessageTest {
             // ok
         }
 
-        GlobalTarariContextImpl context = (GlobalTarariContextImpl)TarariLoader.getGlobalContext();
-        if (context != null) {
-            logger.info("Initializing XML Hardware Acceleration");
-            context.compileAllXpaths();
-        }
         assertFalse(msg.isInitialized());
         msg.initialize(new ByteArrayStashManager(),
                               ContentTypeHeader.XML_DEFAULT,
@@ -443,35 +406,6 @@ public class KnobblyMessageTest {
 
         nonPreservableKnob = mess.getKnob(MyNonPreservableKnob.class);
         assertNull(nonPreservableKnob);
-    }
-
-    @Test
-    @BugNumber(3559)
-    public void testBug3559TarariIsSoap() throws Exception {
-        Message msg = new Message();
-
-        msg.initialize(new ByteArrayStashManager(),
-                              ContentTypeHeader.XML_DEFAULT,
-                              TestDocuments.getInputStream(TestDocuments.DIR + "bug3559.xml"));
-
-        // Ensure that message is thought to be SOAP by the software layer, since Tarari isn't here yet
-        assertTrue(msg.isSoap());
-
-        GlobalTarariContextImpl context = (GlobalTarariContextImpl)TarariLoader.getGlobalContext();
-        if (context == null) {
-            logger.info("Can't verify bug 3559; no Tarari card available");
-            return;
-        }
-
-        logger.info("Initializing XML Hardware Acceleration");
-        context.compileAllXpaths();
-
-        if (msg.isSoap()) {
-            // Bug is fixed--should we fail the testcase?
-            logger.info("Bug 3559 does not appear to be present");
-        } else {
-            fail("Bug 3559 reproduced");
-        }
     }
 
     private static class Bug4542ReproStashManager extends ByteArrayStashManager {

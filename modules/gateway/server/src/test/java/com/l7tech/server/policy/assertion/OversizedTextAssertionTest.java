@@ -32,7 +32,6 @@ public class OversizedTextAssertionTest {
 
     @Before
     public void setUp() throws Exception {
-        // Software-only TransformerFactory to ignore the alluring Tarari impl, even if tarari_raxj.jar is sitting right there
         SyspropUtil.setProperty( "javax.xml.transform.TransformerFactory", "org.apache.xalan.processor.TransformerFactoryImpl" );
     }
 

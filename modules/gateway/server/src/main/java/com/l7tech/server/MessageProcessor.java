@@ -985,10 +985,6 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                     checkSecurityProcessingException();
                     return true;
                 }
-
-                // avoid re-Tarari-ing request that's already DOM parsed unless some assertions need it bad
-                XmlKnob xk = context.getRequest().getKnob(XmlKnob.class);
-                if (xk != null) xk.setTarariWanted(metadatas.iterator().next().isTarariWanted());
             }
             return false;
         }

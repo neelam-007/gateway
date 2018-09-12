@@ -41,24 +41,8 @@ public class SchemaConfiguration implements ApplicationContextAware, PropertyCha
         return cacheConfigurationReference.get().maxCacheEntries;
     }
 
-    public int getHardwareRecompileLatency(){
-        return cacheConfigurationReference.get().hardwareRecompileLatency;
-    }
-
-    public int getHardwareRecompileMinAge(){
-        return cacheConfigurationReference.get().hardwareRecompileMinAge;
-    }
-
-    public int getHardwareRecompileMaxAge(){
-        return cacheConfigurationReference.get().hardwareRecompileMaxAge;
-    }
-
     public long getMaxSchemaSize(){
         return cacheConfigurationReference.get().maxSchemaSize;
-    }
-
-    public boolean isSoftwareFallback(){
-        return cacheConfigurationReference.get().softwareFallback;
     }
 
     public boolean isAllowDoctype(){
@@ -147,24 +131,16 @@ public class SchemaConfiguration implements ApplicationContextAware, PropertyCha
         private final int maxCacheAge;
         private final int maxStaleAge;
         private final int maxCacheEntries;
-        private final int hardwareRecompileLatency;
-        private final int hardwareRecompileMinAge;
-        private final int hardwareRecompileMaxAge;
         private final long maxSchemaSize;
-        private final boolean softwareFallback;
         private final boolean allowDoctype;
 
         CacheConfiguration( Config config) {
             maxCacheAge = config.getIntProperty( ServerConfigParams.PARAM_SCHEMA_CACHE_MAX_AGE, 300000);
             maxStaleAge = config.getIntProperty( ServerConfigParams.PARAM_SCHEMA_CACHE_MAX_STALE_AGE, -1);
             maxCacheEntries = config.getIntProperty( ServerConfigParams.PARAM_SCHEMA_CACHE_MAX_ENTRIES, 100);
-            hardwareRecompileLatency = config.getIntProperty( ServerConfigParams.PARAM_SCHEMA_CACHE_HARDWARE_RECOMPILE_LATENCY, 10000);
-            hardwareRecompileMinAge = config.getIntProperty( ServerConfigParams.PARAM_SCHEMA_CACHE_HARDWARE_RECOMPILE_MIN_AGE, 500);
-            hardwareRecompileMaxAge = config.getIntProperty( ServerConfigParams.PARAM_SCHEMA_CACHE_HARDWARE_RECOMPILE_MAX_AGE, 30000);
             maxSchemaSize = config.getLongProperty( ServerConfigParams.PARAM_SCHEMA_CACHE_MAX_SCHEMA_SIZE, HttpObjectCache.DEFAULT_DOWNLOAD_LIMIT);
 
             // This isn't "true".equals(...) just in case ServerConfig returns null--we want to default to true.
-            softwareFallback = !("false".equals(config.getProperty( ServerConfigParams.PARAM_SCHEMA_SOFTWARE_FALLBACK, "true")));
             allowDoctype = config.getBooleanProperty( ServerConfigParams.PARAM_SCHEMA_ALLOW_DOCTYPE, false );
         }
     }

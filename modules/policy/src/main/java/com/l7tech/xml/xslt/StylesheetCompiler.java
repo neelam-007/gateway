@@ -3,9 +3,6 @@ package com.l7tech.xml.xslt;
 import com.l7tech.common.io.XmlUtil;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
-import com.l7tech.xml.TarariLoader;
-import com.l7tech.xml.tarari.GlobalTarariContext;
-import com.l7tech.xml.tarari.TarariCompiledStylesheet;
 import org.jetbrains.annotations.Nullable;
 import org.w3c.dom.*;
 import org.xml.sax.InputSource;
@@ -51,23 +48,9 @@ public class StylesheetCompiler {
     public static CompiledStylesheet compileStylesheet(String xslt, @Nullable String xsltVersion) throws ParseException {
         if (xsltVersion == null)
             xsltVersion = "1.0";
-        final GlobalTarariContext gtc = "1.0".equals(xsltVersion) ? TarariLoader.getGlobalContext() : null;
         final Document cleanXslt = preprocessStylesheet( xslt );
-        TarariCompiledStylesheet tarariStylesheet =
-                gtc == null ? null : gtc.compileStylesheet(toString(cleanXslt));
         final Templates templates = compileSoftware(cleanXslt, xsltVersion);
-        return new CompiledStylesheet(templates, getVariablesUsed(templates), tarariStylesheet);
-    }
-
-    /**
-     * Convert the DOM to string
-     */
-    private static String toString( final Document document ) throws ParseException {
-        try {
-            return XmlUtil.nodeToString( document );
-        } catch (IOException e) {
-            throw (ParseException)new ParseException(ExceptionUtils.getMessage(e), 0).initCause(e);
-        }
+        return new CompiledStylesheet(templates, getVariablesUsed(templates));
     }
 
     /**

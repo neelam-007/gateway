@@ -47,7 +47,6 @@ import com.l7tech.server.service.ServiceMetricsServices;
 import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.*;
 import com.l7tech.util.ValidationUtils.Validator;
-import com.l7tech.xml.TarariLoader;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.BeansException;
@@ -496,7 +495,7 @@ public class ClusterStatusAdminImp extends AsyncAdminMethodsImpl implements Clus
     // TODO refactor these methods into a separate HardwareCapabilityManager bean that delegates to HardwareCapability instances
 
     private static boolean isKnownCapability(String capability) {
-        return ClusterStatusAdmin.CAPABILITY_LUNACLIENT.equals(capability) || ClusterStatusAdmin.CAPABILITY_HWXPATH.equals(capability) ||
+        return ClusterStatusAdmin.CAPABILITY_LUNACLIENT.equals(capability) ||
                 ClusterStatusAdmin.CAPABILITY_FIREWALL.equals(capability) || ClusterStatusAdmin.CAPABILITY_SITEMINDER.equals(capability);
     }
 
@@ -507,8 +506,6 @@ public class ClusterStatusAdminImp extends AsyncAdminMethodsImpl implements Clus
         //noinspection IfCanBeSwitch
         if (ClusterStatusAdmin.CAPABILITY_LUNACLIENT.equals(capability)) {
             return LunaProber.isLunaClientLibraryAvailable() ? "true" : null;
-        } else if (ClusterStatusAdmin.CAPABILITY_HWXPATH.equals(capability)) {
-            return TarariLoader.getGlobalContext() != null ? ClusterStatusAdmin.CAPABILITY_VALUE_HWXPATH_TARARI : null;
         } else if (ClusterStatusAdmin.CAPABILITY_FIREWALL.equals(capability)){
             final File applianceDir = new File("/opt/SecureSpan/Appliance");
             if (applianceDir.exists() && applianceDir.isDirectory()){

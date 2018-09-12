@@ -44,9 +44,7 @@ import com.l7tech.server.util.WSSecurityProcessorUtils;
 import com.l7tech.test.BugNumber;
 import com.l7tech.util.*;
 import com.l7tech.xml.SoapFaultLevel;
-import com.l7tech.xml.TarariLoader;
 import com.l7tech.xml.soap.SoapUtil;
-import com.l7tech.xml.tarari.GlobalTarariContext;
 import java.io.Closeable;
 import org.junit.*;
 import org.springframework.context.ApplicationContext;
@@ -365,12 +363,6 @@ public class PolicyProcessingTest {
      */
     @Test
     public void testDocumentStructure() throws Exception {
-        GlobalTarariContext tgc = TarariLoader.getGlobalContext();
-        if (tgc != null) {
-            // Make sure document statistics collection is initialized
-            tgc.compileAllXpaths();
-        }
-
         String requestMessage1 = new String(loadResource("REQUEST_general.xml"));
         String requestMessage2 = new String(loadResource("REQUEST_documentstructure_fail.xml"));
 

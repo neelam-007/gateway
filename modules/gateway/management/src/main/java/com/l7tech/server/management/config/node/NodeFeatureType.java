@@ -7,7 +7,6 @@ package com.l7tech.server.management.config.node;
 public enum NodeFeatureType {
     /** The feature describes the version of the Node */
     VERSION(true),
-    TARARI(true),
     SCA(true),
     RMI_PORT(true),
     PC_NODE_API_PORT(true),

@@ -442,7 +442,7 @@ public class ServerXslTransformation
      * @throws java.io.IOException if there is a problem reading the source document
      */
     private String findXslHref(XmlKnob knob) throws SAXException, InvalidDocumentFormatException, IOException {
-        if (!knob.isDomParsed() && !knob.isTarariParsed()) {
+        if (!knob.isDomParsed()) {
             // TODO use StAX to find URL without parsing the whole document, if it hasn't already been parsed (and hence we are going to end up streaming it into the actual transform)
             // the goal is to avoid forcing a DOM or Tarari parse when we are just going to throw it all away after the transform anyway
             //return findXslHrefWithoutDomOrTarariParse_perhapsUsingStAX(knob);

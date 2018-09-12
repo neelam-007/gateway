@@ -80,7 +80,7 @@ public class DecryptElementAssertionPropertiesEditor implements AssertionPropert
             public void actionPerformed(ActionEvent evt) {
                 confirmed = true;
             }
-        }, false, readOnly);
+        }, readOnly);
 
         /*String initialExpression = (assertion.getXpathExpression() == null) ? "" : assertion.getXpathExpression().getExpression();
         Map initialNamespaces = (assertion.getXpathExpression() == null) ? new HashMap<String, String>() : assertion.getXpathExpression().getNamespaces();

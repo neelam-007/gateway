@@ -4,7 +4,6 @@ import com.l7tech.policy.AssertionResourceInfo;
 import com.l7tech.policy.SingleUrlResourceInfo;
 import com.l7tech.policy.StaticResourceInfo;
 import com.l7tech.policy.assertion.*;
-import com.l7tech.policy.assertion.annotation.HardwareAccelerated;
 import com.l7tech.policy.assertion.annotation.RequiresXML;
 import com.l7tech.policy.variable.DataType;
 import com.l7tech.policy.variable.Syntax;
@@ -36,7 +35,6 @@ import static com.l7tech.policy.assertion.AssertionMetadata.*;
  *
  */
 @RequiresXML
-@HardwareAccelerated( type=HardwareAccelerated.Type.XSLT )
 public class XslTransformation extends MessageTargetableAssertion implements UsesVariables, UsesResourceInfo, SetsVariables {
     public static final String DEFAULT_PREFIX = "xslt";
     public static final String VARIABLE_NAME = "messages";

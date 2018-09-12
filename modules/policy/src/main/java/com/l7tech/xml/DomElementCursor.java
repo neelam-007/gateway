@@ -275,8 +275,7 @@ public class DomElementCursor extends ElementCursor {
             return domCompiledXpath.getXpathResult(this, variableFinder);
         }
 
-        // This can't happen -- currently there are only two impls, TarariCompiledXpath and DomCompiledXpath,
-        // and TarariCompiledXpath extends DomCompiledXpath.
+        // This can't happen -- currently there are only one impl DomCompiledXpath
         throw new IllegalArgumentException("Unsupported CompiledXpath of type " + compiledXpath.getClass().getName());
     }
 

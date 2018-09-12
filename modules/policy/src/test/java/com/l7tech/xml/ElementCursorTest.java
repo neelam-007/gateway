@@ -6,12 +6,10 @@
 package com.l7tech.xml;
 
 import com.l7tech.common.io.XmlUtil;
-import com.l7tech.message.TarariMessageContextFactory;
 import com.l7tech.test.SystemPropertyPrerequisite;
 import com.l7tech.test.SystemPropertySwitchedRunner;
 import com.l7tech.util.Charsets;
 import com.l7tech.util.InvalidDocumentFormatException;
-import com.l7tech.xml.tarari.TarariMessageContextImpl;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -36,31 +34,6 @@ public class ElementCursorTest {
         public ElementCursor newElementCursor(String xml) throws SAXException {
             return new DomElementCursor( XmlUtil.stringToDocument(xml));
         }
-    }
-
-    private static class TarariElementCursorFactory implements ElementCursorFactory {
-        @Override
-        public ElementCursor newElementCursor(String xml) throws SAXException {
-            try {
-                final TarariMessageContextFactory mcf = TarariLoader.getMessageContextFactory();
-                if (mcf == null)
-                    throw new UnsatisfiedLinkError("No tarari hardware detected");
-                TarariMessageContextImpl tmci =
-                        (TarariMessageContextImpl)mcf.
-                                makeMessageContext(new ByteArrayInputStream(xml.getBytes(Charsets.UTF8)));
-                return tmci.getElementCursor();
-            } catch (IOException e) {
-                throw new SAXException(e);
-            } catch ( SoftwareFallbackException e) {
-                throw new RuntimeException(e); // can't happen
-            }
-        }
-    }
-
-    @Test
-    @SystemPropertyPrerequisite(require = TarariLoader.ENABLE_PROPERTY)
-    public void testTarariCursor() throws Exception {
-        testAll(new TarariElementCursorFactory());
     }
 
     @Test

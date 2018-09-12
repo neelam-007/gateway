@@ -1388,7 +1388,6 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
         }
 
         // determine other metadata
-        MutableBoolean tarariWanted = new MutableBoolean(false);
         MutableBoolean wssInPolicy = new MutableBoolean(false);
         MutableBoolean multipartInPolicy = new MutableBoolean(false);
 
@@ -1402,16 +1401,15 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
                 continue;
             }
 
-            getAssertionMetadata(ass, tarariWanted, wssInPolicy, multipartInPolicy);
+            getAssertionMetadata(ass, wssInPolicy, multipartInPolicy);
             getAssertionVariables(allVarsUsed, allVarsSet, ass);
         }
 
         // need to check included policies also (which must have been cached before calling)
         for( Goid usedPolicyGoid : usedPolicyGoids ) {
-            getIncludedPolicyMetadataAndVariables(usedPolicyGoid, tarariWanted, wssInPolicy, multipartInPolicy, allVarsUsed, allVarsSet);
+            getIncludedPolicyMetadataAndVariables(usedPolicyGoid, wssInPolicy, multipartInPolicy, allVarsUsed, allVarsSet);
         }
 
-        final boolean metaTarariWanted = tarariWanted.booleanValue();
         final boolean metaWssInPolicy = wssInPolicy.booleanValue();
         final boolean metaMultipartInPolicy = multipartInPolicy.booleanValue();
         final String[] metaVariablesUsed = allVarsUsed.toArray( new String[allVarsUsed.size()] );
@@ -1419,10 +1417,6 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
         final PolicyHeader policyHeader = new PolicyHeader(policy, policyRevision);
 
         return new PolicyMetadata() {
-            @Override
-            public boolean isTarariWanted() {
-                return metaTarariWanted;
-            }
 
             @Override
             public boolean isWssInPolicy() {
@@ -1451,11 +1445,10 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
         };
     }
 
-    private void getIncludedPolicyMetadataAndVariables(Goid usedPolicyGoid, MutableBoolean tarariWanted, MutableBoolean wssInPolicy, MutableBoolean multipartInPolicy, Set<String> allVarsUsed, Map<String, VariableMetadata> allVarsSet) {
+    private void getIncludedPolicyMetadataAndVariables(Goid usedPolicyGoid, MutableBoolean wssInPolicy, MutableBoolean multipartInPolicy, Set<String> allVarsUsed, Map<String, VariableMetadata> allVarsSet) {
         PolicyCacheEntry entry = cacheGet( usedPolicyGoid );
         if( entry != null && entry.isValid() ) {
             PolicyMetadata metadata = entry.handle.getPolicyMetadata();
-            tarariWanted.setValue(tarariWanted.booleanValue() || metadata.isTarariWanted());
             wssInPolicy.setValue(wssInPolicy.booleanValue() || metadata.isWssInPolicy());
             multipartInPolicy.setValue(multipartInPolicy.booleanValue() || metadata.isMultipart());
             String[] varsUsed = metadata.getVariablesUsed();
@@ -1466,10 +1459,8 @@ public class PolicyCacheImpl implements PolicyCache, ApplicationContextAware, Po
         }
     }
 
-    private static void getAssertionMetadata(Assertion ass, MutableBoolean tarariWanted, MutableBoolean wssInPolicy, MutableBoolean multipartInPolicy) {
-        if( Assertion.isHardwareAccelerated( ass ) ) {
-            tarariWanted.setValue(true);
-        } else if( Assertion.isRequest( ass ) && Assertion.isWSSecurity( ass ) ) {
+    private static void getAssertionMetadata(Assertion ass, MutableBoolean wssInPolicy, MutableBoolean multipartInPolicy) {
+        if( Assertion.isRequest( ass ) && Assertion.isWSSecurity( ass ) ) {
             wssInPolicy.setValue(true);
         } else if ( Assertion.isMultipart( ass ) && Assertion.isRequest( ass ) ) {
             multipartInPolicy.setValue(true);

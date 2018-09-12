@@ -9,8 +9,6 @@ import com.l7tech.gateway.common.Component;
 import com.l7tech.gateway.common.audit.BootMessages;
 import com.l7tech.security.prov.JceProvider;
 import com.l7tech.security.cert.TrustedCertManager;
-import com.l7tech.xml.TarariLoader;
-import com.l7tech.xml.tarari.GlobalTarariContext;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.server.audit.Auditor;
@@ -197,14 +195,6 @@ public class BootProcess
 
         logger.info(BuildInfo.getLongBuildString());
         logConfiguredFactories();
-
-        GlobalTarariContext context = TarariLoader.getGlobalContext();
-        if (context != null) {
-            auditor.logAndAudit(BootMessages.XMLHARDWARE_INIT);
-            TarariLoader.compile();
-        } else {
-            auditor.logAndAudit(BootMessages.XMLHARDWARE_DISABLED);
-        }
 
         try {
             ipAddress = InetAddress.getLocalHost().getHostAddress();

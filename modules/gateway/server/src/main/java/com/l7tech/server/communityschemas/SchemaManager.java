@@ -54,8 +54,8 @@ public interface SchemaManager {
     /**
      * Get an up-to-date {@link SchemaHandle} for a schema document specified by its URI.
      * <p/>
-     * The system will make an effort to ensure that frequently-accessed remote URI schemas are kept "hot", even
-     * loading into Tarari where possible, even if all outstanding handles are temporarily closed.
+     * The system will make an effort to ensure that frequently-accessed remote URI schemas are kept "hot",
+     * even if all outstanding handles are temporarily closed.
      * <p/>
      * Caller must close the handle when they no longer need it.  Callers should not keep this handle for long
      * periods of time, since it is a handle to the version of the schema that was known when this method was

@@ -15,9 +15,10 @@ import java.util.logging.Level;
  */
 public class BootMessages extends Messages {
     public static final M DELETING_ATTACHMENT   = m(1000, Level.INFO,    "Deleting leftover attachment cache file: {0}");
-    public static final M XMLHARDWARE_INIT      = m(1001, Level.INFO,    "Initializing hardware XML acceleration");
-    public static final M XMLHARDWARE_ERROR     = m(1002, Level.WARNING, "Error initializing Tarari board");
-    public static final M XMLHARDWARE_DISABLED  = m(1003, Level.INFO,    "Hardware XML acceleration disabled");
+    //  KEEP THIS to reserve the message IDs, hardware acceleration support removed,
+    //  public static final M XMLHARDWARE_INIT      = m(1001, Level.INFO,    "Initializing hardware XML acceleration");
+    //  public static final M XMLHARDWARE_ERROR     = m(1002, Level.WARNING, "Error initializing Tarari board");
+    //  public static final M XMLHARDWARE_DISABLED  = m(1003, Level.INFO,    "Hardware XML acceleration disabled");
     public static final M NO_IP                 = m(1004, Level.WARNING, "Unable to retrieve local IP address - 127.0.0.1 will be used in audit records");
     public static final M CRYPTO_INIT           = m(1005, Level.INFO,    "Initializing cryptography subsystem");
     public static final M CRYPTO_ASYMMETRIC     = m(1006, Level.INFO,    "Using asymmetric cryptography provider: {0}");

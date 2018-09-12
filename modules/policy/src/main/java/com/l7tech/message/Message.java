@@ -537,24 +537,13 @@ public final class Message implements Closeable {
 
         SoapInfo info = null;
 
-        // See if we have already inspected a non-SOAP XML message
-        TarariKnob tk = getKnob(TarariKnob.class);
-        if (tk != null && !preferDOM)
-            info = tk.getSoapInfo();
-
-        if (info == null) {
-            // We have an XML knob but no SOAP knob.  See if we can create a SOAP knob.
-            try {
-                if (preferDOM) {
-                    getXmlKnob().getDocumentReadOnly();
-                }
-                info = SoapFacet.getSoapInfo(this);
-            } catch (NoSuchPartException e) {
-                throw new SAXException(e);
-            }
+        // We have an XML knob but no SOAP knob.  See if we can create a SOAP knob.
+        if (preferDOM) {
+            getXmlKnob().getDocumentReadOnly();
         }
+        info = SoapFacet.getSoapInfo(this);
 
-        if (info == null || !info.isSoap())
+        if (!info.isSoap())
             return false;
 
         rootFacet = new SoapFacet(this, rootFacet, info);
@@ -932,8 +921,6 @@ public final class Message implements Closeable {
      * be invalid (i.e. the document may have mutated out from under the cache)
      */
     void invalidateCaches() {
-        TarariKnob tk = getKnob(TarariKnob.class);
-        if (tk != null) tk.close();
         SoapKnob sk = getKnob(SoapKnob.class);
         if (sk != null) sk.invalidate();
     }

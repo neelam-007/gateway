@@ -12,18 +12,7 @@ import com.l7tech.policy.assertion.UsesVariables;
 public interface PolicyMetadata extends UsesVariables, SetsVariables {
 
     /**
-     * Does at least one assertion in the policy strongly prefer to use Tarari?
-     *
-     * <p>As opposed to use of a pre-parsed DOM tree. </p>
-     *
-     * @return true if tarari is desired.
-     */
-    boolean isTarariWanted();
-
-    /**
      * Does this policy contain a WSS assertion?
-     *
-     * <p>If this is the case, then DOM would likely be better than using Tarari.</p>
      *
      * @return true if there is WSS in the policy.
      */

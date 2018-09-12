@@ -231,7 +231,6 @@ public class ServerSchemaValidation
                     context.setVariable(SchemaValidation.SCHEMA_FAILURE_VARIABLE, messes.toArray());
                     return AssertionStatus.BAD_REQUEST; // Note if this is not the request this gets changed later ...
                 }
-                // Tarari failure with no message
                 schemaValidationFailed(context, ExceptionUtils.getMessage(validationException), ExceptionUtils.getDebugException(validationException));
                 return AssertionStatus.BAD_REQUEST;
             }

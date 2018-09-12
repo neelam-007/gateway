@@ -18,8 +18,6 @@ import java.util.Set;
  * @author alex
  */
 public class PCNodeConfig extends NodeConfig {
-    /** Is this node intended to be the sole user of the Tarari card on this Node? */
-    private boolean tarariOwner;
 
     /** Is this node intended to be the sole user of the SCA card on this Node? */
     private boolean scaOwner;
@@ -36,14 +34,6 @@ public class PCNodeConfig extends NodeConfig {
      * Must contain {0} to hold the primary host:port; may contain additional {1}, {2} etc. for secondary host:ports.
      */
     private Map<DatabaseType, String> databaseUrlTemplate = new HashMap<DatabaseType, String>();
-
-    public boolean isTarariOwner() {
-        return tarariOwner;
-    }
-
-    public void setTarariOwner(boolean tarariOwner) {
-        this.tarariOwner = tarariOwner;
-    }
 
     public boolean isScaOwner() {
         return scaOwner;
@@ -74,7 +64,6 @@ public class PCNodeConfig extends NodeConfig {
         final Set<NodeFeature> features = new HashSet<NodeFeature>();
         features.add(new RmiPortFeature(this, getRmiPort()));
         features.add(new ProcessControllerApiUrlFeature(this, getProcessControllerApiUrl()));
-        features.add(new TarariFeature(this, isTarariOwner()));
         features.add(new ScaFeature(this, isScaOwner()));
         return features;
     }
@@ -97,7 +86,6 @@ public class PCNodeConfig extends NodeConfig {
 
         if (!enabled != !that.enabled) return false;
         if (scaOwner != that.scaOwner) return false;
-        if (tarariOwner != that.tarariOwner) return false;
         if (host != null ? !host.equals(that.host) : that.host != null) return false;
 
         return true;
@@ -107,7 +95,6 @@ public class PCNodeConfig extends NodeConfig {
         int result = super.hashCode();
         result = 31 * result + (host != null ? host.hashCode() : 0);
         result = 31 * result + (!enabled ? 1 : 0);
-        result = 31 * result + (tarariOwner ? 1 : 0);
         result = 31 * result + (scaOwner ? 1 : 0);
         result = 31 * result + (databaseUrlTemplate != null ? databaseUrlTemplate.hashCode() : 0);
         return result;
