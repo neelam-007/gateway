@@ -5,11 +5,13 @@ import com.l7tech.common.TestKeys;
 import com.l7tech.objectmodel.Goid;
 import com.l7tech.security.cert.KeyUsageChecker;
 import com.l7tech.security.cert.KeyUsageException;
+import com.l7tech.security.cert.TrustedCertManager;
 import com.l7tech.security.types.CertificateValidationResult;
 import com.l7tech.security.types.CertificateValidationType;
 import com.l7tech.server.audit.Auditor;
 import com.l7tech.server.identity.cert.TrustedCertServices;
 import com.l7tech.server.security.cert.CertValidationProcessor;
+import com.l7tech.test.BugId;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -18,12 +20,15 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import javax.net.ssl.X509TrustManager;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.HashSet;
+import java.util.Set;
 
 import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 
 /**
@@ -139,5 +144,18 @@ public class SslClientTrustManagerTest {
             assertEquals("Certificate key usage or extended key usage disallowed by key usage enforcement " +
                     "policy for activity: sslServerRemote", e.getMessage());
         }
+    }
+
+    @BugId("DE371400")
+    @Test(expected = TrustedCertManager.UnknownCertificateException.class)
+    public void testCheckServerTrusted_StrictCheck_InvalidCertificate() throws Exception {
+        doThrow(TrustedCertManager.UnknownCertificateException.class)
+                .when(trustedCertServices).checkSslTrust(any(X509Certificate[].class), any(Set.class));
+
+        X509TrustManager trustManager =
+                sslClientTrustManager.createTrustManagerWithCustomTrustedCerts(new HashSet<>());
+
+        trustManager.checkServerTrusted(new X509Certificate[]{certificate}, RSA_256);
+        fail("Should have failed with TrustedCertManager.UnknownCertificateException");
     }
 }

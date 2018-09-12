@@ -72,8 +72,12 @@ public class SslClientTrustManager implements X509TrustManager {
         try {
             trustedCertServices.checkSslTrust(certs, trustedCertOids);
         } catch (TrustedCertManager.UnknownCertificateException uce) {
-            // this is ok, as long as it is a cert from a known CA
-            isCartel = true;
+            if (trustedCertOids == null) {
+                // this is ok, as long as it is a cert from a known CA
+                isCartel = true;
+            } else {
+                throw uce;
+            }
         }
 
         try {
