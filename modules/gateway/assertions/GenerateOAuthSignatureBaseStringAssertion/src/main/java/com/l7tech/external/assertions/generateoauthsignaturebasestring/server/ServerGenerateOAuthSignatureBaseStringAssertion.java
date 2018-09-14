@@ -36,6 +36,9 @@ import static com.l7tech.external.assertions.generateoauthsignaturebasestring.Ge
  */
 @SuppressWarnings({"ThrowableResultOfMethodCallIgnored"})
 public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractServerAssertion<GenerateOAuthSignatureBaseStringAssertion> {
+
+    private static final String OAUTH_CALLBACK_VALIDATION_REGEX = "oob|http[s]?[^\"]{1," + GenerateOAuthSignatureBaseStringAssertion.MAX_OAUTH_CALLBACK_LENGTH + "}";
+
     public ServerGenerateOAuthSignatureBaseStringAssertion(@NotNull final GenerateOAuthSignatureBaseStringAssertion assertion) throws PolicyAssertionException {
         super(assertion);
         throwIfNullOrBlank(assertion.getRequestUrl(), "Request Url");
@@ -434,11 +437,11 @@ public class ServerGenerateOAuthSignatureBaseStringAssertion extends AbstractSer
         if (!SIGNATURE_METHODS.contains(foundSignatureMethod.toUpperCase())) {
             throw new InvalidParameterException(OAUTH_SIGNATURE_METHOD, foundSignatureMethod, OAUTH_SIGNATURE_METHOD + " is invalid: " + foundSignatureMethod);
         }
-        // callback must be oob or start with http/https and be a max of 2048 characters (the maximum length of the corresponding table field)
+        // callback must be oob or start with http/https and be a max of GenerateOAuthSignatureBaseStringAssertion.MAX_OAUTH_CALLBACK_LENGTH characters (the maximum length of the corresponding table field)
         if (sortedParameters.get(OAUTH_CALLBACK) != null) {
             final String foundCallback = sortedParameters.get(OAUTH_CALLBACK).iterator().next();
             if (!(assertion.isAllowEmptyCallback() && StringUtils.isBlank(foundCallback)) &&
-                    !foundCallback.matches("oob|http[s]?[^\"]{1,2048}")) {
+                    !foundCallback.matches(OAUTH_CALLBACK_VALIDATION_REGEX)) {
                 throw new InvalidParameterException(OAUTH_CALLBACK, foundCallback, OAUTH_CALLBACK + " is invalid: " + foundCallback);
             }
         }

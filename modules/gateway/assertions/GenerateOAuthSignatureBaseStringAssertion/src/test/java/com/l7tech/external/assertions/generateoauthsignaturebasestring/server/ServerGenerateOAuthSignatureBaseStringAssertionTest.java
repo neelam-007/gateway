@@ -1567,7 +1567,7 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
     @Test
     @BugId("DE367210")
     public void longCallback_TooLong() throws Exception {
-        // construct a callback that's longer than the new 2048 character limit
+        // construct a callback that's longer than the new GenerateOAuthSignatureBaseStringAssertion.MAX_OAUTH_CALLBACK_LENGTH character limit
         StringBuilder extraLongCallbackBuilder = new StringBuilder("https://stage.beta.masterpassteststore.com/teststorefront/?sdk=java&" +
                 "oauth_token=VY3w79ecd2acd752ae71d05e3ac4ffef14ac3a88aded6&oauth_verifier=VY3w79ecd2acd752ae71d05e3ac4ffe" +
                 "f14ac3a88aded6&checkoutId=2315016983126251771&checkout_resource_url=https%3A%2F%2Fstage.api.mastercard.c" +
@@ -1575,8 +1575,8 @@ public class ServerGenerateOAuthSignatureBaseStringAssertionTest {
 
         String longPathSegment = "%2FVERYLONGPATHSEGMENT";
 
-        // construct a callback at least as long as the 2048 character limit
-        while (extraLongCallbackBuilder.length() < 2048) {
+        // construct a callback at least as long as the GenerateOAuthSignatureBaseStringAssertion.MAX_OAUTH_CALLBACK_LENGTH character limit
+        while (extraLongCallbackBuilder.length() < GenerateOAuthSignatureBaseStringAssertion.MAX_OAUTH_CALLBACK_LENGTH) {
             extraLongCallbackBuilder.append(longPathSegment);
         }
 

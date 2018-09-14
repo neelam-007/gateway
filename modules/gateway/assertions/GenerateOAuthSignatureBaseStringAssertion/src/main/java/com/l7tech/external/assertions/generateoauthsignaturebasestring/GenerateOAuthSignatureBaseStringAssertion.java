@@ -34,6 +34,7 @@ public class GenerateOAuthSignatureBaseStringAssertion extends Assertion impleme
     public static final String PLAINTEXT = "PLAINTEXT";
     public static final String RSA_SHA256 = "RSA-SHA256";
     public static final String RSA_SHA512 = "RSA-SHA512";
+    public static final int MAX_OAUTH_CALLBACK_LENGTH = 4096;
 
     public static enum UsageMode {
         /**
