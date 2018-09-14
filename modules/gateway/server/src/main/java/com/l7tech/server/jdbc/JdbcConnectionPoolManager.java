@@ -47,6 +47,7 @@ public class JdbcConnectionPoolManager implements InitializingBean {
     private static final long MIN_CHECK_AGE = ConfigFactory.getLongProperty( "com.l7tech.server.jdbc.poolConnectionCheckMinAge", 30000L );
     private static final String[] CPDS_IGNORE_PROPS = new String[]{ "connectionPoolDataSource", "driverClass", "initialPoolSize", "jdbcUrl", "logWriter", "maxPoolSize", "minPoolSize", "password", "properties", "propertyCycle", "user", "userOverridesAsString" };
     private static final HashMap<String, Goid> goidNameMap = new HashMap<String, Goid>();
+    private static final String MYSQL_USE_SSL = "useSSL";
 
     private final Audit auditor = new LoggingAudit(logger);
     private final JdbcConnectionManager jdbcConnectionManager;
@@ -304,6 +305,8 @@ public class JdbcConnectionPoolManager implements InitializingBean {
      * @param connection: a JDBC Connection entity containing all connection properties.
      * @throws InvalidPropertyException: thrown when invalid properties are used.
      */
+    // suppressing instanceof warning on class name comparison, we dont have a Driver instance so cannot use instanceof.
+    @SuppressWarnings("squid:S1872")
     private void setDataSourceByJdbcConnection(ComboPooledDataSource cpds, JdbcConnection connection) throws InvalidPropertyException, FindException {
         // Set basic configuration
         try {
@@ -358,6 +361,13 @@ public class JdbcConnectionPoolManager implements InitializingBean {
                 props.put( propName, propValue );
             }
         }
+
+        // DE378269 After Mysql upgrade, ssl warnings are printed everywhere if useSSL is not specified. if using mysql default, and not specified, set to false.
+        // for PCI-DSS we may have to revisit this
+        if (com.mysql.jdbc.Driver.class.getName().equals(connection.getDriverClass()) && !props.containsKey(MYSQL_USE_SSL) && !connection.getJdbcUrl().contains(MYSQL_USE_SSL)) {
+            props.put(MYSQL_USE_SSL, Boolean.FALSE.toString());
+        }
+
         cpds.setProperties(props);
 
         // set username/password after setProperties, else they will be reset

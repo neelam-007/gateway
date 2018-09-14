@@ -29,7 +29,7 @@ import java.util.logging.Logger;
 public class DBActions {
     private static final Logger logger = Logger.getLogger(DBActions.class.getName());
     private static final String EOL_CHAR = SyspropUtil.getProperty("line.separator");
-    private static final String DEFAULT_DB_URL = "jdbc:mysql://{0}:{1}/{2}?autoReconnect=false&characterEncoding=UTF8&characterSetResults=UTF8&socketTimeout=600000&connectTimeout=10000";
+    private static final String DEFAULT_DB_URL = "jdbc:mysql://{0}:{1}/{2}?autoReconnect=false&characterEncoding=UTF8&characterSetResults=UTF8&socketTimeout=600000&connectTimeout=10000&useSSL=false";
     private static final String DB_VERSION_UNKNOWN = "Unknown";
 
     public static final String CONNECTION_SUCCESSFUL_MSG = "Connection to the database was a success";
