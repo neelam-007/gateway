@@ -2200,15 +2200,16 @@ public class ServerHttpRoutingAssertionTest {
 
             serverPolicyFactory.setApplicationContext(ac);
 
-            String url = "http://localhost:" + httpServer.getPort();
+            URL url = new URL("http://localhost:" + httpServer.getPort());
+
             HttpRoutingAssertion assertion = new HttpRoutingAssertion();
             assertion.setPassthroughHttpAuthentication(true);
-            assertion.setProtectedServiceUrl(url);
+            assertion.setProtectedServiceUrl(url.toString());
 
             ServerHttpRoutingAssertion sass = (ServerHttpRoutingAssertion) serverPolicyFactory.compilePolicy(assertion, false);
 
             String authorization = "Basic XXX";
-            String authorizationHash = sass.hashAuthorizationAndURL(url, authorization);
+            String authorizationHash = sass.hashAuthorizationHostnameAndPort(url, authorization);
 
             //Simulate Connection ID
             HttpRequestKnobStub requestKnob = new HttpRequestKnobStub(singletonList(new GenericHttpHeader(HEADER_AUTHORIZATION, authorization)));
@@ -2267,16 +2268,16 @@ public class ServerHttpRoutingAssertionTest {
 
             serverPolicyFactory.setApplicationContext(ac);
 
-            String url = "http://localhost:" + httpServer.getPort();
+            URL url = new URL("http://localhost:" + httpServer.getPort());
             HttpRoutingAssertion assertion = new HttpRoutingAssertion();
             assertion.setPassthroughHttpAuthentication(false);
-            assertion.setProtectedServiceUrl(url);
+            assertion.setProtectedServiceUrl(url.toString());
             assertion.setRequestHeaderRules(new HttpPassthroughRuleSet(true, new HttpPassthroughRule[0]));
 
             ServerHttpRoutingAssertion sass = (ServerHttpRoutingAssertion) serverPolicyFactory.compilePolicy(assertion, false);
 
             String authorization = "Basic XXX";
-            String authorizationHash = sass.hashAuthorizationAndURL(url, authorization);
+            String authorizationHash = sass.hashAuthorizationHostnameAndPort(url, authorization);
 
             //Simulate Connection ID
             HeadersKnob headersKnob = new HeadersKnobSupport();
@@ -2339,18 +2340,18 @@ public class ServerHttpRoutingAssertionTest {
 
             serverPolicyFactory.setApplicationContext(ac);
 
-            String url = "http://localhost:" + httpServer.getPort();
+            URL url = new URL("http://localhost:" + httpServer.getPort());
             HttpRoutingAssertion assertion = new HttpRoutingAssertion();
             assertion.setPassthroughHttpAuthentication(false);
-            assertion.setProtectedServiceUrl(url);
+            assertion.setProtectedServiceUrl(url.toString());
             assertion.setRequestHeaderRules(new HttpPassthroughRuleSet(true, new HttpPassthroughRule[0]));
 
             ServerHttpRoutingAssertion sass = (ServerHttpRoutingAssertion) serverPolicyFactory.compilePolicy(assertion, false);
 
             String authorization = "Basic XXX";
-            String authorizationHash = sass.hashAuthorizationAndURL(url, authorization);
+            String authorizationHash = sass.hashAuthorizationHostnameAndPort(url, authorization);
             String authorization2 = "Basic YYY";
-            String authorizationHash2 = sass.hashAuthorizationAndURL(url, authorization2);
+            String authorizationHash2 = sass.hashAuthorizationHostnameAndPort(url, authorization2);
 
             //Simulate Connection ID
             HeadersKnob headersKnob = new HeadersKnobSupport();

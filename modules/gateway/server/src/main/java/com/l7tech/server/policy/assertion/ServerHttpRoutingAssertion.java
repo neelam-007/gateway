@@ -930,7 +930,7 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
                 if (header.getFullValue() != null && !header.getFullValue().startsWith(ServerHttpNegotiate.NTLM_SCHEME)) {
                     // To hold connections and reuse, we hash the authorization together with the routed url
                     try {
-                        hashedStateId = hashAuthorizationAndURL(url.toString(), header.getFullValue());
+                        hashedStateId = hashAuthorizationHostnameAndPort(url, header.getFullValue());
                         connectionId = hashedStateId;
                     } catch (NoSuchAlgorithmException e) {
                         logger.log(Level.WARNING, ExceptionUtils.getDebugException(e), () -> "Error hashing Authorization for connection identification");
@@ -943,8 +943,13 @@ public final class ServerHttpRoutingAssertion extends AbstractServerHttpRoutingA
     }
 
     @NotNull
-    public String hashAuthorizationAndURL(String url, String authorizationHeader) throws NoSuchAlgorithmException {
-        return crypt(MessageDigest.getInstance("SHA-512"), MessageDigest.getInstance("SHA-512"), (url + authorizationHeader).getBytes(), this.hashSalt);
+    String hashAuthorizationHostnameAndPort(final URL url, final String authorizationHeader) throws NoSuchAlgorithmException {
+        // handle default ports
+        int port = url.getPort();
+        if (port <= 0) {
+            port = url.getDefaultPort();
+        }
+        return crypt(MessageDigest.getInstance("SHA-512"), MessageDigest.getInstance("SHA-512"), (url.getHost() + Integer.toString(port) + authorizationHeader).getBytes(), this.hashSalt);
     }
 
     private GenericHttpRequest createRequest(PolicyEnforcementContext context, GenericHttpRequestParams routedRequestParams,
