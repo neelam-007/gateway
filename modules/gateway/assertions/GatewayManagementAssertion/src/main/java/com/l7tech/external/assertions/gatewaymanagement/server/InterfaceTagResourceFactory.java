@@ -15,8 +15,8 @@ import com.l7tech.util.Charsets;
 import com.l7tech.util.Functions;
 import com.l7tech.util.Option;
 import com.l7tech.util.Pair;
-import com.sun.istack.Nullable;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import java.text.ParseException;

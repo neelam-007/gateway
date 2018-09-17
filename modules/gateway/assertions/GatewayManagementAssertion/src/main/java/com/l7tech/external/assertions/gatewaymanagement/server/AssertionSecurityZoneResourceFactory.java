@@ -17,7 +17,7 @@ import com.l7tech.server.security.rbac.SecurityZoneManager;
 import com.l7tech.util.Either;
 import com.l7tech.util.Eithers;
 import com.l7tech.util.Functions;
-import com.sun.istack.Nullable;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import java.util.*;

@@ -17,10 +17,6 @@
         <dependency name="layer7-wsdl" rev="latest.integration" conf="core"/>
         <dependency name="layer7-test" rev="latest.integration" conf="test"/>
         <dependency org="com.l7tech.lib" name="layer7-uddi-lib" rev="1.1.0" force="true" conf="core"/>
-        <dependency org="com.sun.xml.ws" name="jaxws-rt" rev="2.1.7" force="true" conf="core">
-            <exclude org="com.sun.xml.messaging.saaj" module="saaj-impl" name="*" type="*" ext="*" conf=""
-                     matcher="exact"/>
-        </dependency>
         <dependency org="wsdl4j" name="wsdl4j" rev="1.6.2-l7p3" force="true" conf="core"/>
     </dependencies>
 </ivy-module>
