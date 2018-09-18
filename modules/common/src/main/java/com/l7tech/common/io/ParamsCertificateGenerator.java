@@ -19,6 +19,7 @@ import org.bouncycastle.operator.DefaultAlgorithmNameFinder;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 
+import javax.security.auth.x500.X500Principal;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.*;
@@ -142,8 +143,9 @@ public class ParamsCertificateGenerator {
             if (c.isIncludeCertificatePolicies())
                 certBldr.addExtension(Extension.certificatePolicies, c.isCertificatePoliciesCritical(), createCertificatePolicies(c.getCertificatePolicies()));
 
-            if (c.isIncludeSubjectAlternativeName())
+            if (c.isIncludeSubjectAlternativeName()){
                 certBldr.addExtension(Extension.subjectAlternativeName, c.isSubjectAlternativeNameCritical(), createSubjectAlternativeName(c.getSubjectAlternativeNames()));
+            }
 
             if (c.isIncludeAuthorityInfoAccess()) {
                 certBldr.addExtension(Extension.authorityInfoAccess, c.isAuthorityInfoAccessCritical(), createAuthorityInfoAccess(c.getAuthorityInfoAccessOcspUrls()));
@@ -255,10 +257,25 @@ public class ParamsCertificateGenerator {
         );
     }
 
-    private ASN1Encodable createSubjectAlternativeName(final List<X509GeneralName> names) {
-        final List<GeneralName> generalNames = Functions.map(names, (Functions.Unary<GeneralName, X509GeneralName>) name -> {
+    private ASN1Encodable createSubjectAlternativeName(final List<X509GeneralName> x509GeneralNameList) {
+
+        final List<GeneralName> generalNames = Functions.map(x509GeneralNameList, (Functions.Unary<GeneralName, X509GeneralName>) name -> {
             if (name.isString()) {
-                return new GeneralName(name.getType().getTag(), name.getStringVal());
+                X509GeneralName.Type x509GeneralNameType = name.getType();
+                // handle the behaviour when X509v3CertificateBuilder adds the Subject Alternative Name extension, that the directory name
+                // which gets stored in the Bouncy Castle's GeneralName has to be the reverse order of RFC2253.
+                if (x509GeneralNameType == X509GeneralName.Type.directoryName) {
+                    try {
+                        // extracting the directory name and encoding it this way seems to work.
+                        // The encoded value when inspected is the reverse order.
+                        final ASN1Encodable asn1Encodable = ASN1Primitive.fromByteArray(new X500Principal(name.getStringVal()).getEncoded());
+                        return new GeneralName(name.getType().getTag(), asn1Encodable);
+                    } catch (IOException e) {
+                        throw new IllegalArgumentException("Invalid encoded value for X509GeneralName: " + ExceptionUtils.getMessage(e), e);
+                    }
+                } else {
+                    return new GeneralName(name.getType().getTag(), name.getStringVal());
+                }
             } else {
                 try {
                     return new GeneralName(name.getType().getTag(), ASN1Primitive.fromByteArray(name.getDerVal()));

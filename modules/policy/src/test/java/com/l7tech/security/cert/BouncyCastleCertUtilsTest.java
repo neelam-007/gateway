@@ -70,12 +70,13 @@ public class BouncyCastleCertUtilsTest {
     // Test creating a self-signed certificate with subject alternative name attributes.
     public void testGenerateSelfSignedCertificateWithSubjAlternativeNames() {
 
-        final int numberALternativeNames = 5;
+        final int numberALternativeNames = 6;
         final String Ip1AltName = "10.242.15.115";
         final String Ip2AltName = "10.242.15.172";
         final String DNSAltname = "support.example.com";
         final String UriAltName = "https://tst.ca.com:8443/ssl";
         final String emailAltName = "john.smith@example.com";
+        final String directoryAltName = "CN=FirstAltDirName LastAltDirName, L=Calgary, ST=AB, O=CA Technologies, C=CA";
 
         final String subjectDn = "CN=FirstNameTest2 LastNameTest2, L=Vancouver, ST=BC, O=CA Technologies, C=CA";
         final String hashAlg = "SHA224withRSA";
@@ -97,6 +98,7 @@ public class BouncyCastleCertUtilsTest {
         subjectAltNamesInputs.add(X509GeneralName.fromDnsName(DNSAltname));
         subjectAltNamesInputs.add(new X509GeneralName(X509GeneralName.Type.uniformResourceIdentifier, UriAltName));
         subjectAltNamesInputs.add(new X509GeneralName(X509GeneralName.Type.rfc822Name, emailAltName));
+        subjectAltNamesInputs.add(X509GeneralName.fromDirectoryName(directoryAltName));
 
         certGenParams.setSubjectAlternativeNames(subjectAltNamesInputs);
         certGenParams.setIncludeSubjectAlternativeName(true);
@@ -133,6 +135,10 @@ public class BouncyCastleCertUtilsTest {
 
             assertTrue(genNamesFromCert.get(4).getType() == X509GeneralName.Type.rfc822Name);
             assertTrue(genNamesFromCert.get(4).getStringVal().equals(emailAltName));
+
+            assertTrue(genNamesFromCert.get(5).getType() == X509GeneralName.Type.directoryName);
+            // This will verify DE384493:Subject Alternative Names Directory Name elements order gets reversed in the CSR process
+            assertTrue(x500PrincipalEquals(genNamesFromCert.get(5).getStringVal(), directoryAltName));
 
         } catch (CertificateGeneratorException | CertificateParsingException e) {
             fail("CertificateGeneratorException caught while trying to generate a self-signed certificate.");
@@ -194,8 +200,7 @@ public class BouncyCastleCertUtilsTest {
         final PKCS10CertificationRequest pkcs10 = new PKCS10CertificationRequest(decodedCsrBytes);
         final CertificationRequestInfo certReqInfo = pkcs10.toASN1Structure().getCertificationRequestInfo();
         certGenParams.setSubjectDn(new X500Principal(certReqInfo.getSubject().getEncoded()));
-        final ASN1Set attrSet = certReqInfo.getAttributes();
-        final List collection = BouncyCastleCertUtils.extractSubjectAlternativeNamesFromCsrInfoAttr(attrSet);
+        final List collection = BouncyCastleCertUtils.extractSubjectAlternativeNamesFromCertRequest(pkcs10);
         certGenParams.setSubjectAlternativeNames(collection);
 
         final DEROctetString derIpAddress = new DEROctetString(new byte[]{10, 7, 10, 10});
@@ -221,6 +226,27 @@ public class BouncyCastleCertUtilsTest {
         assertEquals(X509GeneralName.Type.directoryName, certGenParams.getSubjectAlternativeNames().get(8).getType());
         assertEquals("C=UK,O=My Organization,OU=My Unit,CN=My Name", certGenParams.getSubjectAlternativeNames().get(8).getStringVal());
     }
+
+
+    @Test // To test DE382750:Signing CSR where there are multiple extensions and the Subject Alternative Names is not the first will fail.
+    public void testReadCsrWithMutlipleExtensionsAndExtractSubjectAlternativeName() throws Exception {
+
+        final InputStream in = BouncyCastleCertUtils.class.getClassLoader().getResourceAsStream("com/l7tech/security/cert/test.csr_with_multi_extensions.pem");
+        final ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        IOUtils.copyStream(in, bos);
+        final byte[] csrBytes = bos.toByteArray();
+
+        final byte[] decodedCsrBytes = CertUtils.csrPemToBinary(csrBytes);
+        final PKCS10CertificationRequest pkcs10 = new PKCS10CertificationRequest(decodedCsrBytes);
+        final List collection = BouncyCastleCertUtils.extractSubjectAlternativeNamesFromCertRequest(pkcs10);
+
+        final CertGenParams certParamsFromCsr = new CertGenParams();
+        certParamsFromCsr.setSubjectAlternativeNames(collection);
+
+        assertEquals(X509GeneralName.Type.rfc822Name, certParamsFromCsr.getSubjectAlternativeNames().get(0).getType());
+        assertEquals("simple@ca.com", certParamsFromCsr.getSubjectAlternativeNames().get(0).getStringVal());
+    }
+
 
     @Test
     public void testGetSubjectAlternativeNameExtensions() throws Exception {

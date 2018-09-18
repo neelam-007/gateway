@@ -62,8 +62,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.l7tech.server.event.AdminInfo.find;
-import static com.l7tech.util.ExceptionUtils.getDebugException;
-import static com.l7tech.util.ExceptionUtils.getMessage;
 
 public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements ApplicationEventPublisherAware, TrustedCertAdmin {
 
@@ -756,7 +754,8 @@ public class TrustedCertAdminImpl extends AsyncAdminMethodsImpl implements Appli
         csrProps.put(CSR_PROP_SUBJECT_DN, certReqInfo.getSubject().toString());
         // Subject Alternative Names
         try {
-            List<X509GeneralName> sANs = BouncyCastleCertUtils.extractSubjectAlternativeNamesFromCsrInfoAttr(certReqInfo.getAttributes());
+
+            List<X509GeneralName> sANs = BouncyCastleCertUtils.extractSubjectAlternativeNamesFromCertRequest(pkcs10);
             if(!sANs.isEmpty()) {
                 List<NameValuePair> sansList = new ArrayList<>();
                 for (X509GeneralName san : sANs) {

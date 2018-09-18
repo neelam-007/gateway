@@ -10,15 +10,17 @@ import com.l7tech.security.prov.bc.BouncyCastleCertificateRequest;
 import com.l7tech.util.ConfigFactory;
 import com.l7tech.util.ExceptionUtils;
 import org.bouncycastle.asn1.*;
-import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.*;
+import org.bouncycastle.asn1.pkcs.Attribute;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.*;
-import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
+import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.bouncycastle.pkcs.PKCS10CertificationRequestBuilder;
 import org.bouncycastle.pkcs.jcajce.JcaPKCS10CertificationRequestBuilder;
+import org.jetbrains.annotations.NotNull;
 
 import javax.security.auth.x500.X500Principal;
 import java.io.IOException;
@@ -162,69 +164,70 @@ public class BouncyCastleCertUtils  {
                 : new JcaContentSignerBuilder(sigAlg).setProvider(provider).build(keyPair.getPrivate());
     }
 
+
     /**
-     * extracts SANs from CSR Info attributes
-     * @param attr ASN1Set attributes
-     * @return returns a list of
-     * @throws Exception thrown if objects cannot be extracted from extension value
+     * Gets the Subject Alternative Names from the CSR (Certificate Signing Request).
+     *
+     * @param pkcs10 The CSR.
+     * @return the list of X509GeneralName
      */
-    public static List<X509GeneralName> extractSubjectAlternativeNamesFromCsrInfoAttr(ASN1Set attr) throws Exception
-    {
-        if (attr == null || attr.size() < 1)
-        {
-            return Collections.emptyList();
+    public static List<X509GeneralName> extractSubjectAlternativeNamesFromCertRequest(PKCS10CertificationRequest pkcs10) throws IOException {
+
+        List<X509GeneralName> x509GeneralNames = new ArrayList<>();
+
+        final Attribute[] attributes = pkcs10.getAttributes(PKCSObjectIdentifiers.pkcs_9_at_extensionRequest);
+        for (Attribute attribute : attributes) {
+            ASN1Set attValue = attribute.getAttrValues();
+            if (attValue != null) {
+                ASN1Encodable extension = attValue.getObjectAt(0);
+                if ((extension instanceof Extensions) || (extension instanceof DERSequence)) {
+                    Extensions extensions = Extensions.getInstance(extension);
+                    GeneralNames subjectAltName = GeneralNames.fromExtensions(extensions, Extension.subjectAlternativeName);
+                    if (subjectAltName != null) {
+                        addX509GeneralNameToList(subjectAltName, x509GeneralNames);
+                    }
+                }
+            }
         }
+        return Collections.unmodifiableList(x509GeneralNames);
+    }
 
-        DERSequence encodable = (DERSequence) attr.getObjectAt(0);
-        if(encodable == null) return Collections.emptyList();
+    /**
+     * Extracts the Bouncy Castle GeneralNames and adds it to the X509GeneralName (layer7 class) list.
+     *
+     * @param genNames            The Bouncy Castle GeneralNames to be converted.
+     * @param x509GeneralNameList The converted GeneralGames will be appended to the x509GeneralNameList.
+     */
+    private static void addX509GeneralNameToList(@NotNull GeneralNames genNames, List<X509GeneralName> x509GeneralNameList) throws IOException {
 
-        DERSet set = (DERSet) encodable.getObjectAt(1);
-        if(set == null) return Collections.emptyList();
+        final GeneralName[] generalNames = genNames.getNames();
 
-        DERSequence seq1 = (DERSequence) set.getObjectAt(0);
-        if(seq1 == null) return Collections.emptyList();
-
-        DERSequence seq2 = (DERSequence) seq1.getObjectAt(0);
-        if(seq2 == null) return Collections.emptyList();
-
-        DEROctetString octetStr = (DEROctetString) seq2.getObjectAt(1);
-        if(octetStr == null) return Collections.emptyList();
-
-        byte[] extVal = octetStr.getEncoded();
-        if(extVal == null) return Collections.emptyList();
-
-        List<X509GeneralName> temp = new ArrayList<>();
-        Enumeration it = DERSequence.getInstance(JcaX509ExtensionUtils.parseExtensionValue(extVal)).getObjects();
-        while (it.hasMoreElements())
-        {
-            GeneralName genName = GeneralName.getInstance(it.nextElement());
-            X509GeneralName.Type type = X509GeneralName.getTypeFromTag(genName.getTagNo());
-            switch (genName.getTagNo())
-            {
+        // Note for some of the case statements, it will fallthrough on purpose.
+        for (GeneralName generalName : generalNames) {
+            X509GeneralName.Type type = X509GeneralName.getTypeFromTag(generalName.getTagNo());
+            switch (generalName.getTagNo()) {
                 case GeneralName.ediPartyName:
                 case GeneralName.x400Address:
                 case GeneralName.otherName:
-                    temp.add(new X509GeneralName(type, genName.getEncoded(ASN1Encoding.DER)));
+                    x509GeneralNameList.add(new X509GeneralName(type, generalName.getEncoded(ASN1Encoding.DER)));
                     break;
                 case GeneralName.directoryName:
-                    temp.add(new X509GeneralName(type, X500Name.getInstance(genName.getName()).toString()));
+                    x509GeneralNameList.add(new X509GeneralName(type, X500Name.getInstance(generalName.getName()).toString()));
                     break;
                 case GeneralName.dNSName:
                 case GeneralName.rfc822Name:
                 case GeneralName.uniformResourceIdentifier:
-                    temp.add((new X509GeneralName(type, ((ASN1String)genName.getName()).getString())));
+                    x509GeneralNameList.add((new X509GeneralName(type, ((ASN1String) generalName.getName()).getString())));
                     break;
                 case GeneralName.registeredID:
-                    temp.add(new X509GeneralName(type, ASN1ObjectIdentifier.getInstance(genName.getName()).getId()));
+                    x509GeneralNameList.add(new X509GeneralName(type, ASN1ObjectIdentifier.getInstance(generalName.getName()).getId()));
                     break;
                 case GeneralName.iPAddress:
-                    temp.add(new X509GeneralName(type, DEROctetString.getInstance(genName.getName()).getEncoded(ASN1Encoding.DER)));
+                    x509GeneralNameList.add(new X509GeneralName(type, DEROctetString.getInstance(generalName.getName()).getEncoded(ASN1Encoding.DER)));
                     break;
                 default:
-                    throw new IOException("Bad tag number: " + genName.getTagNo());
+                    throw new IOException("Bad tag number: " + generalName.getTagNo());
             }
         }
-        return Collections.unmodifiableList(temp);
-
     }
 }

@@ -138,6 +138,15 @@ public class X509GeneralName implements Serializable {
     }
 
     /**
+     * Create an X509GeneralName from a directory name
+     * @param directoryName
+     * @return
+     */
+    public static X509GeneralName fromDirectoryName(String directoryName) {
+        return new X509GeneralName(Type.directoryName, directoryName);
+    }
+
+    /**
      * Create an X509GeneralName from an IPv4 address (dotted decimal) or an IPv6 address (colon delimited).
      *
      * @param ipAddress an IPv4 or IPv6 address in string format.  Required.

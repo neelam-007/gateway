@@ -77,7 +77,8 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
         //extract SANs from the certReqInfo
         if(certGenParams.getSubjectAlternativeNames() == null) {
             logger.log(Level.FINE,"Extracting SANs from the CSR info...");
-            List<X509GeneralName> sANs = BouncyCastleCertUtils.extractSubjectAlternativeNamesFromCsrInfoAttr(certReqInfo.getAttributes());
+
+            List<X509GeneralName> sANs = BouncyCastleCertUtils.extractSubjectAlternativeNamesFromCertRequest(pkcs10);
             if(!sANs.isEmpty()) {
                 certGenParams.setIncludeSubjectAlternativeName(true);
                 certGenParams.setSubjectAlternativeNames(sANs);
