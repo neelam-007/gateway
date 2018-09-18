@@ -94,7 +94,13 @@ public class ServerCodeInjectionProtectionAssertion extends ServerInjectionThrea
         logAndAudit(AssertionMessages.CODEINJECTIONPROTECTION_SCANNING_BODY_URLENCODED);
 
         final StringBuilder evidence = new StringBuilder();
-        final Map<String, String[]> urlParams = httpServletRequestKnob.getRequestBodyParameterMap();
+        final Map<String, String[]> urlParams;
+        try {
+            urlParams = httpServletRequestKnob.getRawRequestBodyParameterMap();
+        } catch (IllegalArgumentException iae) {
+            logAndAuditCannotParse("Request message body", iae.getMessage());
+            return getBadMessageStatus();
+        }
 
         for (Map.Entry<String, String[]> entry : urlParams.entrySet()) {
             final String urlParamName = entry.getKey();
@@ -444,5 +450,10 @@ public class ServerCodeInjectionProtectionAssertion extends ServerInjectionThrea
     @Override
     protected void logAndAuditAttackRejected() {
         // no logging for this case
+    }
+
+    @Override
+    protected void logAndAuditCannotParse(String location, String errorMessage) {
+        logAndAudit(AssertionMessages.CODEINJECTIONPROTECTION_CANNOT_PARSE, location, errorMessage);
     }
 }

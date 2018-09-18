@@ -536,6 +536,83 @@ public class ServerCodeInjectionProtectionAssertionTest {
         checkAuditPresence(false, false, true, false, false);
     }
 
+    @Test
+    public void testCheckRequest_InvalidCharInFormPost_HtmlProtection() throws PolicyAssertionException, IOException {
+        CodeInjectionProtectionAssertion assertion =
+                createAssertion(TargetMessageType.REQUEST, false, false, true, HTML_JAVASCRIPT);
+
+        ServerCodeInjectionProtectionAssertion serverAssertion = createServer(assertion);
+
+        final String formValue = ((char) 0x00) + "<script>alert(123)</script>";
+        final PolicyEnforcementContext context = getContext("a=" + formValue, ContentTypeHeader.APPLICATION_X_WWW_FORM_URLENCODED);
+
+        final AssertionStatus status = serverAssertion.checkRequest(context);
+
+        assertEquals(AssertionStatus.BAD_REQUEST, status);
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROTECTION_CANNOT_PARSE));
+    }
+
+    @Test
+    public void testCheckRequest_ValidCharInFormPostWithScriptTag_HtmlProtection() throws PolicyAssertionException,
+            IOException {
+        CodeInjectionProtectionAssertion assertion =
+                createAssertion(TargetMessageType.REQUEST, false, false, true, HTML_JAVASCRIPT);
+
+        ServerCodeInjectionProtectionAssertion serverAssertion = createServer(assertion);
+
+        final String formValue = "~<script>alert(123)</script>";
+        final PolicyEnforcementContext context = getContext("a=" + formValue, ContentTypeHeader.APPLICATION_X_WWW_FORM_URLENCODED);
+
+        final AssertionStatus status = serverAssertion.checkRequest(context);
+
+        assertEquals(AssertionStatus.FALSIFIED, status);
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROTECTION_DETECTED));
+
+        checkAuditPresence(false, false, true, false, false);
+    }
+
+    @Test
+    public void testCheckRequest_InvalidCharInQueryString_HtmlProtection() throws PolicyAssertionException, IOException {
+        CodeInjectionProtectionAssertion assertion =
+                createAssertion(TargetMessageType.REQUEST, false, true, true, HTML_JAVASCRIPT);
+
+        final String queryStr = ((char) 0x00) + "<script>alert(123)</script>";
+        Message request = createRequest(HttpMethod.GET, BENIGN_URL_PATH, "a=" + queryStr, null, ContentTypeHeader.NONE);
+
+        final PolicyEnforcementContext context =
+                PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
+
+        ServerCodeInjectionProtectionAssertion serverAssertion = createServer(assertion);
+
+        final AssertionStatus status = serverAssertion.checkRequest(context);
+
+        assertEquals(AssertionStatus.BAD_REQUEST, status);
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROTECTION_CANNOT_PARSE));
+
+        checkAuditPresence(false, true, false, false, false);
+    }
+
+    @Test
+    public void testCheckRequest_ValidCharInQueryStringScriptTag_HtmlProtection() throws PolicyAssertionException, IOException {
+        CodeInjectionProtectionAssertion assertion =
+                createAssertion(TargetMessageType.REQUEST, false, true, true, HTML_JAVASCRIPT);
+
+        final String queryStr = "~<script>alert(123)</script>";
+        Message request = createRequest(HttpMethod.GET, BENIGN_URL_PATH, "a=" + queryStr, null, ContentTypeHeader.NONE);
+
+        final PolicyEnforcementContext context =
+                PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, new Message());
+
+        ServerCodeInjectionProtectionAssertion serverAssertion = createServer(assertion);
+
+        final AssertionStatus status = serverAssertion.checkRequest(context);
+
+        assertEquals(AssertionStatus.BAD_REQUEST, status);
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROTECTION_DETECTED_PARAM));
+
+        checkAuditPresence(false, true, false, false, true);
+    }
+
     // Helper methods
 
     private AssertionStatus runTestOnRequestUrl(String urlPath, String urlQueryString,

@@ -127,4 +127,9 @@ public class ServerSqlAttackAssertion extends ServerInjectionThreatProtectionAss
     protected void logAndAuditAttackRejected() {
         logAndAudit(AssertionMessages.SQLATTACK_REJECTED, assertion.getTargetName());
     }
+
+    @Override
+    protected void logAndAuditCannotParse(String location, String exceptionMessage) {
+        logAndAudit(AssertionMessages.SQLATTACK_CANNOT_PARSE, location, exceptionMessage);
+    }
 }

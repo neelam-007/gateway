@@ -220,6 +220,22 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
     }
 
     /**
+     * Parses the query string params and returns without caching it. Use {@link #getQueryParameterMap()} for
+     * better performance.
+     * @return the Map&lt;String, String[]&gt; of parameters found in the URL query string.
+     */
+    public Map<String, String[]> getRawQueryParameterMap() {
+        final String q = getQueryString();
+        if (StringUtils.isBlank(q)) {
+            return Collections.emptyMap();
+        } else {
+            final TreeMap<String, String[]> newmap = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+            newmap.putAll(ParameterizedString.parseQueryString(q, true));
+            return Collections.unmodifiableMap(newmap);
+        }
+    }
+
+    /**
      * @return the Map&lt;String, String[]&gt; of parameters found in the request message body.
      * @since SecureSpan 3.7
      * @throws java.io.IOException if unable to read parameters
@@ -227,6 +243,44 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
     public Map<String, String[]> getRequestBodyParameterMap() throws IOException {
         if (requestBodyParams == null) collectParameters();
         return requestBodyParams;
+    }
+
+    /**
+     * Parses the request body params and returns without caching it. Use {@link #getRequestBodyParameterMap()} for
+     * better performance.
+     * @return the Map&lt;String, String[]&gt; of parameters found in the request message body.
+     * @throws IOException if unable to read parameters
+     */
+    public Map<String, String[]> getRawRequestBodyParameterMap() throws IOException {
+
+        // Check size
+        final int len = request.getContentLength();
+        final int maxLen = ConfigFactory.getIntProperty( PARAM_MAX_FORM_POST, 512 * 1024 );
+        if (len > maxLen) throw new IOException(MessageFormat.format("Request too long (Content-Length = {0} bytes)", len));
+        if (len == -1) {
+            return Collections.emptyMap();
+        }
+
+        ContentTypeHeader ctype = null;
+
+        //check if the Content-Type header is present
+        if(StringUtils.isNotBlank(request.getHeader(MimeUtil.CONTENT_TYPE))) {
+            ctype = ContentTypeHeader.parseValue(request.getHeader(MimeUtil.CONTENT_TYPE));
+        }
+
+        if (ctype != null && !ctype.matches(ContentTypeHeader.APPLICATION_X_WWW_FORM_URLENCODED)) {
+            return Collections.emptyMap();
+        }
+
+        final Charset enc = ctype != null ? ctype.getEncoding() : ContentTypeHeader.OCTET_STREAM_DEFAULT.getEncoding();
+
+        final byte[] buf = IOUtils.slurpStream(request.getInputStream());
+        final String body = new String(buf, enc);
+        final Map<String, String[]> rawRequestBodyParams = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+
+        ParameterizedString.parseParameterString(rawRequestBodyParams, body, true);
+
+        return rawRequestBodyParams;
     }
 
     @Override

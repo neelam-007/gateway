@@ -86,12 +86,17 @@ public abstract class ServerInjectionThreatProtectionAssertion<AT extends Inject
         return AssertionStatus.NONE;
     }
 
-    protected AssertionStatus scanHttpRequestUrlQueryString(final HttpServletRequestKnob httpServletRequestKnob)
-            throws IOException {
+    protected AssertionStatus scanHttpRequestUrlQueryString(final HttpServletRequestKnob httpServletRequestKnob) {
         logAndAuditScanningUrlQueryString();
 
         final StringBuilder evidence = new StringBuilder();
-        final Map<String, String[]> urlParams = httpServletRequestKnob.getQueryParameterMap();
+        final Map<String, String[]> urlParams;
+        try {
+            urlParams = httpServletRequestKnob.getRawQueryParameterMap();
+        } catch (IllegalArgumentException iae) {
+            logAndAuditCannotParse("Request URL", iae.getMessage());
+            return getBadMessageStatus();
+        }
 
         for (Map.Entry<String, String[]> entry : urlParams.entrySet()) {
             final String urlParamName = entry.getKey();
@@ -137,4 +142,6 @@ public abstract class ServerInjectionThreatProtectionAssertion<AT extends Inject
     protected abstract void logAndAuditAttackDetectedInQueryParameter(StringBuilder evidence, String urlParamName, String protectionViolated);
 
     protected abstract void logAndAuditAttackRejected();
+
+    protected abstract void logAndAuditCannotParse(String location, String exceptionMessage);
 }
