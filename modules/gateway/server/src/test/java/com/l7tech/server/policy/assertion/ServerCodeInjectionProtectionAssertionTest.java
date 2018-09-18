@@ -519,6 +519,23 @@ public class ServerCodeInjectionProtectionAssertionTest {
         checkAuditPresence(false, true, false, false, true);
     }
 
+    @Test
+    public void testCheckRequest_SvgTagInFormPost_HtmlProtection() throws PolicyAssertionException, IOException {
+        CodeInjectionProtectionAssertion assertion =
+                createAssertion(TargetMessageType.REQUEST, false, false, true, HTML_JAVASCRIPT);
+
+        ServerCodeInjectionProtectionAssertion serverAssertion = createServer(assertion);
+
+        final PolicyEnforcementContext context = getContext("a=%3Csvg+xmlns%3D%22https%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22+onload%3D%22alert%281%29%22%2F%3E", ContentTypeHeader.APPLICATION_X_WWW_FORM_URLENCODED);
+
+        final AssertionStatus status = serverAssertion.checkRequest(context);
+
+        assertEquals(AssertionStatus.FALSIFIED, status);
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROTECTION_DETECTED));
+
+        checkAuditPresence(false, false, true, false, false);
+    }
+
     // Helper methods
 
     private AssertionStatus runTestOnRequestUrl(String urlPath, String urlQueryString,
@@ -573,6 +590,8 @@ public class ServerCodeInjectionProtectionAssertionTest {
         MockHttpServletResponse hresponse = new MockHttpServletResponse();
 
         if (requestBody != null) {
+            hrequest.setContent(requestBody.getBytes());
+            hrequest.setContentType(contentTypeHeader.getType());
             request.initialize(stashManager, contentTypeHeader,
                     new ByteArrayInputStream(requestBody.getBytes(Charsets.UTF8)));
         }

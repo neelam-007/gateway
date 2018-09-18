@@ -78,8 +78,8 @@ public class CodeInjectionProtectionType implements Serializable, Cloneable {
     public static final CodeInjectionProtectionType HTML_JAVASCRIPT = new CodeInjectionProtectionType(
             "htmlJavaScriptInjection",
             "HTML/JavaScript Injection (Cross Site Scripting)",
-            "Block messages which contain HTML tags that can be used to inject code (including <applet>, <body>, <embed>, <frame>, <frameset>, <html>, <iframe>, <ilayer>, <img>, <layer>, <link>, <meta>, <object>, <script>, <style>).",
-            Pattern.compile("<\\s*(?:applet|body|embed|frame|frameset|html|iframe|ilayer|img|layer|link|meta|object|script|style)\\b", Pattern.CASE_INSENSITIVE),
+            "Block messages which contain HTML tags that can be used to inject code (including <applet>, <body>, <embed>, <frame>, <frameset>, <html>, <iframe>, <ilayer>, <img>, <layer>, <link>, <meta>, <object>, <script>, <style>, <svg>).",
+            Pattern.compile("<\\s*(?:applet|body|embed|frame|frameset|html|iframe|ilayer|img|layer|link|meta|object|script|style|svg)\\b", Pattern.CASE_INSENSITIVE),
             true,
             true);
     public static final CodeInjectionProtectionType PHP_EVAL_INJECTION = new CodeInjectionProtectionType(
