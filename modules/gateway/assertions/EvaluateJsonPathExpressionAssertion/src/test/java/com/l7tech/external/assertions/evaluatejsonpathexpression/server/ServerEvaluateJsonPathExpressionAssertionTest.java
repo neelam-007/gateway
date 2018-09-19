@@ -39,6 +39,11 @@ public class ServerEvaluateJsonPathExpressionAssertionTest {
     private static ApplicationContext applicationContext = ApplicationContexts.getTestApplicationContext();
     private static ServerConfig serverConfig = applicationContext.getBean("serverConfig", ServerConfigStub.class);
 
+    private static final String EVALUATOR_JSONPATH = "JsonPath";
+    private static final String VAR_NAME_JSONPATH_FOUND = "jsonPath.found";
+    private static final String VAR_NAME_JSONPATH_COUNT = "jsonPath.count";
+    private static final String VAR_NAME_JSONPATH_RESULTS = "jsonPath.results";
+
     private static final String TEST_JSON = "{ \"store\": {\n" +
             "    \"book\": [ \n" +
             "      { \"category\": \"reference\",\n" +
@@ -80,6 +85,16 @@ public class ServerEvaluateJsonPathExpressionAssertionTest {
             "      \"price\": 19.95\n" +
             "    },\n" +
             "    \"members\": []\n" +
+            "  }\n" +
+            "}";
+
+    private static final String TEST_JSON_WITH_NULL_ATTRIBUTE = "{\n" +
+            "  \"book\": {\n" +
+            "    \"category\": \"fiction\",\n" +
+            "    \"author\": \"J. R. R. Tolkien\",\n" +
+            "    \"title\": \"The Lord of the Rings\",\n" +
+            "    \"isbn\": \"0-395-19395-8\",\n" +
+            "    \"price\": null\n" +
             "  }\n" +
             "}";
 
@@ -487,6 +502,25 @@ public class ServerEvaluateJsonPathExpressionAssertionTest {
         } catch (Exception e) {
             Assert.fail("Test JsonPath failed: " + e.getMessage());
         }
+    }
+
+    @BugId("DE384413")
+    @Test
+    public void testEvaluateJsonPathExpression_Null_Result() throws Exception {
+        assertion.setEvaluator(EVALUATOR_JSONPATH);
+        assertion.setExpression("$.book.price");
+
+        request.initialize(new ByteArrayStashManager(), ContentTypeHeader.APPLICATION_JSON,
+                new ByteArrayInputStream(TEST_JSON_WITH_NULL_ATTRIBUTE.getBytes()));
+
+        final AssertionStatus status = serverAssertion.checkRequest(pec);
+        Assert.assertEquals(AssertionStatus.NONE, status);
+        Assert.assertEquals(true, pec.getVariable(VAR_NAME_JSONPATH_FOUND));
+        Assert.assertEquals(1, pec.getVariable(VAR_NAME_JSONPATH_COUNT));
+
+        /* jsonPath.result throws NoSuchVariableException as it is NOT set if the value is NULL.
+        Check for jsonPath.results instead. */
+        Assert.assertEquals(null, ((String[]) pec.getVariable(VAR_NAME_JSONPATH_RESULTS))[0]);
     }
 
     private void doTestForNonExistingContextVar(final String varName) {

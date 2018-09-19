@@ -79,7 +79,7 @@ public enum JsonPathEvaluator implements Evaluator {
         if (jsonCompression && obj instanceof JSONAwareEx) {
             return ((JSONAwareEx)obj).toJSONString(JSONStyle.MAX_COMPRESS);
         } else {
-            return obj.toString();
+            return obj != null ? obj.toString() : null;
         }
     }
 
