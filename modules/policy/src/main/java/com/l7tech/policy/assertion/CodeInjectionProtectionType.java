@@ -118,9 +118,17 @@ public class CodeInjectionProtectionType implements Serializable, Cloneable {
             Pattern.compile("[\"*^';&<>()]"),
             true,
             true);
+    public static final CodeInjectionProtectionType HEX_HTML_JAVASCRIPT = new CodeInjectionProtectionType(
+            "hexEncodedInjection",
+            "Hex/Octal Encoded HTML/Javascript Injection",
+            "Block messages which contain Hex/Octal encoded HTML tags that can be used to inject code (including <applet>, <body>, <embed>, <frame>, <frameset>, <html>, <iframe>, <ilayer>, <img>, <layer>, <link>, <meta>, <object>, <script>, <style>, <svg>).",
+            Pattern.compile("(?:(?:\\\\x[0-9a-fA-F][0-9a-fA-F])+)|(?:(?:\\\\[0-7]{1,3})+)"),
+            true,
+            true);
 
     private static final CodeInjectionProtectionType[] _values = new CodeInjectionProtectionType[]{
             HTML_JAVASCRIPT,
+            HEX_HTML_JAVASCRIPT,
             PHP_EVAL_INJECTION,
             SHELL_INJECTION,
             LDAP_DN_INJECTION,

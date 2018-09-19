@@ -303,7 +303,8 @@ public class ServerCodeInjectionProtectionAssertionTest {
         final CodeInjectionProtectionType[] protectionTypes = CodeInjectionProtectionType.values();
         for (CodeInjectionProtectionType protectionType : protectionTypes) {
 
-            if (protectionType == HTML_JAVASCRIPT) continue; //not as simple as going through its chars
+            //not as simple as going through its chars
+            if (protectionType == HTML_JAVASCRIPT || protectionType == HEX_HTML_JAVASCRIPT) continue;
 
             System.out.println(protectionType.getDisplayName());
 
@@ -611,6 +612,76 @@ public class ServerCodeInjectionProtectionAssertionTest {
         assertTrue(testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROTECTION_DETECTED_PARAM));
 
         checkAuditPresence(false, true, false, false, true);
+    }
+
+    @Test
+    public void testCheckRequest_HexEncodedCode() throws PolicyAssertionException, IOException {
+        CodeInjectionProtectionAssertion assertion =
+                createAssertion(TargetMessageType.REQUEST, false, false, true, HEX_HTML_JAVASCRIPT);
+
+        ServerCodeInjectionProtectionAssertion serverAssertion = createServer(assertion);
+
+        // Hex for <script>alert(1)</script>
+        final String formValue = "\\x3c\\x73\\x63\\x72\\x69\\x70\\x74\\x3e\\x61\\x6c\\x65\\x72\\x74\\x28\\x31\\x29\\x3b\\x3c\\x2f\\x73\\x63\\x72\\x69\\x70\\x74\\x3e";
+        final PolicyEnforcementContext context = getContext("a=" + formValue, ContentTypeHeader.APPLICATION_X_WWW_FORM_URLENCODED);
+
+        final AssertionStatus status = serverAssertion.checkRequest(context);
+
+        assertEquals(AssertionStatus.FALSIFIED, status);
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROTECTION_DETECTED));
+    }
+
+    @Test
+    public void testCheckRequest_OctalEncodedCode() throws PolicyAssertionException, IOException {
+        CodeInjectionProtectionAssertion assertion =
+                createAssertion(TargetMessageType.REQUEST, false, false, true, HEX_HTML_JAVASCRIPT);
+
+        ServerCodeInjectionProtectionAssertion serverAssertion = createServer(assertion);
+
+        // Octal for <script>alert(1)</script>
+        final String formValue = "\\74\\163\\143\\162\\151\\160\\164\\76\\141\\154\\145\\162\\164\\50\\61\\51\\73\\74" +
+                "\\57\\163\\143\\162\\151\\160\\164\\76";
+        final PolicyEnforcementContext context = getContext("a=" + formValue, ContentTypeHeader.APPLICATION_X_WWW_FORM_URLENCODED);
+
+        final AssertionStatus status = serverAssertion.checkRequest(context);
+
+        assertEquals(AssertionStatus.FALSIFIED, status);
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROTECTION_DETECTED));
+    }
+
+    @Test
+    public void testCheckRequest_HexAndOctalEncodedCode() throws PolicyAssertionException, IOException {
+        CodeInjectionProtectionAssertion assertion =
+                createAssertion(TargetMessageType.REQUEST, false, false, true, HEX_HTML_JAVASCRIPT);
+
+        ServerCodeInjectionProtectionAssertion serverAssertion = createServer(assertion);
+
+        // Hex or Octal for <script>alert(1)</script>
+        final String formValue = "\\74\\163\\143\\162\\151\\160\\x74\\76\\141\\x6c\\145\\x72\\x74\\x28\\x31\\51\\x3c\\x2f\\163\\143\\162\\x69\\160\\164\\76";
+        final PolicyEnforcementContext context = getContext("a=" + formValue, ContentTypeHeader.APPLICATION_X_WWW_FORM_URLENCODED);
+
+        final AssertionStatus status = serverAssertion.checkRequest(context);
+
+        assertEquals(AssertionStatus.FALSIFIED, status);
+        assertTrue(testAudit.isAuditPresent(AssertionMessages.CODEINJECTIONPROTECTION_DETECTED));
+    }
+
+    @Test
+    public void testCheckRequest_HexOctal_FalsePositiveCase_MustNotMarkThreat() throws PolicyAssertionException,
+            IOException {
+        CodeInjectionProtectionAssertion assertion =
+                createAssertion(TargetMessageType.REQUEST, false, false, true, HEX_HTML_JAVASCRIPT);
+
+        ServerCodeInjectionProtectionAssertion serverAssertion = createServer(assertion);
+
+        // Form value which looks like threat (contains "<script" keyword) but is not actually a valid HTML tag
+        // (<scripting> is not a tag) so skipped
+        final String formValue = "<\\x73\\163ripting>+tag";
+        final PolicyEnforcementContext context = getContext("a=" + formValue, ContentTypeHeader.APPLICATION_X_WWW_FORM_URLENCODED);
+
+        final AssertionStatus status = serverAssertion.checkRequest(context);
+
+        assertEquals(AssertionStatus.NONE, status);
     }
 
     // Helper methods

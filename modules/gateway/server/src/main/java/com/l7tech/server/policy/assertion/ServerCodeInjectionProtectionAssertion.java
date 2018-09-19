@@ -18,13 +18,21 @@ import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.IOUtils;
 import com.l7tech.util.TextUtils;
+import org.apache.commons.codec.DecoderException;
+import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.lang3.StringUtils;
 import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Enforces the Code Injection Protection Assertion.
@@ -38,6 +46,8 @@ public class ServerCodeInjectionProtectionAssertion extends ServerInjectionThrea
 
     /** Number of characters behind the suspicious code to log when detected. */
     private static final int EVIDENCE_MARGIN_AFTER = 24;
+
+    private static final Logger LOGGER = Logger.getLogger(ServerCodeInjectionProtectionAssertion.class.getName());
 
     public ServerCodeInjectionProtectionAssertion(final CodeInjectionProtectionAssertion assertion) {
         super(assertion);
@@ -389,8 +399,19 @@ public class ServerCodeInjectionProtectionAssertion extends ServerInjectionThrea
         int minIndex = -1;
 
         for (CodeInjectionProtectionType protection : protections) {
+            String valueToScan = s;
+            Pattern compiledPattern = protection.getPattern();
+            /*
+             * Check if protection is HEX_HTML_JAVASCRIPT. In that case, we need to try converting HEX or OCTAL code
+             * (if any) into it's UTF-8 (or default charset) representation and then apply HTML_JAVASCRIPT protection
+             * for various HTML tags.
+             */
+            if (protection == CodeInjectionProtectionType.HEX_HTML_JAVASCRIPT) {
+                valueToScan = convertHexOrOctalEncodedToText(s, protection.getPattern());
+                compiledPattern = CodeInjectionProtectionType.HTML_JAVASCRIPT.getPattern();
+            }
             final StringBuilder tmpEvidence = new StringBuilder();
-            final int index = TextUtils.scanAndRecordMatch(s, protection.getPattern(), tmpEvidence);
+            final int index = TextUtils.scanAndRecordMatch(valueToScan, compiledPattern, tmpEvidence);
             if (index != -1 && (minIndex == -1 || index < minIndex)) {
                 minIndex = index;
                 evidence.setLength(0);
@@ -400,6 +421,82 @@ public class ServerCodeInjectionProtectionAssertion extends ServerInjectionThrea
         }
 
         return protectionViolated;
+    }
+
+    /**
+     * This method tries converting HEX or OCTAL encoded texts in the string to it's ASCII representation.
+     * @param s the string to convert
+     * @param pattern Compiled pattern to detect HEX or Octal code
+     * @return the converted string
+     */
+    private static String convertHexOrOctalEncodedToText(final String s, final Pattern pattern) {
+        final Matcher matcher = pattern.matcher(s);
+        final List<String> searchList = new ArrayList<>();
+        final List<String> replacementList = new ArrayList<>();
+        while (matcher.find()) {
+            final String group = matcher.group();
+            searchList.add(group);
+            String replacement;
+            // Check if group is HEX code
+            if (isJavascriptOrPhpHexEncodedCode(group)) {
+                replacement = parseHexEncodedCode(group);
+            } else {
+                // Else, it is Octet code
+                replacement = parseOctetCode(group);
+            }
+            replacementList.add(replacement);
+        }
+        if (searchList.isEmpty()) {
+            // No HEX or OCTAL code found, return the same string.
+            return s;
+        } else {
+            return StringUtils.replaceEach(s, searchList.toArray(new String[searchList.size()]),
+                    replacementList.toArray(new String[replacementList.size()]));
+        }
+    }
+
+    /**
+     * Parses the HEX code and decode it to it's UTF-8 (or default charset) representation.
+     * @param hexCode HEX encoded code to be parsed
+     * @return the UTF-8 representation
+     */
+    private static String parseHexEncodedCode(final String hexCode) {
+        String groupWithoutHexPrefix = hexCode.replace("\\x", "");
+        try {
+            return new String(Hex.decodeHex(groupWithoutHexPrefix.toCharArray()));
+        } catch (DecoderException e) {
+            // This should never occur as we have already checked for HEX format in Pattern. Hence, log and ignore.
+            LOGGER.log(Level.WARNING, "Hex decoding failed for pattern group {0}", hexCode);
+        }
+        return hexCode;
+    }
+
+    /**
+     * Parses the OCTET code and decode it to it's UTF-8 (or default charset) representation.
+     * @param octetCode OCTET encoded code to be parsed
+     * @return the UTF-8 representation
+     */
+    private static String parseOctetCode(final String octetCode) {
+        String[] split = octetCode.split("\\\\");
+        if (split.length > 2) {
+            final StringBuilder sb = new StringBuilder();
+            // Start with index 1 as 1st string will always be blank because Octal code will start with "\".
+            for (int i = 1; i < split.length; i++) {
+                sb.append((char) Integer.parseInt(split[i], 8));
+            }
+            return sb.toString();
+        } else {
+            return new String(new char[] {(char) Integer.parseInt(split[1], 8)});
+        }
+    }
+
+    /**
+     * Checks if the code is Javascript or PHP HEX encoded code.
+     * @param code the code to be checked
+     * @return true if it HEX encoded code, else false
+     */
+    private static boolean isJavascriptOrPhpHexEncodedCode(final String code) {
+        return StringUtils.startsWith(code, "\\x");
     }
 
     @Override
