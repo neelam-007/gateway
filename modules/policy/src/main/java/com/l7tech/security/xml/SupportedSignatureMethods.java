@@ -24,7 +24,7 @@ public enum SupportedSignatureMethods {
     /** RSA with SHA-256 extension*/
     RSA_SHA256("RSA", "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256", SHA256),
     /* RSA with SHA-256 to support RSASSA-PSS with Parameters */
-    RSA_SHA256_MGF1("RSA", "http://www.w3.org/2007/05/xmldsig-more#sha256-rsa-MGF1", SHA256),
+    RSA_SHA256_MGF1("RSA", "http://www.w3.org/2007/05/xmldsig-more#sha256-rsa-MGF1", SHA256, "RSASSA-PSS"),
     /** RSA with SHA-384 extension*/
     RSA_SHA384("RSA", "http://www.w3.org/2001/04/xmldsig-more#rsa-sha384", SHA384),
     /** RSA with SHA-512 extension*/
@@ -60,6 +60,22 @@ public enum SupportedSignatureMethods {
         this.algorithmIdentifier = algId;
         this.digestMethod = digestMethod;
         this.displayName = keyAlg + " / " + digestMethod.getCanonicalName();
+    }
+
+
+    /**
+     * Private constructor.
+     *
+     * @param keyAlg the key algorithm
+     * @param algId the algorithm id
+     * @param msgDigestId the message digest id
+     * @param displayName name of the signature method to be displayed in the assertion's properties dialog
+     */
+    private SupportedSignatureMethods(String keyAlg, String algId, SupportedDigestMethods digestMethod, String algName) {
+        this.keyAlg = keyAlg;
+        this.algorithmIdentifier = algId;
+        this.digestMethod = digestMethod;
+        this.displayName = algName + " / " + digestMethod.getCanonicalName();
     }
 
     /**
