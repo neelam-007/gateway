@@ -119,6 +119,9 @@ public class SshSessionFactory implements KeyedPoolableObjectFactory<SshSessionK
         session.setConfig("cipher.c2s", ciphersString);
         session.setConfig("CheckCiphers", ciphersString);
 
+        //set key exchange algorithm and preference
+        session.setConfig("kex","diffie-hellman-group14-sha1,diffie-hellman-group1-sha1,diffie-hellman-group-exchange-sha1");
+
         // add the macs used on the session
         String macsString = reduce(sshSessionKey.getMacAlgorithms(), "", new Functions.Binary<String, String, String>() {
             @Override

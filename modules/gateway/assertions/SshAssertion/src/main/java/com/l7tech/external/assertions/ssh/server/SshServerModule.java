@@ -58,6 +58,7 @@ import org.apache.sshd.server.*;
 import org.apache.sshd.server.channel.ChannelSession;
 import org.apache.sshd.server.channel.OpenChannelException;
 import org.apache.sshd.server.kex.DHG1;
+import org.apache.sshd.server.kex.DHG14;
 import org.apache.sshd.server.session.ServerSession;
 import org.apache.sshd.server.session.SessionFactory;
 import org.apache.sshd.server.sftp.SftpSubsystem;
@@ -385,7 +386,8 @@ public class SshServerModule extends TransportModule implements ApplicationListe
         }
 
         final SshServer sshd = new SshServer();
-        sshd.setKeyExchangeFactories(Arrays.<NamedFactory<KeyExchange>>asList(new DHG1.Factory()));
+        sshd.setKeyExchangeFactories(Arrays.<NamedFactory<KeyExchange>>asList(new DHG14.Factory(), new DHG1.Factory()));
+
         sshd.setRandomFactory(new SingletonRandomFactory(new JceRandom.Factory()));
 
         sshd.setCompressionFactories(Arrays.<NamedFactory<Compression>>asList(
