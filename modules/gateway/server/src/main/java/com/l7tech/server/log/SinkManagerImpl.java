@@ -466,6 +466,8 @@ public class SinkManagerImpl
 
     static final String TRAFFIC_LOGGER_NAME = "com.l7tech.traffic";
     static final String AUTO_CREATE_ROLE_PROPERTY = "rbac.autoRole.viewSink.autoCreate";
+    static final String FILE_LOGSINKS_DISABLE_PROPERTY = "com.l7tech.server.disableFileLogsinks";
+
 
     //- PRIVATE
 
@@ -721,6 +723,9 @@ public class SinkManagerImpl
                 if ( !isValid( sinkConfiguration ) ) {
                     if ( logger.isLoggable(Level.CONFIG) )
                         logger.log(Level.CONFIG, "Ignoring invalid log sink configuration ''{0}''.", sinkConfiguration.getName());
+                } else if ( sinkConfiguration.getType().equals(SinkConfiguration.SinkType.FILE) && serverConfig.getBooleanProperty(FILE_LOGSINKS_DISABLE_PROPERTY, false) ) {
+                    if ( logger.isLoggable(Level.CONFIG) )
+                        logger.log(Level.CONFIG, "All file logs sinks disabled. Ignoring log sink configuration ''{0}''.", sinkConfiguration.getName());
                 } else {
                     MessageSinkSupport sink = buildSinkForConfiguration( sinkConfiguration );
 
