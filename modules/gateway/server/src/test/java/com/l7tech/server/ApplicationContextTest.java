@@ -74,7 +74,9 @@ public class ApplicationContextTest  {
             "com.l7tech.gateway.common.jdbc.JdbcAdmin.testJdbcConnection",
             "com.l7tech.gateway.common.cluster.ClusterStatusAdmin.isCluster",
             "com.l7tech.gateway.common.admin.UDDIRegistryAdmin.testUDDIRegistryAuthentication",
-            "com.l7tech.gateway.common.siteminder.SiteMinderAdmin.registerSiteMinderConfiguration"
+            "com.l7tech.gateway.common.siteminder.SiteMinderAdmin.registerSiteMinderConfiguration",
+			"com.l7tech.gateway.common.security.rbac.RbacAdmin.findNamesForEntityHeaders",
+			"com.l7tech.gateway.common.security.rbac.RbacAdmin.findPermissionGroupScopeDescriptions"
             );
     private static final Set<EntityType> IGNORE_ENTITY_TYPES = set(
         EntityType.ESM_ENTERPRISE_FOLDER,  

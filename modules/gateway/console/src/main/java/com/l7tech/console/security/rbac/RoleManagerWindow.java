@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
+import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.TableModelEvent;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
@@ -225,6 +226,15 @@ public class RoleManagerWindow extends JDialog {
                     run();
                 }
             }
+
+            @Override
+            public void valueChanged(final ListSelectionEvent e) {
+                //this method is called twice with true and false values for isAdjusting
+                //so load table only once when isAdjusting is true
+                if (e.getValueIsAdjusting()) {
+                    run();
+                }
+            }
         };
         rolesTable.getSelectionModel().addListSelectionListener(tableListener);
         rolesTableModel.addTableModelListener(tableListener);
@@ -257,7 +267,6 @@ public class RoleManagerWindow extends JDialog {
         try {
             // load full role with permissions and attached entity
             found = Registry.getDefault().getRbacAdmin().findRoleByPrimaryKey(roleGoid);
-            attachPredicateEntities(found);
         } catch (final FindException e) {
             logger.log(Level.WARNING, "Unable to retrieve role: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
         }
@@ -322,22 +331,5 @@ public class RoleManagerWindow extends JDialog {
             selected = rolesTableModel.getRowObject(modelIndex);
         }
         return selected;
-    }
-
-    private void attachPredicateEntities(final Role role) {
-        for (final Permission permission : role.getPermissions()) {
-            for (final ScopePredicate scopePredicate : permission.getScope()) {
-                if (scopePredicate instanceof ObjectIdentityPredicate) {
-                    final ObjectIdentityPredicate oip = (ObjectIdentityPredicate) scopePredicate;
-                    final String id = oip.getTargetEntityId();
-                    try {
-                        final EntityHeader header = Registry.getDefault().getRbacAdmin().findHeader(permission.getEntityType(), id);
-                        oip.setHeader(header);
-                    } catch (FindException | PermissionDeniedException e) {
-                        logger.log(Level.WARNING, "Couldn't look up EntityHeader for " + permission.getEntityType().getName() + " id=" + id + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                    }
-                }
-            }
-        }
     }
 }

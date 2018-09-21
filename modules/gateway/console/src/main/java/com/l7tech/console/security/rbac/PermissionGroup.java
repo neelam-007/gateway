@@ -20,6 +20,7 @@ public class PermissionGroup {
     private final Set<Permission> permissions = new HashSet<>();
     private final EntityType entityType;
     private final Set<ScopePredicate> scope;
+    private  String scopedDescription;
 
     /**
      * @param entityType the EntityType which applies to this PermissionGroup (optional because a Permission may not have an entity type).
@@ -89,6 +90,11 @@ public class PermissionGroup {
      */
     @NotNull
     public static Set<PermissionGroup> groupPermissions(@NotNull final Set<Permission> permissions) {
+        Map<Pair<EntityType, Set<ScopePredicate>>, PermissionGroup> groups = groupPermissionScopes(permissions);
+        return new HashSet<>(groups.values());
+    }
+    @NotNull
+    public static Map<Pair<EntityType, Set<ScopePredicate>>, PermissionGroup> groupPermissionScopes(@NotNull final Set<Permission> permissions) {
         final Map<Pair<EntityType, Set<ScopePredicate>>, PermissionGroup> groups = new LinkedHashMap<>();
         for (final Permission permission : permissions) {
             final EntityType entityType = permission.getEntityType();
@@ -102,10 +108,18 @@ public class PermissionGroup {
             }
             group.addPermission(permission);
         }
-        return new HashSet<>(groups.values());
+        return groups;
     }
 
     private static boolean scopesAreEqual(final Set<ScopePredicate> left, final Set<ScopePredicate> right) {
         return RbacUtilities.getAnonymousNoOidsCopyOfScope(left).equals(RbacUtilities.getAnonymousNoOidsCopyOfScope(right));
+    }
+
+    public String getScopedDescription() {
+        return scopedDescription;
+    }
+
+    public void setScopedDescription(final String scopedDescription) {
+        this.scopedDescription = scopedDescription;
     }
 }

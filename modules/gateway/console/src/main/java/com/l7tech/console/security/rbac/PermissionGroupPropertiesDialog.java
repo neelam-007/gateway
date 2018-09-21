@@ -47,7 +47,7 @@ public class PermissionGroupPropertiesDialog extends JDialog {
         getRootPane().setDefaultButton(closeButton);
         Utilities.setEscAction(this, closeButton);
         typeLabel.setText(group.getEntityType() == EntityType.ANY ? ALL : group.getEntityType().getName());
-        scopeTextArea.setText(getScopeDescription(group));
+        scopeTextArea.setText(group.getScopedDescription());
         final Set<String> operations = new TreeSet<>();
         boolean containsOther = false;
         for (final OperationType operationType : group.getOperations()) {

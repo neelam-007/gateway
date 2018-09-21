@@ -15,7 +15,6 @@ import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.policy.AssertionAccess;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import org.jetbrains.annotations.NotNull;
-
 import java.io.IOException;
 import java.security.KeyStoreException;
 import java.security.cert.CertificateException;
@@ -106,7 +105,7 @@ public class EntityUtils {
                             keyMetadata = new SsgKeyMetadata(key.getKeystoreId(), key.getAlias(), null);
                             keyMetadata.setGoid(new Goid(0,--nonPersistedMetadatas));
                         }
-                        entities.add(new KeyMetadataHeaderWrapper(keyMetadata));
+                        entities.add(new com.l7tech.gateway.common.security.rbac.KeyMetadataHeaderWrapper(keyMetadata));
                     }
                 }
             } catch (final IOException | KeyStoreException | CertificateException e) {

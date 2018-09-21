@@ -623,19 +623,24 @@ public class PermissionScopeSelectionPanel extends WizardStepPanel {
 
     private void loadEntities(final String typePlural) {
         final List<EntityHeader> entities = new ArrayList<>();
+        EntityHeaderSet<EntityHeader> foundEntities = null;
+        Map<EntityHeader, String> entityHeaderStringMap = new HashMap<>();
         try {
-            final EntityHeaderSet<EntityHeader> foundEntities = EntityUtils.getEntities(config.getType());
-            for (final EntityHeader foundEntity : foundEntities) {
-                try {
-                    specificObjectNames.put(foundEntity, Registry.getDefault().getEntityNameResolver().getNameForHeader(foundEntity, true));
-                    entities.add(foundEntity);
-                } catch (final FindException | PermissionDeniedException e) {
-                    // skip entities for which we cannot resolve a name as the user needs this info to make an informed decision
-                    logger.log(Level.WARNING, "Unable to resolve name for header " + foundEntity.toStringVerbose() + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                }
-            }
+            foundEntities = EntityUtils.getEntities(config.getType());
+            entityHeaderStringMap = Registry.getDefault().getRbacAdmin().findNamesForEntityHeaders(foundEntities);
         } catch (final FindException e) {
             logger.log(Level.WARNING, "Unable to retrieve entities: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+        }
+        if(foundEntities != null)
+        {
+            for (final EntityHeader foundEntity : foundEntities) {
+                String name = entityHeaderStringMap.get(foundEntity);
+                if (name != null) {
+                    name = Registry.getDefault().getEntityNameResolver().replaceRootAndPaletteFolders(name);
+                }
+                specificObjectNames.put(foundEntity, name);
+                entities.add(foundEntity);
+            }
         }
         specificObjectsModel.setRows(entities);
         specificObjectsTablePanel.configure(specificObjectsModel, new int[]{NAME_COL_INDEX}, typePlural);
