@@ -173,7 +173,7 @@ public abstract class ManagedSyslog implements Closeable {
     //- PRIVATE
 
     private static final String DEFAULT_LOG_PATTERN = "<{2}>{3} {5} {7}[{8}]: {9}";
-    private static final String SYSLOG_DATE_FORMAT_PATTERN = "MMM d HH:mm:ss";
+    private static final String SYSLOG_DATE_FORMAT_PATTERN = "MMM d HH:mm:ss.SSS";
 
     private final AtomicInteger referenceCount = new AtomicInteger(0);
     private SyslogManager manager;

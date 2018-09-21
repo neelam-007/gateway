@@ -33,8 +33,8 @@ import static org.junit.Assert.*;
  */
 public class SyslogManagerTest {
 
-    public static final String REGEX_STANDARD = "<([1-9][0-9]{0,2})>([A-Za-z]{3} [ 1-9][0-9] [0-9]{2}:[0-9]{2}:[0-9]{2}) ([a-zA-Z\\-_0-9]{1,1024}) ([a-zA-Z0-9\\-_]{1,1024})\\[([0-9]{1,10})\\]: ([a-zA-Z0-9 ]{0,10000})[\\n]{0,1}";
-    public static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    public static final String REGEX_STANDARD = "<([1-9][0-9]{0,2})>([A-Za-z]{3} [1-9][0-9]{0,1} [0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]{3}) ([a-zA-Z\\-_0-9]{1,1024}) ([a-zA-Z0-9\\-_]{1,1024})\\[([0-9]{1,10})\\]: ([a-zA-Z0-9 ]{0,10000})[\\n]{0,1}";
+    public static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 
     @AfterClass
     public static void cleanupSystemProperties() {
@@ -55,8 +55,8 @@ public class SyslogManagerTest {
         final SyslogSeverity severity = SyslogSeverity.INFORMATIONAL;
         final String process = "SSG-default_";
         final int threadId = 1;
-        final String date = "Dec  1 14:59:59";
-        final long time = sdf.parse("2007-12-01 14:59:59").getTime();
+        final String date = "Dec 1 14:59:59.999";
+        final long time = sdf.parse("2007-12-01 14:59:59.999").getTime();
         final String message = "Test message";
 
         String result = sendMessage(1234, facility, severity, hostname, process, (long) threadId, time, message);
@@ -95,8 +95,8 @@ public class SyslogManagerTest {
         final SyslogSeverity severity = SyslogSeverity.INFORMATIONAL;
         final String process = "SSG-default_";
         final int threadId = 1;
-        final String date = "Dec  1 14:59:59";
-        final long time = sdf.parse("2007-12-01 14:59:59").getTime();
+        final String date = "Dec 1 14:59:59.999";
+        final long time = sdf.parse("2007-12-01 14:59:59.999").getTime();
         final String message =
                 " 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789" +
                 " 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789" +
