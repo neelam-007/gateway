@@ -66,7 +66,9 @@ class ChildPolicyEnforcementContext extends PolicyEnforcementContextWrapper impl
 
     @Override
     public Pair<Binding, Operation> getBindingAndOperation() throws IOException, SAXException, WSDLException, InvalidDocumentFormatException {
-        return context.getBindingAndOperation();
+        //DE366490: 01077550-Variable ${request.soap.operation} not available within encapsulated assertion
+        //child context does not contain service/requestknob details which are required to get SOAP Binding operation. In order to make the built in context variable ${request.soap.operation} available through EA, calling getBindingAndOperation() through parentContext.
+        return parentContext.getBindingAndOperation();
     }
 
     @Override

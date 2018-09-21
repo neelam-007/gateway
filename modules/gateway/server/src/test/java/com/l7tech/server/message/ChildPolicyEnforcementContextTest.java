@@ -1,5 +1,7 @@
 package com.l7tech.server.message;
 
+import com.ibm.wsdl.BindingImpl;
+import com.ibm.wsdl.OperationImpl;
 import com.l7tech.message.Message;
 import com.l7tech.policy.assertion.MessageTargetableSupport;
 import com.l7tech.policy.assertion.RoutingStatus;
@@ -7,18 +9,20 @@ import com.l7tech.policy.assertion.TargetMessageType;
 import com.l7tech.policy.variable.NoSuchVariableException;
 import com.l7tech.server.RequestIdGenerator;
 import com.l7tech.test.BugId;
+import com.l7tech.util.Pair;
 import org.apache.commons.collections.CollectionUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
-import java.lang.annotation.Annotation;
+import javax.wsdl.Binding;
+import javax.wsdl.Operation;
 import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.*;
+import java.util.HashSet;
+import java.util.Set;
 
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
@@ -46,6 +50,19 @@ public class ChildPolicyEnforcementContextTest {
         parent.setVariable(NAME, VALUE);
         child.putParentVariable(NAME, false);
         assertEquals(VALUE, child.getVariable(NAME));
+    }
+
+    @Test
+    public void getWSDLOperationVariable() throws Exception {
+        PolicyEnforcementContext wsdlParent = spy(PolicyEnforcementContextFactory.createPolicyEnforcementContext(request, response));
+        ChildPolicyEnforcementContext wsdlChild = (ChildPolicyEnforcementContext) PolicyEnforcementContextFactory.createPolicyEnforcementContext(wsdlParent);
+
+        Operation operation = new OperationImpl();
+        operation.setName(VALUE);
+        when(wsdlParent.getBindingAndOperation()).thenReturn(new Pair<Binding, Operation>(new BindingImpl(), operation));
+
+        final Pair<Binding, Operation> bindPair = wsdlChild.getBindingAndOperation();
+        assertEquals(VALUE, bindPair.right.getName());
     }
 
     @Test
