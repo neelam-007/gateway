@@ -1,11 +1,11 @@
 package com.l7tech.external.assertions.apiportalintegration.server;
 
+import static com.l7tech.external.assertions.apiportalintegration.server.ServerIncrementalSyncCommon.API_PLAN_SETTING_ENABLE_STATUS;
 import com.google.common.base.Function;
 import com.google.common.base.Strings;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.l7tech.external.assertions.apiportalintegration.GetIncrementAssertion;
 import com.l7tech.external.assertions.apiportalintegration.IncrementPostBackAssertion;
 import com.l7tech.external.assertions.apiportalintegration.server.resource.PortalSyncPostbackJson;
 import com.l7tech.gateway.common.audit.AssertionMessages;
@@ -84,7 +84,6 @@ public class ServerIncrementPostBackAssertion extends AbstractServerAssertion<In
             final Object jdbcConnectionName = vars.get(assertion.getVariablePrefix() + "." + IncrementPostBackAssertion.SUFFIX_JDBC_CONNECTION);
             final Object nodeId = vars.get(assertion.getVariablePrefix() + "." + IncrementPostBackAssertion.SUFFIX_NODE_ID);
             final Object tenantId = vars.get(assertion.getVariablePrefix() + "." + IncrementPostBackAssertion.SUFFIX_TENANT_ID);
-            Object appsWithApiPlans = vars.get(assertion.getVariablePrefix() + "." + GetIncrementAssertion.SUFFIX_APPS_WITH_API_PLANS);
             //validate inputs
             if (jsonPayload == null || !(jsonPayload instanceof String) || ((String) jsonPayload).isEmpty()) {
                 throw new PolicyAssertionException(assertion, "Assertion must supply a sync postback message");
@@ -107,8 +106,7 @@ public class ServerIncrementPostBackAssertion extends AbstractServerAssertion<In
             transactionManager = transactionManager == null ? new DataSourceTransactionManager(dataSource) : transactionManager;
 
             PortalSyncPostbackJson postback = buildAndValidatePostbackJson((String) jsonPayload);
-            processApplicationSyncPostbackInTransaction(jdbcConnectionName, nodeId, tenantId, postback,
-                    appsWithApiPlans);
+            processApplicationSyncPostbackInTransaction(jdbcConnectionName, nodeId, tenantId, postback);
         } catch (Exception ex) {
             final String errorMsg = "Error handling sync postBack message";
             logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO,
@@ -118,13 +116,14 @@ public class ServerIncrementPostBackAssertion extends AbstractServerAssertion<In
         return AssertionStatus.NONE;
     }
 
-    private void processApplicationSyncPostbackInTransaction(Object jdbcConnectionName, Object nodeId, Object tenantId, PortalSyncPostbackJson postback, Object appsWithApiPlans) throws PolicyAssertionException {
+    private void processApplicationSyncPostbackInTransaction(Object jdbcConnectionName, Object nodeId, Object tenantId, PortalSyncPostbackJson postback) throws PolicyAssertionException {
         DefaultTransactionDefinition def = new DefaultTransactionDefinition();
         def.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRED);
         TransactionStatus status = transactionManager.getTransaction(def);
         if (postback.getEntityType().equalsIgnoreCase(ServerIncrementalSyncCommon.ENTITY_TYPE_APPLICATION)) {
             try {
-                handleApplicationSyncPostback(jdbcConnectionName.toString(), postback, nodeId.toString(), tenantId.toString(), Boolean.parseBoolean((String)appsWithApiPlans));
+                boolean isApiPlansEnabled = isApiPlanEnabled(jdbcConnectionName.toString(), tenantId.toString());
+                handleApplicationSyncPostback(jdbcConnectionName.toString(), postback, nodeId.toString(), tenantId.toString(), isApiPlansEnabled);
                 transactionManager.commit(status);
             } catch (PolicyAssertionException e) {
                 transactionManager.rollback(status);
@@ -246,13 +245,24 @@ public class ServerIncrementPostBackAssertion extends AbstractServerAssertion<In
         // get new or updated or last sync error apps
         columeName = "uuid";
         sqlQuery = ServerIncrementalSyncCommon.getSyncUpdatedAppEntities(Lists.newArrayList(appsWithApiPlans ? "DISTINCT aaapx.API_UUID" : "DISTINCT aaagx.API_UUID", "a." + columeName.toUpperCase()), tenantId, appsWithApiPlans);
-        entityIds.addAll(queryEntityInfo(jdbcConnectionName, sqlQuery,
-                Lists.<Object>newArrayList(incrementStart, incrementEnd, incrementStart, incrementEnd, incrementStart, incrementEnd, nodeId, incrementStart, incrementEnd, incrementStart, incrementEnd), columeName));
+        ArrayList<Object> params = getQueryParamsForQueryType(appsWithApiPlans, nodeId, incrementStart, incrementEnd);
+        entityIds.addAll(queryEntityInfo(jdbcConnectionName, sqlQuery, params, columeName));
         //subtract the new error sync entities
         return Lists.newArrayList(CollectionUtils.subtract(entityIds, errorEntityIds));
     }
 
-    /*
+  @NotNull
+  private ArrayList<Object> getQueryParamsForQueryType(boolean appsWithApiPlans, String nodeId, long incrementStart, long incrementEnd) {
+      if(appsWithApiPlans) {
+          //query with api plans requires 7 params
+          return Lists.<Object>newArrayList(incrementStart, incrementEnd, incrementStart, incrementEnd, incrementStart, incrementEnd, nodeId);
+      } else {
+          //query with api groups requires 11 params
+          return Lists.<Object>newArrayList(incrementStart, incrementEnd, incrementStart, incrementEnd, incrementStart, incrementEnd, nodeId, incrementStart, incrementEnd, incrementStart, incrementEnd);
+      }
+  }
+
+  /*
      *run the input query and get the value that is identified by input columneName
      */
     private List<String> queryEntityInfo(String jdbcConnectionName, String sqlQuery, List<Object> params, String columnName) throws PolicyAssertionException {
@@ -295,6 +305,23 @@ public class ServerIncrementPostBackAssertion extends AbstractServerAssertion<In
         return errorEntityIds;
     }
 
+    private boolean isApiPlanEnabled(final String connName, final String tenantId) throws PolicyAssertionException {
+        boolean isEnabled = false;
+        Map<String, List> isApiPlanEnabledMap =  (Map<String, List>)  queryJdbc(connName,
+                String.format(API_PLAN_SETTING_ENABLE_STATUS, tenantId),
+                new ArrayList<>());
+        //Only one key returned
+        Set<String> isEnabledMap = isApiPlanEnabledMap.keySet();
+        if(isEnabledMap.isEmpty()) {
+            //default as off
+            return false;
+        }
+        final String SETTING_COL_NAME =  isEnabledMap.iterator().next();
+        if(isApiPlanEnabledMap.containsKey(SETTING_COL_NAME) && !isApiPlanEnabledMap.get(SETTING_COL_NAME).isEmpty()) {
+            isEnabled = Boolean.parseBoolean(isApiPlanEnabledMap.get(SETTING_COL_NAME).get(0).toString());
+        }
+        return isEnabled;
+    }
 
     Object queryJdbc(String connName, String queryString, @NotNull List<Object> preparedStmtParams) throws PolicyAssertionException {
         final Object result = jdbcQueryingManager.performJdbcQuery(connName, dataSource, queryString, null, ServerIncrementalSyncCommon.getMaxRecords(), ServerIncrementalSyncCommon.getQueryTimeout(), preparedStmtParams);

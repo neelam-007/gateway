@@ -67,6 +67,8 @@ public class ServerIncrementalSyncCommon {
             //api groups created during sync window
             "OR (ag.UUID IS NOT NULL AND ag.CREATE_TS = ag.MODIFY_TS AND ag.CREATE_TS > ? AND ag.CREATE_TS <= ?))";
 
+    static final String API_PLAN_SETTING_ENABLE_STATUS =
+            "SELECT value FROM SETTING WHERE name='FEATURE_FLAG_API_PLANS' AND tenant_id = '%s'";
     static final String BULK_SYNC_TRUE = "true";
     static final String BULK_SYNC_FALSE = "false";
     static final String ENTITY_TYPE_APPLICATION = "APPLICATION";
