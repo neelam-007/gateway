@@ -41,9 +41,9 @@
       Ivy initialization is global
     -->
 
-    <property name="libs.directory" value="${src.root}/lib/cake/" />
+    <property name="libs.directory" value="${src.root}/portal/portal.libs/" />
 
-    <property name="ivy.home" value="${libs.directory}/ivy/" />
+    <property name="ivy.home" value="${src.root}/lib/tools/" />
     <property name="svnant.home" value="${libs.directory}/svnant/" />
     <property name="missinglink.home" value="${libs.directory}/missinglink/" />
     <property name="antcontrib.home" value="${libs.directory}/antcontrib/" />
