@@ -10,4 +10,5 @@
     <include file="upgrade_9.2.00.xml" relativeToChangelogFile="true"/>
     <include file="upgrade_9.3.00.xml" relativeToChangelogFile="true"/>
     <include file="upgrade_9.4.00.xml" relativeToChangelogFile="true"/>
+    <include file="upgrade_9.5.00.xml" relativeToChangelogFile="true"/>
 </databaseChangeLog>

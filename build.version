@@ -5,13 +5,13 @@
 
 # Note the policy manager version is now kept in UneasyRooster/modules/gateway/console/src/main/resources/com/l7tech/config.properties
 build.version.major=9
-build.version.minor=4
+build.version.minor=5
 build.version.subminor=00
 
 build.em.version.major=1
-build.em.version.minor=19
+build.em.version.minor=20
 build.em.version.subminor=00
-build.em.version.revision=1
+build.em.version.revision=0
 
 # "layer7-api module" version is decoupled from the Gateway version.
 # This module produces the layer7-api-<major.minor.subminor>.jar file. This module/jar is also known as the Custom Assertion API.
