@@ -64,15 +64,13 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
             "a.OAUTH_CALLBACK_URL, a.OAUTH_SCOPE, a.OAUTH_TYPE, a.MAG_SCOPE, a.MAG_MASTER_KEY, a.CREATED_BY, a.MODIFIED_BY, r.LATEST_REQ " +
             "FROM APPLICATION_API_API_PLAN_XREF aaapx " +
             "JOIN (SELECT * FROM APPLICATION " +
-            "WHERE API_KEY IS NOT NULL AND TENANT_ID ='tenant5' AND STATUS IN ('ENABLED','DISABLED','EDIT_APPLICATION_PENDING_APPROVAL')) a ON aaapx.APPLICATION_UUID = a.UUID AND aaapx.TENANT_ID = a.TENANT_ID " +
+            "WHERE API_KEY IS NOT NULL AND TENANT_ID ='%s' AND STATUS IN ('ENABLED','DISABLED','EDIT_APPLICATION_PENDING_APPROVAL')) a ON aaapx.APPLICATION_UUID = a.UUID AND aaapx.TENANT_ID = a.TENANT_ID " +
             "JOIN ORGANIZATION o on a.ORGANIZATION_UUID = o.UUID AND a.TENANT_ID = o.TENANT_ID " +
             "LEFT JOIN (SELECT ENTITY_UUID, PREVIOUS_STATE, max(CREATE_TS) AS LATEST_REQ, TENANT_ID " +
             "FROM REQUEST GROUP BY ENTITY_UUID, PREVIOUS_STATE, CREATE_TS, TENANT_ID) r ON a.UUID = r.ENTITY_UUID AND a.TENANT_ID = r.TENANT_ID " +
             "WHERE aaapx.API_UUID IS NOT NULL";
-    private static final String API_PLAN_SETTING_ENABLE_STATUS =
-        "SELECT value FROM SETTING WHERE name='FEATURE_FLAG_API_PLANS' AND tenant_id = '%s'";
 
-    private static final String STATUS_ENABLED = "ENABLED";
+  private static final String STATUS_ENABLED = "ENABLED";
     private static final String STATUS_ACTIVE = "active";
     private static final String STATUS_SUSPEND = "suspend";
 
@@ -105,7 +103,6 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
             Object sinceStr = vars.get(assertion.getVariablePrefix() + "." + GetIncrementAssertion.SUFFIX_SINCE);
             Object nodeId = vars.get(assertion.getVariablePrefix() + "." + GetIncrementAssertion.SUFFIX_NODE_ID);
             Object tenantId = vars.get(assertion.getVariablePrefix() + "." + GetIncrementAssertion.SUFFIX_TENANT_ID);
-            Object appsWithApiPlans = vars.get(assertion.getVariablePrefix() + "." + GetIncrementAssertion.SUFFIX_APPS_WITH_API_PLANS);
 
             // validate inputs
             if (entityType == null) {
@@ -144,7 +141,7 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
             }
 
             // create result
-            String jsonStr = getJsonMessage(jdbcConnectionName.toString(), since, nodeId.toString(), tenantId.toString(), Boolean.parseBoolean((String)appsWithApiPlans));
+            String jsonStr = getJsonMessage(jdbcConnectionName.toString(), since, nodeId.toString(), tenantId.toString());
 
             // save result
             context.setVariable(assertion.getVariablePrefix() + '.' + GetIncrementAssertion.SUFFIX_JSON, jsonStr);
@@ -159,35 +156,36 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
         return AssertionStatus.NONE;
     }
 
-    String getJsonMessage(final String connName, final Object since, final String nodeId, final String tenantId, boolean appsWithApiPlans) throws IOException {
+    String getJsonMessage(final String connName, final Object since, final String nodeId, final String tenantId) throws IOException {
         ApplicationJson appJsonObj = new ApplicationJson();
         final long incrementStart = System.currentTimeMillis();
         appJsonObj.setIncrementStart(incrementStart);
         appJsonObj.setEntityType(ServerIncrementalSyncCommon.ENTITY_TYPE_APPLICATION);
-        appJsonObj.setApiPlansEnabled(isApiPlanEnabled(connName, tenantId));
+        boolean isApiPlansEnabled = isApiPlanEnabled(connName, tenantId);
+        appJsonObj.setApiPlansEnabled(isApiPlansEnabled);
 
         Map<String, List> results;
 
         if (since != null) {
             appJsonObj.setBulkSync(ServerIncrementalSyncCommon.BULK_SYNC_FALSE);
-            Set deletedAppIds = getDeletedAppIds(connName, since, nodeId, tenantId, appsWithApiPlans, incrementStart);
+            Set deletedAppIds = getDeletedAppIds(connName, since, nodeId, tenantId, isApiPlansEnabled, incrementStart);
             if (deletedAppIds.isEmpty()) {
                 appJsonObj.setDeletedIds(new ArrayList<>());
             } else {
                 appJsonObj.setDeletedIds(new ArrayList<>(deletedAppIds));
             }
             results = getAppsUpdatedWithinIncrement(connName, since, incrementStart, nodeId, tenantId,
-                    appsWithApiPlans);
+                    isApiPlansEnabled);
         } else {
             appJsonObj.setBulkSync(ServerIncrementalSyncCommon.BULK_SYNC_TRUE);
             // bulk, get everything
-            results = (Map<String, List>) queryJdbc(connName, String.format(appsWithApiPlans ? BULK_SYNC_SELECT_WITH_API_PLANS : BULK_SYNC_SELECT, tenantId), Collections.emptyList());
+            results = (Map<String, List>) queryJdbc(connName, String.format(isApiPlansEnabled ? BULK_SYNC_SELECT_WITH_API_PLANS : BULK_SYNC_SELECT, tenantId), Collections.emptyList());
 
             // do not include deleted list in json response
             appJsonObj.setDeletedIds(null);
         }
 
-        appJsonObj.setNewOrUpdatedEntities(buildApplicationEntityList(results, connName, appsWithApiPlans));
+        appJsonObj.setNewOrUpdatedEntities(buildApplicationEntityList(results, connName, isApiPlansEnabled));
 
         ObjectMapper mapper = new ObjectMapper();
         mapper.setSerializationInclusion(JsonSerialize.Inclusion.NON_NULL);
@@ -215,7 +213,7 @@ public class ServerGetIncrementAssertion extends AbstractServerAssertion<GetIncr
     private boolean isApiPlanEnabled(final String connName, final String tenantId)  {
         boolean isEnabled = false;
         Map<String, List> isApiPlanEnabledMap =  (Map<String, List>)  queryJdbc(connName,
-                String.format(API_PLAN_SETTING_ENABLE_STATUS, tenantId),
+                String.format(ServerIncrementalSyncCommon.API_PLAN_SETTING_ENABLE_STATUS, tenantId),
                 new ArrayList<>());
         //Only one key returned
         Set<String> isEnabledMap = isApiPlanEnabledMap.keySet();

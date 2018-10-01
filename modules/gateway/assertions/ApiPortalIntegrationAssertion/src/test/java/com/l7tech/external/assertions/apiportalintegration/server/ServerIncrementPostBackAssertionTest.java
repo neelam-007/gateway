@@ -11,6 +11,8 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.jdbc.JdbcConnectionPoolManager;
 import com.l7tech.server.jdbc.JdbcQueryingManager;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import java.util.Arrays;
+import java.util.HashMap;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -166,6 +168,7 @@ public class ServerIncrementPostBackAssertionTest {
 
     @Test
     public void checkRequestTest03() throws IOException, PolicyAssertionException, JAXBException {
+        final Boolean isApiPlansEnabled = false;
         //success
         printStrForDebug("checkRequestTest03- should be successful and commit the transaction ============================");
 
@@ -231,6 +234,8 @@ public class ServerIncrementPostBackAssertionTest {
                             successSqlCalls.add((String) invocation.getArguments()[2]);
                             ImmutableMap<String, ArrayList<String>> result = ImmutableMap.of(application_uuid_column, Lists.newArrayList("update1","updatedelete1"));
                             return result;
+                        } else if (((String) invocation.getArguments()[2]).startsWith(String.format(ServerIncrementalSyncCommon.API_PLAN_SETTING_ENABLE_STATUS, TENANT_ID))) {
+                            return buildApiPlansFlagSettingResult(isApiPlansEnabled);
                         }
                         return null;
                     }
@@ -247,6 +252,7 @@ public class ServerIncrementPostBackAssertionTest {
 
     @Test
     public void checkRequestTest07() throws IOException, PolicyAssertionException, JAXBException {
+        final Boolean isApiPlansEnabled = false;
         //success
         printStrForDebug("checkRequestTest07- should be successful and commit the transaction ============================");
 
@@ -289,6 +295,8 @@ public class ServerIncrementPostBackAssertionTest {
                         }else if (((String) invocation.getArguments()[2]).startsWith(String.format("SELECT  %s FROM APPLICATION_TENANT_GATEWAY WHERE TENANT_GATEWAY_UUID=? and APPLICATION_UUID IN (",
                                 application_uuid_column.toUpperCase()))) {
                             return null;
+                        } else if (((String) invocation.getArguments()[2]).startsWith(String.format(ServerIncrementalSyncCommon.API_PLAN_SETTING_ENABLE_STATUS, TENANT_ID))) {
+                            return buildApiPlansFlagSettingResult(isApiPlansEnabled);
                         }
                         return null;
                     }
@@ -302,6 +310,7 @@ public class ServerIncrementPostBackAssertionTest {
 
     @Test
     public void checkRequestTest03WithApiPlans() throws IOException, PolicyAssertionException, JAXBException {
+        final Boolean isApiPlansEnabled = true;
         //success
         printStrForDebug("checkRequestTest03- should be successful and commit the transaction ============================");
 
@@ -331,7 +340,7 @@ public class ServerIncrementPostBackAssertionTest {
                 "         \"msg\": \"error message 2\" }\n"+
                 "       ],\n  \"syncLog\" : "+sync_log+"\n}";
         vars.put(assertion.getVariablePrefix() + "." + IncrementPostBackAssertion.SUFFIX_JSON, jsonPayload);
-        vars.put(assertion.getVariablePrefix() + "." + IncrementPostBackAssertion.SUFFIX_APPS_WITH_API_PLANS, "true");
+        vars.put(assertion.getVariablePrefix() + "." + IncrementPostBackAssertion.SUFFIX_APPS_WITH_API_PLANS, isApiPlansEnabled);
         final List<String> insertIds = Lists.newArrayList(errorEntityWillBeInserted , "insertdelete2", "insert1");
         final List<String> updateIds = Lists.newArrayList("update1",errorEntityWillBeUpdated, "updatedelete1");
 
@@ -367,6 +376,8 @@ public class ServerIncrementPostBackAssertionTest {
                             successSqlCalls.add((String) invocation.getArguments()[2]);
                             ImmutableMap<String, ArrayList<String>> result = ImmutableMap.of(application_uuid_column, Lists.newArrayList("update1","updatedelete1"));
                             return result;
+                        } else if (((String) invocation.getArguments()[2]).startsWith(String.format(ServerIncrementalSyncCommon.API_PLAN_SETTING_ENABLE_STATUS, TENANT_ID))) {
+                            return buildApiPlansFlagSettingResult(isApiPlansEnabled);
                         }
                         return null;
                     }
@@ -476,6 +487,8 @@ public class ServerIncrementPostBackAssertionTest {
                             return Integer.valueOf(1);
                         } else if (((String) invocation.getArguments()[2]).startsWith("SELECT ENTITY_UUID FROM DELETED_ENTITY WHERE TYPE = 'APPLICATION' AND DELETED_TS > ? AND DELETED_TS <= ?")) {
                             return "jdbc error";
+                        } else if (((String) invocation.getArguments()[2]).startsWith(String.format(ServerIncrementalSyncCommon.API_PLAN_SETTING_ENABLE_STATUS, TENANT_ID))) {
+                            return "jdbc error";
                         } else if (((String) invocation.getArguments()[2]).startsWith(String.format(ServerIncrementalSyncCommon.SELECT_ENTITIES_SQL, "a."+uuid_column.toUpperCase()))) {
                             return "jdbc error";
                         }else if (((String) invocation.getArguments()[2]).startsWith(String.format("SELECT  %s FROM APPLICATION_TENANT_GATEWAY WHERE TENANT_GATEWAY_UUID=? and APPLICATION_UUID IN (",
@@ -580,6 +593,14 @@ public class ServerIncrementPostBackAssertionTest {
         }
         assertEquals("incrementStart should set to 0 for BulkSync", 0, postback.getIncrementStart());
     }
+
+    private Map<String, List> buildApiPlansFlagSettingResult(Boolean isEnabled) {
+        Map<String, List> results = new HashMap<>();
+        if(isEnabled != null)
+            results.put("value", Arrays.asList(Boolean.toString(isEnabled)));
+        return results;
+    }
+
     private void printStrForDebug(String msg){
         if (debug) System.out.println(msg);
     }

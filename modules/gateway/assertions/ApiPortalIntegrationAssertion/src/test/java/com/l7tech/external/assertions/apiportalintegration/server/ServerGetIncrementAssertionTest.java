@@ -63,7 +63,7 @@ public class ServerGetIncrementAssertionTest {
       ArgumentCaptor<String> queryCaptor = ArgumentCaptor.forClass(String.class);
       ArgumentCaptor<List> queryArgumentsCaptor = ArgumentCaptor.forClass(List.class);
       when(queryingManager.performJdbcQuery(anyString(), queryCaptor.capture(), anyString(), anyInt(), anyInt(), queryArgumentsCaptor.capture()))
-                .thenReturn(buildSettingValueResults(false), buildDeletedAppResults(), new HashMap<>(),
+                .thenReturn(buildApiPlansFlagSettingResult(true), buildDeletedAppResults(), new HashMap<>(),
                         buildResultsMap(), buildCustomFieldsResults());
       AssertionStatus result = serverAssertion.checkRequest(pec);
       assertEquals(AssertionStatus.NONE, result);
@@ -96,7 +96,7 @@ public class ServerGetIncrementAssertionTest {
       ArgumentCaptor<String> queryCaptor = ArgumentCaptor.forClass(String.class);
       ArgumentCaptor<List> queryArgumentsCaptor = ArgumentCaptor.forClass(List.class);
       when(queryingManager.performJdbcQuery(anyString(), queryCaptor.capture(), anyString(), anyInt(), anyInt(), queryArgumentsCaptor.capture()))
-                .thenReturn(buildSettingValueResults(false), buildDeletedAppResults(),
+                .thenReturn(buildApiPlansFlagSettingResult(false), buildDeletedAppResults(),
                         new HashMap<>(), buildResultsMap(), buildCustomFieldsResults());
       AssertionStatus result = serverAssertion.checkRequest(pec);
       assertEquals(AssertionStatus.NONE, result);
@@ -150,10 +150,10 @@ public class ServerGetIncrementAssertionTest {
                 "}";
 
         when(queryingManager.performJdbcQuery(anyString(), anyString(), anyString(), anyInt(), anyInt(), anyListOf(Object.class)))
-                .thenReturn(buildSettingValueResults(false), buildDeletedAppResults(),
+                .thenReturn(buildApiPlansFlagSettingResult(false), buildDeletedAppResults(),
                         new HashMap<>(), buildResultsMap(), buildCustomFieldsResults());
 
-        String json = serverAssertion.getJsonMessage("conn", "1446501119477", "","", false);
+        String json = serverAssertion.getJsonMessage("conn", "1446501119477", "","");
         // remove timestamp for comparison
         assertEquals(json.replaceFirst("\\d{13}", "").replaceAll("\\s+", ""), ref.replaceAll("\\s+", ""));
     }
@@ -195,9 +195,9 @@ public class ServerGetIncrementAssertionTest {
                 "}";
 
         when(queryingManager.performJdbcQuery(anyString(), anyString(), anyString(), anyInt(), anyInt(), anyListOf(Object.class)))
-                .thenReturn(buildSettingValueResults(true), buildDeletedAppResults(), buildResultsMap(), buildCustomFieldsResults());
+                .thenReturn(buildApiPlansFlagSettingResult(true), buildDeletedAppResults(), buildResultsMap(), buildCustomFieldsResults());
 
-        String json = serverAssertion.getJsonMessage("conn", "1446501119477", "","", true);
+        String json = serverAssertion.getJsonMessage("conn", "1446501119477", "","");
         // remove timestamp for comparison
         assertEquals(json.replaceFirst("\\d{13}", "").replaceAll("\\s+", ""), ref.replaceAll("\\s+", ""));
     }
@@ -241,9 +241,9 @@ public class ServerGetIncrementAssertionTest {
     appWithNoApiResults.put("uuid", Arrays.asList("app with no api"));
 
     when(queryingManager.performJdbcQuery(anyString(), anyString(), anyString(), anyInt(), anyInt(), anyListOf(Object.class)))
-        .thenReturn(buildSettingValueResults(false), buildDeletedAppResults(), appWithNoApiResults, buildResultsMap(), buildCustomFieldsResults());
+        .thenReturn(buildApiPlansFlagSettingResult(false), buildDeletedAppResults(), appWithNoApiResults, buildResultsMap(), buildCustomFieldsResults());
 
-    String json = serverAssertion.getJsonMessage("conn", "1446501119477", "","", false);
+    String json = serverAssertion.getJsonMessage("conn", "1446501119477", "","");
     // remove timestamp for comparison
     assertEquals(json.replaceFirst("\\d{13}", "").replaceAll("\\s+", ""), ref.replaceAll("\\s+", ""));
   }
@@ -280,7 +280,7 @@ public class ServerGetIncrementAssertionTest {
       return results;
     }
 
-    private Map<String, List> buildSettingValueResults(Boolean isEnabled) {
+    private Map<String, List> buildApiPlansFlagSettingResult(Boolean isEnabled) {
         Map<String, List> results = new HashMap<>();
         if(isEnabled != null)
             results.put("value", Arrays.asList(Boolean.toString(isEnabled)));
@@ -338,8 +338,8 @@ public class ServerGetIncrementAssertionTest {
 
         Map<String, List> results = buildResultsMapWithMultipleApis();
         when(queryingManager.performJdbcQuery(anyString(), anyString(), anyString(), anyInt(), anyInt(), anyListOf(Object.class)))
-                .thenReturn(buildSettingValueResults(null), results, new HashMap<String, String>());
-        String json = serverAssertion.getJsonMessage("conn", null, "","", false);
+                .thenReturn(buildApiPlansFlagSettingResult(null), results, new HashMap<String, String>());
+        String json = serverAssertion.getJsonMessage("conn", null, "","");
         // remove timestamp for comparison
         assertEquals(json.replaceFirst("\\d{13}", "").replaceAll("\\s+", ""), ref.replaceAll("\\s+", ""));
     }
@@ -379,13 +379,13 @@ public class ServerGetIncrementAssertionTest {
                 "    \"modifiedBy\" : \"user1\",\n" +
                 "    \"custom\" : \"{}\"\n" +
                 "  } ],\n" +
-                "  \"apiPlansEnabled\" : false\n" +
+                "  \"apiPlansEnabled\" : true\n" +
                 "}";
 
         Map<String, List> results = buildResultsMapWithMultipleApis();
         when(queryingManager.performJdbcQuery(anyString(), anyString(), anyString(), anyInt(), anyInt(), anyListOf(Object.class)))
-                .thenReturn(buildSettingValueResults(false), results, new HashMap<String, String>());
-        String json = serverAssertion.getJsonMessage("conn", null, "","", true);
+                .thenReturn(buildApiPlansFlagSettingResult(true), results, new HashMap<String, String>());
+        String json = serverAssertion.getJsonMessage("conn", null, "","");
         // remove timestamp for comparison
         assertEquals(json.replaceFirst("\\d{13}", "").replaceAll("\\s+", ""), ref.replaceAll("\\s+", ""));
     }
