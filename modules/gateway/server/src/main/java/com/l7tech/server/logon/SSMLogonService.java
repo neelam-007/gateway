@@ -145,27 +145,21 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
 
             if (logonInfo == null) throw new FindException("No entry for '" + user.getLogin() + "'");
 
-            switch (logonInfo.getState()) {
-                case ACTIVE:
-                    break; //
-                case INACTIVE: {   // exception for administrator users
-                    if (!isUserFullAdministrator(user)) {
-                        String msg = "Access is denied because of inactivity";
-                        logger.info(msg);
-                        throw new FailInactivityPeriodExceededException(msg);
-                    }
-                }
+            if (logonInfo.getState() == LogonInfo.State.INACTIVE && !isUserFullAdministrator(user)) {
+                String msg = "Access is denied because of inactivity";
+                logger.info(msg);
+                throw new FailInactivityPeriodExceededException(msg);
             }
 
             //verify if has reached login attempts
             if (logonInfo.getState() == LogonInfo.State.EXCEED_ATTEMPT || logonInfo.getFailCount() >= this.maxLoginAttempts) {
                 //if the retry was not after the locked time, then we still lock the account.  Otherwise,
                 //the user is good to go for retry and we'll reset the fail count
-                Calendar cal = Calendar.getInstance();
-                cal.setTimeInMillis(logonInfo.getLastAttempted());
-                cal.add(Calendar.SECOND, this.maxLockoutTime);
+                final Calendar getLastAttemptCal = Calendar.getInstance();
+                getLastAttemptCal.setTimeInMillis(logonInfo.getLastAttempted());
+                getLastAttemptCal.add(Calendar.SECOND, this.maxLockoutTime);
 
-                if (cal.getTimeInMillis() >= now) {
+                if (getLastAttemptCal.getTimeInMillis() >= now) {
                     auditor.logAndAudit(SystemMessages.AUTH_USER_EXCEED_ATTEMPT, user.getLogin(), Integer.toString(logonInfo.getFailCount()), Integer.toString(this.maxLoginAttempts));
                     String msg = "Credentials login matches an internal user " + user.getLogin() + ", but access is denied because of number of failed attempts.";
                     logger.info(msg);
@@ -173,12 +167,15 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
                     doUpdateLogonState(user, LogonInfo.State.EXCEED_ATTEMPT);
                     throw new FailAttemptsExceededException(msg);
                 } else {
-                    doUpdateLogonState(user, LogonInfo.State.ACTIVE);
+                    //reset failed attempts whenever the lockout time passes
+                    logonInfo.resetFailCount(now);
+                    logonInfo.setState(LogonInfo.State.ACTIVE);
+                    logonManager.update(logonInfo);
                 }
             }
 
             // verify if user has exceeded the inactivity period
-            Calendar inactivityCal = Calendar.getInstance();
+            final Calendar inactivityCal = Calendar.getInstance();
             inactivityCal.setTimeInMillis(logonInfo.getLastActivity());
             inactivityCal.add(Calendar.HOUR, this.maxInactivityPeriod * 24);
             if (!isUserFullAdministrator(user) && this.maxInactivityPeriod != 0 && logonInfo.getLastActivity() > 0 && inactivityCal.getTimeInMillis() <= now) {
@@ -194,8 +191,13 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
         } catch (FindException fe) {
             //if we can't find this user then we'll just ignore it and we'll carry on and it'll get updated later
             //this find exception could occur because of backwards compatibility
+        } catch (UpdateException e) {
+            // this error occurs very rarely and so we have not created an exception and error dialogue to specifically address this exception
+            // opting to throw an AuthenticationException instead
+            String errorMessage = FAILED_UPDATE_LOGON_ATTEMPT_EXCEPTION_MESSAGE + user.getLogin() + "' cannot update the database with logon info";
+            logger.log(Level.WARNING, errorMessage, e);
+            throw new AuthenticationException(errorMessage, e);
         }
-
     }
 
     @Override
@@ -215,6 +217,7 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
             Collection<LogonInfo> logonInfos = logonManager.findAll();
 
             for (LogonInfo logonInfo : logonInfos) {
+
                 if (logonInfo.getState() != LogonInfo.State.ACTIVE)
                     continue;
                 inactivityCal.setTimeInMillis(now);
@@ -342,6 +345,8 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
     private static final int DEFAULT_MAX_LOGIN_ATTEMPTS_ALLOW = 5;
     private static final int DEFAULT_MAX_INACTIVITY_PERIOD = 35;
 
+    private static final String FAILED_UPDATE_LOGON_ATTEMPT_EXCEPTION_MESSAGE = "Failed to update logon attempt for '";
+
     private void doUpdateLogonState(final User user, final LogonInfo.State logonState) {
         doLogonInfoUpdate(user, new Functions.UnaryVoid<LogonInfo>() {
             @Override
@@ -422,16 +427,16 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
                             } catch (Exception e) {
                                 transactionStatus.setRollbackOnly();
                                 if (ExceptionUtils.causedBy(e, CannotAcquireLockException.class)) {
-                                    logger.log(Level.WARNING, "Failed to update logon attempt for '" + name + "', could not acquire lock.", ExceptionUtils.getDebugException(e));
+                                    logger.log(Level.WARNING, FAILED_UPDATE_LOGON_ATTEMPT_EXCEPTION_MESSAGE+ name + "', could not acquire lock.", ExceptionUtils.getDebugException(e));
                                 } else {
-                                    logger.log(Level.WARNING, "Failed to update logon attempt for '" + name + "'", e);
+                                    logger.log(Level.WARNING, FAILED_UPDATE_LOGON_ATTEMPT_EXCEPTION_MESSAGE + name + "'", e);
                                 }
                             }
                             return null;
                         }
                     });
                 } catch (Exception e) {
-                    logger.log(Level.INFO, "Failed to update logon attempt for '" + name + "'", e);
+                    logger.log(Level.INFO, FAILED_UPDATE_LOGON_ATTEMPT_EXCEPTION_MESSAGE + name + "'", e);
                 }
                 return null;
             }
