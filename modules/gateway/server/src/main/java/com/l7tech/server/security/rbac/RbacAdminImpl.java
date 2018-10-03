@@ -329,7 +329,13 @@ public class RbacAdminImpl implements RbacAdmin {
                     String entityName = entityNameResolver.getNameForHeader(header, false);
                     String path = StringUtils.EMPTY;
                     if (header instanceof HasFolderId) {
-                        path = entityNameResolver.getPath((HasFolderId) header);
+                        try {
+                            path = entityNameResolver.getPath((HasFolderId) header);
+                        }
+                        catch (FindException | PermissionDeniedException e ){
+                            LOGGER.log(Level.FINEST, "Hiding folder path since user doesnt not have sufficient permission.");
+                            path = "path unavailable";
+                        }
                     }
                     ResolvedEntityHeader securityZoneEntityTO = new ResolvedEntityHeader();
                     securityZoneEntityTO.setEntityHeader(header);

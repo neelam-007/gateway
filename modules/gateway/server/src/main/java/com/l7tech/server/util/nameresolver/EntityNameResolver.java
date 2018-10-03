@@ -51,8 +51,8 @@ public class EntityNameResolver {
     public void setResolverList(List<EntityNameResolver> resolverList) {
         this.resolverList = resolverList;
     }
-    public void setServiceAdmin(ServiceAdmin serviceAdmin)
-    {
+
+    public void setServiceAdmin(ServiceAdmin serviceAdmin) {
         this.serviceAdmin = serviceAdmin;
     }
 
