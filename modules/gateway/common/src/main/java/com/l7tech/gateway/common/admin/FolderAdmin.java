@@ -1,7 +1,6 @@
 package com.l7tech.gateway.common.admin;
 
 import com.l7tech.gateway.common.security.rbac.MethodStereotype;
-import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.security.rbac.Secured;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
@@ -80,7 +79,7 @@ public interface FolderAdmin {
      * @param goid the GOID of the folder to search for
      * @return the folder with the specified GOID, or null if no such folder exists.
      */
-    @Transactional(readOnly=true, noRollbackFor = PermissionDeniedException.class)
+    @Transactional(readOnly=true)
     @Secured(types=EntityType.FOLDER, stereotype=MethodStereotype.FIND_ENTITY)
     @Administrative(licensed=false)            
     Folder findByPrimaryKey(Goid goid) throws FindException;

@@ -19,8 +19,8 @@ import com.l7tech.server.EntityCrud;
 import com.l7tech.server.identity.HasDefaultRole;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.policy.AssertionAccessManager;
-import com.l7tech.server.util.JaasUtils;
 import com.l7tech.server.util.nameresolver.EntityNameResolver;
+import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.ExceptionUtils;
 import com.l7tech.util.Pair;
 import org.apache.commons.lang.StringUtils;
@@ -152,7 +152,7 @@ public class RbacAdminImpl implements RbacAdmin {
     }
 
     /**
-     * Note: this method <em>intentionally</em> avoids validating user accounts (e.g. whether they're expired or disabled).
+     * Note: this method <em>intentionally</em> avoids validating user accounts (e.g. whether they're expired or disabled). 
      * Don't ever use it for authorization!
      */
     public Collection<Role> findRolesForUser(User user) throws FindException {
@@ -329,7 +329,7 @@ public class RbacAdminImpl implements RbacAdmin {
                     String entityName = entityNameResolver.getNameForHeader(header, false);
                     String path = StringUtils.EMPTY;
                     if (header instanceof HasFolderId) {
-                        path = getFolderFullPath((HasFolderId) header);
+                        path = entityNameResolver.getPath((HasFolderId) header);
                     }
                     ResolvedEntityHeader securityZoneEntityTO = new ResolvedEntityHeader();
                     securityZoneEntityTO.setEntityHeader(header);
@@ -346,20 +346,6 @@ public class RbacAdminImpl implements RbacAdmin {
             }
         }
         return securityZoneEntityTOList;
-    }
-
-    private String getFolderFullPath(HasFolderId header) {
-        String path;
-        try {
-            path = entityNameResolver.getPath(header);
-        } catch (PermissionDeniedException e) {
-            LOGGER.log(Level.FINEST, "Hiding folder path since user doesnt not have sufficient permission.");
-            path = "path unavailable";
-        } catch (FindException e) {
-            LOGGER.log(Level.FINEST, "Unable to find path");
-            path = "unknown path";
-        }
-        return path;
     }
 
     /**
