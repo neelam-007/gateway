@@ -16,7 +16,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
-import java.util.Set;
 
 import static com.l7tech.gateway.common.security.rbac.MethodStereotype.*;
 
@@ -176,7 +175,7 @@ public interface RbacAdmin {
     @Secured(types=EntityType.SECURITY_ZONE, stereotype=DELETE_ENTITY)
     void deleteSecurityZone(SecurityZone securityZone) throws DeleteException;
 
-   /**
+    /**
      * Retrieves a collection of ZoneableEntityHeader by type and security zone goid.
      *
      * @param type             the EntityType to retrieve.
@@ -240,43 +239,4 @@ public interface RbacAdmin {
     @Transactional(readOnly=true)
     @Secured(types = EntityType.ANY, stereotype = FIND_ENTITY)
     Entity find(@NotNull EntityHeader header) throws FindException;
-
-    /**
-     * This method returns PermissionGroup Descriptions for given set of scope predicates
-     * @param scopes Collection<Pair<EntityType, Set<ScopePredicate>>>
-     * @return Map<Pair<EntityType, Set<ScopePredicate>>, String>
-     */
-    @Transactional(readOnly=true)
-    @Secured(stereotype = FIND_ENTITIES)
-    Map<Pair<EntityType, Set<ScopePredicate>>, String> findPermissionGroupScopeDescriptions(@NotNull final Collection<Pair<EntityType, Set<ScopePredicate>>> scopes);
-
-    /**
-     * This method returns SecurityZoneEntity transfer object for all the entities of given entity type
-     * @param type EntityType
-     * @param securityZoneGoid Goid
-     * @return Collection<ResolvedEntityHeaderTO>
-     * @throws FindException
-     */
-    @Transactional(readOnly=true)
-    @Secured(stereotype = FIND_ENTITIES, customEntityTranslatorClassName="com.l7tech.server.security.rbac.ResolvedEntityHeaderTranslator")
-    Collection<ResolvedEntityHeader> findSecurityZoneByTypeAndSecurityZoneGoid(@NotNull final EntityType type, final Goid securityZoneGoid) throws FindException;
-
-    /**
-     * This method returns SecurityZoneEntity transfer object for all the given entity headers
-     * @param entityHeaderSet EntityHeaderSet
-     * @return Collection<ResolvedEntityHeaderTO>
-     */
-    @Transactional(readOnly=true)
-    @Secured(stereotype = FIND_ENTITIES, customEntityTranslatorClassName="com.l7tech.server.security.rbac.ResolvedEntityHeaderTranslator")
-    public Collection<ResolvedEntityHeader> findSecurityZoneByEntityHeaders(@NotNull final EntityHeaderSet<EntityHeader>  entityHeaderSet) throws FindException;
-
-    /**
-     * This method returns names for given entity headers
-     * @param entityHeaderSet EntityHeaderSet<EntityHeader>
-     * @return Map<EntityHeader, String>
-     * @throws FindException
-     */
-    @Transactional(readOnly=true)
-    @Secured(stereotype = FIND_ENTITIES)
-    public Map<EntityHeader, String> findNamesForEntityHeaders(@NotNull final EntityHeaderSet<EntityHeader> entityHeaderSet) throws FindException;
 }

@@ -51,7 +51,10 @@ import java.lang.reflect.Proxy;
 import java.net.InetAddress;
 import java.net.PasswordAuthentication;
 import java.security.cert.X509Certificate;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
 
 import static com.l7tech.util.Option.none;
 
@@ -325,26 +328,6 @@ public class RegistryStub extends Registry {
             public Entity find(@NotNull EntityHeader header) throws FindException {
                 return null;
             }
-
-            @Override
-            public Map<Pair<EntityType, Set<ScopePredicate>>, String> findPermissionGroupScopeDescriptions(@NotNull final Collection<Pair<EntityType, Set<ScopePredicate>>> scopes) {
-                return null;
-            }
-
-            @Override
-            public Collection<ResolvedEntityHeader> findSecurityZoneByTypeAndSecurityZoneGoid(@NotNull final EntityType type, final Goid securityZoneGoid) throws FindException {
-                return null;
-            }
-
-            @Override
-            public Map<EntityHeader, String> findNamesForEntityHeaders(@NotNull final EntityHeaderSet<EntityHeader> entityHeaderSet) throws FindException {
-                return null;
-            }
-
-            public Collection<ResolvedEntityHeader> findSecurityZoneByEntityHeaders(@NotNull final EntityHeaderSet<EntityHeader> entityHeaderSet) throws FindException {
-                return null;
-            }
-
         };
     }
 

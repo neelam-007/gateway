@@ -3,7 +3,6 @@
  */
 package com.l7tech.gateway.common.security.rbac;
 
-
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.Goid;
@@ -201,7 +200,6 @@ public class AttributePredicate extends ScopePredicate implements ScopeEvaluator
         return sb.toString(); 
     }
 
-    //transient variable getter is removed from equals and hashcode as equals test is failing for deserialized object
     @SuppressWarnings({"RedundantIfStatement"})
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -209,7 +207,9 @@ public class AttributePredicate extends ScopePredicate implements ScopeEvaluator
         if (!super.equals(o)) return false;
 
         AttributePredicate that = (AttributePredicate) o;
+
         if (attribute != null ? !attribute.equals(that.attribute) : that.attribute != null) return false;
+        if (getter != null ? !getter.equals(that.getter) : that.getter != null) return false;
         if (value != null ? !value.equals(that.value) : that.value != null) return false;
         if (mode != null ? !mode.equals(that.mode) : that.mode != null) return false;
 
@@ -220,6 +220,7 @@ public class AttributePredicate extends ScopePredicate implements ScopeEvaluator
         int result = super.hashCode();
         result = 31 * result + (attribute != null ? attribute.hashCode() : 0);
         result = 31 * result + (value != null ? value.hashCode() : 0);
+        result = 31 * result + (getter != null ? getter.hashCode() : 0);
         result = 31 * result + (mode != null ? mode.hashCode() : 0);
         return result;
     }

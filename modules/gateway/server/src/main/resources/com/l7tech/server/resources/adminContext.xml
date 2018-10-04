@@ -414,6 +414,11 @@
         <constructor-arg ref="dateTimeConfigUtils"/>
     </bean>
 
+    <!-- RBAC admin impl -->
+    <bean id="rbacAdmin" class="com.l7tech.server.security.rbac.RbacAdminImpl">
+        <constructor-arg ref="roleManager"/>
+    </bean>
+
     <!-- Policy admin impl -->
     <bean id="policyAdmin" class="com.l7tech.server.policy.PolicyAdminImpl">
         <constructor-arg ref="policyManager"/>
@@ -427,84 +432,6 @@
         <constructor-arg ref="licenseManager"/>
         <constructor-arg ref="defaultKey"/>
         <property name="serverConfig" ref="serverConfig"/>
-    </bean>
-    <bean id="policyEntityNameResolver" class="com.l7tech.server.util.nameresolver.PolicyEntityNameResolver">
-        <constructor-arg ref="policyAdmin"/>
-        <constructor-arg ref="folderAdmin"/>
-    </bean>
-    <bean id="folderEntityNameResolver" class="com.l7tech.server.util.nameresolver.FolderEntityNameResolver">
-        <constructor-arg ref="folderAdmin"/>
-    </bean>
-    <bean id="serviceAliasNameResolver" class="com.l7tech.server.util.nameresolver.ServiceAliasNameResolver">
-        <constructor-arg ref="serviceAdmin"/>
-        <constructor-arg ref="folderAdmin"/>
-    </bean>
-    <bean id="policyAliasNameResolver" class="com.l7tech.server.util.nameresolver.PolicyAliasNameResolver">
-        <constructor-arg ref="policyAdmin"/>
-        <constructor-arg ref="folderAdmin"/>
-    </bean>
-    <bean id="ssgKeyMetadataNameResolver" class="com.l7tech.server.util.nameresolver.SsgKeyMetadataNameResolver">
-        <constructor-arg ref="trustedCertAdmin"/>
-        <constructor-arg ref="folderAdmin"/>
-    </bean>
-    <bean id="resourceEntryNameResolver" class="com.l7tech.server.util.nameresolver.ResourceEntryNameResolver">
-        <constructor-arg ref="resourceAdmin"/>
-        <constructor-arg ref="folderAdmin"/>
-    </bean>
-    <bean id="httpConfigurationNameResolver" class="com.l7tech.server.util.nameresolver.HttpConfigurationNameResolver">
-        <constructor-arg ref="resourceAdmin"/>
-        <constructor-arg ref="folderAdmin"/>
-    </bean>
-    <bean id="assertionAccessNameResolver" class="com.l7tech.server.util.nameresolver.AssertionAccessNameResolver">
-        <constructor-arg ref="assertionRegistry"/>
-        <constructor-arg ref="folderAdmin"/>
-    </bean>
-    <bean id="serviceEntityNameResolver" class="com.l7tech.server.util.nameresolver.ServiceEntityNameResolver">
-        <constructor-arg ref="serviceAdmin"/>
-        <constructor-arg ref="folderAdmin"/>
-    </bean>
-    <bean id="trustedEsmNameResolver" class="com.l7tech.server.util.nameresolver.TrustedEsmNameResolver">
-        <constructor-arg ref="clusterStatusAdmin"/>
-        <constructor-arg ref="folderAdmin"/>
-    </bean>
-    <bean id="roleNameResolver" class="com.l7tech.server.util.nameresolver.RoleNameResolver">
-    </bean>
-    <bean id="attributePredicateNameResolver" class="com.l7tech.server.util.nameresolver.AttributePredicateNameResolver">
-        <constructor-arg ref="assertionRegistry"/>
-        <constructor-arg ref="folderAdmin"/>
-    </bean>
-    <bean id="securityZoneNameResolver" class="com.l7tech.server.util.nameresolver.SecurityZoneNameResolver">
-    </bean>
-
-
-
-    <bean id="entityNameResolver" class="com.l7tech.server.util.nameresolver.EntityNameResolver">
-        <constructor-arg ref="folderAdmin"/>
-        <property name="resolverList">
-            <list>
-                <ref bean="policyEntityNameResolver"/>
-                <ref bean="folderEntityNameResolver"/>
-                <ref bean="serviceAliasNameResolver"/>
-                <ref bean="policyAliasNameResolver"/>
-                <ref bean="ssgKeyMetadataNameResolver"/>
-                <ref bean="resourceEntryNameResolver"/>
-                <ref bean="httpConfigurationNameResolver"/>
-                <ref bean="assertionAccessNameResolver"/>
-                <ref bean="serviceEntityNameResolver"/>
-                <ref bean="trustedEsmNameResolver"/>
-                <ref bean="policyEntityNameResolver"/>
-                <ref bean="roleNameResolver"/>
-                <ref bean="attributePredicateNameResolver"/>
-                <ref bean="securityZoneNameResolver"/>
-            </list>
-        </property>
-        <property name="serviceAdmin" ref="serviceAdmin"/>
-    </bean>
-
-    <!-- RBAC admin impl -->
-
-    <bean id="rbacAdmin" class="com.l7tech.server.security.rbac.RbacAdminImpl">
-        <constructor-arg ref="roleManager"/>
     </bean>
 
     <bean id="logSinkAdmin" class="com.l7tech.server.log.LogSinkAdminImpl">

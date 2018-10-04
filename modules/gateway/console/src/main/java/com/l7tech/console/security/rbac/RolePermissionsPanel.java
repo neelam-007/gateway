@@ -1,8 +1,6 @@
 package com.l7tech.console.security.rbac;
 
 import com.l7tech.console.panels.FilterPanel;
-import com.l7tech.console.util.EntityNameResolver;
-import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gateway.common.security.rbac.Permission;
@@ -12,7 +10,6 @@ import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.*;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.util.Functions;
-import com.l7tech.util.Pair;
 import org.apache.commons.collections.ComparatorUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -47,6 +44,8 @@ public class RolePermissionsPanel extends JPanel {
     private static final String UPDATE = "U";
     private static final String DELETE = "D";
     private static final String OTHER = "O";
+    private static final String COMPLEX_SCOPE = "<complex scope>";
+    private static final int COMPLEX_SCOPE_SIZE = 3;
     private static final int MAX_WIDTH = 99999;
     private static final int SMALL_COL_WIDTH = 7;
     private JPanel contentPanel;
@@ -63,7 +62,6 @@ public class RolePermissionsPanel extends JPanel {
     private boolean readOnly;
     private boolean differentiateNewPermissions;
     private Map<String, Integer> columnIndices = new HashMap<>();
-
 
     /**
      * Creates a read-only permissions panel.
@@ -172,7 +170,14 @@ public class RolePermissionsPanel extends JPanel {
         columns.add(column(SCOPE, 30, 175, MAX_WIDTH, new Functions.Unary<String, PermissionGroup>() {
             @Override
             public String call(final PermissionGroup permissionGroup) {
-                return getScopeDescription(permissionGroup);
+                final String scopeDescription;
+                final Set<ScopePredicate> scope = permissionGroup.getScope();
+                if (scope.size() < COMPLEX_SCOPE_SIZE) {
+                    scopeDescription = PermissionGroupPropertiesDialog.getScopeDescription(permissionGroup);
+                } else {
+                    scopeDescription = COMPLEX_SCOPE;
+                }
+                return scopeDescription;
             }
         }));
         columns.add(column(CREATE, SMALL_COL_WIDTH, SMALL_COL_WIDTH, MAX_WIDTH, new Functions.Unary<Boolean, PermissionGroup>() {
@@ -260,16 +265,6 @@ public class RolePermissionsPanel extends JPanel {
         }));
     }
 
-    private String getScopeDescription(final PermissionGroup permissionGroup)
-    {
-        String scopedDescription = permissionGroup.getScopedDescription();
-        if (scopedDescription != null) {
-            EntityNameResolver entityNameResolver = Registry.getDefault().getEntityNameResolver();
-            scopedDescription = entityNameResolver.replaceRootAndPaletteFolders(scopedDescription);
-        }
-        return scopedDescription;
-    }
-
     private void enableDisable() {
         final boolean hasSelection = !getSelected().isEmpty();
         removeButton.setEnabled(hasSelection);
@@ -278,17 +273,7 @@ public class RolePermissionsPanel extends JPanel {
 
     private void loadTable() {
         if (permissions != null) {
-            Map<Pair<EntityType, Set<ScopePredicate>>, PermissionGroup> groups = PermissionGroup.groupPermissionScopes(permissions);
-            List<Pair<EntityType, Set<ScopePredicate>>> scopeList = new ArrayList<>();
-            scopeList.addAll(groups.keySet());
-            Map<Pair<EntityType, Set<ScopePredicate>>, String> scopedDescriptionsMap = Registry.getDefault().getRbacAdmin().findPermissionGroupScopeDescriptions(scopeList);
-            for (Map.Entry<Pair<EntityType, Set<ScopePredicate>>, String> entry : scopedDescriptionsMap.entrySet()) {
-                PermissionGroup permissionGroup = groups.get(entry.getKey());
-                if (permissionGroup != null) {
-                    permissionGroup.setScopedDescription(entry.getValue());
-                }
-            }
-            permissionsModel.setRows(new ArrayList<>(groups.values()));
+            permissionsModel.setRows(new ArrayList<>(PermissionGroup.groupPermissions(permissions)));
         } else {
             permissionsModel.setRows(Collections.<PermissionGroup>emptyList());
         }

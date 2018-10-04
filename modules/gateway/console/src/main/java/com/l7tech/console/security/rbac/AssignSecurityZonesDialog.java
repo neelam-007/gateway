@@ -9,7 +9,6 @@ import com.l7tech.gateway.common.security.TrustedCertAdmin;
 import com.l7tech.gateway.common.security.keystore.SsgKeyMetadata;
 import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
-import com.l7tech.gateway.common.security.rbac.ResolvedEntityHeader;
 import com.l7tech.gui.SelectableTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.TableUtil;
@@ -18,14 +17,19 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.folder.Folder;
 import com.l7tech.objectmodel.folder.HasFolderId;
 import com.l7tech.policy.AssertionAccess;
+import com.l7tech.policy.PolicyHeader;
+import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.EncapsulatedAssertion;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
+import javax.swing.event.TableModelEvent;
+import javax.swing.event.TableModelListener;
 import javax.swing.table.TableColumn;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -58,7 +62,7 @@ public class AssignSecurityZonesDialog extends JDialog {
     private SelectableFilterableTablePanel tablePanel;
     private JPanel borderPanel;
     private JLabel setLabel;
-    private SelectableTableModel<ResolvedEntityHeader> dataModel;
+    private SelectableTableModel<EntityHeader> dataModel;
     private Map<EntityType, List<SecurityZone>> entityTypes;
     private TableColumn pathColumn;
     // key = assertion access oid, value = class name
@@ -147,48 +151,65 @@ public class AssignSecurityZonesDialog extends JDialog {
 
     private void initTable() {
         dataModel = TableUtil.configureSelectableTable(tablePanel.getSelectableTable(), true, CHECK_BOX_COL_INDEX,
-                column(StringUtils.EMPTY, 30, 30, 99999, header ->  dataModel.isSelected(header)),
-                column("Name", 30, 250, 99999, securityZoneEntityTO -> {
-                    EntityHeader header = securityZoneEntityTO.getEntityHeader();
-                    String name = UNAVAILABLE;
-                    if (entityNames.containsKey(header)) {
-                        name = entityNames.get(header);
-                    } else {
-                        // header may not be in the map if it was changed since being retrieved
-                        try {
-                            name = Registry.getDefault().getEntityNameResolver().getNameForHeader(header, false);
-                            entityNames.put(header, name);
-                        } catch (final FindException | PermissionDeniedException e) {
-                            logger.log(Level.WARNING, "Error resolving name for header " + header.toStringVerbose() + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                        }
+                column(StringUtils.EMPTY, 30, 30, 99999, new Functions.Unary<Boolean, EntityHeader>() {
+                    @Override
+                    public Boolean call(final EntityHeader header) {
+                        return dataModel.isSelected(header);
                     }
-                    return name;
                 }),
-                column("Current Zone", 30, 250, 99999, securityZoneEntityTO -> {
-                    final EntityHeader header = securityZoneEntityTO.getEntityHeader();
-                    String zoneName = StringUtils.EMPTY;
-                        if (header instanceof HasSecurityZoneId) {
-                        final HasSecurityZoneId zoneable = (HasSecurityZoneId) header;
-                        final SecurityZone zone = SecurityZoneUtil.getSecurityZoneByGoid(zoneable.getSecurityZoneId());
-                        if (zone != null) {
-                            zoneName = zone.getName();
+                column("Name", 30, 250, 99999, new Functions.Unary<String, EntityHeader>() {
+                    @Override
+                    public String call(final EntityHeader header) {
+                        String name = UNAVAILABLE;
+                        if (entityNames.containsKey(header)) {
+                            name = entityNames.get(header);
                         } else {
-                            zoneName = NO_SECURITY_ZONE;
+                            // header may not be in the map if it was changed since being retrieved
+                            try {
+                                name = Registry.getDefault().getEntityNameResolver().getNameForHeader(header, false);
+                                entityNames.put(header, name);
+                            } catch (final FindException | PermissionDeniedException e) {
+                                logger.log(Level.WARNING, "Error resolving name for header " + header.toStringVerbose() + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                            }
                         }
+                        return name;
                     }
-                        return zoneName;
                 }),
-                column("Path", 30, 150, 99999, securityZoneEntityTO -> {
-                    String path = "unavailable";
-                        try {
-                        path = getPathForHeader(securityZoneEntityTO);
-                    } catch (final PermissionDeniedException e) {
-                        logger.log(Level.WARNING, "Error resolving path for header: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                column("Current Zone", 30, 250, 99999, new Functions.Unary<String, EntityHeader>() {
+                    @Override
+                    public String call(final EntityHeader header) {
+                        String zoneName = StringUtils.EMPTY;
+                        if (header instanceof HasSecurityZoneId) {
+                            final HasSecurityZoneId zoneable = (HasSecurityZoneId) header;
+                            final SecurityZone zone = SecurityZoneUtil.getSecurityZoneByGoid(zoneable.getSecurityZoneId());
+                            if (zone != null) {
+                                zoneName = zone.getName();
+                            } else {
+                                zoneName = NO_SECURITY_ZONE;
+                            }
+                        }
+                        return zoneName;
                     }
+                }),
+                column("Path", 30, 150, 99999, new Functions.Unary<String, EntityHeader>() {
+                    @Override
+                    public String call(final EntityHeader header) {
+                        String path = "unavailable";
+                        try {
+                            path = getPathForHeader(header);
+                        } catch (final FindException | PermissionDeniedException e) {
+                            logger.log(Level.WARNING, "Error resolving path for header: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                        }
                         return path;
+                    }
                 }));
         pathColumn = tablePanel.getSelectableTable().getColumnModel().getColumn(PATH_COL_INDEX);
-        dataModel.addTableModelListener(e -> enableDisable());
+        dataModel.addTableModelListener(new TableModelListener() {
+            @Override
+            public void tableChanged(final TableModelEvent e) {
+                enableDisable();
+            }
+        });
         tablePanel.configure(dataModel, new int[]{NAME_COL_INDEX}, null);
     }
 
@@ -218,11 +239,16 @@ public class AssignSecurityZonesDialog extends JDialog {
             selected = convertToBackingEntityType(selected);
             try {
                 final EntityHeaderSet<EntityHeader> entities = EntityUtils.getEntities(selected);
-                Collection<ResolvedEntityHeader> resolvedEntityHeaders = Registry.getDefault().getRbacAdmin().findSecurityZoneByEntityHeaders(entities);
-                final List<ResolvedEntityHeader> securityZoneEntityTOList = new ArrayList<>();
-                EntityNameResolver entityNameResolver = Registry.getDefault().getEntityNameResolver();
-                for (final ResolvedEntityHeader resolvedEntityHeader : resolvedEntityHeaders) {
-                    final EntityHeader header = resolvedEntityHeader.getEntityHeader();
+                final List<EntityHeader> headers = new ArrayList<>();
+                for (final EntityHeader header : entities) {
+                    if (header instanceof PolicyHeader) {
+                        final PolicyHeader policy = (PolicyHeader) header;
+                        if (PolicyType.PRIVATE_SERVICE == policy.getPolicyType() || !policy.getPolicyType().isSecurityZoneable()) {
+                            // don't show service policies or non-zoneable policies
+                            continue;
+                        }
+                    }
+
                     if (header.getType() == EntityType.ASSERTION_ACCESS) {
                         final String assertionClassName = header.getName();
                         if (EncapsulatedAssertion.class.getName().equals(assertionClassName)) {
@@ -231,17 +257,17 @@ public class AssignSecurityZonesDialog extends JDialog {
                         }
                         assertionNames.put(header.getGoid(), assertionClassName);
                     }
-                    String name = resolvedEntityHeader.getName();
-                    if (name != null) {
-                        name = entityNameResolver.replaceRootAndPaletteFolders(name);
-                    } else {
-                        name = UNAVAILABLE;
+
+                    try {
+                        entityNames.put(header, Registry.getDefault().getEntityNameResolver().getNameForHeader(header, false));
+                        headers.add(header);
+                    } catch (final FindException | PermissionDeniedException e) {
+                        // skip entities that we cannot resolve a name for since users shouldn't be able to modify an entity without this information
+                        logger.log(Level.WARNING, "Error resolving name for header " + header.toStringVerbose() + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                     }
-                    entityNames.put(header, name);
-                    securityZoneEntityTOList.add(resolvedEntityHeader);
                 }
-                dataModel.setRows(securityZoneEntityTOList);
-                boolean showPath = !securityZoneEntityTOList.isEmpty() && (securityZoneEntityTOList.get(0).getEntityHeader() instanceof HasFolderId || securityZoneEntityTOList.get(0).getEntityHeader().getType() == EntityType.ASSERTION_ACCESS);
+                dataModel.setRows(headers);
+                boolean showPath = !headers.isEmpty() && (headers.get(0) instanceof HasFolderId || headers.get(0).getType() == EntityType.ASSERTION_ACCESS);
                 showHidePathColumn(showPath);
             } catch (final FindException ex) {
                 final String error = "Error retrieving entities of type " + selected;
@@ -251,13 +277,14 @@ public class AssignSecurityZonesDialog extends JDialog {
         }
     }
 
-    private String getPathForHeader(final ResolvedEntityHeader securityZoneEntityTO)  {
-        String path = securityZoneEntityTO.getPath();
+    private String getPathForHeader(final EntityHeader header) throws FindException {
+        String path = StringUtils.EMPTY;
+        final EntityNameResolver entityNameResolver = Registry.getDefault().getEntityNameResolver();
         final ConsoleAssertionRegistry assertionRegistry = TopComponents.getInstance().getAssertionRegistry();
         try {
-            final EntityNameResolver entityNameResolver = Registry.getDefault().getEntityNameResolver();
-            final EntityHeader header = securityZoneEntityTO.getEntityHeader();
-            if (header.getType() == EntityType.ASSERTION_ACCESS && !(header instanceof HasFolderId)) {
+            if (header instanceof HasFolderId) {
+                path = entityNameResolver.getPath((HasFolderId) header);
+            } else if (header.getType() == EntityType.ASSERTION_ACCESS) {
                 final String assname = assertionNames.get(header.getGoid());
                 final Assertion assertion = assname == null ? null : assertionRegistry.findByClassName(assname);
                 if (assertion != null) {
@@ -301,15 +328,14 @@ public class AssignSecurityZonesDialog extends JDialog {
             if (selectedZone != null && selectedZone.equals(SecurityZoneUtil.getNullZone())) {
                 selectedZone = null;
             }
-            final List<ResolvedEntityHeader> selectedEntities = dataModel.getSelected();
+            final List<EntityHeader> selectedEntities = dataModel.getSelected();
             if (selectedEntityType == EntityType.ASSERTION_ACCESS) {
                 final Set<EntityHeader> assertionAccessToUpdate = new HashSet<>();
                 try {
                     final RbacAdmin rbacAdmin = Registry.getDefault().getRbacAdmin();
-                    for (final ResolvedEntityHeader securityZoneEntityTO : selectedEntities) {
-                        final EntityHeader header = securityZoneEntityTO.getEntityHeader();
+                    for (final EntityHeader header : selectedEntities) {
                         if (PersistentEntity.DEFAULT_GOID.equals(header.getGoid()) || GoidRange.WRAPPED_OID.isInRange(header.getGoid())) {
-                            final int rowIndex = dataModel.getRowIndex(securityZoneEntityTO);
+                            final int rowIndex = dataModel.getRowIndex(header);
                             // save a new assertion access
                             final String assertionClassName = assertionNames.get(header.getGoid());
                             final AssertionAccess assertionAccess = new AssertionAccess(assertionClassName);
@@ -334,13 +360,12 @@ public class AssignSecurityZonesDialog extends JDialog {
                 final Set<EntityHeader> metadataToUpdate = new HashSet<>();
                 try {
                     final TrustedCertAdmin trustedCertManager = Registry.getDefault().getTrustedCertManager();
-                    for (final ResolvedEntityHeader securityZoneEntityTO : selectedEntities) {
-                        final EntityHeader header = securityZoneEntityTO.getEntityHeader();
+                    for (final EntityHeader header : selectedEntities) {
                         if (GoidRange.ZEROED_PREFIX.isInRange(header.getGoid()) && header.getGoid().getLow() < 0) {
-                            final int rowIndex = dataModel.getRowIndex(securityZoneEntityTO);
+                            final int rowIndex = dataModel.getRowIndex(header);
                             // save new key metadata
-                            if (header instanceof com.l7tech.gateway.common.security.rbac.KeyMetadataHeaderWrapper) {
-                                final com.l7tech.gateway.common.security.rbac.KeyMetadataHeaderWrapper keyHeader = (com.l7tech.gateway.common.security.rbac.KeyMetadataHeaderWrapper) header;
+                            if (header instanceof KeyMetadataHeaderWrapper) {
+                                final KeyMetadataHeaderWrapper keyHeader = (KeyMetadataHeaderWrapper) header;
                                 final SsgKeyMetadata metadata = new SsgKeyMetadata(keyHeader.getKeystoreOid(), keyHeader.getAlias(), selectedZone);
                                 final Goid savedGoid = trustedCertManager.saveOrUpdateMetadata(metadata);
                                 entityNames.remove(header);
@@ -358,9 +383,7 @@ public class AssignSecurityZonesDialog extends JDialog {
                     DialogDisplayer.showMessageDialog(AssignSecurityZonesDialog.this, "Error", "Error assigning entities to zone.", ex);
                 }
             } else {
-                final List<EntityHeader> selectedHeaders = new ArrayList<>();
-                selectedEntities.forEach(item ->selectedHeaders.add(item.getEntityHeader()));
-                doBulkUpdate(selectedEntityType, selectedZone, selectedHeaders);
+                doBulkUpdate(selectedEntityType, selectedZone, selectedEntities);
             }
         }
 

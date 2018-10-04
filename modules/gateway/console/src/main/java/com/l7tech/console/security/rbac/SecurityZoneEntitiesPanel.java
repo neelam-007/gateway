@@ -5,8 +5,8 @@ import com.l7tech.console.util.EntityNameResolver;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SecurityZoneUtil;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.gateway.common.security.rbac.RbacAdmin;
-import com.l7tech.gateway.common.security.rbac.ResolvedEntityHeader;
 import com.l7tech.gui.SimpleTableModel;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.TableUtil;
@@ -16,8 +16,12 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SecurityZone;
 import com.l7tech.objectmodel.folder.HasFolderId;
+import com.l7tech.policy.PolicyHeader;
+import com.l7tech.policy.PolicyType;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.Functions;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
@@ -37,7 +41,7 @@ import static com.l7tech.gui.util.TableUtil.column;
  * Panel which displays the Entities in a SecurityZone.
  */
 public class SecurityZoneEntitiesPanel extends JPanel {
-    private static final Logger LOGGER = Logger.getLogger(SecurityZoneEntitiesPanel.class.getName());
+    private static final Logger logger = Logger.getLogger(SecurityZoneEntitiesPanel.class.getName());
     private static final int PATH_COL_INDEX = 1;
     private static final String UNAVAILABLE = "unavailable";
     private JPanel contentPanel;
@@ -46,7 +50,7 @@ public class SecurityZoneEntitiesPanel extends JPanel {
     private JComboBox entityTypeComboBox;
     private JLabel countLabel;
     private FilterPanel filterPanel;
-    private SimpleTableModel<ResolvedEntityHeader> entitiesTableModel;
+    private SimpleTableModel<EntityHeader> entitiesTableModel;
     private SecurityZone securityZone;
     private TableColumn pathColumn;
     private Map<EntityHeader, String> entityNames = new HashMap<>();
@@ -100,25 +104,35 @@ public class SecurityZoneEntitiesPanel extends JPanel {
 
     private void initTable() {
         entitiesTableModel = TableUtil.configureTable(entitiesTable,
-                column("Name", 80, 300, 99999, securityZoneEntityTO -> {
-                    String name = securityZoneEntityTO.getName();
-                    if (name != null) {
-                        return  Registry.getDefault().getEntityNameResolver().replaceRootAndPaletteFolders(name);
-                    } else {
-                        return UNAVAILABLE;
+                column("Name", 80, 300, 99999, new Functions.Unary<String, EntityHeader>() {
+                    @Override
+                    public String call(final EntityHeader header) {
+                        return entityNames.containsKey(header) ? entityNames.get(header) : UNAVAILABLE;
                     }
                 }),
-                column("Path", 60, 60, 99999, securityZoneEntityTO -> {
-                    String path = securityZoneEntityTO.getPath();
-                    EntityHeader entityHeader = securityZoneEntityTO.getEntityHeader();
-                    if (entityHeader.getType() == EntityType.ASSERTION_ACCESS) {
-                        final Assertion assertion = TopComponents.getInstance().getAssertionRegistry().findByClassName(entityHeader.getName());
-                        if (assertion != null) {
-                            EntityNameResolver entityNameResolver = Registry.getDefault().getEntityNameResolver();
-                            path = entityNameResolver.getPaletteFolders(assertion);
+                column("Path", 60, 60, 99999, new Functions.Unary<String, EntityHeader>() {
+                    @Override
+                    public String call(final EntityHeader entityHeader) {
+                        final EntityNameResolver entityNameResolver = Registry.getDefault().getEntityNameResolver();
+                        String path = StringUtils.EMPTY;
+                        if (entityHeader instanceof HasFolderId) {
+                            try {
+                                path = entityNameResolver.getPath((HasFolderId) entityHeader);
+                            } catch (final FindException e) {
+                                logger.log(Level.WARNING, "Unable to determine path for entity: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                                return "unknown path";
+                            } catch (final PermissionDeniedException e) {
+                                logger.log(Level.WARNING, "Unable to determine path for entity: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                                return "path unavailable";
+                            }
+                        } else if (entityHeader.getType() == EntityType.ASSERTION_ACCESS) {
+                            final Assertion assertion = TopComponents.getInstance().getAssertionRegistry().findByClassName(entityHeader.getName());
+                            if (assertion != null) {
+                                path = entityNameResolver.getPaletteFolders(assertion);
+                            }
                         }
+                        return path;
                     }
-                    return path;
                 }));
         pathColumn = entitiesTable.getColumnModel().getColumn(PATH_COL_INDEX);
         Utilities.setRowSorter(entitiesTable, entitiesTableModel);
@@ -170,22 +184,31 @@ public class SecurityZoneEntitiesPanel extends JPanel {
         if (securityZone != null) {
             EntityType selected = getSelectedEntityType();
             if (selected != null) {
+                final List<EntityHeader> entities = new ArrayList<>();
                 final RbacAdmin rbacAdmin = Registry.getDefault().getRbacAdmin();
                 try {
                     if (EntityType.SSG_KEY_ENTRY == selected) {
                         selected = EntityType.SSG_KEY_METADATA;
                     }
-                    Collection<ResolvedEntityHeader> securityZoneEntityTOCollection= rbacAdmin.findSecurityZoneByTypeAndSecurityZoneGoid(selected, securityZone.getGoid());
-                    List<ResolvedEntityHeader> securityZoneEntityTOList = new ArrayList<>();
-                    securityZoneEntityTOList.addAll(securityZoneEntityTOCollection);
-                    entitiesTableModel.setRows(securityZoneEntityTOList);
+                    for (final EntityHeader header : rbacAdmin.findEntitiesByTypeAndSecurityZoneGoid(selected, securityZone.getGoid())) {
+                        if (EntityType.POLICY != selected || !(header instanceof PolicyHeader && PolicyType.PRIVATE_SERVICE == ((PolicyHeader) header).getPolicyType())) {
+                            try {
+                                entityNames.put(header, Registry.getDefault().getEntityNameResolver().getNameForHeader(header, false));
+                                entities.add(header);
+                            } catch (final FindException | PermissionDeniedException e) {
+                                // don't show entities that we cannot resolve a name for
+                                logger.log(Level.WARNING, "Error resolving name for header " + header.toStringVerbose() + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                            }
+                        }
+                    }
+                    entitiesTableModel.setRows(entities);
                 } catch (final FindException e) {
-                    LOGGER.log(Level.WARNING, "Error retrieving entities of type " + selected + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                    logger.log(Level.WARNING, "Error retrieving entities of type " + selected + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                     DialogDisplayer.showMessageDialog(this, "Unable to retrieve entities", "Error", JOptionPane.ERROR_MESSAGE, null);
                 }
             }
         } else {
-            entitiesTableModel.setRows(Collections.<ResolvedEntityHeader>emptyList());
+            entitiesTableModel.setRows(Collections.<EntityHeader>emptyList());
         }
 
         showHidePathColumn();
@@ -194,8 +217,7 @@ public class SecurityZoneEntitiesPanel extends JPanel {
     private void showHidePathColumn() {
         final boolean pathColumnVisible = entitiesTable.getColumnCount() > 1;
         if (entitiesTableModel.getRowCount() > 0) {
-            ResolvedEntityHeader securityZoneEntityTO = entitiesTableModel.getRowObject(0);
-            final EntityHeader firstHeader = securityZoneEntityTO.getEntityHeader();
+            final EntityHeader firstHeader = entitiesTableModel.getRowObject(0);
             if (!pathColumnVisible && (firstHeader instanceof HasFolderId || firstHeader.getType() == EntityType.ASSERTION_ACCESS)) {
                 entitiesTable.addColumn(pathColumn);
             } else if (pathColumnVisible && !(firstHeader instanceof HasFolderId || firstHeader.getType() == EntityType.ASSERTION_ACCESS)) {

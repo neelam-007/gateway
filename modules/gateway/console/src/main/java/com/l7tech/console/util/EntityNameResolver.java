@@ -38,8 +38,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Utility class for resolving names of entities.
@@ -70,9 +68,6 @@ public class EntityNameResolver {
     private final AssertionRegistry assertionRegistry;
     private final PaletteFolderRegistry folderRegistry;
     private final String rootFolderName;
-    private static final String REPLACE_PATTERN = "\\$\\{(.)*?\\}";
-    private static final String ROOT_FOLDER_PATTERN = "${rootFolderName}";
-    private static final String PALETTE_FOLDER = "${paletteFolder:";
 
     static {
         IGNORE_HEADER_NAMES = new HashSet<>();
@@ -602,31 +597,5 @@ public class EntityNameResolver {
             }
         }
         return stringBuilder.toString();
-    }
-
-    public String replaceRootAndPaletteFolders(final String input) {
-        String output = input;
-        if (input != null) {
-            Pattern pattern = Pattern.compile(REPLACE_PATTERN);
-            Matcher matcher = pattern.matcher(input);
-            StringBuffer sb = new StringBuffer();
-            while (matcher.find()) {
-                String match = matcher.group();
-                if (ROOT_FOLDER_PATTERN.equals(match)) {
-                    matcher.appendReplacement(sb, rootFolderName);
-                } else if (match != null && match.startsWith(PALETTE_FOLDER)) {
-                    int index = match.indexOf(':') + 1;
-                    String folderId = match.substring(index, match.length() - 1);
-                    String folderName = folderRegistry.getPaletteFolderName(folderId);
-                    if (folderName == null) {
-                        folderName = UNKNOWN_FOLDER;
-                    }
-                    matcher.appendReplacement(sb, folderName);
-                }
-            }
-            matcher.appendTail(sb);
-            output = sb.toString();
-        }
-        return output;
     }
 }
