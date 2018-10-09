@@ -66,7 +66,9 @@
         <dependency name="CsrfProtectionAssertion" rev="latest.integration" conf="module"/>
         <dependency name="JsonTransformationAssertion" rev="latest.integration" conf="module"/>
         <dependency name="RetrieveServiceWsdlAssertion" rev="latest.integration" conf="module"/>
-        <dependency name="IcapAntivirusScannerAssertion" rev="latest.integration" conf="module"/>
+        <dependency org="com.ca.apim.gateway.extension" name="IcapAntivirusScannerAssertion" rev="latest.integration" conf="module">
+            <artifact name="IcapAntivirusScannerAssertion" type="aar"/>
+        </dependency>
         <dependency name="UUIDGeneratorAssertion" rev="latest.integration" conf="module"/>
         <dependency name="SshAssertion" rev="latest.integration" conf="module"/>
         <dependency name="MqNativeAssertion" rev="latest.integration" conf="module"/>
