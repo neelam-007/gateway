@@ -1,7 +1,7 @@
 package com.l7tech.server.policy.module;
 
+import com.sun.istack.Nullable;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.net.URL;

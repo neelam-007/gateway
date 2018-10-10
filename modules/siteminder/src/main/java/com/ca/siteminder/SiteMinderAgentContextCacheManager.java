@@ -2,7 +2,7 @@ package com.ca.siteminder;
 
 import com.ca.siteminder.SiteMinderAgentContextCache.AgentContextSubCache;
 import com.l7tech.objectmodel.Goid;
-import org.jetbrains.annotations.NotNull;
+import com.sun.istack.NotNull;
 
 import java.util.List;
 

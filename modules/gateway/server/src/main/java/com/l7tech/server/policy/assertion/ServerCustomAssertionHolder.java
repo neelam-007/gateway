@@ -59,9 +59,9 @@ import java.security.*;
 import java.util.*;
 import java.util.logging.Level;
 
+import com.sun.istack.Nullable;
 import org.jetbrains.annotations.NotNull;
 
-import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;

@@ -10,7 +10,7 @@ import com.l7tech.gateway.common.solutionkit.SolutionKitsConfig;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.gui.util.Utilities;
 import com.l7tech.util.Pair;
-import org.jetbrains.annotations.NotNull;
+import com.sun.istack.NotNull;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
