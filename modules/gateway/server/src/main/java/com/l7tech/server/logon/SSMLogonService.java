@@ -168,9 +168,13 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
                     throw new FailAttemptsExceededException(msg);
                 } else {
                     //reset failed attempts whenever the lockout time passes
-                    logonInfo.resetFailCount(now);
-                    logonInfo.setState(LogonInfo.State.ACTIVE);
-                    logonManager.update(logonInfo);
+                    doLogonInfoUpdate(user, new Functions.UnaryVoid<LogonInfo>() {
+                        @Override
+                        public void call(final LogonInfo logonInfo) {
+                            logonInfo.setState(LogonInfo.State.ACTIVE);
+                            logonInfo.resetFailCount(now);
+                        }
+                    });
                 }
             }
 
@@ -191,12 +195,6 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
         } catch (FindException fe) {
             //if we can't find this user then we'll just ignore it and we'll carry on and it'll get updated later
             //this find exception could occur because of backwards compatibility
-        } catch (UpdateException e) {
-            // this error occurs very rarely and so we have not created an exception and error dialogue to specifically address this exception
-            // opting to throw an AuthenticationException instead
-            String errorMessage = FAILED_UPDATE_LOGON_ATTEMPT_EXCEPTION_MESSAGE + user.getLogin() + "' cannot update the database with logon info";
-            logger.log(Level.WARNING, errorMessage, e);
-            throw new AuthenticationException(errorMessage, e);
         }
     }
 
