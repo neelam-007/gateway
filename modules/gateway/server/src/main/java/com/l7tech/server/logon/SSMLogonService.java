@@ -168,13 +168,7 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
                     throw new FailAttemptsExceededException(msg);
                 } else {
                     //reset failed attempts whenever the lockout time passes
-                    doLogonInfoUpdate(user, new Functions.UnaryVoid<LogonInfo>() {
-                        @Override
-                        public void call(final LogonInfo logonInfo) {
-                            logonInfo.setState(LogonInfo.State.ACTIVE);
-                            logonInfo.resetFailCount(now);
-                        }
-                    });
+                    doResetLockedUser(user, now);
                 }
             }
 
@@ -376,6 +370,16 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
                 } else {
                     logonInfo.failLogonAttempt(now);
                 }
+            }
+        });
+    }
+
+    void doResetLockedUser(final User user, final long now) {
+        doLogonInfoUpdate(user, new Functions.UnaryVoid<LogonInfo>() {
+            @Override
+            public void call(final LogonInfo logonInfo) {
+                logonInfo.setState(LogonInfo.State.ACTIVE);
+                logonInfo.resetFailCount(now);
             }
         });
     }
