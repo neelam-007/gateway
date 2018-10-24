@@ -38,6 +38,9 @@ public interface ServerConfigParams {
     String PARAM_AUDIT_PURGE_MINIMUM_AGE = "auditPurgeMinimumAge";
     String PARAM_AUDIT_REFRESH_PERIOD_SECS = "auditViewerRefreshSeconds";
     String PARAM_AUDIT_HINTING_ENABLED = "auditHintingEnabled";
+    String PARAM_AUDIT_MESSAGE_SAVE_TO_INTERNAL = "auditMessageSaveToInternal";
+    String PARAM_AUDIT_ADMIN_SAVE_TO_INTERNAL = "auditAdminSaveToInternal";
+    String PARAM_AUDIT_SYSTEM_SAVE_TO_INTERNAL = "auditSystemSaveToInternal";
     String PARAM_AUDIT_ASSERTION_STATUS_ENABLED = "auditAssertionStatusEnabled";
     String PARAM_AUDIT_ASSOCIATED_LOGS_THRESHOLD = "auditAssociatedLogsThreshold";
     String PARAM_AUDIT_USE_ASSOCIATED_LOGS_THRESHOLD = "auditAssociatedLogsThresholdRespected";

@@ -361,11 +361,12 @@ public class AuditContextImpl implements AuditContext {
                             OUR_IP
                         );
 
-                        if (isSignAudits()) {
-                            signRecord(auditFallbackDisabled);
+                        if (saveToDatabase(auditFallbackDisabled)) {
+                            if(isSignAudits()){
+                                signRecord(auditFallbackDisabled);
+                            }
+                            auditRecordManager.save(auditFallbackDisabled);
                         }
-
-                        auditRecordManager.save(auditFallbackDisabled);
                     }
 
                     return;
@@ -390,27 +391,46 @@ public class AuditContextImpl implements AuditContext {
             }
         }
 
-        if (isSignAudits()) {
-            signRecord(rec);
-        } else {
-            rec.setSignature(null);   // in case of updating, remove any old signature
-        }
+        if (saveToDatabase(rec)) {
+            if (isSignAudits()) {
+                signRecord(rec);
+            } else {
+                rec.setSignature(null);   // in case of updating, remove any old signature
+            }
 
-        if (update) {
-            auditRecordManager.update(rec);
-        } else {
-            auditRecordManager.save(rec);
+            if (update) {
+                auditRecordManager.update(rec);
+            } else {
+                auditRecordManager.save(rec);
+            }
         }
 
         if (sinkPolicyFailed) {
             // Need to audit something about the failure, says func spec
             SystemAuditRecord fail = new SystemAuditRecord(Level.WARNING, nodeId, Component.GW_AUDIT_SYSTEM,
                     "Audit sink policy failed; status = " + sinkPolicyStatus.getNumeric(), false, null, null, null, "Sink Failure", OUR_IP);
-            if(isSignAudits()){
-                signRecord(fail);
+            if (saveToDatabase(fail)) {
+                if(isSignAudits()){
+                    signRecord(fail);
+                }
+                auditRecordManager.save(fail);
+            } else {
+                logger.warning(fail.getMessage());
             }
-            auditRecordManager.save(fail);
         }
+    }
+
+    private boolean saveToDatabase(AuditRecord rec) {
+        if (rec instanceof MessageSummaryAuditRecord) {
+            return config.getBooleanProperty(ServerConfigParams.PARAM_AUDIT_MESSAGE_SAVE_TO_INTERNAL, true);
+        }
+        if (rec instanceof SystemAuditRecord) {
+            return config.getBooleanProperty(ServerConfigParams.PARAM_AUDIT_SYSTEM_SAVE_TO_INTERNAL, true);
+        }
+        if (rec instanceof AdminAuditRecord) {
+            return config.getBooleanProperty(ServerConfigParams.PARAM_AUDIT_ADMIN_SAVE_TO_INTERNAL, true);
+        }
+        return true;
     }
 
     private boolean isPCIDSSEnabled() {
