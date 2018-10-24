@@ -374,7 +374,7 @@ public class SSMLogonService implements LogonService, PropertyChangeListener, Ap
         });
     }
 
-    void doResetLockedUser(final User user, final long now) {
+    private void doResetLockedUser(final User user, final long now) {
         doLogonInfoUpdate(user, new Functions.UnaryVoid<LogonInfo>() {
             @Override
             public void call(final LogonInfo logonInfo) {
