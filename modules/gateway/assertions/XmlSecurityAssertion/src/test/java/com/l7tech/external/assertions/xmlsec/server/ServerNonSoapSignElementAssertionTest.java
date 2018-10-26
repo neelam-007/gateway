@@ -12,7 +12,10 @@ import com.l7tech.security.xml.SupportedSignatureMethods;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.message.PolicyEnforcementContextFactory;
 import com.l7tech.server.util.SimpleSingletonBeanFactory;
+import com.l7tech.test.BugId;
 import com.l7tech.test.BugNumber;
+import com.l7tech.util.MissingRequiredElementException;
+import com.l7tech.util.TooManyChildElementsException;
 import com.l7tech.xml.InvalidXpathException;
 import com.l7tech.xml.soap.SoapUtil;
 import com.l7tech.xml.xpath.XpathExpression;
@@ -115,6 +118,28 @@ public class ServerNonSoapSignElementAssertionTest {
         Element reference = XmlUtil.findExactlyOneChildElementByName(signedInfo, SoapUtil.DIGSIG_URI, "Reference");
         Attr uriAttr = reference.getAttributeNode("URI");
         assertEquals("", uriAttr.getNodeValue());
+    }
+
+    @Test
+    @BugId("DE379506")
+    public void testSignElement_enveloped_withEmptyUriRef() throws Exception {
+        final String requestXml = "<message><from>anonymous</from><to>all</to><text>Hello World</text></message>";
+        final NonSoapSignElementAssertion assertion = makeAssertion();
+
+        assertion.setXpathExpression(new XpathExpression("/message"));
+        assertion.setCustomIdAttributeQname("");
+        assertion.setForceEnvelopedTransform(true);
+
+        final Element signature = applySignature(assertion, makeRequest(requestXml));
+        assertEquals("message", signature.getParentNode().getLocalName());
+
+        final Element message = (Element) signature.getParentNode();
+        assertFalse(message.hasAttribute("Id"));
+        assertEquals("", getSignatureReferenceElement(signature).getAttribute("URI"));
+    }
+
+    private Element getSignatureReferenceElement(Element signature) throws TooManyChildElementsException, MissingRequiredElementException {
+        return XmlUtil.findExactlyOneChildElementByName(XmlUtil.findFirstChildElementByName(signature, SoapUtil.DIGSIG_URI, "SignedInfo"), SoapUtil.DIGSIG_URI, "Reference");
     }
 
     @Test

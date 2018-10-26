@@ -61,11 +61,19 @@ public class ServerNonSoapSignElementAssertion extends ServerNonSoapSecurityAsse
     }
 
     private int signElement(int count, Element elementToSign, SignerInfo signer) throws SignatureException, SignatureStructureException, XSignatureException, UnrecoverableKeyException {
-        Pair<Integer, String> p = generateId(count, elementToSign);
-        count = p.left;
-        String idValue = p.right;
+        final String idValue;
 
-        final Map<String, Element> elementsToSignWithIDs = new HashMap<String, Element>();
+        // Avoid generating the reference id for the root element if requested.
+        // Root element is unique to the given document and hence not necessary to attach ID attribute to it to reference inside signature/signedinfo/reference element.
+        if (enableImplicitEmptyUriDocRef && elementToSign.getParentNode().getNodeType() == Node.DOCUMENT_NODE) {
+            idValue = "";
+        } else {
+            final Pair<Integer, String> p = generateId(count, elementToSign);
+            count = p.left;
+            idValue = p.right;
+        }
+
+        final Map<String, Element> elementsToSignWithIDs = new HashMap<>();
         elementsToSignWithIDs.put(idValue, elementToSign);
         Element signature = DsigUtil.createSignature(elementsToSignWithIDs, elementToSign.getOwnerDocument(), signer.getCertificate(), signer.getPrivate(), null, null, assertion.getDigestAlgName(), assertion.getRefDigestAlgName(), true, enableImplicitEmptyUriDocRef);
 
