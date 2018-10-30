@@ -3607,7 +3607,7 @@ ${versionfilecontent}
     </target>
 
     <target name="sign-jar">
-        <signjar jar="${file}" alias="signer7" keystore="${src.root}/etc/ssgKeyStore" storepass="password" lazy="true"/>
+        <signjar jar="${file}" alias="signer8" keystore="${src.root}/etc/ssgKeyStore" storepass="password" lazy="true"/>
     </target>
 
 	<target name="checkwebstartresourcefile">
