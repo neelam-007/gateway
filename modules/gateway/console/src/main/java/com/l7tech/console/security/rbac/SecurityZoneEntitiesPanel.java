@@ -104,35 +104,27 @@ public class SecurityZoneEntitiesPanel extends JPanel {
 
     private void initTable() {
         entitiesTableModel = TableUtil.configureTable(entitiesTable,
-                column("Name", 80, 300, 99999, new Functions.Unary<String, EntityHeader>() {
-                    @Override
-                    public String call(final EntityHeader header) {
-                        return entityNames.containsKey(header) ? entityNames.get(header) : UNAVAILABLE;
-                    }
-                }),
-                column("Path", 60, 60, 99999, new Functions.Unary<String, EntityHeader>() {
-                    @Override
-                    public String call(final EntityHeader entityHeader) {
-                        final EntityNameResolver entityNameResolver = Registry.getDefault().getEntityNameResolver();
-                        String path = StringUtils.EMPTY;
-                        if (entityHeader instanceof HasFolderId) {
-                            try {
-                                path = entityNameResolver.getPath((HasFolderId) entityHeader);
-                            } catch (final FindException e) {
-                                logger.log(Level.WARNING, "Unable to determine path for entity: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                                return "unknown path";
-                            } catch (final PermissionDeniedException e) {
-                                logger.log(Level.WARNING, "Unable to determine path for entity: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                                return "path unavailable";
-                            }
-                        } else if (entityHeader.getType() == EntityType.ASSERTION_ACCESS) {
-                            final Assertion assertion = TopComponents.getInstance().getAssertionRegistry().findByClassName(entityHeader.getName());
-                            if (assertion != null) {
-                                path = entityNameResolver.getPaletteFolders(assertion);
-                            }
+                column("Name", 80, 300, 99999, (Functions.Unary<String, EntityHeader>) header -> entityNames.containsKey(header) ? entityNames.get(header) : UNAVAILABLE),
+                column("Path", 60, 60, 99999, (Functions.Unary<String, EntityHeader>) entityHeader -> {
+                    final EntityNameResolver entityNameResolver = Registry.getDefault().getEntityNameResolver();
+                    String path = StringUtils.EMPTY;
+                    if (entityHeader instanceof HasFolderId) {
+                        try {
+                            path = entityNameResolver.getPath((HasFolderId) entityHeader);
+                        } catch (final FindException e) {
+                            logger.log(Level.WARNING, "Unable to determine path for entity: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                            return "unknown path";
+                        } catch (final PermissionDeniedException e) {
+                            logger.log(Level.WARNING, "Unable to determine path for entity: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                            return "path unavailable";
                         }
-                        return path;
+                    } else if (entityHeader.getType() == EntityType.ASSERTION_ACCESS) {
+                        final Assertion assertion = TopComponents.getInstance().getAssertionRegistry().findByClassName(entityHeader.getName());
+                        if (assertion != null) {
+                            path = entityNameResolver.getPaletteFolders(assertion);
+                        }
                     }
+                    return path;
                 }));
         pathColumn = entitiesTable.getColumnModel().getColumn(PATH_COL_INDEX);
         Utilities.setRowSorter(entitiesTable, entitiesTableModel);
@@ -192,13 +184,7 @@ public class SecurityZoneEntitiesPanel extends JPanel {
                     }
                     for (final EntityHeader header : rbacAdmin.findEntitiesByTypeAndSecurityZoneGoid(selected, securityZone.getGoid())) {
                         if (EntityType.POLICY != selected || !(header instanceof PolicyHeader && PolicyType.PRIVATE_SERVICE == ((PolicyHeader) header).getPolicyType())) {
-                            try {
-                                entityNames.put(header, Registry.getDefault().getEntityNameResolver().getNameForHeader(header, false));
-                                entities.add(header);
-                            } catch (final FindException | PermissionDeniedException e) {
-                                // don't show entities that we cannot resolve a name for
-                                logger.log(Level.WARNING, "Error resolving name for header " + header.toStringVerbose() + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                            }
+                            populateHeader(entities, header);
                         }
                     }
                     entitiesTableModel.setRows(entities);
@@ -212,6 +198,16 @@ public class SecurityZoneEntitiesPanel extends JPanel {
         }
 
         showHidePathColumn();
+    }
+
+    private void populateHeader(List<EntityHeader> entities, EntityHeader header) {
+        try {
+            entityNames.put(header, Registry.getDefault().getEntityNameResolver().getNameForHeader(header, false));
+            entities.add(header);
+        } catch (final FindException | PermissionDeniedException e) {
+            // don't show entities that we cannot resolve a name for
+            logger.log(Level.WARNING, "Error resolving name for header " + header.toStringVerbose() + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+        }
     }
 
     private void showHidePathColumn() {

@@ -151,57 +151,43 @@ public class AssignSecurityZonesDialog extends JDialog {
 
     private void initTable() {
         dataModel = TableUtil.configureSelectableTable(tablePanel.getSelectableTable(), true, CHECK_BOX_COL_INDEX,
-                column(StringUtils.EMPTY, 30, 30, 99999, new Functions.Unary<Boolean, EntityHeader>() {
-                    @Override
-                    public Boolean call(final EntityHeader header) {
-                        return dataModel.isSelected(header);
-                    }
-                }),
-                column("Name", 30, 250, 99999, new Functions.Unary<String, EntityHeader>() {
-                    @Override
-                    public String call(final EntityHeader header) {
-                        String name = UNAVAILABLE;
-                        if (entityNames.containsKey(header)) {
-                            name = entityNames.get(header);
-                        } else {
-                            // header may not be in the map if it was changed since being retrieved
-                            try {
-                                name = Registry.getDefault().getEntityNameResolver().getNameForHeader(header, false);
-                                entityNames.put(header, name);
-                            } catch (final FindException | PermissionDeniedException e) {
-                                logger.log(Level.WARNING, "Error resolving name for header " + header.toStringVerbose() + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                            }
-                        }
-                        return name;
-                    }
-                }),
-                column("Current Zone", 30, 250, 99999, new Functions.Unary<String, EntityHeader>() {
-                    @Override
-                    public String call(final EntityHeader header) {
-                        String zoneName = StringUtils.EMPTY;
-                        if (header instanceof HasSecurityZoneId) {
-                            final HasSecurityZoneId zoneable = (HasSecurityZoneId) header;
-                            final SecurityZone zone = SecurityZoneUtil.getSecurityZoneByGoid(zoneable.getSecurityZoneId());
-                            if (zone != null) {
-                                zoneName = zone.getName();
-                            } else {
-                                zoneName = NO_SECURITY_ZONE;
-                            }
-                        }
-                        return zoneName;
-                    }
-                }),
-                column("Path", 30, 150, 99999, new Functions.Unary<String, EntityHeader>() {
-                    @Override
-                    public String call(final EntityHeader header) {
-                        String path = "unavailable";
+                column(StringUtils.EMPTY, 30, 30, 99999, (Functions.Unary<Boolean, EntityHeader>) header -> dataModel.isSelected(header)),
+                column("Name", 30, 250, 99999, (Functions.Unary<String, EntityHeader>) header -> {
+                    String name = UNAVAILABLE;
+                    if (entityNames.containsKey(header)) {
+                        name = entityNames.get(header);
+                    } else {
+                        // header may not be in the map if it was changed since being retrieved
                         try {
-                            path = getPathForHeader(header);
+                            name = Registry.getDefault().getEntityNameResolver().getNameForHeader(header, false);
+                            entityNames.put(header, name);
                         } catch (final FindException | PermissionDeniedException e) {
-                            logger.log(Level.WARNING, "Error resolving path for header: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                            logger.log(Level.WARNING, "Error resolving name for header " + header.toStringVerbose() + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
                         }
-                        return path;
                     }
+                    return name;
+                }),
+                column("Current Zone", 30, 250, 99999, (Functions.Unary<String, EntityHeader>) header -> {
+                    String zoneName = StringUtils.EMPTY;
+                    if (header instanceof HasSecurityZoneId) {
+                        final HasSecurityZoneId zoneable = (HasSecurityZoneId) header;
+                        final SecurityZone zone = SecurityZoneUtil.getSecurityZoneByGoid(zoneable.getSecurityZoneId());
+                        if (zone != null) {
+                            zoneName = zone.getName();
+                        } else {
+                            zoneName = NO_SECURITY_ZONE;
+                        }
+                    }
+                    return zoneName;
+                }),
+                column("Path", 30, 150, 99999, (Functions.Unary<String, EntityHeader>) header -> {
+                    String path = "unavailable";
+                    try {
+                        path = getPathForHeader(header);
+                    } catch (final FindException | PermissionDeniedException e) {
+                        logger.log(Level.WARNING, "Error resolving path for header: " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
+                    }
+                    return path;
                 }));
         pathColumn = tablePanel.getSelectableTable().getColumnModel().getColumn(PATH_COL_INDEX);
         dataModel.addTableModelListener(new TableModelListener() {
@@ -258,13 +244,7 @@ public class AssignSecurityZonesDialog extends JDialog {
                         assertionNames.put(header.getGoid(), assertionClassName);
                     }
 
-                    try {
-                        entityNames.put(header, Registry.getDefault().getEntityNameResolver().getNameForHeader(header, false));
-                        headers.add(header);
-                    } catch (final FindException | PermissionDeniedException e) {
-                        // skip entities that we cannot resolve a name for since users shouldn't be able to modify an entity without this information
-                        logger.log(Level.WARNING, "Error resolving name for header " + header.toStringVerbose() + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
-                    }
+                    populateHeader(headers, header);
                 }
                 dataModel.setRows(headers);
                 boolean showPath = !headers.isEmpty() && (headers.get(0) instanceof HasFolderId || headers.get(0).getType() == EntityType.ASSERTION_ACCESS);
@@ -274,6 +254,16 @@ public class AssignSecurityZonesDialog extends JDialog {
                 logger.log(Level.WARNING, error, ExceptionUtils.getDebugException(ex));
                 DialogDisplayer.showMessageDialog(this, error, "Error", JOptionPane.ERROR_MESSAGE, null);
             }
+        }
+    }
+
+    private void populateHeader(List<EntityHeader> headers, EntityHeader header) {
+        try {
+            entityNames.put(header, Registry.getDefault().getEntityNameResolver().getNameForHeader(header, false));
+            headers.add(header);
+        } catch (final FindException | PermissionDeniedException e) {
+            // skip entities that we cannot resolve a name for since users shouldn't be able to modify an entity without this information
+            logger.log(Level.WARNING, "Error resolving name for header " + header.toStringVerbose() + ": " + ExceptionUtils.getMessage(e), ExceptionUtils.getDebugException(e));
         }
     }
 

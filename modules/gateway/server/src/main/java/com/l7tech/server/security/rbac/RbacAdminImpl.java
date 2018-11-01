@@ -165,13 +165,11 @@ public class RbacAdminImpl implements RbacAdmin {
     private Role attachEntities(Role theRole) {
         Goid entityGoid = theRole.getEntityGoid();
         EntityType entityType = theRole.getEntityType();
-        if (entityType != null && PersistentEntity.class.isAssignableFrom(entityType.getEntityClass())) {
-            if(entityGoid != null) {
-                try {
-                    theRole.setCachedSpecificEntity(entityCrud.find(entityType.getEntityClass(), entityGoid));
-                } catch (FindException e) {
-                    logger.log(Level.WARNING, MessageFormat.format("Couldn't find {0} (# {1}) to attach to ''{2}'' Role", entityType.name(), entityGoid, theRole.getName()), ExceptionUtils.getDebugException(e));
-                }
+        if (entityGoid != null && entityType != null && PersistentEntity.class.isAssignableFrom(entityType.getEntityClass())) {
+            try {
+                theRole.setCachedSpecificEntity(entityCrud.find(entityType.getEntityClass(), entityGoid));
+            } catch (FindException e) {
+                logger.log(Level.WARNING, MessageFormat.format("Couldn't find {0} (# {1}) to attach to ''{2}'' Role", entityType.name(), entityGoid, theRole.getName()), ExceptionUtils.getDebugException(e));
             }
         }
         return theRole;
