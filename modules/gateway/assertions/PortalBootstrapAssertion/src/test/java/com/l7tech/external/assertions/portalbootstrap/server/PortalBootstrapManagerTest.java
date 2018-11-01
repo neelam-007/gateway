@@ -52,9 +52,11 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 import static com.l7tech.external.assertions.portalbootstrap.server.PortalBootstrapManager.*;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.mock;
 
 /**
  * @author alee, 8/28/2015
@@ -70,6 +72,7 @@ public class PortalBootstrapManagerTest {
     private static final String OTK_CONN_ID = new Goid(1, 1).toString();
     private static final String OTK_CONN_NAME = "OTK Connection";
     private static final String LOCALHOST = "localhost";
+    private static final String OTK_VERSION = "4.3.0";
     private UserBean user;
     @Mock
     private ApplicationContext context;
@@ -141,6 +144,8 @@ public class PortalBootstrapManagerTest {
 
     @Test
     public void buildEnrollmentPostBody() throws Exception {
+        PortalBootstrapManager spyManager = spy(manager);
+
         when(clusterInfoManager.retrieveClusterStatus()).thenReturn(Collections.singletonList(new ClusterNodeInfo()));
         final Policy otkPolicy = new Policy(PolicyType.INCLUDE_FRAGMENT, OTK_CLIENT_DB_GET_POLICY, "</xml>", false);
         otkPolicy.setGoid(OTK_POLICY_GOID);
@@ -152,7 +157,9 @@ public class PortalBootstrapManagerTest {
         otkJdbc.setGoid(OTK_JDBC_GOID);
         when(jdbcConnectionManager.findByUniqueName(OAUTH)).thenReturn(otkJdbc);
 
-        final byte[] postBody = manager.buildEnrollmentPostBody
+        doReturn(OTK_VERSION).when(spyManager).getOtkVersion(user);
+
+        final byte[] postBody = spyManager.buildEnrollmentPostBody
                 (user);
         final ObjectMapper mapper = new ObjectMapper();
         final JsonNode jsonNode = mapper.readTree(postBody);
@@ -164,6 +171,7 @@ public class PortalBootstrapManagerTest {
         assertEquals(OTK_POLICY_GOID.toString(), jsonNode.get(OTK_CLIENT_DB_GET_POLICY).getTextValue());
         assertEquals(OTK_ENCASS_GOID.toString(), jsonNode.get(OTK_REQUIRE_OAUTH_2_TOKEN_ENCASS).getTextValue());
         assertEquals(OTK_JDBC_GOID.toString(), jsonNode.get(OTK_JDBC_CONN).getTextValue());
+        assertEquals(OTK_VERSION, jsonNode.get(manager.OTK_VERSION).getTextValue());
         assertEquals("1", jsonNode.get("node_count").getTextValue());
         assertNotNull(jsonNode.get("nodeInfo"));
     }
@@ -335,4 +343,24 @@ public class PortalBootstrapManagerTest {
         when(clusterPropertyManager.getProperty("portal.bundle.version")).thenReturn("12345");
         assertTrue(!manager.isGatewayEnrolled());
     }
+
+
+    @Test
+    public void testGetOTKVersionRequest() throws Exception{
+        ServerAssertion serverAssertion = mock(ServerAssertion.class);
+        PolicyEnforcementContext policyEnforcementContext = mock(PolicyEnforcementContext.class);
+
+        when(serverPolicyFactory.compilePolicy(null, false)).thenReturn(serverAssertion);
+        when(serverAssertion.checkRequest(policyEnforcementContext)).thenReturn(AssertionStatus.BAD_RESPONSE);
+
+        try {
+            manager.getOtkVersion(user);
+        }
+        catch (IOException ioe) {
+            // expected to fail with restman error message, httpStatus = 200
+            assertTrue(ioe.getMessage().contains("RESTMAN failed"));
+        }
+
+    }
+
 }

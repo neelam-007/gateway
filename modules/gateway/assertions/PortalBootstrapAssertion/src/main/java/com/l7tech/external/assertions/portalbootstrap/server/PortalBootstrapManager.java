@@ -65,6 +65,7 @@ import java.net.URL;
 import java.security.*;
 import java.security.cert.*;
 import java.security.cert.Certificate;
+import java.text.MessageFormat;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -95,6 +96,26 @@ public class PortalBootstrapManager {
     static final String OTK_CLIENT_DB_GET = "OTK Client DB GET";
     static final String OTK_REQUIRE_OAUTH_2_0_TOKEN = "OTK Require OAuth 2.0 Token";
     static final String OAUTH = "OAuth";
+    static final String OTK_VERSION = "otk_version";
+    /** OTK_GUID OTK solution kit is always fixed as a6f9bbee-87c2-43d8-b613-5c072f7b6f7d */
+    static final String OTK_GUID = "a6f9bbee-87c2-43d8-b613-5c072f7b6f7d";
+    static final String OTK_VERSION_TAG = "l7:SolutionKitVersion";
+
+    // For restman calls
+    static final String MESS = "mess";
+    static final String POLICY_XML = String.format(
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
+            "    <wsp:All wsp:Usage=\"Required\">\n" +
+            "        <L7p:RESTGatewayManagement>\n" +
+            "            <L7p:OtherTargetMessageVariable stringValue=\"%s\"/>\n" +
+            "            <L7p:Target target=\"OTHER\"/>\n" +
+            "        </L7p:RESTGatewayManagement>\n" +
+            "    </wsp:All>\n" +
+            "</wsp:Policy>\n", MESS );
+    static final String REST_GATEWAY_MAN_URI = "restGatewayMan.uri";
+    static final String REST_GATEWAY_MAN_ACTION= "restGatewayMan.action";
+
 
     //For Cassandra
     static final String OTK_CLIENT_NOSQL_GET = "OTK Client NoSQL GET";
@@ -456,6 +477,7 @@ public class PortalBootstrapManager {
         String clusterName = config.getProperty( "clusterHost", "" );
         String buildInfo = BuildInfo.getLongBuildString();
         String ssgVersion = BuildInfo.getProductVersion();
+        String otkVersion = getOtkVersion(adminUser);
 
         final Collection<ClusterNodeInfo> infos;
         try {
@@ -474,6 +496,7 @@ public class PortalBootstrapManager {
         gen.writeStartObject();
         gen.writeStringField(CLUSTER_NAME, clusterName );
         gen.writeStringField(VERSION, ssgVersion );
+        gen.writeStringField(OTK_VERSION, otkVersion);
         gen.writeStringField(BUILD_INFO, buildInfo );
         gen.writeStringField(ADMINUSER_PROVIDERID, adminUser.getProviderId().toString() );
         gen.writeStringField(ADMINUSER_ID, adminUser.getId() );
@@ -567,17 +590,7 @@ public class PortalBootstrapManager {
                        @NotNull ContentTypeHeader responseContentType,
                        @NotNull User adminUser,
                        @NotNull PolicyEnforcementContext context) throws IOException {
-        String policyXml =
-                "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                "<wsp:Policy xmlns:L7p=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/2002/12/policy\">\n" +
-                "    <wsp:All wsp:Usage=\"Required\">\n" +
-                "        <L7p:RESTGatewayManagement>\n" +
-                "            <L7p:OtherTargetMessageVariable stringValue=\"mess\"/>\n" +
-                "            <L7p:Target target=\"OTHER\"/>\n" +
-                "        </L7p:RESTGatewayManagement>\n" +
-                "    </wsp:All>\n" +
-                "</wsp:Policy>\n";
-        Assertion assertion = wspReader.parseStrictly( policyXml, WspReader.Visibility.omitDisabled );
+        Assertion assertion = wspReader.parseStrictly( POLICY_XML, WspReader.Visibility.omitDisabled );
 
         ServerAssertion sph = null;
         try {
@@ -595,15 +608,15 @@ public class PortalBootstrapManager {
                 }
 
                 mess.initialize( stashManagerFactory.createStashManager(), responseContentType, responseInputStream );
-                context.setVariable( "restGatewayMan.action", "POST" );
-                context.setVariable( "restGatewayMan.uri", "1.0/solutionKitManagers" + queryParam );
+                context.setVariable( REST_GATEWAY_MAN_ACTION, "POST" );
+                context.setVariable( REST_GATEWAY_MAN_URI, "1.0/solutionKitManagers" + queryParam );
             } else {
                 // restman bundle
                 Document bundleDoc;
                 bundleDoc = toDocument(responseInputStream);
                 mess.initialize(bundleDoc, ContentTypeHeader.XML_DEFAULT);
-                context.setVariable("restGatewayMan.action", "PUT");
-                context.setVariable( "restGatewayMan.uri", "1.0/bundle" );
+                context.setVariable( REST_GATEWAY_MAN_ACTION, "PUT");
+                context.setVariable( REST_GATEWAY_MAN_URI, "1.0/bundle" );
             }
 
             context.getResponse().attachHttpResponseKnob( new AbstractHttpResponseKnob() {} );
@@ -615,10 +628,10 @@ public class PortalBootstrapManager {
 
             String resp = new String( IOUtils.slurpStream( context.getResponse().getMimeKnob().getEntireMessageBodyAsInputStream() ), Charsets.UTF8 );
 
-            logger.log( Level.INFO, "Enrollment response from local RESTMAN bundle install: result=" + result + " httpStatus=" + httpStatus + " body:\n" + resp );
+            logger.log( Level.INFO, "Enrollment response from local RESTMAN bundle install: result: {0}, httpStatus: {1}, body: {2}\n", new Object[]{result, httpStatus, resp});
 
             if ( !AssertionStatus.NONE.equals( result ) || httpStatus != 200 ) {
-                throw new IOException( "RESTMAN failed with result=" + result + " httpStatus=" + httpStatus + ": " + resp );
+                throw new IOException(MessageFormat.format("RESTMAN failed with result: {0}, httpStatus: {1}, body: {2}", result, httpStatus, resp));
             }
 
         } catch ( ServerPolicyException | LicenseException e ) {
@@ -702,5 +715,42 @@ public class PortalBootstrapManager {
         }
 
         return true;
+    }
+
+    public String getOtkVersion(@NotNull User adminUser) throws IOException{
+        PolicyEnforcementContext context = PolicyEnforcementContextFactory.createPolicyEnforcementContext(new Message(), new Message());
+        String version;
+        Assertion assertion = wspReader.parseStrictly( POLICY_XML, WspReader.Visibility.omitDisabled );
+
+        ServerAssertion sph;
+        try {
+            sph = serverPolicyFactory.compilePolicy(assertion, false);
+            Message mess = new Message();
+            context.setVariable( REST_GATEWAY_MAN_ACTION, "GET" );
+            context.setVariable( REST_GATEWAY_MAN_URI, "1.0/solutionKits?guid=" + OTK_GUID );
+
+            context.getResponse().attachHttpResponseKnob( new AbstractHttpResponseKnob() {} );
+            context.setVariable( MESS, mess );
+            context.getDefaultAuthenticationContext().addAuthenticationResult( new AuthenticationResult( adminUser, new OpaqueSecurityToken() ) );
+
+            AssertionStatus result = sph.checkRequest( context );
+            String resp = new String( IOUtils.slurpStream( context.getResponse().getMimeKnob().getEntireMessageBodyAsInputStream()), Charsets.UTF8 );
+            int httpStatus = context.getResponse().getHttpResponseKnob().getStatus();
+            logger.log( Level.INFO, "Enrollment response from local RESTMAN bundle install: result: {0}, httpStatus: {1}, body: {2}\n", new Object[]{result, httpStatus, resp});
+
+            if ( !AssertionStatus.NONE.equals( result ) || httpStatus != 200 ) {
+                throw new IOException(MessageFormat.format("RESTMAN failed with result: {0}, httpStatus: {1}, body: {2}", result, httpStatus, resp));
+            }
+
+            Document document = toDocument(context.getResponse().getMimeKnob().getEntireMessageBodyAsInputStream());
+            version = document.getElementsByTagName(OTK_VERSION_TAG).item(0).getTextContent();
+
+        } catch ( ServerPolicyException | LicenseException e ) {
+            throw new IOException( "Unable to prepare RESTMAN policy: " + ExceptionUtils.getMessage( e ), e );
+        } catch ( PolicyAssertionException|NoSuchPartException e ) {
+            throw new IOException( "Unable to invoke RESTMAN policy: " + ExceptionUtils.getMessage( e ), e );
+        }
+
+        return version;
     }
 }
