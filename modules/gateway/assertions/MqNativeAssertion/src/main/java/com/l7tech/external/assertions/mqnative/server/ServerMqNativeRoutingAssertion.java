@@ -490,7 +490,6 @@ public class ServerMqNativeRoutingAssertion extends ServerRoutingAssertion<MqNat
             gmo.matchOptions = MQMO_MATCH_MSG_ID | MQMO_MATCH_CORREL_ID;
             MQMessage mqResponse = new MQMessage();
             mqResponse.correlationId = selector;
-            mqResponse.characterSet = MqNativeUtils.getConversionCCSID();
 
             // wait for and read the reply
             try {
