@@ -620,8 +620,12 @@
     <presetdef name="modules">
         <subant buildpathref="module-build-path" >
             <property name="module.version.default.target" value="${build.version}"/>
-			<property name="module.skarsigner.sign.all" value="${skarsigner.sign.all}"/>
-			
+            <property name="module.skarsigner.sign.all" value="${skarsigner.sign.all}"/>
+            <property name="code.signer.cert.alias" value="${code.signer.cert.alias}"/>
+            <property name="code.signer.cert.expiry.reminder.days" value="${code.signer.cert.expiry.reminder.days}"/>
+            <property name="code.signer.cert.keystore" value="${code.signer.cert.keystore}"/>
+            <property name="code.signer.cert.storepass" value="${code.signer.cert.storepass}"/>
+
             <propertyset dynamic="false">
                 <propertyref name="build.junit.xmlformat"/>
                 <propertyref prefix="module.obfuscate"/>
@@ -3607,7 +3611,7 @@ ${versionfilecontent}
     </target>
 
     <target name="sign-jar">
-        <signjar jar="${file}" alias="signer8" keystore="${src.root}/etc/ssgKeyStore" storepass="password" lazy="true"/>
+        <signjar jar="${file}" alias="${code.signer.cert.alias}" keystore="${src.root}/${code.signer.cert.keystore}" storepass="${code.signer.cert.storepass}" lazy="true"/>
     </target>
 
 	<target name="checkwebstartresourcefile">

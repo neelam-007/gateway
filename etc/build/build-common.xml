@@ -52,9 +52,6 @@
     <property name="module.idea.configurations" value="default,test"/>
     <property name="module.idea.dependencies.scope" value=""/>
 
-    <property name="code.signer.cert.alias" value="signer8"/>
-    <property name="code.signer.cert.expiry.reminder.days" value="180"/>
-
     <!--
       Classpath for Idea form compiler
     -->
@@ -219,7 +216,7 @@
           Modules JAR signing task with presets
         -->
         <presetdef name="sign-jar">
-            <signjar keystore="${src.root}/etc/ssgKeyStore" alias="signer8" storepass="password" jar="${jar.file}">
+            <signjar keystore="${src.root}/${code.signer.cert.keystore}" alias="${code.signer.cert.alias}" storepass="${code.signer.cert.storepass}" jar="${jar.file}">
                 <path>
                     <fileset dir="${build.dir}" includes="${jar.sign.pattern}" />
                 </path>
@@ -571,10 +568,10 @@
 					<!-- use this property to tweak the timeout for creating source and target environments  during migration
 					 Example: -Dtest.migration.waitTimeMinutes=15 -->
 					<propertyref name="test.migration.waitTimeMinutes"/>
-					<!-- use this property to set the current code signing certificate inside /etc/ssgKeyStore
+					<!-- use this property to set the current code signing certificate inside /etc/ssgKeyStore. Default value is defined in etc/build/default_build.properties
 					 Example: -Dcode.signer.cert.alias=signer8 -->
 					<propertyref name="code.signer.cert.alias"/>
-					<!-- use this property to tweak the code signing certificate expiry period (in days) threshold
+					<!-- use this property to tweak the code signing certificate expiry period (in days) threshold. Default value is defined in etc/build/default_build.properties
 					nightly builds will fail when the current code signing certificate already expired or will expire within the specified threshold
 					 Example: -Dcode.signer.cert.expiry.reminder.days=180 -->
 					<propertyref name="code.signer.cert.expiry.reminder.days"/>
