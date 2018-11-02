@@ -106,7 +106,7 @@ public class ServerEvaluateJsonPathExpressionAssertion extends AbstractServerAss
                 logAndAudit(AssertionMessages.EVALUATE_JSON_PATH_NOT_FOUND, expression);
                 context.setVariable(assertion.getVariablePrefix() + SUFFIX_FOUND, false);
                 context.setVariable(assertion.getVariablePrefix() + SUFFIX_RESULT, null);
-                context.setVariable(assertion.getVariablePrefix() + SUFFIX_RESULTS, new String[0]);
+                context.setVariable(assertion.getVariablePrefix() + SUFFIX_RESULTS, null);
                 return AssertionStatus.FALSIFIED;
             }
 

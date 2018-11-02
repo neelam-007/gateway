@@ -63,23 +63,24 @@ public enum JsonPathEvaluator implements Evaluator {
             }
 
             return new JsonPathExpressionResult(results);
+        } catch (InvalidPathException e) {
+            // InvalidPathException is thrown when querying for a path that doesn't exist.
+            // Report InvalidPathException as no results.
+            return JsonPathExpressionResult.NO_RESULT;
         } catch (RuntimeException e) {
-            //InvalidPathException is thrown when querying for a path that doesn't exist.
-            //when it doesn't exist, it shouldn't be an error, it should report
-            //found = false
-            if(!(e instanceof InvalidPathException)){
-                throw new EvaluatorException(e.getMessage());
-            }
+            // Report remaining runtime exceptions as failures
+            throw new EvaluatorException(e.getMessage());
         }
-
-        return new JsonPathExpressionResult(null);
     }
 
-    protected String toJsonString(Object obj, boolean jsonCompression) {
-        if (jsonCompression && obj instanceof JSONAwareEx) {
+    protected String toJsonString(Object obj, boolean jsonCompression) throws EvaluatorException {
+        if (obj == null) {
+            // Report Null results as failures
+            throw new EvaluatorException("Null result found");
+        } else if (jsonCompression && obj instanceof JSONAwareEx) {
             return ((JSONAwareEx)obj).toJSONString(JSONStyle.MAX_COMPRESS);
         } else {
-            return obj != null ? obj.toString() : null;
+            return obj.toString();
         }
     }
 

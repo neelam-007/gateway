@@ -10,6 +10,7 @@ import java.util.List;
  */
 public class JsonPathExpressionResult implements Serializable {
 
+    public static final JsonPathExpressionResult NO_RESULT = new JsonPathExpressionResult(null);
     private final List<String> results;
     private final boolean found;
 

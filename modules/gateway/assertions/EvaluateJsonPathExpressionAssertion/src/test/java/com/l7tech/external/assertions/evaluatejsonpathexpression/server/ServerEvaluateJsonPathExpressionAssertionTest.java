@@ -94,7 +94,8 @@ public class ServerEvaluateJsonPathExpressionAssertionTest {
             "    \"author\": \"J. R. R. Tolkien\",\n" +
             "    \"title\": \"The Lord of the Rings\",\n" +
             "    \"isbn\": \"0-395-19395-8\",\n" +
-            "    \"price\": null\n" +
+            "    \"price\": null,\n" +
+            "    \"tags\": [\"tag1\", null, \"tag3\"]\n" +
             "  }\n" +
             "}";
 
@@ -495,10 +496,7 @@ public class ServerEvaluateJsonPathExpressionAssertionTest {
             Assert.assertEquals(0, pec.getVariable("jsonPath.count"));
 
             doTestForNonExistingContextVar("jsonPath.result");
-
-            final Object objects = pec.getVariable("jsonPath.results");
-            Assert.assertThat(objects, Matchers.instanceOf(String[].class));
-            Assert.assertThat((String[]) objects, Matchers.emptyArray());
+            doTestForNonExistingContextVar("jsonPath.results");
         } catch (Exception e) {
             Assert.fail("Test JsonPath failed: " + e.getMessage());
         }
@@ -514,13 +512,30 @@ public class ServerEvaluateJsonPathExpressionAssertionTest {
                 new ByteArrayInputStream(TEST_JSON_WITH_NULL_ATTRIBUTE.getBytes()));
 
         final AssertionStatus status = serverAssertion.checkRequest(pec);
-        Assert.assertEquals(AssertionStatus.NONE, status);
-        Assert.assertEquals(true, pec.getVariable(VAR_NAME_JSONPATH_FOUND));
-        Assert.assertEquals(1, pec.getVariable(VAR_NAME_JSONPATH_COUNT));
+        Assert.assertEquals(AssertionStatus.FAILED, status);
 
-        /* jsonPath.result throws NoSuchVariableException as it is NOT set if the value is NULL.
-        Check for jsonPath.results instead. */
-        Assert.assertEquals(null, ((String[]) pec.getVariable(VAR_NAME_JSONPATH_RESULTS))[0]);
+        doTestForNonExistingContextVar("jsonPath.found");
+        doTestForNonExistingContextVar("jsonPath.count");
+        doTestForNonExistingContextVar("jsonPath.result");
+        doTestForNonExistingContextVar("jsonPath.results");
+    }
+
+    @BugId("DE387322")
+    @Test
+    public void testEvaluateJsonPathExpressionNullResultInArray() throws Exception {
+        assertion.setEvaluator(EVALUATOR_JSONPATH);
+        assertion.setExpression("$.book.tags");
+
+        request.initialize(new ByteArrayStashManager(), ContentTypeHeader.APPLICATION_JSON,
+                new ByteArrayInputStream(TEST_JSON_WITH_NULL_ATTRIBUTE.getBytes()));
+
+        final AssertionStatus status = serverAssertion.checkRequest(pec);
+        Assert.assertEquals(AssertionStatus.FAILED, status);
+
+        doTestForNonExistingContextVar("jsonPath.found");
+        doTestForNonExistingContextVar("jsonPath.count");
+        doTestForNonExistingContextVar("jsonPath.result");
+        doTestForNonExistingContextVar("jsonPath.results");
     }
 
     private void doTestForNonExistingContextVar(final String varName) {

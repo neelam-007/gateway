@@ -16,7 +16,7 @@ public interface Evaluator {
     /**
      * An exception to signal an error has occurred while evaluating the expression.
      */
-    static public class EvaluatorException extends Exception {
+    class EvaluatorException extends Exception {
         public EvaluatorException() {
             super();
         }
