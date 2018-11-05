@@ -1,6 +1,10 @@
 package com.l7tech.external.assertions.portalbootstrap.server;
 
-import com.l7tech.common.io.*;
+import com.l7tech.common.io.CertGenParams;
+import com.l7tech.common.io.KeyGenParams;
+import com.l7tech.common.io.SSLSocketFactoryWrapper;
+import com.l7tech.common.io.SingleCertX509KeyManager;
+import com.l7tech.common.io.XmlUtil;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.gateway.common.LicenseException;
@@ -12,7 +16,11 @@ import com.l7tech.gateway.common.security.rbac.PermissionDeniedException;
 import com.l7tech.identity.User;
 import com.l7tech.message.AbstractHttpResponseKnob;
 import com.l7tech.message.Message;
-import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.Goid;
+import com.l7tech.objectmodel.ObjectNotFoundException;
+import com.l7tech.objectmodel.PersistentEntity;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
 import com.l7tech.policy.Policy;
 import com.l7tech.policy.assertion.Assertion;
@@ -43,7 +51,60 @@ import com.l7tech.server.security.keystore.SsgKeyStoreManager;
 import com.l7tech.server.security.rbac.RbacServices;
 import com.l7tech.server.util.ApplicationContextInjector;
 import com.l7tech.server.util.JaasUtils;
-import com.l7tech.util.*;
+import com.l7tech.util.BuildInfo;
+import com.l7tech.util.Charsets;
+import com.l7tech.util.Config;
+import com.l7tech.util.ConfigFactory;
+import com.l7tech.util.ExceptionUtils;
+import com.l7tech.util.HexUtils;
+import com.l7tech.util.IOUtils;
+import com.l7tech.util.RandomUtil;
+import com.l7tech.util.ResourceUtils;
+import com.l7tech.util.Triple;
+import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.Socket;
+import java.net.URL;
+import java.security.GeneralSecurityException;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.text.MessageFormat;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.zip.GZIPInputStream;
+import javax.inject.Inject;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.SNIHostName;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLParameters;
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509KeyManager;
+import javax.net.ssl.X509TrustManager;
+import javax.security.auth.x500.X500Principal;
 import org.apache.commons.lang.StringUtils;
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerator;
@@ -52,28 +113,6 @@ import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
-
-import javax.inject.Inject;
-import javax.net.ssl.*;
-import javax.security.auth.x500.X500Principal;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.Socket;
-import java.net.URL;
-import java.security.*;
-import java.security.cert.*;
-import java.security.cert.Certificate;
-import java.text.MessageFormat;
-import java.util.*;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.zip.GZIPInputStream;
 
 /**
  * Class that provides portal bootstrap services.
@@ -242,6 +281,19 @@ public class PortalBootstrapManager {
             connection.setDoOutput(true);
             output = connection.getOutputStream();
             output.write(postBody);
+
+            final int responseCode = connection.getResponseCode();
+
+            if (responseCode != HttpsURLConnection.HTTP_OK) {
+                String errMsg = "Unknown error.";
+                if (connection.getErrorStream() != null) {
+                    try (BufferedReader br = new BufferedReader(new InputStreamReader(connection.getErrorStream()))) {
+                        errMsg = br.lines().collect(Collectors.joining(" "));
+                    }
+                }
+                throw new IOException(errMsg);
+            }
+
             // If the TSSG has already enrolled with a different portal pssg, it should not be allowed to re-enrolled
             String new_pssg_identifier = connection.getHeaderField("portal-config-identifier");
             String current_pssg_identifier = clusterPropertyManager.getProperty("portal.config.identifier");
