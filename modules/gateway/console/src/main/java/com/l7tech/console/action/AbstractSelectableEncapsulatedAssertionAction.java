@@ -9,7 +9,7 @@ import com.l7tech.gateway.common.security.rbac.OperationType;
 import com.l7tech.gui.util.DialogDisplayer;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.encass.EncapsulatedAssertionConfig;
-import com.sun.istack.Nullable;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;

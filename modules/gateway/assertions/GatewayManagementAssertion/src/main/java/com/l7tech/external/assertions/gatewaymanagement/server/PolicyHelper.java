@@ -60,7 +60,7 @@ import com.l7tech.server.util.JaasUtils;
 import com.l7tech.util.*;
 import com.l7tech.wsdl.Wsdl;
 import com.l7tech.xml.soap.SoapVersion;
-import com.sun.istack.Nullable;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.NotNull;
 import org.w3c.dom.Document;
 import org.xml.sax.EntityResolver;

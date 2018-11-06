@@ -59,7 +59,7 @@ import java.security.*;
 import java.util.*;
 import java.util.logging.Level;
 
-import com.sun.istack.Nullable;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.NotNull;
 
 import org.springframework.context.ApplicationContext;
