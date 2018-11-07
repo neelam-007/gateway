@@ -4345,5 +4345,47 @@ ${versionfilecontent}
 		</taskdef>
 		<sonar:sonar />
 	</target>
+
+    <target name="greenlight" description="Run veracode greenlight scan on pull requests">
+        <mkdir dir="build/greenlight"/>
+        <exec executable="/bin/bash">
+            <arg value="tools/greenlight_copy_classes_to_src.sh"/>
+        </exec>
+        <get src="http://isl-dsdc.ca.com/artifactory/generic-third-party-local/veracode/gl-scanner-java.jar"
+            dest="build/greenlight/gl-scanner-java.jar"/>
+        <java jar="build/greenlight/gl-scanner-java.jar"
+            fork="true"
+            failonerror="true">
+            <arg value="-i"/>
+            <arg value="${veracode.id}"/>
+            <arg value="-k"/>
+            <arg value="${veracode.key}"/>
+            <arg value="-g"/>
+            <arg value="."/>
+            <arg value="-s"/>
+            <arg value="."/>
+            <arg value="-b"/>
+            <arg value="."/>
+            <arg value="-p"/>
+            <arg value="UneasyRooster"/>
+            <arg value="-u"/>
+            <arg value="https://github-isl-01.ca.com/APIM-Gateway/UneasyRooster.git"/>
+            <arg value="-jo"/>
+            <arg value="true"/>
+            <arg value="-jf"/>
+            <arg value="build/greenlight/results.json"/>
+            <arg value="-cb"/>
+            <arg value="http://whach01-e16451.ca.com:8008/results"/>
+            <arg value="-bp"/>
+            <arg value="true"/>
+        </java>
+        <exec executable="curl">
+            <arg value="-d"/>
+            <arg value="@build/greenlight/results.json"/>
+            <arg value="-X POST"/>
+            <arg value="http://whach01-e16451.ca.com:8008/results"/>
+        </exec>
+    </target>
+
 	
 </project>
