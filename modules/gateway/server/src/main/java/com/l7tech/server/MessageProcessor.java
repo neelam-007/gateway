@@ -655,15 +655,6 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
 
             context.setPolicyResult(status);
 
-            // Execute post service extensions
-            if (status == AssertionStatus.NONE) {
-                boolean maintainAssertionStatus = messageProcessorInjector.executePostServiceInjections(context);
-                if (!maintainAssertionStatus) {
-                    logger.log(Level.FINE, "Message processing falsified due to post-service injection response");
-                    status = AssertionStatus.FALSIFIED;
-                }
-            }
-
             // Run post service global policies
             if ( status == AssertionStatus.NONE ) {
                 status = processPostServicePolicies(
@@ -671,6 +662,15 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                         MessageProcessingMessages.RUNNING_POST_SERVICE_POLICY,
                         MessageProcessingMessages.ERROR_POST_SERVICE,
                         false );
+            }
+
+            // Execute post service extensions
+            if (status == AssertionStatus.NONE) {
+                boolean maintainAssertionStatus = messageProcessorInjector.executePostServiceInjections(context);
+                if (!maintainAssertionStatus) {
+                    logger.log(Level.FINE, "Message processing falsified due to post-service injection response");
+                    status = AssertionStatus.FALSIFIED;
+                }
             }
 
             doResponseSecurityProcessing(status);
